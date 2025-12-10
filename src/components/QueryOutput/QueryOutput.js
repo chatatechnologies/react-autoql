@@ -7,7 +7,7 @@ import _isEmpty from 'lodash.isempty'
 import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
-import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { TOOLTIP_COPY_TEXTS, TABULATOR_LOCAL_ROW_LIMIT } from '../../js/Constants'
 
 import {
   AggTypes,
@@ -40,6 +40,7 @@ import {
   isColumnNumberType,
   getDateColumnIndex,
   getStringColumnIndices,
+  getVisibleColumns,
   isAggregation,
   isColumnDateType,
   isColumnStringType,
@@ -69,6 +70,8 @@ import {
   formatFiltersForTabulator,
   formatSortersForTabulator,
   DisplayTypes,
+  createFilterFunction,
+  extractOperatorFromValue,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -150,14 +153,41 @@ export class QueryOutput extends React.Component {
       }
     }
 
+    if (
+      props.initialTableConfigs?.pivotTableConfig &&
+      this.isTableConfigValid(props.initialTableConfigs?.pivotTableConfig, this.pivotTableColumns, displayType)
+    ) {
+      const { pivotTableConfig } = props.initialTableConfigs
+      this.pivotTableConfig = _cloneDeep(pivotTableConfig)
+    }
+
+    // Generate data now that columns and any initial table/pivot configs are applied
     this.generateAllData()
 
-    // Set initial table params to be any filters that
-    // are already present in the current query
-    // Note: We handle sorting ourselves, so we don't pass sorters to Tabulator
-    this.formattedTableParams = {
-      filters: props?.initialFormattedTableParams?.filters || [],
-      sorters: [],
+    try {
+      const initial = props?.initialFormattedTableParams ?? {}
+      const feReq = this.queryResponse?.data?.data?.fe_req ?? {}
+
+      const filters =
+        Array.isArray(initial.filters) && initial.filters.length
+          ? initial.filters
+          : Array.isArray(feReq.filters)
+          ? feReq.filters
+          : []
+
+      const sorters =
+        Array.isArray(initial.sorters) && initial.sorters.length
+          ? initial.sorters
+          : Array.isArray(feReq.orders)
+          ? feReq.orders.map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
+          : []
+
+      if (filters.length) this.tableParams.filter = formatFiltersForTabulator(filters, columns)
+      if (sorters.length) this.tableParams.sort = formatSortersForTabulator(sorters, columns)
+
+      this.formattedTableParams = { filters, sorters }
+    } catch (err) {
+      this.formattedTableParams = { filters: [], sorters: [] }
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -179,6 +209,7 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
+      networkColumnConfig: props.initialNetworkColumnConfig || null,
     }
     this.updateMaxConstraints()
   }
@@ -205,6 +236,11 @@ export class QueryOutput extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,
+    initialNetworkColumnConfig: PropTypes.shape({
+      sourceColumnIndex: PropTypes.number,
+      targetColumnIndex: PropTypes.number,
+    }),
+    onNetworkColumnChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -293,6 +329,8 @@ export class QueryOutput extends React.Component {
     isEditing: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
+    initialNetworkColumnConfig: undefined,
+    onNetworkColumnChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
@@ -349,11 +387,12 @@ export class QueryOutput extends React.Component {
       this.forceUpdate()
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
     }
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => {
+    if (!this._isMounted) return
+
     const currentType = this.state.displayType
     this.setState({
       hiddenLegendLabels: hiddenLabels,
@@ -365,6 +404,8 @@ export class QueryOutput extends React.Component {
   }
 
   handleLegendClick = (label) => {
+    if (!this._isMounted) return
+
     const { hiddenLegendLabels, legendStateByChart, displayType } = this.state
     const isHidden = hiddenLegendLabels.includes(label)
     const newHiddenLabels = isHidden ? hiddenLegendLabels.filter((l) => l !== label) : [...hiddenLegendLabels, label]
@@ -461,7 +502,11 @@ export class QueryOutput extends React.Component {
 
         // If new number column indices conflict, reset table config to resolve the arrays
         // The config should stay the same as much as possible while removing the overlapping indices
-        if (!this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)) {
+        // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
+        if (
+          !this.hasError(this.queryResponse) &&
+          !this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)
+        ) {
           this.setTableConfig()
         }
       }
@@ -526,7 +571,9 @@ export class QueryOutput extends React.Component {
       }
 
       setTimeout(() => {
-        this.updateToolbars()
+        if (this._isMounted) {
+          this.updateToolbars()
+        }
       }, 0)
 
       if (!_isEmpty(newState)) {
@@ -541,6 +588,9 @@ export class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+
+    // Cancel any pending requests
+    this.cancelCurrentRequest()
     document.removeEventListener('mousemove', this.handleMouseMove)
     document.removeEventListener('mouseup', this.handleMouseUp)
     document.removeEventListener('mouseleave', this.handleMouseUp)
@@ -569,7 +619,7 @@ export class QueryOutput extends React.Component {
     this.updateMaxConstraints()
   }
   handleResizeStart = (e) => {
-    if (!this.props.enableResizing) return
+    if (!this._isMounted || !this.props.enableResizing) return
 
     e.preventDefault()
     this.updateMaxConstraints()
@@ -590,7 +640,7 @@ export class QueryOutput extends React.Component {
   }
 
   handleMouseMove = (e) => {
-    if (!this.state.isResizing || !this.props.enableResizing) return
+    if (!this._isMounted || !this.state.isResizing || !this.props.enableResizing) return
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
     const isChart = isChartType(this.state.displayType)
@@ -611,7 +661,7 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
+    if (this._isMounted && this.state.isResizing) {
       this.setState({ isResizing: false }, () => {
         this.refreshLayout()
       })
@@ -641,14 +691,42 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onNetworkColumnChange = (networkColumnConfig) => {
+    this.setState({ networkColumnConfig })
+    // Call parent callback if provided
+    if (this.props.onNetworkColumnChange) {
+      this.props.onNetworkColumnChange(networkColumnConfig)
+    }
+  }
+
   onTableConfigChange = (initialized = true) => {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
 
-    this.props.onTableConfigChange({
-      tableConfig: tableConfig,
-      pivotTableConfig: pivotTableConfig,
+    if (typeof this.props.onTableConfigChange === 'function') {
+      this.props.onTableConfigChange({
+        tableConfig: tableConfig,
+        pivotTableConfig: pivotTableConfig,
+      })
+    }
+  }
+
+  findDefaultStringColumnIndex = (defaultDateColumn) => {
+    return this.tableConfig.stringColumnIndices.find((index) => {
+      return (
+        !isColumnNumberType(this.queryResponse.data.data.columns[index]) &&
+        defaultDateColumn?.length > 0 &&
+        this.queryResponse.data.data.columns[index]?.name === defaultDateColumn
+      )
     })
+  }
+
+  getStringColumnIndex = (foundIndex) => {
+    return foundIndex
+      ? foundIndex
+      : this.tableConfig?.stringColumnIndices?.length > 0
+      ? this.tableConfig?.stringColumnIndices[0]
+      : 0
   }
 
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
@@ -671,9 +749,10 @@ export class QueryOutput extends React.Component {
 
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
+    // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
     const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), displayType)
 
-    if (!isTableConfigValid) {
+    if (!this.hasError(this.queryResponse) && !isTableConfigValid) {
       this.setTableConfig()
     }
 
@@ -690,6 +769,8 @@ export class QueryOutput extends React.Component {
   }
 
   changeDisplayType = (displayType, callback) => {
+    if (!this._isMounted) return
+
     this.checkAndUpdateTableConfigs(displayType)
     this.setState({ displayType }, () => {
       if (typeof callback === CustomColumnTypes.FUNCTION) {
@@ -782,6 +863,7 @@ export class QueryOutput extends React.Component {
     return this.formatColumnsForTable(
       this.queryResponse?.data?.data?.columns,
       this.getAdditionalSelectsFromResponse(this.queryResponse),
+      this.props.initialAggConfig,
     )
   }
 
@@ -809,6 +891,10 @@ export class QueryOutput extends React.Component {
   }
 
   usePivotDataForChart = () => {
+    // Network graphs always use original data, never pivot data
+    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
+      return false
+    }
     return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
   }
 
@@ -822,11 +908,15 @@ export class QueryOutput extends React.Component {
   }
 
   isTableConfigValid = (tableConfig, columns, displayType) => {
+    const configToValidate = tableConfig ?? this.tableConfig
+    const columnsToValidate = columns ?? this.getColumns()
+    const displayTypeToValidate = displayType ?? this.state.displayType
+
     return isColumnIndexConfigValid({
       response: this.queryResponse,
-      columnIndexConfig: tableConfig ?? this.tableConfig,
-      columns: columns ?? this.getColumns(),
-      displayType: displayType ?? this.state.displayType,
+      columnIndexConfig: configToValidate,
+      columns: columnsToValidate,
+      displayType: displayTypeToValidate,
     })
   }
 
@@ -854,14 +944,14 @@ export class QueryOutput extends React.Component {
   }
 
   updateColumnsAndData = (response) => {
-    if (response && this._isMounted) {
+    if (response && response.data && response.data.data && this._isMounted) {
       this.pivotTableID = uuid()
       this.isOriginalData = false
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
-      const newColumns = this.formatColumnsForTable(response?.data?.data?.columns, additionalSelects)
+      const newColumns = this.formatColumnsForTable(response.data.data.columns, additionalSelects)
       const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
 
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
@@ -980,6 +1070,7 @@ export class QueryOutput extends React.Component {
       this.tableData = this.queryResponse?.data?.data?.rows
 
       // Only set table config if no valid initial config was provided AND this is during mount
+      // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
       const isDuringMount = !this._isMounted
       const displayType = this.state?.displayType || this.getDisplayTypeFromInitial(this.props)
       const hasValidInitialConfig =
@@ -987,7 +1078,7 @@ export class QueryOutput extends React.Component {
         this.props.initialTableConfigs?.tableConfig &&
         this.isTableConfigValid(this.props.initialTableConfigs.tableConfig, columns, displayType)
 
-      if (!hasValidInitialConfig) {
+      if (!this.hasError(this.queryResponse) && !hasValidInitialConfig) {
         this.setTableConfig()
       }
 
@@ -1010,7 +1101,6 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error('Error generating pivot data', error)
-      this.props.onErrorCallback?.(error)
       this.pivotTableData = undefined
     }
 
@@ -1314,7 +1404,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.drilldownQueryID,
+              queryID: this.queryID,
               source: this.props.source,
               groupBys,
               pageSize,
@@ -1666,7 +1756,11 @@ export class QueryOutput extends React.Component {
 
   onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
-    this.formattedTableParams = formattedTableParams
+
+    // Guard: preserve existing formattedTableParams on empty payload
+    if (Object.keys(formattedTableParams).length > 0) {
+      this.formattedTableParams = formattedTableParams
+    }
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
@@ -1675,9 +1769,11 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
-    // This will update the filter badge in OptionsToolbar
+    // Update filter badge in OptionsToolbar
     setTimeout(() => {
-      this.updateToolbars()
+      if (this._isMounted) {
+        this.updateToolbars()
+      }
     }, 0)
   }
 
@@ -1707,7 +1803,9 @@ export class QueryOutput extends React.Component {
       )
     }
 
-    this.setState({ chartID: uuid() })
+    if (this._isMounted) {
+      this.setState({ chartID: uuid() })
+    }
   }
 
   isValidSorter = (sorter) => {
@@ -1737,10 +1835,7 @@ export class QueryOutput extends React.Component {
   onLegendClick = (d) => {
     d?.label && this.handleLegendClick(d.label)
 
-    if (!d) {
-      console.debug('no legend item was provided on click event')
-      return
-    }
+    if (!d) return
 
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
@@ -1759,7 +1854,9 @@ export class QueryOutput extends React.Component {
         newColumns,
         this.getAdditionalSelectsFromResponse(this.queryResponse),
       )
-      this.setState({ columns: formattedColumns })
+      if (this._isMounted) {
+        this.setState({ columns: formattedColumns })
+      }
     }
   }
 
@@ -1806,10 +1903,28 @@ export class QueryOutput extends React.Component {
 
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
+      // Force chart to re-render with new pivot data by updating chartID
+      if (this._isMounted) {
+        this.setState({
+          chartID: uuid(),
+          visiblePivotRowChangeCount: (this.state.visiblePivotRowChangeCount || 0) + 1,
+        })
+      }
     }
 
     this.onTableConfigChange()
     this.forceUpdate()
+  }
+
+  getPivotRowSelectorOptions = () => {
+    const cols = this.getColumns() || []
+    if (!this.tableConfig) return []
+    return cols
+      .filter(
+        (c) =>
+          c.is_visible !== false && !this.tableConfig.numberColumnIndices?.includes(c.index) && isColumnStringType(c),
+      )
+      .map((c) => ({ value: c.index, label: c.display_name || c.name }))
   }
 
   onChangeLegendColumnIndex = (index) => {
@@ -1921,7 +2036,10 @@ export class QueryOutput extends React.Component {
 
   resetTableConfig = (newColumns) => {
     this.tableConfig = undefined
-    this.setTableConfig(newColumns)
+    const validColumns =
+      Array.isArray(newColumns) && newColumns.length ? newColumns : this.getColumns?.() || this.props.columns || []
+    if (!validColumns.length) return
+    this.setTableConfig(validColumns)
   }
 
   isColumnIndexValid = (index, columns) => {
@@ -1944,11 +2062,66 @@ export class QueryOutput extends React.Component {
     return indices?.findIndex((i) => index === i) !== -1
   }
 
-  setTableConfig = (newColumns) => {
-    const columns = newColumns ?? this.getColumns()
-    if (!columns) {
+  shouldUpdateStringColumnIndices = (columns) => {
+    return (
+      !this.tableConfig.stringColumnIndices ||
+      !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns) ||
+      !getVisibleColumns(columns).some((col) => this.tableConfig.stringColumnIndices.includes(col.index))
+    )
+  }
+
+  initializeNumberColumnIndices = (columns) => {
+    const visibleCols = getVisibleColumns(columns) || []
+    const visibleNumberColumns =
+      visibleCols.filter((col) => isColumnNumberType(col)) || (columns || []).filter((col) => isColumnNumberType(col))
+
+    if (
+      visibleNumberColumns.length > 0 &&
+      (!this.tableConfig.numberColumnIndices || !this.tableConfig.numberColumnIndices.length)
+    ) {
+      this.tableConfig.numberColumnIndices = [visibleNumberColumns[0].index]
+      this.tableConfig.numberColumnIndex = visibleNumberColumns[0].index
+    }
+  }
+
+  configureStringColumnIndices = (columns, currentDisplayType) => {
+    const visibleColumns = getVisibleColumns(columns)
+    const visibleStringColumns = visibleColumns.filter((col) => !isColumnNumberType(col))
+
+    let stringColumnIndices = visibleStringColumns.map((col) => col.index)
+    let stringColumnIndex = stringColumnIndices.length > 0 ? stringColumnIndices[0] : undefined
+
+    // For histograms with only numeric columns, don't assign string columns
+    if (!stringColumnIndices.length && currentDisplayType === 'histogram') {
+      this.tableConfig.stringColumnIndices = []
+      this.tableConfig.stringColumnIndex = undefined
       return
     }
+
+    // For other display types, fallback to first visible column if no string columns
+    if (!stringColumnIndices.length) {
+      const fallback = visibleColumns[0]
+      if (fallback) {
+        stringColumnIndices = [fallback.index]
+        stringColumnIndex = fallback.index
+      }
+    }
+
+    this.tableConfig.stringColumnIndices = stringColumnIndices
+    this.tableConfig.stringColumnIndex = stringColumnIndex
+
+    // Ensure not all columns are string columns (reserve at least one for numbers)
+    if (stringColumnIndices.length === visibleColumns.length) {
+      const indexToRemove = stringColumnIndices.findIndex((i) => i !== stringColumnIndex)
+      if (indexToRemove > -1) {
+        this.tableConfig.stringColumnIndices.splice(indexToRemove, 1)
+      }
+    }
+  }
+
+  setTableConfig = (newColumns) => {
+    const columns = newColumns ?? this.getColumns()
+    if (!columns || !Array.isArray(columns) || columns.length === 0 || !this.queryResponse?.data?.data) return
 
     const prevTableConfig = _cloneDeep(this.tableConfig)
 
@@ -1956,6 +2129,13 @@ export class QueryOutput extends React.Component {
       this.tableConfig = {}
     }
 
+    const currentDisplayType = this.state?.displayType ?? this.getDisplayTypeFromInitial(this.props)
+
+    this.initializeNumberColumnIndices(columns)
+
+    if (this.shouldUpdateStringColumnIndices(columns)) {
+      this.configureStringColumnIndices(columns, currentDisplayType)
+    }
     const isPivot = false
     const defaultDateColumn = this.queryResponse?.data?.data?.default_date_column
     const { stringColumnIndices, stringColumnIndex } = getStringColumnIndices(
@@ -2192,96 +2372,27 @@ export class QueryOutput extends React.Component {
   }
 
   setFilterFunction = (col) => {
-    const self = this
-    if (col.type === ColumnTypes.DATE) {
-      return (headerValue, rowValue, rowData, filterParams) => {
+    // Import the filter function from autoql-fe-utils
+    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+
+    // Wrap the filter function to preserve error callback behavior
+    // This wrapper is necessary because react-autoql needs to call onErrorCallback for error handling
+    if (filterFn && typeof filterFn === 'function') {
+      const wrappedFn = (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (!rowValue) {
-            return false
-          }
-
-          const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
-
-          const dates = headerValue.split(' to ')
-          const precision = getPrecisionForDayJS(getFilterPrecision(col.precision))
-          const startDate = dayjs.utc(dates[0]).startOf(precision)
-          const endDate = dayjs.utc(dates[1] ?? dates[0]).endOf(precision)
-
-          const isAfterStartDate = startDate.isSameOrBefore(rowValueDayJS)
-          const isBeforeEndDate = rowValueDayJS.isSameOrBefore(endDate)
-
-          return isAfterStartDate && isBeforeEndDate
+          return filterFn(headerValue, rowValue, rowData, filterParams)
         } catch (error) {
           console.error(error)
-          this.props.onErrorCallback(error)
+          if (this.props.onErrorCallback) {
+            this.props.onErrorCallback(error)
+          }
           return false
         }
       }
-    } else if (col.type === 'DATE_STRING') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (!rowValue) {
-            return false
-          }
-
-          const formattedElement = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          const shouldFilter = `${formattedElement}`.toLowerCase().includes(`${headerValue}`.toLowerCase())
-
-          return shouldFilter
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          return false
-        }
-      }
-    } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (!rowValue && rowValue !== 0) {
-            return false
-          }
-
-          const trimmedValue = headerValue.trim()
-          if (trimmedValue.length >= 2) {
-            const number = Number(trimmedValue.substr(1).replace(/[^0-9.]/g, ''))
-            if (trimmedValue[0] === '>' && trimmedValue[1] === '=') {
-              return rowValue >= number
-            } else if (trimmedValue[0] === '>') {
-              return rowValue > number
-            } else if (trimmedValue[0] === '<' && trimmedValue[1] === '=') {
-              return rowValue <= number
-            } else if (trimmedValue[0] === '<') {
-              return rowValue < number
-            } else if (trimmedValue[0] === '!' && trimmedValue[1] === '=') {
-              return rowValue !== number
-            } else if (trimmedValue[0] === '=') {
-              return rowValue === number
-            }
-          }
-
-          // No logical operators detected, just compare numbers
-          const filterNumber = headerValue?.toString()
-          const formattedNumber = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          return !isNaN(formattedNumber) && parseFloat(formattedNumber) === parseFloat(filterNumber)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          return false
-        }
-      }
+      return wrappedFn
     }
 
-    return undefined
+    return filterFn
   }
 
   setSorterFunction = (col) => {
@@ -2322,7 +2433,7 @@ export class QueryOutput extends React.Component {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
 
-  copyToClipboard(text, element) {
+  copyToClipboard = (text, element) => {
     const successTimeout = 1500
     const errorTimeout = 3000
     const textarea = document.createElement('textarea')
@@ -2379,156 +2490,165 @@ export class QueryOutput extends React.Component {
       return null
     }
 
-    const formattedColumns = columns.map((col, i) => {
-      const newCol = _cloneDeep(col)
+    const formattedColumns = columns
+      .map((col, i) => {
+        // Ensure we always produce a column object so indexes remain aligned
+        // with row data. If `col` is invalid, create a minimal placeholder.
+        const safeCol =
+          !col || typeof col !== 'object'
+            ? { display_name: String(i), name: String(i), type: 'STRING', is_visible: true }
+            : col
 
-      newCol.id = col.id ?? uuid()
-      newCol.field = `${i}`
-      newCol.title = col.display_name
+        const newCol = _cloneDeep(safeCol)
 
-      newCol.mutateLink = 'Custom'
+        newCol.id = col.id ?? uuid()
+        newCol.field = `${i}`
+        newCol.title = col.display_name
 
-      // Visibility flag: this can be changed through the column visibility editor modal
-      newCol.visible = col.is_visible
-      newCol.download = col.is_visible
+        newCol.mutateLink = 'Custom'
 
-      newCol.minWidth = '90px'
-      if (newCol.type === ColumnTypes.DATE) {
-        newCol.minWidth = '125px'
-      }
+        // Visibility flag: this can be changed through the column visibility editor modal
+        newCol.visible = col.is_visible
+        newCol.download = col.is_visible
 
-      newCol.maxWidth = false
+        newCol.minWidth = '90px'
+        if (newCol.type === ColumnTypes.DATE) {
+          newCol.minWidth = '125px'
+        }
 
-      if (isColumnNumberType(newCol)) {
-        newCol.hozAlign = 'right'
-      } else {
-        newCol.hozAlign = 'center'
-      }
+        newCol.maxWidth = false
 
-      const drilldownGroupby = this.getDrilldownGroupby(this.queryResponse, newCol)
+        if (isColumnNumberType(newCol)) {
+          newCol.hozAlign = 'right'
+        } else {
+          newCol.hozAlign = 'center'
+        }
 
-      newCol.cssClass = `${newCol.type}`
-      if (drilldownGroupby) {
-        newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
-      }
+        const drilldownGroupby = this.getDrilldownGroupby(this.queryResponse, newCol)
 
-      // Cell formatting
-      newCol.formatter = (cell, formatterParams, onRendered) => {
-        const cellValue = cell.getValue()
-        const wrapper = document.createElement('div')
-        wrapper.className = 'react-autoql-cell-value-wrapper'
-        const valueContainer = document.createElement('div')
-        valueContainer.className = 'react-autoql-cell-value'
-        const formattedValue = formatElement({
-          element: cellValue,
-          column: newCol,
-          config: getDataFormatting(this.props.dataFormatting),
-          htmlElement: cell.getElement(),
+        newCol.cssClass = `${newCol.type}`
+        if (drilldownGroupby) {
+          newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
+        }
+
+        // Cell formatting
+        newCol.formatter = (cell, formatterParams, onRendered) => {
+          const cellValue = cell.getValue()
+          const wrapper = document.createElement('div')
+          wrapper.className = 'react-autoql-cell-value-wrapper'
+          const valueContainer = document.createElement('div')
+          valueContainer.className = 'react-autoql-cell-value'
+          const formattedValue = formatElement({
+            element: cellValue,
+            column: newCol,
+            config: getDataFormatting(this.props.dataFormatting),
+            htmlElement: cell.getElement(),
+          })
+
+          valueContainer.innerHTML = formattedValue ?? ''
+
+          wrapper.appendChild(valueContainer)
+
+          if (cellValue != null && cellValue !== '') {
+            onRendered(() => {
+              const cellElement = cell.getElement()
+              this.addCopyToClipboardListener(
+                cellElement,
+                cellValue,
+                newCol,
+                getDataFormatting(this.props.dataFormatting),
+                this.props.tooltipID ?? this.TOOLTIP_ID,
+              )
+            })
+          }
+
+          return wrapper
+        }
+
+        // Always have filtering enabled, but only
+        // display if filtering is toggled by user
+        newCol.headerFilter = col.headerFilter ?? 'input'
+        newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
+        newCol.headerFilterLiveFilter = false
+
+        // Need to set custom filters for cells that are
+        // displayed differently than the data (ie. dates)
+        newCol.headerFilterFunc = this.setFilterFunction(newCol)
+
+        // Allow proper chronological sorting for date strings
+        newCol.sorter = this.setSorterFunction(newCol)
+        newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
+        newCol.headerSortStartingDir = 'desc'
+        newCol.headerClick = (e, col) => {
+          // To allow tabulator to sort, we must first restore redrawing,
+          // then the component will disable it again afterwards automatically
+          if (this.state.displayType === 'table') {
+            this.tableRef?.ref?.restoreRedraw()
+          } else if (this.state.displayType === 'pivot_table') {
+            this.pivotTableRef?.ref?.restoreRedraw()
+          }
+        }
+
+        // Column header context menu
+        // Keep for future use
+        // newCol.headerContextMenu = [
+        //   {
+        //     label: 'Hide Column',
+        //     action: function (e, column, a, b, c) {
+        //       column.hide()
+        //     },
+        //   },
+        // ]
+
+        // Show drilldown filter value in column title so user knows they can't filter on this column
+        if (drilldownGroupby) {
+          newCol.isDrilldownColumn = true
+          newCol.tooltipTitle = newCol.title
+          newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
+        }
+
+        // Set aggregate type is data is list query
+        let aggType = col.aggType
+        if (aggConfig?.[col?.name]) {
+          aggType = aggConfig[col.name]
+        }
+        if (isListQuery(columns)) {
+          if (isColumnNumberType(col)) {
+            newCol.aggType = aggType || AggTypes.SUM
+          } else {
+            newCol.aggType = aggType || AggTypes.COUNT
+          }
+        }
+
+        // Check if a date range is available
+        const dateRange = this.columnDateRanges.find((rangeObj) => {
+          return newCol.type === ColumnTypes.DATE && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
         })
 
-        valueContainer.innerHTML = formattedValue ?? ''
+        if (dateRange) {
+          newCol.dateRange = dateRange
+        }
 
-        wrapper.appendChild(valueContainer)
-
-        if (cellValue != null && cellValue !== '') {
-          onRendered(() => {
-            const cellElement = cell.getElement()
-            this.addCopyToClipboardListener(
-              cellElement,
-              cellValue,
-              newCol,
-              getDataFormatting(this.props.dataFormatting),
-              this.props.tooltipID ?? this.TOOLTIP_ID,
+        if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
+          const customSelect = additionalSelects.find((select) => {
+            return (
+              (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
+              (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
             )
           })
+          const cleanName = getCleanColumnName(newCol?.name)
+          const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
+            return select?.table_column?.trim() === cleanName
+          })
+
+          if (customSelect && !availableSelect) {
+            newCol.custom = true
+          }
         }
 
-        return wrapper
-      }
-
-      // Always have filtering enabled, but only
-      // display if filtering is toggled by user
-      newCol.headerFilter = col.headerFilter ?? 'input'
-      newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
-      newCol.headerFilterLiveFilter = false
-
-      // Need to set custom filters for cells that are
-      // displayed differently than the data (ie. dates)
-      newCol.headerFilterFunc = this.setFilterFunction(newCol)
-
-      // Allow proper chronological sorting for date strings
-      newCol.sorter = this.setSorterFunction(newCol)
-      newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
-      newCol.headerSortStartingDir = 'desc'
-      newCol.headerClick = (e, col) => {
-        // To allow tabulator to sort, we must first restore redrawing,
-        // then the component will disable it again afterwards automatically
-        if (this.state.displayType === 'table') {
-          this.tableRef?.ref?.restoreRedraw()
-        } else if (this.state.displayType === 'pivot_table') {
-          this.pivotTableRef?.ref?.restoreRedraw()
-        }
-      }
-
-      // Column header context menu
-      // Keep for future use
-      // newCol.headerContextMenu = [
-      //   {
-      //     label: 'Hide Column',
-      //     action: function (e, column, a, b, c) {
-      //       column.hide()
-      //     },
-      //   },
-      // ]
-
-      // Show drilldown filter value in column title so user knows they can't filter on this column
-      if (drilldownGroupby) {
-        newCol.isDrilldownColumn = true
-        newCol.tooltipTitle = newCol.title
-        newCol.title = `${newCol.title} <em>(Clicked: "${drilldownGroupby.value}")</em>`
-      }
-
-      // Set aggregate type is data is list query
-      let aggType = col.aggType
-      if (aggConfig?.[col?.name]) {
-        aggType = aggConfig[col.name]
-      }
-      if (isListQuery(columns)) {
-        if (isColumnNumberType(col)) {
-          newCol.aggType = aggType || AggTypes.SUM
-        } else {
-          newCol.aggType = aggType || AggTypes.COUNT
-        }
-      }
-
-      // Check if a date range is available
-      const dateRange = this.columnDateRanges.find((rangeObj) => {
-        return newCol.type === ColumnTypes.DATE && (rangeObj.columnName === newCol.display_name || !!newCol.groupable)
+        return newCol
       })
-
-      if (dateRange) {
-        newCol.dateRange = dateRange
-      }
-
-      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
-        const customSelect = additionalSelects.find((select) => {
-          return (
-            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
-            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
-          )
-        })
-        const cleanName = getCleanColumnName(newCol?.name)
-        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.table_column?.trim() === cleanName
-        })
-
-        if (customSelect && !availableSelect) {
-          newCol.custom = true
-        }
-      }
-
-      return newCol
-    })
+      .filter((col) => col !== null)
 
     return formattedColumns
   }
@@ -2563,6 +2683,13 @@ export class QueryOutput extends React.Component {
     try {
       const columns = this.getColumns()
       const dateColumnIndex = getDateColumnIndex(columns)
+      // If we could not find a date column (e.g., stale indexes after reorder),
+      // fall back to the regular pivot generation path instead of throwing.
+      if (!(dateColumnIndex >= 0) || !columns[dateColumnIndex]) {
+        // fallback to general pivot table generator which is more robust to missing indexes
+        this.generatePivotTableData({})
+        return
+      }
       let numberColumnIndex = this.tableConfig.numberColumnIndex
       if (!(numberColumnIndex >= 0)) {
         numberColumnIndex = columns.findIndex(
@@ -2708,6 +2835,31 @@ export class QueryOutput extends React.Component {
       tableData = tableData.filter((row) => row[0] !== null)
 
       const columns = this.getColumns()
+
+      // Ensure tableConfig is valid for the current columns after any reordering.
+      // Recompute tableConfig if any of the indices used by pivot generation
+      // are not valid for the current column set. Invalid indices occur when
+      // users reorder columns visually and the stored indices are stale.
+      const numberIndex = this.tableConfig?.numberColumnIndex
+      const stringIndex = this.tableConfig?.stringColumnIndex
+      const legendIndex = this.tableConfig?.legendColumnIndex
+
+      // If any index is out of range OR the inferred column types no longer
+      // match what pivot generation expects (number for value, non-number for
+      // string/legend) then recompute a valid tableConfig for the current columns.
+      const needRecompute =
+        !this.tableConfig ||
+        !this.isColumnIndexValid(legendIndex, columns) ||
+        !this.isColumnIndexValid(stringIndex, columns) ||
+        !this.isColumnIndexValid(numberIndex, columns) ||
+        (numberIndex !== undefined && !isColumnNumberType(columns[numberIndex])) ||
+        (stringIndex !== undefined && isColumnNumberType(columns[stringIndex])) ||
+        (legendIndex !== undefined && !columns[legendIndex]?.groupable && !isColumnDateType(columns[legendIndex]))
+
+      if (needRecompute) {
+        this.setTableConfig(columns)
+      }
+
       const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
 
       tableData = tableData.filter((row) => {
@@ -2726,55 +2878,70 @@ export class QueryOutput extends React.Component {
         this.formattedTableParams.filters.forEach((filter) => {
           const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
-            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
+            let op = filter.operator,
+              val = filter.value
+            const parsed = extractOperatorFromValue(filter.value)
+            if (parsed) {
+              op = parsed.operator
+              val = parsed.cleanValue
+            }
+            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
           }
         })
       }
 
-      // Apply any active Tabulator header filters so the pivot reflects the filtered table view.
+      // Apply any active Tabulator header filters so the pivot reflects the filtered table view
       try {
         const headerFilters = this.getTabulatorHeaderFilters?.()
         if (headerFilters) {
-          if (Array.isArray(headerFilters)) {
-            headerFilters.forEach((headFilter) => {
-              if (!headFilter) return
-              const field = headFilter.field ?? headFilter[0]
-              const value = headFilter.value ?? headFilter[1]
-              if (field === undefined || value === undefined) return
-              let filterColumnIndex
-              const parsed = parseInt(field, 10)
-              if (!isNaN(parsed)) filterColumnIndex = parsed
-              if (filterColumnIndex === undefined)
-                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
-              if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(
-                  tableData,
-                  columns,
-                  filterColumnIndex,
-                  value,
-                  headFilter.type || headFilter.operator,
-                )
+          const filters = Array.isArray(headerFilters)
+            ? headerFilters.map((f) => ({
+                field: f.field ?? f[0],
+                value: f.value ?? f[1],
+                type: f.type,
+                operator: f.operator,
+              }))
+            : Object.entries(headerFilters).map(([field, value]) => ({
+                field,
+                value,
+                type: undefined,
+                operator: undefined,
+              }))
+
+          filters.forEach(({ field, value, type, operator }, idx) => {
+            if (field === undefined || value === undefined) {
+              return
+            }
+            if (typeof value === 'string' && value.trim() === '') {
+              return
+            }
+
+            // Skip custom filter functions (e.g., date range pickers)
+            if (typeof type === 'function') {
+              return
+            }
+
+            let columnIndex = parseInt(field, 10)
+            if (isNaN(columnIndex)) {
+              columnIndex = columns.find((col) => col.field === field || col.id === field)?.index
+            }
+
+            if (columnIndex !== undefined) {
+              let op = type || operator
+              let val = value
+              const parsed = extractOperatorFromValue(value)
+              if (parsed) {
+                op = parsed.operator
+                val = parsed.cleanValue
               }
-            })
-          } else if (typeof headerFilters === 'object') {
-            Object.entries(headerFilters).forEach(([field, value]) => {
-              if (value === undefined || value === null || value === '') return
-              let filterColumnIndex
-              const parsed = parseInt(field, 10)
-              if (!isNaN(parsed)) filterColumnIndex = parsed
-              if (filterColumnIndex === undefined)
-                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
-              if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, value, undefined)
-              }
-            })
-          }
+              tableData = filterDataByColumn(tableData, columns, columnIndex, val, op)
+            }
+          })
         }
       } catch (err) {
-        // ignore header filter parsing errors and continue
+        console.error('[generatePivotTableData] Error applying header filters:', err)
       }
 
-      // Respect user sorters first, fall back to date sort if none provided
       const userSorters = this.formattedTableParams?.sorters || []
       let sortedData = null
       if (userSorters.length > 0) {
@@ -2800,6 +2967,24 @@ export class QueryOutput extends React.Component {
         .map((d) => d[legendColumnIndex])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
+
+      // Guard: If after filtering we have no data, don't attempt to create pivot table
+      // This prevents malformed column structures when filter results in 0 rows
+      if (
+        !uniqueRowHeaders ||
+        uniqueRowHeaders.length === 0 ||
+        !uniqueColumnHeaders ||
+        uniqueColumnHeaders.length === 0
+      ) {
+        this.pivotTableColumns = []
+        this.pivotTableData = []
+        this.numberOfPivotTableRows = 0
+        this.setPivotTableConfig(true)
+        if (this._isMounted) {
+          this.forceUpdate()
+        }
+        return
+      }
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
@@ -2902,7 +3087,7 @@ export class QueryOutput extends React.Component {
           config: getDataFormatting(this.props.dataFormatting),
         })
 
-        pivotTableColumns.push({
+        const newPivotCol = {
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
           origPivotColumn: columns[newLegendColumnIndex],
@@ -2915,7 +3100,9 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
-        })
+        }
+
+        pivotTableColumns.push(newPivotCol)
       })
 
       const pivotTableData = this.makeEmptyArrayShared(
@@ -2974,7 +3161,6 @@ export class QueryOutput extends React.Component {
       }
     } catch (error) {
       console.error(error)
-      this.props.onErrorCallback?.(error)
     }
   }
 
@@ -3284,6 +3470,10 @@ export class QueryOutput extends React.Component {
           pivot
           queryText={this.queryResponse?.data?.data?.text}
           isLoadingLocal={this.props.isLoadingLocal}
+          pivotAxisOptions={this.getPivotRowSelectorOptions()}
+          pivotAxisCurrentIndex={this.tableConfig?.stringColumnIndex}
+          onPivotAxisChange={this.onChangeStringColumnIndex}
+          originalColumns={this.getColumns()}
         />
       </ErrorBoundary>
     )
@@ -3296,6 +3486,7 @@ export class QueryOutput extends React.Component {
     }
 
     const usePivotData = this.usePivotDataForChart()
+
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
@@ -3311,8 +3502,7 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    const isPivotDataLimited =
-      this.usePivotDataForChart() && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
     return (
       <ErrorBoundary>
@@ -3344,6 +3534,8 @@ export class QueryOutput extends React.Component {
           isResizing={this.props.isResizing || this.state.isResizing}
           isAnimating={this.props.isAnimating}
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
+          networkColumnConfig={this.state.networkColumnConfig}
+          onNetworkColumnChange={this.onNetworkColumnChange}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
@@ -3544,7 +3736,6 @@ export class QueryOutput extends React.Component {
     const columns = usePivotData ? this.pivotTableColumns : this.getColumns()
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
-
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
     const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable

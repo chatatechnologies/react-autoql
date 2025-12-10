@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.filter'
+import _cloneDeep from 'lodash.clonedeep'
 
 import {
   deepEqual,
@@ -29,19 +29,20 @@ import AggMenu from '../AddColumnBtn/AggMenu'
 
 import './ReverseTranslation.scss'
 
-const ReverseTranslation = ({
-  authentication = authenticationDefault,
-  onValueLabelClick,
-  queryResponse,
-  tooltipID,
-  textOnly = false,
-  termId,
-  subjects = [],
-  queryResponseRef = {},
-  allowColumnAddition = false,
-  enableEditReverseTranslation = false,
-  localRTFilterResponse,
-}) => {
+const ReverseTranslation = (props = {}) => {
+  const {
+    authentication = authenticationDefault,
+    onValueLabelClick,
+    queryResponse,
+    tooltipID,
+    textOnly = false,
+    termId,
+    subjects = [],
+    queryResponseRef = {},
+    allowColumnAddition = false,
+    enableEditReverseTranslation = false,
+    localRTFilterResponse,
+  } = props || {}
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
   const initialParsedInterpretations = useRef()
@@ -244,7 +245,7 @@ const ReverseTranslation = ({
         console.error(error)
         setIsRefiningRT(false)
         setIsLoading(false)
-        this.queryResponseRef?.setPageLoading(false)
+        queryResponseRef?.tableRef?.setPageLoading(false)
       })
   }
 
@@ -253,7 +254,7 @@ const ReverseTranslation = ({
     try {
       await validateAndUpdateReverseTranslation(rt)
     } catch (error) {
-      console.error('Prerequisites not met to render Reverse Translation')
+      console.warn('ReverseTranslation: Error during prerequisites validation:', error)
     } finally {
       setIsLoading(false)
     }
@@ -261,13 +262,11 @@ const ReverseTranslation = ({
 
   useEffect(() => {
     isMounted.current = true
-
     let cancelled = false
 
-    if (onValueLabelClick && reverseTranslationArray?.length) {
+    // Skip prerequisites for read-only/text-only rendering modes
+    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation) && reverseTranslationArray?.length) {
       executePrerequisites(reverseTranslationArray)
-    } else {
-      console.error('Prerequisites not met to render Reverse Translation')
     }
 
     return () => {
@@ -277,18 +276,22 @@ const ReverseTranslation = ({
   }, [])
 
   useEffect(() => {
-    const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
-    initialParsedInterpretations.current = newParsedInterpretation
-    const newArray = constructRTArray(newParsedInterpretation)
-    executePrerequisites(newArray)
+    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
+      const newParsedInterpretation = queryResponse?.data?.data?.parsed_interpretation
+      initialParsedInterpretations.current = newParsedInterpretation
+      const newArray = constructRTArray(newParsedInterpretation)
+      executePrerequisites(newArray)
+    }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
-  // todo: see if we can update and remove this useEffect and use queryRepsonse instead
+  // todo: consolidate with queryResponse effect
   useEffect(() => {
-    const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
-    initialParsedInterpretations.current = newParsedInterpretation
-    const newArray = constructRTArray(newParsedInterpretation)
-    executePrerequisites(newArray)
+    if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
+      const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
+      initialParsedInterpretations.current = newParsedInterpretation
+      const newArray = constructRTArray(newParsedInterpretation)
+      executePrerequisites(newArray)
+    }
   }, [localRTFilterResponse?.data?.data?.parsed_interpretation])
 
   useEffect(() => {
@@ -305,7 +308,7 @@ const ReverseTranslation = ({
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
-          if (disableAction) return
+          if (disableAction || !onValueLabelClick) return
           onValueLabelClick(chunk.eng)
         }}
       >

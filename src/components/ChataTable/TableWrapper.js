@@ -31,6 +31,7 @@ export default class TableWrapper extends React.Component {
       rowHeight: 25,
       layout: this.props.isDrilldown ? 'fitDataFill' : this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill',
       clipboard: true,
+      columnGroups: this.props.pivot, // Enable column groups for pivot tables to support grouped headers
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,
@@ -62,6 +63,8 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    onColumnMoved: PropTypes.func,
+    onColumnResized: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
     isDrilldown: PropTypes.bool,
@@ -80,6 +83,8 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    onColumnMoved: () => {},
+    onColumnResized: () => {},
     pivot: false,
     scope: undefined,
     isDrilldown: false,
@@ -349,6 +354,8 @@ export default class TableWrapper extends React.Component {
     tabulator.on('dataFiltering', this.props.onDataFiltering)
     tabulator.on('dataFiltered', this.props.onDataFiltered)
     tabulator.on('scrollVertical', this.props.onScrollVertical)
+    tabulator.on('columnMoved', this.props.onColumnMoved)
+    tabulator.on('columnResized', this.props.onColumnResized)
   }
 
   recreateTabulatorForPivot = (data) => {

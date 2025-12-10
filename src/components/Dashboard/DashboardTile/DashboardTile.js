@@ -541,10 +541,13 @@ export class DashboardTile extends React.Component {
 
     return Promise.all(promises)
       .then((queryResponses) => {
+        // Helper to normalize query response
+        const normalizeResponse = (resp) => (Array.isArray(resp) ? { data: { rows: resp } } : resp ?? {})
+
         return {
           ...this.props.tile,
-          queryResponse: queryResponses?.[0],
-          secondQueryResponse: queryResponses?.[1],
+          queryResponse: normalizeResponse(queryResponses?.[0]),
+          secondQueryResponse: normalizeResponse(queryResponses?.[1]),
           defaultSelectedSuggestion: undefined,
           secondDefaultSelectedSuggestion: undefined,
         }
@@ -799,6 +802,7 @@ export class DashboardTile extends React.Component {
   onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
+  onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
 
   onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
 
@@ -1242,6 +1246,9 @@ export class DashboardTile extends React.Component {
 
     const initialDisplayType = this.props?.tile?.displayType
 
+    // Helper to normalize query response
+    const normalizeResponse = (resp) => (Array.isArray(resp) ? { data: { rows: resp } } : resp ?? {})
+
     return this.renderResponse({
       renderPlaceholder,
       isExecuting,
@@ -1252,7 +1259,7 @@ export class DashboardTile extends React.Component {
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         initialDisplayType,
-        queryResponse: this.props.tile?.queryResponse,
+        queryResponse: normalizeResponse(this.props.tile?.queryResponse),
         initialTableConfigs: this.props.tile.dataConfig,
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
@@ -1273,6 +1280,8 @@ export class DashboardTile extends React.Component {
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
         bucketSize: this.props.tile.bucketSize,
+        initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
+        onNetworkColumnChange: this.onNetworkColumnChange,
         initialFormattedTableParams: (() => {
           const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
           const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters

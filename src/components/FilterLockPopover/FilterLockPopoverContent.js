@@ -400,7 +400,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   handleExcludeToggle = (category, value) => {
-    if (!value) {
+    if (value === undefined || value === null) {
       return
     }
 

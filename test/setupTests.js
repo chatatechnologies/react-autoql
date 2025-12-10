@@ -27,3 +27,12 @@ if (typeof global.CSS === 'undefined') {
   // Some third-party libs call CSS.supports; provide a safe fallback.
   global.CSS = { supports: () => false }
 }
+
+// jsdom lacks getComputedTextLength on SVG text nodes; provide a basic shim used by D3 legend helpers
+// Ensure any SVG text node (tspan, text, etc.) has a getComputedTextLength function
+if (typeof SVGElement !== 'undefined' && !SVGElement.prototype.getComputedTextLength) {
+  SVGElement.prototype.getComputedTextLength = function () {
+    // Return a basic character-length based width to make calculations predictable in tests
+    return (this.textContent || '').length * 6
+  }
+}

@@ -175,6 +175,8 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
+      clearTimeout(this.onChangeTimer)
+      clearTimeout(this.callbackSubsciptionTimer)
     } catch (error) {
       console.error(error)
     }

@@ -92,30 +92,13 @@
       &:hover {
         overflow: auto !important;
       }
-      .tabulator-tableholder {
-        overflow: hidden;
+      // Force-hide Tabulator's built-in summary row/footer
+      .tabulator-footer {
+        display: none !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
       }
-      .tabulator-header {
-        border-bottom: 2px solid var(--react-autoql-border-color);
-        overflow: hidden;
-
-        .tabulator-header-contents {
-          overflow: hidden;
-          .tabulator-headers {
-            border-bottom: 2px solid var(--react-autoql-border-color);
-            .tabulator-col {
-              background: transparent;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  &.resizing {
-    width: 100vw;
-
-    .react-autoql-table {
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
@@ -327,11 +310,18 @@
         visibility: hidden;
       }
 
-      .tabulator-col.is-filtered .tabulator-col-title:before {
+      // Show filter badge for regular columns (direct child only, not descendants)
+      .tabulator-col.is-filtered > .tabulator-col-content .tabulator-col-title:before {
         opacity: 1;
       }
 
-      .tabulator-col-title:before {
+      // Show filter badge for pivot group headers
+      .tabulator-col-group.is-filtered > .tabulator-col-content .tabulator-col-group-title:before {
+        opacity: 1;
+      }
+
+      .tabulator-col-title:before,
+      .tabulator-col-group-title:before {
         content: '';
         display: inline-block;
         vertical-align: middle;
@@ -366,7 +356,7 @@
 
       &:last-child {
         border-bottom: none;
-        margin-bottom: 15px;
+        margin-bottom: 0px;
       }
 
       .tabulator-cell {
@@ -434,45 +424,20 @@
       background-color: var(--react-autoql-background-color-secondary);
     }
 
+    // Hide Tabulator's horizontal scrollbar visually, but keep it functional
     .tabulator-tableholder {
       overflow: auto;
       background-color: inherit;
-
-      // Enable smooth scrolling on mobile devices
       -webkit-overflow-scrolling: touch;
-
-      // Ensure table content has minimum width to trigger horizontal scrolling
       .tabulator-table {
         min-width: max-content;
       }
-
-      // On mobile devices, always show scrollbars for better touch interaction
-      @media (hover: none) and (pointer: coarse) {
-        overflow: auto !important;
-        // Let browser handle all touch interactions naturally
-        touch-action: auto;
-        // Enable momentum scrolling on iOS and add performance optimizations
-        -webkit-overflow-scrolling: touch;
-        // Hardware acceleration for smoother scrolling
-        -webkit-transform: translateZ(0);
-        transform: translateZ(0);
-        // Optimize rendering for mobile
-        will-change: scroll-position;
-
-        // Ensure scrollbars are visible on mobile
-        &::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        &::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        &::-webkit-scrollbar-thumb {
-          background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
-          border-radius: 4px;
-        }
+      scrollbar-width: none; /* Firefox */
+      &::-webkit-scrollbar {
+        display: none; /* Chrome, Safari */
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
       }
     }
   }
@@ -576,5 +541,74 @@
   &::-webkit-scrollbar-thumb {
     background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
     border-radius: 4px;
+  }
+}
+
+// Pivot Axis Selector styles
+.pivot-axis-title-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  box-sizing: border-box;
+
+  .pivot-axis-title-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: inherit;
+    font-weight: inherit;
+    display: inline-block;
+    max-width: 110px;
+  }
+
+  .pivot-axis-title-arrow {
+    font-size: 7px;
+    opacity: 0.6;
+    flex-shrink: 0;
+    margin-left: 2px;
+  }
+
+  &:hover {
+    .pivot-axis-title-arrow {
+      opacity: 1;
+    }
+  }
+}
+
+.pivot-axis-selector-popover {
+  background-color: var(--react-autoql-background-color-primary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 5px;
+  box-shadow: var(--react-autoql-box-shadow);
+  min-width: 150px;
+  max-width: 250px;
+  padding: 5px 0;
+
+  .pivot-axis-selector-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--react-autoql-text-color-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &:hover {
+        background-color: var(--react-autoql-hover-color);
+      }
+
+      &.active {
+        background-color: var(--react-autoql-accent-color);
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
   }
 }

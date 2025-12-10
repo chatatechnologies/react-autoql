@@ -67,13 +67,230 @@
   }
 }
 
+.filter-dropdown-item-selected {
+  fill: var(--react-autoql-hover-color) !important;
+}
+
 .filter-dropdown-item-text {
   pointer-events: none;
   user-select: none;
+  font-size: 12px;
+  fill: var(--react-autoql-text-color-primary);
 }
 
 .filter-dropdown-background,
 .filter-dropdown-item-rect,
 .filter-dropdown-item-text {
   opacity: 1 !important;
+}
+
+.source-button-rect,
+.target-button-rect {
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+  stroke-width: 1px;
+  stroke: var(--react-autoql-border-color);
+  fill: var(--react-autoql-background-color-secondary);
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    stroke: var(--react-autoql-accent-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.source-button-icon,
+.target-button-icon {
+  pointer-events: none;
+  color: var(--react-autoql-text-color-primary) !important;
+
+  line,
+  polygon {
+    pointer-events: none;
+    stroke: var(--react-autoql-text-color-primary) !important;
+    fill: var(--react-autoql-text-color-primary) !important;
+  }
+
+  circle {
+    pointer-events: none;
+    stroke: var(--react-autoql-text-color-primary) !important;
+    /* Fill color is set inline in JSX (red/green), don't override it */
+  }
+}
+
+.source-button-icon,
+.source-button-rect,
+.target-button-icon,
+.target-button-rect {
+  opacity: 1 !important;
+  transition: all 0.2s ease;
+}
+
+.source-button-rect:hover ~ .source-button-icon,
+.source-button:hover .source-button-icon {
+  color: var(--react-autoql-text-color-primary) !important;
+  
+  line,
+  polygon {
+    stroke: var(--react-autoql-text-color-primary) !important;
+    fill: var(--react-autoql-text-color-primary) !important;
+  }
+
+  circle {
+    stroke: var(--react-autoql-text-color-primary) !important;
+    /* Fill color is set inline in JSX (red), don't override it */
+  }
+}
+
+.target-button-rect:hover ~ .target-button-icon,
+.target-button:hover .target-button-icon {
+  color: var(--react-autoql-text-color-primary) !important;
+  
+  line,
+  polygon {
+    stroke: var(--react-autoql-text-color-primary) !important;
+    fill: var(--react-autoql-text-color-primary) !important;
+  }
+
+  circle {
+    stroke: var(--react-autoql-text-color-primary) !important;
+    /* Fill color is set inline in JSX (green), don't override it */
+  }
+}
+
+.source-dropdown-popover-content,
+.target-dropdown-popover-content,
+.filter-dropdown-popover-content {
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.source-dropdown-container,
+.target-dropdown-container,
+.filter-dropdown-container {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .source-dropdown-popover-content,
+  .target-dropdown-popover-content,
+  .filter-dropdown-popover-content {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .source-dropdown-container,
+  .target-dropdown-container,
+  .filter-dropdown-container {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  // Ensure CustomScrollbars fills the container on mobile
+  .source-dropdown-popover-content .scrollbar-container,
+  .target-dropdown-popover-content .scrollbar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .source-dropdown-popover-content .scrollbar-wrapper,
+  .target-dropdown-popover-content .scrollbar-wrapper {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+.source-dropdown-item,
+.target-dropdown-item,
+.filter-dropdown-item {
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--react-autoql-text-color-primary);
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+
+  &:not(.source-dropdown-item-selected):not(.target-dropdown-item-selected):not(.filter-dropdown-item-selected):hover {
+    background-color: var(--react-autoql-hover-color);
+  }
+}
+
+.source-dropdown-item-selected,
+.target-dropdown-item-selected,
+.filter-dropdown-item-selected {
+  background-color: var(--react-autoql-hover-color);
+}
+
+.source-dropdown-item-check,
+.target-dropdown-item-check,
+.filter-dropdown-item-check {
+  width: 12px;
+  text-align: center;
+}
+
+.source-dropdown-title,
+.target-dropdown-title,
+.filter-dropdown-title {
+  padding: 8px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--react-autoql-text-color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+  background-color: var(--react-autoql-background-color-secondary);
+  user-select: none;
+}
+
+.react-autoql-network-viz {
+  display: block;
+  max-width: 100%;
+  height: auto;
+
+  // Links - CSS takes priority for theme changes, but attributes ensure PNG export works
+  .network-link {
+    stroke: var(--react-autoql-text-color-placeholder) !important;
+  }
+
+  // Arrowheads - CSS takes priority for theme changes, but attributes ensure PNG export works
+  .network-link-arrowhead {
+    fill: var(--react-autoql-text-color-placeholder) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .react-autoql-network-viz {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+  }
 }
