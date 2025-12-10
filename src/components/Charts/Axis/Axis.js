@@ -833,6 +833,9 @@ export default class Axis extends Component {
     }
   }
 
+  // TODO: Refactor axis selector visibility logic
+  // PROPOSAL: Move to autoql-fe-utils in a function like `shouldRenderAxisSelector(scale, isAggregated, legendLocation, columns)`
+  // Then add computed property to scale object: `scale.shouldRenderAxisSelector = true/false`
   shouldRenderAxisSelector = () => {
     const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
     const scaleType = scale?.type

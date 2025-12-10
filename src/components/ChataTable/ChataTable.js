@@ -638,7 +638,6 @@ export default class ChataTable extends React.Component {
       const DEBOUNCE_MS = 1000
       const hasRecentlySetHeaderFilters =
         this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < DEBOUNCE_MS
-      const hasRecentlySetInitialData = Date.now() - (this._setInitialDataTime || 0) < DEBOUNCE_MS
 
       if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
         return initialData
