@@ -437,10 +437,38 @@ export const networkIcon = (
     <path className='chart-icon-svg-0' d='M4.5,11.5L7.2,8.8' strokeWidth='1' fill='none' stroke='currentColor' />
     <path className='chart-icon-svg-0' d='M11.5,11.5L8.8,8.8' strokeWidth='1' fill='none' stroke='currentColor' />
     {/* Additional connections between outer nodes */}
-    <path className='chart-icon-svg-0' d='M4.5,4.5L11.5,4.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
-    <path className='chart-icon-svg-0' d='M4.5,4.5L4.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
-    <path className='chart-icon-svg-0' d='M11.5,4.5L11.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
-    <path className='chart-icon-svg-0' d='M4.5,11.5L11.5,11.5' strokeWidth='1' fill='none' stroke='currentColor' strokeDasharray='1,1' />
+    <path
+      className='chart-icon-svg-0'
+      d='M4.5,4.5L11.5,4.5'
+      strokeWidth='1'
+      fill='none'
+      stroke='currentColor'
+      strokeDasharray='1,1'
+    />
+    <path
+      className='chart-icon-svg-0'
+      d='M4.5,4.5L4.5,11.5'
+      strokeWidth='1'
+      fill='none'
+      stroke='currentColor'
+      strokeDasharray='1,1'
+    />
+    <path
+      className='chart-icon-svg-0'
+      d='M11.5,4.5L11.5,11.5'
+      strokeWidth='1'
+      fill='none'
+      stroke='currentColor'
+      strokeDasharray='1,1'
+    />
+    <path
+      className='chart-icon-svg-0'
+      d='M4.5,11.5L11.5,11.5'
+      strokeWidth='1'
+      fill='none'
+      stroke='currentColor'
+      strokeDasharray='1,1'
+    />
   </svg>
 )
 
@@ -476,6 +504,17 @@ export const targetColumnIcon = (
       <line x1='18.66' y1='15' x2='13.46' y2='11.5' stroke='currentColor' strokeWidth='1.5' />
       {/* Line 3: Bottom-left (210°) - point at (1.34, 15), circle edge at (6.54, 11.5) */}
       <line x1='1.34' y1='15' x2='6.54' y2='11.5' stroke='currentColor' strokeWidth='1.5' />
+    </g>
+  </svg>
+)
+
+export const amountColumnIcon = (
+  <svg x='0px' y='0px' width='20px' height='20px' viewBox='0 0 20 20'>
+    <g className='amount-button-icon'>
+      {/* Three circles of different sizes to represent node size variation - using green/red/green colors */}
+      <circle cx='6.5' cy='10' r='2.5' fill='#28A745' stroke='currentColor' strokeWidth='1' />
+      <circle cx='10' cy='10' r='3.5' fill='#DC3545' stroke='currentColor' strokeWidth='1' />
+      <circle cx='13.5' cy='10' r='4.5' fill='#28A745' stroke='currentColor' strokeWidth='1' />
     </g>
   </svg>
 )

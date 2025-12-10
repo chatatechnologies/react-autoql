@@ -85,7 +85,8 @@
 }
 
 .source-button-rect,
-.target-button-rect {
+.target-button-rect,
+.amount-button-rect {
   box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
   stroke-width: 1px;
   stroke: var(--react-autoql-border-color);
@@ -103,7 +104,8 @@
 }
 
 .source-button-icon,
-.target-button-icon {
+.target-button-icon,
+.amount-button-icon {
   pointer-events: none;
   color: var(--react-autoql-text-color-primary) !important;
 
@@ -124,7 +126,9 @@
 .source-button-icon,
 .source-button-rect,
 .target-button-icon,
-.target-button-rect {
+.target-button-rect,
+.amount-button-icon,
+.amount-button-rect {
   opacity: 1 !important;
   transition: all 0.2s ease;
 }
@@ -132,7 +136,7 @@
 .source-button-rect:hover ~ .source-button-icon,
 .source-button:hover .source-button-icon {
   color: var(--react-autoql-text-color-primary) !important;
-  
+
   line,
   polygon {
     stroke: var(--react-autoql-text-color-primary) !important;
@@ -148,7 +152,7 @@
 .target-button-rect:hover ~ .target-button-icon,
 .target-button:hover .target-button-icon {
   color: var(--react-autoql-text-color-primary) !important;
-  
+
   line,
   polygon {
     stroke: var(--react-autoql-text-color-primary) !important;
@@ -161,8 +165,26 @@
   }
 }
 
+.amount-button-rect:hover ~ .amount-button-icon,
+.amount-button:hover .amount-button-icon {
+  color: var(--react-autoql-text-color-primary) !important;
+
+  line,
+  polygon,
+  rect {
+    stroke: var(--react-autoql-text-color-primary) !important;
+    fill: var(--react-autoql-text-color-primary) !important;
+  }
+
+  circle {
+    stroke: var(--react-autoql-text-color-primary) !important;
+    /* Fill color is set inline in JSX (red/green), don't override it */
+  }
+}
+
 .source-dropdown-popover-content,
 .target-dropdown-popover-content,
+.amount-dropdown-popover-content,
 .filter-dropdown-popover-content {
   background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
@@ -177,6 +199,7 @@
 
 .source-dropdown-container,
 .target-dropdown-container,
+.amount-dropdown-container,
 .filter-dropdown-container {
   width: 100%;
 }
@@ -184,6 +207,7 @@
 @media (max-width: 768px) {
   .source-dropdown-popover-content,
   .target-dropdown-popover-content,
+  .amount-dropdown-popover-content,
   .filter-dropdown-popover-content {
     min-width: 100%;
     max-width: 100%;
@@ -199,6 +223,7 @@
 
   .source-dropdown-container,
   .target-dropdown-container,
+  .amount-dropdown-container,
   .filter-dropdown-container {
     width: 100%;
     flex: 1;
@@ -209,7 +234,8 @@
 
   // Ensure CustomScrollbars fills the container on mobile
   .source-dropdown-popover-content .scrollbar-container,
-  .target-dropdown-popover-content .scrollbar-container {
+  .target-dropdown-popover-content .scrollbar-container,
+  .amount-dropdown-popover-content .scrollbar-container {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -217,7 +243,8 @@
   }
 
   .source-dropdown-popover-content .scrollbar-wrapper,
-  .target-dropdown-popover-content .scrollbar-wrapper {
+  .target-dropdown-popover-content .scrollbar-wrapper,
+  .amount-dropdown-popover-content .scrollbar-wrapper {
     flex: 1;
     min-height: 0;
   }
@@ -225,6 +252,7 @@
 
 .source-dropdown-item,
 .target-dropdown-item,
+.amount-dropdown-item,
 .filter-dropdown-item {
   padding: 6px 8px;
   cursor: pointer;
@@ -236,19 +264,21 @@
   background-color: transparent;
   transition: background-color 0.2s ease;
 
-  &:not(.source-dropdown-item-selected):not(.target-dropdown-item-selected):not(.filter-dropdown-item-selected):hover {
+  &:not(.source-dropdown-item-selected):not(.target-dropdown-item-selected):not(.amount-dropdown-item-selected):not(.filter-dropdown-item-selected):hover {
     background-color: var(--react-autoql-hover-color);
   }
 }
 
 .source-dropdown-item-selected,
 .target-dropdown-item-selected,
+.amount-dropdown-item-selected,
 .filter-dropdown-item-selected {
   background-color: var(--react-autoql-hover-color);
 }
 
 .source-dropdown-item-check,
 .target-dropdown-item-check,
+.amount-dropdown-item-check,
 .filter-dropdown-item-check {
   width: 12px;
   text-align: center;
@@ -256,6 +286,7 @@
 
 .source-dropdown-title,
 .target-dropdown-title,
+.amount-dropdown-title,
 .filter-dropdown-title {
   padding: 8px 12px 6px;
   font-size: 11px;
@@ -266,6 +297,12 @@
   border-bottom: 1px solid var(--react-autoql-border-color);
   background-color: var(--react-autoql-background-color-secondary);
   user-select: none;
+}
+
+.amount-dropdown-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--react-autoql-text-color-secondary);
 }
 
 .react-autoql-network-viz {
