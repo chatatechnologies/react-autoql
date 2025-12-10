@@ -62,6 +62,7 @@ export default class ChatContent extends React.Component {
     scope: PropTypes.string,
     shouldRender: PropTypes.bool,
     hideChatBarAfterInitialResponse: PropTypes.bool,
+    executeQuery: PropTypes.func,
   }
 
   static defaultProps = {
@@ -74,6 +75,7 @@ export default class ChatContent extends React.Component {
     onRTValueLabelClick: undefined,
     shouldRender: true,
     hideChatBarAfterInitialResponse: false,
+    executeQuery: () => {},
   }
 
   componentDidMount = () => {
@@ -433,7 +435,9 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}
+            ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
+            ${isMobile ? 'mobile-padding' : ''}`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity }}
         >
           <CustomScrollbars
@@ -496,6 +500,8 @@ export default class ChatContent extends React.Component {
                     subjects={this.state.subjects}
                     onMessageResize={this.onMessageResize}
                     enableCustomColumns={this.props.enableCustomColumns}
+                    disableAggregationMenu={this.props.disableAggregationMenu}
+                    allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
                     preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                   />
                 )
@@ -503,19 +509,19 @@ export default class ChatContent extends React.Component {
             </div>
           </CustomScrollbars>
           {this.isChataThinking() && (
-            <div className='response-loading-container'>
+            <div className={`response-loading-container ${isMobile ? 'mobile-padding' : ''}`}>
               <LoadingDots />
             </div>
           )}
+          <div className='watermark'>
+            <Icon type='react-autoql-bubbles-outlined' />
+            {lang.run}
+          </div>
         </div>
         <div
           style={{ visibility: queryInputVisibility, opacity: queryInputOpacity }}
           className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
         >
-          <div className='watermark'>
-            <Icon type='react-autoql-bubbles-outlined' />
-            {lang.run}
-          </div>
           <QueryInput
             ref={(r) => (this.queryInputRef = r)}
             className='chat-drawer-chat-bar'
@@ -523,6 +529,7 @@ export default class ChatContent extends React.Component {
             autoQLConfig={this.props.autoQLConfig}
             onSubmit={this.onInputSubmit}
             onResponseCallback={this.onResponse}
+            addResponseMessage={this.addResponseMessage}
             isDisabled={this.state.isInputDisabled}
             enableVoiceRecord={this.props.enableVoiceRecord}
             autoCompletePlacement='above'
@@ -539,6 +546,8 @@ export default class ChatContent extends React.Component {
             isResizing={this.props.isResizing}
             shouldRender={this.props.shouldRender}
             tooltipID={this.props.tooltipID}
+            executeQuery={this.props.executeQuery}
+            enableQueryInputTopics={this.props.enableQueryInputTopics}
           />
         </div>
       </ErrorBoundary>

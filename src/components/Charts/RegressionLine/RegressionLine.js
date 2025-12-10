@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, getChartColorVars } from 'autoql-fe-utils'
+import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+
 import './RegressionLine.scss'
 
 export class RegressionLine extends React.Component {
@@ -38,6 +39,20 @@ export class RegressionLine extends React.Component {
       textBBox: null,
       individualTextBBoxes: {},
     }
+
+    this.labelInlineStyles = {
+      fontSize: '11px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
+    }
+
+    this.individualLabelInlineStyles = {
+      fontSize: '10px',
+      fontWeight: 'bold',
+      fill: 'currentColor',
+      fontFamily: 'var(--react-autoql-font-family)',
+    }
   }
 
   componentDidMount() {
@@ -46,14 +61,21 @@ export class RegressionLine extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Re-measure if data or formatting changes
+    // Re-measure if data, formatting, or visibility changes
     if (
       prevProps.data !== this.props.data ||
       prevProps.dataFormatting !== this.props.dataFormatting ||
-      prevProps.numberColumnIndex !== this.props.numberColumnIndex
+      prevProps.numberColumnIndex !== this.props.numberColumnIndex ||
+      prevProps.visibleSeriesIndices !== this.props.visibleSeriesIndices ||
+      prevProps.stringColumnIndex !== this.props.stringColumnIndex ||
+      prevProps.columns !== this.props.columns ||
+      prevProps.isVisible !== this.props.isVisible
     ) {
-      this.updateTextBBox()
-      this.updateIndividualTextBBoxes()
+      // Use setTimeout to ensure DOM is updated before measuring
+      setTimeout(() => {
+        this.updateTextBBox()
+        this.updateIndividualTextBBoxes()
+      }, 0)
     }
   }
 
@@ -93,7 +115,7 @@ export class RegressionLine extends React.Component {
 
   isScatterplot = () => {
     const { chartType } = this.props
-    return chartType === 'scatterplot'
+    return chartType === DisplayTypes.SCATTERPLOT
   }
 
   calculateLinearRegression = () => {
@@ -104,7 +126,7 @@ export class RegressionLine extends React.Component {
     }
 
     // For scatterplots, use X and Y number columns directly
-    if (chartType === 'scatterplot') {
+    if (chartType === DisplayTypes.SCATTERPLOT) {
       const points = data
         .map((row) => {
           const xValue = row[numberColumnIndex] // X-axis column
@@ -236,46 +258,45 @@ export class RegressionLine extends React.Component {
     return result
   }
 
-  hasMixedColumnTypes = () => {
-    const { columns, visibleSeriesIndices } = this.props
-
-    if (!columns || !visibleSeriesIndices || visibleSeriesIndices.length <= 1) {
-      return false
-    }
-
-    // Get the types of all visible series columns
-    const columnTypes = visibleSeriesIndices.map((index) => columns[index]?.type).filter((type) => type) // Remove undefined types
-
-    // Check if there are multiple different types
-    return new Set(columnTypes).size > 1
-  }
-
   render = () => {
-    if (!this.props.isVisible || this.hasMixedColumnTypes()) {
+    if (!this.props.isVisible) {
       return null
     }
 
     const { chartType, visibleSeriesIndices } = this.props
     const isMultiSeries = visibleSeriesIndices?.length > 1
     const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
+    const isScatterplot = this.isScatterplot()
 
-    if (isStacked || !isMultiSeries) {
-      // Use combined trend line for stacked charts or single series
+    // For scatterplots, stacked charts, or single series, use combined trend line
+    // For multi-series non-stacked regular charts, use individual trend lines
+    if (isScatterplot || isStacked || !isMultiSeries) {
       return this.renderCombinedTrendLine()
     } else {
-      // Use individual trend lines for regular multi-series charts
       return this.renderIndividualTrendLines()
     }
   }
 
   renderCombinedTrendLine = () => {
-    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting } = this.props
+    const { xScale, yScale, width, height, strokeWidth, strokeDasharray, dataFormatting, visibleSeriesIndices } =
+      this.props
 
     const regression = this.calculateLinearRegression()
 
     if (!regression) {
       return null
     }
+
+    // Calculate dynamic font size for combined trend line based on chart size
+    const getCombinedFontSize = () => {
+      const baseFontSize = 11
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      return isSmallChart ? 11 : baseFontSize
+    }
+
+    const fontSize = getCombinedFontSize()
 
     // Convert regression points to SVG coordinates
     // For bar charts, center the line through the middle of the bars
@@ -379,6 +400,10 @@ export class RegressionLine extends React.Component {
     const midX = this.isBarChart() ? (clippedStartY + clippedEndY) / 2 : (clippedStartX + clippedEndX) / 2
     const midY = this.isBarChart() ? height / 2 : (clippedStartY + clippedEndY) / 2
     const textY = this.isBarChart() ? (midY < 20 ? midY + 15 : midY - 5) : midY < 20 ? midY + 15 : midY - 5
+
+    // Clamp text position to stay within chart bounds
+    const clampedMidX = Math.max(50, Math.min(midX, width - 50))
+    const clampedTextY = Math.max(20, Math.min(textY, height - 20))
     // For scatterplots, use Y-column for formatting; for other charts, use main number column
     const columnForFormatting = this.isScatterplot()
       ? this.props.columns[this.props.numberColumnIndex2]
@@ -388,6 +413,7 @@ export class RegressionLine extends React.Component {
       element: displayedSlope,
       column: columnForFormatting,
       config: dataFormatting,
+      isChart: true,
     })
 
     // Create tooltip content with R-squared and per-period terminology
@@ -404,28 +430,32 @@ export class RegressionLine extends React.Component {
       rectWidth = textBBox.width + padding * 2
       rectHeight = textBBox.height + padding * 2
 
-      // textAnchor="middle" - center the rect on midX
-      rectX = midX - rectWidth / 2
+      // textAnchor="middle" - center the rect on clampedMidX
+      rectX = clampedMidX - rectWidth / 2
 
-      // Y position: text baseline is at textY
+      // Y position: text baseline is at clampedTextY
       // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
-      rectY = textY - textBBox.height * 0.75 - padding
+      rectY = clampedTextY - textBBox.height * 0.75 - padding
     } else {
       // Fallback to estimated dimensions if bbox not yet available
-      rectX = midX - Math.max(30, formattedSlope.length * 4)
-      rectY = textY - 12
+      rectX = clampedMidX - Math.max(30, formattedSlope.length * 4)
+      rectY = clampedTextY - 12
       rectWidth = Math.max(60, formattedSlope.length * 8)
       rectHeight = 16
     }
+
+    // Clamp rectangle bounds to stay within chart area
+    rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
+    rectY = Math.max(5, Math.min(rectY, height - rectHeight - 5))
 
     return (
       <g className='regression-line-container' style={{ outline: 'none' }}>
         {/* Invisible hover area for easier tooltip triggering */}
         <line
-          x1={Math.min(clippedStartX, clippedEndX)}
-          y1={Math.min(clippedStartY, clippedEndY) - 5}
-          x2={Math.max(clippedStartX, clippedEndX)}
-          y2={Math.max(clippedStartY, clippedEndY) + 5}
+          x1={this.isBarChart() ? clippedStartY : clippedStartX}
+          y1={this.isBarChart() ? clippedStartX : clippedStartY}
+          x2={this.isBarChart() ? clippedEndY : clippedEndX}
+          y2={this.isBarChart() ? clippedEndX : clippedEndY}
           stroke='transparent'
           strokeWidth={10}
           className='regression-line-hover-area'
@@ -458,26 +488,30 @@ export class RegressionLine extends React.Component {
           strokeWidth='1'
           rx='3'
           className='regression-line-text-bg'
-          style={{ outline: 'none' }}
+          style={{
+            outline: 'none',
+            fill: getThemeValue('background-color-secondary'),
+          }}
         />
 
         {/* Text label */}
         <text
           ref={this.textRef}
-          x={midX}
-          y={textY}
-          fontSize='11'
-          fontWeight='bold'
-          fill={trendColor}
-          stroke='var(--react-autoql-background-color)'
-          strokeWidth='3'
+          x={clampedMidX}
+          y={clampedTextY}
+          strokeWidth={0}
           strokeLinejoin='round'
           strokeLinecap='round'
           textAnchor='middle'
           className='regression-line-label'
           data-tooltip-content={tooltipContent}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ outline: 'none' }}
+          style={{
+            ...this.labelInlineStyles,
+            outline: 'none',
+            fill: trendColor,
+            stroke: getThemeValue('background-color-secondary'),
+          }}
         >
           {isTrendUp ? '↗' : '↘'} {formattedSlope}
         </text>
@@ -511,6 +545,32 @@ export class RegressionLine extends React.Component {
     }
 
     const stringColumnIndex = this.props.stringColumnIndex || 0
+
+    // Only show labels if there are 5 or fewer series to avoid clutter
+    const shouldShowLabels = visibleSeriesIndices.length <= 5
+
+    // Calculate dynamic font size based on number of series and chart size
+    const getFontSize = () => {
+      const baseFontSize = 10
+      const seriesCount = visibleSeriesIndices.length
+
+      // Consider chart size - smaller charts need smaller fonts
+      const chartArea = width * height
+      const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
+
+      // Reduce font size for multiple series to prevent overlap (but keep minimum readable)
+      if (seriesCount >= 4) return isSmallChart ? 9 : 10
+      if (seriesCount >= 3) return isSmallChart ? 10 : 11
+      if (seriesCount >= 2) return isSmallChart ? 10.5 : 11
+
+      // Single series - still consider chart size
+      return isSmallChart ? 10.5 : baseFontSize
+    }
+
+    const fontSize = getFontSize()
+
+    // Collect all labels to render at the end
+    const labelElements = []
 
     return (
       <g className='individual-regression-lines-container' style={{ outline: 'none' }}>
@@ -665,6 +725,9 @@ export class RegressionLine extends React.Component {
           const textOffset = seriesIndex % 2 === 0 ? -20 : 20 // Consistent 20px offset
           const textY = lineY + textOffset
 
+          // Clamp Y position to stay within chart bounds
+          const clampedTextY = Math.max(20, Math.min(textY, height - 20))
+
           // Calculate displayed slope value to match visual direction
           const displayedSlope = isTrendUp ? Math.abs(regression.slope) : -Math.abs(regression.slope)
 
@@ -678,10 +741,11 @@ export class RegressionLine extends React.Component {
             element: displayedSlope,
             column: columnForFormatting,
             config: dataFormatting,
+            isChart: true,
           })
 
           // Create tooltip content with R-squared and per-period terminology
-          const seriesName = columns[columnIndex]?.name || `Series ${seriesIndex + 1}`
+          const seriesName = columns[columnIndex]?.display_name || `Series ${seriesIndex + 1}`
           const rSquaredFormatted = (regression.rSquared * 100).toFixed(1)
           const tooltipContent = `${seriesName}: ${
             isTrendUp ? 'Up' : 'Down'
@@ -705,16 +769,20 @@ export class RegressionLine extends React.Component {
             // textAnchor="middle" - center the rect on clampedTextX
             rectX = clampedTextX - rectWidth / 2
 
-            // Y position: text baseline is at textY
+            // Y position: text baseline is at clampedTextY
             // For typical fonts, about 75% of the height is above the baseline, 25% below (for descenders)
-            rectY = textY - textBBox.height * 0.75 - padding
+            rectY = clampedTextY - textBBox.height * 0.75 - padding
           } else {
             // Fallback to estimated dimensions
             rectX = clampedTextX - Math.max(30, formattedSlope.length * 4)
-            rectY = textY - 12
+            rectY = clampedTextY - 12
             rectWidth = Math.max(60, formattedSlope.length * 8)
             rectHeight = 16
           }
+
+          // Clamp rectangle bounds to stay within chart area
+          rectX = Math.max(5, Math.min(rectX, width - rectWidth - 5))
+          rectY = Math.max(5, Math.min(rectY, height - rectHeight - 5))
 
           return (
             <g key={`individual-trend-${columnIndex}`} className={`individual-regression-line series-${seriesIndex}`}>
@@ -759,26 +827,28 @@ export class RegressionLine extends React.Component {
                     strokeWidth='1'
                     rx='3'
                     className='regression-line-text-bg'
-                    style={{ outline: 'none' }}
+                    style={{
+                      outline: 'none',
+                      fill: getThemeValue('background-color-secondary'),
+                    }}
                   />
 
                   {/* Text label */}
                   <text
                     ref={(ref) => (this.individualTextRefs[refKey] = ref)}
                     x={clampedTextX}
-                    y={textY}
-                    fontSize='10'
-                    fontWeight='bold'
-                    fill={seriesColor}
-                    stroke='var(--react-autoql-background-color)'
-                    strokeWidth='3'
+                    y={clampedTextY}
+                    strokeWidth={0}
                     strokeLinejoin='round'
                     strokeLinecap='round'
                     textAnchor='middle'
                     className='regression-line-label'
                     data-tooltip-content={tooltipContent}
                     data-tooltip-id={this.props.chartTooltipID}
-                    style={{ outline: 'none' }}
+                    style={{
+                      ...this.individualLabelInlineStyles,
+                      fill: seriesColor,
+                    }}
                   >
                     {isTrendUp ? '↗' : '↘'} {formattedSlope}
                   </text>
@@ -787,6 +857,8 @@ export class RegressionLine extends React.Component {
             </g>
           )
         })}
+        {/* Render all labels on top */}
+        {labelElements}
       </g>
     )
   }

@@ -312,6 +312,8 @@ export default class ChatMessage extends React.Component {
     } else if (this.props.response?.status === 401) {
       return <div className='chat-message-bubble-content-container'>{UNAUTHENTICATED_ERROR}</div>
     } else if (this.props.response) {
+      const isDataPreview = this.props.response?.data?.data?.isDataPreview
+
       return (
         <QueryOutput
           enableResizing={true}
@@ -351,7 +353,7 @@ export default class ChatMessage extends React.Component {
           showSuggestionPrefix={false}
           dataPageSize={this.props.dataPageSize}
           popoverParentElement={this.props.popoverParentElement}
-          allowColumnAddition={true}
+          allowColumnAddition={!isDataPreview}
           onNewData={this.onNewDataCallback}
           isUserResizing={this.state.isUserResizing}
           reportProblemCallback={() => {
@@ -361,7 +363,9 @@ export default class ChatMessage extends React.Component {
           }}
           subjects={this.props.subjects}
           onUpdateFilterResponse={this.onUpdateFilterResponse}
-          enableCustomColumns={this.props.enableCustomColumns}
+          enableCustomColumns={isDataPreview ? false : this.props.enableCustomColumns}
+          disableAggregationMenu={this.props.disableAggregationMenu}
+          allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         />
       )
@@ -382,6 +386,19 @@ export default class ChatMessage extends React.Component {
   onDeleteMessage = () => this.props.deleteMessageCallback(this.props.id)
 
   renderRightToolbar = () => {
+    // For data preview responses, only show delete button
+    const isDataPreview = this.props.response?.data?.data?.isDataPreview
+    const customAutoQLConfig = isDataPreview
+      ? {
+          ...this.props.autoQLConfig,
+          enableCSVDownload: false,
+          enableReportProblem: false,
+          enableColumnVisibilityManager: false,
+          enableNotifications: false,
+          translation: 'exclude',
+        }
+      : this.props.autoQLConfig
+
     return (
       <div className='chat-message-toolbar chat-message-toolbar-right'>
         {this.props.isResponse ? (
@@ -392,7 +409,7 @@ export default class ChatMessage extends React.Component {
             dataFormatting={this.props.dataFormatting}
             shouldRender={!this.props.isResizing && this.props.shouldRender}
             authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
+            autoQLConfig={customAutoQLConfig}
             onCSVDownloadStart={this.onCSVDownloadStart}
             onCSVDownloadFinish={this.onCSVDownloadFinish}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
@@ -400,11 +417,13 @@ export default class ChatMessage extends React.Component {
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
+            enableFilterBtn={!isDataPreview}
+            enableCopyBtn={!isDataPreview}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.createDataAlertCallback}
-            customOptions={this.props.customToolbarOptions}
+            customOptions={isDataPreview ? [] : this.props.customToolbarOptions}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
           />
@@ -414,9 +433,12 @@ export default class ChatMessage extends React.Component {
   }
 
   renderLeftToolbar = () => {
+    // Don't show charting options for data preview responses
+    const isDataPreview = this.props.response?.data?.data?.isDataPreview
+
     return (
       <div className='chat-message-toolbar chat-message-toolbar-left'>
-        {this.props.isResponse && this.props.type !== 'text' ? (
+        {this.props.isResponse && this.props.type !== 'text' && !isDataPreview ? (
           <VizToolbar
             ref={(r) => (this.vizToolbarRef = r)}
             responseRef={this.responseRef}

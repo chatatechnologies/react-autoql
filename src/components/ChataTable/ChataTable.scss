@@ -546,3 +546,35 @@
     z-index: 0;
   }
 }
+
+// Hide horizontal scrollbar on table when summary row is present
+.react-autoql-table-container:has(.custom-summary-row) {
+  .tabulator-tableholder {
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &::-webkit-scrollbar:horizontal {
+      display: none;
+    }
+  }
+}
+
+// Summary row styles
+.custom-summary-row {
+  flex-shrink: 0;
+  border-top: 2px solid var(--react-autoql-border-color);
+
+  // Show scrollbar on summary row
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--react-autoql-background-color-secondary);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
+    border-radius: 4px;
+  }
+}

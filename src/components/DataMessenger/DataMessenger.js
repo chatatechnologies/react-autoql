@@ -140,6 +140,7 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: PropTypes.bool,
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
+    enableQueryInputTopics: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -201,6 +202,7 @@ export class DataMessenger extends React.Component {
     autoChartAggregations: true,
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
+    enableQueryInputTopics: true,
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
     setMobileActivePage: () => {},
@@ -756,7 +758,7 @@ export class DataMessenger extends React.Component {
         <div
           className={`react-autoql-header-left-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          } ${isMobile ? 'mobile-hidden' : ''}`}
         >
           {isBrowser ? (
             <>
@@ -785,7 +787,7 @@ export class DataMessenger extends React.Component {
         <div
           className={`react-autoql-header-right-container ${
             this.state.activePage === 'data-messenger' ? 'visible' : 'hidden'
-          }`}
+          } ${isMobile ? 'mobile-hidden' : ''}`}
         >
           {this.renderRightHeaderContent()}
         </div>
@@ -827,6 +829,12 @@ export class DataMessenger extends React.Component {
           introMessages={this.dataMessengerIntroMessages}
           inputPlaceholder={this.props.inputPlaceholder}
           autoChartAggregations={this.props.autoChartAggregations}
+          executeQuery={(queryRequestParams) => {
+            this.dataMessengerContentRef?.animateInputTextAndSubmit({
+              ...queryRequestParams,
+              source: ['query_suggestions'],
+            })
+          }}
           popoverParentElement={this.messengerDrawerRef}
           dataPageSize={this.props.dataPageSize}
           createDataAlertCallback={this.closeDataMessenger}
@@ -835,6 +843,9 @@ export class DataMessenger extends React.Component {
           scope={this.props.scope}
           customToolbarOptions={this.props.customToolbarOptions}
           enableCustomColumns={this.props.enableCustomColumns}
+          disableAggregationMenu={this.props.disableAggregationMenu}
+          allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
+          enableQueryInputTopics={this.props.enableQueryInputTopics}
         />
       </ErrorBoundary>
     )
@@ -1134,7 +1145,10 @@ export class DataMessenger extends React.Component {
             className={`react-autoql-drawer-content-container ${this.state.activePage}`}
           >
             {!shouldHideHeader && (
-              <div className='chat-header-container' id={isMobile ? 'mobile-version' : null}>
+              <div
+                className={`chat-header-container ${isMobile ? 'mobile-hidden' : ''}`}
+                id={isMobile ? 'mobile-version' : null}
+              >
                 {this.renderHeaderContent()}
               </div>
             )}

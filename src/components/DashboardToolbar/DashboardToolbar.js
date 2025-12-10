@@ -31,9 +31,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onUndoClick: PropTypes.func,
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
+    onDownloadClick: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
+    enableAutoRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -46,9 +48,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onUndoClick: () => {},
     onRedoClick: () => {},
     onRenameClick: () => {},
+    onDownloadClick: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
+    enableAutoRefresh: false,
   }
 
   state = {
@@ -78,61 +82,65 @@ export class DashboardToolbarWithoutRef extends React.Component {
     this.setState({ isRenameModalOpen: false })
   }
 
-  formatRefreshInterval = (useFullWords = false) => {
+  formatRefreshInterval = () => {
     const { refreshInterval } = this.props
+    const totalMinutes = Math.floor(refreshInterval / 60)
 
-    if (refreshInterval >= 60) {
-      const minutes = Math.floor(refreshInterval / 60)
-      const seconds = refreshInterval % 60
-      if (seconds === 0) {
-        return `${minutes} ${minutes === 1 ? 'min' : 'mins'}`
+    if (totalMinutes >= 60) {
+      // Handle hours (60 minutes = 1 hour)
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+
+      if (minutes === 0) {
+        return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`
       } else {
-        return `${minutes} ${minutes === 1 ? 'min' : 'mins'} ${seconds} ${seconds === 1 ? 'sec' : 'secs'}`
+        return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ${minutes} ${minutes === 1 ? 'min' : 'mins'}`
       }
     } else {
-      if (useFullWords) {
-        return `${refreshInterval} ${refreshInterval === 1 ? 'second' : 'seconds'}`
-      } else {
-        return `${refreshInterval} ${refreshInterval === 1 ? 'sec' : 'secs'}`
-      }
+      // Minutes only (minimum is 1 minute)
+      return `${totalMinutes} ${totalMinutes === 1 ? 'min' : 'mins'}`
     }
   }
 
-  getRefreshIntervalText = () => {
-    const { refreshInterval } = this.props
-    if (!refreshInterval) {
-      return 'No refresh interval set'
+  getRefreshButtonTooltip = () => {
+    const { refreshInterval, enableAutoRefresh } = this.props
+    if (!refreshInterval || !enableAutoRefresh) {
+      return 'Refresh Dashboard Data'
     }
-    return `Dashboard refreshes every ${this.formatRefreshInterval(true)}`
-  }
-
-  getRefreshIntervalDisplay = () => {
-    const { refreshInterval } = this.props
-    if (!refreshInterval) {
-      return 'Auto-refresh: Off'
-    }
-    return this.formatRefreshInterval(false)
+    return `Click to refresh now. Dashboard auto-refreshes every ${this.formatRefreshInterval()}.`
   }
 
   optionsMenu = () => {
     return (
       <Menu>
+        {this.props.isEditable && (
+          <MenuItem
+            title='Edit Dashboard'
+            icon='edit'
+            onClick={() => {
+              this.props.onEditClick()
+              this.setState({ isOptionsMenuOpen: false })
+            }}
+          />
+        )}
         <MenuItem
-          title='Edit Dashboard'
-          icon='edit'
+          title='Export Snapshot (.aqldash)'
+          icon='download'
           onClick={() => {
-            this.props.onEditClick()
+            this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
           }}
         />
-        <MenuItem
-          title='Delete Dashboard'
-          icon='trash'
-          style={{ color: 'var(--react-autoql-danger-color)' }}
-          onClick={() => {
-            this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
-          }}
-        />
+        {this.props.isEditable && (
+          <MenuItem
+            title='Delete Dashboard'
+            icon='trash'
+            style={{ color: 'var(--react-autoql-danger-color)' }}
+            onClick={() => {
+              this.setState({ isOptionsMenuOpen: false, isConfirmDeleteModalVisible: true })
+            }}
+          />
+        )}
       </Menu>
     )
   }
@@ -246,24 +254,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  {/* <div
-                    style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', opacity: 0.7 }}
-                  >
-                    <Icon
-                      type='schedule'
-                      tooltip={this.getRefreshIntervalText()}
-                      tooltipID={this.props.tooltipID}
-                      style={{ marginRight: '6px', fontSize: '1.2rem' }}
-                    />
-                    <span data-tooltip-content={this.getRefreshIntervalText()} data-tooltip-id={this.props.tooltipID}>
-                      {this.getRefreshIntervalDisplay()}
-                    </span>
-                  </div> */}
                   <Button
                     iconOnly
                     icon='refresh'
                     border={false}
-                    tooltip='Refresh Dashboard Data'
+                    tooltip={this.getRefreshButtonTooltip()}
                     tooltipID={this.props.tooltipID}
                     onClick={this.props.onRefreshClick}
                   />
@@ -289,7 +284,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   </Button>
                 </div>
               )}
-              {this.props.isEditable && !this.props.isEditing && (
+              {!this.props.isEditing && (
                 <Popover
                   align='end'
                   positions={['bottom', 'left', 'top', 'right']}

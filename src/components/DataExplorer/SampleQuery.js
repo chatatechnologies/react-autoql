@@ -52,8 +52,8 @@ export default class SampleQuery extends React.Component {
   static defaultProps = {
     initialValues: undefined,
     suggestion: undefined,
-    onVLChange: () => { },
-    executeQuery: () => { },
+    onVLChange: () => {},
+    executeQuery: () => {},
   }
 
   componentDidMount = () => {
@@ -189,7 +189,7 @@ export default class SampleQuery extends React.Component {
 
     return (
       <div className='data-explorer-sample-query'>
-        <div className='query-suggestion-text'>{renderedChunks}</div>
+        <Icon type='lightning' /> <div className='query-suggestion-text'>{renderedChunks}</div>
         <div
           className='query-suggestion-send-btn'
           onClick={this.submitQuery}

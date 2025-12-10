@@ -4,6 +4,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import RGL, { WidthProvider } from 'react-grid-layout'
+import pako from 'pako'
 
 import {
   deepEqual,
@@ -68,6 +69,8 @@ class DashboardWithoutTheme extends React.Component {
     executeOnMount: PropTypes.bool,
     dataPageSize: PropTypes.number,
     executeOnStopEditing: PropTypes.bool,
+    disableAggregationMenu: PropTypes.bool,
+    allowCustomColumnsOnDrilldown: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
@@ -87,6 +90,8 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: PropTypes.func,
     showToolbar: PropTypes.bool,
     refreshInterval: PropTypes.number,
+    dashboardId: PropTypes.string,
+    enableAutoRefresh: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -117,6 +122,8 @@ class DashboardWithoutTheme extends React.Component {
     stopEditingCallback: () => {},
     onSaveClick: () => {},
     onDeleteCallback: () => {},
+    dashboardId: undefined,
+    enableAutoRefresh: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -135,7 +142,30 @@ class DashboardWithoutTheme extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.executeOnMount) {
-      this.executeDashboard()
+      // Execute only tiles that don't have queryResponse
+      // Use requestAnimationFrame to ensure tile refs are set
+      requestAnimationFrame(() => {
+        if (!this._isMounted) return
+
+        const tiles = this.props.tiles || []
+        const tilesToExecute = tiles.filter((tile) => !tile.queryResponse && !tile.secondQueryResponse)
+
+        if (tilesToExecute.length > 0) {
+          const promises = []
+          tilesToExecute.forEach((tile) => {
+            const tileRef = this.tileRefs[tile.key] || this.tileRefs[tile.i]
+            if (tileRef && tileRef.processTile) {
+              promises.push(tileRef.processTile())
+            }
+          })
+
+          if (promises.length > 0) {
+            Promise.all(promises).catch((error) => {
+              console.error('Error executing tiles:', error)
+            })
+          }
+        }
+      })
     }
     window.addEventListener('resize', this.onWindowResize)
   }
@@ -287,6 +317,24 @@ class DashboardWithoutTheme extends React.Component {
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
           promises.push(this.tileRefs[dashboardTile].processTile())
+        }
+      }
+
+      return Promise.all(promises).catch(() => {
+        return Promise.reject(new Error('There was an error processing this dashboard. Please try again.'))
+      })
+    } catch (error) {
+      console.error(error)
+      return undefined
+    }
+  }
+
+  executeCachedDashboard = () => {
+    try {
+      const promises = []
+      for (var dashboardTile in this.tileRefs) {
+        if (this.tileRefs[dashboardTile]) {
+          promises.push(this.tileRefs[dashboardTile].processTile({ isCachedRefresh: true }))
         }
       }
 
@@ -533,6 +581,81 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  exportDashboard = () => {
+    try {
+      const tiles = this.getMostRecentTiles()
+
+      // Create the dashboard export object with complete tile state
+      const dashboardExport = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        dashboard: {
+          title: this.props.title || 'Untitled Dashboard',
+          tiles: tiles.map((tile) => {
+            // Save the entire tile state
+            return { ...tile }
+          }),
+          props: {
+            dataPageSize: this.props.dataPageSize,
+          },
+        },
+      }
+
+      // Convert to JSON string
+      const jsonStr = JSON.stringify(dashboardExport, null, 2)
+
+      // Compress using gzip
+      const compressed = pako.gzip(jsonStr)
+
+      // Create blob with compressed data
+      const dataBlob = new Blob([compressed], { type: 'application/gzip' })
+      const url = URL.createObjectURL(dataBlob)
+      const link = document.createElement('a')
+      link.href = url
+
+      // Generate filename with sanitized title and timestamp
+      const sanitizedTitle = (this.props.title || 'dashboard').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+      const timestamp = new Date().toISOString().split('T')[0]
+      link.download = `${sanitizedTitle}_${timestamp}.aqldash`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error exporting dashboard:', error)
+    }
+  }
+
+  importDashboard = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+
+      reader.onload = (e) => {
+        try {
+          const uint8Array = new Uint8Array(e.target.result)
+
+          // Try to decompress - if it fails, assume it's uncompressed JSON
+          let jsonStr
+          try {
+            jsonStr = pako.ungzip(uint8Array, { to: 'string' })
+          } catch (decompressError) {
+            // Fallback to plain text for backwards compatibility with old uncompressed files
+            jsonStr = new TextDecoder().decode(uint8Array)
+          }
+
+          const dashboardData = JSON.parse(jsonStr)
+          resolve(dashboardData)
+        } catch (error) {
+          reject(new Error('Failed to parse dashboard file: ' + error.message))
+        }
+      }
+
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
   setParamsForTile = (params, id, callbackArray) => {
     try {
       const originalTiles = this.getMostRecentTiles()
@@ -689,7 +812,18 @@ class DashboardWithoutTheme extends React.Component {
             dashboardRef={this.ref}
             authentication={this.props.authentication}
             cancelQueriesOnUnmount={this.props.cancelQueriesOnUnmount}
-            autoQLConfig={this.props.autoQLConfig}
+            autoQLConfig={
+              !this.props.offline
+                ? this.props.autoQLConfig
+                : {
+                    ...getAutoQLConfig(this.props.autoQLConfig),
+                    enableDrilldowns: false,
+                    enableReportProblem: false,
+                    enableColumnVisibilityManager: false,
+                    enableNotifications: false,
+                    enableCSVDownload: false,
+                  }
+            }
             tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
@@ -707,6 +841,8 @@ class DashboardWithoutTheme extends React.Component {
             autoChartAggregations={this.props.autoChartAggregations}
             onDrilldownStart={this.onDrilldownStart}
             onDrilldownEnd={this.onDrilldownEnd}
+            disableAggregationMenu={this.props.disableAggregationMenu}
+            allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
             onCSVDownloadStart={this.props.onCSVDownloadStart}
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
@@ -718,6 +854,9 @@ class DashboardWithoutTheme extends React.Component {
             customToolbarOptions={this.props.customToolbarOptions}
             enableCustomColumns={this.props.enableCustomColumns}
             preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+            dashboardId={this.props.dashboardId}
+            tileKey={tile.key}
+            useInfiniteScroll={!this.props.offline}
           />
         ))}
       </ReactGridLayout>
@@ -741,7 +880,8 @@ class DashboardWithoutTheme extends React.Component {
               onAddTileClick={this.addTile}
               onUndoClick={this.undo}
               onRedoClick={this.redo}
-              onRefreshClick={this.executeDashboard}
+              onRefreshClick={this.props.enableAutoRefresh ? this.executeCachedDashboard : this.executeDashboard}
+              onDownloadClick={this.exportDashboard}
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
                   // Keep if we need to add back in the near future
@@ -755,6 +895,7 @@ class DashboardWithoutTheme extends React.Component {
                 this.props.stopEditingCallback()
               }}
               refreshInterval={this.props.refreshInterval}
+              enableAutoRefresh={this.props.enableAutoRefresh}
             />
           )}
           <div

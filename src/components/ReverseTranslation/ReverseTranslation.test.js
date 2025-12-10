@@ -63,4 +63,23 @@ describe('renders correctly', () => {
     const reverseTranslationComponent = findByTestAttr(wrapper, 'react-autoql-reverse-translation-container')
     expect(reverseTranslationComponent.text()).toBe('<Icon /> Interpreted as:  This is a test Value Label more text.')
   })
+
+  test('handles missing onValueLabelClick callback gracefully', () => {
+    const wrapper = setup({
+      reverseTranslation: [{ c_type: 'VALIDATED_VALUE_LABEL', eng: 'This is a test' }],
+      onValueLabelClick: undefined, // Explicitly undefined
+    })
+    const reverseTranslationComponent = findByTestAttr(wrapper, 'react-autoql-reverse-translation-container')
+    // Should still render even without callback
+    expect(reverseTranslationComponent.exists()).toBe(true)
+  })
+
+  test('renders text-only mode without prerequisites', () => {
+    const wrapper = setup({
+      reverseTranslation: [{ c_type: 'TEXT', eng: 'This is a test' }],
+      textOnly: true,
+    })
+    const span = wrapper.find('span').first()
+    expect(span.text()).toBe('This is a test')
+  })
 })

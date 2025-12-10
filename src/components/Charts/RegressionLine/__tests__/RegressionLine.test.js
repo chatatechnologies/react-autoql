@@ -7,6 +7,16 @@ import { formatElement } from 'autoql-fe-utils'
 jest.mock('autoql-fe-utils', () => ({
   formatElement: jest.fn(({ element }) => `${element}`),
   getChartColorVars: jest.fn(() => ({ chartColors: ['#3498db', '#e74c3c', '#2ecc71'] })),
+  getThemeValue: jest.fn((key) => {
+    const themeValues = {
+      'background-color-secondary': '#f8f9fa',
+      'text-color-primary': '#333333',
+    }
+    return themeValues[key] || '#f8f9fa'
+  }),
+  DisplayTypes: {
+    SCATTERPLOT: 'scatterplot',
+  },
 }))
 
 describe('RegressionLine', () => {
