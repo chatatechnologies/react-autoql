@@ -96,6 +96,8 @@ export default class ChataChart extends React.Component {
       showRegressionLine: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    onAxisSortChange: PropTypes.func,
+    axisSorts: PropTypes.object,
   }
 
   static defaultProps = {
@@ -109,6 +111,8 @@ export default class ChataChart extends React.Component {
       showRegressionLine: false,
     },
     onChartControlsChange: () => {},
+    onAxisSortChange: () => {},
+    axisSorts: {},
   }
 
   componentDidMount = () => {
@@ -157,6 +161,17 @@ export default class ChataChart extends React.Component {
     if (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) {
       // Stop throttling loop
       this.stopThrottledRefresh()
+    }
+
+    // Re-process data if axis sorts changed
+    // Use deepEqual to properly compare objects
+    const axisSortsChanged = !deepEqual(this.props.axisSorts, prevProps.axisSorts)
+    if (axisSortsChanged) {
+      const newData = this.getData(this.props)
+      if (newData) {
+        // Force chart re-render with new sorted data
+        this.setState({ ...newData, chartID: uuid() })
+      }
     }
 
     if (
@@ -254,13 +269,61 @@ export default class ChataChart extends React.Component {
 
       let isDataTruncated = false
 
+      // Determine sort configuration first (before processing data)
+      const hasAxisSort = props.axisSorts && Object.keys(props.axisSorts).length > 0
+      let sortColumnIndex = null
+      let sortDirection = null
+      let primaryAxisSort = null
+
+      if (hasAxisSort) {
+        // Get the primary axis sort (usually 'x' axis for bottom axis)
+        const axisKeys = Object.keys(props.axisSorts)
+        // Find the first 'x-' key, then 'y-' key, or fall back to the first key
+        const xAxisKey = axisKeys.find((key) => key.startsWith('x-'))
+        const yAxisKey = axisKeys.find((key) => key.startsWith('y-'))
+        primaryAxisSort =
+          (xAxisKey && props.axisSorts[xAxisKey]) ||
+          (yAxisKey && props.axisSorts[yAxisKey]) ||
+          props.axisSorts[axisKeys[0]]
+
+        if (primaryAxisSort) {
+          const numberColumnIndices = props.numberColumnIndices || []
+          const primaryNumberColumnIndex = numberColumnIndices[0]
+
+          if (primaryAxisSort.startsWith('alpha-')) {
+            // Sort by the current string column
+            sortColumnIndex = stringColumnIndex
+            sortDirection = primaryAxisSort === 'alpha-asc' ? 'asc' : 'desc'
+          } else if (primaryAxisSort.startsWith('value-')) {
+            // Sort by the current primary number column
+            sortColumnIndex = primaryNumberColumnIndex
+            if (primaryAxisSort === 'value-asc') {
+              sortDirection = 'asc'
+            } else if (primaryAxisSort === 'value-desc') {
+              sortDirection = 'desc'
+            }
+          }
+        }
+      }
+
       if (props.isDataAggregated) {
+        // Data is already aggregated - sort the aggregated data using the original column indices
         let data = props.data
 
-        if (isColumnDateType(props.columns[stringColumnIndex])) {
-          data = sortDataByDate(props.data, props.columns, 'asc')
-        } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
-          data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
+        if (
+          hasAxisSort &&
+          sortColumnIndex !== undefined &&
+          sortColumnIndex !== null &&
+          (sortDirection === 'asc' || sortDirection === 'desc')
+        ) {
+          data = sortDataByColumn(data, props.columns, sortColumnIndex, sortDirection)
+        } else if (!hasAxisSort) {
+          // Only apply default sorting if no axis sort is specified
+          if (isColumnDateType(props.columns[stringColumnIndex])) {
+            data = sortDataByDate(data, props.columns, 'asc')
+          } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
+            data = sortDataByColumn(data, props.columns, stringColumnIndex, 'asc')
+          }
         }
 
         if (data?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned() && props.type !== DisplayTypes.NETWORK_GRAPH) {
@@ -274,6 +337,7 @@ export default class ChataChart extends React.Component {
           isDataTruncated,
         }
       } else {
+        // Data needs to be aggregated - aggregate first, then sort
         const indices1 = props.numberColumnIndices ?? []
         const indices2 = props.numberColumnIndices2 ?? []
         const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
@@ -299,6 +363,16 @@ export default class ChataChart extends React.Component {
           numberIndices,
           dataFormatting: props.dataFormatting,
         })
+
+        // Apply axis sorting to aggregated data using the original column indices
+        if (
+          hasAxisSort &&
+          sortColumnIndex !== undefined &&
+          sortColumnIndex !== null &&
+          (sortDirection === 'asc' || sortDirection === 'desc')
+        ) {
+          aggregated = sortDataByColumn(aggregated, props.columns, sortColumnIndex, sortDirection)
+        }
 
         if (
           aggregated?.length > MAX_CHART_ELEMENTS &&

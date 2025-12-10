@@ -10,6 +10,7 @@ import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabel
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
+import AxisSortPopover from '../Axes/AxisSortPopover'
 
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
@@ -44,6 +45,7 @@ export default class Axis extends Component {
 
     this.state = {
       isAxisSelectorOpen: false,
+      isAxisSortOpen: false,
     }
   }
 
@@ -53,6 +55,8 @@ export default class Axis extends Component {
     orient: PropTypes.string,
     translateX: PropTypes.number,
     translateY: PropTypes.number,
+    axisSorts: PropTypes.object,
+    onAxisSortChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -66,6 +70,8 @@ export default class Axis extends Component {
     outerHeight: 0,
     outerWidth: 0,
     onAxisRenderComplete: () => {},
+    axisSorts: {},
+    onAxisSortChange: () => {},
   }
 
   componentDidMount = () => {
@@ -116,7 +122,7 @@ export default class Axis extends Component {
     }
 
     const renderJustCompleted = this.state.axisRenderComplete && !prevState.axisRenderComplete
-    if (!this.state.isAxisSelectorOpen) {
+    if (!this.state.isAxisSelectorOpen && !this.state.isAxisSortOpen) {
       this.renderAxis(renderJustCompleted)
     }
   }
@@ -413,6 +419,7 @@ export default class Axis extends Component {
 
     this.adjustTitleToFit()
     this.adjustAxisSelectorBorder()
+    this.adjustAxisSortBorder()
     this.adjustAxisScalerBorder()
     this.adjustLegendLocation()
 
@@ -479,6 +486,158 @@ export default class Axis extends Component {
 
   closeSelector = () => {
     this.setState({ isAxisSelectorOpen: false })
+  }
+
+  openSortPopover = () => {
+    this.setState({ isAxisSortOpen: true })
+  }
+
+  closeSortPopover = () => {
+    this.setState({ isAxisSortOpen: false })
+  }
+
+  shouldRenderAxisSort = () => {
+    // Only show sort for ordinal (BAND) type axes
+    return this.props.scale?.type === 'BAND'
+  }
+
+  renderAxisSort = ({ positions }) => {
+    if (!this.shouldRenderAxisSort()) {
+      return null
+    }
+
+    // Get the column index for this axis
+    const columnIndex = this.props.scale?.column?.index
+    const axis = this.props.scale?.axis || 'x' // 'x' or 'y'
+    
+    // Get column display names
+    const column = this.props.columns?.[columnIndex]
+    const columnDisplayName = column?.display_name || this.props.scale?.title || 'column'
+    
+    // Get value column display name (first number column)
+    const numberColumnIndices = this.props.numberColumnIndices || []
+    const primaryNumberColumnIndex = numberColumnIndices[0]
+    const valueColumn = primaryNumberColumnIndex !== undefined ? this.props.columns?.[primaryNumberColumnIndex] : null
+    const valueColumnDisplayName = valueColumn?.display_name || 'values'
+    
+    // Get current sort state for this axis
+    const axisSortKey = `${axis}-${columnIndex}`
+    const currentSort = this.props.axisSorts?.[axisSortKey] || null
+
+    // Create handler that wraps onAxisSortChange
+    const handleSortChange = (sortType) => {
+      if (this.props.onAxisSortChange && columnIndex !== undefined) {
+        this.props.onAxisSortChange(axis, columnIndex, sortType)
+      }
+    }
+
+    return (
+      <AxisSortPopover
+        chartContainerRef={this.props.chartContainerRef}
+        popoverParentElement={this.props.popoverParentElement}
+        hidden={!this.shouldRenderAxisSort()}
+        currentSort={currentSort}
+        onSortChange={handleSortChange}
+        columnDisplayName={columnDisplayName}
+        valueColumnDisplayName={valueColumnDisplayName}
+        align='center'
+        position='right'
+        positions={positions}
+        axisSortRef={(r) => (this.axisSort = r)}
+        isOpen={this.state.isAxisSortOpen}
+        closeSelector={this.closeSortPopover}
+      >
+        <g>
+          <rect
+            ref={(r) => (this.axisSort = r)}
+            className={`axis-label-border ${this.shouldRenderAxisSort() ? '' : 'hidden'}`}
+            data-test='axis-sort-border'
+            onClick={this.openSortPopover}
+            fill='transparent'
+            stroke='transparent'
+            strokeWidth='1px'
+            rx='4'
+          />
+          <text
+            className='axis-sort-icon'
+            data-test='axis-sort-icon'
+            fontSize='14px'
+            fill='currentColor'
+            stroke='currentColor'
+            strokeWidth='0.5px'
+            paintOrder='stroke'
+            textAnchor='middle'
+            dominantBaseline='middle'
+            opacity='0' // use css to style so it isnt exported in the png
+            style={{ cursor: 'pointer' }}
+            onClick={this.openSortPopover}
+          >
+            ⇅
+          </text>
+        </g>
+      </AxisSortPopover>
+    )
+  }
+
+  adjustAxisSortBorder = () => {
+    if (!this.titleRef || !this.axisSort || !this.shouldRenderAxisSort()) {
+      return
+    }
+
+    const titleBBox = getBBoxFromRef(this.titleRef)
+    const titleHeight = titleBBox?.height ?? 0
+    const titleWidth = titleBBox?.width ?? 0
+    const titleX = titleBBox?.x ?? 0
+    const titleY = titleBBox?.y ?? 0
+
+    // Position to the right of the title with some spacing
+    const SORT_BUTTON_WIDTH = 20
+    const SORT_BUTTON_SPACING = 5
+
+    // Find the sort icon text element (it's a sibling of the rect)
+    const sortGroup = this.axisSort?.parentElement
+    const sortIcon = sortGroup?.querySelector('.axis-sort-icon')
+
+    // For rotated axes (left/right), adjust positioning
+    const transform = this.titleRef?.getAttribute('transform')
+    const rectX = Math.round(titleX + titleWidth + SORT_BUTTON_SPACING)
+    const rectY = Math.round(titleY - this.AXIS_TITLE_BORDER_PADDING_TOP)
+    const rectWidth = SORT_BUTTON_WIDTH
+    const rectHeight = Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
+    const iconX = rectX + rectWidth / 2
+    const iconY = rectY + rectHeight / 2 + 2 // Lower icon by 2 pixels
+
+    if (transform && transform.includes('rotate')) {
+      // For vertical axes, position differently
+      select(this.axisSort)
+        .attr('transform', transform)
+        .attr('width', rectWidth)
+        .attr('height', rectHeight)
+        .attr('x', rectX)
+        .attr('y', rectY)
+      
+      if (sortIcon) {
+        select(sortIcon)
+          .attr('transform', transform)
+          .attr('x', iconX)
+          .attr('y', iconY)
+      }
+    } else {
+      // For horizontal axes (bottom/top)
+      select(this.axisSort)
+        .attr('transform', transform || null)
+        .attr('width', rectWidth)
+        .attr('height', rectHeight)
+        .attr('x', rectX)
+        .attr('y', rectY)
+      
+      if (sortIcon) {
+        select(sortIcon)
+          .attr('transform', transform || null)
+          .attr('x', iconX)
+          .attr('y', iconY)
+      }
+    }
   }
 
   renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
@@ -576,6 +735,9 @@ export default class Axis extends Component {
         {this.renderAxisSelector({
           positions: ['top', 'bottom', 'right', 'left'],
         })}
+        {this.renderAxisSort({
+          positions: ['top', 'bottom', 'right', 'left'],
+        })}
       </g>
     )
   }
@@ -608,6 +770,9 @@ export default class Axis extends Component {
           {this.renderAxisTitleText()}
         </text>
         {this.renderAxisSelector({
+          positions: ['right', 'bottom', 'left', 'top'],
+        })}
+        {this.renderAxisSort({
           positions: ['right', 'bottom', 'left', 'top'],
         })}
       </g>
@@ -645,6 +810,9 @@ export default class Axis extends Component {
           isSecondAxis: true,
           positions: ['left', 'top', 'bottom', 'right'],
         })}
+        {this.renderAxisSort({
+          positions: ['left', 'top', 'bottom', 'right'],
+        })}
       </g>
     )
   }
@@ -671,6 +839,9 @@ export default class Axis extends Component {
         </text>
         {this.renderAxisSelector({
           isSecondAxis: true,
+          positions: ['bottom', 'top', 'left', 'right'],
+        })}
+        {this.renderAxisSort({
           positions: ['bottom', 'top', 'left', 'right'],
         })}
       </g>

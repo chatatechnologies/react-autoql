@@ -802,6 +802,8 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
+  onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
+  onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
 
   onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
 
@@ -1278,6 +1280,8 @@ export class DashboardTile extends React.Component {
         bucketSize: this.props.tile.bucketSize,
         initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
         onNetworkColumnChange: this.onNetworkColumnChange,
+        initialAxisSorts: this.props.tile.axisSorts,
+        onAxisSortChange: this.onAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {
@@ -1375,6 +1379,9 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
+        initialNetworkColumnConfig: this.props.tile.secondNetworkColumnConfig,
+        initialAxisSorts: this.props.tile.secondAxisSorts,
+        onAxisSortChange: this.onSecondAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {
