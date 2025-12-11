@@ -1367,7 +1367,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.queryID,
+              queryID: this.drilldownQueryID,
               source: this.props.source,
               groupBys,
               pageSize,
