@@ -69,6 +69,8 @@ import {
   formatFiltersForTabulator,
   formatSortersForTabulator,
   DisplayTypes,
+  createFilterFunction,
+  extractOperatorFromValue,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -108,6 +110,8 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
+    this.drilldownQueryID =
+      this.queryResponse?.data?.data?.drilldown_query_id || this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -150,12 +154,30 @@ export class QueryOutput extends React.Component {
 
     this.generateAllData()
 
-    // Set initial table params to be any filters that
-    // are already present in the current query
-    // Note: We handle sorting ourselves, so we don't pass sorters to Tabulator
-    this.formattedTableParams = {
-      filters: props?.initialFormattedTableParams?.filters || [],
-      sorters: [],
+    try {
+      const initial = props?.initialFormattedTableParams ?? {}
+      const feReq = this.queryResponse?.data?.data?.fe_req ?? {}
+
+      const filters =
+        Array.isArray(initial.filters) && initial.filters.length
+          ? initial.filters
+          : Array.isArray(feReq.filters)
+          ? feReq.filters
+          : []
+
+      const sorters =
+        Array.isArray(initial.sorters) && initial.sorters.length
+          ? initial.sorters
+          : Array.isArray(feReq.orders)
+          ? feReq.orders.map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
+          : []
+
+      if (filters.length) this.tableParams.filter = formatFiltersForTabulator(filters, columns)
+      if (sorters.length) this.tableParams.sort = formatSortersForTabulator(sorters, columns)
+
+      this.formattedTableParams = { filters, sorters }
+    } catch (err) {
+      this.formattedTableParams = { filters: [], sorters: [] }
     }
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -434,6 +456,7 @@ export class QueryOutput extends React.Component {
       if (this.state.isResizing !== prevState.isResizing) {
         if (!this.state.isResizing && prevState.isResizing) {
           setTimeout(() => {
+            if (!this._isMounted) return
             this.refreshLayout()
           }, 50)
         }
@@ -805,6 +828,7 @@ export class QueryOutput extends React.Component {
     return this.formatColumnsForTable(
       this.queryResponse?.data?.data?.columns,
       this.getAdditionalSelectsFromResponse(this.queryResponse),
+      this.props.initialAggConfig,
     )
   }
 
@@ -1374,6 +1398,7 @@ export class QueryOutput extends React.Component {
             // For OR logic, filter client-side instead of sending to backend
             // Use setTimeout to show loading state, just like other filter drilldowns
             setTimeout(() => {
+              if (!this._isMounted) return
               response = this.getFilterDrilldownWithOr({
                 stringColumnIndices: clickedFilter.stringColumnIndices,
                 rows: clickedFilter.rows,
@@ -1695,7 +1720,11 @@ export class QueryOutput extends React.Component {
 
   onTableParamsChange = (params, formattedTableParams = {}) => {
     this.tableParams = _cloneDeep(params)
-    this.formattedTableParams = formattedTableParams
+
+    // Guard: preserve existing formattedTableParams on empty payload
+    if (Object.keys(formattedTableParams).length > 0) {
+      this.formattedTableParams = formattedTableParams
+    }
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
 
@@ -1704,8 +1733,9 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
-    // This will update the filter badge in OptionsToolbar
+    // Update filter badge in OptionsToolbar
     setTimeout(() => {
+      if (!this._isMounted) return
       this.updateToolbars()
     }, 0)
   }
@@ -1766,10 +1796,7 @@ export class QueryOutput extends React.Component {
   onLegendClick = (d) => {
     d?.label && this.handleLegendClick(d.label)
 
-    if (!d) {
-      console.debug('no legend item was provided on click event')
-      return
-    }
+    if (!d) return
 
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
@@ -1835,10 +1862,30 @@ export class QueryOutput extends React.Component {
 
     if (this.usePivotDataForChart()) {
       this.generatePivotTableData()
+      // Force chart to re-render with new pivot data by updating chartID
+      if (this._isMounted) {
+        this.setState({
+          chartID: uuid(),
+          visiblePivotRowChangeCount: (this.state.visiblePivotRowChangeCount || 0) + 1,
+        })
+      }
     }
 
     this.onTableConfigChange()
     this.forceUpdate()
+  }
+
+  getPivotRowSelectorOptions = () => {
+    const cols = this.getColumns() || []
+    if (!this.tableConfig) return []
+    return cols
+      .filter(
+        (c) =>
+          c.is_visible !== false &&
+          !this.tableConfig.numberColumnIndices?.includes(c.index) &&
+          (isColumnStringType(c) || c.custom),
+      )
+      .map((c) => ({ value: c.index, label: c.display_name || c.name }))
   }
 
   onChangeLegendColumnIndex = (index) => {
@@ -2221,96 +2268,27 @@ export class QueryOutput extends React.Component {
   }
 
   setFilterFunction = (col) => {
-    const self = this
-    if (col.type === ColumnTypes.DATE) {
-      return (headerValue, rowValue, rowData, filterParams) => {
+    // Import the filter function from autoql-fe-utils
+    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+
+    // Wrap the filter function to preserve error callback behavior
+    // This wrapper is necessary because react-autoql needs to call onErrorCallback for error handling
+    if (filterFn && typeof filterFn === 'function') {
+      const wrappedFn = (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (!rowValue) {
-            return false
-          }
-
-          const rowValueDayJS = getDayJSObj({ value: rowValue, column: col, config: this.props.dataFormatting })
-
-          const dates = headerValue.split(' to ')
-          const precision = getPrecisionForDayJS(getFilterPrecision(col.precision))
-          const startDate = dayjs.utc(dates[0]).startOf(precision)
-          const endDate = dayjs.utc(dates[1] ?? dates[0]).endOf(precision)
-
-          const isAfterStartDate = startDate.isSameOrBefore(rowValueDayJS)
-          const isBeforeEndDate = rowValueDayJS.isSameOrBefore(endDate)
-
-          return isAfterStartDate && isBeforeEndDate
+          return filterFn(headerValue, rowValue, rowData, filterParams)
         } catch (error) {
           console.error(error)
-          this.props.onErrorCallback(error)
+          if (this.props.onErrorCallback) {
+            this.props.onErrorCallback(error)
+          }
           return false
         }
       }
-    } else if (col.type === 'DATE_STRING') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (!rowValue) {
-            return false
-          }
-
-          const formattedElement = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          const shouldFilter = `${formattedElement}`.toLowerCase().includes(`${headerValue}`.toLowerCase())
-
-          return shouldFilter
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          return false
-        }
-      }
-    } else if (col.type === 'DOLLAR_AMT' || col.type === 'QUANTITY' || col.type === 'PERCENT' || col.type === 'RATIO') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (!rowValue && rowValue !== 0) {
-            return false
-          }
-
-          const trimmedValue = headerValue.trim()
-          if (trimmedValue.length >= 2) {
-            const number = Number(trimmedValue.substr(1).replace(/[^0-9.]/g, ''))
-            if (trimmedValue[0] === '>' && trimmedValue[1] === '=') {
-              return rowValue >= number
-            } else if (trimmedValue[0] === '>') {
-              return rowValue > number
-            } else if (trimmedValue[0] === '<' && trimmedValue[1] === '=') {
-              return rowValue <= number
-            } else if (trimmedValue[0] === '<') {
-              return rowValue < number
-            } else if (trimmedValue[0] === '!' && trimmedValue[1] === '=') {
-              return rowValue !== number
-            } else if (trimmedValue[0] === '=') {
-              return rowValue === number
-            }
-          }
-
-          // No logical operators detected, just compare numbers
-          const filterNumber = headerValue?.toString()
-          const formattedNumber = formatElement({
-            element: rowValue,
-            column: col,
-            config: self.props.dataFormatting,
-          })
-
-          return !isNaN(formattedNumber) && parseFloat(formattedNumber) === parseFloat(filterNumber)
-        } catch (error) {
-          console.error(error)
-          this.props.onErrorCallback(error)
-          return false
-        }
-      }
+      return wrappedFn
     }
 
-    return undefined
+    return filterFn
   }
 
   setSorterFunction = (col) => {
@@ -2334,6 +2312,17 @@ export class QueryOutput extends React.Component {
     return 'Filter'
   }
 
+  calculatePivotColumnMinWidth = (title) => {
+    // Calculate min width dynamically based on title length
+    if (!title) {
+      return '104px'
+    }
+    const charWidth = 10 // pixels per character (approximate for default font)
+    const extraSpace = 44 // padding (28px) + gap (3px) + arrow (7px)
+    const calculatedWidth = Math.max(104, title.length * charWidth + extraSpace)
+    return calculatedWidth + 'px'
+  }
+
   getAggConfig = (columns) => {
     if (!columns) {
       return null
@@ -2351,7 +2340,7 @@ export class QueryOutput extends React.Component {
     return queryResponse?.data?.data?.fe_req?.columns?.find((column) => newCol.name === column.name)
   }
 
-  copyToClipboard(text, element) {
+  copyToClipboard = (text, element) => {
     const successTimeout = 1500
     const errorTimeout = 3000
     const textarea = document.createElement('textarea')
@@ -2630,7 +2619,8 @@ export class QueryOutput extends React.Component {
         title: 'Month',
         name: 'Month',
         field: '0',
-        resizable: false,
+        resizable: true,
+        minWidth: this.calculatePivotColumnMinWidth('Month'),
         frozen: true,
         visible: true,
         is_visible: true,
@@ -2758,57 +2748,70 @@ export class QueryOutput extends React.Component {
         this.formattedTableParams.filters.forEach((filter) => {
           const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
-            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, filter.value, filter.operator)
+            let op = filter.operator,
+              val = filter.value
+            const parsed = extractOperatorFromValue(filter.value)
+            if (parsed) {
+              op = parsed.operator
+              val = parsed.cleanValue
+            }
+            tableData = filterDataByColumn(tableData, columns, filterColumnIndex, val, op)
           }
         })
       }
 
-      // Apply any active Tabulator header filters so the pivot reflects the filtered table view.
+      // Apply any active Tabulator header filters so the pivot reflects the filtered table view
       try {
         const headerFilters = this.getTabulatorHeaderFilters?.()
         if (headerFilters) {
-          if (Array.isArray(headerFilters)) {
-            headerFilters.forEach((headFilter) => {
-              if (!headFilter) return
-              const field = headFilter.field ?? headFilter[0]
-              const value = headFilter.value ?? headFilter[1]
-              if (field === undefined || value === undefined) return
-              let filterColumnIndex
-              const parsed = parseInt(field, 10)
-              if (!isNaN(parsed)) filterColumnIndex = parsed
-              if (filterColumnIndex === undefined)
-                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
-              if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(
-                  tableData,
-                  columns,
-                  filterColumnIndex,
-                  value,
-                  headFilter.type || headFilter.operator,
-                )
+          const filters = Array.isArray(headerFilters)
+            ? headerFilters.map((f) => ({
+                field: f.field ?? f[0],
+                value: f.value ?? f[1],
+                type: f.type,
+                operator: f.operator,
+              }))
+            : Object.entries(headerFilters).map(([field, value]) => ({
+                field,
+                value,
+                type: undefined,
+                operator: undefined,
+              }))
+
+          filters.forEach(({ field, value, type, operator }, idx) => {
+            if (field === undefined || value === undefined) {
+              return
+            }
+            if (typeof value === 'string' && value.trim() === '') {
+              return
+            }
+
+            // Skip custom filter functions (e.g., date range pickers)
+            if (typeof type === 'function') {
+              return
+            }
+
+            let columnIndex = parseInt(field, 10)
+            if (isNaN(columnIndex)) {
+              columnIndex = columns.find((col) => col.field === field || col.id === field)?.index
+            }
+
+            if (columnIndex !== undefined) {
+              let op = type || operator
+              let val = value
+              const parsed = extractOperatorFromValue(value)
+              if (parsed) {
+                op = parsed.operator
+                val = parsed.cleanValue
               }
-            })
-          } else if (typeof headerFilters === 'object') {
-            Object.entries(headerFilters).forEach(([field, value]) => {
-              // Skip only undefined, null, and empty strings - allow 0, '0', false
-              if (value === undefined || value === null) return
-              if (typeof value === 'string' && value.trim() === '') return
-              let filterColumnIndex
-              const parsed = parseInt(field, 10)
-              if (!isNaN(parsed)) filterColumnIndex = parsed
-              if (filterColumnIndex === undefined)
-                filterColumnIndex = columns.find((col) => col.field === field || col.id === field)?.index
-              if (filterColumnIndex !== undefined) {
-                tableData = filterDataByColumn(tableData, columns, filterColumnIndex, value, undefined)
-              }
-            })
-          }
+              tableData = filterDataByColumn(tableData, columns, columnIndex, val, op)
+            }
+          })
         }
       } catch (err) {
         // ignore header filter parsing errors and continue
       }
 
-      // Respect user sorters first, fall back to date sort if none provided
       const userSorters = this.formattedTableParams?.sorters || []
       let sortedData = null
       if (userSorters.length > 0) {
@@ -2834,6 +2837,24 @@ export class QueryOutput extends React.Component {
         .map((d) => d[legendColumnIndex])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
+
+      // Guard: If after filtering we have no data, don't attempt to create pivot table
+      // This prevents malformed column structures when filter results in 0 rows
+      if (
+        !uniqueRowHeaders ||
+        uniqueRowHeaders.length === 0 ||
+        !uniqueColumnHeaders ||
+        uniqueColumnHeaders.length === 0
+      ) {
+        this.pivotTableColumns = []
+        this.pivotTableData = []
+        this.numberOfPivotTableRows = 0
+        this.setPivotTableConfig(true)
+        if (this._isMounted) {
+          this.forceUpdate()
+        }
+        return
+      }
 
       let newStringColumnIndex = stringColumnIndex
       let newLegendColumnIndex = legendColumnIndex
@@ -2922,7 +2943,8 @@ export class QueryOutput extends React.Component {
         visible: true,
         is_visible: true,
         field: '0',
-        resizable: false,
+        resizable: true,
+        minWidth: this.calculatePivotColumnMinWidth(columns[newStringColumnIndex].display_name),
         cssClass: 'pivot-category',
         pivot: true,
         headerFilter: false,
@@ -2936,7 +2958,7 @@ export class QueryOutput extends React.Component {
           config: getDataFormatting(this.props.dataFormatting),
         })
 
-        pivotTableColumns.push({
+        const newPivotCol = {
           ...columns[numberColumnIndex],
           origColumn: columns[numberColumnIndex],
           origPivotColumn: columns[newLegendColumnIndex],
@@ -2949,7 +2971,9 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
-        })
+        }
+
+        pivotTableColumns.push(newPivotCol)
       })
 
       const pivotTableData = this.makeEmptyArrayShared(
@@ -3324,6 +3348,10 @@ export class QueryOutput extends React.Component {
           pivot
           queryText={this.queryResponse?.data?.data?.text}
           isLoadingLocal={this.props.isLoadingLocal}
+          pivotAxisOptions={this.getPivotRowSelectorOptions()}
+          pivotAxisCurrentIndex={this.tableConfig?.stringColumnIndex}
+          onPivotAxisChange={this.onChangeStringColumnIndex}
+          originalColumns={this.getColumns()}
         />
       </ErrorBoundary>
     )
