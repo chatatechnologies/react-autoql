@@ -453,6 +453,42 @@
         min-width: max-content;
       }
 
+      // Desktop: Hide scrollbars by default, show on hover (overlay style)
+      @media (hover: hover) and (pointer: fine) {
+        // Always reserve space for scrollbar to prevent content shift
+        scrollbar-gutter: stable;
+        
+        // Firefox - hide by default (but space is reserved by scrollbar-gutter)
+        scrollbar-width: none;
+        
+        // Webkit browsers (Chrome, Safari, Edge) - make scrollbars invisible by default
+        // Width stays constant so space is always reserved (no shift)
+        &::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background-color: transparent;
+          border-radius: 4px;
+        }
+
+        &:hover {
+          // Firefox - show thin scrollbar on hover (in reserved gutter space)
+          scrollbar-width: thin;
+          scrollbar-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3)) transparent;
+
+          // Webkit browsers - show scrollbar on hover (in reserved space)
+          &::-webkit-scrollbar-thumb {
+            background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
+          }
+        }
+      }
+
       // On mobile devices, always show scrollbars for better touch interaction
       @media (hover: none) and (pointer: coarse) {
         overflow: auto !important;
