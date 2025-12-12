@@ -33,6 +33,7 @@ import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
@@ -940,23 +941,25 @@ class QueryInput extends React.Component {
               )}
 
               {/* <div className='query-suggestions-label'>Quick Topics:</div> */}
-              <div className='query-suggestions-buttons'>
-                <span className='query-suggestions-buttons-label'>
-                  <Icon type='lightning' /> Quick Topics:{' '}
-                </span>
-                {this.state.topics.map((topic, index) => (
-                  <button
-                    key={topic.context || index}
-                    className={`query-suggestion-button ${
-                      this.state.selectedTopic?.context === topic.context ? 'selected' : ''
-                    }`}
-                    onClick={() => this.onTopicClick(topic)}
-                    type='button'
-                  >
-                    {topic.displayName}
-                  </button>
-                ))}
-              </div>
+              <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
+                <div className='query-suggestions-buttons'>
+                  <span className='query-suggestions-buttons-label'>
+                    <Icon type='lightning' /> Quick Topics:{' '}
+                  </span>
+                  {this.state.topics.map((topic, index) => (
+                    <button
+                      key={topic.context || index}
+                      className={`query-suggestion-button ${
+                        this.state.selectedTopic?.context === topic.context ? 'selected' : ''
+                      }`}
+                      onClick={() => this.onTopicClick(topic)}
+                      type='button'
+                    >
+                      {topic.displayName}
+                    </button>
+                  ))}
+                </div>
+              </CustomScrollbars>
             </div>
           )}
 
