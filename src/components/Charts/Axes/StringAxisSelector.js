@@ -14,6 +14,7 @@ export default class StringAxisSelector extends React.Component {
   }
 
   getAllStringColumnIndices = () => {
+    if (!this.props.columns?.length) return []
     const columnIndices = []
     this.props.columns.forEach((col, i) => {
       if (!col.is_visible) {

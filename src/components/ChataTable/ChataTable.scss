@@ -327,11 +327,18 @@
         visibility: hidden;
       }
 
-      .tabulator-col.is-filtered .tabulator-col-title:before {
+      // Show filter badge for regular columns (direct child only, not descendants)
+      .tabulator-col.is-filtered > .tabulator-col-content .tabulator-col-title:before {
         opacity: 1;
       }
 
-      .tabulator-col-title:before {
+      // Show filter badge for pivot group headers
+      .tabulator-col-group.is-filtered > .tabulator-col-content .tabulator-col-group-title:before {
+        opacity: 1;
+      }
+
+      .tabulator-col-title:before,
+      .tabulator-col-group-title:before {
         content: '';
         display: inline-block;
         vertical-align: middle;
@@ -444,6 +451,42 @@
       // Ensure table content has minimum width to trigger horizontal scrolling
       .tabulator-table {
         min-width: max-content;
+      }
+
+      // Desktop: Hide scrollbars by default, show on hover (overlay style)
+      @media (hover: hover) and (pointer: fine) {
+        // Always reserve space for scrollbar to prevent content shift
+        scrollbar-gutter: stable;
+        
+        // Firefox - hide by default (but space is reserved by scrollbar-gutter)
+        scrollbar-width: none;
+        
+        // Webkit browsers (Chrome, Safari, Edge) - make scrollbars invisible by default
+        // Width stays constant so space is always reserved (no shift)
+        &::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background-color: transparent;
+          border-radius: 4px;
+        }
+
+        &:hover {
+          // Firefox - show thin scrollbar on hover (in reserved gutter space)
+          scrollbar-width: thin;
+          scrollbar-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3)) transparent;
+
+          // Webkit browsers - show scrollbar on hover (in reserved space)
+          &::-webkit-scrollbar-thumb {
+            background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
+          }
+        }
       }
 
       // On mobile devices, always show scrollbars for better touch interaction
@@ -576,5 +619,95 @@
   &::-webkit-scrollbar-thumb {
     background-color: var(--react-autoql-scrollbar-thumb-color, rgba(0, 0, 0, 0.3));
     border-radius: 4px;
+  }
+}
+
+// Pivot Axis Selector styles
+.pivot-axis-title-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  box-sizing: border-box;
+
+  .pivot-axis-title-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: inherit;
+    font-weight: inherit;
+    display: inline-block;
+    max-width: 110px;
+  }
+
+  .pivot-axis-title-arrow {
+    font-size: 20px;
+    opacity: 0.6;
+    flex-shrink: 0;
+    margin-left: 2px;
+  }
+
+  &:hover {
+    .pivot-axis-title-arrow {
+      opacity: 1;
+    }
+  }
+}
+
+.table-pivot-axis-selector-container {
+  display: flex;
+  justify-content: center;
+  padding: 5px 0;
+}
+
+.table-pivot-axis-selector-btn {
+  background: transparent;
+  color: var(--react-autoql-text-color-primary);
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+
+  &:hover {
+    border: 1px solid var(--react-autoql-accent-color) !important;
+  }
+}
+
+.pivot-axis-selector-container {
+  display: flex;
+  flex-direction: column;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  padding: 5px;
+  z-index: 9999;
+  max-height: 300px;
+
+  .pivot-axis-selector-list {
+    list-style-type: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+
+    li {
+      color: var(--react-autoql-text-color-primary);
+      width: 100%;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 15px;
+      cursor: pointer;
+      font-size: 12px;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      &.active {
+        background: var(--react-autoql-accent-color);
+        color: var(--react-autoql-text-color-accent);
+      }
+    }
   }
 }
