@@ -400,7 +400,7 @@ export default class FilterLockPopover extends React.Component {
   }
 
   handleExcludeToggle = (category, value) => {
-    if (!value) {
+    if (value === undefined || value === null) {
       return
     }
 
@@ -556,7 +556,7 @@ export default class FilterLockPopover extends React.Component {
     return (
       <div {...containerProps}>
         <div className='react-autoql-filter-suggestion-container'>
-          <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight}>
+          <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight} suppressScrollX>
             {children}
           </CustomScrollbars>
         </div>
@@ -693,6 +693,7 @@ export default class FilterLockPopover extends React.Component {
 
   renderFilterListItem = (filter) => {
     const key = this.getKey(filter)
+    const filterName = filter.format_txt ?? filter.value
 
     return (
       <div
@@ -702,7 +703,13 @@ export default class FilterLockPopover extends React.Component {
           this.state.highlightedFilter === key ? 'react-autoql-highlight-row' : ''
         } ${isMobile ? 'mobile' : ''}`}
       >
-        <div className='react-autoql-filter-list-item-filter'>{filter.format_txt ?? filter.value}</div>
+        <div
+          className='react-autoql-filter-list-item-filter'
+          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+          data-tooltip-content={filterName}
+        >
+          {filterName}
+        </div>
         <div className='react-autoql-filter-list-item-actions'>
           <Checkbox
             className='persist-toggle'
@@ -745,7 +752,7 @@ export default class FilterLockPopover extends React.Component {
 
     return (
       <div ref={(r) => (this.filterListContainerRef = r)} className='react-autoql-filter-list-container'>
-        <CustomScrollbars>
+        <CustomScrollbars suppressScrollX>
           {uniqueCategories.map((category, i) => {
             return this.renderFilterListCategory(category, i)
           })}

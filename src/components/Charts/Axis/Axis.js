@@ -833,16 +833,28 @@ export default class Axis extends Component {
     }
   }
 
+  // TODO: Refactor axis selector visibility logic
+  // PROPOSAL: Move to autoql-fe-utils in a function like `shouldRenderAxisSelector(scale, isAggregated, legendLocation, columns)`
+  // Then add computed property to scale object: `scale.shouldRenderAxisSelector = true/false`
   shouldRenderAxisSelector = () => {
-    if (this.props.scale?.type === 'LINEAR' && this.props.scale?.allFields?.length <= 1) {
-      return false
-    } else if (this.props.scale?.type === 'BAND' && !this.props.isAggregated && this.props.scale?.allFields <= 1) {
-      return false
-    } else if (this.props.isAggregated && this.props.legendLocation) {
+    const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
+    const scaleType = scale?.type
+    const isStringAxis = scaleType === 'BAND' || scaleType === 'TIME'
+
+    // For numeric (LINEAR) axes
+    if (!isStringAxis) {
+      return scale?.allFields?.length > 1 || scale?.hasDropdown
+    }
+
+    // For string axes, show selector if aggregated with legend or multiple groupable columns
+    if (isAggregated && legendLocation) {
       return true
     }
 
-    return this.props.scale?.hasDropdown
+    const cols = originalColumns || columns
+    const groupableCount = cols?.filter((col) => col?.groupable && col?.is_visible)?.length ?? 0
+
+    return groupableCount > 1 || scale?.hasDropdown
   }
 
   shouldRenderAxisScaler = () => {
