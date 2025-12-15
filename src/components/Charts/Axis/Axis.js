@@ -5,13 +5,7 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
-import {
-  formatChartLabel,
-  getBBoxFromRef,
-  mergeBoundingClientRects,
-  shouldLabelsRotate,
-  getAxisSelectorVisibility,
-} from 'autoql-fe-utils'
+import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabelsRotate } from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -840,13 +834,27 @@ export default class Axis extends Component {
   }
 
   shouldRenderAxisSelector = () => {
-    const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
-    return getAxisSelectorVisibility({
-      scale,
-      isAggregated,
-      legendLocation,
-      columns: originalColumns || columns,
-    })
+    const { scale, isAggregated, legendLocation } = this.props
+
+    if (!scale) return false
+
+    // Hide selector for LINEAR with only 1 field
+    if (scale?.type === 'LINEAR' && scale?.allFields?.length <= 1) {
+      return false
+    }
+
+    // Hide selector for BAND without aggregation and only 1 field
+    if (scale?.type === 'BAND' && !isAggregated && scale?.allFields?.length <= 1) {
+      return false
+    }
+
+    // Show selector when aggregated with legend location
+    if (isAggregated && legendLocation) {
+      return true
+    }
+
+    // Otherwise use explicit hasDropdown flag
+    return scale?.hasDropdown ?? false
   }
 
   shouldRenderAxisScaler = () => {
