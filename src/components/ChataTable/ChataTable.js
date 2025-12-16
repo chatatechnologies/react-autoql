@@ -1880,7 +1880,7 @@ export default class ChataTable extends React.Component {
                 <>
                   <TableWrapper
                     ref={(r) => (this.ref = r)}
-                    height={this.initialTableHeight}
+                    height={this.props.autoHeight ? false : this.initialTableHeight}
                     tableKey={`react-autoql-table-${this.TABLE_ID}`}
                     id={`react-autoql-table-${this.TABLE_ID}`}
                     key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
