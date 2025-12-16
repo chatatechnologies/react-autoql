@@ -245,6 +245,7 @@
   margin-top: auto;
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
+  height: auto; /* Let content determine height */
   max-height: none; /* Don't constrain height */
 
   // Constrain PerfectScrollbar container to content height
