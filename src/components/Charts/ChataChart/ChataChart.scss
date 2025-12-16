@@ -72,6 +72,15 @@
     outline: none !important;
   }
 
+  .legend-view-all-button {
+    cursor: pointer;
+
+    &:hover .legend-view-all-button-rect {
+      fill-opacity: 0.2;
+      stroke-width: 1.5;
+    }
+  }
+
   .legendCells {
     .cell {
       &.hidden {

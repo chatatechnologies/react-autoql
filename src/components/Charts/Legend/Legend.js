@@ -7,6 +7,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import { symbol, symbolSquare } from 'd3-shape'
 import LegendSelector from '../Legend/LegendSelector'
+import LegendPopover from '../Legend/LegendPopover'
 import {
   legendColor,
   deepEqual,
@@ -37,8 +38,10 @@ export default class Legend extends React.Component {
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
     this.justMounted = true
+    this.allLegendLabels = [] // Store all labels before removing hidden ones
     this.state = {
       isColumnSelectorOpen: false,
+      isLegendPopoverOpen: false,
     }
   }
 
@@ -91,6 +94,9 @@ export default class Legend extends React.Component {
       return true
     }
     if (this.state.isColumnSelectorOpen !== nextState.isColumnSelectorOpen) {
+      return true
+    }
+    if (this.state.isLegendPopoverOpen !== nextState.isLegendPopoverOpen) {
       return true
     }
     return false
@@ -170,6 +176,9 @@ export default class Legend extends React.Component {
         ))
       : []
 
+    // Store all legend labels before filtering for the popover
+    this.allLegendLabels = [...this.legendLabels1, ...this.legendLabels2]
+
     this.legendLabelSections = this.getlegendLabelSections(this.legendLabels1, this.legendLabels2)
 
     this.legendLabelSections?.forEach((legendLabels, i) => {
@@ -236,6 +245,14 @@ export default class Legend extends React.Component {
     return this.distributeListsEvenly(legendLabels1, legendLabels2, totalSections)
   }
 
+  openLegendPopover = () => {
+    this.setState({ isLegendPopoverOpen: true })
+  }
+
+  closeLegendPopover = () => {
+    this.setState({ isLegendPopoverOpen: false })
+  }
+
   removeHiddenLegendLabels = (legendElement) => {
     // Remove red arrow if it has been rendered already
     select(legendElement).select('.legend-hidden-field-arrow').remove()
@@ -269,21 +286,26 @@ export default class Legend extends React.Component {
         }
       })
 
+    // Store state for render method
+    this.hasHiddenLegendItems = hasRemovedElement
+    this.hiddenLegendButtonY = removedElementYBottom
+    this.hiddenLegendButtonTransform = removedElementTransform
+
     if (hasRemovedElement && removedElementTransform) {
-      // Add red arrow to bottom of legend to show not all labels are visible
+      // Add red arrow indicator
       const tooltipID = this.props.chartTooltipID
+      const verticalOffset = 5 // Add some spacing below the last legend item
       select(legendElement)
         .append('text')
         .html('&#9660 ...')
         .attr('class', 'legend-hidden-field-arrow')
-        .attr('y', removedElementYBottom)
+        .attr('y', removedElementYBottom + verticalOffset)
         .attr('transform', removedElementTransform)
-        .attr('data-tooltip-content', 'Some legend fields are hidden. Please expand the chart size to view them.')
-        .attr('data-tooltip-id', tooltipID)
         .style('font-size', `${this.props.fontSize - 3}px`)
         .style('color', 'red')
         .style('font-weight', 'bold')
         .style('cursor', 'default')
+        .style('pointer-events', 'none')
     }
   }
 
@@ -628,6 +650,71 @@ export default class Legend extends React.Component {
       </LegendSelector>
     )
   }
+
+  renderViewAllButton = () => {
+    if (!this.hasHiddenLegendItems) {
+      return null
+    }
+
+    const buttonHeight = 18
+    const buttonWidth = 65
+    const buttonX = 40 // Position to the right of the red arrow
+    const verticalOffset = 5 // Add some spacing below the last legend item
+    const tooltipID = this.props.chartTooltipID
+
+    return (
+      <LegendPopover
+        isOpen={this.state.isLegendPopoverOpen}
+        legendLabels={this.allLegendLabels}
+        colorScale={this.props.colorScale}
+        onClose={this.closeLegendPopover}
+        popoverParentElement={this.props.popoverParentElement}
+        onLegendClick={this.props.onLegendClick}
+        hiddenLegendLabels={this.props.hiddenLegendLabels}
+        shapeSize={this.SHAPE_SIZE}
+        chartHeight={this.props.outerHeight}
+      >
+        <g
+          className='legend-view-all-button'
+          transform={this.hiddenLegendButtonTransform}
+          style={{ cursor: 'pointer' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            this.openLegendPopover()
+          }}
+        >
+          <rect
+            x={buttonX}
+            y={this.hiddenLegendButtonY - buttonHeight / 2 + verticalOffset}
+            width={buttonWidth}
+            height={buttonHeight}
+            rx='3'
+            fill='var(--react-autoql-accent-color)'
+            fillOpacity='0.1'
+            stroke='var(--react-autoql-accent-color)'
+            strokeWidth='1'
+            className='legend-view-all-button-rect'
+          />
+          <text
+            x={buttonX + buttonWidth / 2}
+            y={this.hiddenLegendButtonY + 1 + verticalOffset}
+            textAnchor='middle'
+            dominantBaseline='middle'
+            style={{
+              fontSize: `${this.props.fontSize - 2}px`,
+              fill: 'var(--react-autoql-accent-color)',
+              fontWeight: '500',
+              pointerEvents: 'none',
+            }}
+            data-tooltip-content='Click to view all legend items'
+            data-tooltip-id={tooltipID}
+          >
+            View All
+          </text>
+        </g>
+      </LegendPopover>
+    )
+  }
   render = () => {
     const translateX = this.getTotalLeftPadding()
     const translateY = this.getTotalTopPadding() + this.TOP_ADJUSTMENT
@@ -638,6 +725,7 @@ export default class Legend extends React.Component {
         {this.renderLegendClippingContainer(translateX, translateY)}
         {this.renderLegendBorder()}
         {this.props.isAggregated && this.renderTitleSelector()}
+        {this.renderViewAllButton()}
       </g>
     )
   }
