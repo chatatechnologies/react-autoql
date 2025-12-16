@@ -245,6 +245,14 @@
   margin-top: auto;
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
+  height: auto; /* Let content determine height */
+  max-height: none; /* Don't constrain height */
+
+  // Constrain PerfectScrollbar container to content height
+  .ps {
+    height: auto !important;
+    max-height: none !important;
+  }
 
   // Use PerfectScrollbar hover styles for desktop
   @media (hover: hover) and (pointer: fine) {
@@ -366,13 +374,45 @@
 
 .query-suggestions-sample-list {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: hidden; /* Let CustomScrollbars handle scrolling */
   min-height: 0; /* Allow flex item to shrink */
+  display: flex; /* Enable flex for CustomScrollbars height */
+  flex-direction: column;
 
   /* Placeholder loading items */
   .data-explorer-section-placeholder-loading-item {
     padding: 12px 0;
+  }
+
+  /* Ensure CustomScrollbars gets the full height */
+  .query-suggestion-list-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+
+    .react-autoql-custom-scrollbars {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+
+      /* Hide horizontal scrollbar rail by default */
+      .ps__rail-x {
+        display: none !important;
+      }
+
+      /* Only show horizontal scrollbar when PerfectScrollbar detects actual overflow */
+      &.ps--active-x .ps__rail-x {
+        display: block !important;
+      }
+    }
+
+    .query-suggestion-list {
+      width: 100%;
+      min-width: 0; /* Allow it to shrink */
+    }
   }
 
   /* Make query suggestions more condensed */
