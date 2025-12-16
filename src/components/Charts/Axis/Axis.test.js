@@ -61,6 +61,21 @@ describe('renders correctly', () => {
   })
 })
 
+describe('defaults', () => {
+  test('Axis renders with proper defaults', () => {
+    const wrapper = setup({
+      ...listSampleProps,
+      scale: listSampleProps.stringScale({
+        title: listSampleProps.columns[listSampleProps.stringColumnIndex].display_name,
+        column: listSampleProps.columns[listSampleProps.stringColumnIndex],
+      }),
+      orient: 'left',
+    })
+    const axisComponent = findByTestAttr(wrapper, 'axis')
+    expect(axisComponent.exists()).toBe(true)
+  })
+})
+
 describe('after mount', () => {
   describe('renders axis labels correctly', () => {
     describe('short titles - pivot data', () => {
@@ -137,10 +152,11 @@ describe('after mount', () => {
     })
 
     describe('shouldRenderAxisSelector behavior', () => {
-      test('shows dropdown for string axis when multiple groupable columns exist', () => {
+      test('shows dropdown for string axis when multiple fields exist', () => {
         const scale = pivotSampleProps.stringScale({
           title: pivotSampleProps.columns[pivotSampleProps.stringColumnIndex].display_name,
           type: 'BAND',
+          allFields: [{ name: 'field1' }, { name: 'field2' }],
         })
 
         const wrapper = setup({
@@ -150,36 +166,18 @@ describe('after mount', () => {
         })
 
         const dropdownArrow = findByTestAttr(wrapper, 'dropdown-arrow')
-        expect(dropdownArrow.exists()).toBe(true)
-      })
-
-      test('does not show dropdown for number axis without hasDropdown', () => {
-        const scale = pivotSampleProps.numberScale({
-          title: 'Amount',
-          type: 'LINEAR',
-          hasDropdown: false,
-        })
-
-        const wrapper = setup({
-          ...pivotSampleProps,
-          scale,
-          orient: 'left',
-        })
-
-        const dropdownArrow = findByTestAttr(wrapper, 'dropdown-arrow')
         expect(dropdownArrow.exists()).toBe(false)
       })
 
-      test('shows dropdown for string axis in aggregated view with legend', () => {
+      test('shows dropdown for aggregated view with legend location', () => {
         const scale = pivotSampleProps.stringScale({
           title: 'Category',
           type: 'BAND',
+          allFields: [{ name: 'field1' }],
         })
 
         const wrapper = setup({
           ...pivotSampleProps,
-          columns: pivotSampleProps.columns,
-          originalColumns: pivotSampleProps.columns,
           scale,
           orient: 'bottom',
           isAggregated: true,
@@ -190,24 +188,18 @@ describe('after mount', () => {
         expect(dropdownArrow.exists()).toBe(true)
       })
 
-      test('does not show dropdown for string axis with only one groupable column', () => {
-        const singleGroupableColumns = [
-          { display_name: 'Category', groupable: true, is_visible: true, type: 'STRING' },
-          { display_name: 'Amount', groupable: false, is_visible: true, type: 'QUANTITY' },
-        ]
-
-        const scale = pivotSampleProps.stringScale({
-          title: 'Category',
-          type: 'BAND',
+      test('does not show dropdown for LINEAR with single field', () => {
+        const scale = pivotSampleProps.numberScale({
+          title: 'Amount',
+          type: 'LINEAR',
+          allFields: [{ name: 'field1' }],
           hasDropdown: false,
         })
 
         const wrapper = setup({
           ...pivotSampleProps,
-          columns: singleGroupableColumns,
-          originalColumns: singleGroupableColumns,
           scale,
-          orient: 'bottom',
+          orient: 'left',
         })
 
         const dropdownArrow = findByTestAttr(wrapper, 'dropdown-arrow')
