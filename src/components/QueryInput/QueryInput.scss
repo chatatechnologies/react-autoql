@@ -182,22 +182,38 @@
 
 /* Query Suggestions Styles */
 .react-autoql-input-query-suggestions {
-  position: absolute;
-  bottom: 100%;
   left: 0;
   right: 0;
   padding: 0;
   z-index: 1;
   background: var(--react-autoql-background-color-primary);
-  border-top: 1px solid var(--react-autoql-border-color);
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 -7px 6px -4px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   max-height: 200px;
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+
+  // Above placement (default)
+  &.placement-above {
+    position: absolute;
+    bottom: 100%;
+    top: unset;
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -7px 6px -4px rgba(0, 0, 0, 0.05);
+  }
+
+  // Below placement
+  &.placement-below {
+    position: relative;
+    top: unset;
+    bottom: unset;
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 7px 6px -4px rgba(0, 0, 0, 0.05);
+    flex-direction: column-reverse; // Reverse order so buttons are on top, expanded content below
+  }
 
   &.expanded {
     height: 300px;
@@ -229,6 +245,15 @@
       width: 12px;
       height: 12px;
     }
+  }
+}
+
+// Adjust expanded section for below placement
+.react-autoql-input-query-suggestions.placement-below {
+  .query-suggestions-expanded {
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
