@@ -1078,6 +1078,13 @@ export class QueryOutput extends React.Component {
       this.setState({
         visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
         chartID: uuid(), // Force chart to re-render with new pivot data
+        axisSorts: {}, // Clear axis sorts when pivot data changes
+      })
+    } else if (!isFirstGeneration && this._isMounted) {
+      // Also clear axis sorts when pivot data is regenerated (e.g., from table filters)
+      this.setState({
+        axisSorts: {},
+        chartID: uuid(),
       })
     }
   }
@@ -1805,7 +1812,13 @@ export class QueryOutput extends React.Component {
 
     // Just update the axisSorts state - ChataChart will handle the actual sorting
     this.setState((prevState) => {
-      const newAxisSorts = { ...prevState.axisSorts }
+      const isHeatmapOrBubble =
+        this.state.displayType === DisplayTypes.HEATMAP || this.state.displayType === DisplayTypes.BUBBLE
+
+      // For non-heatmap/bubble charts, only allow one axis sort at a time
+      // Clear any existing sorts when a new one is applied
+      const newAxisSorts = isHeatmapOrBubble ? { ...prevState.axisSorts } : {}
+
       if (sortType) {
         newAxisSorts[`${axis}-${columnIndex}`] = sortType
       } else {

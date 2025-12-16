@@ -5,7 +5,7 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
-import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabelsRotate } from 'autoql-fe-utils'
+import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabelsRotate, DisplayTypes } from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -498,7 +498,18 @@ export default class Axis extends Component {
 
   shouldRenderAxisSort = () => {
     // Only show sort for ordinal (BAND) type axes
-    return this.props.scale?.type === 'BAND'
+    if (this.props.scale?.type !== 'BAND') {
+      return false
+    }
+    
+    // Don't allow Y-axis sorting for heatmaps and bubble charts
+    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
+    const isYAxis = this.props.scale?.axis === 'y'
+    if (isHeatmapOrBubble && isYAxis) {
+      return false
+    }
+    
+    return true
   }
 
   renderAxisSort = ({ positions }) => {
@@ -510,15 +521,44 @@ export default class Axis extends Component {
     const columnIndex = this.props.scale?.column?.index
     const axis = this.props.scale?.axis || 'x' // 'x' or 'y'
     
-    // Get column display names
-    const column = this.props.columns?.[columnIndex]
-    const columnDisplayName = column?.display_name || this.props.scale?.title || 'column'
+    // Always use originalColumns for display names to avoid duplicates from pivoted columns
+    let column = null
+    let valueColumn = null
+    let columnDisplayName = this.props.scale?.title || 'column'
+    let valueColumnDisplayName = 'values'
     
-    // Get value column display name (first number column)
-    const numberColumnIndices = this.props.numberColumnIndices || []
-    const primaryNumberColumnIndex = numberColumnIndices[0]
-    const valueColumn = primaryNumberColumnIndex !== undefined ? this.props.columns?.[primaryNumberColumnIndex] : null
-    const valueColumnDisplayName = valueColumn?.display_name || 'values'
+    // Always try to find column by name in originalColumns (works for both aggregated and non-aggregated)
+    const columnName = this.props.scale?.column?.name
+    if (columnName && this.props.originalColumns) {
+      column = this.props.originalColumns.find((col) => col.name === columnName)
+      if (column) {
+        columnDisplayName = column.display_name || columnDisplayName
+      }
+      
+      // Get value column display name (first number column from originalColumns)
+      const numberColumnIndices = this.props.numberColumnIndices || []
+      const primaryNumberColumnIndex = numberColumnIndices[0]
+      if (primaryNumberColumnIndex !== undefined) {
+        valueColumn = this.props.originalColumns[primaryNumberColumnIndex]
+        if (valueColumn) {
+          valueColumnDisplayName = valueColumn.display_name || valueColumnDisplayName
+        }
+      }
+    } else {
+      // Fallback to using props.columns if originalColumns not available or no column name
+      column = this.props.columns?.[columnIndex]
+      columnDisplayName = column?.display_name || columnDisplayName
+      
+      // Get value column display name (first number column)
+      const numberColumnIndices = this.props.numberColumnIndices || []
+      const primaryNumberColumnIndex = numberColumnIndices[0]
+      if (primaryNumberColumnIndex !== undefined) {
+        valueColumn = this.props.columns?.[primaryNumberColumnIndex]
+        if (valueColumn) {
+          valueColumnDisplayName = valueColumn.display_name || valueColumnDisplayName
+        }
+      }
+    }
     
     // Get current sort state for this axis
     const axisSortKey = `${axis}-${columnIndex}`
@@ -530,6 +570,10 @@ export default class Axis extends Component {
         this.props.onAxisSortChange(axis, columnIndex, sortType)
       }
     }
+
+    // For heatmaps, bubble charts, and pivot data, only allow string column sorting (no value sorting)
+    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
+    const stringColumnOnly = isHeatmapOrBubble || this.props.isAggregated
 
     return (
       <AxisSortPopover
@@ -546,6 +590,7 @@ export default class Axis extends Component {
         axisSortRef={(r) => (this.axisSort = r)}
         isOpen={this.state.isAxisSortOpen}
         closeSelector={this.closeSortPopover}
+        stringColumnOnly={stringColumnOnly}
       >
         <g>
           <rect
@@ -590,7 +635,7 @@ export default class Axis extends Component {
     const titleX = titleBBox?.x ?? 0
     const titleY = titleBBox?.y ?? 0
 
-    // Position to the right of the title with some spacing
+    // Position to the right of the title/selector with some spacing
     const SORT_BUTTON_WIDTH = 20
     const SORT_BUTTON_SPACING = 5
 
@@ -598,45 +643,70 @@ export default class Axis extends Component {
     const sortGroup = this.axisSort?.parentElement
     const sortIcon = sortGroup?.querySelector('.axis-sort-icon')
 
-    // For rotated axes (left/right), adjust positioning
     const transform = this.titleRef?.getAttribute('transform')
-    const rectX = Math.round(titleX + titleWidth + SORT_BUTTON_SPACING)
-    const rectY = Math.round(titleY - this.AXIS_TITLE_BORDER_PADDING_TOP)
-    const rectWidth = SORT_BUTTON_WIDTH
-    const rectHeight = Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
-    const iconX = rectX + rectWidth / 2
-    const iconY = rectY + rectHeight / 2 + 2 // Lower icon by 2 pixels
+    const isRotated = transform && transform.includes('rotate')
+    
+    // Get axis selector position for reference
+    const selectorBBox = this.axisSelector ? getBBoxFromRef(this.axisSelector) : null
+    
+    let rectX, rectY, rectWidth, rectHeight, iconX, iconY, iconTransform
 
-    if (transform && transform.includes('rotate')) {
-      // For vertical axes, position differently
-      select(this.axisSort)
-        .attr('transform', transform)
-        .attr('width', rectWidth)
-        .attr('height', rectHeight)
-        .attr('x', rectX)
-        .attr('y', rectY)
+    if (isRotated) {
+      // For rotated axes (left/right), position next to the selector
+      // Use selector's actual bounding box if available, otherwise calculate from title
+      let selectorX, selectorY, selectorWidth, selectorHeight
       
-      if (sortIcon) {
-        select(sortIcon)
-          .attr('transform', transform)
-          .attr('x', iconX)
-          .attr('y', iconY)
+      if (selectorBBox) {
+        selectorX = selectorBBox.x
+        selectorY = selectorBBox.y
+        selectorWidth = selectorBBox.width
+        selectorHeight = selectorBBox.height
+      } else {
+        selectorWidth = titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+        selectorX = titleX - this.AXIS_TITLE_BORDER_PADDING_LEFT
+        selectorY = titleY - this.AXIS_TITLE_BORDER_PADDING_TOP
+        selectorHeight = titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
       }
+      
+      // For rotated -90, the selector appears vertically in final rendering
+      // "After the text" means positioned after the selector end
+      // Position button after the selector (to the right in rotated space = higher X value)
+      rectWidth = Math.round(selectorHeight) // Match selector height
+      rectHeight = SORT_BUTTON_WIDTH
+      // Position after selector: selectorX + selectorWidth + spacing
+      rectX = Math.round(selectorX + selectorWidth + SORT_BUTTON_SPACING)
+      // Align vertically with selector center
+      rectY = Math.round(selectorY + (selectorHeight / 2) - (SORT_BUTTON_WIDTH / 2))
+      iconX = rectX + rectWidth / 2
+      iconY = rectY + rectHeight / 2 + 2
+      // Apply same transform as title, then rotate icon 90 degrees so arrows point correctly
+      iconTransform = transform ? `${transform} rotate(90)` : 'rotate(90)'
     } else {
-      // For horizontal axes (bottom/top)
-      select(this.axisSort)
-        .attr('transform', transform || null)
-        .attr('width', rectWidth)
-        .attr('height', rectHeight)
-        .attr('x', rectX)
-        .attr('y', rectY)
+      // For horizontal axes (bottom/top), position to the right of the title/selector
+      const selectorWidth = titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
+      const selectorX = titleX - this.AXIS_TITLE_BORDER_PADDING_LEFT
       
-      if (sortIcon) {
-        select(sortIcon)
-          .attr('transform', transform || null)
-          .attr('x', iconX)
-          .attr('y', iconY)
-      }
+      rectWidth = SORT_BUTTON_WIDTH
+      rectHeight = Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
+      rectX = Math.round(selectorX + selectorWidth + SORT_BUTTON_SPACING)
+      rectY = Math.round(titleY - this.AXIS_TITLE_BORDER_PADDING_TOP)
+      iconX = rectX + rectWidth / 2
+      iconY = rectY + rectHeight / 2 + 2
+      iconTransform = transform || null
+    }
+
+    select(this.axisSort)
+      .attr('transform', transform || null)
+      .attr('width', rectWidth)
+      .attr('height', rectHeight)
+      .attr('x', rectX)
+      .attr('y', rectY)
+    
+    if (sortIcon) {
+      select(sortIcon)
+        .attr('transform', iconTransform)
+        .attr('x', iconX)
+        .attr('y', iconY)
     }
   }
 

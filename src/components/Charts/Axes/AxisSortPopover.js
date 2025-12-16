@@ -35,13 +35,20 @@ export default class AxisSortPopover extends React.Component {
     const columnDisplayName = this.props.columnDisplayName || 'column'
     const valueColumnDisplayName = this.props.valueColumnDisplayName || 'values'
     
-    const sortOptions = [
-      { value: null, label: 'No sort (original)' },
-      { value: 'alpha-asc', label: `Sort by ${columnDisplayName} (asc)` },
-      { value: 'alpha-desc', label: `Sort by ${columnDisplayName} (desc)` },
-      { value: 'value-asc', label: `Sort by ${valueColumnDisplayName} (asc)` },
-      { value: 'value-desc', label: `Sort by ${valueColumnDisplayName} (desc)` },
-    ]
+    // For heatmaps and bubble charts, only show string column sort options
+    const sortOptions = this.props.stringColumnOnly
+      ? [
+          { value: null, label: 'No sort (original)' },
+          { value: 'alpha-asc', label: `Sort by ${columnDisplayName} (asc)` },
+          { value: 'alpha-desc', label: `Sort by ${columnDisplayName} (desc)` },
+        ]
+      : [
+          { value: null, label: 'No sort (original)' },
+          { value: 'alpha-asc', label: `Sort by ${columnDisplayName} (asc)` },
+          { value: 'alpha-desc', label: `Sort by ${columnDisplayName} (desc)` },
+          { value: 'value-asc', label: `Sort by ${valueColumnDisplayName} (asc)` },
+          { value: 'value-desc', label: `Sort by ${valueColumnDisplayName} (desc)` },
+        ]
 
     return (
       <div
