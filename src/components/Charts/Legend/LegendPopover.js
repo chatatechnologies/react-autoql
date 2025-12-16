@@ -5,6 +5,7 @@ import { isMobile } from 'react-device-detect'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { Checkbox } from '../../Checkbox'
 
 import './LegendPopover.scss'
 
@@ -19,6 +20,9 @@ export default class LegendPopover extends React.Component {
 
     this.state = {
       tempHiddenLabels: hiddenLabels,
+      initialHiddenLabels: hiddenLabels, // Track what state was when popover opened
+      searchQuery: '',
+      sortOrder: null, // null (unsorted), 'asc', or 'desc'
     }
   }
 
@@ -60,8 +64,51 @@ export default class LegendPopover extends React.Component {
 
       this.setState({
         tempHiddenLabels: hiddenLabels,
+        initialHiddenLabels: hiddenLabels, // Store initial state
+        searchQuery: '', // Reset search when opening
       })
     }
+  }
+
+  handleSearchChange = (e) => {
+    this.setState({ searchQuery: e.target.value })
+  }
+
+  clearSearch = () => {
+    this.setState({ searchQuery: '' })
+  }
+
+  toggleSort = () => {
+    const { sortOrder } = this.state
+    let newSortOrder
+
+    if (sortOrder === null) {
+      newSortOrder = 'asc'
+    } else if (sortOrder === 'asc') {
+      newSortOrder = 'desc'
+    } else {
+      newSortOrder = null
+    }
+
+    this.setState({ sortOrder: newSortOrder })
+  }
+
+  getFilteredAndSortedLabels = () => {
+    const { legendLabels } = this.props
+    const { searchQuery, sortOrder } = this.state
+
+    // Filter by search query
+    let filtered = legendLabels.filter((label) => label.label.toLowerCase().includes(searchQuery.toLowerCase()))
+
+    // Sort
+    if (sortOrder === 'asc') {
+      filtered = [...filtered].sort((a, b) => a.label.localeCompare(b.label))
+    } else if (sortOrder === 'desc') {
+      filtered = [...filtered].sort((a, b) => b.label.localeCompare(a.label))
+    }
+    // null keeps original order
+
+    return filtered
   }
 
   handleCheckboxChange = (labelText) => {
@@ -99,12 +146,12 @@ export default class LegendPopover extends React.Component {
   }
 
   handleApply = () => {
-    const { tempHiddenLabels } = this.state
+    const { tempHiddenLabels, initialHiddenLabels } = this.state
     const { legendLabels, onLegendClick, onClose } = this.props
 
-    // For each label, call onLegendClick if its visibility has changed
+    // For each label, call onLegendClick if its visibility has changed from initial state
     legendLabels.forEach((label) => {
-      const wasHidden = label.hidden // Use the actual current state from the label object
+      const wasHidden = initialHiddenLabels.includes(label.label) // Compare against state when popover opened
       const isHidden = tempHiddenLabels.includes(label.label)
 
       if (wasHidden !== isHidden) {
@@ -116,16 +163,16 @@ export default class LegendPopover extends React.Component {
   }
 
   handleCancel = () => {
-    // Reset temp state and close
+    // Reset temp state to initial state and close
     this.setState({
-      tempHiddenLabels: [...(this.props.hiddenLegendLabels || [])],
+      tempHiddenLabels: this.state.initialHiddenLabels,
     })
     this.props.onClose()
   }
 
   renderLegendContent = () => {
     const { legendLabels, colorScale, shapeSize, chartHeight } = this.props
-    const { tempHiddenLabels } = this.state
+    const { tempHiddenLabels, searchQuery, sortOrder } = this.state
 
     if (!legendLabels?.length) {
       return null
@@ -133,70 +180,86 @@ export default class LegendPopover extends React.Component {
 
     // Use full chart outer height (minus some padding for header and footer)
     const maxHeight = isMobile ? Math.min(200, window.innerHeight * 0.4) : chartHeight - 20
-    const contentMaxHeight = maxHeight - 100 // Reserve space for header and footer
+    const contentHeight = maxHeight - 150 // Reserve space for header, search, and footer
 
     const allVisible = tempHiddenLabels.length === 0
     const noneVisible = tempHiddenLabels.length === legendLabels.length
 
+    const filteredLabels = this.getFilteredAndSortedLabels()
+
     return (
       <div className='legend-popover-wrapper' style={{ maxHeight: `${maxHeight}px` }}>
         <div className='legend-popover-header'>
-          <label className='legend-select-all-label'>
-            <input
-              type='checkbox'
-              checked={allVisible}
-              onChange={this.handleSelectAllToggle}
-              className='legend-select-all-checkbox'
-            />
-            <span>Select All</span>
-          </label>
+          <div className='legend-select-all-wrapper' onClick={this.handleSelectAllToggle}>
+            <Checkbox checked={allVisible} clickable={false} className='legend-select-all-checkbox' />
+            <span className='legend-select-all-label'>Select All</span>
+          </div>
+
+          <div className='legend-popover-controls'>
+            <div className='legend-search-wrapper'>
+              <input
+                type='text'
+                placeholder='Search...'
+                value={searchQuery}
+                onChange={this.handleSearchChange}
+                className='legend-search-input'
+              />
+              {searchQuery && (
+                <button className='legend-search-clear' onClick={this.clearSearch} title='Clear search'>
+                  ×
+                </button>
+              )}
+            </div>
+            <button
+              className={`legend-sort-button ${sortOrder || ''}`}
+              onClick={this.toggleSort}
+              title={sortOrder === 'asc' ? 'Sort A-Z' : sortOrder === 'desc' ? 'Sort Z-A' : 'Unsorted'}
+            >
+              {sortOrder === 'asc' ? '↑' : sortOrder === 'desc' ? '↓' : '↕'}
+            </button>
+          </div>
         </div>
 
-        <CustomScrollbars autoHeight autoHeightMin={50} autoHeightMax={contentMaxHeight} suppressScrollX>
-          <div className='legend-popover-content'>
-            {legendLabels.map((label, i) => {
-              const isHidden = tempHiddenLabels?.includes(label.label)
-              const color = colorScale?.(label.label) || label.color
-              const isChecked = !isHidden
+        <div style={{ height: `${contentHeight}px` }}>
+          <CustomScrollbars style={{ height: '100%' }} suppressScrollX>
+            <div className='legend-popover-content'>
+              {filteredLabels.length === 0 ? (
+                <div className='legend-no-results'>No items found</div>
+              ) : (
+                filteredLabels.map((label, i) => {
+                  const isHidden = tempHiddenLabels?.includes(label.label)
+                  const color = colorScale?.(label.label) || label.color
+                  const isChecked = !isHidden
 
-              // Log first item and any items in tempHiddenLabels
-              if (i === 0 || tempHiddenLabels?.includes(label.label)) {
-                console.log('[LegendPopover] Rendering item:', {
-                  labelText: label.label,
-                  labelHidden: label.hidden,
-                  tempHiddenLabels,
-                  isHidden,
-                  isChecked,
+                  // Log first item and any items in tempHiddenLabels
+                  if (i === 0 || tempHiddenLabels?.includes(label.label)) {
+                    console.log('[LegendPopover] Rendering item:', {
+                      labelText: label.label,
+                      labelHidden: label.hidden,
+                      labelColor: label.color,
+                      colorScaleResult: colorScale?.(label.label),
+                      finalColor: color,
+                      tempHiddenLabels,
+                      isHidden,
+                      isChecked,
+                    })
+                  }
+
+                  return (
+                    <div
+                      key={`legend-item-${i}`}
+                      className={`legend-item ${isHidden ? 'hidden' : ''}`}
+                      onClick={() => this.handleCheckboxChange(label.label)}
+                    >
+                      <Checkbox checked={isChecked} clickable={false} className='legend-item-checkbox' />
+                      <span className='legend-item-label'>{label.label}</span>
+                    </div>
+                  )
                 })
-              }
-
-              return (
-                <div
-                  key={`legend-item-${i}`}
-                  className={`legend-item ${isHidden ? 'hidden' : ''}`}
-                  onClick={() => this.handleCheckboxChange(label.label)}
-                >
-                  <input
-                    type='checkbox'
-                    checked={isChecked}
-                    onChange={() => {}} // Handled by parent div onClick
-                    className='legend-item-checkbox'
-                  />
-                  <svg width={shapeSize / 3} height={shapeSize / 3} className='legend-item-swatch'>
-                    <rect
-                      width={shapeSize / 3}
-                      height={shapeSize / 3}
-                      fill={color}
-                      stroke={isHidden ? '#999' : color}
-                      strokeWidth={isHidden ? 0 : 1}
-                    />
-                  </svg>
-                  <span className='legend-item-label'>{label.label}</span>
-                </div>
-              )
-            })}
-          </div>
-        </CustomScrollbars>
+              )}
+            </div>
+          </CustomScrollbars>
+        </div>
 
         <div className='legend-popover-footer'>
           <button className='legend-popover-button secondary' onClick={this.handleCancel}>
