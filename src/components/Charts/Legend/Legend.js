@@ -6,6 +6,7 @@ import { scaleOrdinal } from 'd3-scale'
 import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import { symbol, symbolSquare } from 'd3-shape'
+import { Icon } from '../../Icon'
 import LegendSelector from '../Legend/LegendSelector'
 import LegendPopover from '../Legend/LegendPopover'
 import {
@@ -337,6 +338,7 @@ export default class Legend extends React.Component {
       const titleHeight = titleBBox?.height ?? 0
       const titleWidth = titleBBox?.width ?? 0
       this.titleBBox = titleBBox
+
       select(this.columnSelector)
         .attr('width', Math.round(titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT))
         .attr('height', Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP))
@@ -473,13 +475,17 @@ export default class Legend extends React.Component {
       const height = this.combinedLegendHeight <= maxLegendHeight ? this.combinedLegendHeight : maxLegendHeight
       const width = this.combinedLegendWidth <= maxLegendWidth ? this.combinedLegendWidth : maxLegendWidth
 
+      // Add extra width for filter button (icon + spacing)
+      const filterButtonWidth = 25 // 14px icon + 11px spacing
+      const totalWidth = width + filterButtonWidth
+
       select(this.legendClippingContainer)
         .attr('height', height + totalVerticalPadding)
-        .attr('width', width + totalHorizontalPadding)
+        .attr('width', totalWidth + totalHorizontalPadding)
 
       select(this.legendBorder)
         .attr('height', height + 2 * this.BORDER_PADDING)
-        .attr('width', width + 2 * this.BORDER_PADDING)
+        .attr('width', totalWidth + 2 * this.BORDER_PADDING)
 
       this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
@@ -493,7 +499,7 @@ export default class Legend extends React.Component {
       if (this.props.isAggregated) {
         this.styleLegendTitleWithBorder(legendElement, isFirstSection)
       } else {
-        this.styleLegendTitleNoBorder(legendElement)
+        this.styleLegendTitleNoBorder(legendElement, isFirstSection)
       }
 
       if (!isFirstSection) {
@@ -651,17 +657,31 @@ export default class Legend extends React.Component {
     )
   }
 
-  renderViewAllButton = () => {
-    if (!this.hasHiddenLegendItems) {
-      return null
+  renderFilterButton = () => {
+    // Always render filter button, positioned next to the legend title
+    const tooltipID = this.props.chartTooltipID
+    const iconSize = 14
+
+    // Calculate position based on legend title
+    let buttonX = 0
+    let buttonY = 0
+
+    if (this.legendElements && this.legendElements[0]) {
+      try {
+        const firstLegendElement = this.legendElements[0]
+        const titleElement = select(firstLegendElement).select('.legendTitle').node()
+        const titleBBox = titleElement?.getBBox()
+
+        if (titleBBox) {
+          buttonX = titleBBox.x + titleBBox.width + 18 // 18px spacing to the right
+          buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
+        }
+      } catch (error) {
+        console.warn('Error calculating filter button position:', error)
+      }
     }
 
-    const buttonHeight = 18
-    const buttonWidth = 65
-    const buttonX = 40 // Position to the right of the red arrow
-    const verticalOffset = 5 // Add some spacing below the last legend item
-    const tooltipID = this.props.chartTooltipID
-
+    // Wrap button with LegendPopover so it can measure the child element
     return (
       <LegendPopover
         isOpen={this.state.isLegendPopoverOpen}
@@ -675,58 +695,65 @@ export default class Legend extends React.Component {
         chartHeight={this.props.outerHeight}
       >
         <g
-          className='legend-view-all-button'
-          transform={this.hiddenLegendButtonTransform}
+          ref={(r) => {
+            this.filterButton = r
+          }}
+          className='legend-filter-button'
           style={{ cursor: 'pointer' }}
+          transform={`translate(${buttonX}, ${buttonY})`}
           onClick={(e) => {
             e.stopPropagation()
             this.openLegendPopover()
           }}
         >
           <rect
-            x={buttonX}
-            y={this.hiddenLegendButtonY - buttonHeight / 2 + verticalOffset}
-            width={buttonWidth}
-            height={buttonHeight}
-            rx='3'
-            fill='var(--react-autoql-accent-color)'
-            fillOpacity='0.1'
-            stroke='var(--react-autoql-accent-color)'
-            strokeWidth='1'
-            className='legend-view-all-button-rect'
+            x={-iconSize / 2 - 2}
+            y={-iconSize / 2 - 2}
+            width={iconSize + 4}
+            height={iconSize + 4}
+            fill='transparent'
+            stroke='transparent'
+            className='legend-filter-button-bg'
+            rx={3}
           />
-          <text
-            x={buttonX + buttonWidth / 2}
-            y={this.hiddenLegendButtonY + 1 + verticalOffset}
-            textAnchor='middle'
-            dominantBaseline='middle'
-            style={{
-              fontSize: `${this.props.fontSize - 2}px`,
-              fill: 'var(--react-autoql-accent-color)',
-              fontWeight: '500',
-              pointerEvents: 'none',
-            }}
-            data-tooltip-content='Click to view all legend items'
-            data-tooltip-id={tooltipID}
+          <foreignObject
+            x={-iconSize / 2}
+            y={-iconSize / 2}
+            width={iconSize}
+            height={iconSize}
+            style={{ pointerEvents: 'none' }}
           >
-            View All
-          </text>
+            <Icon
+              type='filter'
+              style={{
+                fontSize: `${iconSize}px`,
+                color: 'var(--react-autoql-text-color-secondary)',
+                display: 'block',
+              }}
+              data-tooltip-content='Filter legend items'
+              data-tooltip-id={tooltipID}
+            />
+          </foreignObject>
         </g>
       </LegendPopover>
     )
   }
+
   render = () => {
     const translateX = this.getTotalLeftPadding()
     const translateY = this.getTotalTopPadding() + this.TOP_ADJUSTMENT
+    const filterButton = this.renderFilterButton()
 
     return (
-      <g data-test='legend' transform={`translate(${translateX}, ${translateY})`}>
-        {this.renderLegendSections()}
-        {this.renderLegendClippingContainer(translateX, translateY)}
-        {this.renderLegendBorder()}
-        {this.props.isAggregated && this.renderTitleSelector()}
-        {this.renderViewAllButton()}
-      </g>
+      <>
+        <g data-test='legend' transform={`translate(${translateX}, ${translateY})`}>
+          {this.renderLegendSections()}
+          {this.renderLegendClippingContainer(translateX, translateY)}
+          {this.renderLegendBorder()}
+          {this.props.isAggregated && this.renderTitleSelector()}
+          {filterButton}
+        </g>
+      </>
     )
   }
 }

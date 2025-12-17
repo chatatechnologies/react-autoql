@@ -72,12 +72,23 @@
     outline: none !important;
   }
 
-  .legend-view-all-button {
+  .legend-filter-button {
     cursor: pointer;
+    transition: all 0.2s ease;
 
-    &:hover .legend-view-all-button-rect {
-      fill-opacity: 0.2;
-      stroke-width: 1.5;
+    .react-autoql-icon {
+      transition: color 0.2s ease;
+    }
+
+    &:hover {
+      .legend-filter-button-bg {
+        fill: var(--react-autoql-hover-color);
+        fill-opacity: 0.8;
+      }
+
+      .react-autoql-icon {
+        color: var(--react-autoql-accent-color) !important;
+      }
     }
   }
 

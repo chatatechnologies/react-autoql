@@ -56,12 +56,6 @@ export default class LegendPopover extends React.Component {
       // Build hidden labels list from legendLabels.hidden property
       const hiddenLabels = this.props.legendLabels?.filter((l) => l.hidden).map((l) => l.label) || []
 
-      console.log('[LegendPopover] Opening popover, initializing state:', {
-        hiddenLegendLabelsProp: this.props.hiddenLegendLabels,
-        hiddenLabelsFromObjects: hiddenLabels,
-        legendLabels: this.props.legendLabels?.map((l) => ({ label: l.label, hidden: l.hidden })),
-      })
-
       this.setState({
         tempHiddenLabels: hiddenLabels,
         initialHiddenLabels: hiddenLabels, // Store initial state
@@ -228,22 +222,7 @@ export default class LegendPopover extends React.Component {
               ) : (
                 filteredLabels.map((label, i) => {
                   const isHidden = tempHiddenLabels?.includes(label.label)
-                  const color = colorScale?.(label.label) || label.color
                   const isChecked = !isHidden
-
-                  // Log first item and any items in tempHiddenLabels
-                  if (i === 0 || tempHiddenLabels?.includes(label.label)) {
-                    console.log('[LegendPopover] Rendering item:', {
-                      labelText: label.label,
-                      labelHidden: label.hidden,
-                      labelColor: label.color,
-                      colorScaleResult: colorScale?.(label.label),
-                      finalColor: color,
-                      tempHiddenLabels,
-                      isHidden,
-                      isChecked,
-                    })
-                  }
 
                   return (
                     <div
@@ -286,8 +265,8 @@ export default class LegendPopover extends React.Component {
         onClickOutside={this.handleCancel}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
-        positions={['left', 'right']}
-        align='center'
+        positions={['left', 'bottom', 'top', 'right']}
+        align='start'
         padding={10}
       >
         {this.props.children}
