@@ -49,8 +49,10 @@ export default class Legend extends React.Component {
     const columnKey = props.columns?.map((c) => c.name).join('|') || 'default'
     this.LEGEND_FILTER_KEY = `legend-${columnKey}`
 
-    // Initialize filtered labels from persistent store
-    if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
+    // Initialize filtered labels from props config or persistent store
+    if (props.legendFilterConfig?.filteredOutLabels) {
+      legendFilterStore.set(this.LEGEND_FILTER_KEY, props.legendFilterConfig.filteredOutLabels)
+    } else if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
       legendFilterStore.set(this.LEGEND_FILTER_KEY, [])
     }
 
@@ -72,6 +74,10 @@ export default class Legend extends React.Component {
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
     onVisibleLabelsChange: PropTypes.func,
+    legendFilterConfig: PropTypes.shape({
+      filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
+    }),
+    onLegendFilterChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     topMargin: PropTypes.number,
     bottomMargin: PropTypes.number,
@@ -99,6 +105,32 @@ export default class Legend extends React.Component {
   componentDidMount = () => {
     // https://d3-legend.susielu.com/
     this.renderAllLegends()
+
+    // Initialize hidden state for filtered labels on mount
+    this.initializeFilteredLabelsFromConfig()
+  }
+
+  initializeFilteredLabelsFromConfig = () => {
+    const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+
+    if (filteredOutLabels.length > 0 && this.allLegendLabels.length > 0) {
+      // Get all visible labels
+      const allLabelStrings = this.allLegendLabels.map((l) => l.label)
+      const visibleLabels = allLabelStrings.filter((label) => !filteredOutLabels.includes(label))
+
+      // Notify parent about visible labels for color scale
+      if (this.props.onVisibleLabelsChange) {
+        this.props.onVisibleLabelsChange(visibleLabels)
+      }
+
+      // Hide all filtered out series
+      filteredOutLabels.forEach((labelText) => {
+        const labelObj = this.allLegendLabels.find((l) => l.label === labelText)
+        if (labelObj && !labelObj.hidden) {
+          this.props.onLegendClick?.(labelObj)
+        }
+      })
+    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -118,7 +150,15 @@ export default class Legend extends React.Component {
     return false
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
+    // Sync with legendFilterConfig prop changes
+    if (
+      this.props.legendFilterConfig?.filteredOutLabels &&
+      this.props.legendFilterConfig.filteredOutLabels !== prevProps.legendFilterConfig?.filteredOutLabels
+    ) {
+      legendFilterStore.set(this.LEGEND_FILTER_KEY, this.props.legendFilterConfig.filteredOutLabels)
+    }
+
     this.renderAllLegends()
   }
 
@@ -302,6 +342,13 @@ export default class Legend extends React.Component {
 
     // Store in module-level map so it persists across remounts
     legendFilterStore.set(this.LEGEND_FILTER_KEY, filteredOutLabels)
+
+    // Notify parent about the legend filter config change (for dashboard persistence)
+    if (this.props.onLegendFilterChange) {
+      this.props.onLegendFilterChange({
+        filteredOutLabels,
+      })
+    }
 
     // Notify parent about visible labels so it can regenerate the color scale
     // If all labels are visible, pass null to reset colors to original

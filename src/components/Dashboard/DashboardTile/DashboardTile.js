@@ -802,6 +802,7 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
+  onLegendFilterChange = (legendFilterConfig) => this.debouncedSetParamsForTile({ legendFilterConfig })
 
   onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
 
@@ -1278,6 +1279,8 @@ export class DashboardTile extends React.Component {
         bucketSize: this.props.tile.bucketSize,
         initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
         onNetworkColumnChange: this.onNetworkColumnChange,
+        legendFilterConfig: this.props.tile.legendFilterConfig,
+        onLegendFilterChange: this.onLegendFilterChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {

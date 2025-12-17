@@ -200,6 +200,7 @@ export class QueryOutput extends React.Component {
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
+      legendFilterConfig: props.legendFilterConfig || null,
     }
     this.updateMaxConstraints()
   }
@@ -232,6 +233,10 @@ export class QueryOutput extends React.Component {
       weightColumnIndex: PropTypes.number,
     }),
     onNetworkColumnChange: PropTypes.func,
+    legendFilterConfig: PropTypes.shape({
+      filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
+    }),
+    onLegendFilterChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -324,6 +329,8 @@ export class QueryOutput extends React.Component {
     onAggConfigChange: () => {},
     initialNetworkColumnConfig: undefined,
     onNetworkColumnChange: () => {},
+    legendFilterConfig: undefined,
+    onLegendFilterChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
@@ -683,6 +690,14 @@ export class QueryOutput extends React.Component {
     // Call parent callback if provided
     if (this.props.onNetworkColumnChange) {
       this.props.onNetworkColumnChange(networkColumnConfig)
+    }
+  }
+
+  onLegendFilterChange = (legendFilterConfig) => {
+    this.setState({ legendFilterConfig })
+    // Call parent callback if provided
+    if (this.props.onLegendFilterChange) {
+      this.props.onLegendFilterChange(legendFilterConfig)
     }
   }
 
@@ -3449,6 +3464,8 @@ export class QueryOutput extends React.Component {
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           networkColumnConfig={this.state.networkColumnConfig}
           onNetworkColumnChange={this.onNetworkColumnChange}
+          legendFilterConfig={this.state.legendFilterConfig}
+          onLegendFilterChange={this.onLegendFilterChange}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}

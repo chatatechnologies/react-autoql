@@ -97,6 +97,10 @@ export default class ChataChart extends React.Component {
       showRegressionLine: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    legendFilterConfig: PropTypes.shape({
+      filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
+    }),
+    onLegendFilterChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -756,6 +760,8 @@ export default class ChataChart extends React.Component {
       hiddenLegendLabels: this.props.hiddenLegendLabels,
       onLegendVisibilityChange: this.handleLegendVisibilityChange,
       onVisibleLabelsChange: this.handleVisibleLabelsChange,
+      legendFilterConfig: this.props.legendFilterConfig,
+      onLegendFilterChange: this.props.onLegendFilterChange,
     }
 
     switch (this.props.type) {
