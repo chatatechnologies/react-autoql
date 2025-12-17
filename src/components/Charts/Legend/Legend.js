@@ -9,6 +9,9 @@ import { symbol, symbolSquare } from 'd3-shape'
 import { Icon } from '../../Icon'
 import LegendSelector from '../Legend/LegendSelector'
 import LegendPopover from '../Legend/LegendPopover'
+
+// Module-level storage for filtered labels to persist across component remounts
+const legendFilterStore = new Map()
 import {
   legendColor,
   deepEqual,
@@ -40,6 +43,17 @@ export default class Legend extends React.Component {
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
     this.justMounted = true
     this.allLegendLabels = [] // Store all labels before removing hidden ones
+
+    // Use a stable key based on the data columns to identify this chart across remounts
+    // Using column names as the key since they identify the dataset
+    const columnKey = props.columns?.map((c) => c.name).join('|') || 'default'
+    this.LEGEND_FILTER_KEY = `legend-${columnKey}`
+
+    // Initialize filtered labels from persistent store
+    if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
+      legendFilterStore.set(this.LEGEND_FILTER_KEY, [])
+    }
+
     this.state = {
       isColumnSelectorOpen: false,
       isLegendPopoverOpen: false,
@@ -163,6 +177,18 @@ export default class Legend extends React.Component {
   }
 
   renderAllLegends = () => {
+    // Clear any existing legend sections from the DOM
+    if (this.legendElements && this.legendElements.length > 0) {
+      this.legendElements.forEach((el) => {
+        if (el) {
+          // Remove all children from this legend section
+          while (el.firstChild) {
+            el.removeChild(el.firstChild)
+          }
+        }
+      })
+    }
+
     this.legendLabels1 = getLegendLabelsForMultiSeries(
       this.props.columns,
       this.props.colorScale,
@@ -179,6 +205,14 @@ export default class Legend extends React.Component {
 
     // Store all legend labels before filtering for the popover
     this.allLegendLabels = [...this.legendLabels1, ...this.legendLabels2]
+
+    // Filter out labels that were removed via the filter popover
+    const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+
+    if (filteredOutLabels && filteredOutLabels.length > 0) {
+      this.legendLabels1 = this.legendLabels1.filter((l) => !filteredOutLabels.includes(l.label))
+      this.legendLabels2 = this.legendLabels2.filter((l) => !filteredOutLabels.includes(l.label))
+    }
 
     this.legendLabelSections = this.getlegendLabelSections(this.legendLabels1, this.legendLabels2)
 
@@ -252,6 +286,40 @@ export default class Legend extends React.Component {
 
   closeLegendPopover = () => {
     this.setState({ isLegendPopoverOpen: false })
+  }
+
+  handleFilterApply = (visibleLabels) => {
+    // visibleLabels is an array of label strings that should be shown
+    // Calculate which labels should be filtered out (not in legend at all)
+    const allLabelStrings = this.allLegendLabels.map((l) => l.label)
+    const filteredOutLabels = allLabelStrings.filter((label) => !visibleLabels.includes(label))
+    const previousFilteredOut = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+
+    // Determine which items changed visibility
+    const newlyFiltered = filteredOutLabels.filter((label) => !previousFilteredOut.includes(label))
+    const newlyVisible = previousFilteredOut.filter((label) => !filteredOutLabels.includes(label))
+
+    // Store in module-level map so it persists across remounts
+    legendFilterStore.set(this.LEGEND_FILTER_KEY, filteredOutLabels)
+
+    // For newly filtered items, hide them if they're not already hidden
+    newlyFiltered.forEach((labelText) => {
+      const labelObj = this.allLegendLabels.find((l) => l.label === labelText)
+      if (labelObj && !labelObj.hidden) {
+        this.props.onLegendClick?.(labelObj)
+      }
+    })
+
+    // For newly visible items, show them if they're currently hidden
+    newlyVisible.forEach((labelText) => {
+      const labelObj = this.allLegendLabels.find((l) => l.label === labelText)
+      if (labelObj && labelObj.hidden) {
+        this.props.onLegendClick?.(labelObj)
+      }
+    })
+
+    // Force re-render to update legend display
+    this.forceUpdate()
   }
 
   removeHiddenLegendLabels = (legendElement) => {
@@ -690,7 +758,9 @@ export default class Legend extends React.Component {
         onClose={this.closeLegendPopover}
         popoverParentElement={this.props.popoverParentElement}
         onLegendClick={this.props.onLegendClick}
+        onFilterApply={this.handleFilterApply}
         hiddenLegendLabels={this.props.hiddenLegendLabels}
+        filteredOutLabels={legendFilterStore.get(this.LEGEND_FILTER_KEY) || []}
         shapeSize={this.SHAPE_SIZE}
         chartHeight={this.props.outerHeight}
       >

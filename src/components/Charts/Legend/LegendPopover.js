@@ -15,12 +15,12 @@ export default class LegendPopover extends React.Component {
 
     this.COMPONENT_KEY = uuid()
 
-    // Initialize temporary hidden labels from legendLabels.hidden property
-    const hiddenLabels = props.legendLabels?.filter((l) => l.hidden).map((l) => l.label) || []
+    // Initialize from filteredOutLabels (items removed from legend entirely)
+    const filteredOut = props.filteredOutLabels || []
 
     this.state = {
-      tempHiddenLabels: hiddenLabels,
-      initialHiddenLabels: hiddenLabels, // Track what state was when popover opened
+      tempHiddenLabels: filteredOut, // Items unchecked in popover
+      initialHiddenLabels: filteredOut, // Track what state was when popover opened
       searchQuery: '',
       sortOrder: null, // null (unsorted), 'asc', or 'desc'
     }
@@ -33,7 +33,9 @@ export default class LegendPopover extends React.Component {
     onClose: PropTypes.func,
     popoverParentElement: PropTypes.object,
     onLegendClick: PropTypes.func,
+    onFilterApply: PropTypes.func,
     hiddenLegendLabels: PropTypes.array,
+    filteredOutLabels: PropTypes.array,
     shapeSize: PropTypes.number,
     children: PropTypes.node,
     chartHeight: PropTypes.number,
@@ -51,14 +53,14 @@ export default class LegendPopover extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Reset temp state when popover opens or hidden labels change externally
+    // Reset temp state when popover opens
     if (this.props.isOpen && !prevProps.isOpen) {
-      // Build hidden labels list from legendLabels.hidden property
-      const hiddenLabels = this.props.legendLabels?.filter((l) => l.hidden).map((l) => l.label) || []
+      // Initialize from filteredOutLabels when popover opens
+      const filteredOut = this.props.filteredOutLabels || []
 
       this.setState({
-        tempHiddenLabels: hiddenLabels,
-        initialHiddenLabels: hiddenLabels, // Store initial state
+        tempHiddenLabels: filteredOut,
+        initialHiddenLabels: filteredOut, // Store initial state
         searchQuery: '', // Reset search when opening
       })
     }
@@ -140,18 +142,14 @@ export default class LegendPopover extends React.Component {
   }
 
   handleApply = () => {
-    const { tempHiddenLabels, initialHiddenLabels } = this.state
-    const { legendLabels, onLegendClick, onClose } = this.props
+    const { tempHiddenLabels } = this.state
+    const { legendLabels, onFilterApply, onClose } = this.props
 
-    // For each label, call onLegendClick if its visibility has changed from initial state
-    legendLabels.forEach((label) => {
-      const wasHidden = initialHiddenLabels.includes(label.label) // Compare against state when popover opened
-      const isHidden = tempHiddenLabels.includes(label.label)
+    // Calculate which labels should be visible (not in tempHiddenLabels)
+    const visibleLabels = legendLabels.filter((l) => !tempHiddenLabels.includes(l.label)).map((l) => l.label)
 
-      if (wasHidden !== isHidden) {
-        onLegendClick?.(label)
-      }
-    })
+    // Call the filter apply callback with visible labels
+    onFilterApply?.(visibleLabels)
 
     onClose()
   }
