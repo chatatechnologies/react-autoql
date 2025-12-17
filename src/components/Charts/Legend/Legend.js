@@ -71,6 +71,7 @@ export default class Legend extends React.Component {
     onLabelChange: PropTypes.func,
     onLegendClick: PropTypes.func,
     onLegendTitleClick: PropTypes.func,
+    onVisibleLabelsChange: PropTypes.func,
     numberColumnIndices: PropTypes.arrayOf(PropTypes.number),
     topMargin: PropTypes.number,
     bottomMargin: PropTypes.number,
@@ -301,6 +302,14 @@ export default class Legend extends React.Component {
 
     // Store in module-level map so it persists across remounts
     legendFilterStore.set(this.LEGEND_FILTER_KEY, filteredOutLabels)
+
+    // Notify parent about visible labels so it can regenerate the color scale
+    // If all labels are visible, pass null to reset colors to original
+    // Otherwise pass the visible labels array to reassign colors
+    if (this.props.onVisibleLabelsChange) {
+      const shouldResetColors = visibleLabels.length === allLabelStrings.length
+      this.props.onVisibleLabelsChange(shouldResetColors ? null : visibleLabels)
+    }
 
     // For newly filtered items, hide them if they're not already hidden
     newlyFiltered.forEach((labelText) => {
