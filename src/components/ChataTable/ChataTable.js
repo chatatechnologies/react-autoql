@@ -60,11 +60,10 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.filteredResponseData = null
+    this.previousFilters = []
     this.pageSize = props.pageSize ?? 50
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
-        ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
         ? LOCAL_OR_REMOTE.REMOTE
         : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
@@ -532,8 +531,18 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
-    // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
+    const hasCurrentFilters = this.tableParams?.filter?.length > 0
+    const filtersChanged = !_isEqual(this.previousFilters, this.tableParams?.filter)
+
+    const shouldCallRemoteFilter =
+      (!this.useInfiniteScroll && !this.props.pivot && !this.isLocal && hasCurrentFilters) ||
+      (filtersChanged && !this.isLocal)
+
+    if (filtersChanged) {
+      this.previousFilters = _cloneDeep(this.tableParams?.filter)
+    }
+
+    if (shouldCallRemoteFilter) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return

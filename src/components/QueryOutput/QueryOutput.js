@@ -648,7 +648,7 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
+    if (this._isMounted && this.state.isResizing) {
       this.setState({ isResizing: false }, () => {
         this.refreshLayout()
       })
