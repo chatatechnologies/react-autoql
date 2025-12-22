@@ -77,6 +77,7 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
 import { AddColumnBtn } from '../AddColumnBtn'
+import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -201,6 +202,9 @@ export class QueryOutput extends React.Component {
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
+      showCustomColumnModal: false,
+      activeCustomColumn: undefined,
+      isAddingColumn: false,
     }
     this.updateMaxConstraints()
   }
@@ -3186,6 +3190,10 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
+  resetCustomColumnModal = () => {
+    this.setState({ showCustomColumnModal: false, activeCustomColumn: undefined })
+  }
+
   onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
     if (isHiddenColumn) {
       this.setState({ isAddingColumn: true })
@@ -3213,8 +3221,13 @@ export class QueryOutput extends React.Component {
           this.setState({ isAddingColumn: false })
         })
     } else if (!column) {
-      // Add a custom column
-      this.tableRef?.addCustomColumn()
+      // For single-value responses, open modal directly since ChataTable is not rendered
+      if (isSingleValueResponse(this.queryResponse)) {
+        this.setState({ showCustomColumnModal: true, activeCustomColumn: undefined })
+      } else {
+        // For table responses, delegate to ChataTable
+        this.tableRef?.addCustomColumn()
+      }
     } else {
       this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
@@ -3265,6 +3278,34 @@ export class QueryOutput extends React.Component {
     } else {
       console.error('Unknown column type')
     }
+  }
+
+  renderCustomColumnModal = () => {
+    if (!this.state.showCustomColumnModal) {
+      return null
+    }
+
+    return (
+      <CustomColumnModal
+        {...this.props}
+        columns={this.state.columns}
+        isOpen={this.state.showCustomColumnModal}
+        onClose={() => this.resetCustomColumnModal()}
+        tableRef={this.tableRef}
+        aggConfig={this.state.aggConfig}
+        queryResponse={this.queryResponse}
+        dataFormatting={this.props.dataFormatting}
+        initialColumn={this.state.activeCustomColumn}
+        onUpdateColumn={(column) => {
+          this.onCustomColumnChange(column)
+          this.resetCustomColumnModal()
+        }}
+        onAddColumn={(column) => {
+          this.onCustomColumnChange(column)
+          this.resetCustomColumnModal()
+        }}
+      />
+    )
   }
 
   renderAddColumnBtn = () => {
@@ -3795,6 +3836,7 @@ export class QueryOutput extends React.Component {
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         )}
         {this.renderAddColumnBtn()}
+        {this.renderCustomColumnModal()}
         {this.shouldEnableResize && this.renderResizeHandle()}
       </ErrorBoundary>
     )
