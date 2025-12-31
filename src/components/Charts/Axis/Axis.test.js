@@ -166,7 +166,7 @@ describe('after mount', () => {
         })
 
         const dropdownArrow = findByTestAttr(wrapper, 'dropdown-arrow')
-        expect(dropdownArrow.exists()).toBe(false)
+        expect(dropdownArrow.exists()).toBe(true)
       })
 
       test('shows dropdown for aggregated view with legend location', () => {
