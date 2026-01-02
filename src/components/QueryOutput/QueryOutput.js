@@ -3448,12 +3448,12 @@ export class QueryOutput extends React.Component {
 
     const usePivotData = this.usePivotDataForChart()
 
-    if (usePivotData && (!this.pivotTableData?.length || !this.pivotTableColumns?.length)) {
+    if (usePivotData && (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig)) {
       // Try to generate pivot data if missing
       this.generatePivotData({ isFirstGeneration: true })
 
       // If still empty after generation, show error
-      if (!this.pivotTableData?.length || !this.pivotTableColumns?.length) {
+      if (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig) {
         return this.renderMessage('Error: There was no data supplied for this chart')
       }
     }
