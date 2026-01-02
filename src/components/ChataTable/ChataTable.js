@@ -139,6 +139,10 @@ export default class ChataTable extends React.Component {
       scrollTop: 0,
       pivotAxisSelectorOpen: false,
       pivotAxisSelectorLocation: null,
+      isCustomColumnPopoverOpen: false,
+      activeCustomColumn: undefined,
+      contextMenuColumn: undefined,
+      contextMenuLocation: null,
     }
   }
 
@@ -1510,6 +1514,30 @@ export default class ChataTable extends React.Component {
     return null
   }
 
+  renderContextMenuContent = () => {
+    const { contextMenuColumn } = this.state
+    return (
+      <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
+        <ul className='context-menu-list'>
+          <li onClick={() => this.onFreezeColumnClick(contextMenuColumn)}>
+            <Icon type={this.isColumnFrozen(contextMenuColumn) ? 'unlock' : 'lock'} />
+            {this.isColumnFrozen(contextMenuColumn) ? 'Unfreeze Column' : 'Freeze Column'}
+          </li>
+          {!!contextMenuColumn?.custom && !contextMenuColumn?.has_window_func && (
+            <li onClick={() => this.onUpdateColumnConfirm()}>
+              <Icon type='edit' />
+              Edit Column
+            </li>
+          )}
+          <li onClick={this.onRemoveColumnClick}>
+            <Icon type='close' />
+            Remove Column
+          </li>
+        </ul>
+      </div>
+    )
+  }
+
   renderHeaderContextMenuPopover = () => {
     if (!this.state.contextMenuColumn) {
       return null
@@ -1527,26 +1555,7 @@ export default class ChataTable extends React.Component {
             this.setState({ contextMenuColumn: undefined })
           }
         }}
-        content={
-          <div className='more-options-menu' data-test='react-autoql-toolbar-more-options'>
-            <ul className='context-menu-list'>
-              <li onClick={() => this.onFreezeColumnClick(this.state.contextMenuColumn)}>
-                <Icon type={this.isColumnFrozen(this.state.contextMenuColumn) ? 'unlock' : 'lock'} />
-                {this.isColumnFrozen(this.state.contextMenuColumn) ? 'Unfreeze Column' : 'Freeze Column'}
-              </li>
-              {!!this.state.contextMenuColumn?.custom && !this.state.contextMenuColumn?.has_window_func && (
-                <li onClick={() => this.onUpdateColumnConfirm()}>
-                  <Icon type='edit' />
-                  Edit Column
-                </li>
-              )}
-              <li onClick={this.onRemoveColumnClick}>
-                <Icon type='close' />
-                Remove Column
-              </li>
-            </ul>
-          </div>
-        }
+        content={this.renderContextMenuContent()}
       >
         <div
           style={{
@@ -1923,7 +1932,7 @@ export default class ChataTable extends React.Component {
                 <>
                   <TableWrapper
                     ref={(r) => (this.ref = r)}
-                    height={this.initialTableHeight}
+                    height={this.props.autoHeight ? false : this.initialTableHeight}
                     tableKey={`react-autoql-table-${this.TABLE_ID}`}
                     id={`react-autoql-table-${this.TABLE_ID}`}
                     key={`react-autoql-table-wrapper-${this.TABLE_ID}`}

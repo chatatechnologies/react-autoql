@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.21.0",
+  "version": "8.22.2",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -139,7 +139,6 @@
     "babel-core": "7.0.0-bridge.0",
     "babel-jest": "28.1.1",
     "babel-plugin-import": "1.13.8",
-    "check-prop-types": "1.1.2",
     "enzyme": "3.11.0",
     "enzyme-adapter-react-16": "1.15.6",
     "eslint": "8.25.0",
