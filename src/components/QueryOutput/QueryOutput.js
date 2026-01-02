@@ -501,9 +501,7 @@ export class QueryOutput extends React.Component {
           () => this.props.onDisplayTypeChange?.(this.state.displayType),
         )
 
-        // If new number column indices conflict, reset table config to resolve the arrays
-        // The config should stay the same as much as possible while removing the overlapping indices
-        // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
+        // If number column indices conflict, reset table config while preserving saved config on errors
         if (
           !this.hasError(this.queryResponse) &&
           !this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)
@@ -2351,9 +2349,7 @@ export class QueryOutput extends React.Component {
     if (col.type === ColumnTypes.DATE || col.type === 'DATE_STRING') {
       return (a, b) => dateSortFn(a, b, col, 'isTable')
     } else if (col.type === 'STRING') {
-      // There is some bug in tabulator where its not sorting
-      // certain columns. This explicitly sets the sorter so
-      // it works every time
+      // Tabulator sometimes fails to sort string columns; force 'alphanum'
       return 'alphanum'
     }
 
@@ -2520,14 +2516,12 @@ export class QueryOutput extends React.Component {
         return wrapper
       }
 
-      // Always have filtering enabled, but only
-      // display if filtering is toggled by user
+      // Always enable header filtering but only show when toggled
       newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
       newCol.headerFilterLiveFilter = false
 
-      // Need to set custom filters for cells that are
-      // displayed differently than the data (ie. dates)
+      // Use custom filters for cells displayed differently than raw data (e.g., dates)
       newCol.headerFilterFunc = this.setFilterFunction(newCol)
 
       // Allow proper chronological sorting for date strings
@@ -2535,8 +2529,7 @@ export class QueryOutput extends React.Component {
       newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
       newCol.headerClick = (e, col) => {
-        // To allow tabulator to sort, we must first restore redrawing,
-        // then the component will disable it again afterwards automatically
+        // Restore redraw first so Tabulator sorting works, it will be disabled again automatically
         if (this.state.displayType === 'table') {
           this.tableRef?.ref?.restoreRedraw()
         } else if (this.state.displayType === 'pivot_table') {
@@ -2544,16 +2537,7 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      // Column header context menu
-      // Keep for future use
-      // newCol.headerContextMenu = [
-      //   {
-      //     label: 'Hide Column',
-      //     action: function (e, column, a, b, c) {
-      //       column.hide()
-      //     },
-      //   },
-      // ]
+      // Column header context menu (kept for future use)
 
       // Show drilldown filter value in column title so user knows they can't filter on this column
       if (drilldownGroupby) {
@@ -3464,11 +3448,66 @@ export class QueryOutput extends React.Component {
 
     const usePivotData = this.usePivotDataForChart()
 
-    if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
-      return this.renderMessage('Error: There was no data supplied for this chart')
+    if (usePivotData) {
+      // Try generating missing pivot data to avoid chart errors
+      const pivotMissing = !this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig
+      if (pivotMissing) {
+        try {
+          // Try generating pivot data (first generation)
+          this.generatePivotTableData({ isFirstGeneration: true })
+        } catch (genErr) {
+          console.warn('QueryOutput: generatePivotTableData threw an error', genErr)
+        }
+
+        // If still missing after generation, report error
+        if (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig) {
+          return this.renderMessage('Error: There was no data supplied for this chart')
+        }
+      }
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+
+    // columns used for validation/recompute
+    const currentColumns = usePivotData ? this.pivotTableColumns : this.state.columns
+
+    // Try generating pivot data again if still missing
+    if (usePivotData && (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig)) {
+      try {
+        this.generatePivotTableData({ isFirstGeneration: true })
+      } catch (genErr) {
+        console.warn('QueryOutput: generatePivotTableData threw an error', genErr)
+      }
+
+      if (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig) {
+        return this.renderMessage('Error: There was no data supplied for this chart')
+      }
+    }
+
+    // Recompute numeric column indices when saved indices point to non-number columns
+    try {
+      const indices = Array.isArray(tableConfig?.numberColumnIndices) ? tableConfig.numberColumnIndices : []
+      const hasInvalidIndex = indices.some((i) => !currentColumns?.[i] || !isColumnNumberType(currentColumns[i]))
+
+      if (hasInvalidIndex) {
+        const prevConfig = _cloneDeep(tableConfig)
+        const recomputed = getNumberColumnIndices(
+          currentColumns,
+          usePivotData,
+          this.queryResponse?.data?.data?.default_amount_column,
+        )
+
+        tableConfig.numberColumnIndices = recomputed.numberColumnIndices || recomputed.allNumberColumnIndices || []
+        tableConfig.numberColumnIndex = recomputed.numberColumnIndex
+        tableConfig.numberColumnIndices2 = recomputed.numberColumnIndices2 || []
+        tableConfig.numberColumnIndex2 = recomputed.numberColumnIndex2
+        tableConfig.allNumberColumnIndices = recomputed.allNumberColumnIndices
+
+        if (!_isEqual(prevConfig, tableConfig)) this.onTableConfigChange()
+      }
+    } catch (err) {
+      console.warn('QueryOutput: failed to validate/recompute numberColumnIndices', err)
+    }
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
