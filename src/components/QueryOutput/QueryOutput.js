@@ -3462,7 +3462,7 @@ export class QueryOutput extends React.Component {
     const currentColumns = usePivotData ? this.pivotTableColumns : this.state.columns
 
     // Recompute numeric column indices if they point to invalid columns
-    const indices = Array.isArray(tableConfig?.numberColumnIndices) ? tableConfig.numberColumnIndices : []
+    const indices = tableConfig?.numberColumnIndices || []
     const hasInvalidIndex = indices.some((i) => !currentColumns?.[i] || !isColumnNumberType(currentColumns[i]))
 
     if (hasInvalidIndex) {
