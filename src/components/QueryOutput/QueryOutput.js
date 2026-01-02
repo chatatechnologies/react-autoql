@@ -3448,66 +3448,17 @@ export class QueryOutput extends React.Component {
 
     const usePivotData = this.usePivotDataForChart()
 
-    if (usePivotData) {
-      // Try generating missing pivot data to avoid chart errors
-      const pivotMissing = !this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig
-      if (pivotMissing) {
-        try {
-          // Try generating pivot data (first generation)
-          this.generatePivotTableData({ isFirstGeneration: true })
-        } catch (genErr) {
-          console.warn('QueryOutput: generatePivotTableData threw an error', genErr)
-        }
+    if (usePivotData && (!this.pivotTableData?.length || !this.pivotTableColumns?.length)) {
+      // Try to generate pivot data if missing
+      this.generatePivotData({ isFirstGeneration: true })
 
-        // If still missing after generation, report error
-        if (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig) {
-          return this.renderMessage('Error: There was no data supplied for this chart')
-        }
-      }
-    }
-
-    const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
-
-    // columns used for validation/recompute
-    const currentColumns = usePivotData ? this.pivotTableColumns : this.state.columns
-
-    // Try generating pivot data again if still missing
-    if (usePivotData && (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig)) {
-      try {
-        this.generatePivotTableData({ isFirstGeneration: true })
-      } catch (genErr) {
-        console.warn('QueryOutput: generatePivotTableData threw an error', genErr)
-      }
-
-      if (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig) {
+      // If still empty after generation, show error
+      if (!this.pivotTableData?.length || !this.pivotTableColumns?.length) {
         return this.renderMessage('Error: There was no data supplied for this chart')
       }
     }
 
-    // Recompute numeric column indices when saved indices point to non-number columns
-    try {
-      const indices = Array.isArray(tableConfig?.numberColumnIndices) ? tableConfig.numberColumnIndices : []
-      const hasInvalidIndex = indices.some((i) => !currentColumns?.[i] || !isColumnNumberType(currentColumns[i]))
-
-      if (hasInvalidIndex) {
-        const prevConfig = _cloneDeep(tableConfig)
-        const recomputed = getNumberColumnIndices(
-          currentColumns,
-          usePivotData,
-          this.queryResponse?.data?.data?.default_amount_column,
-        )
-
-        tableConfig.numberColumnIndices = recomputed.numberColumnIndices || recomputed.allNumberColumnIndices || []
-        tableConfig.numberColumnIndex = recomputed.numberColumnIndex
-        tableConfig.numberColumnIndices2 = recomputed.numberColumnIndices2 || []
-        tableConfig.numberColumnIndex2 = recomputed.numberColumnIndex2
-        tableConfig.allNumberColumnIndices = recomputed.allNumberColumnIndices
-
-        if (!_isEqual(prevConfig, tableConfig)) this.onTableConfigChange()
-      }
-    } catch (err) {
-      console.warn('QueryOutput: failed to validate/recompute numberColumnIndices', err)
-    }
+    const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
