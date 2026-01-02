@@ -3456,6 +3456,34 @@ export class QueryOutput extends React.Component {
       if (!this.pivotTableData?.length || !this.pivotTableColumns?.length || !this.pivotTableConfig) {
         return this.renderMessage('Error: There was no data supplied for this chart')
       }
+
+      // Recompute numeric column indices if they point to invalid columns
+      const currentColumns = usePivotData ? this.pivotTableColumns : this.state.columns
+      const indices = Array.isArray(this.pivotTableConfig?.numberColumnIndices)
+        ? this.pivotTableConfig.numberColumnIndices
+        : []
+      const hasInvalidIndex = indices.some((i) => !currentColumns?.[i] || !isColumnNumberType(currentColumns[i]))
+
+      if (hasInvalidIndex) {
+        try {
+          const recomputed = getNumberColumnIndices(
+            currentColumns,
+            usePivotData,
+            this.queryResponse?.data?.data?.default_amount_column,
+          )
+
+          this.pivotTableConfig.numberColumnIndices =
+            recomputed.numberColumnIndices || recomputed.allNumberColumnIndices || []
+          this.pivotTableConfig.numberColumnIndex = recomputed.numberColumnIndex
+          this.pivotTableConfig.numberColumnIndices2 = recomputed.numberColumnIndices2 || []
+          this.pivotTableConfig.numberColumnIndex2 = recomputed.numberColumnIndex2
+          this.pivotTableConfig.allNumberColumnIndices = recomputed.allNumberColumnIndices
+
+          this.onTableConfigChange()
+        } catch (err) {
+          console.warn('QueryOutput: failed to recompute numberColumnIndices', err)
+        }
+      }
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
