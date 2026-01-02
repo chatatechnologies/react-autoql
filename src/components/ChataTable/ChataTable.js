@@ -359,13 +359,8 @@ export default class ChataTable extends React.Component {
   }
 
   componentWillUnmount = () => {
-    // Avoid making a reverse-translation request when no query text is available
-    if (!this.props.queryText) {
-      console.warn('ChataTable: skipping RT request — no queryText provided')
-      return
-    }
-
     try {
+      // Always run cleanup to avoid memory leaks or state updates after unmount
       this._isMounted = false
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
@@ -379,6 +374,12 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
+
+      // Only skip reverse-translation request if no queryText; cleanup must still run.
+      if (!this.props.queryText) {
+        console.warn('ChataTable: skipping RT request — no queryText provided')
+        return
+      }
     } catch (error) {
       console.error(error)
     }
