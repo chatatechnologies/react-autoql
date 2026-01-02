@@ -1243,7 +1243,7 @@ export default class CustomColumnModal extends React.Component {
       <div className='react-autoql-table-preview-wrapper'>
         <div className='react-autoql-input-label'>Preview</div>
         <div className='react-autoql-table-preview-container'>
-          <Suspense fallback={<div />}>
+          <Suspense fallback={<Spinner />}>
             <LazyChataTable
               key={this.TABLE_ID}
               ref={(r) => (this.tableRef = r)}

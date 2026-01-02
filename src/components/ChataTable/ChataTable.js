@@ -65,6 +65,8 @@ export default class ChataTable extends React.Component {
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
+        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
+        ? LOCAL_OR_REMOTE.REMOTE
         : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
@@ -138,6 +140,28 @@ export default class ChataTable extends React.Component {
       pivotAxisSelectorOpen: false,
       pivotAxisSelectorLocation: null,
     }
+  }
+
+  // Safely toggle a class on an element. Handles environments where classList.toggle
+  // may not be available or where classList.toggle is mocked differently in tests.
+  safeToggleClass = (el, className, enabled) => {
+    if (!el) return
+    const cls = el.classList
+    if (cls && typeof cls.toggle === 'function') {
+      cls.toggle(className, enabled)
+      return
+    }
+
+    // Fallback: manipulate className string
+    const current = (el.className || '').split(/\s+/).filter(Boolean)
+    const has = current.includes(className)
+    if (enabled && !has) {
+      current.push(className)
+    } else if (!enabled && has) {
+      const idx = current.indexOf(className)
+      if (idx >= 0) current.splice(idx, 1)
+    }
+    el.className = current.join(' ')
   }
 
   // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
@@ -335,6 +359,12 @@ export default class ChataTable extends React.Component {
   }
 
   componentWillUnmount = () => {
+    // Avoid making a reverse-translation request when no query text is available
+    if (!this.props.queryText) {
+      console.warn('ChataTable: skipping RT request — no queryText provided')
+      return
+    }
+
     try {
       this._isMounted = false
       clearTimeout(this.clickListenerTimeout)
@@ -535,8 +565,7 @@ export default class ChataTable extends React.Component {
     const filtersChanged = !_isEqual(this.previousFilters, this.tableParams?.filter)
 
     const shouldCallRemoteFilter =
-      (!this.useInfiniteScroll && !this.props.pivot && !this.isLocal && hasCurrentFilters) ||
-      (filtersChanged && !this.isLocal)
+      !this.isLocal && hasCurrentFilters && filtersChanged && !this.useInfiniteScroll && !this.props.pivot
 
     if (filtersChanged) {
       this.previousFilters = _cloneDeep(this.tableParams?.filter)
@@ -1119,9 +1148,7 @@ export default class ChataTable extends React.Component {
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
       const element = column.getElement?.()
-      if (element?.classList) {
-        element.classList.toggle('is-filtered', isFiltered)
-      }
+      this.safeToggleClass(element, 'is-filtered', isFiltered)
     })
   }
 
@@ -1152,11 +1179,11 @@ export default class ChataTable extends React.Component {
       const isChild = def?.origPivotColumn !== undefined
       const isFiltered = isChild ? isColDimensionFiltered : isRowFiltered
 
-      column?.getElement?.()?.classList.toggle('is-filtered', isFiltered)
+      this.safeToggleClass(column?.getElement?.(), 'is-filtered', isFiltered)
     })
 
     container?.querySelectorAll('.tabulator-col-group')?.forEach((el) => {
-      el.classList.toggle('is-filtered', isMeasureFiltered)
+      this.safeToggleClass(el, 'is-filtered', isMeasureFiltered)
     })
   }
 
@@ -1704,7 +1731,7 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (!totalRowCount || !(currentRowCount > 0)) {
+    if (!totalRowCount || currentRowCount <= 0) {
       return null
     }
 

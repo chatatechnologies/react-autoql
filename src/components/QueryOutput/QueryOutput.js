@@ -2809,7 +2809,8 @@ export class QueryOutput extends React.Component {
           })
         }
       } catch (err) {
-        // ignore header filter parsing errors and continue
+        // Log header filter parsing errors and continue
+        console.error('Error parsing header filters:', err)
       }
 
       const userSorters = this.formattedTableParams?.sorters || []
