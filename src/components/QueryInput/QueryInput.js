@@ -33,6 +33,7 @@ import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
@@ -83,6 +84,7 @@ class QueryInput extends React.Component {
     addResponseMessage: PropTypes.func,
     className: PropTypes.string,
     autoCompletePlacement: PropTypes.string,
+    quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
     showLoadingDots: PropTypes.bool,
     showChataIcon: PropTypes.bool,
     inputValue: PropTypes.string,
@@ -105,6 +107,7 @@ class QueryInput extends React.Component {
     enableVoiceRecord: false,
     isDisabled: false,
     autoCompletePlacement: 'above',
+    quickTopicsPlacement: 'above',
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
@@ -903,62 +906,76 @@ class QueryInput extends React.Component {
       autoComplete: 'one-time-code',
     }
 
-    return (
-      <ErrorBoundary>
-        <div className='react-autoql-query-input-wrapper' ref={(ref) => (this.queryInputWrapperRef = ref)}>
-          {/* Query Suggestions - Always visible buttons */}
-          {this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0 && (
-            <div className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''}`}>
-              {/* Expanded Sample Queries Section */}
-              {this.state.isExpanded && this.state.selectedTopic && (
-                <div className='query-suggestions-expanded'>
-                  <div className='query-suggestions-expanded-header'>
-                    {this.renderSampleQueriesHeader()}
-                    <div className='query-suggestions-expanded-header-actions'>
-                      <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
-                        <Icon type='close' />
-                      </button>
-                    </div>
-                  </div>
-                  <div className='query-suggestions-sample-list'>
-                    <SampleQueryList
-                      authentication={this.props.authentication}
-                      columns={this.getColumnsForSuggestions()}
-                      context={this.state.selectedTopic.context}
-                      valueLabel={this.state.selectedTopic.valueLabel}
-                      searchText=''
-                      executeQuery={this.props.executeQuery}
-                      skipQueryValidation={false}
-                      userSelection={null}
-                      tooltipID={this.props.tooltipID}
-                      scope={this.props.scope}
-                      shouldRender={this.props.shouldRender}
-                      onSuggestionListResponse={() => {}}
-                    />
-                  </div>
-                </div>
-              )}
+    const isTopicsBelow = this.props.quickTopicsPlacement === 'below'
+    const showTopics =
+      this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
 
-              {/* <div className='query-suggestions-label'>Quick Topics:</div> */}
-              <div className='query-suggestions-buttons'>
-                <span className='query-suggestions-buttons-label'>
-                  <Icon type='lightning' /> Quick Topics:{' '}
-                </span>
-                {this.state.topics.map((topic, index) => (
-                  <button
-                    key={topic.context || index}
-                    className={`query-suggestion-button ${
-                      this.state.selectedTopic?.context === topic.context ? 'selected' : ''
-                    }`}
-                    onClick={() => this.onTopicClick(topic)}
-                    type='button'
-                  >
-                    {topic.displayName}
-                  </button>
-                ))}
+    const renderQuerySuggestions = () => (
+      <div
+        className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} placement-${
+          this.props.quickTopicsPlacement
+        }`}
+      >
+        {/* Expanded Sample Queries Section */}
+        {this.state.isExpanded && this.state.selectedTopic && (
+          <div className='query-suggestions-expanded'>
+            <div className='query-suggestions-expanded-header'>
+              {this.renderSampleQueriesHeader()}
+              <div className='query-suggestions-expanded-header-actions'>
+                <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
+                  <Icon type='close' />
+                </button>
               </div>
             </div>
-          )}
+            <div className='query-suggestions-sample-list'>
+              <SampleQueryList
+                authentication={this.props.authentication}
+                columns={this.getColumnsForSuggestions()}
+                context={this.state.selectedTopic.context}
+                valueLabel={this.state.selectedTopic.valueLabel}
+                searchText=''
+                executeQuery={this.props.executeQuery}
+                skipQueryValidation={false}
+                userSelection={null}
+                tooltipID={this.props.tooltipID}
+                scope={this.props.scope}
+                shouldRender={this.props.shouldRender}
+                onSuggestionListResponse={() => {}}
+              />
+            </div>
+          </div>
+        )}
+
+        <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
+          <div className='query-suggestions-buttons'>
+            <span className='query-suggestions-buttons-label'>
+              <Icon type='lightning' /> Quick Topics:{' '}
+            </span>
+            {this.state.topics.map((topic, index) => (
+              <button
+                key={topic.context || index}
+                className={`query-suggestion-button ${
+                  this.state.selectedTopic?.context === topic.context ? 'selected' : ''
+                }`}
+                onClick={() => this.onTopicClick(topic)}
+                type='button'
+              >
+                {topic.displayName}
+              </button>
+            ))}
+          </div>
+        </CustomScrollbars>
+      </div>
+    )
+
+    return (
+      <ErrorBoundary>
+        <div
+          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'}`}
+          ref={(ref) => (this.queryInputWrapperRef = ref)}
+        >
+          {/* Query Suggestions - Render ABOVE input when placement is 'above' */}
+          {showTopics && !isTopicsBelow && renderQuerySuggestions()}
 
           <div
             className={`react-autoql-bar-container ${this.props.className} ${
@@ -1020,6 +1037,9 @@ class QueryInput extends React.Component {
               </button>
             </div>
           </div>
+
+          {/* Query Suggestions - Render BELOW input when placement is 'below' */}
+          {showTopics && isTopicsBelow && renderQuerySuggestions()}
         </div>
       </ErrorBoundary>
     )

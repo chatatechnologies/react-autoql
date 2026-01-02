@@ -2,7 +2,8 @@
   &:not(.filter-lock-popover-mobile) {
     top: -15px !important;
     left: -2px !important;
-    width: 450px;
+    // Width is set dynamically via containerStyle prop to match drawer width
+    min-width: 400px;
     height: 350px;
   }
 
@@ -166,6 +167,19 @@
     margin-top: 15px;
     margin-right: 0;
     overflow: hidden;
+
+    // Hide scrollbars when content doesn't need scrolling
+    .react-autoql-custom-scrollbars {
+      .ps__rail-y {
+        display: none;
+      }
+
+      &.ps--active-y {
+        .ps__rail-y {
+          display: block;
+        }
+      }
+    }
 
     .react-autoql-filter-list-title {
       width: 100%;

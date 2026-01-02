@@ -148,6 +148,7 @@ export default class CustomColumnModal extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
     enableWindowFunctions: PropTypes.bool,
+    columns: PropTypes.arrayOf(PropTypes.shape({})),
     queryResponse: PropTypes.shape({}),
 
     onAddColumn: PropTypes.func,
@@ -160,7 +161,7 @@ export default class CustomColumnModal extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     dataFormatting: dataFormattingDefault,
     enableWindowFunctions: true,
-
+    columns: [],
     queryResponse: undefined,
     onAddColumn: () => {},
     onUpdateColumn: () => {},
