@@ -60,6 +60,7 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.filteredResponseData = null
+    this.previousFilters = []
     this.pageSize = props.pageSize ?? 50
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
@@ -143,6 +144,28 @@ export default class ChataTable extends React.Component {
       contextMenuColumn: undefined,
       contextMenuLocation: null,
     }
+  }
+
+  // Safely toggle a class on an element. Handles environments where classList.toggle
+  // may not be available or where classList.toggle is mocked differently in tests.
+  safeToggleClass = (el, className, enabled) => {
+    if (!el) return
+    const cls = el.classList
+    if (cls && typeof cls.toggle === 'function') {
+      cls.toggle(className, enabled)
+      return
+    }
+
+    // Fallback: manipulate className string
+    const current = (el.className || '').split(/\s+/).filter(Boolean)
+    const has = current.includes(className)
+    if (enabled && !has) {
+      current.push(className)
+    } else if (!enabled && has) {
+      const idx = current.indexOf(className)
+      if (idx >= 0) current.splice(idx, 1)
+    }
+    el.className = current.join(' ')
   }
 
   // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
@@ -341,6 +364,7 @@ export default class ChataTable extends React.Component {
 
   componentWillUnmount = () => {
     try {
+      // Always run cleanup to avoid memory leaks or state updates after unmount
       this._isMounted = false
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
@@ -354,6 +378,12 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
+
+      // Only skip reverse-translation request if no queryText; cleanup must still run.
+      if (!this.props.queryText) {
+        console.warn('ChataTable: skipping RT request — no queryText provided')
+        return
+      }
     } catch (error) {
       console.error(error)
     }
@@ -536,8 +566,17 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
-    // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
+    const hasCurrentFilters = this.tableParams?.filter?.length > 0
+    const filtersChanged = !_isEqual(this.previousFilters, this.tableParams?.filter)
+
+    const shouldCallRemoteFilter =
+      !this.isLocal && hasCurrentFilters && filtersChanged && !this.useInfiniteScroll && !this.props.pivot
+
+    if (filtersChanged) {
+      this.previousFilters = _cloneDeep(this.tableParams?.filter)
+    }
+
+    if (shouldCallRemoteFilter) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -1114,9 +1153,7 @@ export default class ChataTable extends React.Component {
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
       const element = column.getElement?.()
-      if (element?.classList) {
-        element.classList.toggle('is-filtered', isFiltered)
-      }
+      this.safeToggleClass(element, 'is-filtered', isFiltered)
     })
   }
 
@@ -1147,11 +1184,11 @@ export default class ChataTable extends React.Component {
       const isChild = def?.origPivotColumn !== undefined
       const isFiltered = isChild ? isColDimensionFiltered : isRowFiltered
 
-      column?.getElement?.()?.classList.toggle('is-filtered', isFiltered)
+      this.safeToggleClass(column?.getElement?.(), 'is-filtered', isFiltered)
     })
 
     container?.querySelectorAll('.tabulator-col-group')?.forEach((el) => {
-      el.classList.toggle('is-filtered', isMeasureFiltered)
+      this.safeToggleClass(el, 'is-filtered', isMeasureFiltered)
     })
   }
 
@@ -1704,7 +1741,7 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (!totalRowCount || !(currentRowCount > 0)) {
+    if (!totalRowCount || currentRowCount <= 0) {
       return null
     }
 

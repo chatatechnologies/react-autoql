@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
@@ -45,7 +45,7 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
-import ChataTable from '../ChataTable/ChataTable'
+const LazyChataTable = React.lazy(() => import('../ChataTable/ChataTable'))
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -1244,24 +1244,26 @@ export default class CustomColumnModal extends React.Component {
       <div className='react-autoql-table-preview-wrapper'>
         <div className='react-autoql-input-label'>Preview</div>
         <div className='react-autoql-table-preview-container'>
-          <ChataTable
-            key={this.TABLE_ID}
-            ref={(r) => (this.tableRef = r)}
-            authentication={this.props.authentication}
-            dataFormatting={this.props.dataFormatting}
-            response={this.props.response}
-            queryRequestData={this.props.queryRequestData}
-            popoverParentElement={this.props.popoverParentElement}
-            tooltipID={this.props.tooltipID}
-            columns={this.state.columns}
-            useInfiniteScroll={false}
-            supportsDrilldowns={false}
-            keepScrolledRight={true}
-            pageSize={10}
-            tableOptions={{}}
-            enableContextMenu={false}
-            allowCustomColumns={false}
-          />
+          <Suspense fallback={<Spinner />}>
+            <LazyChataTable
+              key={this.TABLE_ID}
+              ref={(r) => (this.tableRef = r)}
+              authentication={this.props.authentication}
+              dataFormatting={this.props.dataFormatting}
+              response={this.props.response}
+              queryRequestData={this.props.queryRequestData}
+              popoverParentElement={this.props.popoverParentElement}
+              tooltipID={this.props.tooltipID}
+              columns={this.state.columns}
+              useInfiniteScroll={false}
+              supportsDrilldowns={false}
+              keepScrolledRight={true}
+              pageSize={10}
+              tableOptions={{}}
+              enableContextMenu={false}
+              allowCustomColumns={false}
+            />
+          </Suspense>
         </div>
       </div>
     )

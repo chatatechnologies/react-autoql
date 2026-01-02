@@ -298,8 +298,6 @@ export class DashboardTile extends React.Component {
 
   endTopQuery = ({ response }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
-      // Update component key after getting new response
-      // so QueryOutput completely resets
       this.debouncedSetParamsForTile(
         {
           queryResponse: response,
@@ -367,6 +365,7 @@ export class DashboardTile extends React.Component {
         displayOverrides: currentDisplayOverrides,
         filters: currentSessionFilters,
         orders: currentOrders,
+        // tableFilters NOT sent to API - query returns full dataset, filtering done locally/remotely in UI
         tableFilters: currentFilter,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
@@ -408,7 +407,7 @@ export class DashboardTile extends React.Component {
     const queryValidationSelections =
       userSelection || (queryChanged ? undefined : this.props.tile?.queryValidationSelections)
 
-    // New query is running, reset temporary state fields
+    // Clear tableFilters to get full dataset on new query
     this.debouncedSetParamsForTile({
       query,
       dataConfig: queryChanged ? undefined : this.props.tile.dataConfig,
@@ -453,7 +452,7 @@ export class DashboardTile extends React.Component {
     const queryValidationSelections =
       userSelection || (queryChanged ? undefined : this.props.tile?.secondQueryValidationSelections)
 
-    // New query is running, reset temporary state fields
+    // Clear tableFilters to get full dataset on new query
     this.debouncedSetParamsForTile({
       secondQuery: query,
       secondDataConfig: queryChanged ? undefined : this.props.tile.secondDataConfig,
@@ -1288,7 +1287,7 @@ export class DashboardTile extends React.Component {
           const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
           const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters
           return {
-            filters: filtersToUse,
+            filters: filtersToUse || [],
             sorters: this.props.tile?.orders,
             sessionFilters: this.props.tile?.filters,
           }
@@ -1390,7 +1389,7 @@ export class DashboardTile extends React.Component {
           const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.secondTableFilters
 
           return {
-            filters: filtersToUse,
+            filters: filtersToUse || [],
             sorters: this.props.tile?.secondOrders,
             sessionFilters: this.props.tile?.secondFilters,
           }
