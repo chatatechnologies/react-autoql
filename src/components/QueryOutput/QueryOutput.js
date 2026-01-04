@@ -3519,6 +3519,8 @@ export class QueryOutput extends React.Component {
   renderChart = () => {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing for chart')
+      // If the chart would be hidden (e.g., table view), avoid rendering the error message
+      if (!isChartType(this.state.displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
@@ -3580,6 +3582,8 @@ export class QueryOutput extends React.Component {
 
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
+      // Don't show the error message under a table when charts are hidden
+      if (!isChartType(this.state.displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
