@@ -2074,10 +2074,11 @@ export class QueryOutput extends React.Component {
 
     let sIdx = isValidIndex(tableConfig.stringColumnIndex) ? tableConfig.stringColumnIndex : findFirstGroupable()
     let lIdx = isValidIndex(tableConfig.legendColumnIndex) ? tableConfig.legendColumnIndex : findFirstGroupable([sIdx])
+    // Respect explicit `tableConfig.numberColumnIndex`; only auto-avoid conflicts when not explicit.
     const tableConfigHasNumber = isValidIndex(tableConfig.numberColumnIndex)
     let nIdx = tableConfigHasNumber ? tableConfig.numberColumnIndex : findFirstNumber([sIdx, lIdx])
 
-    // If we didn't get a number index from tableConfig, try to avoid conflicts
+    // Only try to avoid conflicts if we generated the index (not from explicit config)
     if (!tableConfigHasNumber && (nIdx === sIdx || nIdx === lIdx)) {
       nIdx = findFirstNumber([sIdx, lIdx])
     }

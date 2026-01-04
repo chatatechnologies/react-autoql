@@ -316,6 +316,26 @@ describe('QueryOutput pivot suite', () => {
 
         expect(resolved.nIdx).toBe(2)
       })
+
+      it('respects explicit numberColumnIndex even if it overlaps with string/legend', () => {
+        const instance = new QueryOutput({})
+        const columns = [
+          { name: 'Category', groupable: true, type: ColumnTypes.STRING },
+          { name: 'Amount', groupable: false, type: ColumnTypes.DOLLAR_AMT },
+        ]
+
+        // Intentionally use index 0 for both string AND number (valid in some scenarios)
+        const resolved = instance.resolveColumnIndices(columns, {
+          stringColumnIndex: 0,
+          legendColumnIndex: 1,
+          numberColumnIndex: 0, // explicit overlap
+        })
+
+        // Should RESPECT the explicit config
+        expect(resolved.sIdx).toBe(0)
+        expect(resolved.lIdx).toBe(1)
+        expect(resolved.nIdx).toBe(0)
+      })
     })
   })
 })
