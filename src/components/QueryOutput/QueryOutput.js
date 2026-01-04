@@ -2098,10 +2098,18 @@ export class QueryOutput extends React.Component {
       nIdx = nIdx < 0 ? 0 : nIdx
     }
 
-    // Ensure we don't return indices that overlap
+    // Ensure we don't return indices that overlap: prefer a numeric column, otherwise any column
     if (nIdx === sIdx || nIdx === lIdx) {
-      const alt = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
-      nIdx = alt >= 0 ? alt : nIdx
+      // First try to find a different NUMBER column
+      const altNumber = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
+
+      if (altNumber >= 0) {
+        nIdx = altNumber
+      } else {
+        // Only fall back to ANY column if no number columns exist
+        const anyAlt = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
+        nIdx = anyAlt >= 0 ? anyAlt : nIdx
+      }
     }
 
     return { sIdx, lIdx, nIdx }
