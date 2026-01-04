@@ -2823,21 +2823,8 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns() || []
       const resolved = this.resolveColumnIndices(columns, this.tableConfig || {})
 
-      this.tableConfig = this.tableConfig || {}
-      this.tableConfig.stringColumnIndex = resolved.sIdx
-      this.tableConfig.legendColumnIndex = resolved.lIdx
-      this.tableConfig.numberColumnIndex = resolved.nIdx
-
-      // Persist updated config to parent callback if available
-      try {
-        if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange)
-          this.onTableConfigChange(false)
-      } catch (err) {
-        console.error('onTableConfigChange threw while updating resolved indices:', err)
-        if (this.props.onErrorCallback) this.props.onErrorCallback(err)
-      }
-
-      // Local copies for subsequent logic
+      // Use local copies for computation. Do not mutate `this.tableConfig` until we've completed
+      // pivot generation and know the final resolved indices.
       let sIdx = resolved.sIdx
       let lIdx = resolved.lIdx
       let nIdx = resolved.nIdx
@@ -3145,6 +3132,31 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
+
+      // Persist resolved indices to instance config only once pivot data is ready.
+      try {
+        const newTableConfig = _cloneDeep(this.tableConfig) || {}
+        newTableConfig.legendColumnIndex = newLegendColumnIndex
+        newTableConfig.stringColumnIndex = newStringColumnIndex
+        newTableConfig.stringColumnIndices = [newStringColumnIndex]
+        newTableConfig.numberColumnIndex = nIdx
+
+        const configsAreEqual = deepEqual(newTableConfig, this.tableConfig)
+        if (!configsAreEqual) {
+          this.tableConfig = newTableConfig
+          if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange) {
+            try {
+              this.onTableConfigChange(false)
+            } catch (err) {
+              console.error('onTableConfigChange threw while updating resolved indices:', err)
+              if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to persist tableConfig after pivot generation:', err)
+      }
+
       this.setPivotTableConfig(true)
       if (this._isMounted) {
         this.forceUpdate()
