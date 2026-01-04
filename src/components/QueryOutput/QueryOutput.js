@@ -2075,30 +2075,32 @@ export class QueryOutput extends React.Component {
     let sIdx = isValidIndex(tableConfig.stringColumnIndex) ? tableConfig.stringColumnIndex : findFirstGroupable()
     let lIdx = isValidIndex(tableConfig.legendColumnIndex) ? tableConfig.legendColumnIndex : findFirstGroupable([sIdx])
     const tableConfigHasNumber = isValidIndex(tableConfig.numberColumnIndex)
+    let nIdx = tableConfigHasNumber ? tableConfig.numberColumnIndex : findFirstNumber([sIdx, lIdx])
 
-    // Fallbacks for sIdx/lIdx first
+    // If we didn't get a number index from tableConfig, try to avoid conflicts
+    if (!tableConfigHasNumber && (nIdx === sIdx || nIdx === lIdx)) {
+      nIdx = findFirstNumber([sIdx, lIdx])
+    }
+
+    // Fallbacks when nothing found
     sIdx = sIdx < 0 ? 0 : sIdx
     lIdx = lIdx < 0 ? (sIdx === 0 ? Math.min(1, columns.length - 1) : 0) : lIdx
 
-    let nIdx
-    if (tableConfigHasNumber) {
-      // Respect explicit numberColumnIndex from config
-      nIdx = tableConfig.numberColumnIndex
-    } else {
-      // Find a numeric column that doesn't conflict with sIdx/lIdx
-      nIdx = findFirstNumber([sIdx, lIdx])
-
-      if (nIdx < 0 || nIdx === sIdx || nIdx === lIdx) {
-        nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
-
-        // Fallback to any non-conflicting column
-        if (nIdx < 0) {
-          nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
-        }
-
-        // Ultimate fallback to 0
-        if (nIdx < 0) nIdx = 0
+    if (nIdx < 0) {
+      // Prefer a numeric column that doesn't conflict with sIdx/lIdx
+      nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
+      if (nIdx < 0) {
+        // As a last resort pick any column index that's not sIdx or lIdx
+        nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
       }
+      // If still not found, fall back to 0
+      nIdx = nIdx < 0 ? 0 : nIdx
+    }
+
+    // Ensure we don't return indices that overlap
+    if (nIdx === sIdx || nIdx === lIdx) {
+      const alt = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
+      nIdx = alt >= 0 ? alt : nIdx
     }
 
     return { sIdx, lIdx, nIdx }
@@ -2823,8 +2825,21 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns() || []
       const resolved = this.resolveColumnIndices(columns, this.tableConfig || {})
 
-      // Use local copies for computation. Do not mutate `this.tableConfig` until we've completed
-      // pivot generation and know the final resolved indices.
+      this.tableConfig = this.tableConfig || {}
+      this.tableConfig.stringColumnIndex = resolved.sIdx
+      this.tableConfig.legendColumnIndex = resolved.lIdx
+      this.tableConfig.numberColumnIndex = resolved.nIdx
+
+      // Persist updated config to parent callback if available
+      try {
+        if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange)
+          this.onTableConfigChange(false)
+      } catch (err) {
+        console.error('onTableConfigChange threw while updating resolved indices:', err)
+        if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+      }
+
+      // Local copies for subsequent logic
       let sIdx = resolved.sIdx
       let lIdx = resolved.lIdx
       let nIdx = resolved.nIdx
@@ -3132,31 +3147,6 @@ export class QueryOutput extends React.Component {
       this.pivotTableColumns = pivotTableColumns
       this.pivotTableData = pivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
-
-      // Persist resolved indices to instance config only once pivot data is ready.
-      try {
-        const newTableConfig = _cloneDeep(this.tableConfig) || {}
-        newTableConfig.legendColumnIndex = newLegendColumnIndex
-        newTableConfig.stringColumnIndex = newStringColumnIndex
-        newTableConfig.stringColumnIndices = [newStringColumnIndex]
-        newTableConfig.numberColumnIndex = nIdx
-
-        const configsAreEqual = deepEqual(newTableConfig, this.tableConfig)
-        if (!configsAreEqual) {
-          this.tableConfig = newTableConfig
-          if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange) {
-            try {
-              this.onTableConfigChange(false)
-            } catch (err) {
-              console.error('onTableConfigChange threw while updating resolved indices:', err)
-              if (this.props.onErrorCallback) this.props.onErrorCallback(err)
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to persist tableConfig after pivot generation:', err)
-      }
-
       this.setPivotTableConfig(true)
       if (this._isMounted) {
         this.forceUpdate()
