@@ -507,7 +507,7 @@ describe('ChataTable', () => {
             ['online', 'John'],
             ['offline', 'Jane'],
           ],
-          count_rows: 2,
+          count_rows: 51000, // Large dataset to trigger remote filtering
           query_id: 'test-query-data',
         },
       },
@@ -618,8 +618,19 @@ describe('ChataTable', () => {
     test('should allow ajaxRequestFunc calls after timing protection period expires', async () => {
       const initialFilters = [{ field: '1', type: '=', value: 'online' }]
 
+      // Create a large dataset response with no data (for initial filter)
+      const mockLargeResponseWithNoData = {
+        data: {
+          data: {
+            rows: [],
+            count_rows: 51000, // Large dataset but with no initial data
+            query_id: 'test-query-empty-large',
+          },
+        },
+      }
+
       const props = {
-        response: mockResponseWithNoData,
+        response: mockLargeResponseWithNoData,
         initialTableParams: { filter: initialFilters },
         queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
         useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
@@ -657,8 +668,19 @@ describe('ChataTable', () => {
     test('should handle the complete flow: mount with no data + filters, then clear filters', async () => {
       const initialFilters = [{ field: '1', type: '=', value: 'online' }]
 
+      // Create a large dataset response with no data (for initial filter)
+      const mockLargeResponseWithNoData = {
+        data: {
+          data: {
+            rows: [],
+            count_rows: 51000, // Large dataset but with no initial data
+            query_id: 'test-query-empty-large',
+          },
+        },
+      }
+
       const props = {
-        response: mockResponseWithNoData,
+        response: mockLargeResponseWithNoData,
         initialTableParams: { filter: initialFilters },
         queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
         useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn

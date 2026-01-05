@@ -77,6 +77,7 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
 import { AddColumnBtn } from '../AddColumnBtn'
+import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -201,6 +202,10 @@ export class QueryOutput extends React.Component {
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
       legendFilterConfig: props.legendFilterConfig || null,
+      axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
+      showCustomColumnModal: false,
+      activeCustomColumn: undefined,
+      isAddingColumn: false,
     }
     this.updateMaxConstraints()
   }
@@ -237,6 +242,8 @@ export class QueryOutput extends React.Component {
       filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
     }),
     onLegendFilterChange: PropTypes.func,
+    initialAxisSorts: PropTypes.object,
+    onAxisSortChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -307,6 +314,8 @@ export class QueryOutput extends React.Component {
     isResizing: false,
     enableDynamicCharting: true,
     onNoneOfTheseClick: undefined,
+    initialAxisSorts: undefined,
+    onAxisSortChange: undefined,
     autoChartAggregations: true,
     showQueryInterpretation: false,
     isTaskModule: false,
@@ -655,7 +664,7 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
+    if (this._isMounted && this.state.isResizing) {
       this.setState({ isResizing: false }, () => {
         this.refreshLayout()
       })
@@ -1088,6 +1097,13 @@ export class QueryOutput extends React.Component {
       this.setState({
         visiblePivotRowChangeCount: this.state.visiblePivotRowChangeCount + 1,
         chartID: uuid(), // Force chart to re-render with new pivot data
+        axisSorts: {}, // Clear axis sorts when pivot data changes
+      })
+    } else if (!isFirstGeneration && this._isMounted) {
+      // Also clear axis sorts when pivot data is regenerated (e.g., from table filters)
+      this.setState({
+        axisSorts: {},
+        chartID: uuid(),
       })
     }
   }
@@ -1808,6 +1824,38 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onAxisSortChange = (axis, columnIndex, sortType) => {
+    // axis: 'x' or 'y'
+    // columnIndex: the index of the column on the axis (for state tracking only)
+    // sortType: 'alpha-asc', 'alpha-desc', 'value-asc', 'value-desc', or null
+
+    // Just update the axisSorts state - ChataChart will handle the actual sorting
+    this.setState((prevState) => {
+      const isHeatmapOrBubble =
+        this.state.displayType === DisplayTypes.HEATMAP || this.state.displayType === DisplayTypes.BUBBLE
+
+      // For non-heatmap/bubble charts, only allow one axis sort at a time
+      // Clear any existing sorts when a new one is applied
+      const newAxisSorts = isHeatmapOrBubble ? { ...prevState.axisSorts } : {}
+
+      if (sortType) {
+        newAxisSorts[`${axis}-${columnIndex}`] = sortType
+      } else {
+        delete newAxisSorts[`${axis}-${columnIndex}`]
+      }
+
+      // Persist axisSorts to parent if callback provided
+      if (this.props.onAxisSortChange) {
+        this.props.onAxisSortChange(newAxisSorts)
+      }
+
+      return { axisSorts: newAxisSorts }
+    })
+
+    // Force chart re-render with new sort state
+    this.setState({ chartID: uuid() })
+  }
+
   onLegendClick = (d) => {
     d?.label && this.handleLegendClick(d.label)
 
@@ -2056,38 +2104,46 @@ export class QueryOutput extends React.Component {
       defaultDateColumn,
     )
     // Prefer the chart's ordinal/axis column if set; otherwise pick a groupable, non-total/non-near-unique string column with the highest unique count.
-    let chosenStringIndex =
-      this.tableConfig?.stringColumnIndex >= 0 ? this.tableConfig.stringColumnIndex : stringColumnIndex
-    try {
-      const rows = this.tableData || this.queryResponse?.data?.data?.rows || []
-      const rowCount = rows?.length || 0
+    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't auto-select a different one)
+    const existingStringIndex = this.tableConfig?.stringColumnIndex
+    const hasValidExistingStringIndex =
+      existingStringIndex >= 0 && this.isColumnIndexValid(existingStringIndex, columns)
 
-      const candidates = (stringColumnIndices || [])
-        .filter((idx) => idx !== undefined && idx !== null && columns[idx])
-        .map((idx) => {
-          const vals = rows
-            .map((r) => r?.[idx])
-            .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
-          const uniqueCount = new Set(vals).size
-          const col = columns[idx]
-          return { idx, uniqueCount, groupable: !!col?.groupable, display_name: col?.display_name, name: col?.name }
-        })
+    let chosenStringIndex = hasValidExistingStringIndex ? existingStringIndex : stringColumnIndex
 
-      const looksLikeTotal = (s) => (s || '').toString().toLowerCase().includes('total')
-      const isNearUnique = (c) => rowCount > 0 && c.uniqueCount >= Math.floor(rowCount * 0.9)
+    // Only auto-select if we don't have a valid existing string column index
+    if (!hasValidExistingStringIndex) {
+      try {
+        const rows = this.tableData || this.queryResponse?.data?.data?.rows || []
+        const rowCount = rows?.length || 0
 
-      const preferred = candidates.filter((c) => c.groupable)
-      const pool = preferred.length ? preferred : candidates
-      const filtered = pool.filter(
-        (c) => !looksLikeTotal(c.display_name) && !looksLikeTotal(c.name) && !isNearUnique(c),
-      )
-      const finalPool = filtered.length ? filtered : pool
+        const candidates = (stringColumnIndices || [])
+          .filter((idx) => idx !== undefined && idx !== null && columns[idx])
+          .map((idx) => {
+            const vals = rows
+              .map((r) => r?.[idx])
+              .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
+            const uniqueCount = new Set(vals).size
+            const col = columns[idx]
+            return { idx, uniqueCount, groupable: !!col?.groupable, display_name: col?.display_name, name: col?.name }
+          })
 
-      if (finalPool.length) {
-        finalPool.sort((a, b) => b.uniqueCount - a.uniqueCount)
-        chosenStringIndex = finalPool[0].idx
-      }
-    } catch (e) {}
+        const looksLikeTotal = (s) => (s || '').toString().toLowerCase().includes('total')
+        const isNearUnique = (c) => rowCount > 0 && c.uniqueCount >= Math.floor(rowCount * 0.9)
+
+        const preferred = candidates.filter((c) => c.groupable)
+        const pool = preferred.length ? preferred : candidates
+        const filtered = pool.filter(
+          (c) => !looksLikeTotal(c.display_name) && !looksLikeTotal(c.name) && !isNearUnique(c),
+        )
+        const finalPool = filtered.length ? filtered : pool
+
+        if (finalPool.length) {
+          finalPool.sort((a, b) => b.uniqueCount - a.uniqueCount)
+          chosenStringIndex = finalPool[0].idx
+        }
+      } catch (e) {}
+    }
 
     this.tableConfig.stringColumnIndices = stringColumnIndices
     this.tableConfig.stringColumnIndex = chosenStringIndex
@@ -2859,7 +2915,8 @@ export class QueryOutput extends React.Component {
           })
         }
       } catch (err) {
-        // ignore header filter parsing errors and continue
+        // Log header filter parsing errors and continue
+        console.error('Error parsing header filters:', err)
       }
 
       const userSorters = this.formattedTableParams?.sorters || []
@@ -2915,6 +2972,7 @@ export class QueryOutput extends React.Component {
         this.isColumnIndexValid(this.tableConfig.legendColumnIndex, columns)
 
       let didSwapAxes = false
+      // Only allow axis swapping/changing on first generation, never when called from sort
       if (
         isFirstGeneration &&
         !hasSavedAxisConfig && // Skip switching if user has saved preferences
@@ -2933,22 +2991,26 @@ export class QueryOutput extends React.Component {
         didSwapAxes = true
       }
 
-      try {
-        if (!columns[newStringColumnIndex]?.groupable) {
-          const found = columns.findIndex((col, i) => col?.groupable && i !== newLegendColumnIndex)
-          if (found >= 0) {
-            newStringColumnIndex = found
+      // Only try to fix non-groupable columns on first generation
+      // When sorting, preserve the current column indices
+      if (isFirstGeneration) {
+        try {
+          if (!columns[newStringColumnIndex]?.groupable) {
+            const found = columns.findIndex((col, i) => col?.groupable && i !== newLegendColumnIndex)
+            if (found >= 0) {
+              newStringColumnIndex = found
+            }
           }
-        }
 
-        if (!columns[newLegendColumnIndex]?.groupable) {
-          const found = columns.findIndex((col, i) => col?.groupable && i !== newStringColumnIndex)
-          if (found >= 0) {
-            newLegendColumnIndex = found
+          if (!columns[newLegendColumnIndex]?.groupable) {
+            const found = columns.findIndex((col, i) => col?.groupable && i !== newStringColumnIndex)
+            if (found >= 0) {
+              newLegendColumnIndex = found
+            }
           }
+        } catch (e) {
+          /* ignore */
         }
-      } catch (e) {
-        /* ignore */
       }
 
       if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
@@ -3179,6 +3241,10 @@ export class QueryOutput extends React.Component {
     return this.props.dataPageSize ?? this.queryResponse?.data?.data?.fe_req?.page_size ?? DEFAULT_DATA_PAGE_SIZE
   }
 
+  resetCustomColumnModal = () => {
+    this.setState({ showCustomColumnModal: false, activeCustomColumn: undefined })
+  }
+
   onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
     if (isHiddenColumn) {
       this.setState({ isAddingColumn: true })
@@ -3206,8 +3272,13 @@ export class QueryOutput extends React.Component {
           this.setState({ isAddingColumn: false })
         })
     } else if (!column) {
-      // Add a custom column
-      this.tableRef?.addCustomColumn()
+      // For single-value responses, open modal directly since ChataTable is not rendered
+      if (isSingleValueResponse(this.queryResponse)) {
+        this.setState({ showCustomColumnModal: true, activeCustomColumn: undefined })
+      } else {
+        // For table responses, delegate to ChataTable
+        this.tableRef?.addCustomColumn()
+      }
     } else {
       this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
@@ -3258,6 +3329,34 @@ export class QueryOutput extends React.Component {
     } else {
       console.error('Unknown column type')
     }
+  }
+
+  renderCustomColumnModal = () => {
+    if (!this.state.showCustomColumnModal) {
+      return null
+    }
+
+    return (
+      <CustomColumnModal
+        {...this.props}
+        columns={this.state.columns}
+        isOpen={this.state.showCustomColumnModal}
+        onClose={() => this.resetCustomColumnModal()}
+        tableRef={this.tableRef}
+        aggConfig={this.state.aggConfig}
+        queryResponse={this.queryResponse}
+        dataFormatting={this.props.dataFormatting}
+        initialColumn={this.state.activeCustomColumn}
+        onUpdateColumn={(column) => {
+          this.onCustomColumnChange(column)
+          this.resetCustomColumnModal()
+        }}
+        onAddColumn={(column) => {
+          this.onCustomColumnChange(column)
+          this.resetCustomColumnModal()
+        }}
+      />
+    )
   }
 
   renderAddColumnBtn = () => {
@@ -3487,6 +3586,8 @@ export class QueryOutput extends React.Component {
           enableChartControls={this.props.enableChartControls}
           initialChartControls={this.props.initialChartControls}
           onChartControlsChange={this.props.onChartControlsChange}
+          onAxisSortChange={this.onAxisSortChange}
+          axisSorts={this.state.axisSorts}
         />
       </ErrorBoundary>
     )
@@ -3788,6 +3889,7 @@ export class QueryOutput extends React.Component {
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         )}
         {this.renderAddColumnBtn()}
+        {this.renderCustomColumnModal()}
         {this.shouldEnableResize && this.renderResizeHandle()}
       </ErrorBoundary>
     )

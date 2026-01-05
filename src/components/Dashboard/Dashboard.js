@@ -154,7 +154,7 @@ class DashboardWithoutTheme extends React.Component {
           const promises = []
           tilesToExecute.forEach((tile) => {
             const tileRef = this.tileRefs[tile.key] || this.tileRefs[tile.i]
-            if (tileRef && tileRef.processTile) {
+            if (tileRef?.processTile) {
               promises.push(tileRef.processTile())
             }
           })
