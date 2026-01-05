@@ -493,6 +493,7 @@ export default class Legend extends React.Component {
         .append('g')
         .attr('class', 'legend-filter-button-d3')
         .attr('transform', `translate(${buttonX}, ${buttonY})`)
+        .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
         .style('cursor', 'pointer')
         .on('click', (event) => {
           event.stopPropagation()
