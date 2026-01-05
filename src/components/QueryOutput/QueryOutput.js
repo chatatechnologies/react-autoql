@@ -3695,6 +3695,8 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
+      } else if (displayType === 'single-value') {
+        return this.renderSingleValueResponse()
       } else if (isSingleValueResponse(this.queryResponse)) {
         return this.renderSingleValueResponse()
       } else if (!isTableType(displayType) && !isChartType(displayType)) {

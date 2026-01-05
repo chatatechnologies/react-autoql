@@ -381,7 +381,6 @@ export default class ChataTable extends React.Component {
 
       // Only skip reverse-translation request if no queryText; cleanup must still run.
       if (!this.props.queryText) {
-        console.warn('ChataTable: skipping RT request — no queryText provided')
         return
       }
     } catch (error) {

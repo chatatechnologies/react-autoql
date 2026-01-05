@@ -45,6 +45,7 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
+import { Spinner } from '../Spinner'
 const LazyChataTable = React.lazy(() => import('../ChataTable/ChataTable'))
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
