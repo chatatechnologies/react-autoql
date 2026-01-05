@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
@@ -43,6 +44,7 @@ export default class Legend extends React.Component {
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
     this.justMounted = true
     this.allLegendLabels = [] // Store all labels before removing hidden ones
+    this.filterButtonD3Element = null
 
     // Use a stable key based on the data columns to identify this chart across remounts
     // Using column names as the key since they identify the dataset
@@ -322,6 +324,7 @@ export default class Legend extends React.Component {
   }
 
   openLegendPopover = () => {
+    console.log('[openLegendPopover] Called, filterButtonD3Element:', this.filterButtonD3Element)
     this.setState({ isLegendPopoverOpen: true })
   }
 
@@ -469,8 +472,86 @@ export default class Legend extends React.Component {
         .attr('x', Math.round(titleBBox?.x - this.AXIS_TITLE_BORDER_PADDING_LEFT))
         .attr('y', Math.round(titleBBox?.y - this.AXIS_TITLE_BORDER_PADDING_TOP))
         .style('transform', select(titleElement).style('transform'))
+
+      // Add filter button next to the title
+      this.renderFilterButtonWithD3(legendElement, titleBBox)
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  renderFilterButtonWithD3 = (legendElement, titleBBox) => {
+    try {
+      // Remove existing button if any
+      select(legendElement).select('.legend-filter-button-d3').remove()
+
+      const iconSize = 14
+      const buttonX = titleBBox.x + titleBBox.width + 20 // 20px spacing to the right
+      const buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
+
+      const buttonGroup = select(legendElement)
+        .append('g')
+        .attr('class', 'legend-filter-button-d3')
+        .attr('transform', `translate(${buttonX}, ${buttonY})`)
+        .style('cursor', 'pointer')
+        .on('click', (event) => {
+          event.stopPropagation()
+          this.openLegendPopover()
+        })
+
+      // Background rect for hover
+      buttonGroup
+        .append('rect')
+        .attr('x', -iconSize / 2 - 2)
+        .attr('y', -iconSize / 2 - 2)
+        .attr('width', iconSize + 4)
+        .attr('height', iconSize + 4)
+        .attr('fill', 'transparent')
+        .attr('stroke', 'transparent')
+        .attr('rx', 3)
+        .attr('class', 'legend-filter-button-bg')
+
+      // Use foreignObject to render the icon
+      const foreignObject = buttonGroup
+        .append('foreignObject')
+        .attr('x', -iconSize / 2)
+        .attr('y', -iconSize / 2)
+        .attr('width', iconSize)
+        .attr('height', iconSize)
+        .style('pointer-events', 'none')
+        .style('overflow', 'visible')
+
+      // Create a div for the React icon
+      const iconContainer = foreignObject
+        .append('xhtml:div')
+        .style('width', '100%')
+        .style('height', '100%')
+        .style('display', 'flex')
+        .style('align-items', 'center')
+        .style('justify-content', 'center')
+
+      // Store reference for button element and position
+      this.filterButtonD3Element = buttonGroup.node()
+      this.filterButtonPosition = { x: buttonX, y: buttonY }
+
+      // Render the icon directly into the container
+      const tooltipID = this.props.chartTooltipID
+      ReactDOM.render(
+        <Icon
+          type='filter'
+          style={{
+            width: `${iconSize}px`,
+            height: `${iconSize}px`,
+            color: 'var(--react-autoql-text-color-secondary)',
+            display: 'block',
+          }}
+          data-tooltip-content='Filter legend items'
+          data-tooltip-id={tooltipID}
+        />,
+        iconContainer.node(),
+      )
+    } catch (error) {
+      console.warn('Error rendering filter button with D3:', error)
     }
   }
 
@@ -781,31 +862,11 @@ export default class Legend extends React.Component {
     )
   }
 
-  renderFilterButton = () => {
-    // Always render filter button, positioned next to the legend title
-    const tooltipID = this.props.chartTooltipID
-    const iconSize = 14
+  renderLegendPopover = (buttonPosition, iconSize) => {
+    if (!buttonPosition) return null
 
-    // Calculate position based on legend title
-    let buttonX = 0
-    let buttonY = 0
+    const { x, y } = buttonPosition
 
-    if (this.legendElements && this.legendElements[0]) {
-      try {
-        const firstLegendElement = this.legendElements[0]
-        const titleElement = select(firstLegendElement).select('.legendTitle').node()
-        const titleBBox = titleElement?.getBBox()
-
-        if (titleBBox) {
-          buttonX = titleBBox.x + titleBBox.width + 18 // 18px spacing to the right
-          buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
-        }
-      } catch (error) {
-        console.warn('Error calculating filter button position:', error)
-      }
-    }
-
-    // Wrap button with LegendPopover so it can measure the child element
     return (
       <LegendPopover
         isOpen={this.state.isLegendPopoverOpen}
@@ -820,47 +881,15 @@ export default class Legend extends React.Component {
         shapeSize={this.SHAPE_SIZE}
         chartHeight={this.props.outerHeight}
       >
-        <g
-          ref={(r) => {
-            this.filterButton = r
-          }}
-          className='legend-filter-button'
-          style={{ cursor: 'pointer' }}
-          transform={`translate(${buttonX}, ${buttonY})`}
-          onClick={(e) => {
-            e.stopPropagation()
-            this.openLegendPopover()
-          }}
-        >
-          <rect
-            x={-iconSize / 2 - 2}
-            y={-iconSize / 2 - 2}
-            width={iconSize + 4}
-            height={iconSize + 4}
-            fill='transparent'
-            stroke='transparent'
-            className='legend-filter-button-bg'
-            rx={3}
-          />
-          <foreignObject
-            x={-iconSize / 2}
-            y={-iconSize / 2}
-            width={iconSize}
-            height={iconSize}
-            style={{ pointerEvents: 'none' }}
-          >
-            <Icon
-              type='filter'
-              style={{
-                fontSize: `${iconSize}px`,
-                color: 'var(--react-autoql-text-color-secondary)',
-                display: 'block',
-              }}
-              data-tooltip-content='Filter legend items'
-              data-tooltip-id={tooltipID}
-            />
-          </foreignObject>
-        </g>
+        <rect
+          x={x - iconSize / 2 - 2}
+          y={y - iconSize / 2 - 2}
+          width={iconSize + 4}
+          height={iconSize + 4}
+          fill='transparent'
+          stroke='transparent'
+          style={{ pointerEvents: 'none' }}
+        />
       </LegendPopover>
     )
   }
@@ -868,7 +897,13 @@ export default class Legend extends React.Component {
   render = () => {
     const translateX = this.getTotalLeftPadding()
     const translateY = this.getTotalTopPadding() + this.TOP_ADJUSTMENT
-    const filterButton = this.renderFilterButton()
+    const iconSize = 14
+    const buttonPosition = this.filterButtonPosition
+      ? {
+          x: this.filterButtonPosition.x,
+          y: this.filterButtonPosition.y,
+        }
+      : null
 
     return (
       <>
@@ -877,7 +912,7 @@ export default class Legend extends React.Component {
           {this.renderLegendClippingContainer(translateX, translateY)}
           {this.renderLegendBorder()}
           {this.props.isAggregated && this.renderTitleSelector()}
-          {filterButton}
+          {this.props.isAggregated && buttonPosition && this.renderLegendPopover(buttonPosition, iconSize)}
         </g>
       </>
     )
