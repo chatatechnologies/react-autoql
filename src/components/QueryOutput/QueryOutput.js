@@ -657,7 +657,7 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this._isMounted && this.state.isResizing) {
+    if (this.state.isResizing) {
       this.setState({ isResizing: false }, () => {
         this.refreshLayout()
       })
@@ -2865,8 +2865,7 @@ export class QueryOutput extends React.Component {
           })
         }
       } catch (err) {
-        // Log header filter parsing errors and continue
-        console.error('Error parsing header filters:', err)
+        // ignore header filter parsing errors and continue
       }
 
       const userSorters = this.formattedTableParams?.sorters || []
