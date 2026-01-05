@@ -100,7 +100,7 @@ export class QueryOutput extends React.Component {
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
-    this.MAX_PIVOT_TABLE_COLUMNS = 50
+    this.MAX_PIVOT_TABLE_CELLS = 500000
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
@@ -201,6 +201,7 @@ export class QueryOutput extends React.Component {
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
+      legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
@@ -237,6 +238,10 @@ export class QueryOutput extends React.Component {
       weightColumnIndex: PropTypes.number,
     }),
     onNetworkColumnChange: PropTypes.func,
+    legendFilterConfig: PropTypes.shape({
+      filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
+    }),
+    onLegendFilterChange: PropTypes.func,
     initialAxisSorts: PropTypes.object,
     onAxisSortChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
@@ -333,6 +338,8 @@ export class QueryOutput extends React.Component {
     onAggConfigChange: () => {},
     initialNetworkColumnConfig: undefined,
     onNetworkColumnChange: () => {},
+    legendFilterConfig: undefined,
+    onLegendFilterChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
     onDrilldownStart: () => {},
@@ -692,6 +699,14 @@ export class QueryOutput extends React.Component {
     // Call parent callback if provided
     if (this.props.onNetworkColumnChange) {
       this.props.onNetworkColumnChange(networkColumnConfig)
+    }
+  }
+
+  onLegendFilterChange = (legendFilterConfig) => {
+    this.setState({ legendFilterConfig })
+    // Call parent callback if provided
+    if (this.props.onLegendFilterChange) {
+      this.props.onLegendFilterChange(legendFilterConfig)
     }
   }
 
@@ -2776,10 +2791,45 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  limitPivotTableByTotalCells = (uniqueRowHeaders, uniqueColumnHeaders) => {
+    const originalRowCount = uniqueRowHeaders.length
+    const originalColumnCount = uniqueColumnHeaders.length
+    const totalCells = originalRowCount * originalColumnCount
+
+    if (totalCells <= this.MAX_PIVOT_TABLE_CELLS) {
+      return {
+        rowHeaders: uniqueRowHeaders,
+        columnHeaders: uniqueColumnHeaders,
+        isLimited: false,
+      }
+    }
+
+    // Calculate scaling factor to fit within cell limit
+    const scaleFactor = Math.sqrt(this.MAX_PIVOT_TABLE_CELLS / totalCells)
+    const maxRows = Math.floor(originalRowCount * scaleFactor)
+    const maxColumns = Math.floor(originalColumnCount * scaleFactor)
+
+    // Ensure we don't exceed the cell limit
+    let finalRows = maxRows
+    let finalColumns = maxColumns
+    if (finalRows * finalColumns > this.MAX_PIVOT_TABLE_CELLS) {
+      // Adjust to ensure we stay within limit
+      finalColumns = Math.floor(this.MAX_PIVOT_TABLE_CELLS / finalRows)
+    }
+
+    return {
+      rowHeaders: uniqueRowHeaders.slice(0, finalRows),
+      columnHeaders: uniqueColumnHeaders.slice(0, finalColumns),
+      isLimited: true,
+      originalRowCount,
+      originalColumnCount,
+      totalCells,
+    }
+  }
+
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
-      this.pivotTableColumnsLimited = false
-      this.pivotTableRowsLimited = false
+      this.pivotTableDataLimited = false
       this.pivotTableID = uuid()
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
@@ -2966,22 +3016,22 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
       }
 
-      if (uniqueRowHeaders?.length > MAX_CHART_ELEMENTS) {
-        this.pivotTableRowsLimited = true
-        this.pivotTableTotalRows = uniqueRowHeaders.length
-        uniqueRowHeaders = uniqueRowHeaders.slice(0, MAX_CHART_ELEMENTS)
+      // Limit by total number of cells (rows × columns)
+      const limitResult = this.limitPivotTableByTotalCells(uniqueRowHeaders, uniqueColumnHeaders)
+      uniqueRowHeaders = limitResult.rowHeaders
+      uniqueColumnHeaders = limitResult.columnHeaders
+
+      if (limitResult.isLimited) {
+        this.pivotTableDataLimited = true
+        this.pivotTableTotalRows = limitResult.originalRowCount
+        this.pivotTableTotalColumns = limitResult.originalColumnCount
+        this.pivotTableTotalCells = limitResult.totalCells
       }
 
       const uniqueRowHeadersObj = uniqueRowHeaders.reduce((map, title, i) => {
         map[title] = i
         return map
       }, {})
-
-      if (uniqueColumnHeaders?.length > this.MAX_PIVOT_TABLE_COLUMNS) {
-        this.pivotTableColumnsLimited = true
-        this.pivotTableTotalColumns = uniqueColumnHeaders.length
-        uniqueColumnHeaders = uniqueColumnHeaders.slice(0, this.MAX_PIVOT_TABLE_COLUMNS)
-      }
 
       const uniqueColumnHeadersObj = uniqueColumnHeaders.reduce((map, title, i) => {
         map[title] = i
@@ -3435,11 +3485,11 @@ export class QueryOutput extends React.Component {
           scope={this.props.scope}
           tooltipID={this.props.tooltipID}
           response={this.queryResponse}
-          pivotTableRowsLimited={this.pivotTableRowsLimited}
-          pivotTableColumnsLimited={this.pivotTableColumnsLimited}
+          pivotTableDataLimited={this.pivotTableDataLimited}
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
-          maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
+          totalCells={this.pivotTableTotalCells}
+          maxCells={this.MAX_PIVOT_TABLE_CELLS}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
@@ -3478,7 +3528,7 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    const isPivotDataLimited = usePivotData && this.pivotTableDataLimited
 
     return (
       <ErrorBoundary>
@@ -3512,6 +3562,8 @@ export class QueryOutput extends React.Component {
           isDrilldownChartHidden={this.props.isDrilldownChartHidden}
           networkColumnConfig={this.state.networkColumnConfig}
           onNetworkColumnChange={this.onNetworkColumnChange}
+          legendFilterConfig={this.state.legendFilterConfig}
+          onLegendFilterChange={this.onLegendFilterChange}
           enableDynamicCharting={this.props.enableDynamicCharting}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}

@@ -1627,33 +1627,27 @@ export default class ChataTable extends React.Component {
 
     if (
       (this.useInfiniteScroll && isDataLimited(this.props.response)) ||
-      this.props.pivotTableRowsLimited ||
-      this.props.pivotTableColumnsLimited
+      this.props.pivotTableDataLimited
     ) {
       const rowLimit = this.props.response?.data?.data?.row_limit
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
-      const chartElementLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_CHART_ELEMENTS)
       const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
         this.props.response?.data?.data?.count_rows,
       )
       const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
       const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
+      const totalCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalCells)
+      const maxCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxCells)
 
       let content
       let tooltipContent
 
       if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
         tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
-      } else if (this.props.pivotTableRowsLimited && this.props.pivotTableColumnsLimited) {
-        content = 'Rows and Columns have been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to the first <em>${this.props.maxColumns}/${totalPivotColumnsFormatted}</em> columns and <em>${chartElementLimitFormatted}/${totalPivotRowsFormatted}</em> rows of data.`
-      } else if (this.props.pivotTableRowsLimited) {
-        content = 'Rows have been limited!'
-        tooltipContent = `To optimize performance, this pivot table has limited to the first <em>${chartElementLimitFormatted}/${totalPivotRowsFormatted}</em> rows of data.`
-      } else if (this.props.pivotTableColumnsLimited) {
-        content = 'Columns have been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to the first <em>${this.props.maxColumns}/${totalPivotColumnsFormatted}</em> columns.`
+      } else if (this.props.pivotTableDataLimited) {
+        content = 'Data has been limited!'
+        tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxCellsFormatted}</em> cells. The original table would have had <em>${totalPivotRowsFormatted}</em> rows × <em>${totalPivotColumnsFormatted}</em> columns = <em>${totalCellsFormatted}</em> cells.`
       }
 
       return (
