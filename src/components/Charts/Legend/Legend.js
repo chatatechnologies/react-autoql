@@ -680,17 +680,13 @@ export default class Legend extends React.Component {
       const height = this.combinedLegendHeight <= maxLegendHeight ? this.combinedLegendHeight : maxLegendHeight
       const width = this.combinedLegendWidth <= maxLegendWidth ? this.combinedLegendWidth : maxLegendWidth
 
-      // Add extra width for filter button (icon + spacing)
-      const filterButtonWidth = 25 // 14px icon + 11px spacing
-      const totalWidth = width + filterButtonWidth
-
       select(this.legendClippingContainer)
         .attr('height', height + totalVerticalPadding)
-        .attr('width', totalWidth + totalHorizontalPadding)
+        .attr('width', width + totalHorizontalPadding)
 
       select(this.legendBorder)
         .attr('height', height + 2 * this.BORDER_PADDING)
-        .attr('width', totalWidth + 2 * this.BORDER_PADDING)
+        .attr('width', width + 2 * this.BORDER_PADDING)
 
       this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
