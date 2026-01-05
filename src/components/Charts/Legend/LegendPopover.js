@@ -182,25 +182,25 @@ export default class LegendPopover extends React.Component {
     return (
       <div className='legend-popover-wrapper' style={{ maxHeight: `${maxHeight}px` }}>
         <div className='legend-popover-header'>
-          <div className='legend-select-all-wrapper' onClick={this.handleSelectAllToggle}>
-            <Checkbox checked={allVisible} clickable={false} className='legend-select-all-checkbox' />
-            <span className='legend-select-all-label'>Select All</span>
+          <div className='legend-search-wrapper'>
+            <input
+              type='text'
+              placeholder='Search...'
+              value={searchQuery}
+              onChange={this.handleSearchChange}
+              className='legend-search-input'
+            />
+            {searchQuery && (
+              <button className='legend-search-clear' onClick={this.clearSearch} title='Clear search'>
+                ×
+              </button>
+            )}
           </div>
 
           <div className='legend-popover-controls'>
-            <div className='legend-search-wrapper'>
-              <input
-                type='text'
-                placeholder='Search...'
-                value={searchQuery}
-                onChange={this.handleSearchChange}
-                className='legend-search-input'
-              />
-              {searchQuery && (
-                <button className='legend-search-clear' onClick={this.clearSearch} title='Clear search'>
-                  ×
-                </button>
-              )}
+            <div className='legend-select-all-wrapper' onClick={this.handleSelectAllToggle}>
+              <Checkbox checked={allVisible} clickable={false} className='legend-select-all-checkbox' />
+              <span className='legend-select-all-label'>Select All</span>
             </div>
             <button
               className={`legend-sort-button ${sortOrder || ''}`}
