@@ -324,7 +324,6 @@ export default class Legend extends React.Component {
   }
 
   openLegendPopover = () => {
-    console.log('[openLegendPopover] Called, filterButtonD3Element:', this.filterButtonD3Element)
     this.setState({ isLegendPopoverOpen: true })
   }
 
