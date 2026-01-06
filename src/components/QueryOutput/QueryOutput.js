@@ -3862,9 +3862,7 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
-      } else if (displayType === 'single-value') {
-        return this.renderSingleValueResponse()
-      } else if (isSingleValueResponse(this.queryResponse)) {
+      } else if (this.queryResisSingleValueResponseponse) {
         return this.renderSingleValueResponse()
       } else if (!isTableType(displayType) && !isChartType(displayType)) {
         console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
