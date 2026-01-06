@@ -60,7 +60,6 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.filteredResponseData = null
-    this.previousFilters = []
     this.pageSize = props.pageSize ?? 50
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
@@ -144,28 +143,6 @@ export default class ChataTable extends React.Component {
       contextMenuColumn: undefined,
       contextMenuLocation: null,
     }
-  }
-
-  // Safely toggle a class on an element. Handles environments where classList.toggle
-  // may not be available or where classList.toggle is mocked differently in tests.
-  safeToggleClass = (el, className, enabled) => {
-    if (!el) return
-    const cls = el.classList
-    if (cls && typeof cls.toggle === 'function') {
-      cls.toggle(className, enabled)
-      return
-    }
-
-    // Fallback: manipulate className string
-    const current = (el.className || '').split(/\s+/).filter(Boolean)
-    const has = current.includes(className)
-    if (enabled && !has) {
-      current.push(className)
-    } else if (!enabled && has) {
-      const idx = current.indexOf(className)
-      if (idx >= 0) current.splice(idx, 1)
-    }
-    el.className = current.join(' ')
   }
 
   // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
@@ -364,7 +341,6 @@ export default class ChataTable extends React.Component {
 
   componentWillUnmount = () => {
     try {
-      // Always run cleanup to avoid memory leaks or state updates after unmount
       this._isMounted = false
       clearTimeout(this.clickListenerTimeout)
       clearTimeout(this.setDimensionsTimeout)
@@ -565,17 +541,8 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
-    const hasCurrentFilters = this.tableParams?.filter?.length > 0
-    const filtersChanged = !_isEqual(this.previousFilters, this.tableParams?.filter)
-
-    const shouldCallRemoteFilter =
-      !this.isLocal && hasCurrentFilters && filtersChanged && !this.useInfiniteScroll && !this.props.pivot
-
-    if (filtersChanged) {
-      this.previousFilters = _cloneDeep(this.tableParams?.filter)
-    }
-
-    if (shouldCallRemoteFilter) {
+    // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
+    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -1152,7 +1119,9 @@ export default class ChataTable extends React.Component {
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
       const element = column.getElement?.()
-      this.safeToggleClass(element, 'is-filtered', isFiltered)
+      if (element?.classList) {
+        element.classList.toggle('is-filtered', isFiltered)
+      }
     })
   }
 
@@ -1183,11 +1152,11 @@ export default class ChataTable extends React.Component {
       const isChild = def?.origPivotColumn !== undefined
       const isFiltered = isChild ? isColDimensionFiltered : isRowFiltered
 
-      this.safeToggleClass(column?.getElement?.(), 'is-filtered', isFiltered)
+      column?.getElement?.()?.classList.toggle('is-filtered', isFiltered)
     })
 
     container?.querySelectorAll('.tabulator-col-group')?.forEach((el) => {
-      this.safeToggleClass(el, 'is-filtered', isMeasureFiltered)
+      el.classList.toggle('is-filtered', isMeasureFiltered)
     })
   }
 
@@ -1661,35 +1630,26 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    if (
-      (this.useInfiniteScroll && isDataLimited(this.props.response)) ||
-      this.props.pivotTableRowsLimited ||
-      this.props.pivotTableColumnsLimited
-    ) {
+    if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
       const rowLimit = this.props.response?.data?.data?.row_limit
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
-      const chartElementLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_CHART_ELEMENTS)
       const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
         this.props.response?.data?.data?.count_rows,
       )
       const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
       const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
+      const totalCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalCells)
+      const maxCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxCells)
 
       let content
       let tooltipContent
 
       if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
         tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
-      } else if (this.props.pivotTableRowsLimited && this.props.pivotTableColumnsLimited) {
-        content = 'Rows and Columns have been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to the first <em>${this.props.maxColumns}/${totalPivotColumnsFormatted}</em> columns and <em>${chartElementLimitFormatted}/${totalPivotRowsFormatted}</em> rows of data.`
-      } else if (this.props.pivotTableRowsLimited) {
-        content = 'Rows have been limited!'
-        tooltipContent = `To optimize performance, this pivot table has limited to the first <em>${chartElementLimitFormatted}/${totalPivotRowsFormatted}</em> rows of data.`
-      } else if (this.props.pivotTableColumnsLimited) {
-        content = 'Columns have been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to the first <em>${this.props.maxColumns}/${totalPivotColumnsFormatted}</em> columns.`
+      } else if (this.props.pivotTableDataLimited) {
+        content = 'Data has been limited!'
+        tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxCellsFormatted}</em> cells. The original table would have had <em>${totalPivotRowsFormatted}</em> rows × <em>${totalPivotColumnsFormatted}</em> columns = <em>${totalCellsFormatted}</em> cells.`
       }
 
       return (
@@ -1740,7 +1700,7 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (!totalRowCount || currentRowCount <= 0) {
+    if (!totalRowCount || !(currentRowCount > 0)) {
       return null
     }
 

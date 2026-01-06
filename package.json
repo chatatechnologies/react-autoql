@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.10.17",
+    "autoql-fe-utils": "1.10.16",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
@@ -139,6 +139,7 @@
     "babel-core": "7.0.0-bridge.0",
     "babel-jest": "28.1.1",
     "babel-plugin-import": "1.13.8",
+    "check-prop-types": "1.1.2",
     "enzyme": "3.11.0",
     "enzyme-adapter-react-16": "1.15.6",
     "eslint": "8.25.0",
