@@ -508,9 +508,7 @@ export class QueryOutput extends React.Component {
           () => this.props.onDisplayTypeChange?.(this.state.displayType),
         )
 
-        // If new number column indices conflict, reset table config to resolve the arrays
-        // The config should stay the same as much as possible while removing the overlapping indices
-        // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
+        // Preserve saved config while resolving number-column conflicts
         if (
           !this.hasError(this.queryResponse) &&
           !this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)
@@ -1040,7 +1038,7 @@ export class QueryOutput extends React.Component {
   }
 
   shouldGeneratePivotData = () => {
-    return this.tableData && this.potentiallySupportsPivot()
+    return !!this.tableData && this.potentiallySupportsPivot()
   }
 
   shouldGenerateTableData = () => {
@@ -1829,13 +1827,11 @@ export class QueryOutput extends React.Component {
     // columnIndex: the index of the column on the axis (for state tracking only)
     // sortType: 'alpha-asc', 'alpha-desc', 'value-asc', 'value-desc', or null
 
-    // Just update the axisSorts state - ChataChart will handle the actual sorting
+    // Update axis sort state (ChataChart performs actual sorting)
     this.setState((prevState) => {
       const isHeatmapOrBubble =
-        this.state.displayType === DisplayTypes.HEATMAP || this.state.displayType === DisplayTypes.BUBBLE
+        prevState.displayType === DisplayTypes.HEATMAP || prevState.displayType === DisplayTypes.BUBBLE
 
-      // For non-heatmap/bubble charts, only allow one axis sort at a time
-      // Clear any existing sorts when a new one is applied
       const newAxisSorts = isHeatmapOrBubble ? { ...prevState.axisSorts } : {}
 
       if (sortType) {
@@ -1844,16 +1840,18 @@ export class QueryOutput extends React.Component {
         delete newAxisSorts[`${axis}-${columnIndex}`]
       }
 
-      // Persist axisSorts to parent if callback provided
+      // Persist axisSorts to parent if callback provided (side-effect scheduled)
       if (this.props.onAxisSortChange) {
-        this.props.onAxisSortChange(newAxisSorts)
+        try {
+          this.props.onAxisSortChange(newAxisSorts)
+        } catch (err) {
+          console.error('onAxisSortChange callback threw:', err)
+          if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+        }
       }
 
-      return { axisSorts: newAxisSorts }
+      return { axisSorts: newAxisSorts, chartID: uuid() }
     })
-
-    // Force chart re-render with new sort state
-    this.setState({ chartID: uuid() })
   }
 
   onLegendClick = (d) => {
@@ -2077,6 +2075,59 @@ export class QueryOutput extends React.Component {
     }
 
     return indices.every((index) => this.isColumnIndexValid(index, columns))
+  }
+
+  // Resolve sensible column indices for pivot generation (string, legend, number)
+  resolveColumnIndices = (columns, tableConfig = {}) => {
+    const isValidIndex = (i) => Number.isInteger(i) && i >= 0 && i < columns.length
+
+    const findFirstGroupable = (excludeIndices = []) =>
+      columns.findIndex((c, i) => c?.groupable && !excludeIndices.includes(i))
+
+    const findFirstNumber = (excludeIndices = []) =>
+      columns.findIndex((c, i) => isColumnNumberType(c) && !excludeIndices.includes(i))
+
+    let sIdx = isValidIndex(tableConfig.stringColumnIndex) ? tableConfig.stringColumnIndex : findFirstGroupable()
+    let lIdx = isValidIndex(tableConfig.legendColumnIndex) ? tableConfig.legendColumnIndex : findFirstGroupable([sIdx])
+    // Respect explicit `tableConfig.numberColumnIndex`; only auto-avoid conflicts when not explicit.
+    const tableConfigHasNumber = isValidIndex(tableConfig.numberColumnIndex)
+    let nIdx = tableConfigHasNumber ? tableConfig.numberColumnIndex : findFirstNumber([sIdx, lIdx])
+
+    // Only try to avoid conflicts if we generated the index (not from explicit config)
+    if (!tableConfigHasNumber && (nIdx === sIdx || nIdx === lIdx)) {
+      nIdx = findFirstNumber([sIdx, lIdx])
+    }
+
+    // Fallbacks when nothing found
+    sIdx = sIdx < 0 ? 0 : sIdx
+    lIdx = lIdx < 0 ? (sIdx === 0 ? Math.min(1, columns.length - 1) : 0) : lIdx
+
+    if (nIdx < 0) {
+      // Prefer a numeric column that doesn't conflict with sIdx/lIdx
+      nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
+      if (nIdx < 0) {
+        // As a last resort pick any column index that's not sIdx or lIdx
+        nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
+      }
+      // If still not found, fall back to 0
+      nIdx = nIdx < 0 ? 0 : nIdx
+    }
+
+    // Ensure we don't return indices that overlap: prefer a numeric column, otherwise any column
+    if (nIdx === sIdx || nIdx === lIdx) {
+      // First try to find a different NUMBER column
+      const altNumber = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
+
+      if (altNumber >= 0) {
+        nIdx = altNumber
+      } else {
+        // Only fall back to ANY column if no number columns exist
+        const anyAlt = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
+        nIdx = anyAlt >= 0 ? anyAlt : nIdx
+      }
+    }
+
+    return { sIdx, lIdx, nIdx }
   }
 
   hasIndex = (indices, index) => {
@@ -2366,9 +2417,7 @@ export class QueryOutput extends React.Component {
     if (col.type === ColumnTypes.DATE || col.type === 'DATE_STRING') {
       return (a, b) => dateSortFn(a, b, col, 'isTable')
     } else if (col.type === 'STRING') {
-      // There is some bug in tabulator where its not sorting
-      // certain columns. This explicitly sets the sorter so
-      // it works every time
+      // Tabulator sometimes fails to sort string columns; force 'alphanum'
       return 'alphanum'
     }
 
@@ -2535,14 +2584,12 @@ export class QueryOutput extends React.Component {
         return wrapper
       }
 
-      // Always have filtering enabled, but only
-      // display if filtering is toggled by user
+      // Always enable header filtering; display only when toggled
       newCol.headerFilter = col.headerFilter ?? 'input'
       newCol.headerFilterPlaceholder = this.setHeaderFilterPlaceholder(newCol)
       newCol.headerFilterLiveFilter = false
 
-      // Need to set custom filters for cells that are
-      // displayed differently than the data (ie. dates)
+      // Use custom header filters for cells displayed differently than raw data
       newCol.headerFilterFunc = this.setFilterFunction(newCol)
 
       // Allow proper chronological sorting for date strings
@@ -2550,8 +2597,7 @@ export class QueryOutput extends React.Component {
       newCol.headerSort = col.headerSort ?? !!this.props.enableTableSorting
       newCol.headerSortStartingDir = 'desc'
       newCol.headerClick = (e, col) => {
-        // To allow tabulator to sort, we must first restore redrawing,
-        // then the component will disable it again afterwards automatically
+        // Restore redraw so Tabulator sorting works, it will be disabled afterwards
         if (this.state.displayType === 'table') {
           this.tableRef?.ref?.restoreRedraw()
         } else if (this.state.displayType === 'pivot_table') {
@@ -2832,16 +2878,38 @@ export class QueryOutput extends React.Component {
       this.pivotTableDataLimited = false
       this.pivotTableID = uuid()
 
-      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows)
-      tableData = tableData.filter((row) => row[0] !== null)
+      let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows) || []
 
-      const columns = this.getColumns()
-      const { legendColumnIndex, stringColumnIndex, numberColumnIndex } = this.tableConfig
+      // Defensive: ensure we have a columns array and valid tableConfig indices
+      const columns = this.getColumns() || []
+      const resolved = this.resolveColumnIndices(columns, this.tableConfig || {})
+
+      this.tableConfig = this.tableConfig || {}
+      this.tableConfig.stringColumnIndex = resolved.sIdx
+      this.tableConfig.legendColumnIndex = resolved.lIdx
+      this.tableConfig.numberColumnIndex = resolved.nIdx
+
+      // Persist updated config to parent callback if available
+      try {
+        if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange)
+          this.onTableConfigChange(false)
+      } catch (err) {
+        console.error('onTableConfigChange threw while updating resolved indices:', err)
+        if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+      }
+
+      // Local copies for subsequent logic
+      let sIdx = resolved.sIdx
+      let lIdx = resolved.lIdx
+      let nIdx = resolved.nIdx
+
+      // Preserve original row[0] !== null filter
+      tableData = (tableData || []).filter((row) => row?.[0] !== null)
 
       tableData = tableData.filter((row) => {
-        const stringVal = row?.[stringColumnIndex]
-        const legendVal = row?.[legendColumnIndex]
-        const numVal = row?.[numberColumnIndex]
+        const stringVal = row?.[sIdx]
+        const legendVal = row?.[lIdx]
+        const numVal = row?.[nIdx]
 
         const isStringEmpty = stringVal === null || stringVal === undefined || `${stringVal}`.toString().trim() === ''
         const isLegendEmpty = legendVal === null || legendVal === undefined || `${legendVal}`.toString().trim() === ''
@@ -2935,12 +3003,12 @@ export class QueryOutput extends React.Component {
 
       // Build unique header lists, stripping out null/undefined/empty-string values
       let uniqueRowHeaders = sortedData
-        .map((d) => d[stringColumnIndex])
+        .map((d) => d[sIdx])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
 
       let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
-        .map((d) => d[legendColumnIndex])
+        .map((d) => d[lIdx])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
 
@@ -2962,8 +3030,8 @@ export class QueryOutput extends React.Component {
         return
       }
 
-      let newStringColumnIndex = stringColumnIndex
-      let newLegendColumnIndex = legendColumnIndex
+      let newStringColumnIndex = sIdx
+      let newLegendColumnIndex = lIdx
 
       const hasSavedAxisConfig =
         this.tableConfig &&
@@ -2977,12 +3045,12 @@ export class QueryOutput extends React.Component {
         !hasSavedAxisConfig && // Skip switching if user has saved preferences
         // Only switch if legend is a date AND it would not shrink the number of row headers,
         // or if the legend has more unique headers than the rows (original behavior).
-        ((isColumnDateType(columns[legendColumnIndex]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
+        ((isColumnDateType(columns[lIdx]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
           (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
-            (!isColumnDateType(columns[stringColumnIndex]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
+            (!isColumnDateType(columns[sIdx]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
       ) {
-        newStringColumnIndex = legendColumnIndex
-        newLegendColumnIndex = stringColumnIndex
+        newStringColumnIndex = lIdx
+        newLegendColumnIndex = sIdx
 
         const tempValues = [...uniqueRowHeaders]
         uniqueRowHeaders = [...uniqueColumnHeaders]
@@ -3012,7 +3080,7 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[stringColumnIndex])) {
+      if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[newStringColumnIndex])) {
         uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
       }
 
@@ -3070,8 +3138,8 @@ export class QueryOutput extends React.Component {
         })
 
         const newPivotCol = {
-          ...columns[numberColumnIndex],
-          origColumn: columns[numberColumnIndex],
+          ...columns[nIdx],
+          origColumn: columns[nIdx],
           origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
           name: columnName,
@@ -3118,7 +3186,7 @@ export class QueryOutput extends React.Component {
         const pivotColumnIndex = uniqueColumnHeadersObj[row[newLegendColumnIndex]]
         if (pivotColumnIndex !== undefined) {
           const colIndex = pivotColumnIndex + 1
-          const val = Number(row[numberColumnIndex])
+          const val = Number(row[nIdx])
           if (Number.isFinite(val)) {
             const existing = Number(pivotTableData[pivotRowIndex][colIndex]) || 0
             pivotTableData[pivotRowIndex][colIndex] = existing + val
@@ -3508,13 +3576,54 @@ export class QueryOutput extends React.Component {
   renderChart = () => {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing for chart')
+      // If the chart would be hidden (e.g., table view), avoid rendering the error message
+      if (!isChartType(this.state.displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
     const usePivotData = this.usePivotDataForChart()
 
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
-      return this.renderMessage('Error: There was no data supplied for this chart')
+      // Attempt to regenerate pivot data once (cover cases where config wasn't ready yet)
+      try {
+        this.generatePivotTableData()
+      } catch (e) {
+        console.error('First pivot data generation attempt failed:', e)
+        if (this.props.onErrorCallback) this.props.onErrorCallback(e)
+      }
+
+      // If still missing, try to recompute a valid numeric column index and regenerate
+      if (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig) {
+        try {
+          if (this.pivotTableColumns && this.pivotTableConfig) {
+            const resolved = this.resolveColumnIndices(this.pivotTableColumns, this.pivotTableConfig || {})
+            if (Number.isInteger(resolved.nIdx)) {
+              this.pivotTableConfig.numberColumnIndex = resolved.nIdx
+              this.generatePivotTableData()
+            }
+          } else if (this.tableConfig) {
+            // Fallback: compute indices from visible columns and retry
+            const cols = this.getColumns()
+            const resolved = this.resolveColumnIndices(cols, this.tableConfig || {})
+            if (Number.isInteger(resolved.nIdx)) {
+              this.tableConfig.numberColumnIndex = resolved.nIdx
+              try {
+                this.generatePivotTableData()
+              } catch (err) {
+                console.error('Regeneration after resolving indices failed:', err)
+                if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Attempt to recompute pivot number index and regenerate failed:', e)
+          if (this.props.onErrorCallback) this.props.onErrorCallback(e)
+        }
+      }
+
+      if (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig) {
+        return this.renderMessage('Error: There was no data supplied for this chart')
+      }
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
@@ -3528,7 +3637,14 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const columns = usePivotData ? this.pivotTableColumns : this.state.columns
 
-    const isPivotDataLimited = usePivotData && this.pivotTableDataLimited
+    // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
+    if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
+      // Don't show the error message under a table when charts are hidden
+      if (!isChartType(this.state.displayType)) return null
+      return this.renderMessage('Error: There was no data supplied for this chart')
+    }
+
+    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
 
     return (
       <ErrorBoundary>
