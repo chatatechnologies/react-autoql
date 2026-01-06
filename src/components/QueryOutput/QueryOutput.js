@@ -75,6 +75,7 @@ import {
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
+import { Spinner } from '../Spinner'
 import { ChataTable } from '../ChataTable'
 import { AddColumnBtn } from '../AddColumnBtn'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
