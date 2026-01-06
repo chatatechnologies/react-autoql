@@ -72,6 +72,30 @@
     outline: none !important;
   }
 
+  .legend-filter-button {
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    .react-autoql-icon {
+      transition: color 0.2s ease;
+    }
+
+    &:hover {
+      .legend-filter-button-bg {
+        fill: var(--react-autoql-hover-color);
+        fill-opacity: 0.8;
+      }
+
+      .react-autoql-icon {
+        color: var(--react-autoql-accent-color) !important;
+      }
+    }
+  }
+
+  .legend-filter-button-d3 {
+    opacity: 1 !important;
+  }
+
   .legendCells {
     .cell {
       &.hidden {

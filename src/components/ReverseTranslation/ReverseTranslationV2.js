@@ -244,7 +244,7 @@ const ReverseTranslation = ({
         console.error(error)
         setIsRefiningRT(false)
         setIsLoading(false)
-        queryResponseRef?.tableRef?.setPageLoading(false)
+        this.queryResponseRef?.setPageLoading(false)
       })
   }
 

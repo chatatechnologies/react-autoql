@@ -83,6 +83,7 @@ export default class ChataChart extends React.Component {
       showAverageLine: props.initialChartControls?.showAverageLine || false,
       showRegressionLine: props.initialChartControls?.showRegressionLine || false,
       scaleVersion: 0, // Track scale changes to force line re-render
+      visibleLegendLabels: null, // null means all labels are visible
     }
   }
 
@@ -97,6 +98,10 @@ export default class ChataChart extends React.Component {
       showRegressionLine: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    legendFilterConfig: PropTypes.shape({
+      filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
+    }),
+    onLegendFilterChange: PropTypes.func,
     onAxisSortChange: PropTypes.func,
     axisSorts: PropTypes.object,
   }
@@ -278,7 +283,29 @@ export default class ChataChart extends React.Component {
 
   getColorScales = () => {
     const { numberColumnIndices, numberColumnIndices2 } = this.props
-    return getColorScales({ numberColumnIndices, numberColumnIndices2, data: this.props.data, type: this.props.type })
+
+    const scales = getColorScales({
+      numberColumnIndices,
+      numberColumnIndices2,
+      data: this.props.data,
+      type: this.props.type,
+    })
+
+    // If legend labels are filtered, reassign colors to only visible labels
+    if (this.state.visibleLegendLabels && this.state.visibleLegendLabels.length > 0 && scales.colorScale) {
+      const originalRange = scales.colorScale.range()
+
+      // Create a new color scale with visible labels mapped to colors from the beginning
+      const newColorScale = scales.colorScale.copy()
+      newColorScale.domain(this.state.visibleLegendLabels)
+      // Reset the range to start from the beginning of the color palette
+      const colorsForVisibleLabels = originalRange.slice(0, this.state.visibleLegendLabels.length)
+      newColorScale.range(colorsForVisibleLabels)
+
+      scales.colorScale = newColorScale
+    }
+
+    return scales
   }
 
   dataIsBinned = () => {
@@ -829,6 +856,10 @@ export default class ChataChart extends React.Component {
 
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
 
+  handleVisibleLabelsChange = (visibleLabels) => {
+    this.setState({ visibleLegendLabels: visibleLabels })
+  }
+
   toggleAverageLine = () => {
     const newShowAverageLine = !this.state.showAverageLine
     // When turning on average line, turn off regression line (radio button behavior)
@@ -917,6 +948,9 @@ export default class ChataChart extends React.Component {
       isEditing: this.props.isEditing,
       hiddenLegendLabels: this.props.hiddenLegendLabels,
       onLegendVisibilityChange: this.handleLegendVisibilityChange,
+      onVisibleLabelsChange: this.handleVisibleLabelsChange,
+      legendFilterConfig: this.props.legendFilterConfig,
+      onLegendFilterChange: this.props.onLegendFilterChange,
     }
 
     switch (this.props.type) {
