@@ -45,8 +45,10 @@ import { Modal } from '../Modal'
 import { Input } from '../Input'
 import { Button } from '../Button'
 import { Select } from '../Select'
-import ChataTable from '../ChataTable/ChataTable'
+// Use React.lazy for dynamic import of ChataTable to avoid circular import at module evaluation
+const LazyChataTable = React.lazy(() => import('../ChataTable/ChataTable'))
 import { ErrorBoundary } from '../../containers/ErrorHOC'
+import normalizePreviewResponse from '../../utils/previewResponseUtils'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './CustomColumnModal.scss'
@@ -1240,28 +1242,34 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderTablePreview = () => {
+    const originalResponse = this.props.queryResponse ?? {}
+
+    const safeResponse = normalizePreviewResponse(originalResponse, this.state.columns)
+
     return (
       <div className='react-autoql-table-preview-wrapper'>
         <div className='react-autoql-input-label'>Preview</div>
         <div className='react-autoql-table-preview-container'>
-          <ChataTable
-            key={this.TABLE_ID}
-            ref={(r) => (this.tableRef = r)}
-            authentication={this.props.authentication}
-            dataFormatting={this.props.dataFormatting}
-            response={this.props.response}
-            queryRequestData={this.props.queryRequestData}
-            popoverParentElement={this.props.popoverParentElement}
-            tooltipID={this.props.tooltipID}
-            columns={this.state.columns}
-            useInfiniteScroll={false}
-            supportsDrilldowns={false}
-            keepScrolledRight={true}
-            pageSize={10}
-            tableOptions={{}}
-            enableContextMenu={false}
-            allowCustomColumns={false}
-          />
+          <React.Suspense fallback={<div />}>
+            <LazyChataTable
+              key={this.TABLE_ID}
+              ref={(r) => (this.tableRef = r)}
+              authentication={this.props.authentication}
+              dataFormatting={this.props.dataFormatting}
+              response={safeResponse}
+              queryRequestData={this.props.queryRequestData}
+              popoverParentElement={this.props.popoverParentElement}
+              tooltipID={this.props.tooltipID}
+              columns={this.state.columns}
+              useInfiniteScroll={false}
+              supportsDrilldowns={false}
+              keepScrolledRight={true}
+              pageSize={10}
+              tableOptions={{}}
+              enableContextMenu={false}
+              allowCustomColumns={false}
+            />
+          </React.Suspense>
         </div>
       </div>
     )
