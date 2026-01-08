@@ -116,3 +116,155 @@ describe('dashboard tile pivot after filtering', () => {
     wrapper.unmount()
   })
 })
+
+describe('config restoration after errors', () => {
+  let mockSetParamsForTile
+  let savedParams = []
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params, tileId, callbackArray) => {
+      savedParams.push({ params, tileId })
+      // Simulate the debounce by calling callbacks immediately for testing
+      if (callbackArray && Array.isArray(callbackArray)) {
+        callbackArray.forEach((callback) => {
+          if (typeof callback === 'function') {
+            callback()
+          }
+        })
+      }
+    })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  test('should restore config after error when tile runs successfully, then errors, then succeeds again', () => {
+    const initialConfig = {
+      displayType: 'stacked_column',
+      dataConfig: {
+        tableConfig: {
+          legendColumnIndex: 0,
+          numberColumnIndex: 2,
+          stringColumnIndex: 1,
+          numberColumnIndices: [2],
+          stringColumnIndices: [1],
+        },
+        pivotTableConfig: {
+          numberColumnIndex: 1,
+          stringColumnIndex: 0,
+          numberColumnIndices: [1, 2, 3],
+          stringColumnIndices: [0, 1, 2],
+        },
+      },
+      aggConfig: { col1: 'SUM' },
+      axisSorts: { 'x-1': 'value-asc' },
+      networkColumnConfig: { sourceColumnIndex: 0, targetColumnIndex: 1 },
+    }
+
+    const tileWithConfig = {
+      ...sampleTile,
+      ...initialConfig,
+      queryResponse: sampleResponses[10], // Successful response
+    }
+
+    const wrapper = setup({
+      tile: tileWithConfig,
+      setParamsForTile: mockSetParamsForTile,
+    })
+
+    const instance = wrapper.instance()
+
+    // Step 1: First successful run - should save config
+    const successResponse = {
+      data: {
+        data: sampleResponses[10].data.data,
+        reference_id: '1.1.210', // Success (200-299 range)
+      },
+    }
+
+    instance.endTopQuery({ response: successResponse })
+    jest.advanceTimersByTime(100) // Advance past debounce
+
+    // Simulate props update after setParamsForTile is called (what parent would do)
+    wrapper.setProps({
+      tile: {
+        ...tileWithConfig,
+        queryResponse: successResponse,
+      },
+    })
+
+    // Verify config was saved after first success
+    expect(instance.savedTileConfig.dataConfig).toEqual(initialConfig.dataConfig)
+    expect(instance.savedTileConfig.displayType).toBe(initialConfig.displayType)
+    expect(instance.savedTileConfig.aggConfig).toEqual(initialConfig.aggConfig)
+
+    // Step 2: Simulate error response
+    const errorResponse = {
+      data: {
+        message: 'error',
+        reference_id: '1.1.500', // Error (not in 200-299 range)
+      },
+    }
+
+    savedParams = [] // Reset to track restoration
+    instance.endTopQuery({ response: errorResponse })
+    jest.advanceTimersByTime(100) // Advance past debounce
+
+    // Verify config was restored in the params
+    const errorCall = savedParams.find((p) => p.params.queryResponse === errorResponse)
+    expect(errorCall).toBeDefined()
+    const errorCallParams = errorCall.params
+    expect(errorCallParams.dataConfig).toEqual(initialConfig.dataConfig)
+    expect(errorCallParams.displayType).toBe(initialConfig.displayType)
+    expect(errorCallParams.aggConfig).toEqual(initialConfig.aggConfig)
+    expect(errorCallParams.axisSorts).toEqual(initialConfig.axisSorts)
+    expect(errorCallParams.networkColumnConfig).toEqual(initialConfig.networkColumnConfig)
+
+    // Simulate props update with restored config
+    wrapper.setProps({
+      tile: {
+        ...tileWithConfig,
+        queryResponse: errorResponse,
+        dataConfig: errorCallParams.dataConfig,
+        displayType: errorCallParams.displayType,
+        aggConfig: errorCallParams.aggConfig,
+        axisSorts: errorCallParams.axisSorts,
+        networkColumnConfig: errorCallParams.networkColumnConfig,
+      },
+    })
+
+    // Step 3: Third run - successful again (with restored config in props)
+    savedParams = [] // Reset again
+    instance.endTopQuery({ response: successResponse })
+    jest.advanceTimersByTime(100) // Advance past debounce
+
+    // Simulate props update after third success
+    wrapper.setProps({
+      tile: {
+        ...wrapper.props().tile,
+        queryResponse: successResponse,
+      },
+    })
+
+    // After third success, saved config should still have original values
+    expect(instance.savedTileConfig.dataConfig).toEqual(initialConfig.dataConfig)
+    expect(instance.savedTileConfig.displayType).toBe(initialConfig.displayType)
+    expect(instance.savedTileConfig.aggConfig).toEqual(initialConfig.aggConfig)
+    expect(instance.savedTileConfig.axisSorts).toEqual(initialConfig.axisSorts)
+    expect(instance.savedTileConfig.networkColumnConfig).toEqual(initialConfig.networkColumnConfig)
+
+    // Verify the final tile props still have the restored config (not reset to empty)
+    const finalTile = wrapper.props().tile
+    expect(finalTile.dataConfig).toEqual(initialConfig.dataConfig)
+    expect(finalTile.displayType).toBe(initialConfig.displayType)
+    expect(finalTile.aggConfig).toEqual(initialConfig.aggConfig)
+    expect(finalTile.axisSorts).toEqual(initialConfig.axisSorts)
+    expect(finalTile.networkColumnConfig).toEqual(initialConfig.networkColumnConfig)
+
+    wrapper.unmount()
+  })
+})

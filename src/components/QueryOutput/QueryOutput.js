@@ -809,6 +809,12 @@ export class QueryOutput extends React.Component {
     let displayType = props.initialDisplayType
     const defaultDisplayType = this.getUpdatedDefaultDisplayType(this.props.preferredDisplayType)
 
+    // If there's an error response, preserve the initialDisplayType if provided
+    // Don't validate against error responses as they don't have valid data
+    if (this.hasError(props.queryResponse)) {
+      return displayType || defaultDisplayType
+    }
+
     // If prop is not provided, use default display type
     if (!displayType) {
       displayType = defaultDisplayType
