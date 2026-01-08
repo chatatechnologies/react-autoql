@@ -10,15 +10,21 @@ import {
   dataFormattingDefault,
   getAuthentication,
   isDrilldown,
-  isTableType,
-  isChartType,
+  fetchLLMSummary,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
+
+import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
+import { Button } from '../Button'
+import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -87,6 +93,7 @@ export default class ChatMessage extends React.Component {
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    setGeneratingSummary: PropTypes.func,
   }
 
   static defaultProps = {
@@ -304,10 +311,139 @@ export default class ChatMessage extends React.Component {
 
     this.scrollIntoView()
   }
+
+  renderMarkdown = (content) => {
+    if (!content) return null
+
+    // Convert content to string if it's not already
+    let contentStr = typeof content === 'string' ? content : String(content)
+
+    // Replace literal "\n" strings with actual newlines if they exist
+    // (in case the API returns escaped newlines)
+    contentStr = contentStr.replace(/\\n/g, '\n')
+
+    // Pass content directly to react-markdown without any manipulation
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkBreaks]}
+        components={{
+          // Handle lists
+          ul: ({ children }) => <ul>{children}</ul>,
+          li: ({ children }) => <li>{children}</li>,
+          // Handle formatting
+          strong: ({ children }) => <strong>{children}</strong>,
+          em: ({ children }) => <em>{children}</em>,
+          // Handle line breaks (remark-breaks will create these automatically)
+          br: () => <br />,
+        }}
+      >
+        {contentStr}
+      </ReactMarkdown>
+    )
+  }
+
+  handleGenerateSummary = async () => {
+    if (!this.props.response?.data?.data?.rows || !this.props.response?.data?.data?.columns) {
+      return
+    }
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.props.onErrorCallback?.('Missing authentication credentials for summary generation')
+      return
+    }
+
+    // Set loading state in parent ChatContent to show loading dots at bottom
+    this.props.setGeneratingSummary?.(true)
+
+    try {
+      const response = await fetchLLMSummary({
+        data: {
+          rows: this.props.response.data.data.rows,
+          columns: this.props.response.data.data.columns,
+        },
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const summary = response?.data?.llm_resp?.summary
+
+      if (summary) {
+        // Add summary as a new message bubble
+        this.props.addMessageToDM?.({
+          content: summary,
+          type: 'markdown',
+          isResponse: true,
+        })
+      } else {
+        console.error('No summary returned from API')
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      // Clear loading state
+      this.props.setGeneratingSummary?.(false)
+    }
+  }
+
+  renderSummaryFooter = () => {
+    // Only show footer for response messages with data
+    if (
+      !this.props.isResponse ||
+      !this.props.response?.data?.data?.rows ||
+      !this.props.response?.data?.data?.columns ||
+      this.props.type === 'text' ||
+      this.props.isCSVProgressMessage
+    ) {
+      return null
+    }
+
+    const rows = this.props.response?.data?.data?.rows || []
+    const rowCount = rows.length
+    const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
+    const isGenerating = Boolean(this.props.isChataThinking)
+    const isDisabled = isDatasetTooLarge || isGenerating
+
+    const tooltipId = 'chat-message-summary-button-tooltip'
+    const tooltipContent = isDatasetTooLarge
+      ? `The dataset is too large to generate a summary (${rowCount} rows exceeds the limit of ${MAX_DATA_PAGE_SIZE} rows). Please refine your dataset to generate a summary.`
+      : undefined
+
+    return (
+      <div className='chat-message-summary-footer'>
+        <Button
+          type='default'
+          size='large'
+          icon='magic-wand'
+          onClick={this.handleGenerateSummary}
+          disabled={isDisabled}
+          loading={isGenerating}
+          border={false}
+          tooltip={tooltipContent}
+          tooltipID={tooltipContent ? tooltipId : undefined}
+        >
+          Generate Summary
+        </Button>
+        {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
+      </div>
+    )
+  }
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
     } else if (this.props.content) {
+      if (this.props.type === 'markdown' || this.props.type === 'md') {
+        return (
+          <div className='chat-message-bubble-content-container chat-message-markdown'>
+            <div className='chat-message-summary-title'>
+              <Icon type='magic-wand' />
+              <strong>Summary:</strong>
+            </div>
+            {this.renderMarkdown(this.props.content)}
+          </div>
+        )
+      }
       return <div className='chat-message-bubble-content-container'>{this.props.content}</div>
     } else if (this.props.response?.status === 401) {
       return <div className='chat-message-bubble-content-container'>{UNAUTHENTICATED_ERROR}</div>
@@ -494,6 +630,7 @@ export default class ChatMessage extends React.Component {
         ${this.state.isUserResizing ? 'user-resizing' : ''}`}
             >
               {this.renderContent()}
+              {this.renderSummaryFooter()}
             </div>
           </div>
           {!!this.responseRef && (
