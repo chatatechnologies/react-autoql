@@ -441,24 +441,28 @@ export default class ChatMessage extends React.Component {
 
     const tooltipId = 'chat-message-summary-button-tooltip'
     const tooltipContent = isDatasetTooLarge
-      ? `The dataset is too large to generate a summary (${rowCount} rows exceeds the limit of ${MAX_DATA_PAGE_SIZE} rows). Please refine your dataset to generate a summary.`
+      ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
       : undefined
 
     return (
       <div className='chat-message-summary-footer'>
-        <Button
-          type='default'
-          size='large'
-          icon='magic-wand'
-          onClick={this.handleGenerateSummary}
-          disabled={isDisabled}
-          loading={isGenerating}
-          border={false}
-          tooltip={tooltipContent}
-          tooltipID={tooltipContent ? tooltipId : undefined}
+        <div
+          data-tooltip-html={tooltipContent}
+          data-tooltip-id={tooltipContent ? tooltipId : undefined}
+          style={{ display: 'inline-block' }}
         >
-          Generate Summary
-        </Button>
+          <Button
+            type='default'
+            size='large'
+            icon='magic-wand'
+            onClick={this.handleGenerateSummary}
+            disabled={isDisabled}
+            loading={isGenerating}
+            border={false}
+          >
+            Generate Summary
+          </Button>
+        </div>
         {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
       </div>
     )
