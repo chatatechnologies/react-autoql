@@ -34,6 +34,7 @@ import './ChatMessage.scss'
 export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
+    this.markdownContentRef = React.createRef()
 
     this.filtering = false
     this.PIE_CHART_HEIGHT = 330
@@ -387,6 +388,39 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  copyMarkdownAsPlainText = async () => {
+    if (!this.props.content || (this.props.type !== 'markdown' && this.props.type !== 'md')) {
+      return
+    }
+
+    try {
+      // Extract plain text from the rendered markdown content
+      if (!this.markdownContentRef.current) {
+        return
+      }
+
+      const text = this.markdownContentRef.current.innerText
+
+      // Copy as plain text using Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      }
+    } catch (error) {
+      console.error('Failed to copy markdown:', error)
+      this.props.onErrorCallback?.(error)
+    }
+  }
+
   renderSummaryFooter = () => {
     // Only show footer for response messages with data
     if (
@@ -440,7 +474,7 @@ export default class ChatMessage extends React.Component {
               <Icon type='magic-wand' />
               <strong>Summary:</strong>
             </div>
-            {this.renderMarkdown(this.props.content)}
+            <div ref={this.markdownContentRef}>{this.renderMarkdown(this.props.content)}</div>
           </div>
         )
       }
@@ -524,6 +558,7 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     // For data preview responses, only show delete button
     const isDataPreview = this.props.response?.data?.data?.isDataPreview
+    const isMarkdownMessage = this.props.type === 'markdown' || this.props.type === 'md'
     const customAutoQLConfig = isDataPreview
       ? {
           ...this.props.autoQLConfig,
@@ -537,7 +572,7 @@ export default class ChatMessage extends React.Component {
 
     return (
       <div className='chat-message-toolbar chat-message-toolbar-right'>
-        {this.props.isResponse ? (
+        {this.props.isResponse || isMarkdownMessage ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
@@ -555,6 +590,9 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             enableFilterBtn={!isDataPreview}
             enableCopyBtn={!isDataPreview}
+            isMarkdownMessage={isMarkdownMessage}
+            markdownContent={isMarkdownMessage ? this.props.content : undefined}
+            onCopyMarkdown={this.copyMarkdownAsPlainText}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
