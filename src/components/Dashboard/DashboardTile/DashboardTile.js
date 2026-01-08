@@ -57,6 +57,22 @@ export class DashboardTile extends React.Component {
 
     // Store original saved tile config from DB to restore after errors
     this.savedTileConfig = {}
+    this.configKeys = [
+      'displayType',
+      'secondDisplayType',
+      'dataConfig',
+      'secondDataConfig',
+      'aggConfig',
+      'secondAggConfig',
+      'columns',
+      'secondColumns',
+      'tableFilters',
+      'secondTableFilters',
+      'axisSorts',
+      'secondAxisSorts',
+      'networkColumnConfig',
+      'secondNetworkColumnConfig',
+    ]
 
     const tile = props.tile
 
@@ -322,24 +338,8 @@ export class DashboardTile extends React.Component {
   // Helper to filter out null/undefined values from config object
   filterValidConfig = (config) => {
     const filtered = {}
-    const configKeys = [
-      'displayType',
-      'secondDisplayType',
-      'dataConfig',
-      'secondDataConfig',
-      'aggConfig',
-      'secondAggConfig',
-      'columns',
-      'secondColumns',
-      'tableFilters',
-      'secondTableFilters',
-      'axisSorts',
-      'secondAxisSorts',
-      'networkColumnConfig',
-      'secondNetworkColumnConfig',
-    ]
 
-    configKeys.forEach((key) => {
+    this.configKeys.forEach((key) => {
       const value = config[key]
       // For dataConfig/secondDataConfig, check if it has valid values
       if (key === 'dataConfig' || key === 'secondDataConfig') {
