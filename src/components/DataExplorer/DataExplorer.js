@@ -593,6 +593,7 @@ export default class DataExplorer extends React.Component {
             dataExplorerRef={this.dataExplorerPage}
             onClearInputClick={this.resetState}
             tooltipID={this.props.tooltipID}
+            disableColumnSelection={this.props.disableColumnSelection}
           />
           {this.renderDataExplorerContent()}
         </ErrorBoundary>
