@@ -25,12 +25,12 @@
     "start": "npm run watch devscript",
     "dev": "npm run watch devscript",
     "devscript": "export NODE_ENV=dev && npm run build",
-    "test": "jest --silent=false --maxWorkers=4",
-    "test:changed": "jest --onlyChanged",
-    "test:watch": "jest --watch",
+    "test": "cross-env NODE_OPTIONS= jest --silent=false --maxWorkers=4",
+    "test:changed": "cross-env NODE_OPTIONS= jest --onlyChanged",
+    "test:watch": "cross-env NODE_OPTIONS= jest --watch",
     "test:coverage": "npm test -- --coverage",
     "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
-    "test:staged": "jest --findRelatedTests",
+    "test:staged": "cross-env NODE_OPTIONS= jest --findRelatedTests",
     "build": "rollup -c",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint --fix 'src/**/*.js'",
@@ -42,7 +42,7 @@
   "style": "dist/autoql.esm.css",
   "husky": {
     "hooks": {
-      "pre-push": "npx jest --clearCache && npm run test"
+      "pre-push": "cross-env NODE_OPTIONS= npx jest --clearCache && cross-env NODE_OPTIONS= npm run test"
     }
   },
   "lint-staged": {
@@ -161,7 +161,8 @@
     "rollup-plugin-gzip": "3.0.0",
     "rollup-plugin-scss": "4.0.0",
     "rollup-plugin-svg": "2.0.0",
-    "sass": "1.67.0"
+    "sass": "1.67.0",
+    "cross-env": "7.0.3"
   },
   "peerDependencies": {
     "react": ">=16.8.1",
