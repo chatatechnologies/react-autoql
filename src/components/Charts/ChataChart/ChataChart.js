@@ -53,6 +53,7 @@ import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
+import { clearLegendFilter } from '../Legend/Legend'
 
 import './ChataChart.scss'
 
@@ -83,7 +84,7 @@ export default class ChataChart extends React.Component {
       showAverageLine: props.initialChartControls?.showAverageLine || false,
       showRegressionLine: props.initialChartControls?.showRegressionLine || false,
       scaleVersion: 0, // Track scale changes to force line re-render
-      visibleLegendLabels: null, // null means all labels are visible
+      visibleLegendLabels: null, // null means all labels are visible (set only from popover filter)
     }
   }
 
@@ -240,6 +241,29 @@ export default class ChataChart extends React.Component {
         this.setState({ ...newData, chartID: uuid() })
       }
     }
+
+    // Reset legend filters when table config indices change (not column properties)
+    const tableConfigChanged =
+      this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
+      this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
+      !deepEqual(this.props.numberColumnIndices, prevProps.numberColumnIndices) ||
+      !deepEqual(this.props.numberColumnIndices2, prevProps.numberColumnIndices2)
+
+    if (tableConfigChanged) {
+      // Clear legend filter store entry for this chart
+      const columnKey = this.props.columns?.map((c) => c.name).join('|') || 'default'
+      clearLegendFilter(columnKey)
+
+      // Reset visibleLegendLabels state to clear color regeneration
+      if (this.state.visibleLegendLabels !== null) {
+        this.setState({ visibleLegendLabels: null })
+      }
+
+      // Notify parent to clear legend filter config (for dashboard persistence)
+      if (this.props.onLegendFilterChange) {
+        this.props.onLegendFilterChange({ filteredOutLabels: [] })
+      }
+    }
   }
 
   componentWillUnmount = () => {
@@ -284,6 +308,8 @@ export default class ChataChart extends React.Component {
   getColorScales = () => {
     const { numberColumnIndices, numberColumnIndices2 } = this.props
 
+    // Use all column indices (including hidden ones via isSeriesHidden) for the base color scale
+    // This ensures hidden series keep their original colors when clicked directly
     const scales = getColorScales({
       numberColumnIndices,
       numberColumnIndices2,
@@ -291,18 +317,43 @@ export default class ChataChart extends React.Component {
       type: this.props.type,
     })
 
-    // If legend labels are filtered, reassign colors to only visible labels
-    if (this.state.visibleLegendLabels && this.state.visibleLegendLabels.length > 0 && scales.colorScale) {
-      const originalRange = scales.colorScale.range()
+    // Only filter colors if popover filter was applied (visibleLegendLabels is set)
+    // This filters out items filtered via popover, but keeps hidden items (from direct clicks)
+    if (
+      this.state.visibleLegendLabels !== null &&
+      this.state.visibleLegendLabels !== undefined &&
+      this.state.visibleLegendLabels.length > 0 &&
+      scales.colorScale
+    ) {
+      // Get column indices for the visible labels from popover filter
+      // Need to get legend labels to map label strings to column indices
+      const columns = this.sortedColumnsForHeatmap || this.props.columns
+      const allLegendLabels = getLegendLabelsForMultiSeries(
+        columns,
+        scales.colorScale, // Use the base scale we just created
+        numberColumnIndices,
+      )
 
-      // Create a new color scale with visible labels mapped to colors from the beginning
-      const newColorScale = scales.colorScale.copy()
-      newColorScale.domain(this.state.visibleLegendLabels)
-      // Reset the range to start from the beginning of the color palette
-      const colorsForVisibleLabels = originalRange.slice(0, this.state.visibleLegendLabels.length)
-      newColorScale.range(colorsForVisibleLabels)
+      const visibleColumnIndices = this.state.visibleLegendLabels
+        .map((labelString) => {
+          const labelObj = allLegendLabels.find((l) => l.label === labelString)
+          return labelObj?.columnIndex
+        })
+        .filter((idx) => idx !== undefined && idx !== null)
 
-      scales.colorScale = newColorScale
+      if (visibleColumnIndices.length > 0) {
+        const originalRange = scales.colorScale.range()
+
+        // Create a new color scale with only popover-filtered visible column indices
+        // This excludes popover-filtered items but includes hidden items (from direct clicks)
+        const newColorScale = scales.colorScale.copy()
+        newColorScale.domain(visibleColumnIndices)
+        // Reset the range to start from the beginning of the color palette
+        const colorsForVisibleLabels = originalRange.slice(0, visibleColumnIndices.length)
+        newColorScale.range(colorsForVisibleLabels)
+
+        scales.colorScale = newColorScale
+      }
     }
 
     return scales
@@ -806,6 +857,7 @@ export default class ChataChart extends React.Component {
       deltaX,
       deltaY,
       chartPadding: this.PADDING,
+      onLegendClick: this.handleLegendClick,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       onLabelRotation: this.adjustVerticalPosition,
@@ -857,7 +909,15 @@ export default class ChataChart extends React.Component {
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
 
   handleVisibleLabelsChange = (visibleLabels) => {
+    // This is only called from the popover filter - set the visible labels
+    // which will be used to filter the color scale in getColorScales
     this.setState({ visibleLegendLabels: visibleLabels })
+  }
+
+  handleLegendClick = (label) => {
+    // Just pass through to the original handler - colors won't change because
+    // color scale includes all columns (even hidden ones) unless popover filter is active
+    this.props.onLegendClick?.(label)
   }
 
   toggleAverageLine = () => {

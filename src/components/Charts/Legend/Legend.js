@@ -13,6 +13,12 @@ import LegendPopover from '../Legend/LegendPopover'
 
 // Module-level storage for filtered labels to persist across component remounts
 const legendFilterStore = new Map()
+
+// Export function to clear legend filter for a specific chart
+export const clearLegendFilter = (columnKey) => {
+  const key = `legend-${columnKey}`
+  legendFilterStore.delete(key)
+}
 import {
   legendColor,
   deepEqual,
