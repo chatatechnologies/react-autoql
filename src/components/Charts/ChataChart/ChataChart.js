@@ -53,6 +53,7 @@ import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
+import { clearLegendFilter } from '../Legend/Legend'
 
 import './ChataChart.scss'
 
@@ -238,6 +239,29 @@ export default class ChataChart extends React.Component {
         // Force chart re-render with new sorted data and new chartID
         // The new chart render will naturally position everything correctly
         this.setState({ ...newData, chartID: uuid() })
+      }
+    }
+
+    // Reset legend filters when table config indices change (not column properties)
+    const tableConfigChanged =
+      this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
+      this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
+      !deepEqual(this.props.numberColumnIndices, prevProps.numberColumnIndices) ||
+      !deepEqual(this.props.numberColumnIndices2, prevProps.numberColumnIndices2)
+
+    if (tableConfigChanged) {
+      // Clear legend filter store entry for this chart
+      const columnKey = this.props.columns?.map((c) => c.name).join('|') || 'default'
+      clearLegendFilter(columnKey)
+
+      // Reset visibleLegendLabels state to clear color regeneration
+      if (this.state.visibleLegendLabels !== null) {
+        this.setState({ visibleLegendLabels: null })
+      }
+
+      // Notify parent to clear legend filter config (for dashboard persistence)
+      if (this.props.onLegendFilterChange) {
+        this.props.onLegendFilterChange({ filteredOutLabels: [] })
       }
     }
   }
