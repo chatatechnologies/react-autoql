@@ -65,6 +65,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
+    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     isDrilldown: PropTypes.bool,
   }
 
@@ -83,6 +84,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: () => {},
     pivot: false,
     scope: undefined,
+    height: undefined,
     isDrilldown: false,
   }
 
@@ -306,6 +308,7 @@ export default class TableWrapper extends React.Component {
     })
   }
 
+  // Temporarily block Tabulator redraws; callers must call `restoreRedraw()` (use try/finally).
   blockRedraw = () => {
     if (this.isInitialized) {
       this.redrawRestored = false
@@ -313,6 +316,7 @@ export default class TableWrapper extends React.Component {
     }
   }
 
+  // Restore Tabulator redraws if previously blocked (no-op if already enabled).
   restoreRedraw = () => {
     if (this.tabulator && this.isInitialized && !this.redrawRestored && this._isMounted) {
       this.redrawRestored = true

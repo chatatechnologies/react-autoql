@@ -145,7 +145,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
+  // Pivot tables: remove ajax/progressive/pagination options so Tabulator treats them as static tables.
   getTableWrapperOptions = () => {
     // Return a deep-cloned tableOptions so TableWrapper handles pivot cleanup without breaking remote sorting/filtering
     return _cloneDeep(this.tableOptions || {})
@@ -167,6 +167,7 @@ export default class ChataTable extends React.Component {
     onNewData: PropTypes.func,
     tooltipID: PropTypes.string,
     pivot: PropTypes.bool,
+    pivotTableDataLimited: PropTypes.bool,
     style: PropTypes.shape({}),
     supportsDrilldowns: PropTypes.bool,
     response: PropTypes.any,
@@ -186,6 +187,9 @@ export default class ChataTable extends React.Component {
     pivotAxisCurrentIndex: PropTypes.number,
     onPivotAxisChange: PropTypes.func,
     originalColumns: PropTypes.arrayOf(PropTypes.shape({})),
+    // Pivot table sizing info
+    totalCells: PropTypes.number,
+    maxCells: PropTypes.number,
   }
 
   static defaultProps = {
@@ -201,6 +205,7 @@ export default class ChataTable extends React.Component {
     response: undefined,
     tooltipID: undefined,
     pivot: false,
+    pivotTableDataLimited: false,
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -220,6 +225,9 @@ export default class ChataTable extends React.Component {
     pivotAxisCurrentIndex: undefined,
     onPivotAxisChange: () => {},
     originalColumns: [],
+    // Pivot table sizing info
+    totalCells: 0,
+    maxCells: 0,
   }
 
   componentDidMount = () => {
@@ -304,6 +312,7 @@ export default class ChataTable extends React.Component {
         this.updateData(this.state.subscribedData)
         this.setState({ subscribedData: undefined })
       } else {
+        // Restore Tabulator redraw after hidden->visible transition so the table can reflow and update columns/headers.
         this.ref?.restoreRedraw()
       }
     }
@@ -825,6 +834,8 @@ export default class ChataTable extends React.Component {
   }
 
   clearLoadingIndicators = async () => {
+    // After sorting/filtering/data updates, ensure redraw is enabled so
+    // scrollbar and layout measurements are correct.
     this.ref?.restoreRedraw()
 
     // Temporary fix to scrollbars resetting after filtering or sorting
@@ -879,6 +890,7 @@ export default class ChataTable extends React.Component {
     if (response) {
       if (this.tableParams?.page > 1) {
         // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
+        // (we re-enable redraw here after a paged data replace).
         this.ref?.restoreRedraw()
       }
 
@@ -944,6 +956,8 @@ export default class ChataTable extends React.Component {
   }
 
   inputKeydownListener = (event) => {
+    // Re-enable redraw after input interactions that mutate header filters
+    // so Tabulator can recompute column widths/layout.
     if (!this.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
@@ -951,6 +965,7 @@ export default class ChataTable extends React.Component {
 
   inputSearchListener = () => {
     // When "x" button is clicked in the input box
+    // Ensure redraw is enabled after clearing search so layout stabilizes.
     if (!this.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
@@ -1162,7 +1177,10 @@ export default class ChataTable extends React.Component {
 
     if (filterValues) {
       try {
-        this.ref?.tabulator?.blockRedraw()
+        // Batch header filter updates without triggering repeated Tabulator
+        // redraws; this prevents intermediate layout thrashing. Use the
+        // TableWrapper API so wrapper state (redrawRestored) stays in sync.
+        this.ref?.blockRedraw()
 
         try {
           filterValues.forEach((filter) => {
@@ -1174,7 +1192,7 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
-          this.ref?.tabulator?.restoreRedraw()
+          this.ref?.restoreRedraw()
         }
 
         this._filterCheckTimeout = setTimeout(() => {
@@ -1625,10 +1643,7 @@ export default class ChataTable extends React.Component {
       return null
     }
 
-    if (
-      (this.useInfiniteScroll && isDataLimited(this.props.response)) ||
-      this.props.pivotTableDataLimited
-    ) {
+    if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
       const rowLimit = this.props.response?.data?.data?.row_limit
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
