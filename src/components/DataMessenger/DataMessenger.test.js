@@ -107,9 +107,9 @@ describe('Suggestion query response flow', () => {
   let suggestionMessageOriginal
 
   // Stub network calls that may run on mount to avoid async errors
-  const originalFetch = global.fetch
+  const originalFetch = globalThis.fetch
   beforeAll(() => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     messengerComponent = mount(<DataMessenger />)
     chatContent = findByTestAttr(messengerComponent, 'data-messenger-chat-content')
     dmInstance = messengerComponent.instance()
@@ -126,7 +126,7 @@ describe('Suggestion query response flow', () => {
       // swallow unmount errors in CI environment
     }
     jest.restoreAllMocks()
-    global.fetch = originalFetch
+    globalThis.fetch = originalFetch
   })
 
   describe('handle click', () => {

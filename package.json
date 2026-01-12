@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.10.16",
+    "autoql-fe-utils": "1.10.19",
     "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
@@ -140,6 +140,7 @@
     "babel-jest": "28.1.1",
     "babel-plugin-import": "1.13.8",
     "check-prop-types": "1.1.2",
+    "cross-env": "7.0.3",
     "enzyme": "3.11.0",
     "enzyme-adapter-react-16": "1.15.6",
     "eslint": "8.25.0",
@@ -161,8 +162,7 @@
     "rollup-plugin-gzip": "3.0.0",
     "rollup-plugin-scss": "4.0.0",
     "rollup-plugin-svg": "2.0.0",
-    "sass": "1.67.0",
-    "cross-env": "7.0.3"
+    "sass": "1.67.0"
   },
   "peerDependencies": {
     "react": ">=16.8.1",
