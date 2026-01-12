@@ -145,7 +145,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
+  // Pivot tables: remove ajax/progressive/pagination options so Tabulator treats them as static tables.
   getTableWrapperOptions = () => {
     // Return a deep-cloned tableOptions so TableWrapper handles pivot cleanup without breaking remote sorting/filtering
     return _cloneDeep(this.tableOptions || {})

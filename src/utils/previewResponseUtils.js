@@ -1,27 +1,22 @@
-// Normalizes various shapes of a query response so a Tabulator preview can mount and format correctly.
+/**
+ * Normalizes query response data structure for table preview rendering.
+ * Ensures `rows` is always a 2D array and required fields exist.
+ */
 export function normalizePreviewResponse(originalResponse = {}, visibleColumns = []) {
-  const previewColumns = originalResponse?.data?.data?.columns || visibleColumns || []
-  const previewQueryId = originalResponse?.data?.data?.query_id || `preview-${Date.now()}`
+  const responseData = originalResponse?.data?.data
+  const rows = responseData?.rows
+  const columns = responseData?.columns || visibleColumns || []
 
-  const rows = originalResponse?.data?.data?.rows
-  const colCount = visibleColumns?.length || 0
-  const emptyRow = Array.from({ length: colCount }).map(() => undefined)
-
+  // Normalize rows to a 2D array
   let normalizedRows
-
-  if (Array.isArray(rows)) {
-    if (rows.length === 0) {
-      normalizedRows = [emptyRow]
-    } else if (Array.isArray(rows[0])) {
-      normalizedRows = rows
-    } else {
-      // 1D array: wrap into a single row; if it's a single scalar and only one column expected, prefer [[value]] so formatters apply to the single cell.
-      const singleColCount = (originalResponse?.data?.data?.columns || []).length === 1 || colCount === 1
-      normalizedRows = rows.length === 1 && singleColCount ? [[rows[0]]] : [rows]
-    }
-  } else if (rows === null || rows === undefined) {
-    normalizedRows = [emptyRow]
+  if (!rows || (Array.isArray(rows) && rows.length === 0)) {
+    // Empty or missing data: create a single empty row matching column count
+    normalizedRows = [Array(columns.length).fill(undefined)]
+  } else if (Array.isArray(rows)) {
+    // Already an array: ensure it's 2D
+    normalizedRows = Array.isArray(rows[0]) ? rows : [rows]
   } else {
+    // Scalar value: wrap into 2D array
     normalizedRows = [[rows]]
   }
 
@@ -30,10 +25,10 @@ export function normalizePreviewResponse(originalResponse = {}, visibleColumns =
     data: {
       ...originalResponse.data,
       data: {
-        ...originalResponse.data?.data,
+        ...responseData,
         rows: normalizedRows,
-        columns: originalResponse?.data?.data?.columns || previewColumns,
-        query_id: originalResponse?.data?.data?.query_id || previewQueryId,
+        columns,
+        query_id: responseData?.query_id || `preview-${Date.now()}`,
       },
     },
   }
