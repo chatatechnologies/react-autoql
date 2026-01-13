@@ -49,6 +49,7 @@ import {
   CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
+  getFilterPrecision,
   getPrecisionForDayJS,
   dataFormattingDefault,
   autoQLConfigDefault,
@@ -57,10 +58,12 @@ import {
   getDataFormatting,
   getAutoQLConfig,
   isDataLimited,
+  MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
+  getCleanColumnName,
   isDrilldown,
   CustomColumnTypes,
   formatFiltersForTabulator,
@@ -2399,14 +2402,108 @@ export class QueryOutput extends React.Component {
   }
 
   setFilterFunction = (col) => {
-    // Import the filter function from autoql-fe-utils
-    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
-
-    // Wrap the filter function to preserve error callback behavior
-    // This wrapper is necessary because react-autoql needs to call onErrorCallback for error handling
-    if (filterFn && typeof filterFn === 'function') {
-      const wrappedFn = (headerValue, rowValue, rowData, filterParams) => {
+    // Provide a robust header filter for numeric columns to support operator prefixes
+    // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
+    if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+      return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (headerValue === undefined || headerValue === null) return true
+
+          const parsed = extractOperatorFromValue(headerValue)
+          const op = parsed?.operator
+          const cleanValue = parsed?.cleanValue ?? headerValue
+
+          // Empty filter -> no-op
+          if (String(cleanValue).trim() === '') return true
+
+          const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
+          const compareNum = Number(cleanValue)
+          const rowNum = Number(rowValue)
+
+          // No operator: treat as LIKE (substring, case-insensitive)
+          if (!op) {
+            return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+          }
+
+          switch (op) {
+            case '=':
+            case '==':
+              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum === compareNum
+              return rowStr.toLowerCase() === String(cleanValue).toLowerCase()
+            case '!=':
+              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum !== compareNum
+              return rowStr.toLowerCase() !== String(cleanValue).toLowerCase()
+            case '!':
+              return !rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+            case '<':
+              return Number(rowValue) < Number(cleanValue)
+            case '<=':
+              return Number(rowValue) <= Number(cleanValue)
+            case '>':
+              return Number(rowValue) > Number(cleanValue)
+            case '>=':
+              return Number(rowValue) >= Number(cleanValue)
+            case 'like':
+            case 'contains':
+              return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+            case 'regex':
+              try {
+                const re = new RegExp(cleanValue)
+                return re.test(rowStr)
+              } catch (e) {
+                return false
+              }
+            case 'in':
+              try {
+                const arr = String(cleanValue)
+                  .split(',')
+                  .map((s) => s.trim().toLowerCase())
+                return arr.includes(rowStr.toLowerCase()) || arr.includes(String(rowValue))
+              } catch (e) {
+                return false
+              }
+            default: {
+              // Fall back to autoql-fe-utils filter function if available
+              const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+              if (filterFn && typeof filterFn === 'function') {
+                return filterFn(headerValue, rowValue, rowData, filterParams)
+              }
+              return false
+            }
+          }
+        } catch (error) {
+          console.error(error)
+          if (this.props.onErrorCallback) this.props.onErrorCallback(error)
+          return false
+        }
+      }
+    }
+
+    // Non-numeric columns: provide a header filter wrapper that defaults to
+    // a case-insensitive "LIKE" (substring) comparison when the user does
+    // not supply an operator. If an operator is supplied, delegate to the
+    // packaged filter function when available.
+    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+    if (filterFn && typeof filterFn === 'function') {
+      return (headerValue, rowValue, rowData, filterParams) => {
+        try {
+          if (headerValue === undefined || headerValue === null) return true
+
+          const parsed = extractOperatorFromValue(headerValue)
+          const op = parsed?.operator
+          const cleanValue = parsed?.cleanValue ?? headerValue
+
+          // Empty filter -> no-op
+          if (String(cleanValue).trim() === '') return true
+
+          const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
+
+          // No operator: treat as LIKE (substring, case-insensitive)
+          if (!op) {
+            return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+          }
+
+          // Operator present: delegate to packaged filter function
           return filterFn(headerValue, rowValue, rowData, filterParams)
         } catch (error) {
           console.error(error)
@@ -2416,7 +2513,6 @@ export class QueryOutput extends React.Component {
           return false
         }
       }
-      return wrappedFn
     }
 
     return filterFn
@@ -2664,8 +2760,9 @@ export class QueryOutput extends React.Component {
 
         const isCustom = customSelect || newCol?.is_custom
 
+        const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.display_name?.trim() === newCol.display_name
+          return select?.table_column?.trim() === cleanName
         })
 
         if (isCustom && !availableSelect) {
@@ -2899,8 +2996,9 @@ export class QueryOutput extends React.Component {
 
       // Persist updated config to parent callback if available
       try {
-        if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange)
-          this.onTableConfigChange(false)
+        if (typeof this.props.onTableConfigChange === 'function') {
+          this.props.onTableConfigChange(false)
+        }
       } catch (err) {
         console.error('onTableConfigChange threw while updating resolved indices:', err)
         if (this.props.onErrorCallback) this.props.onErrorCallback(err)
