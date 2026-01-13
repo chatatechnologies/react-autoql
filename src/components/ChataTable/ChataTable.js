@@ -771,6 +771,16 @@ export default class ChataTable extends React.Component {
     // because column removal is a schema change, not just data filtering
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
+    } else if (this.props.pivot) {
+      // For pivot tables, don't filter the pivot data directly
+      // Instead, return current pivot data and let onTableParamsChange trigger generatePivotData()
+      // which will filter the source data and regenerate the pivot table
+      return new Promise((resolve) => {
+        const response = _cloneDeep(this.props.response)
+        response.data.data.rows = _cloneDeep(this.props.data) || []
+        response.data.data.count_rows = (this.props.data || []).length
+        resolve(response)
+      })
     } else {
       return new Promise((resolve) => {
         const result = this.clientSortAndFilterData(params)
@@ -800,9 +810,11 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // Pivot tables use ajaxRequestFunc with progressive loading, so apply sorting/filtering then slice
-      const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
-      newRows = sortedData?.slice(start, end) ?? []
+      // For pivot tables, don't filter the pivot data directly
+      // Filtering triggers generatePivotData() which regenerates the pivot table from filtered source data
+      // Just slice the current pivot data for pagination
+      const pivotData = props.data || []
+      newRows = pivotData.slice(start, end)
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
