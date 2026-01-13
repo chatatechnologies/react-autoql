@@ -5,7 +5,13 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
-import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabelsRotate, DisplayTypes } from 'autoql-fe-utils'
+import {
+  formatChartLabel,
+  getBBoxFromRef,
+  mergeBoundingClientRects,
+  shouldLabelsRotate,
+  DisplayTypes,
+} from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -501,14 +507,14 @@ export default class Axis extends Component {
     if (this.props.scale?.type !== 'BAND') {
       return false
     }
-    
+
     // Don't allow Y-axis sorting for heatmaps and bubble charts
     const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
     const isYAxis = this.props.scale?.axis === 'y'
     if (isHeatmapOrBubble && isYAxis) {
       return false
     }
-    
+
     return true
   }
 
@@ -520,13 +526,13 @@ export default class Axis extends Component {
     // Get the column index for this axis
     const columnIndex = this.props.scale?.column?.index
     const axis = this.props.scale?.axis || 'x' // 'x' or 'y'
-    
+
     // Always use originalColumns for display names to avoid duplicates from pivoted columns
     let column = null
     let valueColumn = null
     let columnDisplayName = this.props.scale?.title || 'column'
     let valueColumnDisplayName = 'values'
-    
+
     // Always try to find column by name in originalColumns (works for both aggregated and non-aggregated)
     const columnName = this.props.scale?.column?.name
     if (columnName && this.props.originalColumns) {
@@ -534,7 +540,7 @@ export default class Axis extends Component {
       if (column) {
         columnDisplayName = column.display_name || columnDisplayName
       }
-      
+
       // Get value column display name (first number column from originalColumns)
       const numberColumnIndices = this.props.numberColumnIndices || []
       const primaryNumberColumnIndex = numberColumnIndices[0]
@@ -548,7 +554,7 @@ export default class Axis extends Component {
       // Fallback to using props.columns if originalColumns not available or no column name
       column = this.props.columns?.[columnIndex]
       columnDisplayName = column?.display_name || columnDisplayName
-      
+
       // Get value column display name (first number column)
       const numberColumnIndices = this.props.numberColumnIndices || []
       const primaryNumberColumnIndex = numberColumnIndices[0]
@@ -559,7 +565,7 @@ export default class Axis extends Component {
         }
       }
     }
-    
+
     // Get current sort state for this axis
     const axisSortKey = `${axis}-${columnIndex}`
     const currentSort = this.props.axisSorts?.[axisSortKey] || null
@@ -644,18 +650,18 @@ export default class Axis extends Component {
     const sortIcon = sortGroup?.querySelector('.axis-sort-icon')
 
     const transform = this.titleRef?.getAttribute('transform')
-    const isRotated = transform && transform.includes('rotate')
-    
+    const isRotated = transform?.includes('rotate')
+
     // Get axis selector position for reference
     const selectorBBox = this.axisSelector ? getBBoxFromRef(this.axisSelector) : null
-    
+
     let rectX, rectY, rectWidth, rectHeight, iconX, iconY, iconTransform
 
     if (isRotated) {
       // For rotated axes (left/right), position next to the selector
       // Use selector's actual bounding box if available, otherwise calculate from title
       let selectorX, selectorY, selectorWidth, selectorHeight
-      
+
       if (selectorBBox) {
         selectorX = selectorBBox.x
         selectorY = selectorBBox.y
@@ -667,7 +673,7 @@ export default class Axis extends Component {
         selectorY = titleY - this.AXIS_TITLE_BORDER_PADDING_TOP
         selectorHeight = titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
       }
-      
+
       // For rotated -90, the selector appears vertically in final rendering
       // "After the text" means positioned after the selector end
       // Position button after the selector (to the right in rotated space = higher X value)
@@ -676,7 +682,7 @@ export default class Axis extends Component {
       // Position after selector: selectorX + selectorWidth + spacing
       rectX = Math.round(selectorX + selectorWidth + SORT_BUTTON_SPACING)
       // Align vertically with selector center
-      rectY = Math.round(selectorY + (selectorHeight / 2) - (SORT_BUTTON_WIDTH / 2))
+      rectY = Math.round(selectorY + selectorHeight / 2 - SORT_BUTTON_WIDTH / 2)
       iconX = rectX + rectWidth / 2
       iconY = rectY + rectHeight / 2 + 2
       // Apply same transform as title, then rotate icon 90 degrees so arrows point correctly
@@ -685,7 +691,7 @@ export default class Axis extends Component {
       // For horizontal axes (bottom/top), position to the right of the title/selector
       const selectorWidth = titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
       const selectorX = titleX - this.AXIS_TITLE_BORDER_PADDING_LEFT
-      
+
       rectWidth = SORT_BUTTON_WIDTH
       rectHeight = Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
       rectX = Math.round(selectorX + selectorWidth + SORT_BUTTON_SPACING)
@@ -701,12 +707,9 @@ export default class Axis extends Component {
       .attr('height', rectHeight)
       .attr('x', rectX)
       .attr('y', rectY)
-    
+
     if (sortIcon) {
-      select(sortIcon)
-        .attr('transform', iconTransform)
-        .attr('x', iconX)
-        .attr('y', iconY)
+      select(sortIcon).attr('transform', iconTransform).attr('x', iconX).attr('y', iconY)
     }
   }
 

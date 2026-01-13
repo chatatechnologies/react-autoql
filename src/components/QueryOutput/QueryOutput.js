@@ -2102,8 +2102,14 @@ export class QueryOutput extends React.Component {
     }
 
     // Fallbacks when nothing found
-    sIdx = sIdx < 0 ? 0 : sIdx
-    lIdx = lIdx < 0 ? (sIdx === 0 ? Math.min(1, columns.length - 1) : 0) : lIdx
+    sIdx = Math.max(0, sIdx)
+    if (lIdx < 0) {
+      if (sIdx === 0) {
+        lIdx = Math.min(1, columns.length - 1)
+      } else {
+        lIdx = 0
+      }
+    }
 
     if (nIdx < 0) {
       // Prefer a numeric column that doesn't conflict with sIdx/lIdx
@@ -2113,7 +2119,7 @@ export class QueryOutput extends React.Component {
         nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
       }
       // If still not found, fall back to 0
-      nIdx = nIdx < 0 ? 0 : nIdx
+      nIdx = Math.max(0, nIdx)
     }
 
     // Ensure we don't return indices that overlap: prefer a numeric column, otherwise any column
