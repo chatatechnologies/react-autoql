@@ -46,6 +46,7 @@ const defaultProps = {
 const setup = (props = {}, state = null) => {
   const setupProps = { ...defaultProps, ...props }
   const wrapper = shallow(<ChataTable {...setupProps} />)
+
   if (state) {
     wrapper.setState(state)
   }
@@ -55,6 +56,57 @@ const setup = (props = {}, state = null) => {
 describe('ChataTable', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  test('setFilters always calls restoreRedraw (normal path)', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const restoreSpy = jest.fn()
+    const mockTabulator = {
+      getColumns: jest.fn(() => []),
+      setHeaderFilterValue: jest.fn(),
+      setFilter: jest.fn(),
+      getHeaderFilters: jest.fn(() => []),
+      getSorters: jest.fn(() => []),
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+
+    // Provide both wrapper-level API and underlying tabulator for compatibility
+    instance.ref = { tabulator: mockTabulator, blockRedraw: mockTabulator.blockRedraw, restoreRedraw: restoreSpy }
+
+    instance.setFilters([{ field: '1', type: '=', value: 'online' }])
+
+    expect(restoreSpy).toHaveBeenCalled()
+  })
+
+  test('setFilters always calls restoreRedraw even if Tabulator throws', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const restoreSpy = jest.fn()
+    const mockTabulator = {
+      getColumns: jest.fn(() => {
+        throw new Error('tabulator error')
+      }),
+      setHeaderFilterValue: jest.fn(),
+      setFilter: jest.fn(),
+      getHeaderFilters: jest.fn(() => []),
+      getSorters: jest.fn(() => []),
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+
+    instance.ref = { tabulator: mockTabulator, blockRedraw: mockTabulator.blockRedraw, restoreRedraw: restoreSpy }
+
+    try {
+      instance.setFilters([{ field: '1', type: '=', value: 'online' }])
+    } catch (e) {
+      // ignore thrown error; we only care that restoreRedraw was invoked
+    }
+
+    expect(restoreSpy).toHaveBeenCalled()
   })
 
   describe('renders correctly', () => {
@@ -397,6 +449,95 @@ describe('ChataTable', () => {
         done()
       }, 10)
     })
+
+    test('should use filtered data for subsequent page requests to prevent scrolling past total records', async () => {
+      // Setup: 100 original rows, but filter returns only 15 rows
+      const originalRows = Array.from({ length: 100 }, (_, i) => [`value-${i}`, `name-${i}`])
+      const filteredRows = Array.from({ length: 15 }, (_, i) => [`filtered-${i}`, `name-${i}`])
+
+      const props = {
+        response: {
+          data: {
+            data: {
+              rows: originalRows,
+              count_rows: 100,
+              query_id: 'original-query',
+            },
+          },
+        },
+        useInfiniteScroll: true,
+        pageSize: 10,
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+      instance.pageSize = 10
+      instance.useInfiniteScroll = true
+      instance.hasSetInitialData = true
+
+      // Mock queryFn to return filtered data (simulating a filter applied)
+      const filteredResponse = {
+        data: {
+          data: {
+            rows: filteredRows,
+            count_rows: 15,
+            query_id: 'filtered-query',
+          },
+        },
+      }
+      instance.queryFn = jest.fn().mockResolvedValue(filteredResponse)
+
+      // Apply filter via ajaxRequestFunc (page 1)
+      const filterParams = { page: 1, filter: [{ field: '0', type: '=', value: 'filtered' }] }
+      await instance.ajaxRequestFunc({}, filterParams)
+
+      // Verify filteredResponseData is cached
+      expect(instance.filteredResponseData).toEqual(filteredRows)
+      expect(instance.filterCount).toBe(15)
+
+      // Now request page 2 - this should use filteredResponseData, not props.response
+      const page2Rows = instance.getRows(props, 2)
+
+      // Page 2 should return rows 10-14 (5 rows) from filtered data
+      expect(page2Rows.length).toBe(5)
+      expect(page2Rows[0][0]).toBe('filtered-10')
+
+      // Page 3 should return empty (no more filtered data)
+      const page3Rows = instance.getRows(props, 3)
+      expect(page3Rows.length).toBe(0)
+
+      // Critical: If bug exists, page 3 would return rows from original 100-row dataset
+      // This verifies we don't scroll past the 15 filtered records
+    })
+
+    test('should clear filteredResponseData when query_id changes', () => {
+      const props = {
+        response: {
+          data: {
+            data: {
+              rows: [['a'], ['b']],
+              query_id: 'query-1',
+            },
+          },
+        },
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Set some cached filtered data
+      instance.filteredResponseData = [['filtered-1'], ['filtered-2']]
+
+      // Simulate new query response via componentDidUpdate
+      const prevProps = { response: { data: { data: { query_id: 'query-1' } } } }
+      const newProps = { response: { data: { data: { query_id: 'query-2' } } } }
+
+      // Update props to trigger componentDidUpdate
+      wrapper.setProps({ response: newProps.response })
+
+      // filteredResponseData should be cleared
+      expect(instance.filteredResponseData).toBeNull()
+    })
   })
 
   describe('No Data with Initial Filters Scenario', () => {
@@ -453,6 +594,24 @@ describe('ChataTable', () => {
 
       // Filters should be preserved
       expect(instance.tableParams.filter).toEqual(initialFilters)
+    })
+
+    test('always configures Tabulator AJAX callbacks when initial response has no rows', () => {
+      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
+
+      const props = {
+        response: mockResponseWithNoData,
+        initialTableParams: { filter: initialFilters },
+      }
+
+      const wrapper = setup(props)
+      const instance = wrapper.instance()
+
+      // Table options should always include AJAX hooks even when initial data is empty
+      expect(instance.tableOptions).toBeDefined()
+      expect(typeof instance.tableOptions.ajaxRequestFunc).toBe('function')
+      expect(typeof instance.tableOptions.ajaxResponse).toBe('function')
+      expect(typeof instance.tableOptions.ajaxRequesting).toBe('function')
     })
 
     test('should call ajaxRequestFunc when filter is cleared on table with no initial data', async () => {
@@ -591,6 +750,309 @@ describe('ChataTable', () => {
 
       // Should return the unfiltered data
       expect(result.rows).toEqual(mockResponseWithData.data.data.rows)
+    })
+  })
+
+  describe('setFilterBadgeClasses for pivot tables', () => {
+    test('applies is-filtered class to pivot child columns when column dimension is filtered', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      const childClassList = { toggle: jest.fn() }
+      const rowHeaderClassList = { toggle: jest.fn() }
+
+      const mockRowHeader = {
+        getField: () => '0',
+        getDefinition: () => ({ origColumn: { index: 0 } }),
+        getElement: () => ({ classList: rowHeaderClassList }),
+      }
+
+      const mockChildColumn = {
+        getField: () => '1',
+        getDefinition: () => ({
+          origColumn: { index: 2 },
+          origPivotColumn: { index: 1 },
+        }),
+        getElement: () => ({ classList: childClassList }),
+      }
+
+      instance.ref = { tabulator: { getColumns: () => [mockRowHeader, mockChildColumn] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      instance.getFilteredTabulatorColumnDefinitions = () => [
+        { index: 0 },
+        { columns: [{ origColumn: { index: 2 }, origPivotColumn: { index: 1 } }] },
+      ]
+
+      instance.tableParams.filter = [{ field: '1', value: 'October', type: '=' }]
+      instance.setFilterBadgeClasses()
+
+      expect(childClassList.toggle).toHaveBeenCalledWith('is-filtered', true)
+      expect(rowHeaderClassList.toggle).toHaveBeenCalledWith('is-filtered', false)
+    })
+
+    test('does NOT badge child columns when measure is filtered', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      const childClassList = { toggle: jest.fn() }
+
+      const mockChildColumn = {
+        getField: () => '1',
+        getDefinition: () => ({
+          origColumn: { index: 2 },
+          origPivotColumn: { index: 1 },
+        }),
+        getElement: () => ({ classList: childClassList }),
+      }
+
+      instance.ref = { tabulator: { getColumns: () => [mockChildColumn] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      instance.getFilteredTabulatorColumnDefinitions = () => [
+        { index: 0 },
+        { columns: [{ origColumn: { index: 2 }, origPivotColumn: { index: 1 } }] },
+      ]
+
+      instance.tableParams.filter = [{ field: '2', value: '100', type: '>' }]
+      instance.setFilterBadgeClasses()
+
+      expect(childClassList.toggle).toHaveBeenCalledWith('is-filtered', false)
+    })
+
+    test('removes is-filtered class when no matching filter', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      const classList = { toggle: jest.fn() }
+
+      const mockColumn = {
+        getField: () => '1',
+        getDefinition: () => ({
+          origColumn: { index: 2 },
+          origPivotColumn: { index: 1 },
+        }),
+        getElement: () => ({ classList }),
+      }
+
+      instance.ref = { tabulator: { getColumns: () => [mockColumn] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      instance.getFilteredTabulatorColumnDefinitions = () => [
+        { index: 0 },
+        { columns: [{ origColumn: { index: 2 }, origPivotColumn: { index: 1 } }] },
+      ]
+
+      instance.tableParams.filter = [{ field: '5', value: 'test', type: '=' }]
+      instance.setFilterBadgeClasses()
+
+      expect(classList.toggle).toHaveBeenCalledWith('is-filtered', false)
+    })
+
+    test('handles pivot columns without origColumn gracefully', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      const classList = { toggle: jest.fn() }
+
+      const mockColumn = {
+        getField: () => '0',
+        getDefinition: () => ({}),
+        getElement: () => ({ classList }),
+      }
+
+      instance.ref = { tabulator: { getColumns: () => [mockColumn] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      instance.tableParams.filter = [{ field: '2', value: 'test', type: '=' }]
+
+      expect(() => instance.setFilterBadgeClasses()).not.toThrow()
+      expect(classList.toggle).toHaveBeenCalledWith('is-filtered', false)
+    })
+
+    test('badges row header when axis is switched and row dimension is filtered', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      const rowHeaderClassList = { toggle: jest.fn() }
+      const childClassList = { toggle: jest.fn() }
+
+      const mockRowHeader = {
+        getField: () => '0',
+        getDefinition: () => ({}),
+        getElement: () => ({ classList: rowHeaderClassList }),
+      }
+
+      const mockChildColumn = {
+        getField: () => '1',
+        getDefinition: () => ({
+          origColumn: { index: 2 },
+          origPivotColumn: { index: 0 },
+        }),
+        getElement: () => ({ classList: childClassList }),
+      }
+
+      instance.ref = { tabulator: { getColumns: () => [mockRowHeader, mockChildColumn] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      instance.getFilteredTabulatorColumnDefinitions = () => [
+        { index: 1 },
+        { columns: [{ origColumn: { index: 2 }, origPivotColumn: { index: 0 } }] },
+      ]
+
+      instance.tableParams.filter = [{ field: '1', value: 'October', type: '=' }]
+      instance.setFilterBadgeClasses()
+
+      expect(rowHeaderClassList.toggle).toHaveBeenCalledWith('is-filtered', true)
+      expect(childClassList.toggle).toHaveBeenCalledWith('is-filtered', false)
+    })
+  })
+
+  describe('renderTableRowCount', () => {
+    test('returns null for empty table', () => {
+      const wrapper = setup({ response: { data: { data: { rows: [], count_rows: 0 } } } })
+      const instance = wrapper.instance()
+
+      const result = instance.renderTableRowCount()
+      expect(result).toBeNull()
+    })
+
+    test('uses originalQueryData.length for pivot tables', () => {
+      const pivotData = [
+        ['Product A', 100],
+        ['Product B', 200],
+        ['Product C', 300],
+      ]
+      const wrapper = setup({
+        pivot: true,
+        data: pivotData,
+        response: { data: { data: { rows: [['a'], ['b']], count_rows: 2 } } },
+      })
+      const instance = wrapper.instance()
+      instance.originalQueryData = pivotData
+      instance.state.scrollTop = 0
+
+      // Mock DOM elements
+      instance.tableContainer = {
+        querySelector: jest.fn((selector) => {
+          if (selector === '.tabulator-tableholder') {
+            return { scrollTop: 0, clientHeight: 300 }
+          }
+          if (selector === '.tabulator-row') {
+            return { offsetHeight: 30 }
+          }
+          return null
+        }),
+      }
+
+      const result = instance.renderTableRowCount()
+      expect(result).not.toBeNull()
+      // Should use pivot data length (3), not response count_rows (2)
+      expect(JSON.stringify(result)).toContain('Scrolled 3')
+    })
+
+    test('uses filterCount for filtered non-pivot tables', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+      instance.tableParams.filter = [{ field: '1', value: 'online', type: '=' }]
+      instance.filterCount = 2
+      instance.state.scrollTop = 0
+
+      instance.tableContainer = {
+        querySelector: jest.fn((selector) => {
+          if (selector === '.tabulator-tableholder') {
+            return { scrollTop: 0, clientHeight: 300 }
+          }
+          if (selector === '.tabulator-row') {
+            return { offsetHeight: 30 }
+          }
+          return null
+        }),
+      }
+
+      const result = instance.renderTableRowCount()
+      expect(result).not.toBeNull()
+      expect(JSON.stringify(result)).toContain('Scrolled 2')
+    })
+
+    test('calculates visible rows based on scroll position', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+      instance.state.scrollTop = 600 // Scrolled down
+
+      instance.tableContainer = {
+        querySelector: jest.fn((selector) => {
+          if (selector === '.tabulator-tableholder') {
+            return { scrollTop: 600, clientHeight: 300 }
+          }
+          if (selector === '.tabulator-row') {
+            return { offsetHeight: 30 }
+          }
+          return null
+        }),
+      }
+
+      const result = instance.renderTableRowCount()
+      expect(result).not.toBeNull()
+      // With scrollTop=600, clientHeight=300, rowHeight=30: (600+300)/30 = 30 visible rows
+      // But total is 4, so should show 4
+      expect(JSON.stringify(result)).toContain('Scrolled 4')
+    })
+  })
+
+  describe('setPivotFilterBadges warnings', () => {
+    test('logs warning when pivot columns missing origPivotColumn', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      instance.ref = { tabulator: { getColumns: () => [] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      // Mock column definitions with group but missing origPivotColumn
+      instance.getFilteredTabulatorColumnDefinitions = () => [
+        { index: 0 },
+        { columns: [{ origColumn: { index: 2 } }] }, // Missing origPivotColumn
+      ]
+
+      instance.tableParams.filter = [{ field: '1', value: 'test', type: '=' }]
+      instance.setPivotFilterBadges([], [{ field: '1' }], null)
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'ChataTable: Pivot columns missing origPivotColumn - filter badges may not display correctly',
+      )
+
+      consoleSpy.mockRestore()
+    })
+
+    test('does not log warning when origPivotColumn is present', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      instance.ref = { tabulator: { getColumns: () => [] } }
+      instance._isMounted = true
+      instance.state.tabulatorMounted = true
+
+      instance.getFilteredTabulatorColumnDefinitions = () => [
+        { index: 0 },
+        { columns: [{ origColumn: { index: 2 }, origPivotColumn: { index: 1 } }] },
+      ]
+
+      instance.tableParams.filter = [{ field: '1', value: 'test', type: '=' }]
+      instance.setPivotFilterBadges([], [{ field: '1' }], null)
+
+      expect(consoleSpy).not.toHaveBeenCalled()
+
+      consoleSpy.mockRestore()
     })
   })
 })

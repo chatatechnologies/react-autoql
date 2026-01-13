@@ -39,6 +39,7 @@ export default class DataPreview extends React.Component {
     onDataPreview: PropTypes.func,
 
     defaultCollapsed: PropTypes.bool,
+    disableColumnSelection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -52,6 +53,7 @@ export default class DataPreview extends React.Component {
     onDataPreview: () => {},
 
     defaultCollapsed: false,
+    disableColumnSelection: false,
   }
 
   componentDidMount = () => {
@@ -157,6 +159,7 @@ export default class DataPreview extends React.Component {
         queryResponse={this.state.dataPreview}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
+        disableColumnSelection={this.props.disableColumnSelection}
         // Disable this for now, the logic to disable the columns does not match with the
         // ability to create sample queries currently. We will need to revisit this logic
         // with the recommendation service in the future if we want to have this feature

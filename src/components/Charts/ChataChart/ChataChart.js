@@ -53,6 +53,7 @@ import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
+import { clearLegendFilter } from '../Legend/Legend'
 
 import './ChataChart.scss'
 
@@ -67,6 +68,7 @@ export default class ChataChart extends React.Component {
     this.bucketSize = props.bucketSize
     this.shouldRecalculateDimensions = false
     this.disableTimeScale = true
+    this.sortedColumnsForHeatmap = null // Initialize sorted columns tracking
 
     // Vars for handling refresh layout throttle during resize
     this.throttleDelay = 100 // Default at 200 but adjust on the fly for data size
@@ -82,6 +84,7 @@ export default class ChataChart extends React.Component {
       showAverageLine: props.initialChartControls?.showAverageLine || false,
       showRegressionLine: props.initialChartControls?.showRegressionLine || false,
       scaleVersion: 0, // Track scale changes to force line re-render
+      visibleLegendLabels: null, // null means all labels are visible (set only from popover filter)
     }
   }
 
@@ -96,6 +99,12 @@ export default class ChataChart extends React.Component {
       showRegressionLine: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    legendFilterConfig: PropTypes.shape({
+      filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
+    }),
+    onLegendFilterChange: PropTypes.func,
+    onAxisSortChange: PropTypes.func,
+    axisSorts: PropTypes.object,
   }
 
   static defaultProps = {
@@ -109,6 +118,8 @@ export default class ChataChart extends React.Component {
       showRegressionLine: false,
     },
     onChartControlsChange: () => {},
+    onAxisSortChange: () => {},
+    axisSorts: {},
   }
 
   componentDidMount = () => {
@@ -159,6 +170,26 @@ export default class ChataChart extends React.Component {
       this.stopThrottledRefresh()
     }
 
+    // Re-process data if axis sorts changed
+    // Use deepEqual to properly compare objects
+    const axisSortsChanged = !deepEqual(this.props.axisSorts, prevProps.axisSorts)
+    if (axisSortsChanged) {
+      // Clear sorted columns before re-processing (getData will set it if needed)
+      this.sortedColumnsForHeatmap = null
+      const newData = this.getData(this.props)
+      if (newData) {
+        // Force chart re-render with new sorted data and new chartID
+        // The new chart render will naturally position everything correctly
+        // Note: sortedColumnsForHeatmap is set in getData for Y-axis sorting
+        this.setState({ ...newData, chartID: uuid() })
+      }
+    }
+
+    // Also check if columns changed (which would affect sorted columns)
+    if (!deepEqual(this.props.columns, prevProps.columns)) {
+      this.sortedColumnsForHeatmap = null
+    }
+
     if (
       this.props.type !== prevProps.type &&
       DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
@@ -189,8 +220,49 @@ export default class ChataChart extends React.Component {
     }
 
     if (this.props.queryID !== prevProps.queryID || dataStructureChanged(this.props, prevProps)) {
+      // Clear sorted columns when data structure changes
+      this.sortedColumnsForHeatmap = null
       const data = this.getData(this.props)
       this.setState({ ...data, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+    }
+
+    // Check if props.data changed (which might reset our sorted data)
+    // But only if axisSorts haven't changed (we already handled that case above)
+    // and only if axis sorts exist (otherwise no need to reprocess)
+    const dataChanged = !deepEqual(this.props.data, prevProps.data)
+    const hasAxisSorts = this.props.axisSorts && Object.keys(this.props.axisSorts).length > 0
+    if (dataChanged && !axisSortsChanged && hasAxisSorts) {
+      // Re-apply sorting if data changed but sorts are still active
+      this.sortedColumnsForHeatmap = null
+      const newData = this.getData(this.props)
+      if (newData) {
+        // Force chart re-render with new sorted data and new chartID
+        // The new chart render will naturally position everything correctly
+        this.setState({ ...newData, chartID: uuid() })
+      }
+    }
+
+    // Reset legend filters when table config indices change (not column properties)
+    const tableConfigChanged =
+      this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
+      this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
+      !deepEqual(this.props.numberColumnIndices, prevProps.numberColumnIndices) ||
+      !deepEqual(this.props.numberColumnIndices2, prevProps.numberColumnIndices2)
+
+    if (tableConfigChanged) {
+      // Clear legend filter store entry for this chart
+      const columnKey = this.props.columns?.map((c) => c.name).join('|') || 'default'
+      clearLegendFilter(columnKey)
+
+      // Reset visibleLegendLabels state to clear color regeneration
+      if (this.state.visibleLegendLabels !== null) {
+        this.setState({ visibleLegendLabels: null })
+      }
+
+      // Notify parent to clear legend filter config (for dashboard persistence)
+      if (this.props.onLegendFilterChange) {
+        this.props.onLegendFilterChange({ filteredOutLabels: [] })
+      }
     }
   }
 
@@ -235,7 +307,56 @@ export default class ChataChart extends React.Component {
 
   getColorScales = () => {
     const { numberColumnIndices, numberColumnIndices2 } = this.props
-    return getColorScales({ numberColumnIndices, numberColumnIndices2, data: this.props.data, type: this.props.type })
+
+    // Use all column indices (including hidden ones via isSeriesHidden) for the base color scale
+    // This ensures hidden series keep their original colors when clicked directly
+    const scales = getColorScales({
+      numberColumnIndices,
+      numberColumnIndices2,
+      data: this.props.data,
+      type: this.props.type,
+    })
+
+    // Only filter colors if popover filter was applied (visibleLegendLabels is set)
+    // This filters out items filtered via popover, but keeps hidden items (from direct clicks)
+    if (
+      this.state.visibleLegendLabels !== null &&
+      this.state.visibleLegendLabels !== undefined &&
+      this.state.visibleLegendLabels.length > 0 &&
+      scales.colorScale
+    ) {
+      // Get column indices for the visible labels from popover filter
+      // Need to get legend labels to map label strings to column indices
+      const columns = this.sortedColumnsForHeatmap || this.props.columns
+      const allLegendLabels = getLegendLabelsForMultiSeries(
+        columns,
+        scales.colorScale, // Use the base scale we just created
+        numberColumnIndices,
+      )
+
+      const visibleColumnIndices = this.state.visibleLegendLabels
+        .map((labelString) => {
+          const labelObj = allLegendLabels.find((l) => l.label === labelString)
+          return labelObj?.columnIndex
+        })
+        .filter((idx) => idx !== undefined && idx !== null)
+
+      if (visibleColumnIndices.length > 0) {
+        const originalRange = scales.colorScale.range()
+
+        // Create a new color scale with only popover-filtered visible column indices
+        // This excludes popover-filtered items but includes hidden items (from direct clicks)
+        const newColorScale = scales.colorScale.copy()
+        newColorScale.domain(visibleColumnIndices)
+        // Reset the range to start from the beginning of the color palette
+        const colorsForVisibleLabels = originalRange.slice(0, visibleColumnIndices.length)
+        newColorScale.range(colorsForVisibleLabels)
+
+        scales.colorScale = newColorScale
+      }
+    }
+
+    return scales
   }
 
   dataIsBinned = () => {
@@ -248,19 +369,140 @@ export default class ChataChart extends React.Component {
         return
       }
 
-      const { stringColumnIndex, numberColumnIndex } = props
+      const { stringColumnIndex, numberColumnIndex, legendColumnIndex } = props
+      // For aggregated data, legendColumnIndex might be in tableConfig
+      const actualLegendColumnIndex =
+        legendColumnIndex !== undefined ? legendColumnIndex : props.tableConfig?.legendColumnIndex
 
       const maxElements = 10
 
       let isDataTruncated = false
 
+      // Determine sort configuration first (before processing data)
+      const hasAxisSort = props.axisSorts && Object.keys(props.axisSorts).length > 0
+      const isHeatmapOrBubble = props.type === DisplayTypes.HEATMAP || props.type === DisplayTypes.BUBBLE
+      let sortColumnIndex = null
+      let sortDirection = null
+      let primaryAxisSort = null
+      let isYAxis = false
+
+      if (hasAxisSort) {
+        // Process axis sorts - determine which axis sort to apply
+        const axisKeys = Object.keys(props.axisSorts)
+        const xAxisKey = axisKeys.find((key) => key.startsWith('x-'))
+        const yAxisKey = axisKeys.find((key) => key.startsWith('y-'))
+
+        // Use whichever axis sort exists
+        // If both exist, prefer the most recent one (last in the object)
+        // Since JavaScript objects maintain insertion order, the last key is the most recent
+        let primaryAxisKey = axisKeys[axisKeys.length - 1]
+
+        primaryAxisSort = props.axisSorts[primaryAxisKey]
+
+        if (primaryAxisSort && primaryAxisKey) {
+          isYAxis = primaryAxisKey.startsWith('y-')
+
+          const numberColumnIndices = props.numberColumnIndices || []
+          const primaryNumberColumnIndex = numberColumnIndices[0]
+
+          if (primaryAxisSort.startsWith('alpha-')) {
+            // For heatmaps/bubble charts, Y axis uses legendColumnIndex, X axis uses stringColumnIndex
+            // For other charts, use the column index from the axis key or stringColumnIndex
+            if (isHeatmapOrBubble && isYAxis && props.isDataAggregated) {
+              // For Y-axis sorting on aggregated heatmap/bubble, we'll handle column reordering in the sorting section
+              // Set a flag so we know to do column sorting instead of row sorting
+              sortColumnIndex = 'y-axis-column-sort'
+            } else {
+              // For pivot data (aggregated data), always sort by column 0 (the first column)
+              // This is the string column that was used for grouping
+              if (props.isDataAggregated) {
+                sortColumnIndex = 0 // Always column 0 for pivot data
+              } else {
+                // For non-aggregated data, extract the column index from the axis key (e.g., 'x-1' -> 1, 'y-2' -> 2)
+                const axisColumnIndexMatch = primaryAxisKey.match(/^[xy]-(\d+)$/)
+                const axisColumnIndex = axisColumnIndexMatch ? parseInt(axisColumnIndexMatch[1], 10) : null
+                sortColumnIndex = axisColumnIndex !== null ? axisColumnIndex : stringColumnIndex
+              }
+            }
+            sortDirection = primaryAxisSort === 'alpha-asc' ? 'asc' : 'desc'
+          } else if (primaryAxisSort.startsWith('value-')) {
+            // Sort by the current primary number column
+            sortColumnIndex = primaryNumberColumnIndex
+            if (primaryAxisSort === 'value-asc') {
+              sortDirection = 'asc'
+            } else if (primaryAxisSort === 'value-desc') {
+              sortDirection = 'desc'
+            }
+          }
+        }
+      }
+
       if (props.isDataAggregated) {
+        // Data is already aggregated - sort the aggregated data using the original column indices
         let data = props.data
 
-        if (isColumnDateType(props.columns[stringColumnIndex])) {
-          data = sortDataByDate(props.data, props.columns, 'asc')
-        } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
-          data = sortDataByColumn(props.data, props.columns, stringColumnIndex, 'asc')
+        if (
+          hasAxisSort &&
+          sortColumnIndex !== undefined &&
+          sortColumnIndex !== null &&
+          (sortDirection === 'asc' || sortDirection === 'desc')
+        ) {
+          // For Y-axis sorting on heatmaps/bubbles, we need to sort columns (legend categories), not rows
+          if (isHeatmapOrBubble && isYAxis && sortColumnIndex === 'y-axis-column-sort') {
+            // Sort the columns (legend categories) by their display names
+            // Column 0 is the string column (row header), columns 1+ are the pivoted legend columns
+            const stringColumn = props.columns[0]
+            const legendColumns = props.columns.slice(1)
+
+            // Create indices array for sorting
+            // Map each column with its actual index (index + 1 because column 0 is the string column)
+            const columnsWithIndices = legendColumns.map((col, arrayIndex) => ({
+              columnIndex: arrayIndex + 1, // Actual column index in props.columns
+              name: col.display_name || col.name || '',
+            }))
+
+            // Sort by name
+            const sorted = [...columnsWithIndices].sort((a, b) => {
+              const comparison = (a.name || '').localeCompare(b.name || '', undefined, {
+                numeric: true,
+                sensitivity: 'base',
+              })
+              return sortDirection === 'asc' ? comparison : -comparison
+            })
+
+            // Extract the sorted column indices
+            const sortedIndices = sorted.map((item) => item.columnIndex)
+
+            // Reorder data: for each row, keep column 0 (string value) and reorder columns 1+
+            data = data.map((row) => {
+              const newRow = [row[0]] // Keep the string column value
+              sortedIndices.forEach((colIndex) => {
+                newRow.push(row[colIndex])
+              })
+              return newRow
+            })
+
+            // Also reorder the columns array to match the data
+            // Store in instance variable so getCommonChartProps can use it
+            const sortedColumns = [
+              props.columns[0], // Keep string column
+              ...sortedIndices.map((colIndex) => props.columns[colIndex]),
+            ]
+            this.sortedColumnsForHeatmap = sortedColumns
+          } else {
+            // Normal row sorting for X-axis or other charts
+            this.sortedColumnsForHeatmap = null
+            data = sortDataByColumn(data, props.columns, sortColumnIndex, sortDirection)
+          }
+        } else if (!hasAxisSort) {
+          // Only apply default sorting if no axis sort is specified
+          // Clear sorted columns when no sort is applied
+          this.sortedColumnsForHeatmap = null
+          if (isColumnDateType(props.columns[stringColumnIndex])) {
+            data = sortDataByDate(data, props.columns, 'asc')
+          } else if (isColumnNumberType(props.columns[stringColumnIndex])) {
+            data = sortDataByColumn(data, props.columns, stringColumnIndex, 'asc')
+          }
         }
 
         if (data?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned() && props.type !== DisplayTypes.NETWORK_GRAPH) {
@@ -274,6 +516,7 @@ export default class ChataChart extends React.Component {
           isDataTruncated,
         }
       } else {
+        // Data needs to be aggregated - aggregate first, then sort
         const indices1 = props.numberColumnIndices ?? []
         const indices2 = props.numberColumnIndices2 ?? []
         const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
@@ -299,6 +542,16 @@ export default class ChataChart extends React.Component {
           numberIndices,
           dataFormatting: props.dataFormatting,
         })
+
+        // Apply axis sorting to aggregated data using the original column indices
+        if (
+          hasAxisSort &&
+          sortColumnIndex !== undefined &&
+          sortColumnIndex !== null &&
+          (sortDirection === 'asc' || sortDirection === 'desc')
+        ) {
+          aggregated = sortDataByColumn(aggregated, props.columns, sortColumnIndex, sortDirection)
+        }
 
         if (
           aggregated?.length > MAX_CHART_ELEMENTS &&
@@ -477,11 +730,10 @@ export default class ChataChart extends React.Component {
   }
 
   getLegendLabels = () => {
-    return getLegendLabelsForMultiSeries(
-      this.props.columns,
-      this.getColorScales()?.colorScale,
-      this.props.numberColumnIndices,
-    )
+    // Use sorted columns if available (for Y-axis sorting on heatmaps)
+    // This must use the same columns as getCommonChartProps to ensure consistency
+    const columns = this.sortedColumnsForHeatmap || this.props.columns
+    return getLegendLabelsForMultiSeries(columns, this.getColorScales()?.colorScale, this.props.numberColumnIndices)
   }
 
   getBase64Data = (scale) => {
@@ -556,7 +808,21 @@ export default class ChataChart extends React.Component {
 
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
-    const { numberColumnIndices, columns, enableDynamicCharting } = this.props
+    const { numberColumnIndices, columns: propsColumns, enableDynamicCharting, legendColumn } = this.props
+
+    // Use sorted columns for heatmap Y-axis sorting, otherwise use props columns
+    const columns = this.sortedColumnsForHeatmap || propsColumns
+
+    // If we have sorted columns and a legendColumn, find the matching column in the sorted array
+    let updatedLegendColumn = legendColumn
+    if (this.sortedColumnsForHeatmap && legendColumn && this.props.legendColumnIndex !== undefined) {
+      // Find the column at the same index in the sorted array
+      // For heatmaps, legendColumn is typically at index 1 (first legend column after string column)
+      const legendColumnIndex = this.props.legendColumnIndex
+      if (legendColumnIndex < columns.length) {
+        updatedLegendColumn = columns[legendColumnIndex]
+      }
+    }
 
     const visibleSeriesIndices = numberColumnIndices.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
@@ -575,6 +841,7 @@ export default class ChataChart extends React.Component {
     return {
       ...this.props,
       columns,
+      legendColumn: updatedLegendColumn,
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
@@ -590,6 +857,7 @@ export default class ChataChart extends React.Component {
       deltaX,
       deltaY,
       chartPadding: this.PADDING,
+      onLegendClick: this.handleLegendClick,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       onLabelRotation: this.adjustVerticalPosition,
@@ -639,6 +907,18 @@ export default class ChataChart extends React.Component {
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
+
+  handleVisibleLabelsChange = (visibleLabels) => {
+    // This is only called from the popover filter - set the visible labels
+    // which will be used to filter the color scale in getColorScales
+    this.setState({ visibleLegendLabels: visibleLabels })
+  }
+
+  handleLegendClick = (label) => {
+    // Just pass through to the original handler - colors won't change because
+    // color scale includes all columns (even hidden ones) unless popover filter is active
+    this.props.onLegendClick?.(label)
+  }
 
   toggleAverageLine = () => {
     const newShowAverageLine = !this.state.showAverageLine
@@ -728,6 +1008,9 @@ export default class ChataChart extends React.Component {
       isEditing: this.props.isEditing,
       hiddenLegendLabels: this.props.hiddenLegendLabels,
       onLegendVisibilityChange: this.handleLegendVisibilityChange,
+      onVisibleLabelsChange: this.handleVisibleLabelsChange,
+      legendFilterConfig: this.props.legendFilterConfig,
+      onLegendFilterChange: this.props.onLegendFilterChange,
     }
 
     switch (this.props.type) {

@@ -126,6 +126,13 @@
             cursor: pointer;
           }
 
+          &.selectable-table-column-selection-disabled {
+            cursor: default !important;
+            .checkbox-icon-wrapper {
+              display: none !important;
+            }
+          }
+
           &.react-autoql-selectable-table-hovered {
             .react-autoql-checkbox__input {
               border-color: var(--react-autoql-accent-color) !important;
@@ -181,6 +188,10 @@
 
             &:not(.selectable-table-cell-disabled) {
               cursor: pointer;
+            }
+
+            &.selectable-table-cell-selection-disabled {
+              cursor: default !important;
             }
 
             &:not(:last-child) {

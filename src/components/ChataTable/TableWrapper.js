@@ -23,7 +23,7 @@ export default class TableWrapper extends React.Component {
     this.defaultOptions = {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
       // renderHorizontal: 'virtual', // Todo: test this to see if it helps with performance
-      height: this.props.height || '100%',
+      height: this.props.height !== undefined ? this.props.height : '100%',
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
@@ -31,6 +31,7 @@ export default class TableWrapper extends React.Component {
       rowHeight: 25,
       layout: this.props.isDrilldown ? 'fitDataFill' : this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill',
       clipboard: true,
+      columnGroups: this.props.pivot, // Enable column groups for pivot tables to support grouped headers
       downloadConfig: {
         columnGroups: false,
         rowGroups: false,
@@ -64,6 +65,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
+    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     isDrilldown: PropTypes.bool,
   }
 
@@ -82,6 +84,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: () => {},
     pivot: false,
     scope: undefined,
+    height: undefined,
     isDrilldown: false,
   }
 
@@ -305,6 +308,7 @@ export default class TableWrapper extends React.Component {
     })
   }
 
+  // Temporarily block Tabulator redraws; callers must call `restoreRedraw()` (use try/finally).
   blockRedraw = () => {
     if (this.isInitialized) {
       this.redrawRestored = false
@@ -312,6 +316,7 @@ export default class TableWrapper extends React.Component {
     }
   }
 
+  // Restore Tabulator redraws if previously blocked (no-op if already enabled).
   restoreRedraw = () => {
     if (this.tabulator && this.isInitialized && !this.redrawRestored && this._isMounted) {
       this.redrawRestored = true
