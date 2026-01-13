@@ -1635,31 +1635,54 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  renderPivotTableRowWarning = () => {
-    if (!this.props.pivot) {
+  renderTableRowWarning = () => {
+    // For pivot tables
+    if (this.props.pivot) {
+      if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
+        const rowLimit = this.props.response?.data?.data?.row_limit
+        const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+        const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
+        const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
+          this.props.response?.data?.data?.count_rows,
+        )
+        const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
+        const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
+        const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
+
+        let content
+        let tooltipContent
+
+        if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
+          content = `Limited to ${rowLimitFormatted} rows`
+          tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
+        } else if (this.props.pivotTableDataLimited) {
+          content = `Limited to ${maxColumnsFormatted} columns`
+          tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
+        }
+
+        return (
+          <DataLimitWarning
+            tooltipID={this.props.tooltipID}
+            rowLimit={rowLimit}
+            tooltipContent={tooltipContent}
+            content={content}
+          />
+        )
+      }
       return null
     }
 
-    if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
-      const rowLimit = this.props.response?.data?.data?.row_limit
+    // For regular tables - show warning whenever data is limited, regardless of useInfiniteScroll
+    // useInfiniteScroll is only set once in constructor and may be stale after axis changes
+    if (isDataLimited(this.props.response)) {
+      const rowLimit = this.props.response?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
       const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
         this.props.response?.data?.data?.count_rows,
       )
-      const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
-      const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
-      const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
-
-      let content
-      let tooltipContent
-
-      if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
-        tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
-      } else if (this.props.pivotTableDataLimited) {
-        content = 'Data has been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
-      }
+      const tooltipContent = `To optimize performance, this table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows due to the MAX_DATA_PAGE_SIZE limit.`
+      const content = `Limited to ${rowLimitFormatted} rows`
 
       return (
         <DataLimitWarning
@@ -1893,7 +1916,7 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}
         >
-          {this.renderPivotTableRowWarning()}
+          {this.renderTableRowWarning()}
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
             {!!this.props.response?.data?.data?.rows &&
               !!this.props.columns &&

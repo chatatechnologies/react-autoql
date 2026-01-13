@@ -46,6 +46,7 @@ import {
   getColumnTypeAmounts,
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
+  MAX_DATA_PAGE_SIZE,
   CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
@@ -3646,6 +3647,14 @@ export class QueryOutput extends React.Component {
     }
 
     const isPivotDataLimited = usePivotData && this.pivotTableDataLimited
+    const isDataLimitedResult = isDataLimited(this.queryResponse)
+    const rowLimitValue = this.queryResponse?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
+    const countRows = this.queryResponse?.data?.data?.count_rows
+
+    // Check if isDataLimited is working correctly and fix it if broken
+    const expectedIsDataLimited = countRows != null && rowLimitValue != null && countRows > rowLimitValue
+    const correctedIsDataLimited = expectedIsDataLimited || isDataLimitedResult
+    const isDataLimitedValue = correctedIsDataLimited || isPivotDataLimited
 
     return (
       <ErrorBoundary>
@@ -3689,7 +3698,8 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
+          isDataLimited={isDataLimitedValue}
+          rowLimit={rowLimitValue}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
