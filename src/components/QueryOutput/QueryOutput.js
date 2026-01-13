@@ -3153,6 +3153,7 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
+          headerSort: false,
         }
 
         pivotTableColumns.push(newPivotCol)

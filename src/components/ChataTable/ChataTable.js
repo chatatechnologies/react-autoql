@@ -738,7 +738,23 @@ export default class ChataTable extends React.Component {
 
     // Sorters
     if (params.orders?.length) {
-      const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
+      let sortColumnIndex
+      if (this.props.pivot) {
+        // For pivot tables, use the field property (which is the pivot column index as a string)
+        // Tabulator may pass either id or field in params.orders[0].id, so try both
+        const column =
+          this.props.columns.find((col) => col.id === params?.orders[0]?.id) ||
+          this.props.columns.find((col) => col.field === params?.orders[0]?.id)
+        if (column?.field !== undefined) {
+          const parsed = parseInt(column.field, 10)
+          sortColumnIndex = !isNaN(parsed) ? parsed : column.index
+        } else {
+          sortColumnIndex = column?.index
+        }
+      } else {
+        sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
+      }
+
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
       data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
@@ -784,9 +800,9 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // Pivot tables use ajaxRequestFunc with progressive loading, so slice the data like regular tables
-      const sourceData = this.originalQueryData ?? []
-      newRows = sourceData.slice(start, end) ?? []
+      // Pivot tables use ajaxRequestFunc with progressive loading, so apply sorting/filtering then slice
+      const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
+      newRows = sortedData?.slice(start, end) ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
