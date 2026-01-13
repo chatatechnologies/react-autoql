@@ -68,6 +68,11 @@ export default class StringAxisSelector extends React.Component {
       columnIndices = this.getAllStringColumnIndices()
     }
 
+    const onSelectHandler =
+      this.props.useLegendHandler && this.props.changeLegendColumnIndex
+        ? this.props.changeLegendColumnIndex
+        : this.props.changeStringColumnIndex
+
     return (
       <div
         className={isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'}
@@ -81,27 +86,20 @@ export default class StringAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {columnIndices.map((colIndex, i) => {
-                const onSelectHandler =
-                  this.props.useLegendHandler && this.props.changeLegendColumnIndex
-                    ? this.props.changeLegendColumnIndex
-                    : this.props.changeStringColumnIndex
-
-                return (
-                  <li
-                    className={`string-select-list-item ${
-                      colIndex === this.props.scale?.column?.index ? 'active' : ''
-                    }`}
-                    key={`string-column-select-${i}`}
-                    onClick={() => {
-                      this.props.closeSelector()
-                      onSelectHandler && onSelectHandler(colIndex)
-                    }}
-                  >
-                    {this.props.columns?.[colIndex]?.display_name}
-                  </li>
-                )
-              })}
+              {columnIndices.map((colIndex, i) => (
+                <li
+                  className={`string-select-list-item ${
+                    colIndex === this.props.scale?.column?.index ? 'active' : ''
+                  }`}
+                  key={`string-column-select-${i}`}
+                  onClick={() => {
+                    this.props.closeSelector()
+                    onSelectHandler && onSelectHandler(colIndex)
+                  }}
+                >
+                  {this.props.columns?.[colIndex]?.display_name}
+                </li>
+              ))}
             </ul>
           </div>
         </CustomScrollbars>

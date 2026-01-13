@@ -80,6 +80,19 @@ export default class Axis extends Component {
     onAxisSortChange: () => {},
   }
 
+  // Convenience getters to avoid repeating prop-based checks
+  get isHeatmapOrBubble() {
+    return this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
+  }
+
+  get isYAxis() {
+    return this.props.scale?.axis === 'y'
+  }
+
+  get isHeatmapOrBubbleYAxis() {
+    return this.isHeatmapOrBubble && this.isYAxis
+  }
+
   componentDidMount = () => {
     this._isMounted = true
     this.renderAxis()
@@ -509,9 +522,7 @@ export default class Axis extends Component {
     }
 
     // Don't allow Y-axis sorting for heatmaps and bubble charts
-    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
-    const isYAxis = this.props.scale?.axis === 'y'
-    if (isHeatmapOrBubble && isYAxis) {
+    if (this.isHeatmapOrBubbleYAxis) {
       return false
     }
 
@@ -578,8 +589,7 @@ export default class Axis extends Component {
     }
 
     // For heatmaps, bubble charts, and pivot data, only allow string column sorting (no value sorting)
-    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
-    const stringColumnOnly = isHeatmapOrBubble || this.props.isAggregated
+    const stringColumnOnly = this.isHeatmapOrBubble || this.props.isAggregated
 
     return (
       <AxisSortPopover
@@ -717,10 +727,9 @@ export default class Axis extends Component {
     const columnsForSelector = this.props.isAggregated ? this.props.originalColumns : this.props.columns
 
     // For heatmap/bubble Y-axis, use legend (pivot) handler instead of string handler
-    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
-    const isYAxis = this.props.scale?.axis === 'y'
-    const changeStringColumnIndexHandler =
-      isHeatmapOrBubble && isYAxis ? this.props.changeLegendColumnIndex : this.props.changeStringColumnIndex
+    const changeStringColumnIndexHandler = this.isHeatmapOrBubbleYAxis
+      ? this.props.changeLegendColumnIndex
+      : this.props.changeStringColumnIndex
 
     return (
       <AxisSelector
@@ -1088,9 +1097,7 @@ export default class Axis extends Component {
     // Don't render a Y-axis selector for heatmaps or bubble charts —
     // the chart uses a legend/pivot selection instead and the X-axis
     // already provides a selector. This simplifies the UI.
-    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
-    const isYAxis = this.props.scale?.axis === 'y'
-    if (isHeatmapOrBubble && isYAxis) {
+    if (this.isHeatmapOrBubbleYAxis) {
       return false
     }
     const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
