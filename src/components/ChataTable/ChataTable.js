@@ -724,37 +724,6 @@ export default class ChataTable extends React.Component {
     let response = _cloneDeep(this.props.response)
     let data = _cloneDeep(this.originalQueryData)
 
-    if (this.props.pivot) {
-      if (params?.orders?.length) {
-        const primaryOrder = params.orders[0]
-        let sortColumnIndex
-        if (primaryOrder?.field !== undefined) {
-          const parsed = parseInt(primaryOrder.field, 10)
-          if (!isNaN(parsed)) {
-            sortColumnIndex = parsed
-          } else {
-            sortColumnIndex = this.props.columns.findIndex((col) => col.field === primaryOrder.field)
-          }
-        } else if (primaryOrder?.id !== undefined) {
-          sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
-        }
-
-        // handles sorting by column index/field for pivot tables
-        if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
-          const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
-          data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
-        }
-      }
-
-      this.originalQueryData = _cloneDeep(data)
-
-      response.data = response.data || {}
-      response.data.data = response.data.data || {}
-      response.data.data.rows = data
-      response.data.data.count_rows = data?.length || 0
-      return response
-    }
-
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
