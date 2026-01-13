@@ -49,7 +49,6 @@ import {
   CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
-  getFilterPrecision,
   getPrecisionForDayJS,
   dataFormattingDefault,
   autoQLConfigDefault,
@@ -58,12 +57,10 @@ import {
   getDataFormatting,
   getAutoQLConfig,
   isDataLimited,
-  MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
-  getCleanColumnName,
   isDrilldown,
   CustomColumnTypes,
   formatFiltersForTabulator,
@@ -2667,9 +2664,8 @@ export class QueryOutput extends React.Component {
 
         const isCustom = customSelect || newCol?.is_custom
 
-        const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.table_column?.trim() === cleanName
+          return select?.display_name?.trim() === newCol.display_name
         })
 
         if (isCustom && !availableSelect) {
