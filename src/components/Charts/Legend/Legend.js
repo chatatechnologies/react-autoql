@@ -25,12 +25,6 @@ import {
 // Module-level storage for filtered labels to persist across component remounts
 const legendFilterStore = new Map()
 
-// Export function to clear legend filter for a specific chart
-export const clearLegendFilter = (columnKey) => {
-  const key = `legend-${columnKey}`
-  legendFilterStore.delete(key)
-}
-
 export default class Legend extends React.Component {
   constructor(props) {
     super(props)
@@ -53,10 +47,11 @@ export default class Legend extends React.Component {
     this.allLegendLabels = [] // Store all labels before removing hidden ones
     this.filterButtonD3Element = null
 
-    // Use a stable key based on the data columns to identify this chart across remounts
-    // Using column names as the key since they identify the dataset
+    // Use a stable key based on the data columns and queryID to identify this chart
+    // Include queryID to prevent collisions between different queries with same column names
     const columnKey = props.columns?.map((c) => c.name).join('|') || 'default'
-    this.LEGEND_FILTER_KEY = `legend-${columnKey}`
+    const queryID = props.queryID || 'no-query-id'
+    this.LEGEND_FILTER_KEY = `legend-${queryID}-${columnKey}`
 
     // Initialize filtered labels from props config or persistent store
     if (props.legendFilterConfig?.filteredOutLabels) {

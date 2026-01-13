@@ -53,7 +53,6 @@ import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
-import { clearLegendFilter } from '../Legend/Legend'
 
 import './ChataChart.scss'
 
@@ -250,10 +249,6 @@ export default class ChataChart extends React.Component {
       !deepEqual(this.props.numberColumnIndices2, prevProps.numberColumnIndices2)
 
     if (tableConfigChanged) {
-      // Clear legend filter store entry for this chart
-      const columnKey = this.props.columns?.map((c) => c.name).join('|') || 'default'
-      clearLegendFilter(columnKey)
-
       // Reset visibleLegendLabels state to clear color regeneration
       if (this.state.visibleLegendLabels !== null) {
         this.setState({ visibleLegendLabels: null })
