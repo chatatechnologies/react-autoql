@@ -57,8 +57,8 @@ export default class StringAxisSelector extends React.Component {
       maxHeight = minHeight
     }
 
-    if (maxHeight > Window.innerHeight) {
-      maxHeight = Window.innerHeight
+    if (maxHeight > window.innerHeight) {
+      maxHeight = window.innerHeight
     }
 
     let columnIndices = []
@@ -82,6 +82,11 @@ export default class StringAxisSelector extends React.Component {
           >
             <ul className='axis-selector-content'>
               {columnIndices.map((colIndex, i) => {
+                const onSelectHandler =
+                  this.props.useLegendHandler && this.props.changeLegendColumnIndex
+                    ? this.props.changeLegendColumnIndex
+                    : this.props.changeStringColumnIndex
+
                 return (
                   <li
                     className={`string-select-list-item ${
@@ -90,7 +95,7 @@ export default class StringAxisSelector extends React.Component {
                     key={`string-column-select-${i}`}
                     onClick={() => {
                       this.props.closeSelector()
-                      this.props.changeStringColumnIndex(colIndex)
+                      onSelectHandler && onSelectHandler(colIndex)
                     }}
                   >
                     {this.props.columns?.[colIndex]?.display_name}

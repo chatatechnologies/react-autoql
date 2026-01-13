@@ -716,11 +716,17 @@ export default class Axis extends Component {
   renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
     const columnsForSelector = this.props.isAggregated ? this.props.originalColumns : this.props.columns
 
+    // For heatmap/bubble Y-axis, use legend (pivot) handler instead of string handler
+    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
+    const isYAxis = this.props.scale?.axis === 'y'
+    const changeStringColumnIndexHandler =
+      isHeatmapOrBubble && isYAxis ? this.props.changeLegendColumnIndex : this.props.changeStringColumnIndex
+
     return (
       <AxisSelector
         chartContainerRef={this.props.chartContainerRef}
         changeNumberColumnIndices={this.props.changeNumberColumnIndices}
-        changeStringColumnIndex={this.props.changeStringColumnIndex}
+        changeStringColumnIndex={changeStringColumnIndexHandler}
         legendColumn={this.props.legendColumn}
         popoverParentElement={this.props.popoverParentElement}
         numberColumnIndices={this.props.numberColumnIndices}
@@ -1077,10 +1083,16 @@ export default class Axis extends Component {
     }
   }
 
-  // TODO: Refactor axis selector visibility logic
-  // PROPOSAL: Move to autoql-fe-utils in a function like `shouldRenderAxisSelector(scale, isAggregated, legendLocation, columns)`
-  // Then add computed property to scale object: `scale.shouldRenderAxisSelector = true/false`
+  // TODO/PROPOSAL: Move selector visibility logic to `autoql-fe-utils` as `shouldRenderAxisSelector(scale, isAggregated, legendLocation, columns)` and add `scale.shouldRenderAxisSelector`.
   shouldRenderAxisSelector = () => {
+    // Don't render a Y-axis selector for heatmaps or bubble charts —
+    // the chart uses a legend/pivot selection instead and the X-axis
+    // already provides a selector. This simplifies the UI.
+    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
+    const isYAxis = this.props.scale?.axis === 'y'
+    if (isHeatmapOrBubble && isYAxis) {
+      return false
+    }
     const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
     const scaleType = scale?.type
     const isStringAxis = scaleType === 'BAND' || scaleType === 'TIME'
