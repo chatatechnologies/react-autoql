@@ -255,28 +255,11 @@ export default class TableWrapper extends React.Component {
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
 
-    // If this is a pivot table, prefer passing data directly and avoid using ajaxRequestFunc/progressive loading
+    // Pivot tables now use ajaxRequestFunc with progressive loading like regular tables
     const isPivot = !!this.props.pivot
     const passedOptions = sanitizePivotOptions(this.props.options, isPivot)
 
-    // Ensure Tabulator uses local modes for pivot tables even if the global constant isn't available
-    if (isPivot) {
-      if (typeof LOCAL_OR_REMOTE !== 'undefined' && LOCAL_OR_REMOTE && 'LOCAL' in LOCAL_OR_REMOTE) {
-        passedOptions.sortMode = LOCAL_OR_REMOTE.LOCAL
-        passedOptions.filterMode = LOCAL_OR_REMOTE.LOCAL
-        passedOptions.paginationMode = LOCAL_OR_REMOTE.LOCAL
-      } else {
-        passedOptions.sortMode = 'local'
-        passedOptions.filterMode = 'local'
-        passedOptions.paginationMode = 'local'
-      }
-    }
-
-    const initialData = isPivot
-      ? _cloneDeep(this.props.data)
-      : passedOptions?.ajaxRequestFunc
-      ? []
-      : _cloneDeep(this.props.data)
+    const initialData = passedOptions?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data)
 
     this.tabulator = new Tabulator(this.tableRef, {
       debugInvalidOptions: false,
@@ -291,7 +274,7 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
 
-      if (this.props.options?.ajaxRequestFunc && !this.props.pivot) {
+      if (this.props.options?.ajaxRequestFunc) {
         try {
           await this.tabulator.replaceData()
 
@@ -406,12 +389,8 @@ export default class TableWrapper extends React.Component {
 
     this.restoreRedraw()
 
-    // Remount pivot tables to prevent Tabulator loader/pagination state from duplicating rows
-    if (this.props.pivot) {
-      this.recreateTabulatorForPivot(data)
-      return Promise.resolve()
-    }
-
+    // Pivot tables now use ajaxRequestFunc with progressive loading like regular tables
+    // No need to recreate the tabulator - let ajaxRequestFunc handle data loading
     return this.tabulator?.setData(data)
   }
 

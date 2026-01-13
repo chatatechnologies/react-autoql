@@ -188,8 +188,7 @@ export default class ChataTable extends React.Component {
     onPivotAxisChange: PropTypes.func,
     originalColumns: PropTypes.arrayOf(PropTypes.shape({})),
     // Pivot table sizing info
-    totalCells: PropTypes.number,
-    maxCells: PropTypes.number,
+    maxColumns: PropTypes.number,
   }
 
   static defaultProps = {
@@ -226,8 +225,7 @@ export default class ChataTable extends React.Component {
     onPivotAxisChange: () => {},
     originalColumns: [],
     // Pivot table sizing info
-    totalCells: 0,
-    maxCells: 0,
+    maxColumns: 100,
   }
 
   componentDidMount = () => {
@@ -817,10 +815,9 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // For pivot tables we want to render the full local dataset so users can
-      // scroll through all aggregated rows. Returning a sliced page here caused
-      // the UI to only show the first `pageSize` rows (default 50).
-      newRows = this.originalQueryData ?? []
+      // Pivot tables use ajaxRequestFunc with progressive loading, so slice the data like regular tables
+      const sourceData = this.originalQueryData ?? []
+      newRows = sourceData.slice(start, end) ?? []
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
@@ -1652,8 +1649,7 @@ export default class ChataTable extends React.Component {
       )
       const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
       const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
-      const totalCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalCells)
-      const maxCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxCells)
+      const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 
       let content
       let tooltipContent
@@ -1662,7 +1658,7 @@ export default class ChataTable extends React.Component {
         tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
       } else if (this.props.pivotTableDataLimited) {
         content = 'Data has been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxCellsFormatted}</em> cells. The original table would have had <em>${totalPivotRowsFormatted}</em> rows × <em>${totalPivotColumnsFormatted}</em> columns = <em>${totalCellsFormatted}</em> cells.`
+        tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
       }
 
       return (
@@ -1877,6 +1873,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const isEmpty = this.isTableEmpty()
+    const isLoading = this.state.pageLoading || !this.state.tabulatorMounted
 
     return (
       <ErrorBoundary>
@@ -1886,7 +1883,7 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
+            ${isLoading ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
