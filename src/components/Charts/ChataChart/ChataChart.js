@@ -19,6 +19,8 @@ import {
   getDateColumnIndex,
   isColumnNumberType,
   MAX_CHART_ELEMENTS,
+  MAX_DATA_PAGE_SIZE,
+  getDataFormatting,
   dataStructureChanged,
   DATE_ONLY_CHART_TYPES,
   aggregateOtherCategory,
@@ -53,7 +55,6 @@ import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
-import { clearLegendFilter } from '../Legend/Legend'
 
 import './ChataChart.scss'
 
@@ -250,10 +251,6 @@ export default class ChataChart extends React.Component {
       !deepEqual(this.props.numberColumnIndices2, prevProps.numberColumnIndices2)
 
     if (tableConfigChanged) {
-      // Clear legend filter store entry for this chart
-      const columnKey = this.props.columns?.map((c) => c.name).join('|') || 'default'
-      clearLegendFilter(columnKey)
-
       // Reset visibleLegendLabels state to clear color regeneration
       if (this.state.visibleLegendLabels !== null) {
         this.setState({ visibleLegendLabels: null })
@@ -566,7 +563,7 @@ export default class ChataChart extends React.Component {
       }
     } catch (error) {
       console.error(error)
-      return { data: props.data, dataReduced: props.data }
+      return { data: props.data, dataReduced: props.data, isDataTruncated: false }
     }
   }
 
@@ -899,11 +896,42 @@ export default class ChataChart extends React.Component {
       this.props.type !== DisplayTypes.PIE &&
       this.props.type !== DisplayTypes.NETWORK_GRAPH
 
-    if (this.props.isDataLimited || isTruncated) {
-      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
+    const isDataLimited = this.props.isDataLimited
+
+    if (!isDataLimited && !isTruncated) {
+      return null
     }
 
-    return null
+    const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+    const rowLimit = this.props.rowLimit ?? MAX_DATA_PAGE_SIZE
+    const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
+    const chartElementLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_CHART_ELEMENTS)
+
+    let content
+    let tooltipContent
+
+    if (isDataLimited && isTruncated) {
+      // Both limits exceeded - use general message
+      content = `Limited to ${rowLimitFormatted} rows or ${chartElementLimitFormatted} elements`
+      tooltipContent = `To optimize performance, the visualization is limited to the initial <em>${rowLimitFormatted}</em> rows of data or <em>${chartElementLimitFormatted}</em> chart elements - whichever occurs first.`
+    } else if (isDataLimited) {
+      // Only MAX_DATA_PAGE_SIZE exceeded
+      content = `Limited to ${rowLimitFormatted} rows`
+      tooltipContent = `To optimize performance, this chart is limited to the initial <em>${rowLimitFormatted}</em> rows due to the MAX_DATA_PAGE_SIZE limit.`
+    } else {
+      // Only MAX_CHART_ELEMENTS exceeded
+      content = `Limited to ${chartElementLimitFormatted} chart elements`
+      tooltipContent = `To optimize performance, this chart is limited to <em>${chartElementLimitFormatted}</em> chart elements. Try switching the axis to reduce the number of elements.`
+    }
+
+    return (
+      <DataLimitWarning
+        tooltipID={this.props.tooltipID}
+        rowLimit={rowLimit}
+        tooltipContent={tooltipContent}
+        content={content}
+      />
+    )
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
