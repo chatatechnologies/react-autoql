@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
 import { isColumnDateType } from 'autoql-fe-utils'
@@ -7,6 +8,27 @@ import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class StringAxisSelector extends React.Component {
+  static propTypes = {
+    useLegendHandler: PropTypes.bool,
+    changeLegendColumnIndex: PropTypes.func,
+    changeStringColumnIndex: PropTypes.func,
+    columns: PropTypes.array,
+    numberColumnIndices: PropTypes.array,
+    numberColumnIndices2: PropTypes.array,
+    hasSecondAxis: PropTypes.bool,
+    dateColumnsOnly: PropTypes.bool,
+    chartContainerRef: PropTypes.object,
+    hidden: PropTypes.bool,
+    scale: PropTypes.object,
+    axisSelectorRef: PropTypes.any,
+    isOpen: PropTypes.bool,
+    closeSelector: PropTypes.func,
+    popoverParentElement: PropTypes.object,
+    positions: PropTypes.array,
+    align: PropTypes.string,
+    children: PropTypes.node,
+  }
+
   constructor(props) {
     super(props)
 
@@ -57,8 +79,8 @@ export default class StringAxisSelector extends React.Component {
       maxHeight = minHeight
     }
 
-    if (maxHeight > Window.innerHeight) {
-      maxHeight = Window.innerHeight
+    if (maxHeight > window.innerHeight) {
+      maxHeight = window.innerHeight
     }
 
     let columnIndices = []
@@ -67,6 +89,11 @@ export default class StringAxisSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
+
+    const onSelectHandler =
+      this.props.useLegendHandler && this.props.changeLegendColumnIndex
+        ? this.props.changeLegendColumnIndex
+        : this.props.changeStringColumnIndex
 
     return (
       <div
@@ -81,22 +108,18 @@ export default class StringAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {columnIndices.map((colIndex, i) => {
-                return (
-                  <li
-                    className={`string-select-list-item ${
-                      colIndex === this.props.scale?.column?.index ? 'active' : ''
-                    }`}
-                    key={`string-column-select-${i}`}
-                    onClick={() => {
-                      this.props.closeSelector()
-                      this.props.changeStringColumnIndex(colIndex)
-                    }}
-                  >
-                    {this.props.columns?.[colIndex]?.display_name}
-                  </li>
-                )
-              })}
+              {columnIndices.map((colIndex, i) => (
+                <li
+                  className={`string-select-list-item ${colIndex === this.props.scale?.column?.index ? 'active' : ''}`}
+                  key={`string-column-select-${i}`}
+                  onClick={() => {
+                    this.props.closeSelector()
+                    onSelectHandler && onSelectHandler(colIndex)
+                  }}
+                >
+                  {this.props.columns?.[colIndex]?.display_name}
+                </li>
+              ))}
             </ul>
           </div>
         </CustomScrollbars>

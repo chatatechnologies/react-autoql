@@ -65,7 +65,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
-    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
     isDrilldown: PropTypes.bool,
   }
 
