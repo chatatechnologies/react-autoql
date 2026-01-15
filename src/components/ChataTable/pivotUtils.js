@@ -6,30 +6,8 @@ export function sanitizePivotOptions(options, isPivot = false) {
 
   if (!isPivot) return opts
 
-  // Remove ajax handlers for pivot tables as data is local
-  if (opts.ajaxRequestFunc) delete opts.ajaxRequestFunc
-  ;[
-    'ajaxURL',
-    'ajaxURLGenerator',
-    'ajaxConfig',
-    'ajaxParams',
-    'ajaxResponse',
-    'ajaxError',
-    'progressiveLoad',
-    'pagination',
-    'paginationSize',
-    'paginationMode',
-    'paginationSizeSelector',
-  ].forEach((k) => {
-    if (k in opts) delete opts[k]
-  })
-
-  // Use local modes for pivot to avoid data reload/virtualization issues.
-  if (typeof LOCAL_OR_REMOTE !== 'undefined' && LOCAL_OR_REMOTE && 'LOCAL' in LOCAL_OR_REMOTE) {
-    opts.sortMode = LOCAL_OR_REMOTE.LOCAL
-    opts.filterMode = LOCAL_OR_REMOTE.LOCAL
-    opts.paginationMode = LOCAL_OR_REMOTE.LOCAL
-  }
+  // Pivot tables now use ajaxRequestFunc with progressive loading like regular tables
+  // No need to remove ajax/pagination options - they should work the same way
 
   return opts
 }

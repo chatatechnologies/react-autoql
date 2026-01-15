@@ -46,6 +46,7 @@ import {
   getColumnTypeAmounts,
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
+  MAX_DATA_PAGE_SIZE,
   CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
@@ -100,7 +101,7 @@ export class QueryOutput extends React.Component {
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
-    this.MAX_PIVOT_TABLE_CELLS = 5000
+    this.MAX_PIVOT_TABLE_COLUMNS = 100
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
@@ -446,6 +447,8 @@ export class QueryOutput extends React.Component {
     try {
       const newState = {}
       let shouldForceUpdate = false
+
+      // Legend filters automatically start fresh for each query since the filter key includes queryID
 
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
@@ -2942,12 +2945,11 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  limitPivotTableByTotalCells = (uniqueRowHeaders, uniqueColumnHeaders) => {
+  limitPivotTableByColumns = (uniqueRowHeaders, uniqueColumnHeaders) => {
     const originalRowCount = uniqueRowHeaders.length
     const originalColumnCount = uniqueColumnHeaders.length
-    const totalCells = originalRowCount * originalColumnCount
 
-    if (totalCells <= this.MAX_PIVOT_TABLE_CELLS) {
+    if (originalColumnCount <= this.MAX_PIVOT_TABLE_COLUMNS) {
       return {
         rowHeaders: uniqueRowHeaders,
         columnHeaders: uniqueColumnHeaders,
@@ -2955,26 +2957,14 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    // Calculate scaling factor to fit within cell limit
-    const scaleFactor = Math.sqrt(this.MAX_PIVOT_TABLE_CELLS / totalCells)
-    const maxRows = Math.floor(originalRowCount * scaleFactor)
-    const maxColumns = Math.floor(originalColumnCount * scaleFactor)
-
-    // Ensure we don't exceed the cell limit
-    let finalRows = maxRows
-    let finalColumns = maxColumns
-    if (finalRows * finalColumns > this.MAX_PIVOT_TABLE_CELLS) {
-      // Adjust to ensure we stay within limit
-      finalColumns = Math.floor(this.MAX_PIVOT_TABLE_CELLS / finalRows)
-    }
+    const finalColumns = this.MAX_PIVOT_TABLE_COLUMNS
 
     return {
-      rowHeaders: uniqueRowHeaders.slice(0, finalRows),
+      rowHeaders: uniqueRowHeaders,
       columnHeaders: uniqueColumnHeaders.slice(0, finalColumns),
       isLimited: true,
       originalRowCount,
       originalColumnCount,
-      totalCells,
     }
   }
 
@@ -3025,7 +3015,7 @@ export class QueryOutput extends React.Component {
       })
 
       if (this.formattedTableParams?.filters?.length) {
-        this.formattedTableParams.filters.forEach((filter) => {
+        this.formattedTableParams.filters.forEach((filter, idx) => {
           const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
             let op = filter.operator,
@@ -3102,8 +3092,9 @@ export class QueryOutput extends React.Component {
           sortColumnIndex = !isNaN(parsed) ? parsed : columns.find((col) => col.field === primary.field)?.index
         }
         const sortDirection = (primary?.sort || primary?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
-        if (sortColumnIndex !== undefined)
+        if (sortColumnIndex !== undefined) {
           sortedData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
+        }
       }
       if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
 
@@ -3146,22 +3137,27 @@ export class QueryOutput extends React.Component {
 
       let didSwapAxes = false
       // Only allow axis swapping/changing on first generation, never when called from sort
-      if (
-        isFirstGeneration &&
-        !hasSavedAxisConfig && // Skip switching if user has saved preferences
-        // Only switch if legend is a date AND it would not shrink the number of row headers,
-        // or if the legend has more unique headers than the rows (original behavior).
-        ((isColumnDateType(columns[lIdx]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
-          (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
-            (!isColumnDateType(columns[sIdx]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
-      ) {
-        newStringColumnIndex = lIdx
-        newLegendColumnIndex = sIdx
+      if (isFirstGeneration && !hasSavedAxisConfig) {
+        // Skip switching if user has saved preferences
+        // Check if swapping would prevent a data limit warning
+        const wouldExceedLimit = uniqueColumnHeaders?.length > this.MAX_PIVOT_TABLE_COLUMNS
+        const swappingWouldHelp = wouldExceedLimit && uniqueRowHeaders?.length <= this.MAX_PIVOT_TABLE_COLUMNS
 
-        const tempValues = [...uniqueRowHeaders]
-        uniqueRowHeaders = [...uniqueColumnHeaders]
-        uniqueColumnHeaders = tempValues
-        didSwapAxes = true
+        // Also check original swap conditions
+        const originalSwapCondition =
+          (isColumnDateType(columns[lIdx]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
+          (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
+            (!isColumnDateType(columns[sIdx]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS))
+
+        if (swappingWouldHelp || originalSwapCondition) {
+          newStringColumnIndex = lIdx
+          newLegendColumnIndex = sIdx
+
+          const tempValues = [...uniqueRowHeaders]
+          uniqueRowHeaders = [...uniqueColumnHeaders]
+          uniqueColumnHeaders = tempValues
+          didSwapAxes = true
+        }
       }
 
       // Only try to fix non-groupable columns on first generation
@@ -3190,8 +3186,8 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
       }
 
-      // Limit by total number of cells (rows × columns)
-      const limitResult = this.limitPivotTableByTotalCells(uniqueRowHeaders, uniqueColumnHeaders)
+      // Limit by number of columns
+      const limitResult = this.limitPivotTableByColumns(uniqueRowHeaders, uniqueColumnHeaders)
       uniqueRowHeaders = limitResult.rowHeaders
       uniqueColumnHeaders = limitResult.columnHeaders
 
@@ -3199,7 +3195,6 @@ export class QueryOutput extends React.Component {
         this.pivotTableDataLimited = true
         this.pivotTableTotalRows = limitResult.originalRowCount
         this.pivotTableTotalColumns = limitResult.originalColumnCount
-        this.pivotTableTotalCells = limitResult.totalCells
       }
 
       const uniqueRowHeadersObj = uniqueRowHeaders.reduce((map, title, i) => {
@@ -3256,6 +3251,7 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
+          headerSort: false,
         }
 
         pivotTableColumns.push(newPivotCol)
@@ -3270,7 +3266,7 @@ export class QueryOutput extends React.Component {
       let aggregatedRowCount = 0
       let skippedRowCount = 0
       const skippedRowExamples = []
-      sortedData.forEach((row) => {
+      sortedData.forEach((row, rowIdx) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
         if (!pivotRowHeaderValue || pivotRowIndex === undefined || !pivotTableData[pivotRowIndex]) {
@@ -3662,8 +3658,7 @@ export class QueryOutput extends React.Component {
           pivotTableDataLimited={this.pivotTableDataLimited}
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
-          totalCells={this.pivotTableTotalCells}
-          maxCells={this.MAX_PIVOT_TABLE_CELLS}
+          maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
@@ -3750,7 +3745,15 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
-    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    const isPivotDataLimited = usePivotData && this.pivotTableDataLimited
+    const isDataLimitedResult = isDataLimited(this.queryResponse)
+    const rowLimitValue = this.queryResponse?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
+    const countRows = this.queryResponse?.data?.data?.count_rows
+
+    // Check if isDataLimited is working correctly and fix it if broken
+    const expectedIsDataLimited = countRows != null && rowLimitValue != null && countRows > rowLimitValue
+    const correctedIsDataLimited = expectedIsDataLimited || isDataLimitedResult
+    const isDataLimitedValue = correctedIsDataLimited || isPivotDataLimited
 
     return (
       <ErrorBoundary>
@@ -3794,7 +3797,8 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
+          isDataLimited={isDataLimitedValue}
+          rowLimit={rowLimitValue}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}
