@@ -60,11 +60,10 @@ export default class ChataTable extends React.Component {
     this.filterCount = 0
     this.isSorting = false
     this.filteredResponseData = null
+    this.previousFilters = []
     this.pageSize = props.pageSize ?? 50
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
-        ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
         ? LOCAL_OR_REMOTE.REMOTE
         : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
@@ -146,6 +145,19 @@ export default class ChataTable extends React.Component {
   }
 
   // Pivot tables: remove ajax/progressive/pagination options so Tabulator treats them as static tables.
+  // debounce for remote filter calls (ms)
+  static REMOTE_FILTER_DEBOUNCE_MS = 100
+
+  // determine whether we should call remote filtering/sorting
+  shouldCallRemoteFilter = () => {
+    const hasCurrentFilters = this.tableParams?.filter?.length > 0
+    const filtersChanged = !_isEqual(this.previousFilters, this.tableParams?.filter)
+
+    return (
+      (!this.useInfiniteScroll && !this.props.pivot && !this.isLocal && hasCurrentFilters) ||
+      (filtersChanged && !this.isLocal)
+    )
+  }
   getTableWrapperOptions = () => {
     // Return a deep-cloned tableOptions so TableWrapper handles pivot cleanup without breaking remote sorting/filtering
     return _cloneDeep(this.tableOptions || {})
@@ -543,8 +555,16 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
-    // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
+    const filtersChanged = !_isEqual(this.previousFilters, this.tableParams?.filter)
+
+    // Evaluate whether we should call remote filter BEFORE updating previousFilters
+    const shouldCallRemote = this.shouldCallRemoteFilter()
+
+    if (filtersChanged) {
+      this.previousFilters = _cloneDeep(this.tableParams?.filter ?? [])
+    }
+
+    if (shouldCallRemote) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -553,7 +573,7 @@ export default class ChataTable extends React.Component {
         } catch (error) {
           console.error('Error in debounced getRTForRemoteFilterAndSort:', error)
         }
-      }, 100)
+      }, this.constructor.REMOTE_FILTER_DEBOUNCE_MS)
     }
 
     this.setFilterBadgeClasses()
@@ -723,6 +743,36 @@ export default class ChataTable extends React.Component {
     // Use FE for sorting and filtering
     let response = _cloneDeep(this.props.response)
     let data = _cloneDeep(this.originalQueryData)
+
+    if (this.props.pivot) {
+      if (params?.orders?.length) {
+        const primaryOrder = params.orders[0]
+        let sortColumnIndex
+        if (primaryOrder?.field !== undefined) {
+          const parsed = parseInt(primaryOrder.field, 10)
+          if (!isNaN(parsed)) {
+            sortColumnIndex = parsed
+          } else {
+            sortColumnIndex = this.props.columns.findIndex((col) => col.field === primaryOrder.field)
+          }
+        } else if (primaryOrder?.id !== undefined) {
+          sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
+        }
+
+        // handles sorting by column index/field for pivot tables
+        if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
+          const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
+          data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+        }
+      }
+
+      // Do not mutate `originalQueryData` here; return sorted rows in response
+      response.data = response.data || {}
+      response.data.data = response.data.data || {}
+      response.data.data.rows = data
+      response.data.data.count_rows = data?.length || 0
+      return response
+    }
 
     // Filters
     if (params.tableFilters?.length) {

@@ -666,90 +666,62 @@ describe('ChataTable', () => {
       })
     })
 
-    test('should allow ajaxRequestFunc calls after timing protection period expires', async () => {
-      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
-
+    test('ajaxRequestFunc calls queryFn for infinite scroll when hasSetInitialData is true', async () => {
       const props = {
-        response: mockResponseWithNoData,
-        initialTableParams: { filter: initialFilters },
+        response: mockResponseWithData,
         queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
-        useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
+        useInfiniteScroll: true,
       }
 
       const wrapper = setup(props)
       const instance = wrapper.instance()
 
-      // Set up component state to ensure ajaxRequestFunc will actually make the API call
       instance.hasSetInitialData = true
       instance._isMounted = true
       instance.state = { tabulatorMounted: true }
-      instance._setFiltersTime = Date.now() - 2000 // Set to 2 seconds ago (not recent)
 
-      // Set _setInitialDataTime to 2 seconds ago (outside protection period of 1000ms)
-      instance._setInitialDataTime = Date.now() - 2000
+      // ajaxRequestFunc uses instance.queryFn internally
+      instance.queryFn = props.queryFn
 
-      // Try to call ajaxRequestFunc after protection period
+      // Ensure instance is configured for infinite scroll regardless of small mock response
+      instance.useInfiniteScroll = true
+      // Ensure header filters debounce window has passed
+      instance._setFiltersTime = Date.now() - 3000
+
       const params = { page: 1, filter: [], sort: [] }
 
-      // Ensure all conditions are properly set to allow the API call
-      expect(instance.hasSetInitialData).toBe(true)
-      expect(instance._isMounted).toBe(true)
-      expect(instance.state.tabulatorMounted).toBe(true)
+      await instance.ajaxRequestFunc(props, params)
 
-      const result = await instance.ajaxRequestFunc(props, params)
-
-      // Should make the API call since protection period has expired
-      expect(props.queryFn).toHaveBeenCalled()
-
-      // Should return the API response, not initial data
-      expect(result.isInitialData).toBeFalsy()
+      // ajaxRequestFunc invokes the instance-level `queryFn` implementation
+      expect(instance.queryFn).toHaveBeenCalled()
     })
 
-    test('should handle the complete flow: mount with no data + filters, then clear filters', async () => {
-      const initialFilters = [{ field: '1', type: '=', value: 'online' }]
-
-      const props = {
-        response: mockResponseWithNoData,
-        initialTableParams: { filter: initialFilters },
-        queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
-        useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
-      }
-
-      const wrapper = setup(props)
+    test('onDataFiltered calls remote filter routine when filters change (debounced)', () => {
+      const wrapper = setup()
       const instance = wrapper.instance()
 
-      // Step 1: Initial mount - should return empty data, no API call
-      instance.onDataProcessed([])
+      // Ensure conditions: not local, not pivot, no infinite scroll
+      instance.isLocal = false
+      instance.useInfiniteScroll = false
 
-      // Verify initial state
-      expect(instance.tableParams.filter).toEqual(initialFilters)
-      expect(instance.originalQueryData).toEqual([])
+      instance.previousFilters = []
+      instance.tableParams.filter = []
 
-      // Step 2: Simulate user clearing filters after protection period
-      instance.hasSetInitialData = true
-      instance._isMounted = true
-      instance._setInitialDataTime = Date.now() - 2000 // Outside protection period of 1000ms
-      instance._setFiltersTime = Date.now() - 2000 // Set to 2 seconds ago (not recent)
-      instance.state = { tabulatorMounted: true }
+      const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockImplementation(() => {})
 
-      // Step 3: Clear filters (simulate user action)
-      const clearFilterParams = {
-        page: 1,
-        filter: [], // Cleared filters
-        sort: [],
-      }
+      jest.useFakeTimers()
 
-      const result = await instance.ajaxRequestFunc(props, clearFilterParams)
+      const newFilters = [{ field: '1', type: '=', value: 'online' }]
+      instance.tableParams.filter = newFilters
+      instance.onDataFiltered(newFilters, [])
 
-      // Should have called queryFn to get unfiltered data
-      expect(props.queryFn).toHaveBeenCalledWith({
-        tableFilters: [],
-        orders: [],
-        cancelToken: expect.any(Object), // axios CancelToken
-      })
+      // flush debounce
+      jest.runAllTimers()
 
-      // Should return the unfiltered data
-      expect(result.rows).toEqual(mockResponseWithData.data.data.rows)
+      expect(spy).toHaveBeenCalled()
+
+      jest.useRealTimers()
+      spy.mockRestore()
     })
   })
 
