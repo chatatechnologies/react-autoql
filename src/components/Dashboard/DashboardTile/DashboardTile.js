@@ -593,7 +593,9 @@ export class DashboardTile extends React.Component {
         tableFilters: currentFilter,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
-        source: 'dashboards.user',
+        source: this.props.dashboardId 
+          ? `dashboards.${this.props.dashboardId}` 
+          : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
         cancelToken,
@@ -1451,7 +1453,9 @@ export class DashboardTile extends React.Component {
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
-        source='dashboards.user'
+        source={this.props.dashboardId 
+          ? `dashboards.${this.props.dashboardId}` 
+          : 'dashboards.user'}
         scope='dashboards'
         autoHeight={false}
         height='100%'
