@@ -45,4 +45,36 @@ describe('AddColumnBtnV2', () => {
     // Available selects should include 'Count' (the non-duplicate option)
     expect(renderedLabels).toContain('Count')
   })
+
+  it('hides available_selects that match existing table columns when only `id` is present', () => {
+    // Test: columns with ONLY id (no display_name/name) should match selects by id
+    const columns = [{ id: 'unique-col-id' }]
+
+    const available_selects = [
+      { id: 'unique-col-id', display_name: 'Already In Table' },
+      { id: 'other-col-id', display_name: 'New Column' },
+    ]
+
+    const wrapper = mount(
+      <AddColumnBtn
+        queryResponse={{ data: { data: { columns, available_selects } } }}
+        onAddColumnClick={jest.fn()}
+        onCustomClick={jest.fn()}
+      />,
+    )
+
+    // Open the popover/menu
+    wrapper.find("[data-test='react-autoql-table-add-column-btn']").simulate('click')
+
+    const popover = wrapper.findWhere((n) => n.prop && typeof n.prop('content') === 'function').first()
+    const contentFn = popover.prop('content')
+    const menuWrapper = mount(contentFn())
+
+    const renderedLabels = menuWrapper
+      .find('.react-autoql-add-column-menu .react-autoql-add-column-menu-item span')
+      .map((n) => n.text())
+
+    expect(renderedLabels).toContain('New Column')
+    expect(renderedLabels).not.toContain('Already In Table')
+  })
 })

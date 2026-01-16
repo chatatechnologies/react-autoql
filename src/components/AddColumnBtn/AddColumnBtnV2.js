@@ -78,8 +78,8 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
         <div className='more-options-menu react-autoql-add-column-menu'>
           <ul className='context-menu-list'>
             <div className='react-autoql-input-label'>Add a Column</div>
-            {availableSelectColumns?.map((column) => {
-              const colId = normalizeColumnIdentifier(column)
+            {availableSelectColumns?.map((column, idx) => {
+              const colId = normalizeColumnIdentifier(column) || column?.id || column?.name || `col-${idx}`
               const columnIsNumerical = isColumnNumerical(column.column_type)
               const shouldShowAggMenu = !disableAggregationMenu && columnIsNumerical
 
@@ -126,13 +126,12 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
                 </li>
               )
             })}
-            {availableHiddenColumns?.map((column) => {
-              const isHiddenColumn = true
-              const hiddenId = normalizeColumnIdentifier(column)
+            {availableHiddenColumns?.map((column, idx) => {
+              const hiddenId = normalizeColumnIdentifier(column) || column?.id || column?.name || `hidden-${idx}`
               return (
                 <li
                   key={`column-select-menu-item-hidden-${hiddenId}`}
-                  onClick={() => handleAddColumnClick(column, undefined, isHiddenColumn)}
+                  onClick={() => handleAddColumnClick(column, undefined, true)}
                 >
                   <div className='react-autoql-add-column-menu-item'>
                     <Icon type='plus' />
@@ -154,22 +153,33 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
   }
 
   const existingColumnNames = useMemo(
-    () => (queryResponse?.data?.data?.columns || []).map((c) => normalizeColumnIdentifier(c)),
-    [queryResponse],
+    () => (queryResponse?.data?.data?.columns || []).map((c) => normalizeColumnIdentifier(c) || c?.id || ''),
+    [queryResponse?.data?.data?.columns],
+  )
+
+  const existingColumnIds = useMemo(
+    () => (queryResponse?.data?.data?.columns || []).map((c) => c?.id).filter(Boolean),
+    [queryResponse?.data?.data?.columns],
   )
 
   const availableSelectColumns = useMemo(() => {
     const selects = queryResponse?.data?.data?.available_selects || []
     return selects.filter((col) => {
-      const thisColName = normalizeColumnIdentifier(col)
-      if (existingColumnNames.includes(thisColName)) return false
+      const thisId = normalizeColumnIdentifier(col) || col?.id || ''
+      if ((thisId && existingColumnNames.includes(thisId)) || (col?.id && existingColumnIds.includes(col.id))) {
+        return false
+      }
 
       if (disableGroupColumnsOptions) return isColumnNumerical(col.column_type)
       if (disableFilterColumnsOptions) return !isColumnNumerical(col.column_type)
       return true
     })
-  }, [queryResponse, existingColumnNames, disableGroupColumnsOptions, disableFilterColumnsOptions])
-  const availableHiddenColumns = getHiddenColumns(queryResponse?.data?.data?.columns)
+  }, [existingColumnNames, existingColumnIds, disableGroupColumnsOptions, disableFilterColumnsOptions])
+
+  const availableHiddenColumns = useMemo(
+    () => getHiddenColumns(queryResponse?.data?.data?.columns),
+    [queryResponse?.data?.data?.columns],
+  )
 
   // Force render when allowCustom is true and custom option is enabled (for drilldowns with no available selects)
   const shouldRender =

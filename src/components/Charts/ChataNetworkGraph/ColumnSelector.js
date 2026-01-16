@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
-import { isColumnNumberType } from 'autoql-fe-utils'
+import { isColumnNumberType, findNetworkColumns } from 'autoql-fe-utils'
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { sourceColumnIcon, targetColumnIcon, amountColumnIcon } from '../../../svgIcons'
@@ -42,6 +42,19 @@ const ColumnSelector = (props) => {
     .map((col, idx) => ({ ...col, columnIndex: idx }))
     .filter((col) => isColumnNumberType(col))
 
+  const {
+    sourceColumnIndex: detectedSourceIndex,
+    targetColumnIndex: detectedTargetIndex,
+    weightColumnIndex: detectedWeightIndex,
+  } = findNetworkColumns(columns || [])
+
+  const effectiveSelectedSourceIndex =
+    selectedSourceColumnIndex ?? (detectedSourceIndex !== -1 ? detectedSourceIndex : null)
+  const effectiveSelectedTargetIndex =
+    selectedTargetColumnIndex ?? (detectedTargetIndex !== -1 ? detectedTargetIndex : null)
+  const effectiveSelectedAmountIndex =
+    selectedAmountColumnIndex ?? (detectedWeightIndex !== -1 ? detectedWeightIndex : null)
+
   // On mobile, use a large maxHeight to fill the container, otherwise use calculated height
   const sourceDropdownHeight = isMobile
     ? window.innerHeight - 200
@@ -55,14 +68,15 @@ const ColumnSelector = (props) => {
 
   // Get selected column names for tooltips
   const selectedSourceColumn =
-    stringColumns.find((col) => col.columnIndex === selectedSourceColumnIndex) ||
-    (stringColumns.length > 0 && selectedSourceColumnIndex === null ? stringColumns[0] : null)
+    stringColumns.find((col) => col.columnIndex === effectiveSelectedSourceIndex) ||
+    (stringColumns.length > 0 ? stringColumns[0] : null)
   const selectedTargetColumn =
-    stringColumns.find((col) => col.columnIndex === selectedTargetColumnIndex) ||
-    (stringColumns.length > 1 && selectedTargetColumnIndex === null ? stringColumns[1] : null)
+    stringColumns.find((col) => col.columnIndex === effectiveSelectedTargetIndex) ||
+    // prefer second string col when available, otherwise fall back to first
+    (stringColumns.length > 1 ? stringColumns[1] : stringColumns[0] || null)
   const selectedAmountColumn =
-    numericColumns.find((col) => col.columnIndex === selectedAmountColumnIndex) ||
-    (numericColumns.length > 0 && selectedAmountColumnIndex === null ? numericColumns[0] : null)
+    numericColumns.find((col) => col.columnIndex === effectiveSelectedAmountIndex) ||
+    (numericColumns.length > 0 ? numericColumns[0] : null)
 
   const sourceTooltipHtml = selectedSourceColumn
     ? `Source column<br/><em>(${selectedSourceColumn.display_name || selectedSourceColumn.name})</em>`
@@ -92,8 +106,7 @@ const ColumnSelector = (props) => {
             }}
           >
             {stringColumns.map((col, index) => {
-              const isSelected =
-                selectedSourceColumnIndex === col.columnIndex || (selectedSourceColumnIndex === null && index === 0)
+              const isSelected = effectiveSelectedSourceIndex === col.columnIndex
               return (
                 <div
                   key={`source-${col.columnIndex}`}
@@ -134,7 +147,10 @@ const ColumnSelector = (props) => {
           >
             {stringColumns.map((col, index) => {
               const isSelected =
-                selectedTargetColumnIndex === col.columnIndex || (selectedTargetColumnIndex === null && index === 1)
+                effectiveSelectedTargetIndex === col.columnIndex ||
+                // if no explicit or detected target index, prefer second column when present
+                (effectiveSelectedTargetIndex === null && stringColumns.length > 1 && index === 1) ||
+                (effectiveSelectedTargetIndex === null && stringColumns.length === 1 && index === 0)
               return (
                 <div
                   key={`target-${col.columnIndex}`}
@@ -177,7 +193,7 @@ const ColumnSelector = (props) => {
               }}
             >
               {numericColumns.map((col) => {
-                const isSelected = selectedAmountColumnIndex === col.columnIndex
+                const isSelected = effectiveSelectedAmountIndex === col.columnIndex
                 return (
                   <div
                     key={`amount-${col.columnIndex}`}
