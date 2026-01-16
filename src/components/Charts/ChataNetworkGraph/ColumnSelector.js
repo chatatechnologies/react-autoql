@@ -49,11 +49,11 @@ const ColumnSelector = (props) => {
   } = findNetworkColumns(columns || [])
 
   const effectiveSelectedSourceIndex =
-    selectedSourceColumnIndex ?? (detectedSourceIndex !== -1 ? detectedSourceIndex : null)
+    selectedSourceColumnIndex ?? (detectedSourceIndex === -1 ? null : detectedSourceIndex)
   const effectiveSelectedTargetIndex =
-    selectedTargetColumnIndex ?? (detectedTargetIndex !== -1 ? detectedTargetIndex : null)
+    selectedTargetColumnIndex ?? (detectedTargetIndex === -1 ? null : detectedTargetIndex)
   const effectiveSelectedAmountIndex =
-    selectedAmountColumnIndex ?? (detectedWeightIndex !== -1 ? detectedWeightIndex : null)
+    selectedAmountColumnIndex ?? (detectedWeightIndex === -1 ? null : detectedWeightIndex)
 
   // On mobile, use a large maxHeight to fill the container, otherwise use calculated height
   const sourceDropdownHeight = isMobile

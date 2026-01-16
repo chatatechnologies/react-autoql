@@ -236,6 +236,7 @@ AddColumnBtnWithoutRef.propTypes = {
   queryResponse: PropTypes.shape({
     data: PropTypes.shape({
       data: PropTypes.shape({
+        columns: PropTypes.arrayOf(PropTypes.object),
         available_selects: PropTypes.array,
         fe_req: PropTypes.shape({
           additional_selects: PropTypes.array,

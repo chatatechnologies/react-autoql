@@ -745,11 +745,11 @@ export default class ChataTable extends React.Component {
         const column =
           this.props.columns.find((col) => col.id === params?.orders[0]?.id) ||
           this.props.columns.find((col) => col.field === params?.orders[0]?.id)
-        if (column?.field !== undefined) {
+        if (column?.field === undefined) {
+          sortColumnIndex = column?.index
+        } else {
           const parsed = parseInt(column.field, 10)
           sortColumnIndex = !isNaN(parsed) ? parsed : column.index
-        } else {
-          sortColumnIndex = column?.index
         }
       } else {
         sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
