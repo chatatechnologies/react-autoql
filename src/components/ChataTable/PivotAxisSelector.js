@@ -16,7 +16,7 @@ const PivotAxisSelector = ({ isOpen, options, activeIndex, location, onClose, on
       padding={0}
       content={
         <div className='pivot-axis-selector-container'>
-          <CustomScrollbars maxHeight={220}>
+          <CustomScrollbars maxHeight={220} suppressScrollX={true}>
             <ul className='pivot-axis-selector-list'>
               {options.map((opt) => (
                 <li

@@ -58,6 +58,57 @@ describe('ChataTable', () => {
     jest.clearAllMocks()
   })
 
+  test('setFilters always calls restoreRedraw (normal path)', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const restoreSpy = jest.fn()
+    const mockTabulator = {
+      getColumns: jest.fn(() => []),
+      setHeaderFilterValue: jest.fn(),
+      setFilter: jest.fn(),
+      getHeaderFilters: jest.fn(() => []),
+      getSorters: jest.fn(() => []),
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+
+    // Provide both wrapper-level API and underlying tabulator for compatibility
+    instance.ref = { tabulator: mockTabulator, blockRedraw: mockTabulator.blockRedraw, restoreRedraw: restoreSpy }
+
+    instance.setFilters([{ field: '1', type: '=', value: 'online' }])
+
+    expect(restoreSpy).toHaveBeenCalled()
+  })
+
+  test('setFilters always calls restoreRedraw even if Tabulator throws', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const restoreSpy = jest.fn()
+    const mockTabulator = {
+      getColumns: jest.fn(() => {
+        throw new Error('tabulator error')
+      }),
+      setHeaderFilterValue: jest.fn(),
+      setFilter: jest.fn(),
+      getHeaderFilters: jest.fn(() => []),
+      getSorters: jest.fn(() => []),
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+
+    instance.ref = { tabulator: mockTabulator, blockRedraw: mockTabulator.blockRedraw, restoreRedraw: restoreSpy }
+
+    try {
+      instance.setFilters([{ field: '1', type: '=', value: 'online' }])
+    } catch (e) {
+      // ignore thrown error; we only care that restoreRedraw was invoked
+    }
+
+    expect(restoreSpy).toHaveBeenCalled()
+  })
+
   describe('renders correctly', () => {
     test('renders correctly with required props', () => {
       const wrapper = setup()

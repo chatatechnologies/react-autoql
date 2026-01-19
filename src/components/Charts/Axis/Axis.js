@@ -5,7 +5,13 @@ import _isEqual from 'lodash.isequal'
 import { select } from 'd3-selection'
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis'
 import { isMobile } from 'react-device-detect'
-import { formatChartLabel, getBBoxFromRef, mergeBoundingClientRects, shouldLabelsRotate, DisplayTypes } from 'autoql-fe-utils'
+import {
+  formatChartLabel,
+  getBBoxFromRef,
+  mergeBoundingClientRects,
+  shouldLabelsRotate,
+  DisplayTypes,
+} from 'autoql-fe-utils'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -72,6 +78,19 @@ export default class Axis extends Component {
     onAxisRenderComplete: () => {},
     axisSorts: {},
     onAxisSortChange: () => {},
+  }
+
+  // Convenience getters to avoid repeating prop-based checks
+  get isHeatmapOrBubble() {
+    return this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
+  }
+
+  get isYAxis() {
+    return this.props.scale?.axis === 'y'
+  }
+
+  get isHeatmapOrBubbleYAxis() {
+    return this.isHeatmapOrBubble && this.isYAxis
   }
 
   componentDidMount = () => {
@@ -501,14 +520,12 @@ export default class Axis extends Component {
     if (this.props.scale?.type !== 'BAND') {
       return false
     }
-    
+
     // Don't allow Y-axis sorting for heatmaps and bubble charts
-    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
-    const isYAxis = this.props.scale?.axis === 'y'
-    if (isHeatmapOrBubble && isYAxis) {
+    if (this.isHeatmapOrBubbleYAxis) {
       return false
     }
-    
+
     return true
   }
 
@@ -520,13 +537,13 @@ export default class Axis extends Component {
     // Get the column index for this axis
     const columnIndex = this.props.scale?.column?.index
     const axis = this.props.scale?.axis || 'x' // 'x' or 'y'
-    
+
     // Always use originalColumns for display names to avoid duplicates from pivoted columns
     let column = null
     let valueColumn = null
     let columnDisplayName = this.props.scale?.title || 'column'
     let valueColumnDisplayName = 'values'
-    
+
     // Always try to find column by name in originalColumns (works for both aggregated and non-aggregated)
     const columnName = this.props.scale?.column?.name
     if (columnName && this.props.originalColumns) {
@@ -534,7 +551,7 @@ export default class Axis extends Component {
       if (column) {
         columnDisplayName = column.display_name || columnDisplayName
       }
-      
+
       // Get value column display name (first number column from originalColumns)
       const numberColumnIndices = this.props.numberColumnIndices || []
       const primaryNumberColumnIndex = numberColumnIndices[0]
@@ -548,7 +565,7 @@ export default class Axis extends Component {
       // Fallback to using props.columns if originalColumns not available or no column name
       column = this.props.columns?.[columnIndex]
       columnDisplayName = column?.display_name || columnDisplayName
-      
+
       // Get value column display name (first number column)
       const numberColumnIndices = this.props.numberColumnIndices || []
       const primaryNumberColumnIndex = numberColumnIndices[0]
@@ -559,7 +576,7 @@ export default class Axis extends Component {
         }
       }
     }
-    
+
     // Get current sort state for this axis
     const axisSortKey = `${axis}-${columnIndex}`
     const currentSort = this.props.axisSorts?.[axisSortKey] || null
@@ -572,8 +589,7 @@ export default class Axis extends Component {
     }
 
     // For heatmaps, bubble charts, and pivot data, only allow string column sorting (no value sorting)
-    const isHeatmapOrBubble = this.props.type === DisplayTypes.HEATMAP || this.props.type === DisplayTypes.BUBBLE
-    const stringColumnOnly = isHeatmapOrBubble || this.props.isAggregated
+    const stringColumnOnly = this.isHeatmapOrBubble || this.props.isAggregated
 
     return (
       <AxisSortPopover
@@ -644,18 +660,18 @@ export default class Axis extends Component {
     const sortIcon = sortGroup?.querySelector('.axis-sort-icon')
 
     const transform = this.titleRef?.getAttribute('transform')
-    const isRotated = transform && transform.includes('rotate')
-    
+    const isRotated = transform?.includes('rotate')
+
     // Get axis selector position for reference
     const selectorBBox = this.axisSelector ? getBBoxFromRef(this.axisSelector) : null
-    
+
     let rectX, rectY, rectWidth, rectHeight, iconX, iconY, iconTransform
 
     if (isRotated) {
       // For rotated axes (left/right), position next to the selector
       // Use selector's actual bounding box if available, otherwise calculate from title
       let selectorX, selectorY, selectorWidth, selectorHeight
-      
+
       if (selectorBBox) {
         selectorX = selectorBBox.x
         selectorY = selectorBBox.y
@@ -667,7 +683,7 @@ export default class Axis extends Component {
         selectorY = titleY - this.AXIS_TITLE_BORDER_PADDING_TOP
         selectorHeight = titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP
       }
-      
+
       // For rotated -90, the selector appears vertically in final rendering
       // "After the text" means positioned after the selector end
       // Position button after the selector (to the right in rotated space = higher X value)
@@ -676,7 +692,7 @@ export default class Axis extends Component {
       // Position after selector: selectorX + selectorWidth + spacing
       rectX = Math.round(selectorX + selectorWidth + SORT_BUTTON_SPACING)
       // Align vertically with selector center
-      rectY = Math.round(selectorY + (selectorHeight / 2) - (SORT_BUTTON_WIDTH / 2))
+      rectY = Math.round(selectorY + selectorHeight / 2 - SORT_BUTTON_WIDTH / 2)
       iconX = rectX + rectWidth / 2
       iconY = rectY + rectHeight / 2 + 2
       // Apply same transform as title, then rotate icon 90 degrees so arrows point correctly
@@ -685,7 +701,7 @@ export default class Axis extends Component {
       // For horizontal axes (bottom/top), position to the right of the title/selector
       const selectorWidth = titleWidth + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
       const selectorX = titleX - this.AXIS_TITLE_BORDER_PADDING_LEFT
-      
+
       rectWidth = SORT_BUTTON_WIDTH
       rectHeight = Math.round(titleHeight + 2 * this.AXIS_TITLE_BORDER_PADDING_TOP)
       rectX = Math.round(selectorX + selectorWidth + SORT_BUTTON_SPACING)
@@ -701,23 +717,25 @@ export default class Axis extends Component {
       .attr('height', rectHeight)
       .attr('x', rectX)
       .attr('y', rectY)
-    
+
     if (sortIcon) {
-      select(sortIcon)
-        .attr('transform', iconTransform)
-        .attr('x', iconX)
-        .attr('y', iconY)
+      select(sortIcon).attr('transform', iconTransform).attr('x', iconX).attr('y', iconY)
     }
   }
 
   renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
     const columnsForSelector = this.props.isAggregated ? this.props.originalColumns : this.props.columns
 
+    // For heatmap/bubble Y-axis, use legend (pivot) handler instead of string handler
+    const changeStringColumnIndexHandler = this.isHeatmapOrBubbleYAxis
+      ? this.props.changeLegendColumnIndex
+      : this.props.changeStringColumnIndex
+
     return (
       <AxisSelector
         chartContainerRef={this.props.chartContainerRef}
         changeNumberColumnIndices={this.props.changeNumberColumnIndices}
-        changeStringColumnIndex={this.props.changeStringColumnIndex}
+        changeStringColumnIndex={changeStringColumnIndexHandler}
         legendColumn={this.props.legendColumn}
         popoverParentElement={this.props.popoverParentElement}
         numberColumnIndices={this.props.numberColumnIndices}
@@ -1074,10 +1092,14 @@ export default class Axis extends Component {
     }
   }
 
-  // TODO: Refactor axis selector visibility logic
-  // PROPOSAL: Move to autoql-fe-utils in a function like `shouldRenderAxisSelector(scale, isAggregated, legendLocation, columns)`
-  // Then add computed property to scale object: `scale.shouldRenderAxisSelector = true/false`
+  // TODO/PROPOSAL: Move selector visibility logic to `autoql-fe-utils` as `shouldRenderAxisSelector(scale, isAggregated, legendLocation, columns)` and add `scale.shouldRenderAxisSelector`.
   shouldRenderAxisSelector = () => {
+    // Don't render a Y-axis selector for heatmaps or bubble charts —
+    // the chart uses a legend/pivot selection instead and the X-axis
+    // already provides a selector. This simplifies the UI.
+    if (this.isHeatmapOrBubbleYAxis) {
+      return false
+    }
     const { scale, isAggregated, legendLocation, originalColumns, columns } = this.props
     const scaleType = scale?.type
     const isStringAxis = scaleType === 'BAND' || scaleType === 'TIME'

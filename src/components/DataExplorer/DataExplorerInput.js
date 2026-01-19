@@ -49,6 +49,7 @@ export default class DataExplorerInput extends React.Component {
     inputPlaceholder: PropTypes.string,
     onClearInputClick: PropTypes.func,
     onSelection: PropTypes.func,
+    disableColumnSelection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -56,6 +57,7 @@ export default class DataExplorerInput extends React.Component {
     inputPlaceholder: 'Search terms or topics',
     onClearInputClick: () => {},
     onSelection: () => {},
+    disableColumnSelection: false,
   }
 
   componentDidMount = () => {
@@ -148,21 +150,20 @@ export default class DataExplorerInput extends React.Component {
     this.autoSuggest?.input?.blur()
   }
 
-  // Keep this in case we want to revert back
-  // It seems to be much faster than QC searching the cache
-  // subjectAutocompleteMatch = (input) => {
-  //   if (input == '') {
-  //     return []
-  //   }
+  // Filter subjects from the local list based on input
+  subjectAutocompleteMatch = (input) => {
+    if (input == '') {
+      return []
+    }
 
-  //   var reg = new RegExp(`^${input.toLowerCase()}`)
-  //   return this.state.allSubjects.filter((subject) => {
-  //     const term = subject.displayName.toLowerCase()
-  //     if (term.match(reg)) {
-  //       return subject
-  //     }
-  //   })
-  // }
+    var reg = new RegExp(`^${input.toLowerCase()}`)
+    return this.state.allSubjects.filter((subject) => {
+      const term = subject.displayName.toLowerCase()
+      if (term.match(reg)) {
+        return subject
+      }
+    })
+  }
 
   getNewrecentSearches = (subject) => {
     const recentSearches = _cloneDeep(this.state.recentSearches)
@@ -328,6 +329,19 @@ export default class DataExplorerInput extends React.Component {
       return
     }
 
+    // Skip VLAutocomplete API call if column selection is disabled, but still search local subjects
+    if (this.props.disableColumnSelection) {
+      if (this._isMounted) {
+        const matchedSubjects = this.subjectAutocompleteMatch(value)
+        this.setState({
+          suggestions: matchedSubjects,
+          loadingAutocomplete: false,
+          loadingAutocompleteText: value,
+        })
+      }
+      return
+    }
+
     if (this._isMounted) {
       this.requestSuggestions(value)
     }
@@ -393,11 +407,15 @@ export default class DataExplorerInput extends React.Component {
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {
+      const title = this.props.disableColumnSelection
+        ? 'Topics'
+        : `Related to "${this.state.loadingAutocompleteText}"`
       sections.push({
-        title: `Related to "${this.state.loadingAutocompleteText}"`,
+        title,
         suggestions: this.state.suggestions,
       })
-    } else if (noSuggestions) {
+    } else if (noSuggestions && !this.props.disableColumnSelection) {
+      // Only show "no suggestions" state when using autocomplete API
       sections.push({
         title: `Related to "${this.state.loadingAutocompleteText}"`,
         suggestions: [{ displayName: '' }],

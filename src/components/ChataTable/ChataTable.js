@@ -145,7 +145,7 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  // For pivot tables, remove ajax/progressive/pagination options so Tabulator treats them as static tables.
+  // Pivot tables: remove ajax/progressive/pagination options so Tabulator treats them as static tables.
   getTableWrapperOptions = () => {
     // Return a deep-cloned tableOptions so TableWrapper handles pivot cleanup without breaking remote sorting/filtering
     return _cloneDeep(this.tableOptions || {})
@@ -167,6 +167,7 @@ export default class ChataTable extends React.Component {
     onNewData: PropTypes.func,
     tooltipID: PropTypes.string,
     pivot: PropTypes.bool,
+    pivotTableDataLimited: PropTypes.bool,
     style: PropTypes.shape({}),
     supportsDrilldowns: PropTypes.bool,
     response: PropTypes.any,
@@ -186,6 +187,8 @@ export default class ChataTable extends React.Component {
     pivotAxisCurrentIndex: PropTypes.number,
     onPivotAxisChange: PropTypes.func,
     originalColumns: PropTypes.arrayOf(PropTypes.shape({})),
+    // Pivot table sizing info
+    maxColumns: PropTypes.number,
   }
 
   static defaultProps = {
@@ -201,6 +204,7 @@ export default class ChataTable extends React.Component {
     response: undefined,
     tooltipID: undefined,
     pivot: false,
+    pivotTableDataLimited: false,
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -220,6 +224,8 @@ export default class ChataTable extends React.Component {
     pivotAxisCurrentIndex: undefined,
     onPivotAxisChange: () => {},
     originalColumns: [],
+    // Pivot table sizing info
+    maxColumns: 100,
   }
 
   componentDidMount = () => {
@@ -304,6 +310,7 @@ export default class ChataTable extends React.Component {
         this.updateData(this.state.subscribedData)
         this.setState({ subscribedData: undefined })
       } else {
+        // Restore Tabulator redraw after hidden->visible transition so the table can reflow and update columns/headers.
         this.ref?.restoreRedraw()
       }
     }
@@ -717,37 +724,6 @@ export default class ChataTable extends React.Component {
     let response = _cloneDeep(this.props.response)
     let data = _cloneDeep(this.originalQueryData)
 
-    if (this.props.pivot) {
-      if (params?.orders?.length) {
-        const primaryOrder = params.orders[0]
-        let sortColumnIndex
-        if (primaryOrder?.field !== undefined) {
-          const parsed = parseInt(primaryOrder.field, 10)
-          if (!isNaN(parsed)) {
-            sortColumnIndex = parsed
-          } else {
-            sortColumnIndex = this.props.columns.findIndex((col) => col.field === primaryOrder.field)
-          }
-        } else if (primaryOrder?.id !== undefined) {
-          sortColumnIndex = this.props.columns.findIndex((col) => col.id === primaryOrder.id)
-        }
-
-        // handles sorting by column index/field for pivot tables
-        if (sortColumnIndex !== undefined && sortColumnIndex !== -1) {
-          const sortDirection = primaryOrder.sort === 'DESC' ? 'desc' : 'asc'
-          data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
-        }
-      }
-
-      this.originalQueryData = _cloneDeep(data)
-
-      response.data = response.data || {}
-      response.data.data = response.data.data || {}
-      response.data.data.rows = data
-      response.data.data.count_rows = data?.length || 0
-      return response
-    }
-
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
@@ -762,7 +738,23 @@ export default class ChataTable extends React.Component {
 
     // Sorters
     if (params.orders?.length) {
-      const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
+      let sortColumnIndex
+      if (this.props.pivot) {
+        // For pivot tables, use the field property (which is the pivot column index as a string)
+        // Tabulator may pass either id or field in params.orders[0].id, so try both
+        const column =
+          this.props.columns.find((col) => col.id === params?.orders[0]?.id) ||
+          this.props.columns.find((col) => col.field === params?.orders[0]?.id)
+        if (column?.field !== undefined) {
+          const parsed = parseInt(column.field, 10)
+          sortColumnIndex = !isNaN(parsed) ? parsed : column.index
+        } else {
+          sortColumnIndex = column?.index
+        }
+      } else {
+        sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
+      }
+
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
       data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
@@ -779,6 +771,16 @@ export default class ChataTable extends React.Component {
     // because column removal is a schema change, not just data filtering
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
+    } else if (this.props.pivot) {
+      // For pivot tables, don't filter the pivot data directly
+      // Instead, return current pivot data and let onTableParamsChange trigger generatePivotData()
+      // which will filter the source data and regenerate the pivot table
+      return new Promise((resolve) => {
+        const response = _cloneDeep(this.props.response)
+        response.data.data.rows = _cloneDeep(this.props.data) || []
+        response.data.data.count_rows = (this.props.data || []).length
+        resolve(response)
+      })
     } else {
       return new Promise((resolve) => {
         const result = this.clientSortAndFilterData(params)
@@ -808,10 +810,11 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // For pivot tables we want to render the full local dataset so users can
-      // scroll through all aggregated rows. Returning a sliced page here caused
-      // the UI to only show the first `pageSize` rows (default 50).
-      newRows = this.originalQueryData ?? []
+      // For pivot tables, don't filter the pivot data directly
+      // Filtering triggers generatePivotData() which regenerates the pivot table from filtered source data
+      // Just slice the current pivot data for pagination
+      const pivotData = props.data || []
+      newRows = pivotData.slice(start, end)
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
@@ -825,6 +828,8 @@ export default class ChataTable extends React.Component {
   }
 
   clearLoadingIndicators = async () => {
+    // After sorting/filtering/data updates, ensure redraw is enabled so
+    // scrollbar and layout measurements are correct.
     this.ref?.restoreRedraw()
 
     // Temporary fix to scrollbars resetting after filtering or sorting
@@ -879,6 +884,7 @@ export default class ChataTable extends React.Component {
     if (response) {
       if (this.tableParams?.page > 1) {
         // Only restore redraw for new page - doing this for filter/sort will reset the scroll value
+        // (we re-enable redraw here after a paged data replace).
         this.ref?.restoreRedraw()
       }
 
@@ -944,6 +950,8 @@ export default class ChataTable extends React.Component {
   }
 
   inputKeydownListener = (event) => {
+    // Re-enable redraw after input interactions that mutate header filters
+    // so Tabulator can recompute column widths/layout.
     if (!this.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
@@ -951,6 +959,7 @@ export default class ChataTable extends React.Component {
 
   inputSearchListener = () => {
     // When "x" button is clicked in the input box
+    // Ensure redraw is enabled after clearing search so layout stabilizes.
     if (!this.useInfiniteScroll) {
       this.ref?.restoreRedraw()
     }
@@ -1162,7 +1171,10 @@ export default class ChataTable extends React.Component {
 
     if (filterValues) {
       try {
-        this.ref?.tabulator?.blockRedraw()
+        // Batch header filter updates without triggering repeated Tabulator
+        // redraws; this prevents intermediate layout thrashing. Use the
+        // TableWrapper API so wrapper state (redrawRestored) stays in sync.
+        this.ref?.blockRedraw()
 
         try {
           filterValues.forEach((filter) => {
@@ -1174,7 +1186,7 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
-          this.ref?.tabulator?.restoreRedraw()
+          this.ref?.restoreRedraw()
         }
 
         this._filterCheckTimeout = setTimeout(() => {
@@ -1620,35 +1632,54 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  renderPivotTableRowWarning = () => {
-    if (!this.props.pivot) {
+  renderTableRowWarning = () => {
+    // For pivot tables
+    if (this.props.pivot) {
+      if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
+        const rowLimit = this.props.response?.data?.data?.row_limit
+        const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+        const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
+        const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
+          this.props.response?.data?.data?.count_rows,
+        )
+        const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
+        const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
+        const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
+
+        let content
+        let tooltipContent
+
+        if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
+          content = `Limited to ${rowLimitFormatted} rows`
+          tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
+        } else if (this.props.pivotTableDataLimited) {
+          content = `Limited to ${maxColumnsFormatted} columns`
+          tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
+        }
+
+        return (
+          <DataLimitWarning
+            tooltipID={this.props.tooltipID}
+            rowLimit={rowLimit}
+            tooltipContent={tooltipContent}
+            content={content}
+          />
+        )
+      }
       return null
     }
 
-    if (
-      (this.useInfiniteScroll && isDataLimited(this.props.response)) ||
-      this.props.pivotTableDataLimited
-    ) {
-      const rowLimit = this.props.response?.data?.data?.row_limit
+    // For regular tables - show warning whenever data is limited, regardless of useInfiniteScroll
+    // useInfiniteScroll is only set once in constructor and may be stale after axis changes
+    if (isDataLimited(this.props.response)) {
+      const rowLimit = this.props.response?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
       const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
       const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
       const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
         this.props.response?.data?.data?.count_rows,
       )
-      const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
-      const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
-      const totalCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalCells)
-      const maxCellsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxCells)
-
-      let content
-      let tooltipContent
-
-      if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
-        tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
-      } else if (this.props.pivotTableDataLimited) {
-        content = 'Data has been limited!'
-        tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxCellsFormatted}</em> cells. The original table would have had <em>${totalPivotRowsFormatted}</em> rows × <em>${totalPivotColumnsFormatted}</em> columns = <em>${totalCellsFormatted}</em> cells.`
-      }
+      const tooltipContent = `To optimize performance, this table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows due to the MAX_DATA_PAGE_SIZE limit.`
+      const content = `Limited to ${rowLimitFormatted} rows`
 
       return (
         <DataLimitWarning
@@ -1862,6 +1893,7 @@ export default class ChataTable extends React.Component {
 
   render = () => {
     const isEmpty = this.isTableEmpty()
+    const isLoading = this.state.pageLoading || !this.state.tabulatorMounted
 
     return (
       <ErrorBoundary>
@@ -1871,7 +1903,7 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-            ${this.state.pageLoading || !this.state.tabulatorMounted ? 'loading' : ''}
+            ${isLoading ? 'loading' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
@@ -1881,7 +1913,7 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}
         >
-          {this.renderPivotTableRowWarning()}
+          {this.renderTableRowWarning()}
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
             {!!this.props.response?.data?.data?.rows &&
               !!this.props.columns &&

@@ -135,7 +135,48 @@ export class DashboardTile extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
 
-    tile: PropTypes.shape({}).isRequired,
+    tile: PropTypes.shape({
+      // common tile fields used throughout the component
+      i: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      h: PropTypes.number,
+      query: PropTypes.string,
+      secondQuery: PropTypes.string,
+      title: PropTypes.string,
+      displayType: PropTypes.string,
+      secondDisplayType: PropTypes.string,
+      pageSize: PropTypes.number,
+      secondPageSize: PropTypes.number,
+      bucketSize: PropTypes.number,
+      secondBucketSize: PropTypes.number,
+      columns: PropTypes.array,
+      secondColumns: PropTypes.array,
+      columnSelects: PropTypes.array,
+      secondColumnSelects: PropTypes.array,
+      dataConfig: PropTypes.object,
+      secondDataConfig: PropTypes.object,
+      aggConfig: PropTypes.object,
+      secondAggConfig: PropTypes.object,
+      tableFilters: PropTypes.array,
+      secondTableFilters: PropTypes.array,
+      filters: PropTypes.array,
+      secondFilters: PropTypes.array,
+      orders: PropTypes.array,
+      secondOrders: PropTypes.array,
+      axisSorts: PropTypes.array,
+      secondAxisSorts: PropTypes.array,
+      networkColumnConfig: PropTypes.any,
+      secondNetworkColumnConfig: PropTypes.any,
+      chartControls: PropTypes.object,
+      secondChartControls: PropTypes.object,
+      legendFilterConfig: PropTypes.any,
+      queryResponse: PropTypes.shape({}),
+      secondQueryResponse: PropTypes.shape({}),
+      defaultSelectedSuggestion: PropTypes.string,
+      secondDefaultSelectedSuggestion: PropTypes.string,
+      queryValidationSelections: PropTypes.any,
+      secondQueryValidationSelections: PropTypes.any,
+      splitView: PropTypes.bool,
+    }).isRequired,
     isEditing: PropTypes.bool,
     deleteTile: PropTypes.func,
     dataPageSize: PropTypes.number,
@@ -552,7 +593,9 @@ export class DashboardTile extends React.Component {
         tableFilters: currentFilter,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
-        source: 'dashboards.user',
+        source: this.props.dashboardId 
+          ? `dashboards.${this.props.dashboardId}` 
+          : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
         cancelToken,
@@ -1410,7 +1453,9 @@ export class DashboardTile extends React.Component {
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
-        source='dashboards.user'
+        source={this.props.dashboardId 
+          ? `dashboards.${this.props.dashboardId}` 
+          : 'dashboards.user'}
         scope='dashboards'
         autoHeight={false}
         height='100%'
