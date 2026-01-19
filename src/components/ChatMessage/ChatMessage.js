@@ -387,10 +387,31 @@ export default class ChatMessage extends React.Component {
           isResponse: true,
         })
       } else {
-        console.error('No summary returned from API')
+        // No summary returned - check for error message in response
+        const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
+        const displayMessage = errorMessage || 'Failed to generate summary. Please try again.'
+
+        // Add error message as a new message bubble
+        this.props.addMessageToDM?.({
+          content: displayMessage,
+          type: 'text',
+          isResponse: true,
+        })
       }
     } catch (error) {
-      console.error(error)
+      // Handle API errors - check if error response has a message
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to generate summary. Please try again.'
+
+      // Add error message as a new message bubble
+      this.props.addMessageToDM?.({
+        content: errorMessage,
+        type: 'text',
+        isResponse: true,
+      })
     } finally {
       // Clear loading state for this specific message
       this.setState({ isGeneratingSummary: false })
