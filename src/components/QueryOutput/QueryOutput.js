@@ -703,11 +703,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onLegendFilterChange = (legendFilterConfig) => {
-    this.setState({ legendFilterConfig })
+  onLegendFilterChange = (legendFilterConfigUpdate) => {
+    // Merge the per-column filter update into existing state
+    // legendFilterConfigUpdate is { [legendColumnIdentifier]: { filteredOutLabels: [...] } }
+    const currentConfig = this.state.legendFilterConfig || {}
+    const newConfig = { ...currentConfig, ...legendFilterConfigUpdate }
+    this.setState({ legendFilterConfig: newConfig })
     // Call parent callback if provided
     if (this.props.onLegendFilterChange) {
-      this.props.onLegendFilterChange(legendFilterConfig)
+      this.props.onLegendFilterChange(newConfig)
     }
   }
 
