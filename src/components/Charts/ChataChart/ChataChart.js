@@ -243,7 +243,8 @@ export default class ChataChart extends React.Component {
       }
     }
 
-    // Reset legend filters when table config indices change (not column properties)
+    // Clear visibleLegendLabels state when table config changes (for color regeneration)
+    // But don't clear the stored filters - they're stored per legend column and will be restored automatically
     const tableConfigChanged =
       this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
       this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
@@ -256,10 +257,8 @@ export default class ChataChart extends React.Component {
         this.setState({ visibleLegendLabels: null })
       }
 
-      // Notify parent to clear legend filter config (for dashboard persistence)
-      if (this.props.onLegendFilterChange) {
-        this.props.onLegendFilterChange({ filteredOutLabels: [] })
-      }
+      // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
+      // The Legend component will automatically load the appropriate filter when the legend column changes
     }
   }
 
