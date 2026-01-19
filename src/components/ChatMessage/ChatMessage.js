@@ -56,6 +56,7 @@ export default class ChatMessage extends React.Component {
       isResizable: false,
       isUserResizing: false,
       currentHeight: 400,
+      isGeneratingSummary: false,
     }
 
     // Minimum height for the message container
@@ -354,7 +355,9 @@ export default class ChatMessage extends React.Component {
       return
     }
 
-    // Set loading state in parent ChatContent to show loading dots at bottom
+    // Set loading state for this specific message
+    this.setState({ isGeneratingSummary: true })
+    // Also set loading state in parent ChatContent to show loading dots at bottom
     this.props.setGeneratingSummary?.(true)
 
     try {
@@ -369,7 +372,12 @@ export default class ChatMessage extends React.Component {
         domain: auth.domain,
       })
 
-      const summary = response?.data?.llm_resp?.summary
+      const summary = response?.data?.data?.summary
+
+      console.log(response)
+      console.log(response?.data)
+
+      console.log('summary', summary)
 
       if (summary) {
         // Add summary as a new message bubble
@@ -384,7 +392,9 @@ export default class ChatMessage extends React.Component {
     } catch (error) {
       console.error(error)
     } finally {
-      // Clear loading state
+      // Clear loading state for this specific message
+      this.setState({ isGeneratingSummary: false })
+      // Clear loading state in parent
       this.props.setGeneratingSummary?.(false)
     }
   }
@@ -437,8 +447,11 @@ export default class ChatMessage extends React.Component {
     const rows = this.props.response?.data?.data?.rows || []
     const rowCount = rows.length
     const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
-    const isGenerating = Boolean(this.props.isChataThinking)
-    const isDisabled = isDatasetTooLarge || isGenerating
+    // Only show loading for this specific message, not when any query is running
+    const isGenerating = this.state.isGeneratingSummary
+    // Disable button if dataset is too large, or if this specific message is generating
+    // Also disable if Chata is thinking (query/drilldown running) to prevent conflicts
+    const isDisabled = isDatasetTooLarge || isGenerating || Boolean(this.props.isChataThinking)
 
     const tooltipId = 'chat-message-summary-button-tooltip'
     const tooltipContent = isDatasetTooLarge
@@ -670,7 +683,8 @@ export default class ChatMessage extends React.Component {
             <div
               className={`chat-message-bubble 
         ${isResizable ? 'resizable' : ''} 
-        ${this.state.isUserResizing ? 'user-resizing' : ''}`}
+        ${this.state.isUserResizing ? 'user-resizing' : ''}
+        ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}`}
             >
               {this.renderContent()}
               {this.renderSummaryFooter()}

@@ -192,6 +192,11 @@
       &.active {
         border: 1px solid #c3c3c3;
       }
+
+      // Remove max-height for markdown messages
+      &.markdown-message {
+        max-height: none !important;
+      }
     }
   }
 
@@ -224,6 +229,7 @@
 
   .chat-message-markdown {
     line-height: 1.5;
+    max-height: none !important;
 
     .chat-message-summary-title {
       display: flex;
