@@ -61,11 +61,14 @@ PivotAxisSelector.defaultProps = {
 export const computePivotAxisSelectorLocation = (element, tableContainer) => {
   if (!element) return null
   const rect = element.getBoundingClientRect()
-  const tableRect = tableContainer?.getBoundingClientRect() || { top: 0, left: 0 }
+  const tableRect = tableContainer?.getBoundingClientRect?.() || { top: 0, left: 0 }
 
-  // Center the header element and apply offsets for popover placement.
-  const elementCenterX = rect.left + rect.width / 2 - 52
-  const elementCenterY = rect.top + rect.height / 2 + 35
+  // Compute header center and apply fixed offsets for deterministic popover placement.
+  const OFFSET_X_FROM_CENTER = -52
+  const OFFSET_Y_FROM_CENTER = 35
+
+  const elementCenterX = rect.left + rect.width / 2 + OFFSET_X_FROM_CENTER
+  const elementCenterY = rect.top + rect.height / 2 + OFFSET_Y_FROM_CENTER
 
   return {
     top: elementCenterY - tableRect.top,

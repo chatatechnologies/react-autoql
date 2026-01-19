@@ -1118,6 +1118,25 @@ export default class ChataTable extends React.Component {
         if (!this.props.pivot) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
+
+        // Capture-phase handler: open pivot-axis selector on hamburger click without triggering sort
+        try {
+          const captureHandler = (ev) => {
+            const btn = ev && ev.target && ev.target.closest && ev.target.closest('.pivot-axis-header-btn')
+            if (!btn) return
+            ev.preventDefault()
+            ev.stopImmediatePropagation()
+            this.openPivotAxisSelectorForElement(headerElement)
+          }
+
+          if (headerElement._pivotCaptureHandler) {
+            headerElement.removeEventListener('click', headerElement._pivotCaptureHandler, true)
+          }
+          headerElement._pivotCaptureHandler = captureHandler
+          headerElement.addEventListener('click', captureHandler, true)
+        } catch (err) {
+          console.error('Error attaching pivot header button click handler:', err)
+        }
       }
 
       if (inputElement) {
@@ -1615,15 +1634,6 @@ export default class ChataTable extends React.Component {
             const hamburgerSvg =
               '<svg class="MuiSvgIcon-root" focusable="false" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>'
             pivotCol.title = `<div class="pivot-header-title"><button class="pivot-axis-header-btn" type="button" aria-label="Pivot axis">${hamburgerSvg}</button>${pivotCol.title}</div>`
-            pivotCol.headerClick = (e, column) => {
-              try {
-                const headerEl = column.getElement()
-                this.openPivotAxisSelectorForElement(headerEl)
-              } catch (err) {
-                // fallback to row-count anchor if header element isn't available
-                this.openPivotAxisSelectorAboveRowCount(e)
-              }
-            }
             columns.push(pivotCol)
           } else {
             if (!columns[1]) {

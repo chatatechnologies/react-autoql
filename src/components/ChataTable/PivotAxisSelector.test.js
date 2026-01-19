@@ -108,11 +108,11 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, tableContainer)
 
-      // centerX = 200 - 100 = 100; left = centerX + OFFSET_RIGHT(30) = 130
-      // centerY = 100 - 50 = 50; top = centerY + OFFSET_DOWN(40) = 90
+      // elementCenterX = 200 + 0/2 - 52 = 148; left = 148 - tableLeft(100) = 48
+      // elementCenterY = 100 + 0/2 + 35 = 135; top = 135 - tableTop(50) = 85
       expect(result).toEqual({
-        top: 90,
-        left: 130,
+        top: 85,
+        left: 48,
       })
 
       document.body.removeChild(element)
@@ -132,10 +132,10 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, null)
 
-      // left = 200 + 30, top = 150 + 40
+      // elementCenterX = 200 - 52 = 148; elementCenterY = 150 + 35 = 185
       expect(result).toEqual({
-        top: 190,
-        left: 230,
+        top: 185,
+        left: 148,
       })
 
       document.body.removeChild(element)
@@ -154,10 +154,10 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, undefined)
 
-      // left = 150 + 30, top = 100 + 40
+      // elementCenterX = 150 - 52 = 98; elementCenterY = 100 + 35 = 135
       expect(result).toEqual({
-        top: 140,
-        left: 180,
+        top: 135,
+        left: 98,
       })
 
       document.body.removeChild(element)

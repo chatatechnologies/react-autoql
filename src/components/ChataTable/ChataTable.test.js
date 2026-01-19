@@ -755,7 +755,7 @@ describe('ChataTable', () => {
 
   describe('setFilterBadgeClasses for pivot tables', () => {
     test('applies is-filtered class to pivot child columns when column dimension is filtered', () => {
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       const childClassList = { toggle: jest.fn() }
@@ -793,7 +793,7 @@ describe('ChataTable', () => {
     })
 
     test('does NOT badge child columns when measure is filtered', () => {
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       const childClassList = { toggle: jest.fn() }
@@ -823,7 +823,7 @@ describe('ChataTable', () => {
     })
 
     test('removes is-filtered class when no matching filter', () => {
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       const classList = { toggle: jest.fn() }
@@ -853,7 +853,7 @@ describe('ChataTable', () => {
     })
 
     test('handles pivot columns without origColumn gracefully', () => {
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       const classList = { toggle: jest.fn() }
@@ -875,7 +875,7 @@ describe('ChataTable', () => {
     })
 
     test('badges row header when axis is switched and row dimension is filtered', () => {
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       const rowHeaderClassList = { toggle: jest.fn() }
@@ -1009,7 +1009,7 @@ describe('ChataTable', () => {
     test('logs warning when pivot columns missing origPivotColumn', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
 
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       instance.ref = { tabulator: { getColumns: () => [] } }
@@ -1035,7 +1035,7 @@ describe('ChataTable', () => {
     test('does not log warning when origPivotColumn is present', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
 
-      const wrapper = setup({ pivot: true })
+      const wrapper = setup({ pivot: true, data: mockResponse.data.data.rows })
       const instance = wrapper.instance()
 
       instance.ref = { tabulator: { getColumns: () => [] } }
