@@ -772,15 +772,26 @@ export default class ChataTable extends React.Component {
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else if (this.props.pivot) {
-      // For pivot tables, don't filter the pivot data directly
-      // Instead, return current pivot data and let onTableParamsChange trigger generatePivotData()
-      // which will filter the source data and regenerate the pivot table
-      return new Promise((resolve) => {
-        const response = _cloneDeep(this.props.response)
-        response.data.data.rows = _cloneDeep(this.props.data) || []
-        response.data.data.count_rows = (this.props.data || []).length
-        resolve(response)
-      })
+      // For pivot tables, check if there are filters
+      const hasFilters = params.tableFilters && params.tableFilters.length > 0
+
+      if (hasFilters) {
+        // If filtering, don't filter the pivot data directly
+        // Return current pivot data and let onTableParamsChange trigger generatePivotData()
+        // which will filter the source data and regenerate the pivot table
+        return new Promise((resolve) => {
+          const response = _cloneDeep(this.props.response)
+          response.data.data.rows = _cloneDeep(this.props.data) || []
+          response.data.data.count_rows = (this.props.data || []).length
+          resolve(response)
+        })
+      } else {
+        // If only sorting (no filters), sort the pivot data directly
+        return new Promise((resolve) => {
+          const result = this.clientSortAndFilterData(params)
+          resolve(result)
+        })
+      }
     } else {
       return new Promise((resolve) => {
         const result = this.clientSortAndFilterData(params)
@@ -810,11 +821,20 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // For pivot tables, don't filter the pivot data directly
-      // Filtering triggers generatePivotData() which regenerates the pivot table from filtered source data
-      // Just slice the current pivot data for pagination
-      const pivotData = props.data || []
-      newRows = pivotData.slice(start, end)
+      // For pivot tables, check if there are filters
+      const hasFilters = tableParamsForAPI.tableFilters && tableParamsForAPI.tableFilters.length > 0
+
+      if (hasFilters) {
+        // If filtering, don't filter the pivot data directly
+        // Filtering triggers generatePivotData() which regenerates the pivot table from filtered source data
+        // Just slice the current pivot data for pagination
+        const pivotData = props.data || []
+        newRows = pivotData.slice(start, end)
+      } else {
+        // If only sorting (no filters), sort the pivot data before slicing
+        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows || []
+        newRows = sortedData.slice(start, end)
+      }
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
