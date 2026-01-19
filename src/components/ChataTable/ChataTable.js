@@ -1551,6 +1551,20 @@ export default class ChataTable extends React.Component {
         this.props.columns.forEach((col, i) => {
           if (i === 0) {
             const pivotCol = { ...col }
+            // Inject a compact header button (hamburger) to open the pivot-axis selector
+            pivotCol.title = pivotCol.title || pivotCol.display_name || pivotCol.name || ''
+            const hamburgerSvg =
+              '<svg class="MuiSvgIcon-root" focusable="false" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>'
+            pivotCol.title = `<div class="pivot-header-title"><button class="pivot-axis-header-btn" type="button" aria-label="Pivot axis">${hamburgerSvg}</button>${pivotCol.title}</div>`
+            pivotCol.headerClick = (e, column) => {
+              try {
+                const headerEl = column.getElement()
+                this.openPivotAxisSelectorForElement(headerEl)
+              } catch (err) {
+                // fallback to row-count anchor if header element isn't available
+                this.openPivotAxisSelectorAboveRowCount(e)
+              }
+            }
             columns.push(pivotCol)
           } else {
             if (!columns[1]) {
@@ -1741,23 +1755,6 @@ export default class ChataTable extends React.Component {
 
     return (
       <div>
-        {this.props.pivot && this.props.pivotAxisOptions?.length > 1 && (
-          <div className='table-pivot-axis-selector-container'>
-            {(() => {
-              const selectedOption = this.props.pivotAxisOptions?.find(
-                (opt) => opt.value === this.props.pivotAxisCurrentIndex,
-              )
-              // Ensure consistency: if pivotAxisCurrentIndex is set, a matching option should exist
-              const displayLabel =
-                selectedOption?.label || (this.props.pivotAxisCurrentIndex !== undefined ? 'Axis' : 'Select')
-              return (
-                <button className='table-pivot-axis-selector-btn' onClick={this.openPivotAxisSelectorAboveRowCount}>
-                  {displayLabel} ▼
-                </button>
-              )
-            })()}
-          </div>
-        )}
         <div className='table-row-count'>
           <span>
             {`Scrolled ${currentRowsFormatted} / ${

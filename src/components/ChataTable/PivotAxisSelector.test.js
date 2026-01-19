@@ -93,10 +93,13 @@ describe('PivotAxisSelector', () => {
       document.body.appendChild(tableContainer)
       document.body.appendChild(element)
 
-      // Mock getBoundingClientRect
+      // Mock getBoundingClientRect (provide left/top and zero width/height
+      // so the center equals left/top). Offsets are applied by the function.
       element.getBoundingClientRect = jest.fn(() => ({
-        bottom: 150,
         left: 200,
+        top: 100,
+        width: 0,
+        height: 0,
       }))
       tableContainer.getBoundingClientRect = jest.fn(() => ({
         top: 50,
@@ -105,9 +108,11 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, tableContainer)
 
+      // centerX = 200 - 100 = 100; left = centerX + OFFSET_RIGHT(30) = 130
+      // centerY = 100 - 50 = 50; top = centerY + OFFSET_DOWN(40) = 90
       expect(result).toEqual({
-        top: 100, // 150 - 50
-        left: 100, // 200 - 100
+        top: 90,
+        left: 130,
       })
 
       document.body.removeChild(element)
@@ -119,15 +124,18 @@ describe('PivotAxisSelector', () => {
       document.body.appendChild(element)
 
       element.getBoundingClientRect = jest.fn(() => ({
-        bottom: 150,
         left: 200,
+        top: 150,
+        width: 0,
+        height: 0,
       }))
 
       const result = computePivotAxisSelectorLocation(element, null)
 
+      // left = 200 + 30, top = 150 + 40
       expect(result).toEqual({
-        top: 150, // 150 - 0
-        left: 200, // 200 - 0
+        top: 190,
+        left: 230,
       })
 
       document.body.removeChild(element)
@@ -138,15 +146,18 @@ describe('PivotAxisSelector', () => {
       document.body.appendChild(element)
 
       element.getBoundingClientRect = jest.fn(() => ({
-        bottom: 100,
         left: 150,
+        top: 100,
+        width: 0,
+        height: 0,
       }))
 
       const result = computePivotAxisSelectorLocation(element, undefined)
 
+      // left = 150 + 30, top = 100 + 40
       expect(result).toEqual({
-        top: 100,
-        left: 150,
+        top: 140,
+        left: 180,
       })
 
       document.body.removeChild(element)
