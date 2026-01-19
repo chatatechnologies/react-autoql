@@ -363,6 +363,7 @@ export default class ChatMessage extends React.Component {
           rows: this.props.response.data.data.rows,
           columns: this.props.response.data.data.columns,
         },
+        queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
         token: auth.token,
         domain: auth.domain,
