@@ -53,8 +53,14 @@ export default class Legend extends React.Component {
     const legendColumnIdentifier = props.legendColumn?.name || props.legendColumn?.index || 'default'
     this.LEGEND_FILTER_KEY = `legend-${queryID}-${legendColumnIdentifier}`
 
-    // Initialize empty filter for this legend column if it doesn't exist
-    if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
+    // Initialize filter for this legend column from props (dashboard persistence) or store
+    const savedFilter = props.legendFilterConfig?.[legendColumnIdentifier]?.filteredOutLabels
+
+    if (savedFilter) {
+      // Use filter from props (dashboard persistence)
+      legendFilterStore.set(this.LEGEND_FILTER_KEY, savedFilter)
+    } else if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
+      // Initialize empty filter if it doesn't exist
       legendFilterStore.set(this.LEGEND_FILTER_KEY, [])
     }
 
@@ -161,10 +167,26 @@ export default class Legend extends React.Component {
 
     if (prevLegendColumnId !== currentLegendColumnId || prevQueryID !== currentQueryID) {
       this.LEGEND_FILTER_KEY = `legend-${currentQueryID}-${currentLegendColumnId}`
-      if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
+
+      // Load filter from props (dashboard persistence) or initialize empty
+      const savedFilter = this.props.legendFilterConfig?.[currentLegendColumnId]?.filteredOutLabels
+      if (savedFilter) {
+        legendFilterStore.set(this.LEGEND_FILTER_KEY, savedFilter)
+      } else if (!legendFilterStore.has(this.LEGEND_FILTER_KEY)) {
         legendFilterStore.set(this.LEGEND_FILTER_KEY, [])
       }
+
       this.initializeFilteredLabelsFromConfig()
+    } else if (
+      this.props.legendFilterConfig?.[currentLegendColumnId]?.filteredOutLabels !==
+      prevProps.legendFilterConfig?.[currentLegendColumnId]?.filteredOutLabels
+    ) {
+      // Filter config changed from props (e.g., dashboard loaded)
+      const savedFilter = this.props.legendFilterConfig?.[currentLegendColumnId]?.filteredOutLabels
+      if (savedFilter) {
+        legendFilterStore.set(this.LEGEND_FILTER_KEY, savedFilter)
+        this.initializeFilteredLabelsFromConfig()
+      }
     }
 
     this.renderAllLegends()
@@ -350,6 +372,14 @@ export default class Legend extends React.Component {
 
     // Store in module-level map so it persists across remounts
     legendFilterStore.set(this.LEGEND_FILTER_KEY, filteredOutLabels)
+
+    // Notify parent about legend filter change (for dashboard persistence)
+    if (this.props.onLegendFilterChange) {
+      const legendColumnIdentifier = this.props.legendColumn?.name || this.props.legendColumn?.index || 'default'
+      this.props.onLegendFilterChange({
+        [legendColumnIdentifier]: { filteredOutLabels },
+      })
+    }
 
     // Notify parent about visible labels so it can regenerate the color scale
     // If all labels are visible, pass null to reset colors to original
