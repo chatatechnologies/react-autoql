@@ -703,11 +703,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onLegendFilterChange = (legendFilterConfig) => {
-    this.setState({ legendFilterConfig })
+  onLegendFilterChange = (legendFilterConfigUpdate) => {
+    // Merge the per-column filter update into existing state
+    // legendFilterConfigUpdate is { [legendColumnIdentifier]: { filteredOutLabels: [...] } }
+    const currentConfig = this.state.legendFilterConfig || {}
+    const newConfig = { ...currentConfig, ...legendFilterConfigUpdate }
+    this.setState({ legendFilterConfig: newConfig })
     // Call parent callback if provided
     if (this.props.onLegendFilterChange) {
-      this.props.onLegendFilterChange(legendFilterConfig)
+      this.props.onLegendFilterChange(newConfig)
     }
   }
 
@@ -3099,12 +3103,14 @@ export class QueryOutput extends React.Component {
       if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
 
       // Build unique header lists, stripping out null/undefined/empty-string values
+      // Use sortedData (not tableData) to extract unique column headers
+      // This ensures headers are extracted from the correctly sorted/filtered data
       let uniqueRowHeaders = sortedData
         .map((d) => d[sIdx])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
 
-      let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      let uniqueColumnHeaders = sortedData
         .map((d) => d[lIdx])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)

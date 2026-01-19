@@ -305,6 +305,12 @@ export default class ChataTable extends React.Component {
       this.filteredResponseData = null
     }
 
+    // Update originalQueryData when pivot table data changes (e.g., after switching pivot axis column)
+    // This ensures sorting uses the correct current pivot data as the source
+    if (this.props.pivot && !deepEqual(this.props.data, prevProps.data)) {
+      this.originalQueryData = _cloneDeep(this.props.data)
+    }
+
     if (!this.props.hidden && prevProps.hidden) {
       if (this.state.subscribedData) {
         this.updateData(this.state.subscribedData)
@@ -430,6 +436,15 @@ export default class ChataTable extends React.Component {
   }
 
   getTotalPages = (response) => {
+    // For pivot tables, use props.data instead of response.data.data.rows
+    // because response contains the original query data, not the pivot table data
+    if (this.props.pivot) {
+      const pivotRows = this.props.data || []
+      if (!pivotRows.length) {
+        return 1
+      }
+      return Math.ceil(pivotRows.length / this.pageSize)
+    }
     const rows = response?.data?.data?.rows
     if (!rows?.length) {
       return 1
@@ -694,15 +709,37 @@ export default class ChataTable extends React.Component {
 
         this.props.onNewData(responseWrapper)
 
-        const totalPages = this.getTotalPages(responseWrapper)
-        this.totalPages = totalPages
-        this.filteredResponseData = responseWrapper?.data?.data?.rows ?? []
-        this.filterCount = this.filteredResponseData.length
+        // For pivot tables, use sorted data from responseWrapper if sorting/filtering,
+        // otherwise use props.data (unsorted)
+        if (this.props.pivot) {
+          const hasSorters = nextTableParamsFormatted?.sorters?.length > 0
+          const hasFilters = nextTableParamsFormatted?.filters?.length > 0
 
-        response = {
-          rows: this.filteredResponseData.slice(0, this.pageSize) ?? [],
-          page: 1,
-          last_page: totalPages,
+          // If sorting or filtering, use the sorted/filtered data from queryFn response
+          // Otherwise, use the unsorted props.data
+          const pivotData = hasSorters || hasFilters ? responseWrapper?.data?.data?.rows || [] : this.props.data || []
+
+          const totalPages = Math.ceil(pivotData.length / this.pageSize) || 1
+          this.totalPages = totalPages
+          this.filteredResponseData = pivotData
+          this.filterCount = pivotData.length
+
+          response = {
+            rows: pivotData.slice(0, this.pageSize) ?? [],
+            page: 1,
+            last_page: totalPages,
+          }
+        } else {
+          const totalPages = this.getTotalPages(responseWrapper)
+          this.totalPages = totalPages
+          this.filteredResponseData = responseWrapper?.data?.data?.rows ?? []
+          this.filterCount = this.filteredResponseData.length
+
+          response = {
+            rows: this.filteredResponseData.slice(0, this.pageSize) ?? [],
+            page: 1,
+            last_page: totalPages,
+          }
         }
       }
 
@@ -772,15 +809,26 @@ export default class ChataTable extends React.Component {
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else if (this.props.pivot) {
-      // For pivot tables, don't filter the pivot data directly
-      // Instead, return current pivot data and let onTableParamsChange trigger generatePivotData()
-      // which will filter the source data and regenerate the pivot table
-      return new Promise((resolve) => {
-        const response = _cloneDeep(this.props.response)
-        response.data.data.rows = _cloneDeep(this.props.data) || []
-        response.data.data.count_rows = (this.props.data || []).length
-        resolve(response)
-      })
+      // For pivot tables, check if there are filters
+      const hasFilters = params.tableFilters && params.tableFilters.length > 0
+
+      if (hasFilters) {
+        // If filtering, don't filter the pivot data directly
+        // Return current pivot data and let onTableParamsChange trigger generatePivotData()
+        // which will filter the source data and regenerate the pivot table
+        return new Promise((resolve) => {
+          const response = _cloneDeep(this.props.response)
+          response.data.data.rows = _cloneDeep(this.props.data) || []
+          response.data.data.count_rows = (this.props.data || []).length
+          resolve(response)
+        })
+      } else {
+        // If only sorting (no filters), sort the pivot data directly
+        return new Promise((resolve) => {
+          const result = this.clientSortAndFilterData(params)
+          resolve(result)
+        })
+      }
     } else {
       return new Promise((resolve) => {
         const result = this.clientSortAndFilterData(params)
@@ -810,11 +858,20 @@ export default class ChataTable extends React.Component {
 
     let newRows
     if (props.pivot) {
-      // For pivot tables, don't filter the pivot data directly
-      // Filtering triggers generatePivotData() which regenerates the pivot table from filtered source data
-      // Just slice the current pivot data for pagination
-      const pivotData = props.data || []
-      newRows = pivotData.slice(start, end)
+      // For pivot tables, check if there are filters
+      const hasFilters = tableParamsForAPI.tableFilters && tableParamsForAPI.tableFilters.length > 0
+
+      if (hasFilters) {
+        // If filtering, don't filter the pivot data directly
+        // Filtering triggers generatePivotData() which regenerates the pivot table from filtered source data
+        // Just slice the current pivot data for pagination
+        const pivotData = props.data || []
+        newRows = pivotData.slice(start, end)
+      } else {
+        // If only sorting (no filters), sort the pivot data before slicing
+        const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows || []
+        newRows = sortedData.slice(start, end)
+      }
     } else if (!this.useInfiniteScroll) {
       const sortedData = this.clientSortAndFilterData(tableParamsForAPI)?.data?.data?.rows
 
@@ -870,7 +927,9 @@ export default class ChataTable extends React.Component {
   getNewPage = (props, tableParams) => {
     try {
       const rows = this.getRows(props, tableParams.page)
-      const response = { page: tableParams.page, rows }
+      // For pivot tables, calculate last_page based on actual pivot data length
+      const lastPage = props.pivot ? Math.ceil((props.data || []).length / this.pageSize) || 1 : this.totalPages
+      const response = { page: tableParams.page, rows, last_page: lastPage }
       return Promise.resolve(response)
     } catch (error) {
       console.error(error)
