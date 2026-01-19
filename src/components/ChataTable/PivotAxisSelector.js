@@ -64,15 +64,12 @@ export const computePivotAxisSelectorLocation = (element, tableContainer) => {
   const tableRect = tableContainer?.getBoundingClientRect() || { top: 0, left: 0 }
 
   // Center the header element and apply offsets for popover placement.
-  const OFFSET_RIGHT = 30
-  const OFFSET_DOWN = 40
-
-  const centerX = rect.left + rect.width / 2 - tableRect.left
-  const centerY = rect.top + rect.height / 2 - tableRect.top
+  const elementCenterX = rect.left + rect.width / 2 - 52
+  const elementCenterY = rect.top + rect.height / 2 + 35
 
   return {
-    top: Math.max(0, Math.round(centerY + OFFSET_DOWN)),
-    left: Math.max(0, Math.round(centerX + OFFSET_RIGHT)),
+    top: elementCenterY - tableRect.top,
+    left: elementCenterX - tableRect.left,
   }
 }
 
