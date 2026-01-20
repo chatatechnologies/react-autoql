@@ -762,6 +762,11 @@ export default class ChataTable extends React.Component {
     // For pivot tables, use the pivot data, not the original query data
     let data = this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData)
 
+    // Ensure data is always an array
+    if (!data) {
+      data = []
+    }
+
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
