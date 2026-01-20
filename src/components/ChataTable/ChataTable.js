@@ -1737,7 +1737,7 @@ export default class ChataTable extends React.Component {
       const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
         this.props.response?.data?.data?.count_rows,
       )
-      const tooltipContent = `To optimize performance, this table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows due to the MAX_DATA_PAGE_SIZE limit.`
+      const tooltipContent = `To optimize performance, this table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows.`
       const content = `Limited to ${rowLimitFormatted} rows`
 
       return (

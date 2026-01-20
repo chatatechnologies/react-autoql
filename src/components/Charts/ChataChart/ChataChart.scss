@@ -1,6 +1,9 @@
 .react-autoql-chart-header-container {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   flex: 0 0 auto;
+  overflow: hidden;
 
   &.loading {
     visibility: hidden;
@@ -17,8 +20,40 @@
 .chart-control-buttons {
   display: flex;
   gap: 8px;
-  justify-content: flex-start;
-  padding: 0 0 4px 8px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 4px 0;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+
+  .chart-control-buttons-left {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: 8px;
+  }
+
+  .chart-control-buttons-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 8px;
+
+    .react-autoql-chart-data-limit-icon {
+      color: var(--react-autoql-warning-color, #f39c12);
+      font-size: 18px;
+      cursor: help;
+      display: flex;
+      align-items: center;
+      line-height: 1;
+
+      .react-autoql-icon {
+        display: block;
+      }
+    }
+  }
 }
 
 .react-autoql-chart-container {
