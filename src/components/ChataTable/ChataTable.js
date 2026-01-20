@@ -1692,7 +1692,7 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowWarning = () => {
-    // For pivot tables
+    // For pivot tables - render icon
     if (this.props.pivot) {
       if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
         const rowLimit = this.props.response?.data?.data?.row_limit
@@ -1705,24 +1705,22 @@ export default class ChataTable extends React.Component {
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 
-        let content
         let tooltipContent
 
         if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
-          content = `Limited to ${rowLimitFormatted} rows`
           tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
         } else if (this.props.pivotTableDataLimited) {
-          content = `Limited to ${maxColumnsFormatted} columns`
           tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
         }
 
         return (
-          <DataLimitWarning
-            tooltipID={this.props.tooltipID}
-            rowLimit={rowLimit}
-            tooltipContent={tooltipContent}
-            content={content}
-          />
+          <div
+            className='react-autoql-table-data-limit-icon'
+            data-tooltip-html={tooltipContent}
+            data-tooltip-id={this.props.tooltipID}
+          >
+            <Icon type='warning' />
+          </div>
         )
       }
       return null
