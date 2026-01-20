@@ -836,7 +836,9 @@ export default class ChataChart extends React.Component {
         ref={(r) => (this.sliderRef = r)}
         style={{ paddingLeft }}
         className={`react-autoql-chart-header-container ${
-          this.state.isLoading || this.props.isResizing ? 'loading' : ''
+          (this.state.isLoading || this.props.isResizing) && this.props.type !== DisplayTypes.NETWORK_GRAPH
+            ? 'loading'
+            : ''
         }`}
       >
         {/* Chart Control Buttons and Data Limit Warning */}
