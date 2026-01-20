@@ -1095,8 +1095,8 @@ export default class ChataTable extends React.Component {
     const clearBtn = document.createElement('div')
     clearBtn.className = 'react-autoql-input-clear-btn'
     clearBtn.id = `react-autoql-clear-btn-${this.TABLE_ID}-${column.field}`
-    clearBtn.setAttribute('data-tooltip-id', this.props.tooltipID)
-    clearBtn.setAttribute('data-tooltip-content', 'Clear filter')
+    clearBtn.dataset.tooltipId = this.props.tooltipID
+    clearBtn.dataset.tooltipContent = 'Clear filter'
     clearBtn.appendChild(clearBtnText)
 
     clearBtn.addEventListener('click', (e) => {
@@ -1129,34 +1129,12 @@ export default class ChataTable extends React.Component {
       )
 
       if (headerElement) {
-        headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
-        headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
+        headerElement.dataset.tooltipId = `selectable-table-column-header-tooltip-${this.TABLE_ID}`
+        headerElement.dataset.tooltipContent = JSON.stringify({ ...col, index: i })
 
-        // Insert pivot button and wrap with flex span so it appears before :before
-        if (this.props.pivot && i === 0)
-          try {
-            const t = headerElement.querySelector('.tabulator-col-title')
-            if (t && !headerElement.querySelector('.pivot-axis-header-btn')) {
-              const s = document.createElement('span')
-              s.style.display = 'flex'
-              s.style.alignItems = 'center'
-              s.style.gap = '6px'
-              const b = document.createElement('button')
-              b.className = 'pivot-axis-header-btn'
-              b.type = 'button'
-              b.setAttribute('aria-label', 'Pivot axis')
-              b.setAttribute('data-tooltip-id', this.props.tooltipID)
-              b.setAttribute('data-tooltip-content', 'Change axis')
-              b.innerHTML = this.PIVOT_HAMBURGER_ICON
-              b.addEventListener('click', (e) => {
-                e.stopPropagation()
-                this.openPivotAxisSelectorForElement(b)
-              })
-              headerElement.insertBefore(s, t)
-              s.appendChild(b)
-              s.appendChild(t)
-            }
-          } catch (e) {}
+        if (this.props.pivot && i === 0) {
+          this.ensurePivotHeaderButton(headerElement)
+        }
 
         if (!this.props.pivot) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
@@ -1755,6 +1733,37 @@ export default class ChataTable extends React.Component {
       pivotAxisSelectorOpen: true,
       pivotAxisSelectorLocation: location,
     })
+  }
+
+  // Ensure the pivot header button exists; idempotent and safe to call repeatedly
+  ensurePivotHeaderButton = (headerElement) => {
+    try {
+      const t = headerElement.querySelector('.tabulator-col-title')
+      if (!t) return
+      if (headerElement.querySelector('.pivot-axis-header-btn')) return
+
+      const s = document.createElement('span')
+      s.className = 'pivot-header-title'
+
+      const b = document.createElement('button')
+      b.className = 'pivot-axis-header-btn'
+      b.type = 'button'
+      b.setAttribute('aria-label', 'Pivot axis')
+      b.setAttribute('data-tooltip-id', this.props.tooltipID)
+      b.setAttribute('data-tooltip-content', 'Change axis')
+      b.title = 'Change axis'
+      b.innerHTML = this.PIVOT_HAMBURGER_ICON
+      b.addEventListener('click', (e) => {
+        e.stopPropagation()
+        this.openPivotAxisSelectorForElement(b)
+      })
+
+      headerElement.insertBefore(s, t)
+      s.appendChild(b)
+      s.appendChild(t)
+    } catch (e) {
+      // non-fatal; keep header behavior unchanged on error
+    }
   }
 
   renderTableRowWarning = () => {

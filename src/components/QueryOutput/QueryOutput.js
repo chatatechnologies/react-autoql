@@ -2462,10 +2462,12 @@ export class QueryOutput extends React.Component {
               }
             case 'in':
               try {
-                const arr = String(cleanValue)
-                  .split(',')
-                  .map((s) => s.trim().toLowerCase())
-                return arr.includes(rowStr.toLowerCase()) || arr.includes(String(rowValue))
+                const arr = new Set(
+                  String(cleanValue)
+                    .split(',')
+                    .map((s) => s.trim().toLowerCase()),
+                )
+                return arr.has(rowStr.toLowerCase()) || arr.has(String(rowValue).toLowerCase())
               } catch (e) {
                 return false
               }

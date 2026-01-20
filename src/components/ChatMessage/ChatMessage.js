@@ -266,7 +266,10 @@ export default class ChatMessage extends React.Component {
   }
 
   updateDataConfig = (config) => {
-    this.setState({ dataConfig: config })
+    // Ignore non-object updates (QueryOutput may call with `false`) to avoid storing a boolean
+    if (config && typeof config === 'object') {
+      this.setState({ dataConfig: config })
+    }
   }
 
   renderFetchingFileMessage = () => {
@@ -336,7 +339,9 @@ export default class ChatMessage extends React.Component {
           isAnimating={this.state.isAnimatingMessageBubble}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
-          initialTableConfigs={this.state.dataConfig}
+          initialTableConfigs={
+            this.state.dataConfig && typeof this.state.dataConfig === 'object' ? this.state.dataConfig : undefined
+          }
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}

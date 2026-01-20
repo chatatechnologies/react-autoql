@@ -8,27 +8,6 @@ import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class StringAxisSelector extends React.Component {
-  static propTypes = {
-    useLegendHandler: PropTypes.bool,
-    changeLegendColumnIndex: PropTypes.func,
-    changeStringColumnIndex: PropTypes.func,
-    columns: PropTypes.array,
-    numberColumnIndices: PropTypes.array,
-    numberColumnIndices2: PropTypes.array,
-    hasSecondAxis: PropTypes.bool,
-    dateColumnsOnly: PropTypes.bool,
-    chartContainerRef: PropTypes.object,
-    hidden: PropTypes.bool,
-    scale: PropTypes.object,
-    axisSelectorRef: PropTypes.any,
-    isOpen: PropTypes.bool,
-    closeSelector: PropTypes.func,
-    popoverParentElement: PropTypes.object,
-    positions: PropTypes.array,
-    align: PropTypes.string,
-    children: PropTypes.node,
-  }
-
   constructor(props) {
     super(props)
 
@@ -148,4 +127,25 @@ export default class StringAxisSelector extends React.Component {
       </Popover>
     )
   }
+}
+
+StringAxisSelector.propTypes = {
+  columns: PropTypes.array,
+  numberColumnIndices: PropTypes.array,
+  numberColumnIndices2: PropTypes.array,
+  hasSecondAxis: PropTypes.bool,
+  dateColumnsOnly: PropTypes.bool,
+  chartContainerRef: PropTypes.object,
+  hidden: PropTypes.bool,
+  useLegendHandler: PropTypes.bool,
+  changeLegendColumnIndex: PropTypes.func,
+  changeStringColumnIndex: PropTypes.func,
+  closeSelector: PropTypes.func,
+  scale: PropTypes.object,
+  axisSelectorRef: PropTypes.object,
+  isOpen: PropTypes.bool,
+  popoverParentElement: PropTypes.object,
+  positions: PropTypes.array,
+  align: PropTypes.string,
+  children: PropTypes.node,
 }
