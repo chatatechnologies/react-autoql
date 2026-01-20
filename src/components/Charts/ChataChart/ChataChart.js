@@ -61,6 +61,7 @@ import './ChataChart.scss'
 export default class ChataChart extends React.Component {
   constructor(props) {
     super(props)
+    this.sortedNumberColumnIndicesForStacked = null // Initialize sorted column indices
     const data = this.getData(props)
 
     this.PADDING = 0
@@ -302,7 +303,15 @@ export default class ChataChart extends React.Component {
   }
 
   getColorScales = () => {
-    const { numberColumnIndices, numberColumnIndices2 } = this.props
+    let { numberColumnIndices, numberColumnIndices2 } = this.props
+
+    // For stacked charts, use sorted column indices for color scale calculation
+    // This ensures colors are assigned sequentially to segments (biggest to smallest)
+    const isStackedChart =
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
+      numberColumnIndices = this.sortedNumberColumnIndicesForStacked
+    }
 
     // Use all column indices (including hidden ones via isSeriesHidden) for the base color scale
     // This ensures hidden series keep their original colors when clicked directly
@@ -362,6 +371,8 @@ export default class ChataChart extends React.Component {
   getData = (props) => {
     try {
       if (!props.data?.length || !props.columns?.length) {
+        // Clear sorted indices if no data
+        this.sortedNumberColumnIndicesForStacked = null
         return
       }
 
@@ -506,6 +517,29 @@ export default class ChataChart extends React.Component {
           isDataTruncated = true
         }
 
+        // For stacked charts, calculate sorted column indices based on total aggregates
+        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        if (isStackedChart) {
+          const numberIndices = props.numberColumnIndices || []
+          // Calculate total aggregate for each column index across all rows
+          const columnTotals = numberIndices.map((colIndex) => {
+            const total = data.reduce((sum, row) => {
+              const value = row[colIndex]
+              const numValue = Number(value)
+              return sum + (isNaN(numValue) ? 0 : numValue)
+            }, 0)
+            return { colIndex, total }
+          })
+
+          // Sort by total descending (biggest to smallest)
+          columnTotals.sort((a, b) => b.total - a.total)
+
+          // Store sorted column indices
+          this.sortedNumberColumnIndicesForStacked = columnTotals.map((item) => item.colIndex)
+        } else {
+          this.sortedNumberColumnIndicesForStacked = null
+        }
+
         return {
           data,
           dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
@@ -556,6 +590,28 @@ export default class ChataChart extends React.Component {
         ) {
           aggregated = aggregated.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
+        }
+
+        // For stacked charts, calculate sorted column indices based on total aggregates
+        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        if (isStackedChart) {
+          // Calculate total aggregate for each column index across all rows
+          const columnTotals = numberIndices.map((colIndex) => {
+            const total = aggregated.reduce((sum, row) => {
+              const value = row[colIndex]
+              const numValue = Number(value)
+              return sum + (isNaN(numValue) ? 0 : numValue)
+            }, 0)
+            return { colIndex, total }
+          })
+
+          // Sort by total descending (biggest to smallest)
+          columnTotals.sort((a, b) => b.total - a.total)
+
+          // Store sorted column indices
+          this.sortedNumberColumnIndicesForStacked = columnTotals.map((item) => item.colIndex)
+        } else {
+          this.sortedNumberColumnIndicesForStacked = null
         }
 
         return { data: aggregated, dataReduced: aggregatedWithOtherCategory, isDataTruncated }
@@ -729,7 +785,17 @@ export default class ChataChart extends React.Component {
     // Use sorted columns if available (for Y-axis sorting on heatmaps)
     // This must use the same columns as getCommonChartProps to ensure consistency
     const columns = this.sortedColumnsForHeatmap || this.props.columns
-    return getLegendLabelsForMultiSeries(columns, this.getColorScales()?.colorScale, this.props.numberColumnIndices)
+
+    // For stacked charts, use sorted column indices based on total aggregates
+    // This ensures legend labels match the sorted order of segments
+    const isStackedChart =
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    const numberColumnIndices =
+      isStackedChart && this.sortedNumberColumnIndicesForStacked
+        ? this.sortedNumberColumnIndicesForStacked
+        : this.props.numberColumnIndices
+
+    return getLegendLabelsForMultiSeries(columns, this.getColorScales()?.colorScale, numberColumnIndices)
   }
 
   getBase64Data = (scale) => {
@@ -820,7 +886,16 @@ export default class ChataChart extends React.Component {
       }
     }
 
-    const visibleSeriesIndices = numberColumnIndices.filter(
+    // For stacked charts, use sorted column indices based on total aggregates
+    // This ensures all stacks and the legend use the same order (biggest to smallest)
+    let finalNumberColumnIndices = numberColumnIndices
+    const isStackedChart =
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
+      finalNumberColumnIndices = this.sortedNumberColumnIndicesForStacked
+    }
+
+    const visibleSeriesIndices = finalNumberColumnIndices.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
@@ -838,6 +913,7 @@ export default class ChataChart extends React.Component {
       ...this.props,
       columns,
       legendColumn: updatedLegendColumn,
+      numberColumnIndices: finalNumberColumnIndices, // Use sorted indices for stacked charts
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
