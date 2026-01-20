@@ -759,7 +759,8 @@ export default class ChataTable extends React.Component {
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
     let response = _cloneDeep(this.props.response)
-    let data = _cloneDeep(this.originalQueryData)
+    // For pivot tables, use the pivot data, not the original query data
+    let data = this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData)
 
     // Filters
     if (params.tableFilters?.length) {
@@ -775,26 +776,25 @@ export default class ChataTable extends React.Component {
 
     // Sorters
     if (params.orders?.length) {
-      let sortColumnIndex
-      if (this.props.pivot) {
-        // For pivot tables, use the field property (which is the pivot column index as a string)
-        // Tabulator may pass either id or field in params.orders[0].id, so try both
-        const column =
-          this.props.columns.find((col) => col.id === params?.orders[0]?.id) ||
-          this.props.columns.find((col) => col.field === params?.orders[0]?.id)
-        if (column?.field !== undefined) {
-          const parsed = parseInt(column.field, 10)
-          sortColumnIndex = !isNaN(parsed) ? parsed : column.index
-        } else {
-          sortColumnIndex = column?.index
-        }
-      } else {
-        sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
-      }
-
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
-      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+      if (this.props.pivot) {
+        // For pivot tables, use sortDataByColumn with the pivot column index
+        const searchId = params?.orders[0]?.id
+        const column =
+          this.props.columns.find((col) => col.id === searchId) ||
+          this.props.columns.find((col) => col.field === searchId)
+
+        if (column?.field !== undefined) {
+          const pivotColumnIndex = parseInt(column.field, 10)
+          if (!isNaN(pivotColumnIndex)) {
+            data = sortDataByColumn(data, this.props.columns, pivotColumnIndex, sortDirection)
+          }
+        }
+      } else {
+        const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
+        data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+      }
     }
 
     response.data.data.rows = data
