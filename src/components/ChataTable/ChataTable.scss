@@ -332,8 +332,8 @@
     /* Prevent global header pseudo-elements from affecting this custom header */
     .pivot-header-title::before,
     .pivot-header-title *::before {
-      content: none !important;
-      display: none !important;
+      content: none;
+      display: none;
     }
   }
 

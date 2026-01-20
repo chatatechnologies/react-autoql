@@ -108,11 +108,13 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, tableContainer)
 
-      // elementCenterX = 200 + 0/2 - 52 = 148; left = 148 - tableLeft(100) = 48
-      // elementCenterY = 100 + 0/2 + 35 = 135; top = 135 - tableTop(50) = 85
+      // New behavior: anchor at element center, placed just below the element
+      // with small GAP (4). With zero height/width this becomes:
+      // left = 200 - 100 + 0/2 = 100
+      // top = (top + height) - tableTop + GAP = 100 - 50 + 4 = 54
       expect(result).toEqual({
-        top: 85,
-        left: 48,
+        top: 54,
+        left: 100,
       })
 
       document.body.removeChild(element)
@@ -132,10 +134,12 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, null)
 
-      // elementCenterX = 200 - 52 = 148; elementCenterY = 150 + 35 = 185
+      // With no tableContainer, defaults to 0/0. With zero height/width:
+      // left = 200 - 0 + 0/2 = 200
+      // top = 150 - 0 + 4 = 154
       expect(result).toEqual({
-        top: 185,
-        left: 148,
+        top: 154,
+        left: 200,
       })
 
       document.body.removeChild(element)
@@ -154,10 +158,12 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, undefined)
 
-      // elementCenterX = 150 - 52 = 98; elementCenterY = 100 + 35 = 135
+      // With undefined tableContainer defaulting to 0/0 and zero height/width:
+      // left = 150 - 0 + 0/2 = 150
+      // top = 100 - 0 + 4 = 104
       expect(result).toEqual({
-        top: 135,
-        left: 98,
+        top: 104,
+        left: 150,
       })
 
       document.body.removeChild(element)

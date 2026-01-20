@@ -32,6 +32,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import ReactDOMServer from 'react-dom/server'
 import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
@@ -61,6 +62,12 @@ export default class ChataTable extends React.Component {
     this.isSorting = false
     this.filteredResponseData = null
     this.pageSize = props.pageSize ?? 50
+    // WeakMap to keep pivot header capture handlers without polluting DOM
+    this.pivotHeaderHandlers = new WeakMap()
+    this.pivotHeaderElements = new Set()
+
+    // Pre-rendered hamburger icon markup for header injection
+    this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
@@ -367,6 +374,16 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
+      // Remove any pivot header handlers we attached
+      if (this.pivotHeaderElements) {
+        this.pivotHeaderElements.forEach((el) => {
+          const handler = this.pivotHeaderHandlers.get(el)
+          if (handler && el.removeEventListener) {
+            el.removeEventListener('click', handler, true)
+          }
+        })
+        this.pivotHeaderElements.clear()
+      }
     } catch (error) {
       console.error(error)
     }
@@ -1119,23 +1136,25 @@ export default class ChataTable extends React.Component {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
 
-        // Capture-phase handler: open pivot-axis selector on hamburger click without triggering sort
-        try {
+        // Attach capture handler to the first pivot header only
+        if (this.props.pivot && i === 0) {
           const captureHandler = (ev) => {
-            const btn = ev && ev.target && ev.target.closest && ev.target.closest('.pivot-axis-header-btn')
+            const btn = ev?.target?.closest?.('.pivot-axis-header-btn')
             if (!btn) return
             ev.preventDefault()
             ev.stopImmediatePropagation()
             this.openPivotAxisSelectorForElement(headerElement)
           }
 
-          if (headerElement._pivotCaptureHandler) {
-            headerElement.removeEventListener('click', headerElement._pivotCaptureHandler, true)
+          // Remove any previous handler stored in WeakMap
+          const prev = this.pivotHeaderHandlers.get(headerElement)
+          if (prev) {
+            headerElement.removeEventListener('click', prev, true)
           }
-          headerElement._pivotCaptureHandler = captureHandler
+
+          this.pivotHeaderHandlers.set(headerElement, captureHandler)
+          this.pivotHeaderElements.add(headerElement)
           headerElement.addEventListener('click', captureHandler, true)
-        } catch (err) {
-          console.error('Error attaching pivot header button click handler:', err)
         }
       }
 
@@ -1631,9 +1650,7 @@ export default class ChataTable extends React.Component {
             const pivotCol = { ...col }
             // Inject a compact header button (hamburger) to open the pivot-axis selector
             pivotCol.title = pivotCol.title || pivotCol.display_name || pivotCol.name || ''
-            const hamburgerSvg =
-              '<svg class="MuiSvgIcon-root" focusable="false" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>'
-            pivotCol.title = `<div class="pivot-header-title"><button class="pivot-axis-header-btn" type="button" aria-label="Pivot axis">${hamburgerSvg}</button>${pivotCol.title}</div>`
+            pivotCol.title = `<div class="pivot-header-title"><button class="pivot-axis-header-btn" type="button" aria-label="Pivot axis">${this.PIVOT_HAMBURGER_ICON}</button>${pivotCol.title}</div>`
             columns.push(pivotCol)
           } else {
             if (!columns[1]) {
