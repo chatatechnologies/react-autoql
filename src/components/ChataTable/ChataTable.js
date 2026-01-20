@@ -1132,6 +1132,32 @@ export default class ChataTable extends React.Component {
         headerElement.setAttribute('data-tooltip-id', `selectable-table-column-header-tooltip-${this.TABLE_ID}`)
         headerElement.setAttribute('data-tooltip-content', JSON.stringify({ ...col, index: i }))
 
+        // Insert pivot button and wrap with flex span so it appears before :before
+        if (this.props.pivot && i === 0)
+          try {
+            const t = headerElement.querySelector('.tabulator-col-title')
+            if (t && !headerElement.querySelector('.pivot-axis-header-btn')) {
+              const s = document.createElement('span')
+              s.style.display = 'flex'
+              s.style.alignItems = 'center'
+              s.style.gap = '6px'
+              const b = document.createElement('button')
+              b.className = 'pivot-axis-header-btn'
+              b.type = 'button'
+              b.setAttribute('aria-label', 'Pivot axis')
+              b.setAttribute('data-tooltip-id', this.props.tooltipID)
+              b.setAttribute('data-tooltip-content', 'Change axis')
+              b.innerHTML = this.PIVOT_HAMBURGER_ICON
+              b.addEventListener('click', (e) => {
+                e.stopPropagation()
+                this.openPivotAxisSelectorForElement(b)
+              })
+              headerElement.insertBefore(s, t)
+              s.appendChild(b)
+              s.appendChild(t)
+            }
+          } catch (e) {}
+
         if (!this.props.pivot) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
@@ -1648,9 +1674,8 @@ export default class ChataTable extends React.Component {
         this.props.columns.forEach((col, i) => {
           if (i === 0) {
             const pivotCol = { ...col }
-            // Inject a compact header button (hamburger) to open the pivot-axis selector
+            // Title for the pivot header (button is added directly to the DOM later)
             pivotCol.title = pivotCol.title || pivotCol.display_name || pivotCol.name || ''
-            pivotCol.title = `<div class="pivot-header-title"><button class="pivot-axis-header-btn" type="button" aria-label="Pivot axis">${this.PIVOT_HAMBURGER_ICON}</button>${pivotCol.title}</div>`
             columns.push(pivotCol)
           } else {
             if (!columns[1]) {
