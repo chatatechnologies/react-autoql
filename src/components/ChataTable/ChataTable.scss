@@ -322,6 +322,36 @@
         }
       }
     }
+
+    .pivot-header-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pivot-axis-header-btn {
+      background: transparent;
+      border: none;
+      color: var(--react-autoql-text-color-primary);
+      cursor: pointer;
+      padding: 0;
+      font-size: 12px;
+      line-height: 1;
+      margin: 0;
+    }
+    .pivot-axis-header-btn svg {
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+      fill: currentColor;
+    }
+
+    /* Prevent global header pseudo-elements from affecting this custom header */
+    .pivot-header-title::before,
+    .pivot-header-title *::before {
+      content: none;
+      display: none;
+    }
   }
 
   .react-autoql-table.tabulator {
@@ -474,10 +504,10 @@
       @media (hover: hover) and (pointer: fine) {
         // Always reserve space for scrollbar to prevent content shift
         scrollbar-gutter: stable;
-        
+
         // Firefox - hide by default (but space is reserved by scrollbar-gutter)
         scrollbar-width: none;
-        
+
         // Webkit browsers (Chrome, Safari, Edge) - make scrollbars invisible by default
         // Width stays constant so space is always reserved (no shift)
         &::-webkit-scrollbar {

@@ -32,6 +32,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import ReactDOMServer from 'react-dom/server'
 import { Button } from '../Button'
 import { Spinner } from '../Spinner'
 import { Popover } from '../Popover'
@@ -61,6 +62,12 @@ export default class ChataTable extends React.Component {
     this.isSorting = false
     this.filteredResponseData = null
     this.pageSize = props.pageSize ?? 50
+    // WeakMap to keep pivot header capture handlers without polluting DOM
+    this.pivotHeaderHandlers = new WeakMap()
+    this.pivotHeaderElements = new Set()
+
+    // Pre-rendered hamburger icon markup for header injection
+    this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
     this.useRemote =
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
@@ -367,6 +374,16 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
+      // Remove any pivot header handlers we attached
+      if (this.pivotHeaderElements) {
+        this.pivotHeaderElements.forEach((el) => {
+          const handler = this.pivotHeaderHandlers.get(el)
+          if (handler && el.removeEventListener) {
+            el.removeEventListener('click', handler, true)
+          }
+        })
+        this.pivotHeaderElements.clear()
+      }
     } catch (error) {
       console.error(error)
     }
@@ -1123,6 +1140,27 @@ export default class ChataTable extends React.Component {
         if (!this.props.pivot) {
           headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
         }
+
+        // Attach capture handler to the first pivot header only
+        if (this.props.pivot && i === 0) {
+          const captureHandler = (ev) => {
+            const btn = ev?.target?.closest?.('.pivot-axis-header-btn')
+            if (!btn) return
+            ev.preventDefault()
+            ev.stopImmediatePropagation()
+            this.openPivotAxisSelectorForElement(headerElement)
+          }
+
+          // Remove any previous handler stored in WeakMap
+          const prev = this.pivotHeaderHandlers.get(headerElement)
+          if (prev) {
+            headerElement.removeEventListener('click', prev, true)
+          }
+
+          this.pivotHeaderHandlers.set(headerElement, captureHandler)
+          this.pivotHeaderElements.add(headerElement)
+          headerElement.addEventListener('click', captureHandler, true)
+        }
       }
 
       if (inputElement) {
@@ -1615,6 +1653,9 @@ export default class ChataTable extends React.Component {
         this.props.columns.forEach((col, i) => {
           if (i === 0) {
             const pivotCol = { ...col }
+            // Inject a compact header button (hamburger) to open the pivot-axis selector
+            pivotCol.title = pivotCol.title || pivotCol.display_name || pivotCol.name || ''
+            pivotCol.title = `<div class="pivot-header-title"><button class="pivot-axis-header-btn" type="button" aria-label="Pivot axis">${this.PIVOT_HAMBURGER_ICON}</button>${pivotCol.title}</div>`
             columns.push(pivotCol)
           } else {
             if (!columns[1]) {
@@ -1803,23 +1844,6 @@ export default class ChataTable extends React.Component {
 
     return (
       <div>
-        {this.props.pivot && this.props.pivotAxisOptions?.length > 1 && (
-          <div className='table-pivot-axis-selector-container'>
-            {(() => {
-              const selectedOption = this.props.pivotAxisOptions?.find(
-                (opt) => opt.value === this.props.pivotAxisCurrentIndex,
-              )
-              // Ensure consistency: if pivotAxisCurrentIndex is set, a matching option should exist
-              const displayLabel =
-                selectedOption?.label || (this.props.pivotAxisCurrentIndex !== undefined ? 'Axis' : 'Select')
-              return (
-                <button className='table-pivot-axis-selector-btn' onClick={this.openPivotAxisSelectorAboveRowCount}>
-                  {displayLabel} ▼
-                </button>
-              )
-            })()}
-          </div>
-        )}
         <div className='table-row-count'>
           <span>
             {`Scrolled ${currentRowsFormatted} / ${
