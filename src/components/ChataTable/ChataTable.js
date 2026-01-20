@@ -776,7 +776,13 @@ export default class ChataTable extends React.Component {
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
     let response = _cloneDeep(this.props.response)
-    let data = _cloneDeep(this.originalQueryData)
+    // For pivot tables, use the pivot data, not the original query data
+    let data = this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData)
+
+    // Ensure data is always an array
+    if (!data) {
+      data = []
+    }
 
     // Filters
     if (params.tableFilters?.length) {
@@ -792,26 +798,25 @@ export default class ChataTable extends React.Component {
 
     // Sorters
     if (params.orders?.length) {
-      let sortColumnIndex
-      if (this.props.pivot) {
-        // For pivot tables, use the field property (which is the pivot column index as a string)
-        // Tabulator may pass either id or field in params.orders[0].id, so try both
-        const column =
-          this.props.columns.find((col) => col.id === params?.orders[0]?.id) ||
-          this.props.columns.find((col) => col.field === params?.orders[0]?.id)
-        if (column?.field !== undefined) {
-          const parsed = parseInt(column.field, 10)
-          sortColumnIndex = !isNaN(parsed) ? parsed : column.index
-        } else {
-          sortColumnIndex = column?.index
-        }
-      } else {
-        sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
-      }
-
       const sortDirection = params.orders[0].sort === 'DESC' ? 'desc' : 'asc'
 
-      data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+      if (this.props.pivot) {
+        // For pivot tables, use sortDataByColumn with the pivot column index
+        const searchId = params?.orders[0]?.id
+        const column =
+          this.props.columns.find((col) => col.id === searchId) ||
+          this.props.columns.find((col) => col.field === searchId)
+
+        if (column?.field !== undefined) {
+          const pivotColumnIndex = parseInt(column.field, 10)
+          if (!isNaN(pivotColumnIndex)) {
+            data = sortDataByColumn(data, this.props.columns, pivotColumnIndex, sortDirection)
+          }
+        }
+      } else {
+        const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
+        data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+      }
     }
 
     response.data.data.rows = data
@@ -1733,7 +1738,7 @@ export default class ChataTable extends React.Component {
   }
 
   renderTableRowWarning = () => {
-    // For pivot tables
+    // For pivot tables - render icon
     if (this.props.pivot) {
       if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
         const rowLimit = this.props.response?.data?.data?.row_limit
@@ -1746,24 +1751,22 @@ export default class ChataTable extends React.Component {
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 
-        let content
         let tooltipContent
 
         if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
-          content = `Limited to ${rowLimitFormatted} rows`
           tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
         } else if (this.props.pivotTableDataLimited) {
-          content = `Limited to ${maxColumnsFormatted} columns`
           tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
         }
 
         return (
-          <DataLimitWarning
-            tooltipID={this.props.tooltipID}
-            rowLimit={rowLimit}
-            tooltipContent={tooltipContent}
-            content={content}
-          />
+          <div
+            className='react-autoql-table-data-limit-icon'
+            data-tooltip-html={tooltipContent}
+            data-tooltip-id={this.props.tooltipID}
+          >
+            <Icon type='warning' />
+          </div>
         )
       }
       return null
@@ -1778,7 +1781,7 @@ export default class ChataTable extends React.Component {
       const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
         this.props.response?.data?.data?.count_rows,
       )
-      const tooltipContent = `To optimize performance, this table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows due to the MAX_DATA_PAGE_SIZE limit.`
+      const tooltipContent = `To optimize performance, this table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows.`
       const content = `Limited to ${rowLimitFormatted} rows`
 
       return (
