@@ -171,7 +171,7 @@ export default class LegendPopover extends React.Component {
     }
 
     // Use full chart outer height (minus some padding for header and footer)
-    const maxHeight = isMobile ? Math.min(200, window.innerHeight * 0.4) : chartHeight - 20
+    const maxHeight = isMobile ? Math.min(200, window.innerHeight * 0.4) : Math.max(chartHeight - 20, 220)
     const contentHeight = maxHeight - 150 // Reserve space for header, search, and footer
 
     const allVisible = tempHiddenLabels.length === 0
