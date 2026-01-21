@@ -2,54 +2,82 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnDateType } from 'autoql-fe-utils'
+import { isColumnDateType, getNumberOfGroupables } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 
 export default class StringAxisSelector extends React.Component {
-  static propTypes = {
-    useLegendHandler: PropTypes.bool,
-    changeLegendColumnIndex: PropTypes.func,
-    changeStringColumnIndex: PropTypes.func,
-    columns: PropTypes.array,
-    numberColumnIndices: PropTypes.array,
-    numberColumnIndices2: PropTypes.array,
-    hasSecondAxis: PropTypes.bool,
-    dateColumnsOnly: PropTypes.bool,
-    chartContainerRef: PropTypes.object,
-    hidden: PropTypes.bool,
-    scale: PropTypes.object,
-    axisSelectorRef: PropTypes.any,
-    isOpen: PropTypes.bool,
-    closeSelector: PropTypes.func,
-    popoverParentElement: PropTypes.object,
-    positions: PropTypes.array,
-    align: PropTypes.string,
-    children: PropTypes.node,
-  }
-
   constructor(props) {
     super(props)
 
     this.COMPONENT_KEY = uuid()
   }
 
+  // Build a quick lookup map from `originalColumns` for index resolution
+  getOriginalIndexMap = (originalColumns) => {
+    const map = new Map()
+    if (!originalColumns) return map
+    originalColumns.forEach((oc) => {
+      if (oc?.index !== undefined) map.set(String(oc.index), oc.index)
+      if (oc?.display_name) map.set(oc.display_name, oc.index)
+    })
+    return map
+  }
+
   getAllStringColumnIndices = () => {
-    if (!this.props.columns?.length) return []
+    const columnsForCheck = this.props.originalColumns ?? this.props.columns
+    if (!columnsForCheck?.length) return []
+
     const columnIndices = []
+    // Determine grouped state
+    const numGroupables = getNumberOfGroupables(columnsForCheck)
+    const isGrouped = !!this.props.isAggregated || numGroupables > 0
+
+    // Build a quick lookup for originalColumns by index or display_name
+    const originalIndexMap = this.getOriginalIndexMap(this.props.originalColumns)
+
+    const numberIndices = this.props.numberColumnIndices ?? []
+    const numberIndices2 = this.props.numberColumnIndices2 ?? []
+
     this.props.columns.forEach((col, i) => {
-      if (!col.is_visible) {
+      if (!col.is_visible) return
+
+      // canonical id may be `col.index` or positional `i`
+      const colId = col.index ?? i
+      // Resolve original index: prefer matching by canonical index, but fall back to display_name when mismatched
+      let originalIndexForCol
+      if (col.index === undefined) {
+        originalIndexForCol = originalIndexMap.get(col.display_name)
+      } else {
+        originalIndexForCol = originalIndexMap.get(String(col.index))
+        if (originalIndexForCol === undefined && col.display_name) {
+          originalIndexForCol = originalIndexMap.get(col.display_name)
+        }
+      }
+
+      const isOnNumberAxis =
+        numberIndices.includes(colId) ||
+        numberIndices.includes(i) ||
+        (originalIndexForCol !== undefined && numberIndices.includes(originalIndexForCol))
+
+      const isOnSecondNumberAxis =
+        this.props.hasSecondAxis &&
+        (numberIndices2.includes(colId) ||
+          numberIndices2.includes(i) ||
+          (originalIndexForCol !== undefined && numberIndices2.includes(originalIndexForCol)))
+
+      const isStringType = Boolean(col.isStringType) || String(col.type || '').toUpperCase() === 'STRING'
+
+      // If grouped, only include groupable (dimension) columns
+      if (isGrouped) {
+        if (col.groupable) columnIndices.push(i)
         return
       }
 
-      const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
-      const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
-
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && col.isStringType)) {
-        columnIndices.push(i)
-      }
+      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || isStringType) columnIndices.push(i)
     })
+
     return columnIndices
   }
 
@@ -148,4 +176,31 @@ export default class StringAxisSelector extends React.Component {
       </Popover>
     )
   }
+}
+
+StringAxisSelector.propTypes = {
+  columns: PropTypes.array,
+  originalColumns: PropTypes.array,
+  numberColumnIndices: PropTypes.array,
+  numberColumnIndices2: PropTypes.array,
+  hasSecondAxis: PropTypes.bool,
+  isAggregated: PropTypes.bool,
+  dateColumnsOnly: PropTypes.bool,
+  chartContainerRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
+  hidden: PropTypes.bool,
+  useLegendHandler: PropTypes.bool,
+  changeLegendColumnIndex: PropTypes.func,
+  changeStringColumnIndex: PropTypes.func,
+  closeSelector: PropTypes.func,
+  scale: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
+  axisSelectorRef: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
+  isOpen: PropTypes.bool,
+  popoverParentElement: PropTypes.object,
+  positions: PropTypes.array,
+  align: PropTypes.string,
+  children: PropTypes.node,
+}
+
+StringAxisSelector.defaultProps = {
+  isAggregated: false,
 }

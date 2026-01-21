@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
 
@@ -34,7 +35,7 @@ export default class AxisSortPopover extends React.Component {
 
     const columnDisplayName = this.props.columnDisplayName || 'column'
     const valueColumnDisplayName = this.props.valueColumnDisplayName || 'values'
-    
+
     // For heatmaps and bubble charts, only show string column sort options
     const sortOptions = this.props.stringColumnOnly
       ? [
@@ -63,19 +64,21 @@ export default class AxisSortPopover extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {sortOptions.map((option, i) => {
+              {sortOptions.map((option, idx) => {
+                const isActive = option.value === this.props.currentSort
+                const key = `axis-sort-option-${option.value ?? 'none'}-${idx}`
                 return (
-                  <li
-                    className={`string-select-list-item ${
-                      option.value === this.props.currentSort ? 'active' : ''
-                    }`}
-                    key={`axis-sort-option-${i}`}
-                    onClick={() => {
-                      this.props.closeSelector()
-                      this.props.onSortChange(option.value)
-                    }}
-                  >
-                    {option.label}
+                  <li className='string-select-list-item' key={key}>
+                    <button
+                      type='button'
+                      className={`string-select-button ${isActive ? 'active' : ''}`}
+                      onClick={() => {
+                        this.props.closeSelector()
+                        this.props.onSortChange(option.value)
+                      }}
+                    >
+                      {option.label}
+                    </button>
                   </li>
                 )
               })}
@@ -109,3 +112,19 @@ export default class AxisSortPopover extends React.Component {
   }
 }
 
+AxisSortPopover.propTypes = {
+  hidden: PropTypes.bool,
+  chartContainerRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
+  columnDisplayName: PropTypes.string,
+  valueColumnDisplayName: PropTypes.string,
+  stringColumnOnly: PropTypes.bool,
+  currentSort: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  closeSelector: PropTypes.func.isRequired,
+  onSortChange: PropTypes.func.isRequired,
+  axisSortRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+  isOpen: PropTypes.bool,
+  popoverParentElement: PropTypes.object,
+  positions: PropTypes.array,
+  align: PropTypes.string,
+  children: PropTypes.node,
+}

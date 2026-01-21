@@ -323,8 +323,9 @@
       }
     }
 
+    /* Wrapper used when inserting pivot button before the title */
     .pivot-header-title {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 8px;
     }
@@ -671,7 +672,7 @@
 
 // Pivot Axis Selector styles
 .pivot-axis-title-container {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 3px;
   cursor: pointer;

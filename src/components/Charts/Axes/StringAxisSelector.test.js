@@ -77,3 +77,84 @@ describe('behavior', () => {
     expect(changeString).not.toHaveBeenCalled()
   })
 })
+
+describe('getAllStringColumnIndices edge cases', () => {
+  test('returns only groupable columns when grouped', () => {
+    const props = {
+      columns: [
+        { display_name: 'A', groupable: true, type: 'STRING', is_visible: true },
+        { display_name: 'B', groupable: true, type: 'STRING', is_visible: true },
+        { display_name: 'C', groupable: false, type: 'QUANTITY', is_visible: true },
+      ],
+      numberColumnIndices: [],
+      numberColumnIndices2: [],
+      hasSecondAxis: false,
+      isAggregated: false,
+      hidden: false,
+    }
+
+    const wrapper = setup(props)
+    const instance = wrapper.find(StringAxisSelector).instance()
+    expect(instance.getAllStringColumnIndices()).toEqual([0, 1])
+  })
+
+  test('resolves originalColumns by display_name when canonical ids differ', () => {
+    const props = {
+      columns: [
+        { display_name: 'Dim', index: 10, type: 'STRING', is_visible: true },
+        { display_name: 'Num', index: 11, type: 'QUANTITY', is_visible: true },
+      ],
+      originalColumns: [
+        { display_name: 'Dim', index: 100 },
+        { display_name: 'Num', index: 101 },
+      ],
+      numberColumnIndices: [101],
+      numberColumnIndices2: [],
+      hasSecondAxis: false,
+      isAggregated: false,
+      hidden: false,
+    }
+
+    const wrapper = setup(props)
+    const instance = wrapper.find(StringAxisSelector).instance()
+    expect(instance.getAllStringColumnIndices()).toEqual([0])
+  })
+
+  test('uses positional indices when col.index is undefined', () => {
+    const props = {
+      columns: [
+        { display_name: 'Dim', type: 'STRING', is_visible: true },
+        { display_name: 'Num', type: 'QUANTITY', is_visible: true },
+      ],
+      numberColumnIndices: [1],
+      numberColumnIndices2: [],
+      hasSecondAxis: false,
+      isAggregated: false,
+      hidden: false,
+    }
+
+    const wrapper = setup(props)
+    const instance = wrapper.find(StringAxisSelector).instance()
+    expect(instance.getAllStringColumnIndices()).toEqual([0])
+  })
+
+  test('respects second axis numberColumnIndices2 when hasSecondAxis is true', () => {
+    const props = {
+      columns: [
+        { display_name: 'Dim', type: 'STRING', is_visible: true },
+        { display_name: 'Num', type: 'QUANTITY', is_visible: true },
+      ],
+      numberColumnIndices: [],
+      numberColumnIndices2: [0],
+      hasSecondAxis: true,
+      isAggregated: false,
+      hidden: false,
+    }
+
+    const wrapper = setup(props)
+    const instance = wrapper.find(StringAxisSelector).instance()
+    // column 0 is on the second numeric axis but is string-typed, so included;
+    // column 1 is not marked on any number axis here so included as well
+    expect(instance.getAllStringColumnIndices()).toEqual([0, 1])
+  })
+})
