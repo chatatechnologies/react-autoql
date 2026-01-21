@@ -2412,6 +2412,8 @@ export class QueryOutput extends React.Component {
     // Provide a robust header filter for numeric columns to support operator prefixes
     // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
     if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+      // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
+      const inSetCache = new Map()
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
           if (headerValue === undefined || headerValue === null) return true
@@ -2462,11 +2464,16 @@ export class QueryOutput extends React.Component {
               }
             case 'in':
               try {
-                const arr = new Set(
-                  String(cleanValue)
-                    .split(',')
-                    .map((s) => s.trim().toLowerCase()),
-                )
+                const cacheKey = String(cleanValue)
+                let arr = inSetCache.get(cacheKey)
+                if (!arr) {
+                  arr = new Set(
+                    String(cleanValue)
+                      .split(',')
+                      .map((s) => s.trim().toLowerCase()),
+                  )
+                  inSetCache.set(cacheKey, arr)
+                }
                 return arr.has(rowStr.toLowerCase()) || arr.has(String(rowValue).toLowerCase())
               } catch (e) {
                 return false

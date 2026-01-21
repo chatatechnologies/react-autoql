@@ -1755,8 +1755,8 @@ export default class ChataTable extends React.Component {
       b.className = 'pivot-axis-header-btn'
       b.type = 'button'
       b.setAttribute('aria-label', 'Pivot axis')
-      b.setAttribute('data-tooltip-id', this.props.tooltipID)
-      b.setAttribute('data-tooltip-content', 'Change axis')
+      b.dataset.tooltipId = this.props.tooltipID
+      b.dataset.tooltipContent = 'Change axis'
       b.title = 'Change axis'
       b.innerHTML = this.PIVOT_HAMBURGER_ICON
       b.addEventListener('click', (e) => {
@@ -1768,7 +1768,7 @@ export default class ChataTable extends React.Component {
       s.appendChild(b)
       s.appendChild(t)
     } catch (e) {
-      // non-fatal; keep header behavior unchanged on error
+      // Non-fatal:  preserve default header behavior
     }
   }
 
