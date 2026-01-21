@@ -35,13 +35,7 @@ export default class StringAxisSelector extends React.Component {
     const isGrouped = !!this.props.isAggregated || numGroupables > 0
 
     // Build a quick lookup for originalColumns by index or display_name
-    const originalIndexMap = new Map()
-    if (this.props.originalColumns) {
-      this.props.originalColumns.forEach((oc) => {
-        if (oc?.index !== undefined) originalIndexMap.set(String(oc.index), oc.index)
-        if (oc?.display_name) originalIndexMap.set(oc.display_name, oc.index)
-      })
-    }
+    const originalIndexMap = this.getOriginalIndexMap(this.props.originalColumns)
 
     const numberIndices = this.props.numberColumnIndices ?? []
     const numberIndices2 = this.props.numberColumnIndices2 ?? []
@@ -192,7 +186,7 @@ StringAxisSelector.propTypes = {
   hasSecondAxis: PropTypes.bool,
   isAggregated: PropTypes.bool,
   dateColumnsOnly: PropTypes.bool,
-  chartContainerRef: PropTypes.object,
+  chartContainerRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
   hidden: PropTypes.bool,
   useLegendHandler: PropTypes.bool,
   changeLegendColumnIndex: PropTypes.func,

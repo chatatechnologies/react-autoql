@@ -66,7 +66,7 @@ export default class AxisSortPopover extends React.Component {
             <ul className='axis-selector-content'>
               {sortOptions.map((option, idx) => {
                 const isActive = option.value === this.props.currentSort
-                const key = `axis-sort-option-${String(option.value)}-${idx}`
+                const key = `axis-sort-option-${option.value ?? 'none'}-${idx}`
                 return (
                   <li className='string-select-list-item' key={key}>
                     <button
@@ -114,11 +114,11 @@ export default class AxisSortPopover extends React.Component {
 
 AxisSortPopover.propTypes = {
   hidden: PropTypes.bool,
-  chartContainerRef: PropTypes.object,
+  chartContainerRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
   columnDisplayName: PropTypes.string,
   valueColumnDisplayName: PropTypes.string,
   stringColumnOnly: PropTypes.bool,
-  currentSort: PropTypes.any,
+  currentSort: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   closeSelector: PropTypes.func.isRequired,
   onSortChange: PropTypes.func.isRequired,
   axisSortRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),

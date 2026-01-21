@@ -1757,7 +1757,7 @@ export default class ChataTable extends React.Component {
       b.setAttribute('aria-label', 'Pivot axis')
       b.dataset.tooltipId = this.props.tooltipID
       b.dataset.tooltipContent = 'Change axis'
-      b.title = 'Change axis'
+      b.setAttribute('title', 'Change axis')
       b.innerHTML = this.PIVOT_HAMBURGER_ICON
       b.addEventListener('click', (e) => {
         e.stopPropagation()
