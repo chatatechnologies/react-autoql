@@ -192,7 +192,11 @@ export default class DrilldownModal extends React.Component {
     if (this.props.isOpen) {
       queryResponse = _cloneDeep(this.props.activeDrilldownRef?.queryResponse)
       if (queryResponse) {
-        queryResponse.data.data.columns = _cloneDeep(this.props.activeDrilldownRef?.state?.columns)
+        const stateColumns = this.props.activeDrilldownRef?.state?.columns
+        // Only replace columns if state.columns exists and is not empty
+        if (stateColumns && stateColumns.length > 0) {
+          queryResponse.data.data.columns = _cloneDeep(stateColumns)
+        }
       }
     }
 

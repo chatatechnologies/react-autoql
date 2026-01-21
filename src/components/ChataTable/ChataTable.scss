@@ -13,6 +13,23 @@
   box-sizing: border-box;
   flex: 1;
 
+  .react-autoql-table-data-limit-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    color: var(--react-autoql-warning-color, #f39c12);
+    font-size: 18px;
+    cursor: help;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+
+    .react-autoql-icon {
+      display: block;
+    }
+  }
+
   .react-autoql-pivot-table-row-selector {
     display: flex;
     justify-content: center;
