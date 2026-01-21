@@ -526,7 +526,7 @@ export default class ChataChart extends React.Component {
             const total = data.reduce((sum, row) => {
               const value = row[colIndex]
               const numValue = Number(value)
-              return sum + (isNaN(numValue) ? 0 : numValue)
+              return sum + (Number.isNaN(numValue) ? 0 : numValue)
             }, 0)
             return { colIndex, total }
           })
@@ -600,7 +600,7 @@ export default class ChataChart extends React.Component {
             const total = aggregated.reduce((sum, row) => {
               const value = row[colIndex]
               const numValue = Number(value)
-              return sum + (isNaN(numValue) ? 0 : numValue)
+              return sum + (Number.isNaN(numValue) ? 0 : numValue)
             }, 0)
             return { colIndex, total }
           })

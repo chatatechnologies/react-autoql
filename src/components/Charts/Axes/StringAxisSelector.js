@@ -25,57 +25,67 @@ export default class StringAxisSelector extends React.Component {
     return map
   }
 
+  resolveOriginalColumnIndex = (col, positionalIndex, originalIndexMap) => {
+    if (!originalIndexMap?.size) return undefined
+    if (col.index === undefined) {
+      return originalIndexMap.get(col.display_name)
+    }
+
+    let resolved = originalIndexMap.get(String(col.index))
+    if (resolved === undefined && col.display_name) {
+      resolved = originalIndexMap.get(col.display_name)
+    }
+    return resolved
+  }
+
+  isColumnOnAnyNumberAxis = (colId, positionalIndex, originalIndex, numberIndices, numberIndices2, hasSecondAxis) => {
+    const checkIndices = (indices) =>
+      indices.includes(colId) ||
+      indices.includes(positionalIndex) ||
+      (originalIndex !== undefined && indices.includes(originalIndex))
+
+    const onPrimary = checkIndices(numberIndices)
+    const onSecondary = hasSecondAxis && checkIndices(numberIndices2)
+
+    return { onPrimary, onSecondary, onAny: onPrimary || onSecondary }
+  }
+
   getAllStringColumnIndices = () => {
     const columnsForCheck = this.props.originalColumns ?? this.props.columns
     if (!columnsForCheck?.length) return []
 
     const columnIndices = []
-    // Determine grouped state
     const numGroupables = getNumberOfGroupables(columnsForCheck)
     const isGrouped = !!this.props.isAggregated || numGroupables > 0
 
-    // Build a quick lookup for originalColumns by index or display_name
     const originalIndexMap = this.getOriginalIndexMap(this.props.originalColumns)
-
     const numberIndices = this.props.numberColumnIndices ?? []
     const numberIndices2 = this.props.numberColumnIndices2 ?? []
 
     this.props.columns.forEach((col, i) => {
       if (!col.is_visible) return
 
-      // canonical id may be `col.index` or positional `i`
-      const colId = col.index ?? i
-      // Resolve original index: prefer matching by canonical index, but fall back to display_name when mismatched
-      let originalIndexForCol
-      if (col.index === undefined) {
-        originalIndexForCol = originalIndexMap.get(col.display_name)
-      } else {
-        originalIndexForCol = originalIndexMap.get(String(col.index))
-        if (originalIndexForCol === undefined && col.display_name) {
-          originalIndexForCol = originalIndexMap.get(col.display_name)
-        }
-      }
-
-      const isOnNumberAxis =
-        numberIndices.includes(colId) ||
-        numberIndices.includes(i) ||
-        (originalIndexForCol !== undefined && numberIndices.includes(originalIndexForCol))
-
-      const isOnSecondNumberAxis =
-        this.props.hasSecondAxis &&
-        (numberIndices2.includes(colId) ||
-          numberIndices2.includes(i) ||
-          (originalIndexForCol !== undefined && numberIndices2.includes(originalIndexForCol)))
-
-      const isStringType = Boolean(col.isStringType) || String(col.type || '').toUpperCase() === 'STRING'
-
-      // If grouped, only include groupable (dimension) columns
       if (isGrouped) {
         if (col.groupable) columnIndices.push(i)
         return
       }
 
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || isStringType) columnIndices.push(i)
+      const colId = col.index ?? i
+      const originalIndexForCol = this.resolveOriginalColumnIndex(col, i, originalIndexMap)
+      const { onAny } = this.isColumnOnAnyNumberAxis(
+        colId,
+        i,
+        originalIndexForCol,
+        numberIndices,
+        numberIndices2,
+        this.props.hasSecondAxis,
+      )
+
+      const isStringType = Boolean(col.isStringType) || String(col.type || '').toUpperCase() === 'STRING'
+
+      if (!onAny || isStringType) {
+        columnIndices.push(i)
+      }
     })
 
     return columnIndices
