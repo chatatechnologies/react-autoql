@@ -190,6 +190,7 @@ StringAxisSelector.propTypes = {
   numberColumnIndices: PropTypes.array,
   numberColumnIndices2: PropTypes.array,
   hasSecondAxis: PropTypes.bool,
+  isAggregated: PropTypes.bool,
   dateColumnsOnly: PropTypes.bool,
   chartContainerRef: PropTypes.object,
   hidden: PropTypes.bool,
@@ -204,4 +205,8 @@ StringAxisSelector.propTypes = {
   positions: PropTypes.array,
   align: PropTypes.string,
   children: PropTypes.node,
+}
+
+StringAxisSelector.defaultProps = {
+  isAggregated: false,
 }
