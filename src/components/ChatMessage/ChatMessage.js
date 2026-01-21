@@ -266,8 +266,8 @@ export default class ChatMessage extends React.Component {
   }
 
   updateDataConfig = (config) => {
-    // Ignore non-object updates (QueryOutput may call with `false`) to avoid storing a boolean
-    if (config && typeof config === 'object') {
+    // Accept only plain objects
+    if (config && typeof config === 'object' && !Array.isArray(config)) {
       this.setState({ dataConfig: config })
     }
   }

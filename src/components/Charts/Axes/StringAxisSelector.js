@@ -51,7 +51,16 @@ export default class StringAxisSelector extends React.Component {
 
       // canonical id may be `col.index` or positional `i`
       const colId = col.index ?? i
-      const originalIndexForCol = originalIndexMap.get(col.index === undefined ? col.display_name : String(col.index))
+      // Resolve original index: prefer matching by canonical index, but fall back to display_name when mismatched
+      let originalIndexForCol
+      if (col.index === undefined) {
+        originalIndexForCol = originalIndexMap.get(col.display_name)
+      } else {
+        originalIndexForCol = originalIndexMap.get(String(col.index))
+        if (originalIndexForCol === undefined && col.display_name) {
+          originalIndexForCol = originalIndexMap.get(col.display_name)
+        }
+      }
 
       const isOnNumberAxis =
         numberIndices.includes(colId) ||
