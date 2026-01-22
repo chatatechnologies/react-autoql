@@ -16,7 +16,6 @@ import {
   DAYJS_PRECISION_FORMATS,
   isDataLimited,
   formatElement,
-  MAX_CHART_ELEMENTS,
   getDataFormatting,
   COLUMN_TYPES,
   ColumnTypes,
@@ -1244,30 +1243,19 @@ export default class ChataTable extends React.Component {
     feFilters.forEach((f) => f?.column_index !== undefined && filteredIndices.add(String(f.column_index)))
     filters.forEach((f) => f?.field !== undefined && filteredIndices.add(String(f.field)))
 
-    const rowHeaderIndex = columnDefs?.[0]?.index
-    const groupDef = columnDefs?.find((d) => d?.columns?.length > 0)
-    const firstChild = groupDef?.columns?.[0]
-    const colDimensionIndex = firstChild?.origPivotColumn?.index
-    const measureIndex = firstChild?.origColumn?.index
+    // Get the first column's original table index
+    const firstColumnIndex = columnDefs?.[0]?.index
+    const isFirstColumnFiltered = firstColumnIndex !== undefined && filteredIndices.has(String(firstColumnIndex))
 
-    if (groupDef?.columns?.length && !firstChild?.origPivotColumn) {
-      console.warn('ChataTable: Pivot columns missing origPivotColumn - filter badges may not display correctly')
+    // Apply badge only to the first column if it's filtered
+    const firstColumn = allColumns[0]
+    if (firstColumn) {
+      firstColumn?.getElement?.()?.classList.toggle('is-filtered', isFirstColumnFiltered)
     }
 
-    const isRowFiltered = rowHeaderIndex !== undefined && filteredIndices.has(String(rowHeaderIndex))
-    const isColDimensionFiltered = colDimensionIndex !== undefined && filteredIndices.has(String(colDimensionIndex))
-    const isMeasureFiltered = measureIndex !== undefined && filteredIndices.has(String(measureIndex))
-
-    allColumns.forEach((column) => {
-      const def = column?.getDefinition?.() || {}
-      // Only show badge on row header (first pivot column), not on child columns
-      const isFiltered = def?.origPivotColumn === undefined && isRowFiltered
-
-      column?.getElement?.()?.classList.toggle('is-filtered', isFiltered)
-    })
-
-    container?.querySelectorAll('.tabulator-col-group')?.forEach((el) => {
-      el.classList.toggle('is-filtered', isMeasureFiltered)
+    // Remove badges from all other columns
+    allColumns.slice(1).forEach((column) => {
+      column?.getElement?.()?.classList.toggle('is-filtered', false)
     })
   }
 
