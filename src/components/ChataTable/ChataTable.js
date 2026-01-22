@@ -16,7 +16,6 @@ import {
   DAYJS_PRECISION_FORMATS,
   isDataLimited,
   formatElement,
-  MAX_CHART_ELEMENTS,
   getDataFormatting,
   COLUMN_TYPES,
   ColumnTypes,
@@ -1202,18 +1201,14 @@ export default class ChataTable extends React.Component {
 
       const filters = this.tableParams?.filter ?? []
       const filteredFields = new Set(filters.map((f) => f?.field).filter(Boolean))
-      const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
 
       if (!filteredFields.size) {
         allColumns.forEach((col) => col?.getElement?.()?.classList.remove('is-filtered'))
-        if (this.props.pivot) {
-          container?.querySelectorAll('.tabulator-col-group')?.forEach((g) => g.classList.remove('is-filtered'))
-        }
         return
       }
 
       if (this.props.pivot) {
-        this.setPivotFilterBadges(allColumns, filters, container)
+        this.setPivotFilterBadges(allColumns, filters)
       } else {
         this.setNonPivotFilterBadges(allColumns, filteredFields)
       }
@@ -1236,39 +1231,19 @@ export default class ChataTable extends React.Component {
     })
   }
 
-  setPivotFilterBadges = (allColumns, filters, container) => {
-    const columnDefs = this.getFilteredTabulatorColumnDefinitions()
-    const feFilters = this.props?.response?.data?.data?.fe_req?.filters || []
-
-    const filteredIndices = new Set()
-    feFilters.forEach((f) => f?.column_index !== undefined && filteredIndices.add(String(f.column_index)))
-    filters.forEach((f) => f?.field !== undefined && filteredIndices.add(String(f.field)))
-
-    const rowHeaderIndex = columnDefs?.[0]?.index
-    const groupDef = columnDefs?.find((d) => d?.columns?.length > 0)
-    const firstChild = groupDef?.columns?.[0]
-    const colDimensionIndex = firstChild?.origPivotColumn?.index
-    const measureIndex = firstChild?.origColumn?.index
-
-    if (groupDef?.columns?.length && !firstChild?.origPivotColumn) {
-      console.warn('ChataTable: Pivot columns missing origPivotColumn - filter badges may not display correctly')
-    }
-
-    const isRowFiltered = rowHeaderIndex !== undefined && filteredIndices.has(String(rowHeaderIndex))
-    const isColDimensionFiltered = colDimensionIndex !== undefined && filteredIndices.has(String(colDimensionIndex))
-    const isMeasureFiltered = measureIndex !== undefined && filteredIndices.has(String(measureIndex))
-
+  setPivotFilterBadges = (allColumns, filters) => {
+    // Remove all column badges for pivot tables
     allColumns.forEach((column) => {
-      const def = column?.getDefinition?.() || {}
-      const isChild = def?.origPivotColumn !== undefined
-      const isFiltered = isChild ? isColDimensionFiltered : isRowFiltered
-
-      column?.getElement?.()?.classList.toggle('is-filtered', isFiltered)
+      column?.getElement?.()?.classList.remove('is-filtered')
     })
 
-    container?.querySelectorAll('.tabulator-col-group')?.forEach((el) => {
-      el.classList.toggle('is-filtered', isMeasureFiltered)
-    })
+    // Add a class to the table container if any filters are applied
+    const container = document.getElementById(`react-autoql-table-container-${this.TABLE_ID}`)
+    const hasFilters = filters && filters.length > 0
+
+    if (container) {
+      container.classList.toggle('pivot-table-has-filters', hasFilters)
+    }
   }
 
   setFilters = async (newFilters) => {
@@ -1772,10 +1747,23 @@ export default class ChataTable extends React.Component {
     }
   }
 
-  renderTableRowWarning = () => {
-    // For pivot tables - render icon
+  renderTableWarnings = () => {
+    // For pivot tables - render warnings container with icons
     if (this.props.pivot) {
-      if ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited) {
+      // Check for filters from the original table (before pivot)
+      const feFilters = this.props.response?.data?.data?.fe_req?.filters || []
+      const initialFilters = this.props.initialTableParams?.filter || []
+      const hasFilters = feFilters.length > 0 || initialFilters.length > 0
+
+      const hasDataLimit =
+        (this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited
+
+      if (!hasFilters && !hasDataLimit) {
+        return null
+      }
+
+      let dataLimitTooltip
+      if (hasDataLimit) {
         const rowLimit = this.props.response?.data?.data?.row_limit
         const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
         const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
@@ -1786,24 +1774,42 @@ export default class ChataTable extends React.Component {
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 
-        let tooltipContent
-
         if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
-          tooltipContent = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
+          dataLimitTooltip = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
         } else if (this.props.pivotTableDataLimited) {
-          tooltipContent = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
+          dataLimitTooltip = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
         }
-
-        return (
-          <div
-            className='react-autoql-table-data-limit-icon'
-            data-tooltip-html={tooltipContent}
-            data-tooltip-id={this.props.tooltipID}
-          >
-            <Icon type='warning' />
-          </div>
-        )
       }
+
+      return (
+        <div className='react-autoql-table-warnings-container'>
+          {hasFilters && (
+            <div
+              className='react-autoql-table-filter-warning-icon'
+              data-tooltip-content='Filters from the original table are applied to this pivot view'
+              data-tooltip-id={this.props.tooltipID}
+            >
+              <Icon type='filter' showBadge={true} />
+            </div>
+          )}
+          {hasDataLimit && (
+            <div
+              className='react-autoql-table-data-limit-icon'
+              data-tooltip-html={dataLimitTooltip}
+              data-tooltip-id={this.props.tooltipID}
+            >
+              <Icon type='warning' />
+            </div>
+          )}
+        </div>
+      )
+    }
+    return null
+  }
+
+  renderTableRowWarning = () => {
+    // For regular (non-pivot) tables - render data limit warning
+    if (this.props.pivot) {
       return null
     }
 
@@ -2034,6 +2040,7 @@ export default class ChataTable extends React.Component {
             ${this.props.hidden ? 'hidden' : ''}
             ${isEmpty ? 'empty' : ''}`}
         >
+          {this.renderTableWarnings()}
           {this.renderTableRowWarning()}
           <div ref={(r) => (this.tabulatorContainer = r)} className='react-autoql-tabulator-container'>
             {!!this.props.response?.data?.data?.rows &&
