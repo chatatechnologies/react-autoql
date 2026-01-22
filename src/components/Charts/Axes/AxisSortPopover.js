@@ -65,20 +65,16 @@ export default class AxisSortPopover extends React.Component {
           >
             <ul className='axis-selector-content'>
               {sortOptions.map((option, idx) => {
-                const isActive = option.value === this.props.currentSort
-                const key = `axis-sort-option-${option.value ?? 'none'}-${idx}`
                 return (
-                  <li className='string-select-list-item' key={key}>
-                    <button
-                      type='button'
-                      className={`string-select-button ${isActive ? 'active' : ''}`}
-                      onClick={() => {
-                        this.props.closeSelector()
-                        this.props.onSortChange(option.value)
-                      }}
-                    >
-                      {option.label}
-                    </button>
+                  <li
+                    className={`string-select-list-item ${option.value === this.props.currentSort ? 'active' : ''}`}
+                    key={`axis-sort-option-${idx}`}
+                    onClick={() => {
+                      this.props.closeSelector()
+                      this.props.onSortChange(option.value)
+                    }}
+                  >
+                    {option.label}
                   </li>
                 )
               })}
