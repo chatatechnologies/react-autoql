@@ -1260,8 +1260,8 @@ export default class ChataTable extends React.Component {
 
     allColumns.forEach((column) => {
       const def = column?.getDefinition?.() || {}
-      const isChild = def?.origPivotColumn !== undefined
-      const isFiltered = isChild ? isColDimensionFiltered : isRowFiltered
+      // Only show badge on row header (first pivot column), not on child columns
+      const isFiltered = def?.origPivotColumn === undefined && isRowFiltered
 
       column?.getElement?.()?.classList.toggle('is-filtered', isFiltered)
     })
