@@ -2411,7 +2411,7 @@ export class QueryOutput extends React.Component {
   setFilterFunction = (col) => {
     // Provide a robust header filter for numeric columns to support operator prefixes
     // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
-    if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+    if (isColumnNumberType(col)) {
       // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
       const inSetCache = new Map()
       return (headerValue, rowValue, rowData, filterParams) => {
