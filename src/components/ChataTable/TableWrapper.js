@@ -23,7 +23,7 @@ export default class TableWrapper extends React.Component {
     this.defaultOptions = {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
       // renderHorizontal: 'virtual', // Todo: test this to see if it helps with performance
-      height: this.props.height || '100%',
+      height: this.props.height !== undefined && this.props.height !== false ? this.props.height : '100%',
       headerFilterLiveFilterDelay: 300,
       minHeight: 100,
       reactiveData: false,
@@ -65,6 +65,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
+    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
     isDrilldown: PropTypes.bool,
   }
 
@@ -83,6 +84,7 @@ export default class TableWrapper extends React.Component {
     onScrollVertical: () => {},
     pivot: false,
     scope: undefined,
+    height: undefined,
     isDrilldown: false,
   }
 
@@ -253,28 +255,11 @@ export default class TableWrapper extends React.Component {
   instantiateTabulator = () => {
     // Instantiate Tabulator when element is mounted
 
-    // If this is a pivot table, prefer passing data directly and avoid using ajaxRequestFunc/progressive loading
+    // Pivot tables now use ajaxRequestFunc with progressive loading like regular tables
     const isPivot = !!this.props.pivot
     const passedOptions = sanitizePivotOptions(this.props.options, isPivot)
 
-    // Ensure Tabulator uses local modes for pivot tables even if the global constant isn't available
-    if (isPivot) {
-      if (typeof LOCAL_OR_REMOTE !== 'undefined' && LOCAL_OR_REMOTE && 'LOCAL' in LOCAL_OR_REMOTE) {
-        passedOptions.sortMode = LOCAL_OR_REMOTE.LOCAL
-        passedOptions.filterMode = LOCAL_OR_REMOTE.LOCAL
-        passedOptions.paginationMode = LOCAL_OR_REMOTE.LOCAL
-      } else {
-        passedOptions.sortMode = 'local'
-        passedOptions.filterMode = 'local'
-        passedOptions.paginationMode = 'local'
-      }
-    }
-
-    const initialData = isPivot
-      ? _cloneDeep(this.props.data)
-      : passedOptions?.ajaxRequestFunc
-      ? []
-      : _cloneDeep(this.props.data)
+    const initialData = passedOptions?.ajaxRequestFunc ? [] : _cloneDeep(this.props.data)
 
     this.tabulator = new Tabulator(this.tableRef, {
       debugInvalidOptions: false,
@@ -289,7 +274,7 @@ export default class TableWrapper extends React.Component {
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
 
-      if (this.props.options?.ajaxRequestFunc && !this.props.pivot) {
+      if (this.props.options?.ajaxRequestFunc) {
         try {
           await this.tabulator.replaceData()
 
@@ -306,6 +291,7 @@ export default class TableWrapper extends React.Component {
     })
   }
 
+  // Temporarily block Tabulator redraws; callers must call `restoreRedraw()` (use try/finally).
   blockRedraw = () => {
     if (this.isInitialized) {
       this.redrawRestored = false
@@ -313,6 +299,7 @@ export default class TableWrapper extends React.Component {
     }
   }
 
+  // Restore Tabulator redraws if previously blocked (no-op if already enabled).
   restoreRedraw = () => {
     if (this.tabulator && this.isInitialized && !this.redrawRestored && this._isMounted) {
       this.redrawRestored = true
@@ -402,12 +389,8 @@ export default class TableWrapper extends React.Component {
 
     this.restoreRedraw()
 
-    // Remount pivot tables to prevent Tabulator loader/pagination state from duplicating rows
-    if (this.props.pivot) {
-      this.recreateTabulatorForPivot(data)
-      return Promise.resolve()
-    }
-
+    // Pivot tables now use ajaxRequestFunc with progressive loading like regular tables
+    // No need to recreate the tabulator - let ajaxRequestFunc handle data loading
     return this.tabulator?.setData(data)
   }
 

@@ -93,10 +93,13 @@ describe('PivotAxisSelector', () => {
       document.body.appendChild(tableContainer)
       document.body.appendChild(element)
 
-      // Mock getBoundingClientRect
+      // Mock getBoundingClientRect (provide left/top and zero width/height
+      // so the center equals left/top). Offsets are applied by the function.
       element.getBoundingClientRect = jest.fn(() => ({
-        bottom: 150,
         left: 200,
+        top: 100,
+        width: 0,
+        height: 0,
       }))
       tableContainer.getBoundingClientRect = jest.fn(() => ({
         top: 50,
@@ -105,9 +108,13 @@ describe('PivotAxisSelector', () => {
 
       const result = computePivotAxisSelectorLocation(element, tableContainer)
 
+      // New behavior: anchor at element center, placed just below the element
+      // with small GAP (4). With zero height/width this becomes:
+      // left = 200 - 100 + 0/2 = 100
+      // top = (top + height) - tableTop + GAP = 100 - 50 + 4 = 54
       expect(result).toEqual({
-        top: 100, // 150 - 50
-        left: 100, // 200 - 100
+        top: 54,
+        left: 100,
       })
 
       document.body.removeChild(element)
@@ -119,15 +126,20 @@ describe('PivotAxisSelector', () => {
       document.body.appendChild(element)
 
       element.getBoundingClientRect = jest.fn(() => ({
-        bottom: 150,
         left: 200,
+        top: 150,
+        width: 0,
+        height: 0,
       }))
 
       const result = computePivotAxisSelectorLocation(element, null)
 
+      // With no tableContainer, defaults to 0/0. With zero height/width:
+      // left = 200 - 0 + 0/2 = 200
+      // top = 150 - 0 + 4 = 154
       expect(result).toEqual({
-        top: 150, // 150 - 0
-        left: 200, // 200 - 0
+        top: 154,
+        left: 200,
       })
 
       document.body.removeChild(element)
@@ -138,14 +150,19 @@ describe('PivotAxisSelector', () => {
       document.body.appendChild(element)
 
       element.getBoundingClientRect = jest.fn(() => ({
-        bottom: 100,
         left: 150,
+        top: 100,
+        width: 0,
+        height: 0,
       }))
 
       const result = computePivotAxisSelectorLocation(element, undefined)
 
+      // With undefined tableContainer defaulting to 0/0 and zero height/width:
+      // left = 150 - 0 + 0/2 = 150
+      // top = 100 - 0 + 4 = 104
       expect(result).toEqual({
-        top: 100,
+        top: 104,
         left: 150,
       })
 

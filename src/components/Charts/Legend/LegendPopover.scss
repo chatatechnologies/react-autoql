@@ -1,0 +1,208 @@
+.legend-popover-wrapper {
+  min-width: 200px;
+  max-width: 300px;
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.legend-popover-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-primary);
+
+  .legend-select-all-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+
+    .legend-select-all-checkbox {
+      flex-shrink: 0;
+    }
+
+    .legend-select-all-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--react-autoql-text-color-primary);
+    }
+  }
+
+  .legend-popover-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .legend-search-wrapper {
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .legend-search-input {
+    flex: 1;
+    padding: 5px 8px;
+    padding-right: 28px; // Make room for clear button
+    font-size: 11px;
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 3px;
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+
+    &::placeholder {
+      color: var(--react-autoql-text-color-disabled);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--react-autoql-accent-color);
+    }
+  }
+
+  .legend-search-clear {
+    position: absolute;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--react-autoql-text-color-disabled);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--react-autoql-hover-color);
+      color: var(--react-autoql-text-color-primary);
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  .legend-sort-button {
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    font-size: 16px;
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 3px;
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--react-autoql-hover-color);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--react-autoql-accent-color);
+    }
+
+    &.asc,
+    &.desc {
+      background: var(--react-autoql-accent-color);
+      color: white;
+      border-color: var(--react-autoql-accent-color);
+    }
+  }
+}
+
+.legend-popover-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-primary);
+  justify-content: flex-end;
+}
+
+.legend-popover-button {
+  padding: 6px 12px;
+  font-size: 11px;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 3px;
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--react-autoql-hover-color);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &.primary {
+    background: var(--react-autoql-accent-color);
+    color: white;
+    border-color: var(--react-autoql-accent-color);
+
+    &:hover:not(:disabled) {
+      background: var(--react-autoql-accent-color-dark, var(--react-autoql-accent-color));
+    }
+  }
+
+  &.secondary {
+    // Keep default styles
+  }
+}
+
+.legend-popover-content {
+  padding: 10px 15px;
+
+  .legend-no-results {
+    padding: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--react-autoql-text-color-disabled);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    cursor: pointer;
+    gap: 8px;
+
+    &.hidden {
+      opacity: 0.4;
+    }
+
+    .legend-item-checkbox {
+      flex-shrink: 0;
+    }
+
+    .legend-item-label {
+      flex: 1;
+      font-size: 11px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+  }
+}
+

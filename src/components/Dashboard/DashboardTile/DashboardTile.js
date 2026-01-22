@@ -55,6 +55,25 @@ export class DashboardTile extends React.Component {
     this.paramsToSet = {}
     this.callbackArray = []
 
+    // Store original saved tile config from DB to restore after errors
+    this.savedTileConfig = {}
+    this.configKeys = [
+      'displayType',
+      'secondDisplayType',
+      'dataConfig',
+      'secondDataConfig',
+      'aggConfig',
+      'secondAggConfig',
+      'columns',
+      'secondColumns',
+      'tableFilters',
+      'secondTableFilters',
+      'axisSorts',
+      'secondAxisSorts',
+      'networkColumnConfig',
+      'secondNetworkColumnConfig',
+    ]
+
     const tile = props.tile
 
     // ----- Required for backwards compatibility after changing the agg types to enums ----
@@ -116,7 +135,48 @@ export class DashboardTile extends React.Component {
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
 
-    tile: PropTypes.shape({}).isRequired,
+    tile: PropTypes.shape({
+      // common tile fields used throughout the component
+      i: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+      h: PropTypes.number,
+      query: PropTypes.string,
+      secondQuery: PropTypes.string,
+      title: PropTypes.string,
+      displayType: PropTypes.string,
+      secondDisplayType: PropTypes.string,
+      pageSize: PropTypes.number,
+      secondPageSize: PropTypes.number,
+      bucketSize: PropTypes.number,
+      secondBucketSize: PropTypes.number,
+      columns: PropTypes.array,
+      secondColumns: PropTypes.array,
+      columnSelects: PropTypes.array,
+      secondColumnSelects: PropTypes.array,
+      dataConfig: PropTypes.object,
+      secondDataConfig: PropTypes.object,
+      aggConfig: PropTypes.object,
+      secondAggConfig: PropTypes.object,
+      tableFilters: PropTypes.array,
+      secondTableFilters: PropTypes.array,
+      filters: PropTypes.array,
+      secondFilters: PropTypes.array,
+      orders: PropTypes.array,
+      secondOrders: PropTypes.array,
+      axisSorts: PropTypes.array,
+      secondAxisSorts: PropTypes.array,
+      networkColumnConfig: PropTypes.any,
+      secondNetworkColumnConfig: PropTypes.any,
+      chartControls: PropTypes.object,
+      secondChartControls: PropTypes.object,
+      legendFilterConfig: PropTypes.any,
+      queryResponse: PropTypes.shape({}),
+      secondQueryResponse: PropTypes.shape({}),
+      defaultSelectedSuggestion: PropTypes.string,
+      secondDefaultSelectedSuggestion: PropTypes.string,
+      queryValidationSelections: PropTypes.any,
+      secondQueryValidationSelections: PropTypes.any,
+      splitView: PropTypes.bool,
+    }).isRequired,
     isEditing: PropTypes.bool,
     deleteTile: PropTypes.func,
     dataPageSize: PropTypes.number,
@@ -170,6 +230,8 @@ export class DashboardTile extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    // Save original tile config from DB when component mounts
+    this.saveOriginalTileConfig(this.props.tile)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -296,17 +358,139 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  // Helper function to detect error responses (matches QueryOutput.hasError logic)
+  hasError = (response) => {
+    try {
+      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
+      if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
+        return false
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    return true
+  }
+
+  // Helper to check if dataConfig has valid values
+  hasValidDataConfig = (dataConfig) => {
+    return dataConfig && (dataConfig.tableConfig != null || dataConfig.pivotTableConfig != null)
+  }
+
+  // Helper to filter out null/undefined values from config object
+  filterValidConfig = (config) => {
+    const filtered = {}
+
+    this.configKeys.forEach((key) => {
+      const value = config[key]
+      // For dataConfig/secondDataConfig, check if it has valid values
+      if (key === 'dataConfig' || key === 'secondDataConfig') {
+        if (this.hasValidDataConfig(value)) {
+          filtered[key] = value
+        }
+      }
+      // For tableFilters/secondTableFilters, allow empty arrays but not null/undefined
+      else if (key === 'tableFilters' || key === 'secondTableFilters') {
+        if (value != null) {
+          filtered[key] = value
+        }
+      }
+      // For other fields, only include if truthy
+      else if (value) {
+        filtered[key] = value
+      }
+    })
+
+    return filtered
+  }
+
+  // Save original tile config from DB for restoration after errors
+  saveOriginalTileConfig = (tile) => {
+    if (!tile) return
+
+    // Only save if we have valid saved data (not just error responses)
+    const hasValidResponse = tile.queryResponse && !this.hasError(tile.queryResponse)
+    const hasSavedConfig = tile.displayType || tile.dataConfig || tile.aggConfig
+
+    if (hasValidResponse || hasSavedConfig) {
+      this.savedTileConfig = {
+        displayType: tile.displayType,
+        secondDisplayType: tile.secondDisplayType,
+        dataConfig: tile.dataConfig,
+        secondDataConfig: tile.secondDataConfig,
+        aggConfig: tile.aggConfig,
+        secondAggConfig: tile.secondAggConfig,
+        columns: tile.columns,
+        secondColumns: tile.secondColumns,
+        tableFilters: tile.tableFilters,
+        secondTableFilters: tile.secondTableFilters,
+        axisSorts: tile.axisSorts,
+        secondAxisSorts: tile.secondAxisSorts,
+        networkColumnConfig: tile.networkColumnConfig,
+        secondNetworkColumnConfig: tile.secondNetworkColumnConfig,
+      }
+    }
+  }
+
+  // Restore saved tile config after error
+  restoreSavedTileConfig = () => {
+    const configToRestore = this.filterValidConfig(this.savedTileConfig)
+    if (Object.keys(configToRestore).length > 0) {
+      this.debouncedSetParamsForTile(configToRestore)
+    }
+  }
+
   endTopQuery = ({ response }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+      const isError = this.hasError(response)
+
+      // Build params to set - always include queryResponse
+      const paramsToSet = {
+        queryResponse: response,
+        defaultSelectedSuggestion: undefined,
+      }
+
+      if (isError) {
+        // If there's an error, restore the saved tile config
+        // Merge restoration directly into the same debounced call to avoid timing issues
+        Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
+      } else {
+        // If successful, update saved config with current tile config (preserve user's saved settings)
+        const currentTile = this.props.tile
+        if (currentTile) {
+          // Only update dataConfig if it has valid values (not just an object with undefined properties)
+          const hasValidCurrentDataConfig = this.hasValidDataConfig(currentTile.dataConfig)
+          const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
+
+          this.savedTileConfig = {
+            ...this.savedTileConfig,
+            displayType: currentTile.displayType || this.savedTileConfig.displayType,
+            secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+            dataConfig: hasValidCurrentDataConfig ? currentTile.dataConfig : this.savedTileConfig.dataConfig,
+            secondDataConfig: hasValidSecondDataConfig
+              ? currentTile.secondDataConfig
+              : this.savedTileConfig.secondDataConfig,
+            aggConfig: currentTile.aggConfig || this.savedTileConfig.aggConfig,
+            secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
+            columns: currentTile.columns || this.savedTileConfig.columns,
+            secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
+            tableFilters:
+              currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
+            secondTableFilters:
+              currentTile.secondTableFilters != null
+                ? currentTile.secondTableFilters
+                : this.savedTileConfig.secondTableFilters,
+            axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
+            secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
+            networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
+            secondNetworkColumnConfig:
+              currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
+          }
+        }
+      }
+
       // Update component key after getting new response
       // so QueryOutput completely resets
-      this.debouncedSetParamsForTile(
-        {
-          queryResponse: response,
-          defaultSelectedSuggestion: undefined,
-        },
-        this.setTopExecuted,
-      )
+      this.debouncedSetParamsForTile(paramsToSet, this.setTopExecuted)
       return response
     } else {
       return Promise.reject(REQUEST_CANCELLED_ERROR)
@@ -324,13 +508,52 @@ export class DashboardTile extends React.Component {
 
   endBottomQuery = ({ response }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
-      this.debouncedSetParamsForTile(
-        {
-          secondQueryResponse: response,
-          secondDefaultSelectedSuggestion: undefined,
-        },
-        this.setBottomExecuted,
-      )
+      const isError = this.hasError(response)
+
+      // Build params to set - always include secondQueryResponse
+      const paramsToSet = {
+        secondQueryResponse: response,
+        secondDefaultSelectedSuggestion: undefined,
+      }
+
+      if (isError) {
+        // If there's an error, restore the saved tile config for second query
+        // Only restore second query specific configs
+        const secondQueryConfig = this.filterValidConfig({
+          secondDisplayType: this.savedTileConfig.secondDisplayType,
+          secondDataConfig: this.savedTileConfig.secondDataConfig,
+          secondAggConfig: this.savedTileConfig.secondAggConfig,
+          secondColumns: this.savedTileConfig.secondColumns,
+          secondTableFilters: this.savedTileConfig.secondTableFilters,
+          secondAxisSorts: this.savedTileConfig.secondAxisSorts,
+          secondNetworkColumnConfig: this.savedTileConfig.secondNetworkColumnConfig,
+        })
+        Object.assign(paramsToSet, secondQueryConfig)
+      } else {
+        // If successful, update saved config with current tile config for second query
+        const currentTile = this.props.tile
+        if (currentTile) {
+          const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
+          this.savedTileConfig = {
+            ...this.savedTileConfig,
+            secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+            secondDataConfig: hasValidSecondDataConfig
+              ? currentTile.secondDataConfig
+              : this.savedTileConfig.secondDataConfig,
+            secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
+            secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
+            secondTableFilters:
+              currentTile.secondTableFilters != null
+                ? currentTile.secondTableFilters
+                : this.savedTileConfig.secondTableFilters,
+            secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
+            secondNetworkColumnConfig:
+              currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
+          }
+        }
+      }
+
+      this.debouncedSetParamsForTile(paramsToSet, this.setBottomExecuted)
       return response
     } else {
       return Promise.reject(REQUEST_CANCELLED_ERROR)
@@ -370,7 +593,9 @@ export class DashboardTile extends React.Component {
         tableFilters: currentFilter,
         // Hardcode this for now until we change the filter lock blacklist to a whitelist
         // mergeSources(this.props.source, source),
-        source: 'dashboards.user',
+        source: this.props.dashboardId 
+          ? `dashboards.${this.props.dashboardId}` 
+          : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
         cancelToken,
@@ -408,16 +633,38 @@ export class DashboardTile extends React.Component {
     const queryValidationSelections =
       userSelection || (queryChanged ? undefined : this.props.tile?.queryValidationSelections)
 
+    // Use saved config as fallback if props haven't been updated yet (e.g., after error restoration)
+    // Check if dataConfig actually has valid values (not just an object with undefined properties)
+    const propsDataConfig = this.props.tile.dataConfig
+    const hasValidPropsDataConfig =
+      propsDataConfig && (propsDataConfig.tableConfig != null || propsDataConfig.pivotTableConfig != null)
+    const dataConfig = queryChanged
+      ? undefined
+      : hasValidPropsDataConfig
+      ? propsDataConfig
+      : this.savedTileConfig.dataConfig
+
+    const columns = queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns
+    const tableFilters = queryChanged ? undefined : this.props.tile.tableFilters || this.savedTileConfig.tableFilters
+
     // New query is running, reset temporary state fields
-    this.debouncedSetParamsForTile({
+    // Only include dataConfig if it has valid values
+    const paramsToSet = {
       query,
-      dataConfig: queryChanged ? undefined : this.props.tile.dataConfig,
       skipQueryValidation: skipValidation,
-      columns: queryChanged ? undefined : this.props.tile.columns,
+      columns,
       defaultSelectedSuggestion: undefined,
       queryValidationSelections,
-      tableFilters: queryChanged ? undefined : this.props.tile.tableFilters,
-    })
+    }
+
+    if (this.hasValidDataConfig(dataConfig)) {
+      paramsToSet.dataConfig = dataConfig
+    }
+    if (tableFilters != null) {
+      paramsToSet.tableFilters = tableFilters
+    }
+
+    this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
       query,
@@ -453,16 +700,25 @@ export class DashboardTile extends React.Component {
     const queryValidationSelections =
       userSelection || (queryChanged ? undefined : this.props.tile?.secondQueryValidationSelections)
 
+    // Use saved config as fallback if props haven't been updated yet (e.g., after error restoration)
+    const secondDataConfig = queryChanged
+      ? undefined
+      : this.props.tile.secondDataConfig || this.savedTileConfig.secondDataConfig
+    const secondColumns = queryChanged ? undefined : this.props.tile.secondColumns || this.savedTileConfig.secondColumns
+    const secondTableFilters = queryChanged
+      ? undefined
+      : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters
+
     // New query is running, reset temporary state fields
     this.debouncedSetParamsForTile({
       secondQuery: query,
-      secondDataConfig: queryChanged ? undefined : this.props.tile.secondDataConfig,
+      secondDataConfig,
       secondskipQueryValidation: skipValidation,
-      secondColumns: queryChanged ? undefined : this.props.tile.secondColumns,
+      secondColumns,
       secondCustomColumns: queryChanged ? undefined : this.props.tile.secondCustomColumns,
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
-      secondTableFilters: queryChanged ? undefined : this.props.tile.secondTableFilters,
+      secondTableFilters,
     })
 
     return this.processQuery({
@@ -802,6 +1058,9 @@ export class DashboardTile extends React.Component {
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
+  onLegendFilterChange = (legendFilterConfig) => this.debouncedSetParamsForTile({ legendFilterConfig })
+  onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
+  onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
 
   onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
 
@@ -1194,7 +1453,9 @@ export class DashboardTile extends React.Component {
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
-        source='dashboards.user'
+        source={this.props.dashboardId 
+          ? `dashboards.${this.props.dashboardId}` 
+          : 'dashboards.user'}
         scope='dashboards'
         autoHeight={false}
         height='100%'
@@ -1278,6 +1539,10 @@ export class DashboardTile extends React.Component {
         bucketSize: this.props.tile.bucketSize,
         initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
         onNetworkColumnChange: this.onNetworkColumnChange,
+        legendFilterConfig: this.props.tile.legendFilterConfig,
+        onLegendFilterChange: this.onLegendFilterChange,
+        initialAxisSorts: this.props.tile.axisSorts,
+        onAxisSortChange: this.onAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {
@@ -1375,6 +1640,9 @@ export class DashboardTile extends React.Component {
         onBucketSizeChange: this.onSecondBucketSizeChange,
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
+        initialNetworkColumnConfig: this.props.tile.secondNetworkColumnConfig,
+        initialAxisSorts: this.props.tile.secondAxisSorts,
+        onAxisSortChange: this.onSecondAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: (() => {
