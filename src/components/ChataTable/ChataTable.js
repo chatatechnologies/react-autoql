@@ -1750,7 +1750,11 @@ export default class ChataTable extends React.Component {
   renderTableWarnings = () => {
     // For pivot tables - render warnings container with icons
     if (this.props.pivot) {
-      const hasFilters = this.tableParams?.filter?.length > 0
+      // Check for filters from the original table (before pivot)
+      const feFilters = this.props.response?.data?.data?.fe_req?.filters || []
+      const initialFilters = this.props.initialTableParams?.filter || []
+      const hasFilters = feFilters.length > 0 || initialFilters.length > 0
+
       const hasDataLimit =
         (this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited
 
