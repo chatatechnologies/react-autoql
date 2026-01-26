@@ -1388,7 +1388,7 @@ export default class RuleSimple extends React.Component {
                 }
 
                 let dateText
-                if (filter.column_type !== 'AMOUNT') {
+                if (filter.column_type !== ColumnTypes.DATE) {
                   dateText = this.getFormattedDate(filter)
                 }
 

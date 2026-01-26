@@ -1,0 +1,172 @@
+import React from 'react'
+import { shallow } from 'enzyme'
+
+import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
+
+describe('PivotAxisSelector', () => {
+  const mockOptions = [
+    { value: 0, label: 'Option 1' },
+    { value: 1, label: 'Option 2' },
+    { value: 2, label: 'Option 3' },
+  ]
+
+  describe('PivotAxisSelector component', () => {
+    test('renders null when options is empty', () => {
+      const wrapper = shallow(
+        <PivotAxisSelector
+          isOpen={true}
+          options={[]}
+          activeIndex={0}
+          location={{ top: 0, left: 0 }}
+          onClose={jest.fn()}
+          onChange={jest.fn()}
+        />,
+      )
+      expect(wrapper.type()).toBe(null)
+    })
+
+    test('renders null when options is undefined', () => {
+      const wrapper = shallow(
+        <PivotAxisSelector
+          isOpen={true}
+          options={undefined}
+          activeIndex={0}
+          location={{ top: 0, left: 0 }}
+          onClose={jest.fn()}
+          onChange={jest.fn()}
+        />,
+      )
+      expect(wrapper.type()).toBe(null)
+    })
+
+    test('renders component when options are provided', () => {
+      const wrapper = shallow(
+        <PivotAxisSelector
+          isOpen={true}
+          options={mockOptions}
+          activeIndex={0}
+          location={{ top: 100, left: 200 }}
+          onClose={jest.fn()}
+          onChange={jest.fn()}
+        />,
+      )
+      // Component should render (not return null)
+      expect(wrapper.type()).not.toBe(null)
+    })
+
+    test('has correct default props', () => {
+      expect(PivotAxisSelector.defaultProps).toEqual({
+        isOpen: false,
+        options: [],
+        activeIndex: undefined,
+        location: null,
+        onClose: expect.any(Function),
+        onChange: expect.any(Function),
+      })
+    })
+
+    test('has correct propTypes defined', () => {
+      expect(PivotAxisSelector.propTypes).toBeDefined()
+      expect(PivotAxisSelector.propTypes.isOpen).toBeDefined()
+      expect(PivotAxisSelector.propTypes.options).toBeDefined()
+      expect(PivotAxisSelector.propTypes.activeIndex).toBeDefined()
+      expect(PivotAxisSelector.propTypes.location).toBeDefined()
+      expect(PivotAxisSelector.propTypes.onClose).toBeDefined()
+      expect(PivotAxisSelector.propTypes.onChange).toBeDefined()
+    })
+  })
+
+  describe('computePivotAxisSelectorLocation', () => {
+    test('returns null when element is null', () => {
+      const result = computePivotAxisSelectorLocation(null, document.body)
+      expect(result).toBe(null)
+    })
+
+    test('returns null when element is undefined', () => {
+      const result = computePivotAxisSelectorLocation(undefined, document.body)
+      expect(result).toBe(null)
+    })
+
+    test('computes location relative to table container', () => {
+      const element = document.createElement('div')
+      const tableContainer = document.createElement('div')
+      document.body.appendChild(tableContainer)
+      document.body.appendChild(element)
+
+      // Mock getBoundingClientRect (provide left/top and zero width/height
+      // so the center equals left/top). Offsets are applied by the function.
+      element.getBoundingClientRect = jest.fn(() => ({
+        left: 200,
+        top: 100,
+        width: 0,
+        height: 0,
+      }))
+      tableContainer.getBoundingClientRect = jest.fn(() => ({
+        top: 50,
+        left: 100,
+      }))
+
+      const result = computePivotAxisSelectorLocation(element, tableContainer)
+
+      // New behavior: anchor at element center, placed just below the element
+      // with small GAP (4). With zero height/width this becomes:
+      // left = 200 - 100 + 0/2 = 100
+      // top = (top + height) - tableTop + GAP = 100 - 50 + 4 = 54
+      expect(result).toEqual({
+        top: 54,
+        left: 100,
+      })
+
+      document.body.removeChild(element)
+      document.body.removeChild(tableContainer)
+    })
+
+    test('uses default table container position when tableContainer is null', () => {
+      const element = document.createElement('div')
+      document.body.appendChild(element)
+
+      element.getBoundingClientRect = jest.fn(() => ({
+        left: 200,
+        top: 150,
+        width: 0,
+        height: 0,
+      }))
+
+      const result = computePivotAxisSelectorLocation(element, null)
+
+      // With no tableContainer, defaults to 0/0. With zero height/width:
+      // left = 200 - 0 + 0/2 = 200
+      // top = 150 - 0 + 4 = 154
+      expect(result).toEqual({
+        top: 154,
+        left: 200,
+      })
+
+      document.body.removeChild(element)
+    })
+
+    test('uses default table container position when tableContainer is undefined', () => {
+      const element = document.createElement('div')
+      document.body.appendChild(element)
+
+      element.getBoundingClientRect = jest.fn(() => ({
+        left: 150,
+        top: 100,
+        width: 0,
+        height: 0,
+      }))
+
+      const result = computePivotAxisSelectorLocation(element, undefined)
+
+      // With undefined tableContainer defaulting to 0/0 and zero height/width:
+      // left = 150 - 0 + 0/2 = 150
+      // top = 100 - 0 + 4 = 104
+      expect(result).toEqual({
+        top: 104,
+        left: 150,
+      })
+
+      document.body.removeChild(element)
+    })
+  })
+})

@@ -67,6 +67,7 @@ export default class DataExplorer extends React.Component {
     inputPlaceholder: PropTypes.string,
     introMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     enableQuerySuggestions: PropTypes.bool,
+    disableColumnSelection: PropTypes.bool,
 
     executeQuery: PropTypes.func,
     isSmallScreen: PropTypes.bool,
@@ -79,6 +80,7 @@ export default class DataExplorer extends React.Component {
     inputPlaceholder: undefined,
     introMessage: undefined,
     enableQuerySuggestions: true,
+    disableColumnSelection: false,
     executeQuery: () => {},
     isSmallScreen: false,
   }
@@ -267,6 +269,7 @@ export default class DataExplorer extends React.Component {
         data={this.state.dataPreview}
         subject={this.getSubjectObject(context)}
         selectedColumns={this.state.selectedColumns}
+        disableColumnSelection={this.props.disableColumnSelection}
         onIsCollapsedChange={(isCollapsed) => {
           this.setState({
             isDataPreviewCollapsed: isCollapsed,
@@ -425,16 +428,22 @@ export default class DataExplorer extends React.Component {
 
     return (
       <div className='data-explorer-section data-preview-section'>
-        <div className='react-autoql-input-label'>
-          Select additional fields of interest from <em>"{this.state.selectedSubject?.displayName}"</em> to generate
-          more queries.
-        </div>
+        {!this.props.disableColumnSelection && (
+          <div className='react-autoql-input-label'>
+            Select additional fields of interest from <em>"{this.state.selectedSubject?.displayName}"</em> to generate
+            more queries.
+          </div>
+        )}
         {this.getDataPreview({ subject: this.state.selectedSubject })}
       </div>
     )
   }
 
   renderFieldSelector = () => {
+    if (this.props.disableColumnSelection) {
+      return null
+    }
+
     const columns = this.state.dataPreview?.data?.data?.columns
 
     return (
@@ -584,6 +593,7 @@ export default class DataExplorer extends React.Component {
             dataExplorerRef={this.dataExplorerPage}
             onClearInputClick={this.resetState}
             tooltipID={this.props.tooltipID}
+            disableColumnSelection={this.props.disableColumnSelection}
           />
           {this.renderDataExplorerContent()}
         </ErrorBoundary>

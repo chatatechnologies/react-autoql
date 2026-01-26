@@ -35,6 +35,7 @@ export default class SelectableTable extends React.Component {
     showEndOfPreviewMessage: PropTypes.bool,
     showTooltips: PropTypes.bool,
     disableCheckboxes: PropTypes.bool,
+    disableColumnSelection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -49,6 +50,7 @@ export default class SelectableTable extends React.Component {
     showEndOfPreviewMessage: true,
     showTooltips: true,
     disableCheckboxes: false,
+    disableColumnSelection: false,
   }
 
   componentDidMount = () => {
@@ -66,7 +68,7 @@ export default class SelectableTable extends React.Component {
         >
           {column?.display_name}
         </span>
-        {!this.props.disableCheckboxes && (
+        {!this.props.disableCheckboxes && !this.props.disableColumnSelection && (
           <div className='checkbox-icon-wrapper'>
             <Checkbox
               disabled={this.props.disabledColumns.includes(i)}
@@ -246,9 +248,11 @@ export default class SelectableTable extends React.Component {
                             this.props.selectedColumns.includes(i)
                               ? ' selectable-table-column-selected'
                               : ' selectable-table-column-unselected'
-                          }${isDisabled ? ' selectable-table-column-disabled' : ''}`}
-                          onClick={() => this.onColumnHeaderClick(i)}
-                          onMouseOver={(e) => this.onMouseOverColumn(e, i)}
+                          }${isDisabled ? ' selectable-table-column-disabled' : ''}${
+                            this.props.disableColumnSelection ? ' selectable-table-column-selection-disabled' : ''
+                          }`}
+                          onClick={() => !this.props.disableColumnSelection && this.onColumnHeaderClick(i)}
+                          onMouseOver={(e) => !this.props.disableColumnSelection && this.onMouseOverColumn(e, i)}
                         >
                           {this.formatColumnHeader(col, i)}
                         </th>
@@ -269,9 +273,11 @@ export default class SelectableTable extends React.Component {
                                 this.props.selectedColumns.includes(j)
                                   ? 'selectable-table-cell-selected'
                                   : 'selectable-table-cell-unselected'
-                              } cell-${j}${isDisabled ? ' selectable-table-cell-disabled' : ''}`}
-                              onClick={() => this.onColumnHeaderClick(j)}
-                              onMouseOver={(e) => this.onMouseOverColumn(e, j)}
+                              } cell-${j}${isDisabled ? ' selectable-table-cell-disabled' : ''}${
+                                this.props.disableColumnSelection ? ' selectable-table-cell-selection-disabled' : ''
+                              }`}
+                              onClick={() => !this.props.disableColumnSelection && this.onColumnHeaderClick(j)}
+                              onMouseOver={(e) => !this.props.disableColumnSelection && this.onMouseOverColumn(e, j)}
                               key={`cell-${j}`}
                             >
                               {this.formatCell({ cell, column, config })}

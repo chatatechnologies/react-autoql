@@ -21,7 +21,7 @@ export default class HistogramColumns extends Component {
         name: this.props.columns[this.props.numberColumnIndex]?.name,
         value: `${x0},${x1}`,
         operator: 'between',
-        column_type: 'AMOUNT',
+        column_type: this.props.columns[this.props.numberColumnIndex]?.type,
       },
     })
 

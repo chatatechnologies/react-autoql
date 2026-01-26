@@ -19,6 +19,7 @@ g.legendOrdinal tspan {
 
     &:hover {
       stroke: var(--react-autoql-accent-color) !important;
+      stroke-width: 1px !important;
     }
   }
 }
@@ -34,6 +35,13 @@ g.legendOrdinal tspan {
 
 .react-autoql-axis-selector-arrow {
   opacity: 1 !important;
+}
+
+.axis-sort-icon {
+  opacity: 1 !important;
+  cursor: pointer;
+  pointer-events: all;
+  font-weight: 700;
 }
 
 .drilldown-info-icon,

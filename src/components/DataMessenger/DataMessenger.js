@@ -141,6 +141,7 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
+    disableColumnSelectionForDataExplorer: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -205,6 +206,7 @@ export class DataMessenger extends React.Component {
     enableQueryInputTopics: true,
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
+    disableColumnSelectionForDataExplorer: false,
     setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},
@@ -905,6 +907,7 @@ export class DataMessenger extends React.Component {
           tooltipID={this.TOOLTIP_ID}
           scope={this.props.scope}
           enableQuerySuggestions={this.props.enableQuerySuggestions}
+          disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
           executeQuery={(queryRequestParams) => {
             if (isMobile) {
               this.props.setMobileActivePage('data-messenger')

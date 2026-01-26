@@ -183,28 +183,101 @@
     &.expanded {
       position: relative;
       min-height: 70px;
-      max-height: 550px;
+      height: auto; // Auto-size based on content
+      max-height: 450px; // Cap at 450px
+      overflow: hidden; // Don't add scrolling here - let QueryOutput handle it
+      display: flex;
+      flex-direction: column;
+
+      // Ensure nested containers respect flexbox height constraints
+      .react-autoql-notification-content-container {
+        flex: 1 1 0%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .react-autoql-notification-data-container {
+        flex: 1 1 0%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .react-autoql-notification-chart-container {
+        flex: 1 1 0%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
 
       .react-autoql-notification-query-data-container {
-        flex: 1;
-        visibility: visible;
-        position: relative;
-        opacity: 1;
+        flex: 1 1 0%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      // Target QueryOutput's response content container
+      .react-autoql-response-content-container {
+        flex: 1 1 0%;
+        min-height: 0;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        &.table {
+          overflow-y: auto;
+        }
+      }
+
+      // Target table container specifically
+      .react-autoql-table-container {
+        flex: 1 1 0%;
+        min-height: 0;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      // Target tabulator container specifically
+      .react-autoql-tabulator-container {
+        flex: 1 1 0%;
+        min-height: 0;
+        max-height: 100%;
         overflow: hidden;
         display: flex;
+        flex-direction: column;
+      }
 
-        .react-autoql-response-content-container {
-          // max-height: 300px !important;
-          flex: 1;
-          height: 45vh;
-          max-height: 100%;
-          &.non-table-non-chart {
-            height: unset;
-          }
-          .react-autoql-table-container .react-autoql-table.tabulator {
-            padding-bottom: 5px;
-          }
-        }
+      // Target the actual Tabulator table element
+      .react-autoql-table.tabulator {
+        flex: 1 1 0%;
+        min-height: 0;
+        max-height: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      // Ensure header is visible (flex-shrink: 0 to prevent it from shrinking)
+      .tabulator-header {
+        flex-shrink: 0;
+      }
+
+      // Target tabulator-tableholder which is the scrollable container
+      // With flexbox, it will automatically take remaining space after the header
+      .tabulator-tableholder {
+        flex: 1 1 0%;
+        min-height: 0;
+        overflow: auto;
       }
     }
 
@@ -287,13 +360,6 @@
         padding: 10px 10px 10px 10px;
         overflow: hidden;
       }
-    }
-    .react-autoql-notification-chart-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 10px 10px 0px 10px;
-      overflow: hidden;
     }
 
     .react-autoql-table-container {

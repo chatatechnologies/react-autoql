@@ -4,6 +4,9 @@ import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { DataMessenger } from './DataMessenger'
 import responseTestCases from '../../../test/responseTestCases'
 
+// Prevent react-tooltip from scheduling MutationObservers during tests
+jest.mock('react-tooltip', () => ({ Tooltip: () => null, __esModule: true }))
+
 const defaultProps = DataMessenger.defaultProps
 
 const setup = (props = {}, state = null) => {
@@ -97,12 +100,34 @@ describe('props', () => {
 })
 
 describe('Suggestion query response flow', () => {
-  const messengerComponent = mount(<DataMessenger />)
-  const chatContent = findByTestAttr(messengerComponent, 'data-messenger-chat-content')
-  const dmInstance = messengerComponent.instance()
-  const chatContentInstance = chatContent.instance()
-  jest.spyOn(chatContentInstance, 'addRequestMessage')
-  var suggestionMessageOriginal
+  let messengerComponent
+  let chatContent
+  let dmInstance
+  let chatContentInstance
+  let suggestionMessageOriginal
+
+  // Stub network calls that may run on mount to avoid async errors
+  const originalFetch = globalThis.fetch
+  beforeAll(() => {
+    globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    messengerComponent = mount(<DataMessenger />)
+    chatContent = findByTestAttr(messengerComponent, 'data-messenger-chat-content')
+    dmInstance = messengerComponent.instance()
+    chatContentInstance = chatContent.instance()
+    jest.spyOn(chatContentInstance, 'addRequestMessage')
+  })
+
+  afterAll(() => {
+    try {
+      if (messengerComponent && typeof messengerComponent.unmount === 'function') {
+        messengerComponent.unmount()
+      }
+    } catch (e) {
+      // swallow unmount errors in CI environment
+    }
+    jest.restoreAllMocks()
+    globalThis.fetch = originalFetch
+  })
 
   describe('handle click', () => {
     test('drawer renders closed by default', () => {

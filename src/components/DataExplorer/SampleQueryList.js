@@ -6,6 +6,7 @@ import _isEqual from 'lodash.isequal'
 import { fetchDataExplorerSampleQueries, REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
 
 import SampleQuery from './SampleQuery'
+import { CustomScrollbars } from '../CustomScrollbars'
 
 import './SampleQueryList.scss'
 
@@ -198,24 +199,26 @@ export default class SampleQueryList extends React.Component {
 
     return (
       <div className='query-suggestion-list-wrapper' key={`query-suggestion-list-wrapper-${this.COMPONENT_KEY}`}>
-        <div className='query-suggestion-list' key={`query-suggestion-list-${this.COMPONENT_KEY}`}>
-          {this.state.queryList.map((suggestion, i) => {
-            return (
-              <SampleQuery
-                key={i}
-                authentication={this.props.authentication}
-                valueLabel={this.props.valueLabel}
-                suggestion={suggestion}
-                executeQuery={this.props.executeQuery}
-                tooltipID={this.props.tooltipID}
-                context={this.props.context}
-                shouldRender={this.props.shouldRender}
-                initialValues={this.state.initialValues}
-                onVLChange={this.onVLChange}
-              />
-            )
-          })}
-        </div>
+        <CustomScrollbars autoHide>
+          <div className='query-suggestion-list' key={`query-suggestion-list-${this.COMPONENT_KEY}`}>
+            {this.state.queryList.map((suggestion, i) => {
+              return (
+                <SampleQuery
+                  key={i}
+                  authentication={this.props.authentication}
+                  valueLabel={this.props.valueLabel}
+                  suggestion={suggestion}
+                  executeQuery={this.props.executeQuery}
+                  tooltipID={this.props.tooltipID}
+                  context={this.props.context}
+                  shouldRender={this.props.shouldRender}
+                  initialValues={this.state.initialValues}
+                  onVLChange={this.onVLChange}
+                />
+              )
+            })}
+          </div>
+        </CustomScrollbars>
       </div>
     )
   }

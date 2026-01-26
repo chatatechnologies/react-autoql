@@ -34,11 +34,19 @@ export class FilterLockPopover extends React.Component {
 
   state = {
     insertedFilter: null,
+    drawerWidth: null,
   }
 
   componentDidMount = () => {
     this._isMounted = true
     this.initialize()
+    this.updateDrawerWidth()
+    if (this.props.boundaryElement) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.updateDrawerWidth()
+      })
+      this.resizeObserver.observe(this.props.boundaryElement)
+    }
   }
 
   componentDidUpdate = (prevProps) => {
@@ -46,10 +54,36 @@ export class FilterLockPopover extends React.Component {
       // Clear inserted filter when popover is closed
       this.setState({ insertedFilter: null })
     }
+    if (this.props.boundaryElement) {
+      this.updateDrawerWidth()
+    }
+    if (prevProps.boundaryElement !== this.props.boundaryElement) {
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
+      }
+      if (this.props.boundaryElement) {
+        this.resizeObserver = new ResizeObserver(() => {
+          this.updateDrawerWidth()
+        })
+        this.resizeObserver.observe(this.props.boundaryElement)
+      }
+    }
+  }
+
+  updateDrawerWidth = () => {
+    if (this.props.boundaryElement) {
+      const width = this.props.boundaryElement.offsetWidth
+      if (width && width !== this.state.drawerWidth) {
+        this.setState({ drawerWidth: width })
+      }
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+    }
   }
 
   initialize = () => {
@@ -96,6 +130,8 @@ export class FilterLockPopover extends React.Component {
   }
 
   render = () => {
+    const containerStyle = this.state.drawerWidth && !isMobile ? { width: `${this.state.drawerWidth - 20}px` } : {}
+
     return (
       <Popover
         containerClassName={`filter-lock-popover${isMobile ? ' filter-lock-popover-mobile' : ''}`}
@@ -109,6 +145,7 @@ export class FilterLockPopover extends React.Component {
         content={this.renderContent()}
         boundaryInset={10}
         showArrow
+        containerStyle={containerStyle}
       >
         {this.props.children || <div style={{ display: 'none' }} />}
       </Popover>

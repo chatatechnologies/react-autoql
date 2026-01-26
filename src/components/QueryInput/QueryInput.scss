@@ -182,22 +182,38 @@
 
 /* Query Suggestions Styles */
 .react-autoql-input-query-suggestions {
-  position: absolute;
-  bottom: 100%;
   left: 0;
   right: 0;
   padding: 0;
   z-index: 1;
   background: var(--react-autoql-background-color-primary);
-  border-top: 1px solid var(--react-autoql-border-color);
-  border-radius: 8px 8px 0 0;
-  box-shadow: 0 -7px 6px -4px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   max-height: 200px;
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+
+  // Above placement (default)
+  &.placement-above {
+    position: absolute;
+    bottom: 100%;
+    top: unset;
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -7px 6px -4px rgba(0, 0, 0, 0.05);
+  }
+
+  // Below placement
+  &.placement-below {
+    position: relative;
+    top: unset;
+    bottom: unset;
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 7px 6px -4px rgba(0, 0, 0, 0.05);
+    flex-direction: column-reverse; // Reverse order so buttons are on top, expanded content below
+  }
 
   &.expanded {
     height: 300px;
@@ -232,6 +248,15 @@
   }
 }
 
+// Adjust expanded section for below placement
+.react-autoql-input-query-suggestions.placement-below {
+  .query-suggestions-expanded {
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
 .query-suggestions-label {
   font-size: 12px;
   color: var(--react-autoql-text-color-placeholder);
@@ -240,18 +265,47 @@
   flex-shrink: 0;
 }
 
-.query-suggestions-buttons {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  overflow-y: visible;
-  padding: 10px 0 10px 22px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--react-autoql-border-color) transparent;
+.query-suggestions-buttons-wrapper {
   flex-shrink: 0;
   margin-top: auto;
   width: 100%;
   min-width: 0; /* Allow flex item to shrink below content size */
+  height: auto; /* Let content determine height */
+  max-height: none; /* Don't constrain height */
+
+  // Constrain PerfectScrollbar container to content height
+  .ps {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  // Use PerfectScrollbar hover styles for desktop
+  @media (hover: hover) and (pointer: fine) {
+    .ps__rail-x {
+      opacity: 0 !important;
+      transition: opacity 0.2s ease !important;
+    }
+
+    &:hover {
+      .ps__rail-x {
+        opacity: 0.5 !important;
+      }
+    }
+  }
+
+  // Always show scrollbars on mobile
+  @media (hover: none) and (pointer: coarse) {
+    .ps__rail-x {
+      opacity: 0.5 !important;
+    }
+  }
+}
+
+.query-suggestions-buttons {
+  display: flex;
+  gap: 6px;
+  padding: 10px 0 10px 22px;
+  white-space: nowrap;
 }
 
 .query-suggestions-buttons-label {
@@ -267,23 +321,6 @@
     margin-right: 3px;
     margin-top: 2px;
   }
-}
-
-.query-suggestions-buttons::-webkit-scrollbar {
-  height: 4px;
-}
-
-.query-suggestions-buttons::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.query-suggestions-buttons::-webkit-scrollbar-thumb {
-  background-color: var(--react-autoql-border-color);
-  border-radius: 2px;
-}
-
-.query-suggestions-buttons::-webkit-scrollbar-thumb:hover {
-  background-color: var(--react-autoql-text-color-placeholder);
 }
 
 .query-suggestion-button {
@@ -362,13 +399,45 @@
 
 .query-suggestions-sample-list {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: hidden; /* Let CustomScrollbars handle scrolling */
   min-height: 0; /* Allow flex item to shrink */
+  display: flex; /* Enable flex for CustomScrollbars height */
+  flex-direction: column;
 
   /* Placeholder loading items */
   .data-explorer-section-placeholder-loading-item {
     padding: 12px 0;
+  }
+
+  /* Ensure CustomScrollbars gets the full height */
+  .query-suggestion-list-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+
+    .react-autoql-custom-scrollbars {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+
+      /* Hide horizontal scrollbar rail by default */
+      .ps__rail-x {
+        display: none !important;
+      }
+
+      /* Only show horizontal scrollbar when PerfectScrollbar detects actual overflow */
+      &.ps--active-x .ps__rail-x {
+        display: block !important;
+      }
+    }
+
+    .query-suggestion-list {
+      width: 100%;
+      min-width: 0; /* Allow it to shrink */
+    }
   }
 
   /* Make query suggestions more condensed */

@@ -1,8 +1,8 @@
-import React, { useState, forwardRef } from 'react'
+import React, { useState, forwardRef, useMemo } from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 
-import { ColumnTypes, getHiddenColumns, getSelectableColumns } from 'autoql-fe-utils'
+import { ColumnTypes, getHiddenColumns, getSelectableColumns, normalizeColumnIdentifier } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Popover } from '../Popover'
@@ -32,7 +32,7 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
     disableAggregationMenu,
   } = props
 
-  const COMPONENT_KEY = React.useMemo(() => uuid(), [])
+  const COMPONENT_KEY = useMemo(() => uuid(), [])
 
   const [isAddColumnMenuOpen, setIsAddColumnMenuOpen] = useState(false)
   const [aggPopoverActiveID, setAggPopoverActiveID] = useState(undefined)
@@ -78,15 +78,16 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
         <div className='more-options-menu react-autoql-add-column-menu'>
           <ul className='context-menu-list'>
             <div className='react-autoql-input-label'>Add a Column</div>
-            {availableSelectColumns?.map((column, i) => {
+            {availableSelectColumns?.map((column) => {
+              const colId = normalizeColumnIdentifier(column)
               const columnIsNumerical = isColumnNumerical(column.column_type)
               const shouldShowAggMenu = !disableAggregationMenu && columnIsNumerical
 
               if (shouldShowAggMenu) {
                 return (
                   <Popover
-                    key={`agg-select-menu-${i}`}
-                    isOpen={aggPopoverActiveID === `column-select-menu-item-${i}`}
+                    key={`agg-select-menu-${colId}`}
+                    isOpen={aggPopoverActiveID === `column-select-menu-item-${colId}`}
                     onClickOutside={() => setAggPopoverActiveID(undefined)}
                     content={() => (
                       <AggMenu
@@ -101,10 +102,8 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
                     padding={0}
                   >
                     <li
-                      key={`column-select-menu-item-${i}`}
-                      onMouseOver={(e) => {
-                        setAggPopoverActiveID(`column-select-menu-item-${i}`)
-                      }}
+                      key={`column-select-menu-item-${colId}`}
+                      onMouseOver={() => setAggPopoverActiveID(`column-select-menu-item-${colId}`)}
                     >
                       <div className='react-autoql-add-column-menu-item'>
                         <Icon type='plus' />
@@ -119,7 +118,7 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
               }
 
               return (
-                <li key={`column-select-menu-item-${i}`} onClick={() => handleAddColumnClick(column)}>
+                <li key={`column-select-menu-item-${colId}`} onClick={() => handleAddColumnClick(column)}>
                   <div className='react-autoql-add-column-menu-item'>
                     <Icon type='plus' />
                     <span>{column.display_name}</span>
@@ -127,11 +126,12 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
                 </li>
               )
             })}
-            {availableHiddenColumns?.map((column, i) => {
+            {availableHiddenColumns?.map((column) => {
               const isHiddenColumn = true
+              const hiddenId = normalizeColumnIdentifier(column)
               return (
                 <li
-                  key={`column-select-menu-item-hidden-column-${i}`}
+                  key={`column-select-menu-item-hidden-${hiddenId}`}
                   onClick={() => handleAddColumnClick(column, undefined, isHiddenColumn)}
                 >
                   <div className='react-autoql-add-column-menu-item'>
@@ -153,14 +153,22 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
     )
   }
 
-  const availableSelectColumns = queryResponse?.data?.data?.available_selects?.filter((col) => {
-    if (disableGroupColumnsOptions) {
-      return isColumnNumerical(col.column_type)
-    } else if (disableFilterColumnsOptions) {
-      return !isColumnNumerical(col.column_type)
-    }
-    return true
-  })
+  const existingColumnNames = useMemo(
+    () => (queryResponse?.data?.data?.columns || []).map((c) => normalizeColumnIdentifier(c)),
+    [queryResponse],
+  )
+
+  const availableSelectColumns = useMemo(() => {
+    const selects = queryResponse?.data?.data?.available_selects || []
+    return selects.filter((col) => {
+      const thisColName = normalizeColumnIdentifier(col)
+      if (existingColumnNames.includes(thisColName)) return false
+
+      if (disableGroupColumnsOptions) return isColumnNumerical(col.column_type)
+      if (disableFilterColumnsOptions) return !isColumnNumerical(col.column_type)
+      return true
+    })
+  }, [queryResponse, existingColumnNames, disableGroupColumnsOptions, disableFilterColumnsOptions])
   const availableHiddenColumns = getHiddenColumns(queryResponse?.data?.data?.columns)
 
   // Force render when allowCustom is true and custom option is enabled (for drilldowns with no available selects)
