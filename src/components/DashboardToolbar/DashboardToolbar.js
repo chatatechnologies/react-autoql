@@ -41,6 +41,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
     dashboardId: PropTypes.string,
     authentication: PropTypes.shape({}),
     context: PropTypes.string,
+    slicerSuggestion: PropTypes.string,
+    isDashboardFullyExecuted: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -63,6 +65,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
     authentication: undefined,
     context: undefined,
     value: null,
+    slicerSuggestion: undefined,
+    isDashboardFullyExecuted: false,
   }
 
   state = {
@@ -208,6 +212,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
         <MenuItem
           title='Export Snapshot (.aqldash)'
           icon='download'
+          disabled={!this.props.isDashboardFullyExecuted}
           onClick={() => {
             this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
@@ -435,6 +440,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
                 onChange={this.handleSlicerChange}
                 placeholder='Select a slicer...'
                 dashboardId={this.props.dashboardId}
+                slicerSuggestion={this.props.slicerSuggestion}
               />
             )}
           </div>

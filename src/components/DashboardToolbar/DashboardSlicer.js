@@ -27,6 +27,7 @@ export default class DashboardSlicer extends React.Component {
     onChange: PropTypes.func,
     placeholder: PropTypes.string,
     dashboardId: PropTypes.string,
+    slicerSuggestion: PropTypes.string,
   }
 
   static defaultProps = {
@@ -36,6 +37,7 @@ export default class DashboardSlicer extends React.Component {
     onChange: () => {},
     placeholder: 'Select a slicer...',
     dashboardId: undefined,
+    slicerSuggestion: undefined,
   }
 
   state = {
@@ -162,8 +164,14 @@ export default class DashboardSlicer extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    // Only fetch suggestions if user has typed something
-    if (!value) {
+    // Determine what to fetch suggestions for
+    let suggestionValue = value
+
+    // If no value and user hasn't typed, use the slicerSuggestion prop if available
+    if (!value && !this.userTypedValue && this.props.slicerSuggestion) {
+      suggestionValue = this.props.slicerSuggestion
+    } else if (!value) {
+      // No value, no user typing, and no suggestion prop - just return
       return
     }
 
@@ -178,10 +186,10 @@ export default class DashboardSlicer extends React.Component {
     if (this.axiosSource) {
       clearTimeout(this.autocompleteTimer)
       this.autocompleteTimer = setTimeout(() => {
-        this.fetchSuggestions({ value })
+        this.fetchSuggestions({ value: suggestionValue })
       }, this.autocompleteDelay)
     } else {
-      this.fetchSuggestions({ value })
+      this.fetchSuggestions({ value: suggestionValue })
     }
   }
 
@@ -226,11 +234,6 @@ export default class DashboardSlicer extends React.Component {
       // newValue is the filter object returned from getSuggestionValue
       const sessionFilterLock = newValue
 
-      console.log('DashboardSlicer - onInputChange - Selected slicer:', {
-        sessionFilterLock,
-        canonical_key: sessionFilterLock?.canonical_key,
-        key: sessionFilterLock?.key,
-      })
 
       // Add to recent selections
       this.addToRecentSelections(sessionFilterLock)
@@ -257,6 +260,11 @@ export default class DashboardSlicer extends React.Component {
     // Reset typing state when input is focused (if empty)
     if (!this.state.inputValue) {
       this.userTypedValue = null
+      
+      // If we have a slicerSuggestion prop and no value, fetch suggestions for it
+      if (this.props.slicerSuggestion) {
+        this.onSuggestionsFetchRequested({ value: '' })
+      }
     }
   }
 
@@ -313,26 +321,37 @@ export default class DashboardSlicer extends React.Component {
     const noSuggestions = !this.state.suggestions?.length && doneLoading && this.state.inputValue
     const inputIsEmpty = !this.userTypedValue && !this.state.inputValue
 
-    // Show recent selections only when input is empty (no typing)
-    if (inputIsEmpty && this.state.recentSelections?.length > 0) {
-      sections.push({
-        title: 'Recent',
-        suggestions: this.state.recentSelections,
-      })
-    }
+    // When input is empty, show Recent and Suggested sections
+    if (inputIsEmpty) {
+      // Show recent selections
+      if (this.state.recentSelections?.length > 0) {
+        sections.push({
+          title: 'Recent',
+          suggestions: this.state.recentSelections,
+        })
+      }
 
-    // Show autocomplete suggestions when typing
-    if (hasSuggestions) {
-      sections.push({
-        title: `Related to "${this.state.inputValue}"`,
-        suggestions: this.state.suggestions,
-      })
-    } else if (noSuggestions) {
-      sections.push({
-        title: `Related to "${this.state.inputValue}"`,
-        suggestions: [{ name: '' }],
-        emptyState: true,
-      })
+      // Show suggested items from slicerSuggestion prop
+      if (hasSuggestions) {
+        sections.push({
+          title: 'Suggested',
+          suggestions: this.state.suggestions,
+        })
+      }
+    } else {
+      // When user is typing, show "Related to..." section
+      if (hasSuggestions) {
+        sections.push({
+          title: `Related to "${this.state.inputValue}"`,
+          suggestions: this.state.suggestions,
+        })
+      } else if (noSuggestions) {
+        sections.push({
+          title: `Related to "${this.state.inputValue}"`,
+          suggestions: [{ name: '' }],
+          emptyState: true,
+        })
+      }
     }
 
     return sections
@@ -349,6 +368,12 @@ export default class DashboardSlicer extends React.Component {
         ) : null}
       </React.Fragment>
     )
+  }
+
+  shouldRenderSuggestions = (value) => {
+    // Always render suggestions if we have them, even when input is empty
+    // This allows us to show slicerSuggestion results on focus
+    return true
   }
 
   render = () => {
@@ -368,6 +393,7 @@ export default class DashboardSlicer extends React.Component {
           renderSuggestionsContainer={this.renderSuggestionsContainer}
           getSectionSuggestions={(section) => section.suggestions}
           renderSectionTitle={this.renderSectionTitle}
+          shouldRenderSuggestions={this.shouldRenderSuggestions}
           multiSection={true}
           inputProps={{
             onChange: this.onInputChange,

@@ -93,6 +93,7 @@ class DashboardWithoutTheme extends React.Component {
     refreshInterval: PropTypes.number,
     dashboardId: PropTypes.string,
     enableAutoRefresh: PropTypes.bool,
+    slicerSuggestion: PropTypes.string,
   }
 
   static defaultProps = {
@@ -125,6 +126,7 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: () => {},
     dashboardId: undefined,
     enableAutoRefresh: false,
+    slicerSuggestion: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -892,6 +894,12 @@ class DashboardWithoutTheme extends React.Component {
   render = () => {
     const tiles = this.getMostRecentTiles()
 
+    // Check if any tile is currently executing
+    const isAnyTileExecuting = Object.keys(this.tileRefs).some((key) => {
+      const tileRef = this.tileRefs[key]
+      return tileRef?.state?.isTopExecuting || tileRef?.state?.isBottomExecuting
+    })
+
     return (
       <ErrorBoundary>
         <>
@@ -908,6 +916,11 @@ class DashboardWithoutTheme extends React.Component {
               onRedoClick={this.redo}
               onRefreshClick={this.props.enableAutoRefresh ? this.executeCachedDashboard : this.executeDashboard}
               onDownloadClick={this.exportDashboard}
+              isDashboardFullyExecuted={
+                tiles.length > 0 &&
+                tiles.every((tile) => tile.queryResponse || tile.secondQueryResponse) &&
+                !isAnyTileExecuting
+              }
               onSaveClick={() => {
                 Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
                   // Keep if we need to add back in the near future
@@ -925,6 +938,7 @@ class DashboardWithoutTheme extends React.Component {
               value={this.state.dashboardSlicer}
               refreshInterval={this.props.refreshInterval}
               enableAutoRefresh={this.props.enableAutoRefresh}
+              slicerSuggestion={this.props.slicerSuggestion}
             />
           )}
           <div
