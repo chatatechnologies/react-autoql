@@ -294,6 +294,16 @@
   }
 }
 .react-autoql-vl-autocomplete-input-wrapper {
+  .react-autoql-dashboard-slicer-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.5;
+    z-index: 1;
+  }
+
   .react-autosuggest__container--open {
     position: relative;
 

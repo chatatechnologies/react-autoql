@@ -4,6 +4,7 @@ import axios from 'axios'
 import Autosuggest from 'react-autosuggest'
 import { fetchVLAutocomplete, REQUEST_CANCELLED_ERROR, getAuthentication, authenticationDefault } from 'autoql-fe-utils'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { Icon } from '../Icon'
 
 import { authenticationType } from '../../props/types'
 import '../FilterLockPopover/FilterLockPopover.scss'
@@ -52,6 +53,11 @@ export default class DashboardSlicer extends React.Component {
       this.setState({ inputValue: this.props.value.format_txt || '' })
     }
     this.loadRecentSelections()
+    
+    // Fetch suggestions for slicerSuggestion prop in the background
+    if (this.props.slicerSuggestion) {
+      this.fetchSuggestions({ value: this.props.slicerSuggestion })
+    }
   }
 
   getRecentSelectionsKey = () => {
@@ -109,6 +115,11 @@ export default class DashboardSlicer extends React.Component {
   componentDidUpdate = (prevProps) => {
     if (prevProps.value !== this.props.value) {
       this.setState({ inputValue: this.props.value?.format_txt || '' })
+    }
+    
+    // Fetch suggestions if slicerSuggestion prop changes
+    if (prevProps.slicerSuggestion !== this.props.slicerSuggestion && this.props.slicerSuggestion) {
+      this.fetchSuggestions({ value: this.props.slicerSuggestion })
     }
   }
 
@@ -174,14 +185,13 @@ export default class DashboardSlicer extends React.Component {
   }
 
   onSuggestionsFetchRequested = ({ value }) => {
-    // Determine what to fetch suggestions for
-    let suggestionValue = value
-
-    // If no value and user hasn't typed, use the slicerSuggestion prop if available
-    if (!value && !this.userTypedValue && this.props.slicerSuggestion) {
-      suggestionValue = this.props.slicerSuggestion
-    } else if (!value) {
-      // No value, no user typing, and no suggestion prop - just return
+    // If no value and we already have suggestions (from slicerSuggestion), don't fetch again
+    if (!value && !this.userTypedValue) {
+      // If we have suggestions already loaded, just return
+      if (this.state.suggestions?.length > 0) {
+        return
+      }
+      // No value, no suggestions loaded yet, just return
       return
     }
 
@@ -196,17 +206,22 @@ export default class DashboardSlicer extends React.Component {
     if (this.axiosSource) {
       clearTimeout(this.autocompleteTimer)
       this.autocompleteTimer = setTimeout(() => {
-        this.fetchSuggestions({ value: suggestionValue })
+        this.fetchSuggestions({ value })
       }, this.autocompleteDelay)
     } else {
-      this.fetchSuggestions({ value: suggestionValue })
+      this.fetchSuggestions({ value })
     }
   }
 
   onSuggestionsClearRequested = () => {
-    this.setState({
-      suggestions: [],
-    })
+    // Don't clear suggestions if they came from slicerSuggestion prop
+    // Only clear if user typed something (and we're showing results from their typing)
+    if (this.userTypedValue) {
+      this.setState({
+        suggestions: [],
+      })
+    }
+    // Otherwise, keep the suggestions from slicerSuggestion prop
   }
 
   createNewFilterFromSuggestion = (suggestion) => {
@@ -270,11 +285,6 @@ export default class DashboardSlicer extends React.Component {
     // Reset typing state when input is focused (if empty)
     if (!this.state.inputValue) {
       this.userTypedValue = null
-      
-      // If we have a slicerSuggestion prop and no value, fetch suggestions for it
-      if (this.props.slicerSuggestion) {
-        this.onSuggestionsFetchRequested({ value: '' })
-      }
     }
   }
 
@@ -311,7 +321,7 @@ export default class DashboardSlicer extends React.Component {
   }
 
   renderSuggestionsContainer = ({ containerProps, children, query }) => {
-    const maxHeight = 150
+    const maxHeight = 300
 
     return (
       <div {...containerProps}>
@@ -398,7 +408,8 @@ export default class DashboardSlicer extends React.Component {
     const inputValue = this.props.value?.format_txt || this.state.inputValue
 
     return (
-      <span className='react-autoql-vl-autocomplete-input-wrapper'>
+      <span className='react-autoql-vl-autocomplete-input-wrapper' style={{ position: 'relative' }}>
+        {!inputValue && <Icon type='filter' className='react-autoql-dashboard-slicer-icon' />}
         <Autosuggest
           id='react-autoql-dashboard-slicer-input'
           className='react-autoql-vl-autocomplete-input'
@@ -419,6 +430,7 @@ export default class DashboardSlicer extends React.Component {
             value: inputValue,
             placeholder: this.props.placeholder,
             className: 'react-autoql-vl-autocomplete-input',
+            style: !inputValue ? { paddingLeft: '35px' } : undefined,
             ['data-test']: 'react-autoql-dashboard-slicer-input',
           }}
         />

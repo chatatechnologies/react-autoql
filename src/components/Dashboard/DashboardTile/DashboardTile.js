@@ -674,6 +674,14 @@ export class DashboardTile extends React.Component {
       paramsToSet.tableFilters = tableFilters
     }
 
+    // Reset all tile configs when query changes
+    if (queryChanged) {
+      paramsToSet.columnSelects = undefined
+      paramsToSet.filters = undefined
+      paramsToSet.orders = undefined
+      paramsToSet.displayOverrides = undefined
+    }
+
     this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
@@ -720,7 +728,7 @@ export class DashboardTile extends React.Component {
       : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters
 
     // New query is running, reset temporary state fields
-    this.debouncedSetParamsForTile({
+    const paramsToSet = {
       secondQuery: query,
       secondDataConfig,
       secondskipQueryValidation: skipValidation,
@@ -729,7 +737,17 @@ export class DashboardTile extends React.Component {
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
       secondTableFilters,
-    })
+    }
+
+    // Reset all tile configs when query changes
+    if (queryChanged) {
+      paramsToSet.secondColumnSelects = undefined
+      paramsToSet.secondFilters = undefined
+      paramsToSet.secondOrders = undefined
+      paramsToSet.secondDisplayOverrides = undefined
+    }
+
+    this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
       query,

@@ -141,11 +141,21 @@ export class DashboardToolbarWithoutRef extends React.Component {
 
     const displayName = this.state.selectedSlicer.format_txt || this.state.selectedSlicer.value
     const showMessage = this.state.selectedSlicer.show_message
+    const tooltipText = showMessage 
+      ? `Applied only to tiles whose underlying data contains "${showMessage}"`
+      : 'Applied only to tiles whose underlying data contains this value'
 
     return (
-      <Chip onDelete={this.handleRemoveSlicer}>
-        <span>
-          <strong>{displayName}</strong> {showMessage && <em>({showMessage})</em>}
+      <Chip 
+        onDelete={this.handleRemoveSlicer}
+        tooltip={tooltipText}
+        tooltipID={this.props.tooltipID}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Icon type='filter' />
+          <span>
+            <strong>{displayName}</strong> {showMessage && <em>({showMessage})</em>}
+          </span>
         </span>
       </Chip>
     )
