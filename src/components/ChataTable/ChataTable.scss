@@ -13,6 +13,37 @@
   box-sizing: border-box;
   flex: 1;
 
+  .react-autoql-table-warnings-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .react-autoql-table-data-limit-icon,
+  .react-autoql-table-filter-warning-icon {
+    font-size: 18px;
+    cursor: help;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+
+    .react-autoql-icon {
+      display: block;
+    }
+  }
+
+  .react-autoql-table-data-limit-icon {
+    color: var(--react-autoql-warning-color, #f39c12);
+  }
+
+  .react-autoql-table-filter-warning-icon {
+    color: var(--react-autoql-text-color-secondary);
+  }
+
   .react-autoql-pivot-table-row-selector {
     display: flex;
     justify-content: center;
@@ -305,6 +336,37 @@
         }
       }
     }
+
+    /* Wrapper used when inserting pivot button before the title */
+    .pivot-header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pivot-axis-header-btn {
+      background: transparent;
+      border: none;
+      color: var(--react-autoql-text-color-primary);
+      cursor: pointer;
+      padding: 0;
+      font-size: 12px;
+      line-height: 1;
+      margin: 0;
+    }
+    .pivot-axis-header-btn svg {
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+      fill: currentColor;
+    }
+
+    /* Prevent global header pseudo-elements from affecting this custom header */
+    .pivot-header-title::before,
+    .pivot-header-title *::before {
+      content: none;
+      display: none;
+    }
   }
 
   .react-autoql-table.tabulator {
@@ -457,10 +519,10 @@
       @media (hover: hover) and (pointer: fine) {
         // Always reserve space for scrollbar to prevent content shift
         scrollbar-gutter: stable;
-        
+
         // Firefox - hide by default (but space is reserved by scrollbar-gutter)
         scrollbar-width: none;
-        
+
         // Webkit browsers (Chrome, Safari, Edge) - make scrollbars invisible by default
         // Width stays constant so space is always reserved (no shift)
         &::-webkit-scrollbar {
@@ -624,7 +686,7 @@
 
 // Pivot Axis Selector styles
 .pivot-axis-title-container {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 3px;
   cursor: pointer;

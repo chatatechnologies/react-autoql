@@ -274,8 +274,14 @@ export default class ChatMessage extends React.Component {
     }, delay)
   }
 
+  isValidConfig = (config) => {
+    return config && typeof config === 'object' && !Array.isArray(config)
+  }
+
   updateDataConfig = (config) => {
-    this.setState({ dataConfig: config })
+    if (this.isValidConfig(config)) {
+      this.setState({ dataConfig: config })
+    }
   }
 
   renderFetchingFileMessage = () => {
@@ -545,7 +551,7 @@ export default class ChatMessage extends React.Component {
           isAnimating={this.state.isAnimatingMessageBubble}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
-          initialTableConfigs={this.state.dataConfig}
+          initialTableConfigs={this.isValidConfig(this.state.dataConfig) ? this.state.dataConfig : undefined}
           onTableConfigChange={this.updateDataConfig}
           onNoneOfTheseClick={this.props.onNoneOfTheseClick}
           autoChartAggregations={this.props.autoChartAggregations}

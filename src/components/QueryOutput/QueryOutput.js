@@ -2412,6 +2412,8 @@ export class QueryOutput extends React.Component {
     // Provide a robust header filter for numeric columns to support operator prefixes
     // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
     if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+      // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
+      const inSetCache = new Map()
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
           if (headerValue === undefined || headerValue === null) return true
@@ -2462,10 +2464,17 @@ export class QueryOutput extends React.Component {
               }
             case 'in':
               try {
-                const arr = String(cleanValue)
-                  .split(',')
-                  .map((s) => s.trim().toLowerCase())
-                return arr.includes(rowStr.toLowerCase()) || arr.includes(String(rowValue))
+                const cacheKey = String(cleanValue)
+                let arr = inSetCache.get(cacheKey)
+                if (!arr) {
+                  arr = new Set(
+                    String(cleanValue)
+                      .split(',')
+                      .map((s) => s.trim().toLowerCase()),
+                  )
+                  inSetCache.set(cacheKey, arr)
+                }
+                return arr.has(rowStr.toLowerCase()) || arr.has(String(rowValue).toLowerCase())
               } catch (e) {
                 return false
               }
@@ -3225,6 +3234,8 @@ export class QueryOutput extends React.Component {
       // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
+        id: `pivot-col-0`, // Stable ID based on field
+        index: 0, // Set index to match array position for sortDataByColumn
         frozen: true,
         visible: true,
         is_visible: true,
@@ -3246,6 +3257,8 @@ export class QueryOutput extends React.Component {
 
         const newPivotCol = {
           ...columns[nIdx],
+          id: `pivot-col-${i + 1}`, // Stable ID based on field index
+          index: i + 1, // Set index to match array position for sortDataByColumn
           origColumn: columns[nIdx],
           origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
@@ -3257,7 +3270,7 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
-          headerSort: false,
+          headerSort: true,
         }
 
         pivotTableColumns.push(newPivotCol)
@@ -3311,7 +3324,46 @@ export class QueryOutput extends React.Component {
       })
 
       this.pivotTableColumns = pivotTableColumns
-      this.pivotTableData = pivotTableData
+      let finalPivotTableData = pivotTableData
+
+      // Apply sorting to pivot table data if user sorted a pivot column
+      const pivotSorters = this.formattedTableParams?.sorters || []
+      if (pivotSorters.length > 0) {
+        const primarySort = pivotSorters[0]
+        // Check if this is a pivot column sort (field is a number string like "1", "2", etc.)
+        const pivotColumnField = primarySort?.field
+        const pivotColumnIndex = parseInt(pivotColumnField, 10)
+
+        if (!isNaN(pivotColumnIndex) && pivotColumnIndex >= 0) {
+          const sortDirection =
+            (primarySort?.sort || primarySort?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
+
+          // Sort the pivot data by the specified column
+          finalPivotTableData = [...pivotTableData].sort((a, b) => {
+            const aVal = a[pivotColumnIndex]
+            const bVal = b[pivotColumnIndex]
+
+            // Handle null/undefined values
+            if (aVal === null || aVal === undefined) return 1
+            if (bVal === null || bVal === undefined) return -1
+
+            // Numeric comparison
+            const aNum = Number(aVal)
+            const bNum = Number(bVal)
+
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
+            }
+
+            // String comparison as fallback
+            const aStr = String(aVal)
+            const bStr = String(bVal)
+            return sortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
+          })
+        }
+      }
+
+      this.pivotTableData = finalPivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
       this.setPivotTableConfig(true)
       if (this._isMounted) {
