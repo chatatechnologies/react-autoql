@@ -67,6 +67,7 @@ export default class ChatContent extends React.Component {
     shouldRender: PropTypes.bool,
     hideChatBarAfterInitialResponse: PropTypes.bool,
     executeQuery: PropTypes.func,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -80,6 +81,7 @@ export default class ChatContent extends React.Component {
     shouldRender: true,
     hideChatBarAfterInitialResponse: false,
     executeQuery: () => {},
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
@@ -514,6 +516,7 @@ export default class ChatContent extends React.Component {
                     disableAggregationMenu={this.props.disableAggregationMenu}
                     allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
                     preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+                    enableMagicWand={this.props.enableMagicWand}
                   />
                 )
               })}

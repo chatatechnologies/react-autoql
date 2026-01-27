@@ -96,6 +96,7 @@ export default class ChatMessage extends React.Component {
     onMessageResize: PropTypes.func,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     setGeneratingSummary: PropTypes.func,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -127,6 +128,7 @@ export default class ChatMessage extends React.Component {
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
@@ -466,6 +468,7 @@ export default class ChatMessage extends React.Component {
   renderSummaryFooter = () => {
     // Only show footer for response messages with data
     if (
+      !this.props.enableMagicWand ||
       !this.props.isResponse ||
       !this.props.response?.data?.data?.rows ||
       !this.props.response?.data?.data?.columns ||
