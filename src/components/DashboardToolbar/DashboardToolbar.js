@@ -43,6 +43,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     context: PropTypes.string,
     slicerSuggestion: PropTypes.string,
     isDashboardFullyExecuted: PropTypes.bool,
+    hasTiles: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -67,6 +68,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     value: null,
     slicerSuggestion: undefined,
     isDashboardFullyExecuted: false,
+    hasTiles: false,
   }
 
   state = {
@@ -429,21 +431,23 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
-          <div className='react-autoql-dashboard-slicer-container'>
-            {this.state.selectedSlicer ? (
-              this.renderSlicerChip()
-            ) : (
-              <DashboardSlicer
-                authentication={this.props.authentication}
-                context={this.props.context}
-                value={this.state.selectedSlicer}
-                onChange={this.handleSlicerChange}
-                placeholder='Select a slicer...'
-                dashboardId={this.props.dashboardId}
-                slicerSuggestion={this.props.slicerSuggestion}
-              />
-            )}
-          </div>
+          {this.props.hasTiles && (
+            <div className='react-autoql-dashboard-slicer-container'>
+              {this.state.selectedSlicer ? (
+                this.renderSlicerChip()
+              ) : (
+                <DashboardSlicer
+                  authentication={this.props.authentication}
+                  context={this.props.context}
+                  value={this.state.selectedSlicer}
+                  onChange={this.handleSlicerChange}
+                  placeholder='Select a slicer...'
+                  dashboardId={this.props.dashboardId}
+                  slicerSuggestion={this.props.slicerSuggestion}
+                />
+              )}
+            </div>
+          )}
         </div>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalOpen}

@@ -939,6 +939,7 @@ class DashboardWithoutTheme extends React.Component {
               refreshInterval={this.props.refreshInterval}
               enableAutoRefresh={this.props.enableAutoRefresh}
               slicerSuggestion={this.props.slicerSuggestion}
+              hasTiles={tiles.length > 0}
             />
           )}
           <div

@@ -83,6 +83,16 @@ export default class DashboardSlicer extends React.Component {
     }
   }
 
+  clearRecentSelections = () => {
+    this.setState({ recentSelections: [] })
+    try {
+      const key = this.getRecentSelectionsKey()
+      localStorage.removeItem(key)
+    } catch (error) {
+      console.error('Error clearing recent selections:', error)
+    }
+  }
+
   addToRecentSelections = (selection) => {
     // Remove if already exists
     const filtered = this.state.recentSelections.filter((s) => {
@@ -327,6 +337,11 @@ export default class DashboardSlicer extends React.Component {
       if (this.state.recentSelections?.length > 0) {
         sections.push({
           title: 'Recent',
+          action: (
+            <span className='data-explorer-clear-history-btn' onClick={this.clearRecentSelections}>
+              Clear history
+            </span>
+          ),
           suggestions: this.state.recentSelections,
         })
       }
@@ -360,7 +375,10 @@ export default class DashboardSlicer extends React.Component {
   renderSectionTitle = (section) => {
     return (
       <React.Fragment>
-        <strong>{section.title}</strong>
+        <div className='react-autoql-section-title-container'>
+          <strong>{section.title}</strong>
+          {section.action}
+        </div>
         {section.emptyState ? (
           <div className='filter-locking-no-suggestions-text'>
             <em>No results</em>
