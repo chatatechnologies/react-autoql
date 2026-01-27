@@ -81,8 +81,16 @@ export class DashboardToolbarWithoutRef extends React.Component {
   }
 
   componentDidMount = () => {
-    // Load slicer from localStorage
-    this.loadSlicerFromStorage()
+
+    // If an initial slicer value is provided (e.g., from imported dashboard), use it
+    if (this.props.value) {
+      this.setState({ selectedSlicer: this.props.value })
+      // Also save it to localStorage for persistence
+      this.saveSlicerToStorage(this.props.value)
+    } else {
+      // Otherwise, load from localStorage
+      this.loadSlicerFromStorage()
+    }
   }
 
   getStorageKey = () => {
@@ -162,6 +170,13 @@ export class DashboardToolbarWithoutRef extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // If value prop changes, update the slicer and override localStorage
+    if (this.props.value !== prevProps.value && this.props.value) {
+      this.setState({ selectedSlicer: this.props.value })
+      // Save to localStorage to override any existing value
+      this.saveSlicerToStorage(this.props.value)
+    }
+
     if (!prevState.isRenameModalOpen && this.state.isRenameModalOpen) {
       requestAnimationFrame(() => {
         this.inputRef?.focus()

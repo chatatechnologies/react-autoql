@@ -51,12 +51,15 @@ class DashboardWithoutTheme extends React.Component {
       )
     }
 
+    // Set initial slicer from props if provided (takes precedence over localStorage)
+    const initialSlicer = props.importedSlicer || props.initialSlice
+
     this.state = {
       isDragging: false,
       isReportProblemOpen: false,
       isResizingDrilldown: false,
       uneditedDashboardTiles: null,
-      dashboardSlicer: null,
+      dashboardSlicer: initialSlicer || null,
     }
   }
 
@@ -94,6 +97,8 @@ class DashboardWithoutTheme extends React.Component {
     dashboardId: PropTypes.string,
     enableAutoRefresh: PropTypes.bool,
     slicerSuggestion: PropTypes.string,
+    importedSlicer: PropTypes.shape({}),
+    initialSlice: PropTypes.shape({}),
   }
 
   static defaultProps = {
@@ -117,6 +122,8 @@ class DashboardWithoutTheme extends React.Component {
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
+    importedSlicer: undefined,
+    initialSlice: undefined,
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
@@ -171,6 +178,16 @@ class DashboardWithoutTheme extends React.Component {
       })
     }
     window.addEventListener('resize', this.onWindowResize)
+  }
+
+  componentDidUpdate = (prevProps) => {
+    // Update slicer if importedSlicer or initialSlice prop changes
+    const currentSlicer = this.props.importedSlicer || this.props.initialSlice
+    const prevSlicer = prevProps.importedSlicer || prevProps.initialSlice
+    
+    if (currentSlicer !== prevSlicer && currentSlicer) {
+      this.setState({ dashboardSlicer: currentSlicer })
+    }
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -612,6 +629,7 @@ class DashboardWithoutTheme extends React.Component {
         exportDate: new Date().toISOString(),
         dashboard: {
           title: this.props.title || 'Untitled Dashboard',
+          initialSlicer: this.state.dashboardSlicer,
           tiles: tiles.map((tile) => {
             // Save the entire tile state
             return { ...tile }
