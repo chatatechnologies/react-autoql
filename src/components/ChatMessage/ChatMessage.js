@@ -367,10 +367,14 @@ export default class ChatMessage extends React.Component {
     this.props.setGeneratingSummary?.(true)
 
     try {
+      // Get filtered data from QueryOutput's tableData (already filtered)
+      const filteredRows = this.responseRef?.tableData || this.props.response.data.data.rows
+      const columns = this.props.response.data.data.columns
+
       const response = await fetchLLMSummary({
         data: {
-          rows: this.props.response.data.data.rows,
-          columns: this.props.response.data.data.columns,
+          rows: filteredRows,
+          columns: columns,
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
