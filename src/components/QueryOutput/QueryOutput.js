@@ -204,6 +204,7 @@ export class QueryOutput extends React.Component {
       networkColumnConfig: props.initialNetworkColumnConfig || null,
       legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
+      columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides without mutating queryResponse
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
@@ -521,9 +522,11 @@ export class QueryOutput extends React.Component {
       }
       // If initial data config was changed here, tell the parent
       if (
+        this.props.initialTableConfigs &&
         !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
+          columnOverrides: this.state.columnOverrides,
         }) &&
         this.props.onTableConfigChange &&
         !this.hasCalledInitialTableConfigChange
@@ -715,13 +718,37 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onTableConfigChange = (initialized = true) => {
+  onTableConfigChange = (initialized = true, columnOverridesOverride) => {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
+    // Use provided overrides if available, otherwise use state (for async setState cases)
+    const columnOverrides = columnOverridesOverride || this.state?.columnOverrides || {}
 
     this.props.onTableConfigChange({
       tableConfig: tableConfig,
       pivotTableConfig: pivotTableConfig,
+      columnOverrides: _cloneDeep(columnOverrides), // Persist column overrides
+    })
+  }
+
+  // Apply column overrides (e.g., date precision) to columns for charts only
+  applyColumnOverrides = (columns) => {
+    if (!columns || !this.state?.columnOverrides || Object.keys(this.state.columnOverrides).length === 0) {
+      return columns
+    }
+
+    return columns.map((col) => {
+      if (col?.index !== undefined) {
+        const override = this.state.columnOverrides[col.index]
+        if (override) {
+          return {
+            ...col,
+            type: override.type,
+            precision: override.precision,
+          }
+        }
+      }
+      return col
     })
   }
 
@@ -1946,10 +1973,29 @@ export class QueryOutput extends React.Component {
     }
 
     if (newColumns) {
-      this.updateColumns(newColumns)
+      // Store column overrides (e.g., date precision) without mutating queryResponse
+      // Find the changed column and store its override
+      const currentColumns = this.getColumns()
+      const overrides = { ...this.state.columnOverrides }
+      
+      newColumns.forEach((newCol) => {
+        const currentCol = currentColumns.find((c) => c.index === newCol.index)
+        if (currentCol && (newCol.type !== currentCol.type || newCol.precision !== currentCol.precision)) {
+          // Store override for this column
+          overrides[newCol.index] = {
+            type: newCol.type,
+            precision: newCol.precision,
+          }
+        }
+      })
+      
+      this.setState({ columnOverrides: overrides })
+      // Persist column overrides immediately with the new overrides (before setState completes)
+      this.onTableConfigChange(true, overrides)
+    } else {
+      this.onTableConfigChange()
     }
-
-    this.onTableConfigChange()
+    
     this.forceUpdate()
   }
 
@@ -3766,7 +3812,11 @@ export class QueryOutput extends React.Component {
     }
 
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
-    const columns = usePivotData ? this.pivotTableColumns : this.state.columns
+    const baseColumns = usePivotData ? this.pivotTableColumns : this.state.columns
+    // Apply column overrides (e.g., date precision) for charts only - don't mutate original queryResponse
+    const columns = this.applyColumnOverrides(baseColumns)
+    // originalColumns should be the original columns from queryResponse, not overridden
+    const originalColumns = usePivotData ? this.pivotTableColumns : this.getColumns()
 
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
@@ -3792,7 +3842,7 @@ export class QueryOutput extends React.Component {
           isResizable={this.state.isResizable}
           {...tableConfig}
           tableConfig={this.tableConfig}
-          originalColumns={this.getColumns()}
+          originalColumns={originalColumns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
@@ -3802,6 +3852,7 @@ export class QueryOutput extends React.Component {
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
           columns={columns}
+          columnOverrides={this.state.columnOverrides}
           isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}

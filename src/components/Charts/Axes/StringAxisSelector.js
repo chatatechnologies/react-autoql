@@ -16,6 +16,9 @@ export default class StringAxisSelector extends React.Component {
     this.state = {
       hoveredColumn: null,
     }
+    this.dateBucketMenuRefs = {} // Store refs for date bucket menu items
+    this.dateBucketScrollbarRef = null // Ref for the scrollbar container
+    this.scrolledToActiveColumn = null // Track which column we've scrolled to
 
     // Define the cyclical bucket options for date columns
     this.dateBucketOptions = [
@@ -113,6 +116,19 @@ export default class StringAxisSelector extends React.Component {
     return dateColumnIndices
   }
 
+  componentDidUpdate = (prevProps, prevState) => {
+    // Scroll to active item when menu opens for a column
+    if (this.state.hoveredColumn !== null && this.state.hoveredColumn !== this.scrolledToActiveColumn) {
+      setTimeout(() => {
+        this.scrollToActiveItem(this.state.hoveredColumn)
+        this.scrolledToActiveColumn = this.state.hoveredColumn
+      }, 50) // Small delay to ensure DOM is rendered
+    } else if (this.state.hoveredColumn === null) {
+      // Reset scroll tracking when menu closes
+      this.scrolledToActiveColumn = null
+    }
+  }
+
   handleColumnHover = (colIndex) => {
     this.setState({
       hoveredColumn: colIndex,
@@ -157,6 +173,45 @@ export default class StringAxisSelector extends React.Component {
     this.changeDateColumnBucket(colIndex, bucketOption)
   }
 
+  scrollToActiveItem = (colIndex) => {
+    // Find the active item and scroll to it
+    const column = this.props.columns[colIndex]
+    const columnOverrides = this.props.columnOverrides || {}
+    const override = columnOverrides[colIndex]
+    
+    const currentPrecision = override?.precision || column?.precision
+    const currentType = override?.type || column?.type
+    
+    // Find the index of the active option
+    const activeOptionIndex = this.dateBucketOptions.findIndex(
+      (option) => option.precision === currentPrecision && option.type === currentType
+    )
+    
+    if (activeOptionIndex >= 0) {
+      const activeItemRef = this.dateBucketMenuRefs[`${colIndex}-${activeOptionIndex}`]
+      if (activeItemRef && this.dateBucketScrollbarRef) {
+        // Use setTimeout to ensure the DOM is rendered
+        setTimeout(() => {
+          if (activeItemRef && this.dateBucketScrollbarRef?.ref?._container) {
+            const scrollContainer = this.dateBucketScrollbarRef.ref._container
+            if (scrollContainer && activeItemRef) {
+              const itemTop = activeItemRef.offsetTop
+              const itemHeight = activeItemRef.offsetHeight
+              const containerHeight = scrollContainer.clientHeight
+              const scrollTop = scrollContainer.scrollTop
+              
+              // Check if item is not visible
+              if (itemTop < scrollTop || itemTop + itemHeight > scrollTop + containerHeight) {
+                // Scroll to center the item
+                scrollContainer.scrollTop = itemTop - (containerHeight / 2) + (itemHeight / 2)
+              }
+            }
+          }
+        }, 0)
+      }
+    }
+  }
+
   renderDateBucketMenu = (element, colIndex) => {
     let maxHeight = 300
     const minHeight = 35
@@ -185,6 +240,9 @@ export default class StringAxisSelector extends React.Component {
               }
             >
               <CustomScrollbars
+                ref={(r) => {
+                  this.dateBucketScrollbarRef = r
+                }}
                 autoHeight
                 autoHeightMin={minHeight}
                 maxHeight={maxHeight}
@@ -207,18 +265,39 @@ export default class StringAxisSelector extends React.Component {
                   }}
                 >
                   <ul className='axis-selector-content'>
-                    {this.dateBucketOptions.map((option) => (
-                      <li
-                        className='string-select-list-item'
-                        key={option.precision}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          this.handleDateBucketSelect(this.state.hoveredColumn, option)
-                        }}
-                      >
-                        {option.label}
-                      </li>
-                    ))}
+                    {this.dateBucketOptions.map((option, optionIndex) => {
+                      // Check if this option is the active one
+                      const column = this.props.columns[colIndex]
+                      const columnOverrides = this.props.columnOverrides || {}
+                      const override = columnOverrides[colIndex]
+                      
+                      // Determine current precision: use override if exists, otherwise use column's precision
+                      const currentPrecision = override?.precision || column?.precision
+                      const currentType = override?.type || column?.type
+                      
+                      // Check if this option matches the current precision and type
+                      const isActive = 
+                        currentPrecision === option.precision && 
+                        currentType === option.type
+                      
+                      return (
+                        <li
+                          ref={(r) => {
+                            if (r) {
+                              this.dateBucketMenuRefs[`${colIndex}-${optionIndex}`] = r
+                            }
+                          }}
+                          className={`string-select-list-item ${isActive ? 'active' : ''}`}
+                          key={option.precision}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            this.handleDateBucketSelect(this.state.hoveredColumn, option)
+                          }}
+                        >
+                          {option.label}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               </CustomScrollbars>
@@ -284,9 +363,23 @@ export default class StringAxisSelector extends React.Component {
             <ul className='axis-selector-content'>
               {columnIndices.map((colIndex, i) => {
                 const column = this.props.columns[colIndex]
-
-                // Note: This cannot be a date string because it has to be a time stamp
-                const isDateColumn = column.type === ColumnTypes.DATE
+                
+                // Check if there's a column override for this column (meaning it was changed on FE)
+                const columnOverrides = this.props.columnOverrides || {}
+                const hasColumnOverride = columnOverrides[colIndex] !== undefined
+                
+                // Find the original column to check its type
+                const originalColumn = this.props.originalColumns?.find(
+                  (oc) => oc.index === colIndex || oc.name === column.name || oc.display_name === column.display_name
+                )
+                const originalColumnType = originalColumn?.type
+                
+                // Show menu if:
+                // 1. There's a column override (was changed on FE), OR
+                // 2. The original column type is DATE (not DATE_STRING)
+                const isDateColumn = 
+                  hasColumnOverride || 
+                  originalColumnType === ColumnTypes.DATE
 
                 const li = (
                   <li
@@ -374,6 +467,7 @@ export default class StringAxisSelector extends React.Component {
 StringAxisSelector.propTypes = {
   columns: PropTypes.array,
   originalColumns: PropTypes.array,
+  columnOverrides: PropTypes.object,
   numberColumnIndices: PropTypes.array,
   numberColumnIndices2: PropTypes.array,
   hasSecondAxis: PropTypes.bool,
