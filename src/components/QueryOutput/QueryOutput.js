@@ -1968,7 +1968,9 @@ export class QueryOutput extends React.Component {
     this.tableConfig.legendColumnIndex = index
 
     if (this.tableConfig.stringColumnIndex === index) {
-      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+      let stringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
+      this.tableConfig.legendColumnIndex = stringColumnIndex
     } else if (this.tableConfig.numberColumnIndices.includes(index)) {
       if (this.tableConfig.numberColumnIndices.length > 1) {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
@@ -2173,47 +2175,13 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    // Prefer the chart's ordinal/axis column if set; otherwise pick a groupable, non-total/non-near-unique string column with the highest unique count.
-    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't auto-select a different one)
+    
+    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
       existingStringIndex >= 0 && this.isColumnIndexValid(existingStringIndex, columns)
 
     let chosenStringIndex = hasValidExistingStringIndex ? existingStringIndex : stringColumnIndex
-
-    // Only auto-select if we don't have a valid existing string column index
-    if (!hasValidExistingStringIndex) {
-      try {
-        const rows = this.tableData || this.queryResponse?.data?.data?.rows || []
-        const rowCount = rows?.length || 0
-
-        const candidates = (stringColumnIndices || [])
-          .filter((idx) => idx !== undefined && idx !== null && columns[idx])
-          .map((idx) => {
-            const vals = rows
-              .map((r) => r?.[idx])
-              .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
-            const uniqueCount = new Set(vals).size
-            const col = columns[idx]
-            return { idx, uniqueCount, groupable: !!col?.groupable, display_name: col?.display_name, name: col?.name }
-          })
-
-        const looksLikeTotal = (s) => (s || '').toString().toLowerCase().includes('total')
-        const isNearUnique = (c) => rowCount > 0 && c.uniqueCount >= Math.floor(rowCount * 0.9)
-
-        const preferred = candidates.filter((c) => c.groupable)
-        const pool = preferred.length ? preferred : candidates
-        const filtered = pool.filter(
-          (c) => !looksLikeTotal(c.display_name) && !looksLikeTotal(c.name) && !isNearUnique(c),
-        )
-        const finalPool = filtered.length ? filtered : pool
-
-        if (finalPool.length) {
-          finalPool.sort((a, b) => b.uniqueCount - a.uniqueCount)
-          chosenStringIndex = finalPool[0].idx
-        }
-      } catch (e) {}
-    }
 
     this.tableConfig.stringColumnIndices = stringColumnIndices
     this.tableConfig.stringColumnIndex = chosenStringIndex
