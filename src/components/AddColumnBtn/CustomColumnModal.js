@@ -469,8 +469,7 @@ export default class CustomColumnModal extends React.Component {
   onUpdateColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
-    let protoTableColumn = this.buildProtoTableColumn(newColumn)
-    protoTableColumn = transformDivisionExpression(protoTableColumn)
+    const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
     this.props.onUpdateColumn({
       ...newColumn,
       table_column: protoTableColumn,
@@ -480,16 +479,9 @@ export default class CustomColumnModal extends React.Component {
 
   onAddColumnConfirm = () => {
     const newColumn = _cloneDeep(this.newColumn)
-    newColumn?.columnFnArray?.unshift({
-      type: 'operator',
-      value: CustomColumnValues.LEFT_BRACKET,
-    })
-    newColumn?.columnFnArray?.push({
-      type: 'operator',
-      value: CustomColumnValues.RIGHT_BRACKET,
-    })
-    let protoTableColumn = this.buildProtoTableColumn(newColumn)
-    protoTableColumn = transformDivisionExpression(protoTableColumn)
+    newColumn?.columnFnArray?.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
+    newColumn?.columnFnArray?.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
+    const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
     this.props.onAddColumn({
       ...newColumn,
       table_column: protoTableColumn,

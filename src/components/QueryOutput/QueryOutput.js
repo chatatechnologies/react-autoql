@@ -1539,10 +1539,11 @@ export class QueryOutput extends React.Component {
     }
 
     return allFilters.map((filter) => {
-      const foundColumn = this.getColumns()?.find((column) => column.name === filter.name)
+      const column = this.getColumns()?.find((col) => col.name === filter.name)
       return {
         ...filter,
-        columnName: foundColumn?.title,
+        columnName: column?.title,
+        ...(column?.type ? { column_type: column.type } : {}),
       }
     })
   }
