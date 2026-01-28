@@ -386,11 +386,6 @@ export default class ChatMessage extends React.Component {
 
       const summary = response?.data?.data?.summary
 
-      console.log(response)
-      console.log(response?.data)
-
-      console.log('summary', summary)
-
       if (summary) {
         // Add summary as a new message bubble
         this.props.addMessageToDM?.({
