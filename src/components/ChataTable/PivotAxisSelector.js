@@ -11,12 +11,13 @@ const PivotAxisSelector = ({ isOpen, options, activeIndex, location, onClose, on
     <Popover
       isOpen={isOpen}
       onClickOutside={onClose}
-      positions={['top', 'bottom']}
-      align='start'
+      // Prefer bottom placement; center-align the popover under the header.
+      positions={['bottom', 'top']}
+      align='center'
       padding={0}
       content={
         <div className='pivot-axis-selector-container'>
-          <CustomScrollbars maxHeight={220}>
+          <CustomScrollbars maxHeight={220} suppressScrollX={true}>
             <ul className='pivot-axis-selector-list'>
               {options.map((opt) => (
                 <li
@@ -35,7 +36,16 @@ const PivotAxisSelector = ({ isOpen, options, activeIndex, location, onClose, on
         </div>
       }
     >
-      <div style={{ position: 'absolute', top: location?.top, left: location?.left }} />
+      <div
+        style={{
+          position: 'absolute',
+          top: location?.top,
+          left: location?.left,
+          transform: 'translateX(-50%)',
+          width: 0,
+          height: 0,
+        }}
+      />
     </Popover>
   )
 }
@@ -61,8 +71,17 @@ PivotAxisSelector.defaultProps = {
 export const computePivotAxisSelectorLocation = (element, tableContainer) => {
   if (!element) return null
   const rect = element.getBoundingClientRect()
-  const tableRect = tableContainer?.getBoundingClientRect() || { top: 0, left: 0 }
-  return { top: rect.bottom - tableRect.top, left: rect.left - tableRect.left }
+  const tableRect = tableContainer?.getBoundingClientRect?.() || { top: 0, left: 0 }
+
+  // Some test mocks may not provide `bottom` — compute a fallback.
+  const rectBottom = typeof rect.bottom === 'number' ? rect.bottom : rect.top + (rect.height || 0)
+
+  // Anchor popover centered below header with a small gap
+  const GAP = 4
+  const top = rectBottom - tableRect.top + GAP
+  const left = rect.left - tableRect.left + (rect.width || 0) / 2
+
+  return { top, left }
 }
 
 export default PivotAxisSelector

@@ -4,6 +4,7 @@ import Axis from './Axis'
 import _cloneDeep from 'lodash.clonedeep'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
+import { DisplayTypes } from 'autoql-fe-utils'
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot
@@ -212,6 +213,49 @@ describe('after mount', () => {
 
         const dropdownArrow = findByTestAttr(wrapper, 'dropdown-arrow')
         expect(dropdownArrow.exists()).toBe(false)
+      })
+
+      test('hides Y-axis selector for heatmap charts', () => {
+        const scale = pivotSampleProps.stringScale({
+          title: 'Category',
+          type: 'BAND',
+          axis: 'y',
+        })
+
+        const wrapper = setup({
+          ...pivotSampleProps,
+          scale,
+          orient: 'left',
+          type: DisplayTypes.HEATMAP,
+        })
+
+        const dropdownArrow = findByTestAttr(wrapper, 'dropdown-arrow')
+        expect(dropdownArrow.exists()).toBe(false)
+      })
+
+      test('passes legend handler as string handler for heatmap Y axis', () => {
+        const changeLegend = jest.fn()
+        const changeString = jest.fn()
+
+        const scale = pivotSampleProps.stringScale({
+          title: 'Category',
+          type: 'BAND',
+          axis: 'y',
+        })
+
+        const wrapper = setup({
+          ...pivotSampleProps,
+          scale,
+          orient: 'left',
+          type: DisplayTypes.HEATMAP,
+          changeLegendColumnIndex: changeLegend,
+          changeStringColumnIndex: changeString,
+        })
+
+        const axisSelector = wrapper.find('AxisSelector')
+        expect(axisSelector.exists()).toBe(true)
+        const passedHandler = axisSelector.props().changeStringColumnIndex
+        expect(passedHandler).toBe(changeLegend)
       })
     })
   })

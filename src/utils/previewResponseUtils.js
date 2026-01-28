@@ -11,7 +11,7 @@ export function normalizePreviewResponse(originalResponse = {}, visibleColumns =
   let normalizedRows
   if (!rows || (Array.isArray(rows) && rows.length === 0)) {
     // Empty or missing data: create a single empty row matching column count
-    normalizedRows = [Array(columns.length).fill(undefined)]
+    normalizedRows = [new Array(columns.length).fill(undefined)]
   } else if (Array.isArray(rows)) {
     // Already an array: ensure it's 2D
     normalizedRows = Array.isArray(rows[0]) ? rows : [rows]

@@ -46,9 +46,11 @@ import {
   getColumnTypeAmounts,
   MONTH_NAMES,
   DEFAULT_DATA_PAGE_SIZE,
+  MAX_DATA_PAGE_SIZE,
   CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
+  getFilterPrecision,
   getPrecisionForDayJS,
   dataFormattingDefault,
   autoQLConfigDefault,
@@ -57,10 +59,12 @@ import {
   getDataFormatting,
   getAutoQLConfig,
   isDataLimited,
+  MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
   setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
+  getCleanColumnName,
   isDrilldown,
   CustomColumnTypes,
   formatFiltersForTabulator,
@@ -97,7 +101,7 @@ export class QueryOutput extends React.Component {
     this.TOOLTIP_ID = `react-autoql-query-output-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-query-output-chart-tooltip-${this.COMPONENT_KEY}`
     this.ALLOW_NUMERIC_STRING_COLUMNS = true
-    this.MAX_PIVOT_TABLE_CELLS = 5000
+    this.MAX_PIVOT_TABLE_COLUMNS = 100
 
     this.originalLegendState = {
       hiddenLegendLabels: [],
@@ -444,6 +448,8 @@ export class QueryOutput extends React.Component {
       const newState = {}
       let shouldForceUpdate = false
 
+      // Legend filters automatically start fresh for each query since the filter key includes queryID
+
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
         const shouldEnableResize = this.props.enableResizing && isChart
@@ -697,11 +703,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onLegendFilterChange = (legendFilterConfig) => {
-    this.setState({ legendFilterConfig })
+  onLegendFilterChange = (legendFilterConfigUpdate) => {
+    // Merge the per-column filter update into existing state
+    // legendFilterConfigUpdate is { [legendColumnIdentifier]: { filteredOutLabels: [...] } }
+    const currentConfig = this.state.legendFilterConfig || {}
+    const newConfig = { ...currentConfig, ...legendFilterConfigUpdate }
+    this.setState({ legendFilterConfig: newConfig })
     // Call parent callback if provided
     if (this.props.onLegendFilterChange) {
-      this.props.onLegendFilterChange(legendFilterConfig)
+      this.props.onLegendFilterChange(newConfig)
     }
   }
 
@@ -1481,7 +1491,7 @@ export class QueryOutput extends React.Component {
 
       formattedValue = `${isoDateStart},${isoDateEnd}`
       operator = 'between'
-      column_type = 'TIME'
+      column_type = ColumnTypes.DATE
     } else if (isColumnNumberType(column)) {
       formattedValue = `${value}`
     }
@@ -1962,7 +1972,9 @@ export class QueryOutput extends React.Component {
     this.tableConfig.legendColumnIndex = index
 
     if (this.tableConfig.stringColumnIndex === index) {
-      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+      let stringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
+      this.tableConfig.legendColumnIndex = stringColumnIndex
     } else if (this.tableConfig.numberColumnIndices.includes(index)) {
       if (this.tableConfig.numberColumnIndices.length > 1) {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
@@ -2167,47 +2179,13 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    // Prefer the chart's ordinal/axis column if set; otherwise pick a groupable, non-total/non-near-unique string column with the highest unique count.
-    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't auto-select a different one)
+    
+    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
       existingStringIndex >= 0 && this.isColumnIndexValid(existingStringIndex, columns)
 
     let chosenStringIndex = hasValidExistingStringIndex ? existingStringIndex : stringColumnIndex
-
-    // Only auto-select if we don't have a valid existing string column index
-    if (!hasValidExistingStringIndex) {
-      try {
-        const rows = this.tableData || this.queryResponse?.data?.data?.rows || []
-        const rowCount = rows?.length || 0
-
-        const candidates = (stringColumnIndices || [])
-          .filter((idx) => idx !== undefined && idx !== null && columns[idx])
-          .map((idx) => {
-            const vals = rows
-              .map((r) => r?.[idx])
-              .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
-            const uniqueCount = new Set(vals).size
-            const col = columns[idx]
-            return { idx, uniqueCount, groupable: !!col?.groupable, display_name: col?.display_name, name: col?.name }
-          })
-
-        const looksLikeTotal = (s) => (s || '').toString().toLowerCase().includes('total')
-        const isNearUnique = (c) => rowCount > 0 && c.uniqueCount >= Math.floor(rowCount * 0.9)
-
-        const preferred = candidates.filter((c) => c.groupable)
-        const pool = preferred.length ? preferred : candidates
-        const filtered = pool.filter(
-          (c) => !looksLikeTotal(c.display_name) && !looksLikeTotal(c.name) && !isNearUnique(c),
-        )
-        const finalPool = filtered.length ? filtered : pool
-
-        if (finalPool.length) {
-          finalPool.sort((a, b) => b.uniqueCount - a.uniqueCount)
-          chosenStringIndex = finalPool[0].idx
-        }
-      } catch (e) {}
-    }
 
     this.tableConfig.stringColumnIndices = stringColumnIndices
     this.tableConfig.stringColumnIndex = chosenStringIndex
@@ -2403,14 +2381,117 @@ export class QueryOutput extends React.Component {
   }
 
   setFilterFunction = (col) => {
-    // Import the filter function from autoql-fe-utils
-    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
-
-    // Wrap the filter function to preserve error callback behavior
-    // This wrapper is necessary because react-autoql needs to call onErrorCallback for error handling
-    if (filterFn && typeof filterFn === 'function') {
-      const wrappedFn = (headerValue, rowValue, rowData, filterParams) => {
+    // Provide a robust header filter for numeric columns to support operator prefixes
+    // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
+    if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+      // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
+      const inSetCache = new Map()
+      return (headerValue, rowValue, rowData, filterParams) => {
         try {
+          if (headerValue === undefined || headerValue === null) return true
+
+          const parsed = extractOperatorFromValue(headerValue)
+          const op = parsed?.operator
+          const cleanValue = parsed?.cleanValue ?? headerValue
+
+          // Empty filter -> no-op
+          if (String(cleanValue).trim() === '') return true
+
+          const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
+          const compareNum = Number(cleanValue)
+          const rowNum = Number(rowValue)
+
+          // No operator: treat as LIKE (substring, case-insensitive)
+          if (!op) {
+            return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+          }
+
+          switch (op) {
+            case '=':
+            case '==':
+              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum === compareNum
+              return rowStr.toLowerCase() === String(cleanValue).toLowerCase()
+            case '!=':
+              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum !== compareNum
+              return rowStr.toLowerCase() !== String(cleanValue).toLowerCase()
+            case '!':
+              return !rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+            case '<':
+              return Number(rowValue) < Number(cleanValue)
+            case '<=':
+              return Number(rowValue) <= Number(cleanValue)
+            case '>':
+              return Number(rowValue) > Number(cleanValue)
+            case '>=':
+              return Number(rowValue) >= Number(cleanValue)
+            case 'like':
+            case 'contains':
+              return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+            case 'regex':
+              try {
+                const re = new RegExp(cleanValue)
+                return re.test(rowStr)
+              } catch (e) {
+                return false
+              }
+            case 'in':
+              try {
+                const cacheKey = String(cleanValue)
+                let arr = inSetCache.get(cacheKey)
+                if (!arr) {
+                  arr = new Set(
+                    String(cleanValue)
+                      .split(',')
+                      .map((s) => s.trim().toLowerCase()),
+                  )
+                  inSetCache.set(cacheKey, arr)
+                }
+                return arr.has(rowStr.toLowerCase()) || arr.has(String(rowValue).toLowerCase())
+              } catch (e) {
+                return false
+              }
+            default: {
+              // Fall back to autoql-fe-utils filter function if available
+              const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+              if (filterFn && typeof filterFn === 'function') {
+                return filterFn(headerValue, rowValue, rowData, filterParams)
+              }
+              return false
+            }
+          }
+        } catch (error) {
+          console.error(error)
+          if (this.props.onErrorCallback) this.props.onErrorCallback(error)
+          return false
+        }
+      }
+    }
+
+    // Non-numeric columns: provide a header filter wrapper that defaults to
+    // a case-insensitive "LIKE" (substring) comparison when the user does
+    // not supply an operator. If an operator is supplied, delegate to the
+    // packaged filter function when available.
+    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
+    if (filterFn && typeof filterFn === 'function') {
+      return (headerValue, rowValue, rowData, filterParams) => {
+        try {
+          if (headerValue === undefined || headerValue === null) return true
+
+          const parsed = extractOperatorFromValue(headerValue)
+          const op = parsed?.operator
+          const cleanValue = parsed?.cleanValue ?? headerValue
+
+          // Empty filter -> no-op
+          if (String(cleanValue).trim() === '') return true
+
+          const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
+
+          // No operator: treat as LIKE (substring, case-insensitive)
+          if (!op) {
+            return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
+          }
+
+          // Operator present: delegate to packaged filter function
           return filterFn(headerValue, rowValue, rowData, filterParams)
         } catch (error) {
           console.error(error)
@@ -2420,7 +2501,6 @@ export class QueryOutput extends React.Component {
           return false
         }
       }
-      return wrappedFn
     }
 
     return filterFn
@@ -2668,8 +2748,9 @@ export class QueryOutput extends React.Component {
 
         const isCustom = customSelect || newCol?.is_custom
 
+        const cleanName = getCleanColumnName(newCol?.name)
         const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.display_name?.trim() === newCol.display_name
+          return select?.table_column?.trim() === cleanName
         })
 
         if (isCustom && !availableSelect) {
@@ -2849,12 +2930,11 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  limitPivotTableByTotalCells = (uniqueRowHeaders, uniqueColumnHeaders) => {
+  limitPivotTableByColumns = (uniqueRowHeaders, uniqueColumnHeaders) => {
     const originalRowCount = uniqueRowHeaders.length
     const originalColumnCount = uniqueColumnHeaders.length
-    const totalCells = originalRowCount * originalColumnCount
 
-    if (totalCells <= this.MAX_PIVOT_TABLE_CELLS) {
+    if (originalColumnCount <= this.MAX_PIVOT_TABLE_COLUMNS) {
       return {
         rowHeaders: uniqueRowHeaders,
         columnHeaders: uniqueColumnHeaders,
@@ -2862,26 +2942,14 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    // Calculate scaling factor to fit within cell limit
-    const scaleFactor = Math.sqrt(this.MAX_PIVOT_TABLE_CELLS / totalCells)
-    const maxRows = Math.floor(originalRowCount * scaleFactor)
-    const maxColumns = Math.floor(originalColumnCount * scaleFactor)
-
-    // Ensure we don't exceed the cell limit
-    let finalRows = maxRows
-    let finalColumns = maxColumns
-    if (finalRows * finalColumns > this.MAX_PIVOT_TABLE_CELLS) {
-      // Adjust to ensure we stay within limit
-      finalColumns = Math.floor(this.MAX_PIVOT_TABLE_CELLS / finalRows)
-    }
+    const finalColumns = this.MAX_PIVOT_TABLE_COLUMNS
 
     return {
-      rowHeaders: uniqueRowHeaders.slice(0, finalRows),
+      rowHeaders: uniqueRowHeaders,
       columnHeaders: uniqueColumnHeaders.slice(0, finalColumns),
       isLimited: true,
       originalRowCount,
       originalColumnCount,
-      totalCells,
     }
   }
 
@@ -2903,8 +2971,9 @@ export class QueryOutput extends React.Component {
 
       // Persist updated config to parent callback if available
       try {
-        if (typeof this.props.onTableConfigChange === 'function' && this.onTableConfigChange)
-          this.onTableConfigChange(false)
+        if (typeof this.props.onTableConfigChange === 'function') {
+          this.props.onTableConfigChange(false)
+        }
       } catch (err) {
         console.error('onTableConfigChange threw while updating resolved indices:', err)
         if (this.props.onErrorCallback) this.props.onErrorCallback(err)
@@ -2931,7 +3000,7 @@ export class QueryOutput extends React.Component {
       })
 
       if (this.formattedTableParams?.filters?.length) {
-        this.formattedTableParams.filters.forEach((filter) => {
+        this.formattedTableParams.filters.forEach((filter, idx) => {
           const filterColumnIndex = columns.find((col) => col.id === filter.id)?.index
           if (filterColumnIndex !== undefined) {
             let op = filter.operator,
@@ -3008,18 +3077,21 @@ export class QueryOutput extends React.Component {
           sortColumnIndex = !isNaN(parsed) ? parsed : columns.find((col) => col.field === primary.field)?.index
         }
         const sortDirection = (primary?.sort || primary?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
-        if (sortColumnIndex !== undefined)
+        if (sortColumnIndex !== undefined) {
           sortedData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
+        }
       }
       if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
 
       // Build unique header lists, stripping out null/undefined/empty-string values
+      // Use sortedData (not tableData) to extract unique column headers
+      // This ensures headers are extracted from the correctly sorted/filtered data
       let uniqueRowHeaders = sortedData
         .map((d) => d[sIdx])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
 
-      let uniqueColumnHeaders = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      let uniqueColumnHeaders = sortedData
         .map((d) => d[lIdx])
         .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
         .filter(onlyUnique)
@@ -3052,22 +3124,27 @@ export class QueryOutput extends React.Component {
 
       let didSwapAxes = false
       // Only allow axis swapping/changing on first generation, never when called from sort
-      if (
-        isFirstGeneration &&
-        !hasSavedAxisConfig && // Skip switching if user has saved preferences
-        // Only switch if legend is a date AND it would not shrink the number of row headers,
-        // or if the legend has more unique headers than the rows (original behavior).
-        ((isColumnDateType(columns[lIdx]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
-          (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
-            (!isColumnDateType(columns[sIdx]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS)))
-      ) {
-        newStringColumnIndex = lIdx
-        newLegendColumnIndex = sIdx
+      if (isFirstGeneration && !hasSavedAxisConfig) {
+        // Skip switching if user has saved preferences
+        // Check if swapping would prevent a data limit warning
+        const wouldExceedLimit = uniqueColumnHeaders?.length > this.MAX_PIVOT_TABLE_COLUMNS
+        const swappingWouldHelp = wouldExceedLimit && uniqueRowHeaders?.length <= this.MAX_PIVOT_TABLE_COLUMNS
 
-        const tempValues = [...uniqueRowHeaders]
-        uniqueRowHeaders = [...uniqueColumnHeaders]
-        uniqueColumnHeaders = tempValues
-        didSwapAxes = true
+        // Also check original swap conditions
+        const originalSwapCondition =
+          (isColumnDateType(columns[lIdx]) && uniqueColumnHeaders?.length >= uniqueRowHeaders?.length) ||
+          (uniqueColumnHeaders?.length > uniqueRowHeaders?.length &&
+            (!isColumnDateType(columns[sIdx]) || uniqueColumnHeaders.length > MAX_LEGEND_LABELS))
+
+        if (swappingWouldHelp || originalSwapCondition) {
+          newStringColumnIndex = lIdx
+          newLegendColumnIndex = sIdx
+
+          const tempValues = [...uniqueRowHeaders]
+          uniqueRowHeaders = [...uniqueColumnHeaders]
+          uniqueColumnHeaders = tempValues
+          didSwapAxes = true
+        }
       }
 
       // Only try to fix non-groupable columns on first generation
@@ -3096,8 +3173,8 @@ export class QueryOutput extends React.Component {
         uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
       }
 
-      // Limit by total number of cells (rows × columns)
-      const limitResult = this.limitPivotTableByTotalCells(uniqueRowHeaders, uniqueColumnHeaders)
+      // Limit by number of columns
+      const limitResult = this.limitPivotTableByColumns(uniqueRowHeaders, uniqueColumnHeaders)
       uniqueRowHeaders = limitResult.rowHeaders
       uniqueColumnHeaders = limitResult.columnHeaders
 
@@ -3105,7 +3182,6 @@ export class QueryOutput extends React.Component {
         this.pivotTableDataLimited = true
         this.pivotTableTotalRows = limitResult.originalRowCount
         this.pivotTableTotalColumns = limitResult.originalColumnCount
-        this.pivotTableTotalCells = limitResult.totalCells
       }
 
       const uniqueRowHeadersObj = uniqueRowHeaders.reduce((map, title, i) => {
@@ -3130,6 +3206,8 @@ export class QueryOutput extends React.Component {
       // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
+        id: `pivot-col-0`, // Stable ID based on field
+        index: 0, // Set index to match array position for sortDataByColumn
         frozen: true,
         visible: true,
         is_visible: true,
@@ -3151,6 +3229,8 @@ export class QueryOutput extends React.Component {
 
         const newPivotCol = {
           ...columns[nIdx],
+          id: `pivot-col-${i + 1}`, // Stable ID based on field index
+          index: i + 1, // Set index to match array position for sortDataByColumn
           origColumn: columns[nIdx],
           origPivotColumn: columns[newLegendColumnIndex],
           origValues: {},
@@ -3162,6 +3242,7 @@ export class QueryOutput extends React.Component {
           is_visible: true,
           headerFilter: false,
           headerFilterLiveFilter: false,
+          headerSort: true,
         }
 
         pivotTableColumns.push(newPivotCol)
@@ -3176,7 +3257,7 @@ export class QueryOutput extends React.Component {
       let aggregatedRowCount = 0
       let skippedRowCount = 0
       const skippedRowExamples = []
-      sortedData.forEach((row) => {
+      sortedData.forEach((row, rowIdx) => {
         const pivotRowIndex = uniqueRowHeadersObj[row[newStringColumnIndex]]
         const pivotRowHeaderValue = row[newStringColumnIndex]
         if (!pivotRowHeaderValue || pivotRowIndex === undefined || !pivotTableData[pivotRowIndex]) {
@@ -3215,7 +3296,46 @@ export class QueryOutput extends React.Component {
       })
 
       this.pivotTableColumns = pivotTableColumns
-      this.pivotTableData = pivotTableData
+      let finalPivotTableData = pivotTableData
+
+      // Apply sorting to pivot table data if user sorted a pivot column
+      const pivotSorters = this.formattedTableParams?.sorters || []
+      if (pivotSorters.length > 0) {
+        const primarySort = pivotSorters[0]
+        // Check if this is a pivot column sort (field is a number string like "1", "2", etc.)
+        const pivotColumnField = primarySort?.field
+        const pivotColumnIndex = parseInt(pivotColumnField, 10)
+
+        if (!isNaN(pivotColumnIndex) && pivotColumnIndex >= 0) {
+          const sortDirection =
+            (primarySort?.sort || primarySort?.dir)?.toString().toUpperCase() === 'DESC' ? 'desc' : 'asc'
+
+          // Sort the pivot data by the specified column
+          finalPivotTableData = [...pivotTableData].sort((a, b) => {
+            const aVal = a[pivotColumnIndex]
+            const bVal = b[pivotColumnIndex]
+
+            // Handle null/undefined values
+            if (aVal === null || aVal === undefined) return 1
+            if (bVal === null || bVal === undefined) return -1
+
+            // Numeric comparison
+            const aNum = Number(aVal)
+            const bNum = Number(bVal)
+
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
+            }
+
+            // String comparison as fallback
+            const aStr = String(aVal)
+            const bStr = String(bVal)
+            return sortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr)
+          })
+        }
+      }
+
+      this.pivotTableData = finalPivotTableData
       this.numberOfPivotTableRows = this.pivotTableData?.length ?? 0
       this.setPivotTableConfig(true)
       if (this._isMounted) {
@@ -3568,8 +3688,7 @@ export class QueryOutput extends React.Component {
           pivotTableDataLimited={this.pivotTableDataLimited}
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
-          totalCells={this.pivotTableTotalCells}
-          maxCells={this.MAX_PIVOT_TABLE_CELLS}
+          maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
@@ -3656,7 +3775,15 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
-    const isPivotDataLimited = usePivotData && (this.pivotTableRowsLimited || this.pivotTableColumnsLimited)
+    const isPivotDataLimited = usePivotData && this.pivotTableDataLimited
+    const isDataLimitedResult = isDataLimited(this.queryResponse)
+    const rowLimitValue = this.queryResponse?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
+    const countRows = this.queryResponse?.data?.data?.count_rows
+
+    // Check if isDataLimited is working correctly and fix it if broken
+    const expectedIsDataLimited = countRows != null && rowLimitValue != null && countRows > rowLimitValue
+    const correctedIsDataLimited = expectedIsDataLimited || isDataLimitedResult
+    const isDataLimitedValue = correctedIsDataLimited || isPivotDataLimited
 
     return (
       <ErrorBoundary>
@@ -3700,7 +3827,8 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimited(this.queryResponse) || isPivotDataLimited}
+          isDataLimited={isDataLimitedValue}
+          rowLimit={rowLimitValue}
           source={this.props.source}
           scope={this.props.scope}
           queryFn={this.queryFn}

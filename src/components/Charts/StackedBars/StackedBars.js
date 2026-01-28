@@ -41,19 +41,23 @@ export default class StackedBars extends PureComponent {
       return null
     }
 
+    // numberColumnIndices is already sorted by total aggregates in ChataChart (biggest to smallest)
+    // Use this order for all stacks to ensure consistent ordering and legend matching
+    const visibleIndices = numberColumnIndices.filter((colIndex) => !columns[colIndex].isSeriesHidden)
+
     const stackedBars = this.props.data.map((d, index) => {
       let prevPosValue = 0
       let prevNegValue = 0
-      const bars = numberColumnIndices.map((colIndex, i) => {
-        if (!columns[colIndex].isSeriesHidden) {
+      const bars = visibleIndices
+        .map((colIndex) => {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
           const value = !isNaN(valueNumber) ? valueNumber : 0
+          return { colIndex, value }
+        })
+        .filter(({ value }) => value !== 0 && value !== null && value !== undefined) // Filter out zero/null values, keep negatives
+        .map(({ colIndex, value }) => {
           const color = this.props.colorScale(colIndex)
-
-          if (!value) {
-            return null
-          }
 
           let x
           let width
@@ -97,8 +101,7 @@ export default class StackedBars extends PureComponent {
               style={{ fill: color }}
             />
           )
-        }
-      })
+        })
       return bars
     })
 

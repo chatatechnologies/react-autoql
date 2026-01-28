@@ -19,6 +19,8 @@ import {
   getDateColumnIndex,
   isColumnNumberType,
   MAX_CHART_ELEMENTS,
+  MAX_DATA_PAGE_SIZE,
+  getDataFormatting,
   dataStructureChanged,
   DATE_ONLY_CHART_TYPES,
   aggregateOtherCategory,
@@ -31,6 +33,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Spinner } from '../../Spinner'
+import { Icon } from '../../Icon'
 import { ChataPieChart } from '../ChataPieChart'
 import { ChataBarChart } from '../ChataBarChart'
 import { ChataLineChart } from '../ChataLineChart'
@@ -40,7 +43,6 @@ import { ChataColumnChart } from '../ChataColumnChart'
 import { ChataBubbleChart } from '../ChataBubbleChart'
 import { ChataHeatmapChart } from '../ChataHeatmapChart'
 import { ChataColumnLineChart } from '../ChataColumnLine'
-import { DataLimitWarning } from '../../DataLimitWarning'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ChataStackedBarChart } from '../ChataStackedBarChart'
 import { ChataScatterplotChart } from '../ChataScatterplotChart'
@@ -53,13 +55,13 @@ import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
-import { clearLegendFilter } from '../Legend/Legend'
 
 import './ChataChart.scss'
 
 export default class ChataChart extends React.Component {
   constructor(props) {
     super(props)
+    this.sortedNumberColumnIndicesForStacked = null // Initialize sorted column indices
     const data = this.getData(props)
 
     this.PADDING = 0
@@ -242,7 +244,8 @@ export default class ChataChart extends React.Component {
       }
     }
 
-    // Reset legend filters when table config indices change (not column properties)
+    // Clear visibleLegendLabels state when table config changes (for color regeneration)
+    // But don't clear the stored filters - they're stored per legend column and will be restored automatically
     const tableConfigChanged =
       this.props.stringColumnIndex !== prevProps.stringColumnIndex ||
       this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
@@ -250,19 +253,13 @@ export default class ChataChart extends React.Component {
       !deepEqual(this.props.numberColumnIndices2, prevProps.numberColumnIndices2)
 
     if (tableConfigChanged) {
-      // Clear legend filter store entry for this chart
-      const columnKey = this.props.columns?.map((c) => c.name).join('|') || 'default'
-      clearLegendFilter(columnKey)
-
       // Reset visibleLegendLabels state to clear color regeneration
       if (this.state.visibleLegendLabels !== null) {
         this.setState({ visibleLegendLabels: null })
       }
 
-      // Notify parent to clear legend filter config (for dashboard persistence)
-      if (this.props.onLegendFilterChange) {
-        this.props.onLegendFilterChange({ filteredOutLabels: [] })
-      }
+      // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
+      // The Legend component will automatically load the appropriate filter when the legend column changes
     }
   }
 
@@ -306,7 +303,15 @@ export default class ChataChart extends React.Component {
   }
 
   getColorScales = () => {
-    const { numberColumnIndices, numberColumnIndices2 } = this.props
+    let { numberColumnIndices, numberColumnIndices2 } = this.props
+
+    // For stacked charts, use sorted column indices for color scale calculation
+    // This ensures colors are assigned sequentially to segments (biggest to smallest)
+    const isStackedChart =
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
+      numberColumnIndices = this.sortedNumberColumnIndicesForStacked
+    }
 
     // Use all column indices (including hidden ones via isSeriesHidden) for the base color scale
     // This ensures hidden series keep their original colors when clicked directly
@@ -366,6 +371,8 @@ export default class ChataChart extends React.Component {
   getData = (props) => {
     try {
       if (!props.data?.length || !props.columns?.length) {
+        // Clear sorted indices if no data
+        this.sortedNumberColumnIndicesForStacked = null
         return
       }
 
@@ -510,6 +517,29 @@ export default class ChataChart extends React.Component {
           isDataTruncated = true
         }
 
+        // For stacked charts, calculate sorted column indices based on total aggregates
+        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        if (isStackedChart) {
+          const numberIndices = props.numberColumnIndices || []
+          // Calculate total aggregate for each column index across all rows
+          const columnTotals = numberIndices.map((colIndex) => {
+            const total = data.reduce((sum, row) => {
+              const value = row[colIndex]
+              const numValue = Number(value)
+              return sum + (isNaN(numValue) ? 0 : numValue)
+            }, 0)
+            return { colIndex, total }
+          })
+
+          // Sort by total descending (biggest to smallest)
+          columnTotals.sort((a, b) => b.total - a.total)
+
+          // Store sorted column indices
+          this.sortedNumberColumnIndicesForStacked = columnTotals.map((item) => item.colIndex)
+        } else {
+          this.sortedNumberColumnIndicesForStacked = null
+        }
+
         return {
           data,
           dataReduced: aggregateOtherCategory(props.data, { stringColumnIndex, numberColumnIndex }, maxElements),
@@ -562,11 +592,33 @@ export default class ChataChart extends React.Component {
           isDataTruncated = true
         }
 
+        // For stacked charts, calculate sorted column indices based on total aggregates
+        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        if (isStackedChart) {
+          // Calculate total aggregate for each column index across all rows
+          const columnTotals = numberIndices.map((colIndex) => {
+            const total = aggregated.reduce((sum, row) => {
+              const value = row[colIndex]
+              const numValue = Number(value)
+              return sum + (isNaN(numValue) ? 0 : numValue)
+            }, 0)
+            return { colIndex, total }
+          })
+
+          // Sort by total descending (biggest to smallest)
+          columnTotals.sort((a, b) => b.total - a.total)
+
+          // Store sorted column indices
+          this.sortedNumberColumnIndicesForStacked = columnTotals.map((item) => item.colIndex)
+        } else {
+          this.sortedNumberColumnIndicesForStacked = null
+        }
+
         return { data: aggregated, dataReduced: aggregatedWithOtherCategory, isDataTruncated }
       }
     } catch (error) {
       console.error(error)
-      return { data: props.data, dataReduced: props.data }
+      return { data: props.data, dataReduced: props.data, isDataTruncated: false }
     }
   }
 
@@ -733,7 +785,17 @@ export default class ChataChart extends React.Component {
     // Use sorted columns if available (for Y-axis sorting on heatmaps)
     // This must use the same columns as getCommonChartProps to ensure consistency
     const columns = this.sortedColumnsForHeatmap || this.props.columns
-    return getLegendLabelsForMultiSeries(columns, this.getColorScales()?.colorScale, this.props.numberColumnIndices)
+
+    // For stacked charts, use sorted column indices based on total aggregates
+    // This ensures legend labels match the sorted order of segments
+    const isStackedChart =
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    const numberColumnIndices =
+      isStackedChart && this.sortedNumberColumnIndicesForStacked
+        ? this.sortedNumberColumnIndicesForStacked
+        : this.props.numberColumnIndices
+
+    return getLegendLabelsForMultiSeries(columns, this.getColorScales()?.colorScale, numberColumnIndices)
   }
 
   getBase64Data = (scale) => {
@@ -774,34 +836,44 @@ export default class ChataChart extends React.Component {
         ref={(r) => (this.sliderRef = r)}
         style={{ paddingLeft }}
         className={`react-autoql-chart-header-container ${
-          this.state.isLoading || this.props.isResizing ? 'loading' : ''
+          (this.state.isLoading || this.props.isResizing) && this.props.type !== DisplayTypes.NETWORK_GRAPH
+            ? 'loading'
+            : ''
         }`}
       >
-        {/* Chart Control Buttons */}
-        {this.props.enableChartControls && this.shouldShowAverageLine() && !this.props.hidden && (
-          <div className='chart-control-buttons'>
-            <AverageLineToggle
-              isEnabled={this.state.showAverageLine}
-              onToggle={this.toggleAverageLine}
-              columns={this.props.columns}
-              visibleSeriesIndices={this.props.numberColumnIndices?.filter(
-                (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+        {/* Chart Control Buttons and Data Limit Warning */}
+        {((this.props.enableChartControls && this.shouldShowAverageLine()) || this.shouldShowDataLimitWarning()) &&
+          !this.props.hidden && (
+            <div className='chart-control-buttons'>
+              {this.props.enableChartControls && this.shouldShowAverageLine() && (
+                <div className='chart-control-buttons-left'>
+                  <AverageLineToggle
+                    isEnabled={this.state.showAverageLine}
+                    onToggle={this.toggleAverageLine}
+                    columns={this.props.columns}
+                    visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                      (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                    )}
+                    chartTooltipID={this.props.chartTooltipID}
+                  />
+                  {this.shouldShowRegressionLine() && (
+                    <RegressionLineToggle
+                      isEnabled={this.state.showRegressionLine}
+                      onToggle={this.toggleRegressionLine}
+                      columns={this.props.columns}
+                      visibleSeriesIndices={this.props.numberColumnIndices?.filter(
+                        (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
+                      )}
+                      chartTooltipID={this.props.chartTooltipID}
+                    />
+                  )}
+                </div>
               )}
-              chartTooltipID={this.props.chartTooltipID}
-            />
-            {this.shouldShowRegressionLine() && (
-              <RegressionLineToggle
-                isEnabled={this.state.showRegressionLine}
-                onToggle={this.toggleRegressionLine}
-                columns={this.props.columns}
-                visibleSeriesIndices={this.props.numberColumnIndices?.filter(
-                  (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
-                )}
-                chartTooltipID={this.props.chartTooltipID}
-              />
-            )}
-          </div>
-        )}
+              {this.shouldShowDataLimitWarning() && (
+                <div className='chart-control-buttons-right'>{this.renderDataLimitWarning()}</div>
+              )}
+            </div>
+          )}
       </div>
     )
   }
@@ -824,7 +896,16 @@ export default class ChataChart extends React.Component {
       }
     }
 
-    const visibleSeriesIndices = numberColumnIndices.filter(
+    // For stacked charts, use sorted column indices based on total aggregates
+    // This ensures all stacks and the legend use the same order (biggest to smallest)
+    let finalNumberColumnIndices = numberColumnIndices
+    const isStackedChart =
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
+      finalNumberColumnIndices = this.sortedNumberColumnIndicesForStacked
+    }
+
+    const visibleSeriesIndices = finalNumberColumnIndices.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
@@ -842,6 +923,7 @@ export default class ChataChart extends React.Component {
       ...this.props,
       columns,
       legendColumn: updatedLegendColumn,
+      numberColumnIndices: finalNumberColumnIndices, // Use sorted indices for stacked charts
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
@@ -889,8 +971,23 @@ export default class ChataChart extends React.Component {
     )
   }
 
-  renderDataLimitWarning = () => {
+  shouldShowDataLimitWarning = () => {
     if (this.props.hidden) {
+      return false
+    }
+
+    const isTruncated =
+      this.state.isDataTruncated &&
+      this.props.type !== DisplayTypes.PIE &&
+      this.props.type !== DisplayTypes.NETWORK_GRAPH
+
+    const isDataLimited = this.props.isDataLimited
+
+    return isDataLimited || isTruncated
+  }
+
+  renderDataLimitWarning = () => {
+    if (!this.shouldShowDataLimitWarning()) {
       return null
     }
 
@@ -899,11 +996,35 @@ export default class ChataChart extends React.Component {
       this.props.type !== DisplayTypes.PIE &&
       this.props.type !== DisplayTypes.NETWORK_GRAPH
 
-    if (this.props.isDataLimited || isTruncated) {
-      return <DataLimitWarning tooltipID={this.props.tooltipID} rowLimit={this.props.rowLimit} />
+    const isDataLimited = this.props.isDataLimited
+
+    const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+    const rowLimit = this.props.rowLimit ?? MAX_DATA_PAGE_SIZE
+    const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(rowLimit)
+    const chartElementLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_CHART_ELEMENTS)
+
+    let tooltipContent
+
+    if (isDataLimited && isTruncated) {
+      // Both limits exceeded - use general message
+      tooltipContent = `To optimize performance, the visualization is limited to the initial <em>${rowLimitFormatted}</em> rows of data or <em>${chartElementLimitFormatted}</em> chart elements - whichever occurs first.`
+    } else if (isDataLimited) {
+      // Only MAX_DATA_PAGE_SIZE exceeded
+      tooltipContent = `To optimize performance, this chart is limited to the initial <em>${rowLimitFormatted}</em> rows.`
+    } else {
+      // Only MAX_CHART_ELEMENTS exceeded
+      tooltipContent = `To optimize performance, this chart is limited to <em>${chartElementLimitFormatted}</em> chart elements. Try switching the axis to reduce the number of elements.`
     }
 
-    return null
+    return (
+      <div
+        className='react-autoql-chart-data-limit-icon'
+        data-tooltip-html={tooltipContent}
+        data-tooltip-id={this.props.tooltipID}
+      >
+        <Icon type='warning' />
+      </div>
+    )
   }
 
   handleLegendVisibilityChange = (hiddenLabels) => this.props.onLegendVisibilityChange?.(hiddenLabels)
@@ -1090,7 +1211,6 @@ export default class ChataChart extends React.Component {
     return (
       <ErrorBoundary>
         <>
-          {this.renderDataLimitWarning()}
           {this.renderChartHeader()}
           <div
             id={`react-autoql-chart-${this.state.chartID}`}
