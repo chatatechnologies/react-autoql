@@ -284,7 +284,9 @@ export default class StringAxisSelector extends React.Component {
             <ul className='axis-selector-content'>
               {columnIndices.map((colIndex, i) => {
                 const column = this.props.columns[colIndex]
-                const isDateColumn = isColumnDateType(column)
+
+                // Note: This cannot be a date string because it has to be a time stamp
+                const isDateColumn = column.type === ColumnTypes.DATE
 
                 const li = (
                   <li
