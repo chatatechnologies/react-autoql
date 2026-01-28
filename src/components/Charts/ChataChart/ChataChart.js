@@ -258,6 +258,9 @@ export default class ChataChart extends React.Component {
         this.setState({ visibleLegendLabels: null })
       }
 
+      // Clear sortedNumberColumnIndicesForStacked when columns change (it will be recalculated in getData)
+      this.sortedNumberColumnIndicesForStacked = null
+
       // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
       // The Legend component will automatically load the appropriate filter when the legend column changes
     }
