@@ -38,6 +38,10 @@ export default class ChatContent extends React.Component {
     this.state = {
       messages: [],
       subjects: [],
+      isQueryRunning: false,
+      isDrilldownRunning: false,
+      isInputDisabled: false,
+      isGeneratingSummary: false,
     }
   }
 
@@ -63,6 +67,7 @@ export default class ChatContent extends React.Component {
     shouldRender: PropTypes.bool,
     hideChatBarAfterInitialResponse: PropTypes.bool,
     executeQuery: PropTypes.func,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -76,6 +81,7 @@ export default class ChatContent extends React.Component {
     shouldRender: true,
     hideChatBarAfterInitialResponse: false,
     executeQuery: () => {},
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
@@ -385,7 +391,13 @@ export default class ChatContent extends React.Component {
   }
 
   isChataThinking = () => {
-    return this.state.isQueryRunning || this.state.isDrilldownRunning
+    return this.state.isQueryRunning || this.state.isDrilldownRunning || this.state.isGeneratingSummary
+  }
+
+  setGeneratingSummary = (isGenerating) => {
+    if (this._isMounted) {
+      this.setState({ isGeneratingSummary: isGenerating })
+    }
   }
 
   shouldHideQueryInputComponent = () => {
@@ -469,6 +481,7 @@ export default class ChatContent extends React.Component {
                     isResponse={message.isResponse}
                     isChataThinking={this.isChataThinking()}
                     onSuggestionClick={this.animateInputTextAndSubmit}
+                    setGeneratingSummary={this.setGeneratingSummary}
                     customToolbarOptions={this.props.customToolbarOptions}
                     content={message.content}
                     scrollToBottom={this.scrollToBottom}
@@ -503,6 +516,7 @@ export default class ChatContent extends React.Component {
                     disableAggregationMenu={this.props.disableAggregationMenu}
                     allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
                     preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+                    enableMagicWand={this.props.enableMagicWand}
                   />
                 )
               })}
