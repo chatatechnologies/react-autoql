@@ -1925,12 +1925,20 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    this.tableConfig.stringColumnIndex = index
+
+    // If the new string column index equals the legend column index, change the legend column to a different value
     if (this.tableConfig.legendColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
-      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
-      this.tableConfig.legendColumnIndex = stringColumnIndex
-    } else {
-      this.tableConfig.stringColumnIndex = index
+      const columns = this.getColumns()
+      const differentColumn = columns.find(
+        (col) =>
+          col.is_visible &&
+          col.index !== index &&
+          col.groupable,
+      )
+      if (differentColumn?.index >= 0) {
+        this.tableConfig.legendColumnIndex = differentColumn.index
+      }
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
@@ -2017,10 +2025,18 @@ export class QueryOutput extends React.Component {
 
     this.tableConfig.legendColumnIndex = index
 
+    // If the new legend column index equals the string column index, change the string column to a different value
     if (this.tableConfig.stringColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
-      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
-      this.tableConfig.legendColumnIndex = stringColumnIndex
+      const columns = this.getColumns()
+      const differentColumn = columns.find(
+        (col) =>
+          col.is_visible &&
+          col.index !== index &&
+          col.groupable,
+      )
+      if (differentColumn?.index >= 0) {
+        this.tableConfig.stringColumnIndex = differentColumn.index
+      }
     } else if (this.tableConfig.numberColumnIndices.includes(index)) {
       if (this.tableConfig.numberColumnIndices.length > 1) {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)

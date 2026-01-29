@@ -71,7 +71,7 @@ export default class LegendSelector extends React.Component {
           e.stopPropagation()
         }}
       >
-        <CustomScrollbars>
+        <CustomScrollbars suppressScrollX>
           <ul className='axis-selector-content'>
             {columnIndices.map((colIndex, i) => {
               return (
