@@ -3225,6 +3225,7 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         field: '0',
         resizable: true,
+        origColumn: columns[newStringColumnIndex],
         minWidth: this.calculatePivotColumnMinWidth(columns[newStringColumnIndex].display_name),
         cssClass: 'pivot-category',
         pivot: true,
