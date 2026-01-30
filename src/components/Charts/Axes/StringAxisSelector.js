@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnDateType } from 'autoql-fe-utils'
+import { isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -24,8 +24,16 @@ export default class StringAxisSelector extends React.Component {
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
 
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && col.isStringType)) {
-        columnIndices.push(i)
+      // If using pivot data (isAggregated), only include groupable string columns
+      if (this.props.isAggregated) {
+        if (col.groupable && isColumnStringType(col)) {
+          columnIndices.push(i)
+        }
+      } else {
+        // Original logic: include columns not on number axes, or groupable string columns
+        if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && (col.type === 'STRING'))) {
+          columnIndices.push(i)
+        }
       }
     })
     return columnIndices
