@@ -939,10 +939,24 @@ export default class ChataChart extends React.Component {
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
-    // visibleSeriesIndices: used by chart components for scale calculation (excludes hidden series, maintains order)
-    // For stacked charts, this will be in sorted order (biggest to smallest)
+    // For stacked charts, use sorted column indices for display/legend order (biggest to smallest)
+    let sortedIndicesForDisplay = null
+    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
+      // Filter sorted indices to only include those that exist in the current columns array
+      // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
+      const filteredIndices = this.sortedNumberColumnIndicesForStacked.filter(
+        (colIndex) => columns?.[colIndex] !== undefined && !columns[colIndex].isSeriesHidden,
+      )
+      // Only use filtered indices if we have valid ones, otherwise fall back to visibleSeriesIndicesForScale
+      if (filteredIndices.length > 0) {
+        sortedIndicesForDisplay = filteredIndices
+      }
+    }
+
+    // visibleSeriesIndices: used by chart components for scale calculation (excludes hidden series, maintains original order)
+    // visibleSeriesIndicesForDisplay: used for legend/display (can be sorted for stacked charts)
     const visibleSeriesIndices = visibleSeriesIndicesForScale
-    const visibleSeriesIndicesForDisplay = visibleSeriesIndicesForScale
+    const visibleSeriesIndicesForDisplay = sortedIndicesForDisplay || visibleSeriesIndicesForScale
 
     const { innerHeight, innerWidth } = this.getInnerDimensions()
     const { outerHeight, outerWidth } = this.getOuterDimensions()
