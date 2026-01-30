@@ -31,7 +31,7 @@ export default class StringAxisSelector extends React.Component {
         }
       } else {
         // Original logic: include columns not on number axes, or groupable string columns
-        if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && (col.type === 'STRING'))) {
+        if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && isColumnStringType(col))) {
           columnIndices.push(i)
         }
       }

@@ -1,7 +1,7 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import { QueryOutput } from '../QueryOutput'
-import { ColumnTypes, isColumnNumberType } from 'autoql-fe-utils'
+import { ColumnTypes, isColumnNumberType, sortDataByColumn } from 'autoql-fe-utils'
 import { coerceToNumber, coerceExistingCellToNumber, initPivotNumericCells, ensureRowNumericCells } from '../pivotUtils'
 
 describe('QueryOutput pivot suite', () => {

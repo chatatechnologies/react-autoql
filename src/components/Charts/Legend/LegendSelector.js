@@ -5,6 +5,7 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { getStringColumnIndices, isColumnStringType } from 'autoql-fe-utils'
 
 import './LegendSelector.scss'
+
 export default class LegendSelector extends React.Component {
   constructor(props) {
     super(props)
