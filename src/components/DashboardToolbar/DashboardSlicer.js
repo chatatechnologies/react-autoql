@@ -7,6 +7,7 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import { Icon } from '../Icon'
 
 import { authenticationType } from '../../props/types'
+
 import '../FilterLockPopover/FilterLockPopover.scss'
 
 const DashboardSlicer = (props) => {
