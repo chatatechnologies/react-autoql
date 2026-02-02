@@ -107,6 +107,9 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       isEditing: false,
     }
+    
+    // Ref to store latest column overrides for synchronous access (avoids stale state issues)
+    this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
@@ -732,14 +735,18 @@ export class QueryOutput extends React.Component {
   }
 
   // Apply column overrides (e.g., date precision) to columns for charts only
-  applyColumnOverrides = (columns) => {
-    if (!columns || !this.state?.columnOverrides || Object.keys(this.state.columnOverrides).length === 0) {
+  // Uses ref for latest overrides to avoid stale state issues
+  applyColumnOverrides = (columns, overridesOverride) => {
+    // Use provided override, then ref (latest), then state (fallback)
+    const overrides = overridesOverride || this.latestColumnOverrides || this.state?.columnOverrides || {}
+    
+    if (!columns || !overrides || Object.keys(overrides).length === 0) {
       return columns
     }
 
     return columns.map((col) => {
       if (col?.index !== undefined) {
-        const override = this.state.columnOverrides[col.index]
+        const override = overrides[col.index]
         if (override) {
           return {
             ...col,
@@ -1974,21 +1981,31 @@ export class QueryOutput extends React.Component {
 
     if (newColumns) {
       // Store column overrides (e.g., date precision) without mutating queryResponse
-      // Find the changed column and store its override
-      const currentColumns = this.getColumns()
+      // Always store overrides from newColumns since they represent the user's explicit choice
+      // Don't compare with getColumns() which may already have overrides applied
       const overrides = { ...this.state.columnOverrides }
       
       newColumns.forEach((newCol) => {
-        const currentCol = currentColumns.find((c) => c.index === newCol.index)
-        if (currentCol && (newCol.type !== currentCol.type || newCol.precision !== currentCol.precision)) {
-          // Store override for this column
+        // Store override from newColumns - these represent the user's explicit choice
+        // Compare against existing override in state, not getColumns() which may have stale/already-applied values
+        const existingOverride = overrides[newCol.index]
+        
+        // Update override if type or precision is different from existing override
+        const needsUpdate = 
+          (newCol.type && newCol.type !== existingOverride?.type) ||
+          (newCol.precision && newCol.precision !== existingOverride?.precision)
+        
+        if (needsUpdate) {
           overrides[newCol.index] = {
-            type: newCol.type,
-            precision: newCol.precision,
+            type: newCol.type || existingOverride?.type,
+            precision: newCol.precision || existingOverride?.precision,
           }
         }
       })
       
+      // Update ref immediately for synchronous access (avoids stale state)
+      // Deep clone to avoid reference issues
+      this.latestColumnOverrides = _cloneDeep(overrides)
       this.setState({ columnOverrides: overrides })
       // Persist column overrides immediately with the new overrides (before setState completes)
       this.onTableConfigChange(true, overrides)

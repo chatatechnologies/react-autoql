@@ -37,6 +37,7 @@ export default class StringAxisSelector extends React.Component {
       { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOW, label: 'Day of Week' },
       { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.HOUR, label: 'Hour of Day' },
     ]
+    
   }
 
   getAllStringColumnIndices = () => {
@@ -258,7 +259,7 @@ export default class StringAxisSelector extends React.Component {
                                 this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
                               }
                             }}
-                            className={`string-select-list-item ${isActive ? 'active' : ''}`}
+                            className={`string-select-list-item ${isActive ? 'active' : ''} ${option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''}`}
                             key={`absolute-${option.precision}`}
                             onClick={(e) => {
                               e.stopPropagation()
@@ -275,44 +276,44 @@ export default class StringAxisSelector extends React.Component {
                     {this.dateBucketOptions
                       .filter((option) => option.type === ColumnTypes.DATE_STRING)
                       .map((option, optionIndex) => {
-                        // Check if this option is the active one
-                        const column = this.props.columns[colIndex]
-                        const columnOverrides = this.props.columnOverrides || {}
-                        const override = columnOverrides[colIndex]
-                        
-                        // Determine current precision: use override if exists, otherwise use column's precision
-                        const currentPrecision = override?.precision || column?.precision
-                        const currentType = override?.type || column?.type
-                        
+                      // Check if this option is the active one
+                      const column = this.props.columns[colIndex]
+                      const columnOverrides = this.props.columnOverrides || {}
+                      const override = columnOverrides[colIndex]
+                      
+                      // Determine current precision: use override if exists, otherwise use column's precision
+                      const currentPrecision = override?.precision || column?.precision
+                      const currentType = override?.type || column?.type
+                      
                         // Only show as active if this is the selected column AND the precision/type matches
-                        const isActive = 
+                      const isActive = 
                           isSelectedColumn &&
-                          currentPrecision === option.precision && 
-                          currentType === option.type
-                        
+                        currentPrecision === option.precision && 
+                        currentType === option.type
+                      
                         // Find the original index in dateBucketOptions for ref
                         const originalIndex = this.dateBucketOptions.findIndex(
                           (opt) => opt.precision === option.precision && opt.type === option.type
                         )
                         
-                        return (
-                          <li
-                            ref={(r) => {
-                              if (r) {
+                      return (
+                        <li
+                          ref={(r) => {
+                            if (r) {
                                 this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
-                              }
-                            }}
-                            className={`string-select-list-item ${isActive ? 'active' : ''}`}
+                            }
+                          }}
+                          className={`string-select-list-item ${isActive ? 'active' : ''}`}
                             key={`cyclical-${option.precision}`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              this.handleDateBucketSelect(this.state.hoveredColumn, option)
-                            }}
-                          >
-                            {option.label}
-                          </li>
-                        )
-                      })}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            this.handleDateBucketSelect(this.state.hoveredColumn, option)
+                          }}
+                        >
+                          {option.label}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               </CustomScrollbars>
