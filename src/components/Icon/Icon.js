@@ -111,6 +111,7 @@ import {
   sum,
   median,
   networkIcon,
+  magicWandIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -246,6 +247,10 @@ export default class Icon extends React.Component {
       }
       case 'layers-plus': {
         icon = <BiLayerPlus />
+        break
+      }
+      case 'magic-wand': {
+        icon = magicWandIcon
         break
       }
       case 'mark-read': {

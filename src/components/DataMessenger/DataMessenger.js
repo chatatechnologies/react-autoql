@@ -142,6 +142,7 @@ export class DataMessenger extends React.Component {
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -207,6 +208,7 @@ export class DataMessenger extends React.Component {
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
     disableColumnSelectionForDataExplorer: false,
+    enableMagicWand: false,
     setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},
