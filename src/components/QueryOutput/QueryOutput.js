@@ -1539,10 +1539,11 @@ export class QueryOutput extends React.Component {
     }
 
     return allFilters.map((filter) => {
-      const foundColumn = this.getColumns()?.find((column) => column.name === filter.name)
+      const column = this.getColumns()?.find((col) => col.name === filter.name)
       return {
         ...filter,
-        columnName: foundColumn?.title,
+        columnName: column?.title,
+        ...(column?.type ? { column_type: column.type } : {}),
       }
     })
   }
@@ -2338,7 +2339,7 @@ export class QueryOutput extends React.Component {
   setFilterFunction = (col) => {
     // Provide a robust header filter for numeric columns to support operator prefixes
     // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
-    if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+    if (isColumnNumberType(col)) {
       // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
       const inSetCache = new Map()
       return (headerValue, rowValue, rowData, filterParams) => {
@@ -3266,7 +3267,7 @@ export class QueryOutput extends React.Component {
             const aNum = Number(aVal)
             const bNum = Number(bVal)
 
-            if (!isNaN(aNum) && !isNaN(bNum)) {
+            if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
               return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
             }
 
