@@ -233,7 +233,7 @@ export default class CustomColumnModal extends React.Component {
 
     const { columnFn, columnType } = this.state
 
-    // Quick semantic/structural checks before creating mutator
+    // Validate formula has variables and correct operator sequences before creating mutator
     if (!this.hasVariablesInColumnFn()) {
       this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
       return
@@ -584,12 +584,13 @@ export default class CustomColumnModal extends React.Component {
 
   hasVariablesInColumnFn = () => {
     const columnFn = this.state.columnFn || []
-    return columnFn.some((chunk) => {
-      if (!chunk) return false
-      if (chunk.type === CustomColumnTypes.COLUMN || chunk.type === CustomColumnTypes.NUMBER) return true
-      if (chunk.type === CustomColumnTypes.FUNCTION) return !!(chunk.fn || chunk.column || chunk.nTileNumber)
-      return false
-    })
+    return columnFn.some(
+      (chunk) =>
+        chunk &&
+        (chunk.type === CustomColumnTypes.COLUMN ||
+          chunk.type === CustomColumnTypes.NUMBER ||
+          (chunk.type === CustomColumnTypes.FUNCTION && (chunk.fn || chunk.column || chunk.nTileNumber))),
+    )
   }
 
   isStructurallyValidColumnFn = () => {
