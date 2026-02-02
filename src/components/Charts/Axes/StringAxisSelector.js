@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { isColumnDateType, getNumberOfGroupables } from 'autoql-fe-utils'
+import { isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -14,70 +14,28 @@ export default class StringAxisSelector extends React.Component {
     this.COMPONENT_KEY = uuid()
   }
 
-  // Build a quick lookup map from `originalColumns` for index resolution
-  getOriginalIndexMap = (originalColumns) => {
-    const map = new Map()
-    if (!originalColumns) return map
-    originalColumns.forEach((oc) => {
-      if (oc?.index !== undefined) map.set(String(oc.index), oc.index)
-      if (oc?.display_name) map.set(oc.display_name, oc.index)
-    })
-    return map
-  }
-
   getAllStringColumnIndices = () => {
-    const columnsForCheck = this.props.originalColumns ?? this.props.columns
-    if (!columnsForCheck?.length) return []
-
     const columnIndices = []
-    // Determine grouped state
-    const numGroupables = getNumberOfGroupables(columnsForCheck)
-    const isGrouped = !!this.props.isAggregated || numGroupables > 0
-
-    // Build a quick lookup for originalColumns by index or display_name
-    const originalIndexMap = this.getOriginalIndexMap(this.props.originalColumns)
-
-    const numberIndices = this.props.numberColumnIndices ?? []
-    const numberIndices2 = this.props.numberColumnIndices2 ?? []
-
     this.props.columns.forEach((col, i) => {
-      if (!col.is_visible) return
-
-      // canonical id may be `col.index` or positional `i`
-      const colId = col.index ?? i
-      // Resolve original index: prefer matching by canonical index, but fall back to display_name when mismatched
-      let originalIndexForCol
-      if (col.index === undefined) {
-        originalIndexForCol = originalIndexMap.get(col.display_name)
-      } else {
-        originalIndexForCol = originalIndexMap.get(String(col.index))
-        if (originalIndexForCol === undefined && col.display_name) {
-          originalIndexForCol = originalIndexMap.get(col.display_name)
-        }
-      }
-
-      const isOnNumberAxis =
-        numberIndices.includes(colId) ||
-        numberIndices.includes(i) ||
-        (originalIndexForCol !== undefined && numberIndices.includes(originalIndexForCol))
-
-      const isOnSecondNumberAxis =
-        this.props.hasSecondAxis &&
-        (numberIndices2.includes(colId) ||
-          numberIndices2.includes(i) ||
-          (originalIndexForCol !== undefined && numberIndices2.includes(originalIndexForCol)))
-
-      const isStringType = Boolean(col.isStringType) || String(col.type || '').toUpperCase() === 'STRING'
-
-      // If grouped, only include groupable (dimension) columns
-      if (isGrouped) {
-        if (col.groupable) columnIndices.push(i)
+      if (!col.is_visible) {
         return
       }
 
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis) || isStringType) columnIndices.push(i)
-    })
+      const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
+      const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
 
+      // If using pivot data (isAggregated), only include groupable string columns
+      if (this.props.isAggregated) {
+        if (col.groupable && isColumnStringType(col)) {
+          columnIndices.push(i)
+        }
+      } else {
+        // Original logic: include columns not on number axes, or groupable string columns
+        if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && isColumnStringType(col))) {
+          columnIndices.push(i)
+        }
+      }
+    })
     return columnIndices
   }
 
@@ -118,10 +76,7 @@ export default class StringAxisSelector extends React.Component {
       columnIndices = this.getAllStringColumnIndices()
     }
 
-    const onSelectHandler =
-      this.props.useLegendHandler && this.props.changeLegendColumnIndex
-        ? this.props.changeLegendColumnIndex
-        : this.props.changeStringColumnIndex
+    const origColumn = this.props.scale?.column?.origColumn ?? this.props.scale?.column
 
     return (
       <div
@@ -136,18 +91,22 @@ export default class StringAxisSelector extends React.Component {
             }}
           >
             <ul className='axis-selector-content'>
-              {columnIndices.map((colIndex, i) => (
-                <li
-                  className={`string-select-list-item ${colIndex === this.props.scale?.column?.index ? 'active' : ''}`}
-                  key={`string-column-select-${i}`}
-                  onClick={() => {
-                    this.props.closeSelector()
-                    onSelectHandler?.(colIndex)
-                  }}
-                >
-                  {this.props.columns?.[colIndex]?.display_name}
-                </li>
-              ))}
+              {columnIndices.map((colIndex, i) => {
+                return (
+                  <li
+                    className={`string-select-list-item ${
+                      colIndex === origColumn?.index ? 'active' : ''
+                    }`}
+                    key={`string-column-select-${i}`}
+                    onClick={() => {
+                      this.props.closeSelector()
+                      this.props.changeStringColumnIndex(colIndex)
+                    }}
+                  >
+                    {this.props.columns?.[colIndex]?.display_name}
+                  </li>
+                )
+              })}
             </ul>
           </div>
         </CustomScrollbars>

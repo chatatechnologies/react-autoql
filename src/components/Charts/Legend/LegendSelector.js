@@ -2,9 +2,9 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
+import { getStringColumnIndices, isColumnStringType } from 'autoql-fe-utils'
 
 import './LegendSelector.scss'
-import { getStringColumnIndices } from 'autoql-fe-utils'
 
 export default class LegendSelector extends React.Component {
   constructor(props) {
@@ -46,22 +46,42 @@ export default class LegendSelector extends React.Component {
         return
       }
 
-      const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
-      const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
-      if ((!isOnNumberAxis && !isOnSecondNumberAxis && col.is_visible) || (col.groupable && col.isStringType)) {
-        columnIndices.push(i)
+      // Check if column is on number axis - use array index i (as tableConfig uses array indices)
+      const isOnNumberAxis =
+        this.props.tableConfig?.numberColumnIndices?.includes(i) ||
+        this.props.numberColumnIndices?.includes(col.index) ||
+        this.props.numberColumnIndices?.includes(i)
+      const isOnSecondNumberAxis =
+        this.props.hasSecondAxis &&
+        (this.props.tableConfig?.numberColumnIndices2?.includes(i) ||
+          this.props.numberColumnIndices2?.includes(col.index) ||
+          this.props.numberColumnIndices2?.includes(i))
+
+      // If using pivot data (isAggregation), only include groupable string columns that are NOT on number axes
+      if (this.props.isAggregation) {
+        if (col.groupable && isColumnStringType(col) && !isOnNumberAxis && !isOnSecondNumberAxis) {
+          columnIndices.push(i)
+        }
+      } else {
+        // Original logic: include columns not on number axes, or groupable string columns
+        if ((!isOnNumberAxis && !isOnSecondNumberAxis && col.is_visible) || (col.groupable && col.type === 'STRING')) {
+          columnIndices.push(i)
+        }
       }
     })
     return columnIndices
   }
 
   renderSelectorContent = () => {
-    const columnIndices =
-      getStringColumnIndices(this.props.columns, undefined, true)?.stringColumnIndices?.filter(
-        (i) =>
-          !this.props.tableConfig.numberColumnIndices.includes(i) &&
-          !this.props.tableConfig.numberColumnIndices2.includes(i),
-      ) ?? []
+    // If using pivot data (isAggregation), use getAllStringColumnIndices to only show groupable string columns
+    // Otherwise, use the original logic with getStringColumnIndices
+    const columnIndices = this.props.isAggregation
+      ? this.getAllStringColumnIndices()
+      : getStringColumnIndices(this.props.columns, undefined, true)?.stringColumnIndices?.filter(
+          (i) =>
+            !this.props.tableConfig.numberColumnIndices.includes(i) &&
+            !this.props.tableConfig.numberColumnIndices2.includes(i),
+        ) ?? []
 
     return (
       <div
@@ -71,7 +91,7 @@ export default class LegendSelector extends React.Component {
           e.stopPropagation()
         }}
       >
-        <CustomScrollbars>
+        <CustomScrollbars suppressScrollX>
           <ul className='axis-selector-content'>
             {columnIndices.map((colIndex, i) => {
               return (

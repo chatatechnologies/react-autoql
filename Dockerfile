@@ -1,4 +1,4 @@
-FROM node:16-alpine as build
+FROM node:20-alpine as build
 
 # Create app directory
 
@@ -17,6 +17,7 @@ RUN npm ci --legacy-peer-deps && npm run build
 WORKDIR /app
 ADD example .
 ENV NODE_ENV=ci
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
 RUN npm i file:./react-autoql
 RUN npm i --legacy-peer-deps && npm run build
