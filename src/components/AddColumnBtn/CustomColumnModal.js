@@ -245,17 +245,9 @@ export default class CustomColumnModal extends React.Component {
       return
     }
 
-    // ----- If function threw an error, use the most recent working function ------
-    let newMutator
-    let newFnSummary
-    try {
-      newMutator = createMutatorFn(columnFn)
-      newFnSummary = getFnSummary(columnFn)
-    } catch (err) {
-      // If mutator creation fails, surface the error and stop.
-      this.setState({ isFnValid: false, fnError: err?.message || 'Invalid formula' })
-      return
-    }
+    // Create mutator and summary; helper returns an error object on failure
+    let newMutator = createMutatorFn(columnFn)
+    let newFnSummary = getFnSummary(columnFn)
 
     if (!newMutator || newMutator?.error?.message) {
       const fnError = newMutator?.error?.message
@@ -610,11 +602,10 @@ export default class CustomColumnModal extends React.Component {
         const leftLeft = a?.value === CustomColumnValues.LEFT_BRACKET && b?.value === CustomColumnValues.LEFT_BRACKET
         const rightRight =
           a?.value === CustomColumnValues.RIGHT_BRACKET && b?.value === CustomColumnValues.RIGHT_BRACKET
+        // Allow consecutive left/right brackets; allow unary +/- only immediately after an opening bracket
         const unaryAllowed =
           (b?.value === CustomColumnValues.ADDITION || b?.value === CustomColumnValues.SUBTRACTION) &&
-          (a?.value === CustomColumnValues.MULTIPLICATION ||
-            a?.value === CustomColumnValues.DIVISION ||
-            a?.value === CustomColumnValues.LEFT_BRACKET)
+          a?.value === CustomColumnValues.LEFT_BRACKET
 
         if (!leftLeft && !rightRight && !unaryAllowed) return { valid: false, error: 'Invalid operator sequence' }
       }
