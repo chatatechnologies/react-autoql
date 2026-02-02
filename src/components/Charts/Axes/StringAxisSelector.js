@@ -170,7 +170,7 @@ export default class StringAxisSelector extends React.Component {
     }
   }
 
-  renderDateBucketMenu = (element, colIndex) => {
+  renderDateBucketMenu = (element, colIndex, selectedColumnIndex) => {
     let maxHeight = 300
     const minHeight = 35
     const padding = 50
@@ -185,6 +185,9 @@ export default class StringAxisSelector extends React.Component {
     if (maxHeight > window.innerHeight) {
       maxHeight = window.innerHeight
     }
+
+    // Only show active state if this is the currently selected column
+    const isSelectedColumn = colIndex === selectedColumnIndex
 
     return (
       <Popover
@@ -223,39 +226,93 @@ export default class StringAxisSelector extends React.Component {
                   }}
                 >
                   <ul className='axis-selector-content'>
-                    {this.dateBucketOptions.map((option, optionIndex) => {
-                      // Check if this option is the active one
-                      const column = this.props.columns[colIndex]
-                      const columnOverrides = this.props.columnOverrides || {}
-                      const override = columnOverrides[colIndex]
-                      
-                      // Determine current precision: use override if exists, otherwise use column's precision
-                      const currentPrecision = override?.precision || column?.precision
-                      const currentType = override?.type || column?.type
-                      
-                      // Check if this option matches the current precision and type
-                      const isActive = 
-                        currentPrecision === option.precision && 
-                        currentType === option.type
-                      
-                      return (
-                        <li
-                          ref={(r) => {
-                            if (r) {
-                              this.dateBucketMenuRefs[`${colIndex}-${optionIndex}`] = r
-                            }
-                          }}
-                          className={`string-select-list-item ${isActive ? 'active' : ''}`}
-                          key={option.precision}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            this.handleDateBucketSelect(this.state.hoveredColumn, option)
-                          }}
-                        >
-                          {option.label}
-                        </li>
-                      )
-                    })}
+                    {/* Absolute date options (DATE type) */}
+                    <li className='axis-selector-header'>Absolute</li>
+                    {this.dateBucketOptions
+                      .filter((option) => option.type === ColumnTypes.DATE)
+                      .map((option, optionIndex) => {
+                        // Check if this option is the active one
+                        const column = this.props.columns[colIndex]
+                        const columnOverrides = this.props.columnOverrides || {}
+                        const override = columnOverrides[colIndex]
+                        
+                        // Determine current precision: use override if exists, otherwise use column's precision
+                        const currentPrecision = override?.precision || column?.precision
+                        const currentType = override?.type || column?.type
+                        
+                        // Only show as active if this is the selected column AND the precision/type matches
+                        const isActive = 
+                          isSelectedColumn &&
+                          currentPrecision === option.precision && 
+                          currentType === option.type
+                        
+                        // Find the original index in dateBucketOptions for ref
+                        const originalIndex = this.dateBucketOptions.findIndex(
+                          (opt) => opt.precision === option.precision && opt.type === option.type
+                        )
+                        
+                        return (
+                          <li
+                            ref={(r) => {
+                              if (r) {
+                                this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
+                              }
+                            }}
+                            className={`string-select-list-item ${isActive ? 'active' : ''}`}
+                            key={`absolute-${option.precision}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              this.handleDateBucketSelect(this.state.hoveredColumn, option)
+                            }}
+                          >
+                            {option.label}
+                          </li>
+                        )
+                      })}
+                    
+                    {/* Cyclical date options (DATE_STRING type) */}
+                    <li className='axis-selector-header'>Cyclical</li>
+                    {this.dateBucketOptions
+                      .filter((option) => option.type === ColumnTypes.DATE_STRING)
+                      .map((option, optionIndex) => {
+                        // Check if this option is the active one
+                        const column = this.props.columns[colIndex]
+                        const columnOverrides = this.props.columnOverrides || {}
+                        const override = columnOverrides[colIndex]
+                        
+                        // Determine current precision: use override if exists, otherwise use column's precision
+                        const currentPrecision = override?.precision || column?.precision
+                        const currentType = override?.type || column?.type
+                        
+                        // Only show as active if this is the selected column AND the precision/type matches
+                        const isActive = 
+                          isSelectedColumn &&
+                          currentPrecision === option.precision && 
+                          currentType === option.type
+                        
+                        // Find the original index in dateBucketOptions for ref
+                        const originalIndex = this.dateBucketOptions.findIndex(
+                          (opt) => opt.precision === option.precision && opt.type === option.type
+                        )
+                        
+                        return (
+                          <li
+                            ref={(r) => {
+                              if (r) {
+                                this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
+                              }
+                            }}
+                            className={`string-select-list-item ${isActive ? 'active' : ''}`}
+                            key={`cyclical-${option.precision}`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              this.handleDateBucketSelect(this.state.hoveredColumn, option)
+                            }}
+                          >
+                            {option.label}
+                          </li>
+                        )
+                      })}
                   </ul>
                 </div>
               </CustomScrollbars>
@@ -380,7 +437,7 @@ export default class StringAxisSelector extends React.Component {
                 )
 
                 if (isDateColumn) {
-                  return this.renderDateBucketMenu(li, colIndex)
+                  return this.renderDateBucketMenu(li, colIndex, origColumn?.index)
                 }
 
                 return li
