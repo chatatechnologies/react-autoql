@@ -2,7 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { ColumnTypes, DateStringPrecisionTypes, isColumnDateType, PrecisionTypes, getNumberOfGroupables, isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
+import { ColumnTypes, DateStringPrecisionTypes, PrecisionTypes, isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
