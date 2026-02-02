@@ -208,7 +208,7 @@ export class DataMessenger extends React.Component {
     enableDPRTab: false,
     mobileActivePage: 'data-messenger',
     disableColumnSelectionForDataExplorer: false,
-    enableMagicWand: true,
+    enableMagicWand: false,
     setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},
