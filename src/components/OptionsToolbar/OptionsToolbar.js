@@ -57,6 +57,9 @@ export class OptionsToolbar extends React.Component {
     shouldRender: PropTypes.bool,
     enableFilterBtn: PropTypes.bool,
     enableCopyBtn: PropTypes.bool,
+    isMarkdownMessage: PropTypes.bool,
+    markdownContent: PropTypes.string,
+    onCopyMarkdown: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onNewNotificationCallback: PropTypes.func,
@@ -75,6 +78,9 @@ export class OptionsToolbar extends React.Component {
     enableFilterBtn: true,
     enableDeleteBtn: false,
     enableCopyBtn: true,
+    isMarkdownMessage: false,
+    markdownContent: undefined,
+    onCopyMarkdown: undefined,
     shouldRender: true,
     onSuccessAlert: () => {},
     onErrorCallback: () => {},
@@ -634,7 +640,28 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
+  renderCopyMarkdownBtn = () => {
+    return (
+      <Button
+        onClick={() => {
+          if (this.props.onCopyMarkdown) {
+            this.props.onCopyMarkdown()
+          }
+        }}
+        className={this.getMenuItemClass()}
+        tooltip='Copy summary'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-test='options-toolbar-copy-markdown-btn'
+        size='small'
+      >
+        <Icon type='copy' />
+      </Button>
+    )
+  }
+
   renderToolbar = (shouldShowButton) => {
+    const isMarkdownOnly = this.props.isMarkdownMessage && !shouldShowButton.showFilterButton && !shouldShowButton.showHideColumnsButton && !shouldShowButton.showReportProblemButton && !shouldShowButton.showRefreshDataButton
+    
     return (
       <ErrorBoundary>
         <div
@@ -643,21 +670,22 @@ export class OptionsToolbar extends React.Component {
 			${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
-          {shouldShowButton.showFilterButton && this.renderFilterBtn()}
-          {shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
-          {shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
-          {shouldShowButton.showRefreshDataButton && (
+          {!isMarkdownOnly && shouldShowButton.showFilterButton && this.renderFilterBtn()}
+          {!isMarkdownOnly && shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
+          {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
+          {!isMarkdownOnly && shouldShowButton.showRefreshDataButton && (
             <Button
               onClick={this.refreshData}
               className={this.getMenuItemClass()}
               tooltip='Re-run query'
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-              data-test='options-toolbar-trash-btn'
+              data-test='options-toolbar-refresh-btn'
               size='small'
             >
               <Icon type='refresh' />
             </Button>
           )}
+          {shouldShowButton.showCopyMarkdownButton && this.renderCopyMarkdownBtn()}
           {shouldShowButton.showDeleteButton && (
             <Button
               onClick={this.deleteMessage}
@@ -670,7 +698,7 @@ export class OptionsToolbar extends React.Component {
               <Icon type='trash' />
             </Button>
           )}
-          {shouldShowButton.showMoreOptionsButton && (
+          {!isMarkdownOnly && shouldShowButton.showMoreOptionsButton && (
             <Popover
               key={`more-options-button-${this.COMPONENT_KEY}`}
               isOpen={this.state.activeMenu === 'more-options'}
@@ -717,36 +745,46 @@ export class OptionsToolbar extends React.Component {
       const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
-
+      
+      // For markdown messages, only show copy and delete buttons
+      const isMarkdownOnly = props.isMarkdownMessage && props.onCopyMarkdown
+      
       shouldShowButton = {
         showFilterButton:
+          !isMarkdownOnly &&
           this.props.enableFilterBtn &&
           (displayType === 'table' || isChartType(displayType)) &&
           !allColumnsHidden &&
           hasMoreThanOneRow,
-        showCopyButton: this.props.enableCopyBtn && isTable && !allColumnsHidden,
-        showSaveAsPNGButton: isChart,
+        showCopyButton: !isMarkdownOnly && this.props.enableCopyBtn && isTable && !allColumnsHidden,
+        showCopyMarkdownButton: isMarkdownOnly,
+        showSaveAsPNGButton: !isMarkdownOnly && isChart,
         showHideColumnsButton:
+          !isMarkdownOnly &&
           autoQLConfig.enableColumnVisibilityManager &&
           hasData &&
           (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
-        showHiddenColsBadge: someColumnsHidden,
-        showSQLButton: isDataResponse && autoQLConfig.translation === 'include',
-        showSaveAsCSVButton: isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+        showHiddenColsBadge: !isMarkdownOnly && someColumnsHidden,
+        showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
+        showSaveAsCSVButton: !isMarkdownOnly && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
-        showReportProblemButton: autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
-        showCreateNotificationIcon: isMobile
-          ? false
-          : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props),
+        showReportProblemButton: !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+        showCreateNotificationIcon:
+          !isMarkdownOnly &&
+          (isMobile
+            ? false
+            : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
         showRefreshDataButton: false,
       }
 
-      shouldShowButton.showMoreOptionsButton =
+      // Don't show more options button if it's a markdown-only message
+      shouldShowButton.showMoreOptionsButton = !isMarkdownOnly && (
         shouldShowButton.showCopyButton ||
         shouldShowButton.showSQLButton ||
         shouldShowButton.showCreateNotificationIcon ||
         shouldShowButton.showSaveAsCSVButton ||
         shouldShowButton.showSaveAsPNGButton
+      )
     } catch (error) {
       console.error(error)
     }

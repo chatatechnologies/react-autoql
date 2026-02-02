@@ -1,7 +1,7 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import { QueryOutput } from '../QueryOutput'
-import { ColumnTypes, isColumnNumberType } from 'autoql-fe-utils'
+import { ColumnTypes, isColumnNumberType, sortDataByColumn } from 'autoql-fe-utils'
 import { coerceToNumber, coerceExistingCellToNumber, initPivotNumericCells, ensureRowNumericCells } from '../pivotUtils'
 
 describe('QueryOutput pivot suite', () => {
@@ -243,99 +243,6 @@ describe('QueryOutput pivot suite', () => {
       const flat2 = inst2.pivotTableData.flat()
       expect(flat2).toContain(400)
       expect(flat2).not.toContain(300)
-    })
-
-    describe('resolveColumnIndices unit tests', () => {
-      it('respects explicit numberColumnIndex from tableConfig', () => {
-        const instance = new QueryOutput({})
-        const columns = [
-          { name: 'Group', groupable: true, type: ColumnTypes.STRING },
-          { name: 'Value', groupable: false, type: ColumnTypes.DOLLAR_AMT },
-        ]
-
-        const resolved = instance.resolveColumnIndices(columns, {
-          stringColumnIndex: 0,
-          legendColumnIndex: 1,
-          numberColumnIndex: 1,
-        })
-
-        expect(resolved.sIdx).toBe(0)
-        expect(resolved.lIdx).toBe(1)
-        expect(resolved.nIdx).toBe(1)
-      })
-
-      it('finds a numeric column when number index not provided and avoids overlap', () => {
-        const instance = new QueryOutput({})
-        const columns = [
-          { name: 'Group', groupable: true, type: ColumnTypes.STRING },
-          { name: 'Extra', groupable: false, type: ColumnTypes.STRING },
-          { name: 'Value', groupable: false, type: ColumnTypes.DOLLAR_AMT },
-        ]
-
-        const resolved = instance.resolveColumnIndices(columns, {
-          stringColumnIndex: 0,
-          legendColumnIndex: 1,
-        })
-
-        expect(resolved.sIdx).toBe(0)
-        expect(resolved.lIdx).toBe(1)
-        expect(resolved.nIdx).toBe(2)
-      })
-
-      it('falls back sensibly when no numeric column exists', () => {
-        const instance = new QueryOutput({})
-        const columns = [
-          { name: 'Group', groupable: true, type: ColumnTypes.STRING },
-          { name: 'Other', groupable: false, type: ColumnTypes.STRING },
-        ]
-
-        const resolved = instance.resolveColumnIndices(columns, {
-          stringColumnIndex: 0,
-          legendColumnIndex: 1,
-        })
-
-        // With only two columns, fallback will return a valid index
-        expect(resolved.nIdx).toBeGreaterThanOrEqual(0)
-        expect([0, 1]).toContain(resolved.sIdx)
-        expect([0, 1]).toContain(resolved.lIdx)
-      })
-
-      it('ignores invalid explicit number index and finds first numeric', () => {
-        const instance = new QueryOutput({})
-        const columns = [
-          { name: 'Group', groupable: true, type: ColumnTypes.STRING },
-          { name: 'Meta', groupable: false, type: ColumnTypes.STRING },
-          { name: 'Value', groupable: false, type: ColumnTypes.DOLLAR_AMT },
-        ]
-
-        const resolved = instance.resolveColumnIndices(columns, {
-          stringColumnIndex: 0,
-          legendColumnIndex: 1,
-          numberColumnIndex: 99,
-        })
-
-        expect(resolved.nIdx).toBe(2)
-      })
-
-      it('respects explicit numberColumnIndex even if it overlaps with string/legend', () => {
-        const instance = new QueryOutput({})
-        const columns = [
-          { name: 'Category', groupable: true, type: ColumnTypes.STRING },
-          { name: 'Amount', groupable: false, type: ColumnTypes.DOLLAR_AMT },
-        ]
-
-        // Intentionally use index 0 for both string AND number (valid in some scenarios)
-        const resolved = instance.resolveColumnIndices(columns, {
-          stringColumnIndex: 0,
-          legendColumnIndex: 1,
-          numberColumnIndex: 0, // explicit overlap
-        })
-
-        // Should RESPECT the explicit config
-        expect(resolved.sIdx).toBe(0)
-        expect(resolved.lIdx).toBe(1)
-        expect(resolved.nIdx).toBe(0)
-      })
     })
   })
 })

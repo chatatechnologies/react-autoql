@@ -10,15 +10,21 @@ import {
   dataFormattingDefault,
   getAuthentication,
   isDrilldown,
-  isTableType,
-  isChartType,
+  fetchLLMSummary,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
+
+import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
+import { Button } from '../Button'
+import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -28,6 +34,7 @@ import './ChatMessage.scss'
 export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
+    this.markdownContentRef = React.createRef()
 
     this.filtering = false
     this.PIE_CHART_HEIGHT = 330
@@ -49,6 +56,7 @@ export default class ChatMessage extends React.Component {
       isResizable: false,
       isUserResizing: false,
       currentHeight: 400,
+      isGeneratingSummary: false,
     }
 
     // Minimum height for the message container
@@ -87,6 +95,8 @@ export default class ChatMessage extends React.Component {
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    setGeneratingSummary: PropTypes.func,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -118,6 +128,7 @@ export default class ChatMessage extends React.Component {
     scrollToBottom: () => {},
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
@@ -310,10 +321,211 @@ export default class ChatMessage extends React.Component {
 
     this.scrollIntoView()
   }
+
+  renderMarkdown = (content) => {
+    if (!content) return null
+
+    // Convert content to string if it's not already
+    let contentStr = typeof content === 'string' ? content : String(content)
+
+    // Replace literal "\n" strings with actual newlines if they exist
+    // (in case the API returns escaped newlines)
+    contentStr = contentStr.replace(/\\n/g, '\n')
+
+    // Pass content directly to react-markdown without any manipulation
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkBreaks]}
+        components={{
+          // Handle lists
+          ul: ({ children }) => <ul>{children}</ul>,
+          li: ({ children }) => <li>{children}</li>,
+          // Handle formatting
+          strong: ({ children }) => <strong>{children}</strong>,
+          em: ({ children }) => <em>{children}</em>,
+          // Handle line breaks (remark-breaks will create these automatically)
+          br: () => <br />,
+        }}
+      >
+        {contentStr}
+      </ReactMarkdown>
+    )
+  }
+
+  handleGenerateSummary = async () => {
+    if (!this.props.response?.data?.data?.rows || !this.props.response?.data?.data?.columns) {
+      return
+    }
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.props.onErrorCallback?.('Missing authentication credentials for summary generation')
+      return
+    }
+
+    // Set loading state for this specific message
+    this.setState({ isGeneratingSummary: true })
+    // Also set loading state in parent ChatContent to show loading dots at bottom
+    this.props.setGeneratingSummary?.(true)
+
+    try {
+      // Get filtered data from QueryOutput's tableData (already filtered)
+      const filteredRows = this.responseRef?.tableData || this.props.response.data.data.rows
+
+      const response = await fetchLLMSummary({
+        data: {
+          text: this.props.response.data.data.text,
+          interpretation: this.props.response.data.data.interpretation,
+          rows: filteredRows,
+          columns: this.props.response.data.data.columns
+        },
+        queryID: this.props.response.data.data.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const summary = response?.data?.data?.summary
+
+      if (summary) {
+        // Add summary as a new message bubble
+        this.props.addMessageToDM?.({
+          content: summary,
+          type: 'markdown',
+          isResponse: true,
+        })
+      } else {
+        // No summary returned - check for error message in response
+        const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
+        const displayMessage = errorMessage || 'Failed to generate summary. Please try again.'
+
+        // Add error message as a new message bubble
+        this.props.addMessageToDM?.({
+          content: displayMessage,
+          type: 'text',
+          isResponse: true,
+        })
+      }
+    } catch (error) {
+      // Handle API errors - check if error response has a message
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to generate summary. Please try again.'
+
+      // Add error message as a new message bubble
+      this.props.addMessageToDM?.({
+        content: errorMessage,
+        type: 'text',
+        isResponse: true,
+      })
+    } finally {
+      // Clear loading state for this specific message
+      this.setState({ isGeneratingSummary: false })
+      // Clear loading state in parent
+      this.props.setGeneratingSummary?.(false)
+    }
+  }
+
+  copyMarkdownAsPlainText = async () => {
+    if (!this.props.content || (this.props.type !== 'markdown' && this.props.type !== 'md')) {
+      return
+    }
+
+    try {
+      // Extract plain text from the rendered markdown content
+      if (!this.markdownContentRef.current) {
+        return
+      }
+
+      const text = this.markdownContentRef.current.innerText
+
+      // Copy as plain text using Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      }
+    } catch (error) {
+      console.error('Failed to copy markdown:', error)
+      this.props.onErrorCallback?.(error)
+    }
+  }
+
+  renderSummaryFooter = () => {
+    // Only show footer for response messages with data
+    if (
+      !this.props.enableMagicWand ||
+      !this.props.isResponse ||
+      !this.props.response?.data?.data?.rows ||
+      !this.props.response?.data?.data?.columns ||
+      this.props.type === 'text' ||
+      this.props.isCSVProgressMessage
+    ) {
+      return null
+    }
+
+    const rows = this.props.response?.data?.data?.rows || []
+    const rowCount = rows.length
+    const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
+    // Only show loading for this specific message, not when any query is running
+    const isGenerating = this.state.isGeneratingSummary
+    // Disable button if dataset is too large, or if this specific message is generating
+    // Also disable if Chata is thinking (query/drilldown running) to prevent conflicts
+    const isDisabled = isDatasetTooLarge || isGenerating || Boolean(this.props.isChataThinking)
+
+    const tooltipId = 'chat-message-summary-button-tooltip'
+    const tooltipContent = isDatasetTooLarge
+      ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
+      : undefined
+
+    return (
+      <div className='chat-message-summary-footer'>
+        <div
+          data-tooltip-html={tooltipContent}
+          data-tooltip-id={tooltipContent ? tooltipId : undefined}
+          style={{ display: 'inline-block' }}
+        >
+          <Button
+            type='default'
+            size='large'
+            icon='magic-wand'
+            onClick={this.handleGenerateSummary}
+            disabled={isDisabled}
+            loading={isGenerating}
+            border={false}
+          >
+            Generate Summary
+          </Button>
+        </div>
+        {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
+      </div>
+    )
+  }
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
     } else if (this.props.content) {
+      if (this.props.type === 'markdown' || this.props.type === 'md') {
+        return (
+          <div className='chat-message-bubble-content-container chat-message-markdown'>
+            <div className='chat-message-summary-title'>
+              <Icon type='magic-wand' />
+              <strong>Summary:</strong>
+            </div>
+            <div ref={this.markdownContentRef}>{this.renderMarkdown(this.props.content)}</div>
+          </div>
+        )
+      }
       return <div className='chat-message-bubble-content-container'>{this.props.content}</div>
     } else if (this.props.response?.status === 401) {
       return <div className='chat-message-bubble-content-container'>{UNAUTHENTICATED_ERROR}</div>
@@ -394,6 +606,7 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     // For data preview responses, only show delete button
     const isDataPreview = this.props.response?.data?.data?.isDataPreview
+    const isMarkdownMessage = this.props.type === 'markdown' || this.props.type === 'md'
     const customAutoQLConfig = isDataPreview
       ? {
           ...this.props.autoQLConfig,
@@ -407,7 +620,7 @@ export default class ChatMessage extends React.Component {
 
     return (
       <div className='chat-message-toolbar chat-message-toolbar-right'>
-        {this.props.isResponse ? (
+        {this.props.isResponse || isMarkdownMessage ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
@@ -425,6 +638,9 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             enableFilterBtn={!isDataPreview}
             enableCopyBtn={!isDataPreview}
+            isMarkdownMessage={isMarkdownMessage}
+            markdownContent={isMarkdownMessage ? this.props.content : undefined}
+            onCopyMarkdown={this.copyMarkdownAsPlainText}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
@@ -497,9 +713,11 @@ export default class ChatMessage extends React.Component {
             <div
               className={`chat-message-bubble 
         ${isResizable ? 'resizable' : ''} 
-        ${this.state.isUserResizing ? 'user-resizing' : ''}`}
+        ${this.state.isUserResizing ? 'user-resizing' : ''}
+        ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}`}
             >
               {this.renderContent()}
+              {this.renderSummaryFooter()}
             </div>
           </div>
           {!!this.responseRef && (

@@ -880,7 +880,7 @@ export default class ChataChart extends React.Component {
 
   getCommonChartProps = () => {
     const { deltaX, deltaY } = this.state
-    const { numberColumnIndices, columns: propsColumns, enableDynamicCharting, legendColumn } = this.props
+    let { numberColumnIndices, columns: propsColumns, enableDynamicCharting, legendColumn } = this.props
 
     // Use sorted columns for heatmap Y-axis sorting, otherwise use props columns
     const columns = this.sortedColumnsForHeatmap || propsColumns
@@ -896,18 +896,47 @@ export default class ChataChart extends React.Component {
       }
     }
 
-    // For stacked charts, use sorted column indices based on total aggregates
-    // This ensures all stacks and the legend use the same order (biggest to smallest)
-    let finalNumberColumnIndices = numberColumnIndices
+    // For stacked charts, use sorted column indices so chart components render in sorted order
+    // This ensures colors match the sorted order (biggest to smallest)
     const isStackedChart =
       this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
-      finalNumberColumnIndices = this.sortedNumberColumnIndicesForStacked
+      // Filter sorted indices to only include those that exist in the current columns array
+      // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
+      const filteredIndices = this.sortedNumberColumnIndicesForStacked.filter(
+        (colIndex) => columns?.[colIndex] !== undefined,
+      )
+      // Only use filtered indices if we have valid ones, otherwise fall back to original
+      if (filteredIndices.length > 0) {
+        numberColumnIndices = filteredIndices
+      }
     }
 
-    const visibleSeriesIndices = finalNumberColumnIndices.filter(
+    // Calculate visible series indices from numberColumnIndices (which may be sorted for stacked charts)
+    // This ensures hidden series are excluded from scale domain calculation
+    const visibleSeriesIndicesForScale = numberColumnIndices.filter(
       (colIndex) => columns?.[colIndex] && !columns[colIndex].isSeriesHidden,
     )
+
+    // For stacked charts, use sorted column indices for display/legend order (biggest to smallest)
+    let sortedIndicesForDisplay = null
+    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
+      // Filter sorted indices to only include those that exist in the current columns array
+      // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
+      const filteredIndices = this.sortedNumberColumnIndicesForStacked.filter(
+        (colIndex) => columns?.[colIndex] !== undefined && !columns[colIndex].isSeriesHidden,
+      )
+      // Only use filtered indices if we have valid ones, otherwise fall back to visibleSeriesIndicesForScale
+      if (filteredIndices.length > 0) {
+        sortedIndicesForDisplay = filteredIndices
+      }
+    }
+
+    // visibleSeriesIndices: used by chart components for scale calculation (excludes hidden series, maintains original order)
+    // visibleSeriesIndicesForDisplay: used for legend/display (can be sorted for stacked charts)
+    const visibleSeriesIndices = visibleSeriesIndicesForScale
+    const visibleSeriesIndicesForDisplay = sortedIndicesForDisplay || visibleSeriesIndicesForScale
 
     const { innerHeight, innerWidth } = this.getInnerDimensions()
     const { outerHeight, outerWidth } = this.getOuterDimensions()
@@ -923,7 +952,7 @@ export default class ChataChart extends React.Component {
       ...this.props,
       columns,
       legendColumn: updatedLegendColumn,
-      numberColumnIndices: finalNumberColumnIndices, // Use sorted indices for stacked charts
+      numberColumnIndices: numberColumnIndices, // For stacked charts, this is already sorted (biggest to smallest)
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
       key: undefined,
@@ -943,7 +972,8 @@ export default class ChataChart extends React.Component {
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       onLabelRotation: this.adjustVerticalPosition,
-      visibleSeriesIndices,
+      visibleSeriesIndices, // Used by chart components for scale calculation (excludes hidden series, maintains original order)
+      visibleSeriesIndicesForDisplay, // Used for legend/display (can be sorted for stacked charts)
       tooltipID: this.props.tooltipID,
       chartTooltipID: this.props.chartTooltipID,
       chartContainerRef: this.chartContainerRef,

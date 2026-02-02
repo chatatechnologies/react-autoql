@@ -33,17 +33,15 @@ export default class StackedBars extends PureComponent {
 
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
-    const visibleSeries = numberColumnIndices.filter((colIndex) => {
-      return !columns[colIndex].isSeriesHidden
-    })
-
-    if (!visibleSeries.length) {
+    if (!columns || !numberColumnIndices) {
       return null
     }
 
     // numberColumnIndices is already sorted by total aggregates in ChataChart (biggest to smallest)
     // Use this order for all stacks to ensure consistent ordering and legend matching
-    const visibleIndices = numberColumnIndices.filter((colIndex) => !columns[colIndex].isSeriesHidden)
+    const visibleIndices = numberColumnIndices.filter(
+      (colIndex) => columns[colIndex] && !columns[colIndex].isSeriesHidden,
+    )
 
     const stackedBars = this.props.data.map((d, index) => {
       let prevPosValue = 0

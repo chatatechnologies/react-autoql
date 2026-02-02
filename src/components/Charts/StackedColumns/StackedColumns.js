@@ -33,9 +33,15 @@ export default class StackedColumns extends PureComponent {
 
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale } = this.props
 
+    if (!columns || !numberColumnIndices) {
+      return null
+    }
+
     // numberColumnIndices is already sorted by total aggregates in ChataChart (biggest to smallest)
     // Use this order for all stacks to ensure consistent ordering and legend matching
-    const visibleIndices = numberColumnIndices.filter((colIndex) => !columns[colIndex].isSeriesHidden)
+    const visibleIndices = numberColumnIndices.filter(
+      (colIndex) => columns[colIndex] && !columns[colIndex].isSeriesHidden,
+    )
 
     if (!visibleIndices.length) {
       return null
