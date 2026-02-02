@@ -1898,12 +1898,20 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    this.tableConfig.stringColumnIndex = index
+
+    // If the new string column index equals the legend column index, change the legend column to a different value
     if (this.tableConfig.legendColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
-      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
-      this.tableConfig.legendColumnIndex = stringColumnIndex
-    } else {
-      this.tableConfig.stringColumnIndex = index
+      const columns = this.getColumns()
+      const differentColumn = columns.find(
+        (col) =>
+          col.is_visible &&
+          col.index !== index &&
+          col.groupable,
+      )
+      if (differentColumn?.index >= 0) {
+        this.tableConfig.legendColumnIndex = differentColumn.index
+      }
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
@@ -1967,8 +1975,18 @@ export class QueryOutput extends React.Component {
 
     this.tableConfig.legendColumnIndex = index
 
+    // If the new legend column index equals the string column index, change the string column to a different value
     if (this.tableConfig.stringColumnIndex === index) {
-      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+      const columns = this.getColumns()
+      const differentColumn = columns.find(
+        (col) =>
+          col.is_visible &&
+          col.index !== index &&
+          col.groupable,
+      )
+      if (differentColumn?.index >= 0) {
+        this.tableConfig.stringColumnIndex = differentColumn.index
+      }
     } else if (this.tableConfig.numberColumnIndices.includes(index)) {
       if (this.tableConfig.numberColumnIndices.length > 1) {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
@@ -2090,64 +2108,7 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
-  // Resolve sensible column indices for pivot generation (string, legend, number)
-  resolveColumnIndices = (columns, tableConfig = {}) => {
-    const isValidIndex = (i) => Number.isInteger(i) && i >= 0 && i < columns.length
 
-    const findFirstGroupable = (excludeIndices = []) =>
-      columns.findIndex((c, i) => c?.groupable && !excludeIndices.includes(i))
-
-    const findFirstNumber = (excludeIndices = []) =>
-      columns.findIndex((c, i) => isColumnNumberType(c) && !excludeIndices.includes(i))
-
-    let sIdx = isValidIndex(tableConfig.stringColumnIndex) ? tableConfig.stringColumnIndex : findFirstGroupable()
-    let lIdx = isValidIndex(tableConfig.legendColumnIndex) ? tableConfig.legendColumnIndex : findFirstGroupable([sIdx])
-    // Respect explicit `tableConfig.numberColumnIndex`; only auto-avoid conflicts when not explicit.
-    const tableConfigHasNumber = isValidIndex(tableConfig.numberColumnIndex)
-    let nIdx = tableConfigHasNumber ? tableConfig.numberColumnIndex : findFirstNumber([sIdx, lIdx])
-
-    // Only try to avoid conflicts if we generated the index (not from explicit config)
-    if (!tableConfigHasNumber && (nIdx === sIdx || nIdx === lIdx)) {
-      nIdx = findFirstNumber([sIdx, lIdx])
-    }
-
-    // Fallbacks when nothing found
-    sIdx = Math.max(0, sIdx)
-    if (lIdx < 0) {
-      if (sIdx === 0) {
-        lIdx = Math.min(1, columns.length - 1)
-      } else {
-        lIdx = 0
-      }
-    }
-
-    if (nIdx < 0) {
-      // Prefer a numeric column that doesn't conflict with sIdx/lIdx
-      nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
-      if (nIdx < 0) {
-        // As a last resort pick any column index that's not sIdx or lIdx
-        nIdx = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
-      }
-      // If still not found, fall back to 0
-      nIdx = Math.max(0, nIdx)
-    }
-
-    // Ensure we don't return indices that overlap: prefer a numeric column, otherwise any column
-    if (nIdx === sIdx || nIdx === lIdx) {
-      // First try to find a different NUMBER column
-      const altNumber = columns.findIndex((c, i) => i !== sIdx && i !== lIdx && isColumnNumberType(c))
-
-      if (altNumber >= 0) {
-        nIdx = altNumber
-      } else {
-        // Only fall back to ANY column if no number columns exist
-        const anyAlt = columns.findIndex((c, i) => i !== sIdx && i !== lIdx)
-        nIdx = anyAlt >= 0 ? anyAlt : nIdx
-      }
-    }
-
-    return { sIdx, lIdx, nIdx }
-  }
 
   hasIndex = (indices, index) => {
     return indices?.findIndex((i) => index === i) !== -1
@@ -2173,47 +2134,13 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    // Prefer the chart's ordinal/axis column if set; otherwise pick a groupable, non-total/non-near-unique string column with the highest unique count.
-    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't auto-select a different one)
+    
+    // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
       existingStringIndex >= 0 && this.isColumnIndexValid(existingStringIndex, columns)
 
     let chosenStringIndex = hasValidExistingStringIndex ? existingStringIndex : stringColumnIndex
-
-    // Only auto-select if we don't have a valid existing string column index
-    if (!hasValidExistingStringIndex) {
-      try {
-        const rows = this.tableData || this.queryResponse?.data?.data?.rows || []
-        const rowCount = rows?.length || 0
-
-        const candidates = (stringColumnIndices || [])
-          .filter((idx) => idx !== undefined && idx !== null && columns[idx])
-          .map((idx) => {
-            const vals = rows
-              .map((r) => r?.[idx])
-              .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
-            const uniqueCount = new Set(vals).size
-            const col = columns[idx]
-            return { idx, uniqueCount, groupable: !!col?.groupable, display_name: col?.display_name, name: col?.name }
-          })
-
-        const looksLikeTotal = (s) => (s || '').toString().toLowerCase().includes('total')
-        const isNearUnique = (c) => rowCount > 0 && c.uniqueCount >= Math.floor(rowCount * 0.9)
-
-        const preferred = candidates.filter((c) => c.groupable)
-        const pool = preferred.length ? preferred : candidates
-        const filtered = pool.filter(
-          (c) => !looksLikeTotal(c.display_name) && !looksLikeTotal(c.name) && !isNearUnique(c),
-        )
-        const finalPool = filtered.length ? filtered : pool
-
-        if (finalPool.length) {
-          finalPool.sort((a, b) => b.uniqueCount - a.uniqueCount)
-          chosenStringIndex = finalPool[0].idx
-        }
-      } catch (e) {}
-    }
 
     this.tableConfig.stringColumnIndices = stringColumnIndices
     this.tableConfig.stringColumnIndex = chosenStringIndex
@@ -2988,29 +2915,16 @@ export class QueryOutput extends React.Component {
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows) || []
 
-      // Defensive: ensure we have a columns array and valid tableConfig indices
+      // Ensure tableConfig has valid indices by calling setTableConfig if needed
       const columns = this.getColumns() || []
-      const resolved = this.resolveColumnIndices(columns, this.tableConfig || {})
-
-      this.tableConfig = this.tableConfig || {}
-      this.tableConfig.stringColumnIndex = resolved.sIdx
-      this.tableConfig.legendColumnIndex = resolved.lIdx
-      this.tableConfig.numberColumnIndex = resolved.nIdx
-
-      // Persist updated config to parent callback if available
-      try {
-        if (typeof this.props.onTableConfigChange === 'function') {
-          this.props.onTableConfigChange(false)
-        }
-      } catch (err) {
-        console.error('onTableConfigChange threw while updating resolved indices:', err)
-        if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+      if (!this.tableConfig || !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)) {
+        this.setTableConfig(columns)
       }
 
-      // Local copies for subsequent logic
-      let sIdx = resolved.sIdx
-      let lIdx = resolved.lIdx
-      let nIdx = resolved.nIdx
+      // Use validated indices from tableConfig
+      const sIdx = this.tableConfig.stringColumnIndex
+      const lIdx = this.tableConfig.legendColumnIndex
+      const nIdx = this.tableConfig.numberColumnIndex
 
       // Preserve original row[0] !== null filter
       tableData = (tableData || []).filter((row) => row?.[0] !== null)
@@ -3241,6 +3155,7 @@ export class QueryOutput extends React.Component {
         is_visible: true,
         field: '0',
         resizable: true,
+        origColumn: columns[newStringColumnIndex],
         minWidth: this.calculatePivotColumnMinWidth(columns[newStringColumnIndex].display_name),
         cssClass: 'pivot-category',
         pivot: true,
@@ -3751,27 +3666,26 @@ export class QueryOutput extends React.Component {
         if (this.props.onErrorCallback) this.props.onErrorCallback(e)
       }
 
-      // If still missing, try to recompute a valid numeric column index and regenerate
+      // If still missing, try to recompute valid indices and regenerate
       if (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig) {
         try {
           if (this.pivotTableColumns && this.pivotTableConfig) {
-            const resolved = this.resolveColumnIndices(this.pivotTableColumns, this.pivotTableConfig || {})
-            if (Number.isInteger(resolved.nIdx)) {
-              this.pivotTableConfig.numberColumnIndex = resolved.nIdx
+            // For pivot columns, we need to set pivotTableConfig properly
+            // This is a fallback - normally setPivotTableConfig should handle this
+            const { numberColumnIndex: recomputedNumberIndex } = getNumberColumnIndices(this.pivotTableColumns, true)
+            if (Number.isInteger(recomputedNumberIndex)) {
+              this.pivotTableConfig.numberColumnIndex = recomputedNumberIndex
               this.generatePivotTableData()
             }
           } else if (this.tableConfig) {
-            // Fallback: compute indices from visible columns and retry
+            // Fallback: ensure tableConfig has valid indices and retry
             const cols = this.getColumns()
-            const resolved = this.resolveColumnIndices(cols, this.tableConfig || {})
-            if (Number.isInteger(resolved.nIdx)) {
-              this.tableConfig.numberColumnIndex = resolved.nIdx
-              try {
-                this.generatePivotTableData()
-              } catch (err) {
-                console.error('Regeneration after resolving indices failed:', err)
-                if (this.props.onErrorCallback) this.props.onErrorCallback(err)
-              }
+            this.setTableConfig(cols)
+            try {
+              this.generatePivotTableData()
+            } catch (err) {
+              console.error('Regeneration after setting table config failed:', err)
+              if (this.props.onErrorCallback) this.props.onErrorCallback(err)
             }
           }
         } catch (e) {

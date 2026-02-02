@@ -192,6 +192,11 @@
       &.active {
         border: 1px solid #c3c3c3;
       }
+
+      // Remove max-height for markdown messages
+      &.markdown-message {
+        max-height: none !important;
+      }
     }
   }
 
@@ -202,6 +207,61 @@
 
     .react-autoql-reverse-translation {
       background: transparent;
+    }
+  }
+
+  .chat-message-summary-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+
+    .response-loading {
+      width: 48px;
+      height: 48px;
+    }
+
+    .react-autoql-btn {
+      font-size: 13px;
+    }
+  }
+
+  .chat-message-markdown {
+    line-height: 1.5;
+    max-height: none !important;
+
+    .chat-message-summary-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      line-height: 1.5;
+
+      .react-autoql-icon {
+        display: flex;
+        align-items: center;
+      }
+
+      strong {
+        font-weight: 600;
+      }
+    }
+
+    ul {
+      margin: 8px 0;
+      padding-left: 20px;
+
+      li {
+        margin: 4px 0;
+        line-height: 1.5;
+      }
+    }
+
+    br {
+      line-height: 1.5;
     }
   }
 }
