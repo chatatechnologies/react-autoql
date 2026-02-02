@@ -3352,7 +3352,7 @@ export class QueryOutput extends React.Component {
             const aNum = Number(aVal)
             const bNum = Number(bVal)
 
-            if (!isNaN(aNum) && !isNaN(bNum)) {
+            if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
               return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
             }
 

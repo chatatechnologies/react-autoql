@@ -7,7 +7,7 @@ jest.mock('../../ChataTable/ChataTable', () => {
   return {
     __esModule: true,
     default: function Mock(props) {
-      global.__lastChataTableProps = props
+      globalThis.__lastChataTableProps = props
       return null
     },
   }
@@ -25,7 +25,7 @@ describe('CustomColumnModal preview normalization', () => {
       wrapper.update()
 
       try {
-        const props = global.__lastChataTableProps
+        const props = globalThis.__lastChataTableProps
         expect(props).toBeTruthy()
         expect(Array.isArray(props.response.data.data.rows)).toBe(true)
         expect(Array.isArray(props.response.data.data.rows[0])).toBe(true)

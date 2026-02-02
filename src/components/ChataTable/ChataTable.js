@@ -518,7 +518,7 @@ export default class ChataTable extends React.Component {
       return {
         ...filter,
         ...(filter?.operator === 'between' && typeof filter?.value === 'string'
-          ? { value: filter.value.replace(/^\(+|\)+$/g, '') }
+          ? { value: filter.value.replace(/^(?:\(+|\)+)$/g, '') }
           : {}),
         ...(column?.type ? { column_type: column.type } : {}),
       }
@@ -1782,7 +1782,6 @@ export default class ChataTable extends React.Component {
         const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
           this.props.response?.data?.data?.count_rows,
         )
-        const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 
