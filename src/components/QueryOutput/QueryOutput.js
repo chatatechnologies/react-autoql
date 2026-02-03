@@ -3762,9 +3762,11 @@ export class QueryOutput extends React.Component {
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const baseColumns = usePivotData ? this.pivotTableColumns : this.state.columns
     // Apply column overrides (e.g., date precision) for charts only - don't mutate original queryResponse
-    const columns = this.applyColumnOverrides(baseColumns)
+    // Don't apply overrides when using pivot data - pivot columns have different structure
+    const columns = usePivotData ? baseColumns : this.applyColumnOverrides(baseColumns)
     // originalColumns should be the original columns from queryResponse, not overridden
-    const originalColumns = usePivotData ? this.pivotTableColumns : this.getColumns()
+    // Always use getColumns() to match master branch behavior
+    const originalColumns = this.getColumns()
 
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
@@ -3800,7 +3802,7 @@ export class QueryOutput extends React.Component {
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
           columns={columns}
-          columnOverrides={this.state.columnOverrides}
+          columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}

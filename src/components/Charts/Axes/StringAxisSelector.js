@@ -40,7 +40,6 @@ export default class StringAxisSelector extends React.Component {
       // Disable for now because it's too granular and not useful for most use cases
       // { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.SECOND, label: 'Second of Minute' },
     ]
-    
   }
 
   getAllStringColumnIndices = () => {
@@ -361,6 +360,13 @@ export default class StringAxisSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
+    
+    // Exclude the column that's selected on the legend axis
+    // legendColumn.index is an array index, and columnIndices are also array indices
+    const legendColumnIndexToExclude = this.props.legendColumn?.index ?? this.props.tableConfig?.legendColumnIndex
+    if (legendColumnIndexToExclude !== undefined && legendColumnIndexToExclude >= 0) {
+      columnIndices = columnIndices.filter((i) => i !== legendColumnIndexToExclude)
+    }
 
     const origColumn = this.props.scale?.column?.origColumn ?? this.props.scale?.column
 
@@ -390,15 +396,18 @@ export default class StringAxisSelector extends React.Component {
                 )
                 const originalColumnType = originalColumn?.type
                 
-                // Show menu if:
+                // Show hover menu if:
                 // 1. enableCyclicalDates is enabled, AND
                 // 2. NOT using pivot data (isAggregated), AND
-                // 3. (There's a column override (was changed on FE), OR the original column type is DATE (not DATE_STRING))
+                // 3. Column is a DATE type (not DATE_STRING) - check original column type or current column type
                 const enableCyclicalDates = this.props.enableCyclicalDates !== false // Default to true if not specified
+                // Check if column is DATE type (not DATE_STRING)
+                const isDateType = originalColumnType === ColumnTypes.DATE || 
+                                  (column?.type === ColumnTypes.DATE && column?.type !== ColumnTypes.DATE_STRING)
                 const isDateColumn = 
                   enableCyclicalDates && 
                   !this.props.isAggregated &&
-                  (hasColumnOverride || column.is_timestamp)
+                  isDateType
 
                 const li = (
                   <li
@@ -407,12 +416,10 @@ export default class StringAxisSelector extends React.Component {
                     } ${isDateColumn ? 'date-column' : ''}`}
                     key={`string-column-select-${colIndex}`}
                     onClick={() => {
-                      // If it's not a date column, or if cyclical dates are disabled, select immediately
-                      if (!isDateColumn || !enableCyclicalDates) {
-                        this.props.closeSelector()
-                        this.props.changeStringColumnIndex(colIndex)
-                      }
-                      // If it's a date column with cyclical dates enabled, the hover menu will show (no action needed here)
+                      // Master behavior: clicking always selects immediately
+                      // For date columns, hover menu provides additional options but clicking still works
+                      this.props.closeSelector()
+                      this.props.changeStringColumnIndex(colIndex)
                     }}
                     onMouseEnter={(e) => {
                       if (isDateColumn) {
@@ -432,7 +439,7 @@ export default class StringAxisSelector extends React.Component {
                       }
                     }}
                   >
-                    <span>{this.props.columns?.[colIndex]?.display_name}</span>
+                    {this.props.columns?.[colIndex]?.display_name}
                     {isDateColumn && (
                       <span
                         style={{

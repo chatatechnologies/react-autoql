@@ -56,15 +56,20 @@ export default class LegendSelector extends React.Component {
         (this.props.tableConfig?.numberColumnIndices2?.includes(i) ||
           this.props.numberColumnIndices2?.includes(col.index) ||
           this.props.numberColumnIndices2?.includes(i))
+      
+      // Exclude the column that's selected on the string axis
+      const stringColumnIndexToExclude = this.props.tableConfig?.stringColumnIndex ?? this.props.stringColumnIndex
+      const isOnStringAxis = stringColumnIndexToExclude !== undefined && 
+        (i === stringColumnIndexToExclude || col.index === stringColumnIndexToExclude)
 
       // If using pivot data (isAggregation), only include groupable string columns that are NOT on number axes
       if (this.props.isAggregation) {
-        if (col.groupable && isColumnStringType(col) && !isOnNumberAxis && !isOnSecondNumberAxis) {
+        if (col.groupable && isColumnStringType(col) && !isOnNumberAxis && !isOnSecondNumberAxis && !isOnStringAxis) {
           columnIndices.push(i)
         }
       } else {
         // Original logic: include columns not on number axes, or groupable string columns
-        if ((!isOnNumberAxis && !isOnSecondNumberAxis && col.is_visible) || (col.groupable && col.type === 'STRING')) {
+        if ((!isOnNumberAxis && !isOnSecondNumberAxis && !isOnStringAxis && col.is_visible) || (col.groupable && col.type === 'STRING' && !isOnStringAxis)) {
           columnIndices.push(i)
         }
       }
@@ -75,29 +80,55 @@ export default class LegendSelector extends React.Component {
   renderSelectorContent = () => {
     // If using pivot data (isAggregation), use getAllStringColumnIndices to only show groupable string columns
     // Otherwise, use the original logic with getStringColumnIndices
-    const columnIndices = this.props.isAggregation
+    let columnIndices = this.props.isAggregation
       ? this.getAllStringColumnIndices()
       : getStringColumnIndices(this.props.columns, undefined, true)?.stringColumnIndices?.filter(
           (i) =>
             !this.props.tableConfig.numberColumnIndices.includes(i) &&
             !this.props.tableConfig.numberColumnIndices2.includes(i),
         ) ?? []
+    
+    // Exclude the column that's selected on the string axis
+    // Since we're using originalColumns, we need to find the column by matching
+    // the stringColumnIndex from tableConfig (which is an array index in the columns array)
+    const stringColumnIndexToExclude = this.props.tableConfig?.stringColumnIndex ?? this.props.stringColumnIndex
+    if (stringColumnIndexToExclude !== undefined && stringColumnIndexToExclude >= 0) {
+      // Find the column that's selected on the string axis by matching its index property
+      // or by finding it in the originalColumns array at that position
+      const stringAxisColumn = this.props.columns[stringColumnIndexToExclude]
+      if (stringAxisColumn) {
+        // Filter out columns that match by array index OR by column.index property OR by name
+        columnIndices = columnIndices.filter((i) => {
+          const col = this.props.columns[i]
+          return (
+            i !== stringColumnIndexToExclude &&
+            col?.index !== stringAxisColumn?.index &&
+            col?.index !== stringColumnIndexToExclude &&
+            col?.name !== stringAxisColumn?.name
+          )
+        })
+      } else {
+        // Fallback: just filter by array index
+        columnIndices = columnIndices.filter((i) => i !== stringColumnIndexToExclude)
+      }
+    }
 
     return (
       <div
         className='legend-selector-container'
         id='legend-selector-content'
+        key={`legend-selector-${this.props.stringColumnIndex}`}
         onClick={(e) => {
           e.stopPropagation()
         }}
       >
-        <CustomScrollbars>
+        <CustomScrollbars suppressScrollX>
           <ul className='axis-selector-content'>
             {columnIndices.map((colIndex, i) => {
               return (
                 <li
                   className={`legend-select-list-item ${colIndex === this.props.legendColumn.index ? 'active' : ''}`}
-                  key={`legend-column-select-${i}`}
+                  key={`legend-column-select-${colIndex}`}
                   onClick={() => {
                     this.props.closeSelector()
                     this.props.changeLegendColumnIndex(colIndex)
@@ -114,8 +145,11 @@ export default class LegendSelector extends React.Component {
   }
 
   render = () => {
+    // Use stringColumnIndex in key to force re-render when string axis selection changes
+    const stringColumnIndex = this.props.stringColumnIndex ?? this.props.tableConfig?.stringColumnIndex
     return (
       <Popover
+        key={`legend-selector-popover-${stringColumnIndex}`}
         isOpen={this.props.isOpen}
         innerRef={this.props.legendSelectorRef}
         content={this.renderSelectorContent}
