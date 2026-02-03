@@ -274,6 +274,7 @@ export class QueryOutput extends React.Component {
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
+    enableCyclicalDates: PropTypes.bool,
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
@@ -3832,6 +3833,7 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
+          enableCyclicalDates={this.props.enableCyclicalDates}
           queryID={this.queryResponse?.data?.data?.query_id}
           isEditing={this.props.isEditing}
           hiddenLegendLabels={this.state.hiddenLegendLabels}

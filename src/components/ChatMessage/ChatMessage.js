@@ -97,6 +97,7 @@ export default class ChatMessage extends React.Component {
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -573,6 +574,7 @@ export default class ChatMessage extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           allowColumnAddition={!isDataPreview}
           onNewData={this.onNewDataCallback}
+          enableCyclicalDates={this.props.enableCyclicalDates}
           isUserResizing={this.state.isUserResizing}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {

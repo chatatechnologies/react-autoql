@@ -228,7 +228,7 @@ export default class StringAxisSelector extends React.Component {
                 >
                   <ul className='axis-selector-content'>
                     {/* Absolute date options (DATE type) */}
-                    <li className='axis-selector-header'>Absolute</li>
+                    <li key={`${colIndex}-absolute-header`} className='axis-selector-header'>Absolute</li>
                     {this.dateBucketOptions
                       .filter((option) => option.type === ColumnTypes.DATE)
                       .map((option, optionIndex) => {
@@ -260,7 +260,7 @@ export default class StringAxisSelector extends React.Component {
                               }
                             }}
                             className={`string-select-list-item ${isActive ? 'active' : ''} ${option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''}`}
-                            key={`absolute-${option.precision}`}
+                            key={`${colIndex}-absolute-${option.precision}`}
                             onClick={(e) => {
                               e.stopPropagation()
                               this.handleDateBucketSelect(this.state.hoveredColumn, option)
@@ -272,7 +272,7 @@ export default class StringAxisSelector extends React.Component {
                       })}
                     
                     {/* Cyclical date options (DATE_STRING type) */}
-                    <li className='axis-selector-header'>Cyclical</li>
+                    <li key={`${colIndex}-cyclical-header`} className='axis-selector-header'>Cyclical</li>
                     {this.dateBucketOptions
                       .filter((option) => option.type === ColumnTypes.DATE_STRING)
                       .map((option, optionIndex) => {
@@ -304,7 +304,7 @@ export default class StringAxisSelector extends React.Component {
                             }
                           }}
                           className={`string-select-list-item ${isActive ? 'active' : ''}`}
-                            key={`cyclical-${option.precision}`}
+                            key={`${colIndex}-cyclical-${option.precision}`}
                           onClick={(e) => {
                             e.stopPropagation()
                             this.handleDateBucketSelect(this.state.hoveredColumn, option)
@@ -388,11 +388,12 @@ export default class StringAxisSelector extends React.Component {
                 const originalColumnType = originalColumn?.type
                 
                 // Show menu if:
-                // 1. There's a column override (was changed on FE), OR
-                // 2. The original column type is DATE (not DATE_STRING)
+                // 1. enableCyclicalDates is enabled, AND
+                // 2. (There's a column override (was changed on FE), OR the original column type is DATE (not DATE_STRING))
+                const enableCyclicalDates = this.props.enableCyclicalDates !== false // Default to true if not specified
                 const isDateColumn = 
-                  hasColumnOverride || 
-                  originalColumnType === ColumnTypes.DATE
+                  enableCyclicalDates && 
+                  (hasColumnOverride || originalColumnType === ColumnTypes.DATE)
 
                 const li = (
                   <li
@@ -401,13 +402,17 @@ export default class StringAxisSelector extends React.Component {
                     } ${isDateColumn ? 'date-column' : ''}`}
                     key={`string-column-select-${i}`}
                     onClick={() => {
-                      if (!isDateColumn) {
+                      // If it's not a date column, or if cyclical dates are disabled, select immediately
+                      if (!isDateColumn || !enableCyclicalDates) {
                         this.props.closeSelector()
                         this.props.changeStringColumnIndex(colIndex)
                       }
+                      // If it's a date column with cyclical dates enabled, the hover menu will show (no action needed here)
                     }}
                     onMouseEnter={(e) => {
-                      this.handleColumnHover(colIndex, e)
+                      if (isDateColumn) {
+                        this.handleColumnHover(colIndex, e)
+                      }
                     }}
                     onMouseLeave={() => {
                       // Clear the hover state when leaving

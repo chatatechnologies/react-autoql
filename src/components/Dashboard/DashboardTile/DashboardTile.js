@@ -196,6 +196,7 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -1466,6 +1467,7 @@ export class DashboardTile extends React.Component {
         enableCustomColumns={this.props.enableCustomColumns}
         preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         useInfiniteScroll={this.props.useInfiniteScroll}
+        enableCyclicalDates={this.props.enableCyclicalDates}
         {...queryOutputProps}
       />
     )

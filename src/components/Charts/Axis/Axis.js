@@ -763,6 +763,7 @@ export default class Axis extends Component {
         originalColumns={this.props.originalColumns}
         closeSelector={this.closeSelector}
         isSecondAxis={isSecondAxis}
+        enableCyclicalDates={this.props.enableCyclicalDates}
       >
         <rect
           ref={(r) => (this.axisSelector = r)}

@@ -490,6 +490,7 @@ export default class ChatContent extends React.Component {
                     type={message.type}
                     drilldownFilters={message.drilldownFilters}
                     onErrorCallback={this.props.onErrorCallback}
+                    enableCyclicalDates={this.props.enableCyclicalDates}
                     onSuccessAlert={this.props.onSuccessAlert}
                     deleteMessageCallback={this.deleteMessage}
                     createDataAlertCallback={this.props.createDataAlertCallback}
