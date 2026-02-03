@@ -2033,13 +2033,18 @@ export class QueryOutput extends React.Component {
   onChangeLegendColumnIndex = (index) => {
     const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
 
-    this.tableConfig.legendColumnIndex = index
-
+    // If clicking on the column that's currently on the string axis, swap them
     if (this.tableConfig.stringColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
-      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
-      this.tableConfig.legendColumnIndex = stringColumnIndex
-    } else if (this.tableConfig.numberColumnIndices.includes(index)) {
+      // Swap: string column becomes the old legend column, legend column becomes the old string column
+      const oldStringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+      this.tableConfig.legendColumnIndex = oldStringColumnIndex
+    } else {
+      // Normal case: just set the legend column index
+      this.tableConfig.legendColumnIndex = index
+    }
+
+    if (this.tableConfig.numberColumnIndices.includes(index)) {
       if (this.tableConfig.numberColumnIndices.length > 1) {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
         this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]

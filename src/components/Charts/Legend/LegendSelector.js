@@ -88,30 +88,8 @@ export default class LegendSelector extends React.Component {
             !this.props.tableConfig.numberColumnIndices2.includes(i),
         ) ?? []
     
-    // Exclude the column that's selected on the string axis
-    // Since we're using originalColumns, we need to find the column by matching
-    // the stringColumnIndex from tableConfig (which is an array index in the columns array)
-    const stringColumnIndexToExclude = this.props.tableConfig?.stringColumnIndex ?? this.props.stringColumnIndex
-    if (stringColumnIndexToExclude !== undefined && stringColumnIndexToExclude >= 0) {
-      // Find the column that's selected on the string axis by matching its index property
-      // or by finding it in the originalColumns array at that position
-      const stringAxisColumn = this.props.columns[stringColumnIndexToExclude]
-      if (stringAxisColumn) {
-        // Filter out columns that match by array index OR by column.index property OR by name
-        columnIndices = columnIndices.filter((i) => {
-          const col = this.props.columns[i]
-          return (
-            i !== stringColumnIndexToExclude &&
-            col?.index !== stringAxisColumn?.index &&
-            col?.index !== stringColumnIndexToExclude &&
-            col?.name !== stringAxisColumn?.name
-          )
-        })
-      } else {
-        // Fallback: just filter by array index
-        columnIndices = columnIndices.filter((i) => i !== stringColumnIndexToExclude)
-      }
-    }
+    // Don't exclude the string column - it will be shown in the list
+    // When clicked, onChangeLegendColumnIndex will swap it with the current legend column
 
     return (
       <div

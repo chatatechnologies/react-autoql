@@ -361,12 +361,8 @@ export default class StringAxisSelector extends React.Component {
       columnIndices = this.getAllStringColumnIndices()
     }
     
-    // Exclude the column that's selected on the legend axis
-    // legendColumn.index is an array index, and columnIndices are also array indices
-    const legendColumnIndexToExclude = this.props.legendColumn?.index ?? this.props.tableConfig?.legendColumnIndex
-    if (legendColumnIndexToExclude !== undefined && legendColumnIndexToExclude >= 0) {
-      columnIndices = columnIndices.filter((i) => i !== legendColumnIndexToExclude)
-    }
+    // Don't exclude the legend column - it will be shown in the list
+    // When clicked, onChangeStringColumnIndex will swap it with the current string column
 
     const origColumn = this.props.scale?.column?.origColumn ?? this.props.scale?.column
 
