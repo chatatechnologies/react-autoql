@@ -931,6 +931,7 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             source={this.SOURCE}
+            enableCyclicalDates={this.props.enableCyclicalDates}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />

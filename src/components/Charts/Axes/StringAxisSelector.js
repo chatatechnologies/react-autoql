@@ -393,7 +393,7 @@ export default class StringAxisSelector extends React.Component {
                 const enableCyclicalDates = this.props.enableCyclicalDates !== false // Default to true if not specified
                 const isDateColumn = 
                   enableCyclicalDates && 
-                  (hasColumnOverride || originalColumnType === ColumnTypes.DATE)
+                  (hasColumnOverride || column.is_timestamp)
 
                 const li = (
                   <li
