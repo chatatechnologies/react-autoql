@@ -238,6 +238,17 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  // Normalize order-by direction to either 'ASC' or 'DESC'
+  getOrderByDirection = (dir) => {
+    if (!dir) return null
+    const raw = typeof dir === 'object' && dir?.value ? dir.value : dir
+    if (raw === null || raw === undefined) return null
+    const s = String(raw).toUpperCase()
+    if (s.includes('ASC')) return 'ASC'
+    if (s.includes('DESC')) return 'DESC'
+    return null
+  }
+
   updateTabulatorColumnFn = () => {
     const columns = _cloneDeep(this.state.columns)
 
@@ -445,11 +456,12 @@ export default class CustomColumnModal extends React.Component {
                         getVisibleColumns(this.props.columns).find((column) => {
                           return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                         })?.name +
-                        `${
-                          columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection
-                            ? ' ' + (columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection)
-                            : ' DESC'
-                        }` +
+                        `${(() => {
+                          const _dir = this.getOrderByDirection(
+                            columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection,
+                          )
+                          return _dir ? ' ' + _dir : ' DESC'
+                        })()}` +
                         `${
                           columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange
                             ? ' ' + (columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange)
@@ -605,6 +617,17 @@ export default class CustomColumnModal extends React.Component {
       const columnFn = _cloneDeep(this.state.columnFn)
       if (columnFn[i]) {
         columnFn[i].rowsOrRangeOptionPost = value
+      }
+      this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
+    }
+  }
+
+  changeChunkOrderbyDirection = (value, type, i) => {
+    if (type === CustomColumnTypes.FUNCTION) {
+      const columnFn = _cloneDeep(this.state.columnFn)
+      if (columnFn[i]) {
+        columnFn[i].orderbyDirection = value
       }
       this.setState({ columnFn })
       this.syncNewColumnFnArray(columnFn)
@@ -1128,6 +1151,18 @@ export default class CustomColumnModal extends React.Component {
                 />
               </>
             ) : null}
+            {/* Order-by direction selector for the function chunk */}
+            <Select
+              key={`custom-orderedby-direction-select-${i}`}
+              placeholder='Direction'
+              value={chunk.orderbyDirection ?? null}
+              outlined={false}
+              showArrow={false}
+              className='react-autoql-available-column-selector'
+              onChange={(value) => this.changeChunkOrderbyDirection(value, chunk.type, i)}
+              options={ORDERBY_DIRECTIONS}
+              isDisabled={!chunk.orderby}
+            />
           </>
         ) : null}{' '}
         )
