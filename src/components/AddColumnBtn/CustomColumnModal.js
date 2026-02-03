@@ -228,13 +228,14 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
-  // Keep an authoritative in-memory copy of the column function chunks
-  // to avoid reading stale state while React setState is still pending.
+  // Sync columnFnArray to avoid stale state during async setState
   syncNewColumnFnArray = (columnFn) => {
     if (!this.newColumn) return
     try {
       this.newColumn.columnFnArray = _cloneDeep(columnFn) || []
-    } catch (e) {}
+    } catch (error) {
+      console.error('Failed to sync column function array:', error)
+    }
   }
 
   updateTabulatorColumnFn = () => {
@@ -515,8 +516,8 @@ export default class CustomColumnModal extends React.Component {
     }
 
     const newColumn = _cloneDeep(this.newColumn)
-    // Ensure `columnFnArray` is present on the cloned column to build proto.
-    if (!newColumn.columnFnArray || newColumn.columnFnArray.length === 0) {
+    // Fallback to state if columnFnArray is missing
+    if (!newColumn.columnFnArray?.length) {
       newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
     }
     newColumn.id = this.props.initialColumn?.id
@@ -541,8 +542,8 @@ export default class CustomColumnModal extends React.Component {
       return
     }
     const newColumn = _cloneDeep(this.newColumn)
-    // Ensure `columnFnArray` is present on the cloned column to build proto.
-    if (!newColumn.columnFnArray || newColumn.columnFnArray.length === 0) {
+    // Fallback to state if columnFnArray is missing
+    if (!newColumn.columnFnArray?.length) {
       newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
     }
     newColumn.columnFnArray.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
