@@ -238,15 +238,14 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
-  // Normalize order-by direction to either 'ASC' or 'DESC'
+  // Map order-by direction to SQL token: 'ASC' or 'DESC' (defaults to 'DESC')
   getOrderByDirection = (dir) => {
-    if (!dir) return null
     const raw = typeof dir === 'object' && dir?.value ? dir.value : dir
-    if (raw === null || raw === undefined) return null
+    if (raw === null || raw === undefined) return 'DESC'
     const s = String(raw).toUpperCase()
     if (s.includes('ASC')) return 'ASC'
     if (s.includes('DESC')) return 'DESC'
-    return null
+    return 'DESC'
   }
 
   updateTabulatorColumnFn = () => {
@@ -456,12 +455,10 @@ export default class CustomColumnModal extends React.Component {
                         getVisibleColumns(this.props.columns).find((column) => {
                           return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                         })?.name +
-                        `${(() => {
-                          const _dir = this.getOrderByDirection(
+                        (' ' +
+                          this.getOrderByDirection(
                             columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection,
-                          )
-                          return _dir ? ' ' + _dir : ' DESC'
-                        })()}` +
+                          )) +
                         `${
                           columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange
                             ? ' ' + (columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange)
@@ -1151,7 +1148,6 @@ export default class CustomColumnModal extends React.Component {
                 />
               </>
             ) : null}
-            {/* Order-by direction selector for the function chunk */}
             <Select
               key={`custom-orderedby-direction-select-${i}`}
               placeholder='Direction'
@@ -1578,9 +1574,9 @@ export default class CustomColumnModal extends React.Component {
                       isRequired={this.isInputRequired('selectedFnOrderBy')}
                       className='custom-column-window-fn-selector'
                       value={this.state.selectedFnOrderBy ?? null}
-                      onChange={(selectedFnOrderBy) => {
-                        this.setState({ selectedFnOrderBy })
-                      }}
+                      onChange={(selectedFnOrderBy) =>
+                        this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
+                      }
                       positions={['bottom', 'top', 'right', 'left']}
                       options={allColumnsOptions}
                     />
@@ -1589,7 +1585,11 @@ export default class CustomColumnModal extends React.Component {
                       isRequired={this.isInputRequired('selectedFnOrderByDirection')}
                       className='custom-column-window-fn-selector'
                       value={this.state.selectedFnOrderByDirection ?? null}
-                      onChange={(selectedFnOrderByDirection) => this.setState({ selectedFnOrderByDirection })}
+                      onChange={(selectedFnOrderByDirection) =>
+                        this.setState({ selectedFnOrderByDirection }, () =>
+                          this.syncNewColumnFnArray(this.state.columnFn),
+                        )
+                      }
                       positions={['bottom', 'top', 'right', 'left']}
                       options={ORDERBY_DIRECTIONS}
                       isDisabled={!this.state.selectedFnOrderBy}
@@ -1762,9 +1762,9 @@ export default class CustomColumnModal extends React.Component {
                   isRequired={true}
                   className='custom-column-window-fn-selector'
                   value={this.state.selectedFnOrderBy ?? null}
-                  onChange={(selectedFnOrderBy) => {
-                    this.setState({ selectedFnOrderBy })
-                  }}
+                  onChange={(selectedFnOrderBy) =>
+                    this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
+                  }
                   positions={['bottom', 'top', 'right', 'left']}
                   options={allColumnsOptions}
                 />
@@ -1773,7 +1773,9 @@ export default class CustomColumnModal extends React.Component {
                   isRequired={this.isInputRequired('selectedFnOrderByDirection')}
                   className='custom-column-window-fn-selector'
                   value={this.state.selectedFnOrderByDirection ?? null}
-                  onChange={(selectedFnOrderByDirection) => this.setState({ selectedFnOrderByDirection })}
+                  onChange={(selectedFnOrderByDirection) =>
+                    this.setState({ selectedFnOrderByDirection }, () => this.syncNewColumnFnArray(this.state.columnFn))
+                  }
                   positions={['bottom', 'top', 'right', 'left']}
                   options={ORDERBY_DIRECTIONS}
                   isDisabled={!this.state.selectedFnOrderBy}

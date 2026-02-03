@@ -400,6 +400,50 @@ describe('CustomColumnModal edge cases', () => {
     expect(structural.valid).toBe(true)
   })
 
+  it('preserves ORDER BY direction from function chunk and from modal state', () => {
+    const initialColumns = [
+      { field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'pgs.a' },
+      { field: '1', title: 'B', display_name: 'B', is_visible: true, name: 'pgs.b' },
+    ]
+
+    const wrapper = mount(
+      <CustomColumnModal isOpen={true} columns={initialColumns} queryResponse={{ data: { data: {} } }} />,
+    )
+    const inst = wrapper.instance()
+
+    // Case 1: chunk-level orderbyDirection should be included
+    const customColumnChunk = {
+      columnFnArray: [
+        {
+          type: CustomColumnTypes.FUNCTION,
+          fn: CustomColumnValues.RANK,
+          column: initialColumns[0],
+          orderby: initialColumns[1].field,
+          orderbyDirection: 'ASC',
+        },
+      ],
+    }
+
+    const proto1 = inst.buildProtoTableColumn(customColumnChunk)
+    expect(proto1).toContain(`ORDER BY ${initialColumns[1].name} ASC`)
+
+    // Case 2: modal-level selectedFnOrderByDirection should be used when chunk lacks it
+    const customColumnModal = {
+      columnFnArray: [
+        {
+          type: CustomColumnTypes.FUNCTION,
+          fn: CustomColumnValues.RANK,
+          column: initialColumns[0],
+          orderby: initialColumns[1].field,
+        },
+      ],
+    }
+
+    inst.setState({ selectedFnOrderByDirection: 'DESC', selectedFnOrderBy: initialColumns[1].field })
+    const proto2 = inst.buildProtoTableColumn(customColumnModal)
+    expect(proto2).toContain(`ORDER BY ${initialColumns[1].name} DESC`)
+  })
+
   it('division-by-zero normalization is applied on save', () => {
     const columns = [
       { field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' },
