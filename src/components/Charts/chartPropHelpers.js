@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types'
+import { isColumnDateType, ColumnTypes, getDayJSObj, getPrecisionForDayJS } from 'autoql-fe-utils'
 import { dataFormattingDefault } from 'autoql-fe-utils'
 
 import { dataFormattingType } from '../../props/types'
@@ -74,4 +75,42 @@ export const chartElementPropTypes = {
 export const chartElementDefaultProps = {
   activeKey: undefined,
   onChartClick: () => {},
+}
+
+/**
+ * Creates a "between" filter for date drilldowns when the string axis is a DATE column.
+ * Returns null if the column is not a DATE type or if the date value is invalid.
+ * 
+ * @param {Object} params - Parameters object
+ * @param {Object} params.stringColumn - The column object for the string axis
+ * @param {*} params.dateValue - The date value from the row data
+ * @param {Object} params.dataFormatting - Data formatting configuration
+ * @returns {Object|null} Filter object with "between" operator, or null if not applicable
+ */
+export const createDateDrilldownFilter = ({ stringColumn, dateValue, dataFormatting }) => {
+  // Only handle absolute DATE types, not cyclical DATE_STRING types
+  if (!stringColumn || !isColumnDateType(stringColumn) || stringColumn.type !== ColumnTypes.DATE) {
+    return null
+  }
+
+  if (dateValue == null) {
+    return null
+  }
+
+  try {
+    const isoDate = getDayJSObj({ value: dateValue, column: stringColumn, config: dataFormatting })
+    const precision = getPrecisionForDayJS(stringColumn.precision)
+    const isoDateStart = isoDate.startOf(precision).toISOString()
+    const isoDateEnd = isoDate.endOf(precision).toISOString()
+
+    return {
+      name: stringColumn.name,
+      operator: 'between',
+      value: `${isoDateStart},${isoDateEnd}`,
+      column_type: ColumnTypes.DATE,
+    }
+  } catch (error) {
+    console.error('Error creating date drilldown filter:', error)
+    return null
+  }
 }
