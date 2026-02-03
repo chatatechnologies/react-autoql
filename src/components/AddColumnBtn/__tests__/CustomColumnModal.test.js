@@ -1,7 +1,12 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import CustomColumnModal from '../CustomColumnModal'
-import { transformDivisionExpression, normalizeCoalesceParentheses, CustomColumnTypes, CustomColumnValues } from 'autoql-fe-utils'
+import {
+  transformDivisionExpression,
+  normalizeCoalesceParentheses,
+  CustomColumnTypes,
+  CustomColumnValues,
+} from 'autoql-fe-utils'
 
 jest.mock('../../ChataTable/ChataTable', () => {
   return {
@@ -79,8 +84,23 @@ describe('CustomColumnModal validation', () => {
     inst.setState({ columnFn: opsOnly })
     inst.updateTabulatorColumnFn()
 
+    // Intermediate/incomplete formulas should not show warnings while typing
     expect(inst.state.isFnValid).toBe(false)
-    expect(inst.state.fnError).toBeTruthy()
+    expect(inst.state.fnError).toBeUndefined()
+  })
+
+  it('allows leading unary minus (-A) structurally', () => {
+    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'A' }]
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
+    const inst = wrapper.instance()
+
+    const fn = [
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.SUBTRACTION },
+      { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
+    ]
+    inst.setState({ columnFn: fn })
+    const structural = inst.isStructurallyValidColumnFn()
+    expect(structural.valid).toBe(true)
   })
 
   it('rejects consecutive operators between variables', () => {
@@ -144,7 +164,10 @@ describe('CustomColumnModal validation', () => {
     expect(wrapper.find('Modal').first().prop('confirmDisabled')).toBe(true)
 
     // add a variable -> modal should allow confirm (if name valid)
-    inst.setState({ columnFn: [{ type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] }], isColumnNameValid: true })
+    inst.setState({
+      columnFn: [{ type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] }],
+      isColumnNameValid: true,
+    })
     inst.updateTabulatorColumnFn()
     wrapper.update()
     expect(wrapper.find('Modal').first().prop('confirmDisabled')).toBe(false)
@@ -243,15 +266,25 @@ describe('CustomColumnModal integration (UI interactions)', () => {
     const inst = wrapper.instance()
 
     // leading operator — createMutator may accept unary leading signs; ensure no crash
-    inst.setState({ columnFn: [{ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }, { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] }] })
+    inst.setState({
+      columnFn: [
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+        { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
+      ],
+    })
     inst.updateTabulatorColumnFn()
     expect(typeof inst.state.isFnValid).toBe('boolean')
 
-    // trailing operator
-    inst.setState({ columnFn: [{ type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] }, { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }] })
+    // trailing operator — suppress intermediate warning while typing
+    inst.setState({
+      columnFn: [
+        { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+      ],
+    })
     inst.updateTabulatorColumnFn()
-    expect(inst.state.isFnValid).toBe(false)
-    expect(inst.state.fnError).toBeTruthy()
+    expect(typeof inst.state.isFnValid).toBe('boolean')
+    expect(inst.state.fnError).toBeUndefined()
   })
 
   it('accepts decimal and scientific numeric literals', () => {
@@ -356,9 +389,11 @@ describe('CustomColumnModal edge cases', () => {
     // build deep parentheses around column A (moderate depth)
     const depth = 10
     const fn = []
-    for (let i = 0; i < depth; i++) fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET })
+    for (let i = 0; i < depth; i++)
+      fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET })
     fn.push({ type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] })
-    for (let i = 0; i < depth; i++) fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })
+    for (let i = 0; i < depth; i++)
+      fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })
 
     inst.setState({ columnFn: fn })
     const structural = inst.isStructurallyValidColumnFn()

@@ -233,7 +233,11 @@ export default class CustomColumnModal extends React.Component {
 
     const { columnFn, columnType } = this.state
 
-    // Validate formula has variables and correct operator sequences before creating mutator
+    // Validate formula has variables and correct operator sequences; suppress intermediate warnings while formula is incomplete
+    if (!this.isFormulaComplete()) {
+      return
+    }
+
     if (!this.hasVariablesInColumnFn()) {
       this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
       return
@@ -479,6 +483,18 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onUpdateColumnConfirm = () => {
+    // Final validation before update
+    const structural = this.isStructurallyValidColumnFn()
+    if (!structural.valid) {
+      this.setState({ isFnValid: false, fnError: structural.error })
+      return
+    }
+
+    if (!this.hasVariablesInColumnFn()) {
+      this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
+      return
+    }
+
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
     const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
@@ -490,6 +506,18 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onAddColumnConfirm = () => {
+    // Final validation before add
+    const structural = this.isStructurallyValidColumnFn()
+    if (!structural.valid) {
+      this.setState({ isFnValid: false, fnError: structural.error })
+      return
+    }
+
+    if (!this.hasVariablesInColumnFn()) {
+      this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
+      return
+    }
+
     const newColumn = _cloneDeep(this.newColumn)
     newColumn?.columnFnArray?.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
     newColumn?.columnFnArray?.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
@@ -593,6 +621,16 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
+  isFormulaComplete = () => {
+    const columnFn = this.state.columnFn || []
+    if (columnFn.length === 0) return false
+    const lastChunk = columnFn[columnFn.length - 1]
+    // If the last chunk is an operator (and not a right bracket), the formula is incomplete
+    if (lastChunk?.type === CustomColumnTypes.OPERATOR && lastChunk?.value !== CustomColumnValues.RIGHT_BRACKET)
+      return false
+    return true
+  }
+
   isStructurallyValidColumnFn = () => {
     const columnFn = this.state.columnFn || []
 
@@ -603,10 +641,10 @@ export default class CustomColumnModal extends React.Component {
         const leftLeft = a?.value === CustomColumnValues.LEFT_BRACKET && b?.value === CustomColumnValues.LEFT_BRACKET
         const rightRight =
           a?.value === CustomColumnValues.RIGHT_BRACKET && b?.value === CustomColumnValues.RIGHT_BRACKET
-        // Allow consecutive left/right brackets; allow unary +/- only immediately after an opening bracket
+        // Allow consecutive left/right brackets; allow unary +/- only immediately after an opening bracket or at start
         const unaryAllowed =
           (b?.value === CustomColumnValues.ADDITION || b?.value === CustomColumnValues.SUBTRACTION) &&
-          a?.value === CustomColumnValues.LEFT_BRACKET
+          (a?.value === CustomColumnValues.LEFT_BRACKET || i === 0)
 
         if (!leftLeft && !rightRight && !unaryAllowed) return { valid: false, error: 'Invalid operator sequence' }
       }
