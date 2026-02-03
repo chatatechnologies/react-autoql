@@ -3767,6 +3767,10 @@ export class QueryOutput extends React.Component {
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
+    
+    // Disable cyclical dates if any column has groupable: true
+    const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
+    const effectiveEnableCyclicalDates = hasGroupableColumns ? false : this.props.enableCyclicalDates
 
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
@@ -3835,7 +3839,7 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
-          enableCyclicalDates={this.props.enableCyclicalDates}
+          enableCyclicalDates={effectiveEnableCyclicalDates}
           queryID={this.queryResponse?.data?.data?.query_id}
           isEditing={this.props.isEditing}
           hiddenLegendLabels={this.state.hiddenLegendLabels}
