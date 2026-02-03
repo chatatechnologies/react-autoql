@@ -228,6 +228,15 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  // Keep an authoritative in-memory copy of the column function chunks
+  // to avoid reading stale state while React setState is still pending.
+  syncNewColumnFnArray = (columnFn) => {
+    if (!this.newColumn) return
+    try {
+      this.newColumn.columnFnArray = _cloneDeep(columnFn) || []
+    } catch (e) {}
+  }
+
   updateTabulatorColumnFn = () => {
     const columns = _cloneDeep(this.state.columns)
 
@@ -371,10 +380,10 @@ export default class CustomColumnModal extends React.Component {
             columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL
               ? `((${columnFn?.column?.name}) / SUM(${columnFn?.column?.name}) OVER (
               ${
-                this.state.selectedFnGroupby
+                columnFn?.groupby ?? this.state.selectedFnGroupby
                   ? `PARTITION BY ${
                       getVisibleColumns(this.props.columns).find((column) => {
-                        return column.field === columnFn.groupby
+                        return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
                       })?.name
                     }`
                   : ''
@@ -383,81 +392,91 @@ export default class CustomColumnModal extends React.Component {
               : columnFn.fn === CustomColumnValues.MOVING_AVG
               ? `AVG(${columnFn?.column?.name}) OVER(ORDER BY ${
                   getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === this.state.selectedFnOrderBy
+                    return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                   })?.name
-                } ROWS BETWEEN ${this.state.selectedFnMovingAverageTimeInterval} PRECEDING AND CURRENT ROW)`
+                } ROWS BETWEEN ${
+                  columnFn?.movingAvgTimeInterval ?? this.state.selectedFnMovingAverageTimeInterval
+                } PRECEDING AND CURRENT ROW)`
               : columnFn.fn === CustomColumnValues.CHANGE
               ? `${columnFn?.column?.name} - LAG(${columnFn?.column?.name}) 
               OVER(ORDER BY ${
                 getVisibleColumns(this.props.columns).find((column) => {
-                  return column.field === this.state.selectedFnOrderBy
+                  return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                 })?.name
               })`
               : columnFn.fn === CustomColumnValues.CUMULATIVE_SUM
               ? `SUM(${columnFn?.column?.name}) OVER(ORDER BY ${
                   getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === this.state.selectedFnOrderBy
+                    return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                   })?.name
                 } ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )`
               : columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT
               ? `(SUM(${columnFn?.column?.name}) OVER(ORDER BY ${
                   getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === this.state.selectedFnOrderBy
+                    return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                   })?.name
                 } ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / SUM(${columnFn?.column?.name}) OVER()) * 100`
-              : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
+              : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
               ? `${colName?.substring(colName?.indexOf('SUM(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
               : `${columnFn.fn}(` +
                 `${
-                  WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
+                  WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
                     ? columnFn?.column?.name
-                    : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.NUMBER
-                    ? this.state.selectedFnNTileNumber
+                    : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector ===
+                      CustomColumnTypes.NUMBER
+                    ? columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber
                     : this.state.selected ?? ''
                 })` +
                 `${
                   ' OVER(' +
                   `${
-                    this.state.selectedFnGroupby
+                    columnFn?.groupby ?? this.state.selectedFnGroupby
                       ? 'PARTITION BY ' +
                         getVisibleColumns(this.props.columns).find((column) => {
-                          return column.field === this.state.selectedFnGroupby
+                          return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
                         })?.name
                       : ''
                   }` +
                   `${
-                    this.state.selectedFnOrderBy
-                      ? (this.state.selectedFnGroupby ? ' ' : '') +
+                    columnFn?.orderby ?? this.state.selectedFnOrderBy
+                      ? (columnFn?.groupby ?? this.state.selectedFnGroupby ? ' ' : '') +
                         'ORDER BY ' +
                         getVisibleColumns(this.props.columns).find((column) => {
-                          return column.field === this.state.selectedFnOrderBy
+                          return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
                         })?.name +
                         `${
-                          this.state?.selectedFnOrderByDirection
-                            ? ' ' + this.state?.selectedFnOrderByDirection
+                          columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection
+                            ? ' ' + (columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection)
                             : ' DESC'
                         }` +
-                        `${this.state?.selectedFnRowsOrRange ? ' ' + this.state?.selectedFnRowsOrRange : ''}` +
-                        `${!!this.state?.selectedFnRowsOrRange ? ' Between ' : ''}` +
                         `${
-                          this.state?.selectedFnRowsOrRangeOptionPreNValue
-                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPreNValue
+                          columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange
+                            ? ' ' + (columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange)
+                            : ''
+                        }` +
+                        `${!!(columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange) ? ' Between ' : ''}` +
+                        `${
+                          columnFn?.rowsOrRangeOptionPreNValue ?? this.state?.selectedFnRowsOrRangeOptionPreNValue
+                            ? ' ' +
+                              (columnFn?.rowsOrRangeOptionPreNValue ?? this.state?.selectedFnRowsOrRangeOptionPreNValue)
                             : ''
                         }` +
                         `${
-                          this.state?.selectedFnRowsOrRangeOptionPre
-                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPre
+                          columnFn?.rowsOrRangeOptionPre ?? this.state?.selectedFnRowsOrRangeOptionPre
+                            ? ' ' + (columnFn?.rowsOrRangeOptionPre ?? this.state?.selectedFnRowsOrRangeOptionPre)
                             : ''
                         }` +
-                        `${!!this.state?.selectedFnRowsOrRange ? ' AND ' : ''}` +
+                        `${!!(columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange) ? ' AND ' : ''}` +
                         `${
-                          this.state?.selectedFnRowsOrRangeOptionPostNValue
-                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPostNValue
+                          columnFn?.rowsOrRangeOptionPostNValue ?? this.state?.selectedFnRowsOrRangeOptionPostNValue
+                            ? ' ' +
+                              (columnFn?.rowsOrRangeOptionPostNValue ??
+                                this.state?.selectedFnRowsOrRangeOptionPostNValue)
                             : ''
                         }` +
                         `${
-                          this.state?.selectedFnRowsOrRangeOptionPost
-                            ? ' ' + this.state?.selectedFnRowsOrRangeOptionPost
+                          columnFn?.rowsOrRangeOptionPost ?? this.state?.selectedFnRowsOrRangeOptionPost
+                            ? ' ' + (columnFn?.rowsOrRangeOptionPost ?? this.state?.selectedFnRowsOrRangeOptionPost)
                             : ''
                         }`
                       : ''
@@ -496,6 +515,10 @@ export default class CustomColumnModal extends React.Component {
     }
 
     const newColumn = _cloneDeep(this.newColumn)
+    // Ensure `columnFnArray` is present on the cloned column to build proto.
+    if (!newColumn.columnFnArray || newColumn.columnFnArray.length === 0) {
+      newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
+    }
     newColumn.id = this.props.initialColumn?.id
     const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
     this.props.onUpdateColumn({
@@ -517,10 +540,13 @@ export default class CustomColumnModal extends React.Component {
       this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
       return
     }
-
     const newColumn = _cloneDeep(this.newColumn)
-    newColumn?.columnFnArray?.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
-    newColumn?.columnFnArray?.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
+    // Ensure `columnFnArray` is present on the cloned column to build proto.
+    if (!newColumn.columnFnArray || newColumn.columnFnArray.length === 0) {
+      newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
+    }
+    newColumn.columnFnArray.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
+    newColumn.columnFnArray.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
     const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
     this.props.onAddColumn({
       ...newColumn,
@@ -536,6 +562,7 @@ export default class CustomColumnModal extends React.Component {
         columnFn[i].groupby = value
       }
       this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
     }
   }
 
@@ -546,6 +573,7 @@ export default class CustomColumnModal extends React.Component {
         columnFn[i].orderby = value
       }
       this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
     }
   }
 
@@ -556,6 +584,7 @@ export default class CustomColumnModal extends React.Component {
         columnFn[i].rowsOrRange = value
       }
       this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
     }
   }
 
@@ -566,6 +595,7 @@ export default class CustomColumnModal extends React.Component {
         columnFn[i].rowsOrRangeOptionPre = value
       }
       this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
     }
   }
 
@@ -576,6 +606,7 @@ export default class CustomColumnModal extends React.Component {
         columnFn[i].rowsOrRangeOptionPost = value
       }
       this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
     }
   }
 
@@ -589,6 +620,7 @@ export default class CustomColumnModal extends React.Component {
       }
 
       this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
     }
   }
 
@@ -1143,7 +1175,6 @@ export default class CustomColumnModal extends React.Component {
     } else if (chunk.type === CustomColumnTypes.FUNCTION) {
       chunkElement = this.renderWindowFnChunk(chunk, i)
     }
-
     return (
       <span key={`column-fn-chunk-${i}`} className='react-autoql-operator-select-wrapper'>
         {chunkElement}

@@ -436,3 +436,59 @@ describe('CustomColumnModal edge cases', () => {
     expect(captured.table_column).toBe(transformDivisionExpression(inst2.buildProtoTableColumn(captured)))
   })
 })
+
+describe('CustomColumnModal reproducer - window fn orderby update', () => {
+  it('uses the updated chunk.orderby when saving', (done) => {
+    const initialColumns = [
+      { field: '0', title: 'Sacks', display_name: 'Sacks', is_visible: true, name: 'pgs.sacks' },
+      { field: '1', title: 'Turnovers', display_name: 'Turnovers', is_visible: true, name: 'pgs.turnovers' },
+    ]
+
+    const captured = {}
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={initialColumns}
+        queryResponse={{ data: { data: {} } }}
+        onAddColumn={(newCol) => Object.assign(captured, newCol)}
+      />,
+    )
+
+    // Wait for lazy-loaded ChataTable to mount
+    setTimeout(() => {
+      wrapper.update()
+      const inst = wrapper.find('CustomColumnModal').first().instance()
+
+      // make name valid so confirm flow isn't blocked by name validation
+      inst.setState({ isColumnNameValid: true, columnName: 'RankBy' })
+
+      // Add a configured RANK function chunk pointing at column 0
+      const fnChunk = {
+        type: CustomColumnTypes.FUNCTION,
+        fn: CustomColumnValues.RANK,
+        column: initialColumns[0],
+        orderby: initialColumns[0].field,
+      }
+
+      inst.setState({ columnFn: [fnChunk] })
+
+      // Now change the chunk orderby to column 1 via the same handler used by the UI
+      inst.changeChunkOrderby(initialColumns[1].field, CustomColumnTypes.FUNCTION, 0)
+
+      // Call confirm to add column
+      inst.onAddColumnConfirm()
+
+      setTimeout(() => {
+        try {
+          expect(captured).toBeTruthy()
+          // The saved table_column should include the updated column name (pgs.turnovers)
+          expect(captured.table_column).toBeDefined()
+          expect(captured.table_column).toContain(initialColumns[1].name)
+          done()
+        } catch (err) {
+          done(err)
+        }
+      }, 0)
+    }, 0)
+  })
+})
