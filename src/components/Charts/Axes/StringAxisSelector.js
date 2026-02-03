@@ -36,6 +36,9 @@ export default class StringAxisSelector extends React.Component {
       { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOM, label: 'Day of Month' },
       { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOW, label: 'Day of Week' },
       { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.HOUR, label: 'Hour of Day' },
+      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.MINUTE, label: 'Minute of Hour' },
+      // Disable for now because it's too granular and not useful for most use cases
+      // { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.SECOND, label: 'Second of Minute' },
     ]
     
   }
@@ -389,10 +392,12 @@ export default class StringAxisSelector extends React.Component {
                 
                 // Show menu if:
                 // 1. enableCyclicalDates is enabled, AND
-                // 2. (There's a column override (was changed on FE), OR the original column type is DATE (not DATE_STRING))
+                // 2. NOT using pivot data (isAggregated), AND
+                // 3. (There's a column override (was changed on FE), OR the original column type is DATE (not DATE_STRING))
                 const enableCyclicalDates = this.props.enableCyclicalDates !== false // Default to true if not specified
                 const isDateColumn = 
                   enableCyclicalDates && 
+                  !this.props.isAggregated &&
                   (hasColumnOverride || column.is_timestamp)
 
                 const li = (
@@ -400,7 +405,7 @@ export default class StringAxisSelector extends React.Component {
                     className={`string-select-list-item ${
                       colIndex === origColumn?.index ? 'active' : ''
                     } ${isDateColumn ? 'date-column' : ''}`}
-                    key={`string-column-select-${i}`}
+                    key={`string-column-select-${colIndex}`}
                     onClick={() => {
                       // If it's not a date column, or if cyclical dates are disabled, select immediately
                       if (!isDateColumn || !enableCyclicalDates) {
