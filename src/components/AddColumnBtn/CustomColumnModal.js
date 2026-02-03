@@ -233,7 +233,23 @@ export default class CustomColumnModal extends React.Component {
 
     const { columnFn, columnType } = this.state
 
-    // ----- If function threw an error, use the most recent working function ------
+    // Validate formula has variables and correct operator sequences; suppress intermediate warnings while formula is incomplete
+    if (!this.isFormulaComplete()) {
+      return
+    }
+
+    if (!this.hasVariablesInColumnFn()) {
+      this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
+      return
+    }
+
+    const structural = this.isStructurallyValidColumnFn()
+    if (!structural.valid) {
+      this.setState({ isFnValid: false, fnError: structural.error })
+      return
+    }
+
+    // Create mutator and summary; helper returns an error object on failure
     let newMutator = createMutatorFn(columnFn)
     let newFnSummary = getFnSummary(columnFn)
 
@@ -467,6 +483,18 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onUpdateColumnConfirm = () => {
+    // Final validation before update
+    const structural = this.isStructurallyValidColumnFn()
+    if (!structural.valid) {
+      this.setState({ isFnValid: false, fnError: structural.error })
+      return
+    }
+
+    if (!this.hasVariablesInColumnFn()) {
+      this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
+      return
+    }
+
     const newColumn = _cloneDeep(this.newColumn)
     newColumn.id = this.props.initialColumn?.id
     const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
@@ -478,6 +506,18 @@ export default class CustomColumnModal extends React.Component {
   }
 
   onAddColumnConfirm = () => {
+    // Final validation before add
+    const structural = this.isStructurallyValidColumnFn()
+    if (!structural.valid) {
+      this.setState({ isFnValid: false, fnError: structural.error })
+      return
+    }
+
+    if (!this.hasVariablesInColumnFn()) {
+      this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
+      return
+    }
+
     const newColumn = _cloneDeep(this.newColumn)
     newColumn?.columnFnArray?.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
     newColumn?.columnFnArray?.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
@@ -568,6 +608,60 @@ export default class CustomColumnModal extends React.Component {
 
   getLabelForOperator = (operator) => {
     return operator?.icon ? <Icon type={operator?.icon} /> : operator?.label
+  }
+
+  hasVariablesInColumnFn = () => {
+    const columnFn = this.state.columnFn || []
+    return columnFn.some(
+      (chunk) =>
+        chunk &&
+        (chunk.type === CustomColumnTypes.COLUMN ||
+          chunk.type === CustomColumnTypes.NUMBER ||
+          (chunk.type === CustomColumnTypes.FUNCTION && (chunk.fn || chunk.column || chunk.nTileNumber))),
+    )
+  }
+
+  isFormulaComplete = () => {
+    const columnFn = this.state.columnFn || []
+    if (columnFn.length === 0) return false
+    const lastChunk = columnFn[columnFn.length - 1]
+    // If the last chunk is an operator (and not a right bracket), the formula is incomplete
+    if (lastChunk?.type === CustomColumnTypes.OPERATOR && lastChunk?.value !== CustomColumnValues.RIGHT_BRACKET)
+      return false
+    return true
+  }
+
+  isStructurallyValidColumnFn = () => {
+    const columnFn = this.state.columnFn || []
+
+    for (let i = 0; i < columnFn.length - 1; i++) {
+      const a = columnFn[i]
+      const b = columnFn[i + 1]
+      if (a?.type === CustomColumnTypes.OPERATOR && b?.type === CustomColumnTypes.OPERATOR) {
+        const leftLeft = a?.value === CustomColumnValues.LEFT_BRACKET && b?.value === CustomColumnValues.LEFT_BRACKET
+        const rightRight =
+          a?.value === CustomColumnValues.RIGHT_BRACKET && b?.value === CustomColumnValues.RIGHT_BRACKET
+        // Allow consecutive left/right brackets; allow unary +/- only immediately after an opening bracket or at start
+        const unaryAllowed =
+          (b?.value === CustomColumnValues.ADDITION || b?.value === CustomColumnValues.SUBTRACTION) &&
+          (a?.value === CustomColumnValues.LEFT_BRACKET || i === 0)
+
+        if (!leftLeft && !rightRight && !unaryAllowed) return { valid: false, error: 'Invalid operator sequence' }
+      }
+    }
+
+    let balance = 0
+    for (let i = 0; i < columnFn.length; i++) {
+      const chunk = columnFn[i]
+      if (chunk?.type === CustomColumnTypes.OPERATOR) {
+        if (chunk.value === CustomColumnValues.LEFT_BRACKET) balance++
+        if (chunk.value === CustomColumnValues.RIGHT_BRACKET) balance--
+        if (balance < 0) return { valid: false, error: 'Mismatched parentheses' }
+      }
+    }
+    if (balance !== 0) return { valid: false, error: 'Mismatched parentheses' }
+
+    return { valid: true }
   }
 
   getColumnType = () => {
@@ -1085,7 +1179,11 @@ export default class CustomColumnModal extends React.Component {
           </div>
           {!!this.state.columnFn?.length && (
             <div className='react-autoql-formula-builder-validation-message'>
-              {!!this.state.fnError ? (
+              {!this.hasVariablesInColumnFn() ? (
+                <span className='react-autoql-formula-builder-validation-message-warning'>
+                  <Icon type='warning-triangle' warning /> Formula must include at least one variable
+                </span>
+              ) : !!this.state.fnError ? (
                 <span className='react-autoql-formula-builder-validation-message-warning'>
                   <Icon type='warning-triangle' warning /> {this.state.fnError}
                 </span>
@@ -1836,7 +1934,12 @@ export default class CustomColumnModal extends React.Component {
           shouldRender={this.props.shouldRender}
           onClose={this.props.onClose}
           onConfirm={this.props.initialColumn ? this.onUpdateColumnConfirm : this.onAddColumnConfirm}
-          confirmDisabled={!this.state.isFnValid || !this.state.isColumnNameValid || !this.state.columnFn?.length}
+          confirmDisabled={
+            !this.state.isFnValid ||
+            !this.state.isColumnNameValid ||
+            !this.state.columnFn?.length ||
+            !this.hasVariablesInColumnFn()
+          }
           enableBodyScroll={true}
         >
           <div ref={(r) => (this.columnModalContentRef = r)} className='custom-column-modal'>
