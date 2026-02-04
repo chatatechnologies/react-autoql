@@ -16,6 +16,9 @@ export default class StringAxisSelector extends React.Component {
     this.state = {
       hoveredColumn: null,
       hoveredMenuItem: null, // Track which menu item (chronological/cyclical) is hovered
+      // Mobile state: track which items are tapped/opened
+      tappedColumn: null, // Track which column menu is open on mobile
+      tappedMenuItem: null, // Track which menu item (chronological/cyclical) is open on mobile
     }
     this.dateBucketMenuRefs = {} // Store refs for date bucket menu items
     this.dateBucketScrollbarRef = null // Ref for the scrollbar container
@@ -125,6 +128,16 @@ export default class StringAxisSelector extends React.Component {
     }, 100)
   }
 
+  handleMenuItemTapLeave = () => {
+    // Close tapped menus on mobile when clicking outside
+    if (isMobile) {
+      this.setState({
+        tappedColumn: null,
+        tappedMenuItem: null,
+      })
+    }
+  }
+
   changeDateColumnBucket = (colIndex, bucketOption) => {
     const { columns } = this.props
     const newColumns = columns.map((col) => {
@@ -141,16 +154,40 @@ export default class StringAxisSelector extends React.Component {
     this.props.changeStringColumnIndex(colIndex, newColumns)
   }
 
-  handleDateBucketSelect = (colIndex, bucketOption) => {
-    this.setState({
-      hoveredColumn: null,
-      hoveredMenuItem: null,
-      dateBucketMenuPosition: null,
-    })
-
-    this.props.closeSelector()
-
-    this.changeDateColumnBucket(colIndex, bucketOption)
+  handleDateBucketSelect = (colIndex, bucketOption, e) => {
+    // Stop propagation to prevent clicks from going through overlapping menus
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    
+    // Clear all menu states immediately, especially important for mobile
+    if (isMobile) {
+      // On mobile: apply the change immediately, then close menus
+      this.changeDateColumnBucket(colIndex, bucketOption)
+      this.setState({
+        hoveredColumn: null,
+        hoveredMenuItem: null,
+        tappedColumn: null,
+        tappedMenuItem: null,
+        dateBucketMenuPosition: null,
+      }, () => {
+        // After state is cleared, close the selector
+        this.props.closeSelector()
+      })
+    } else {
+      this.setState({
+        hoveredColumn: null,
+        hoveredMenuItem: null,
+        tappedColumn: null,
+        tappedMenuItem: null,
+        dateBucketMenuPosition: null,
+      }, () => {
+        // After state is cleared, close the selector and apply the change
+        this.props.closeSelector()
+        this.changeDateColumnBucket(colIndex, bucketOption)
+      })
+    }
   }
 
   scrollToActiveItem = (colIndex) => {
@@ -224,7 +261,7 @@ export default class StringAxisSelector extends React.Component {
     return (
       <Popover
         id={`string-axis-selector-menu-item-${this.COMPONENT_KEY}`}
-        isOpen={this.state.hoveredMenuItem === `${colIndex}-${menuItemType}`}
+        isOpen={isMobile ? this.state.tappedMenuItem === `${colIndex}-${menuItemType}` : this.state.hoveredMenuItem === `${colIndex}-${menuItemType}`}
         content={() => {
           return (
             <div
@@ -241,6 +278,10 @@ export default class StringAxisSelector extends React.Component {
               >
                 <div
                   className='axis-selector-container date-bucket-submenu'
+                  onClick={(e) => {
+                    // Stop propagation to prevent clicks from going through overlapping menus
+                    e.stopPropagation()
+                  }}
                   onMouseEnter={(e) => {
                     this.setState({ 
                       hoveredMenuItem: `${colIndex}-${menuItemType}`,
@@ -252,7 +293,10 @@ export default class StringAxisSelector extends React.Component {
                   onMouseLeave={(e) => {
                     // Only close if we're really leaving the submenu
                     const relatedTarget = e.relatedTarget
-                    if (!relatedTarget || !relatedTarget.closest('.date-bucket-submenu')) {
+                    const isMovingToSubmenu = relatedTarget && 
+                      typeof relatedTarget.closest === 'function' && 
+                      relatedTarget.closest('.date-bucket-submenu')
+                    if (!isMovingToSubmenu) {
                       this.setState({
                         hoveredMenuItem: null,
                       })
@@ -292,9 +336,25 @@ export default class StringAxisSelector extends React.Component {
                           }}
                           className={`string-select-list-item ${isActive ? 'active' : ''} ${option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''}`}
                           key={`${colIndex}-${menuItemType}-${option.precision}`}
+                          style={{ cursor: 'pointer', userSelect: 'none', pointerEvents: 'auto', WebkitTapHighlightColor: 'transparent' }}
+                          onTouchStart={(e) => {
+                            // Don't prevent default on touchstart to allow normal touch behavior
+                          }}
+                          onTouchEnd={(e) => {
+                            if (isMobile) {
+                              e.stopPropagation()
+                              e.preventDefault()
+                              this.handleDateBucketSelect(colIndex, option, e)
+                            }
+                          }}
                           onClick={(e) => {
                             e.stopPropagation()
-                            this.handleDateBucketSelect(colIndex, option)
+                            e.preventDefault()
+                            if (!isMobile) {
+                              // On desktop, handle click normally
+                              this.handleDateBucketSelect(colIndex, option, e)
+                            }
+                            // On mobile, touchend will handle it
                           }}
                         >
                           {option.label}
@@ -307,7 +367,7 @@ export default class StringAxisSelector extends React.Component {
             </div>
           )
         }}
-        onClickOutside={this.handleMenuItemLeave}
+        onClickOutside={isMobile ? this.handleMenuItemTapLeave : this.handleMenuItemLeave}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={['right', 'top', 'bottom', 'left']}
@@ -341,7 +401,7 @@ export default class StringAxisSelector extends React.Component {
     return (
       <Popover
         id={`string-axis-selector-${this.COMPONENT_KEY}`}
-        isOpen={this.state.hoveredColumn === colIndex}
+        isOpen={isMobile ? this.state.tappedColumn === colIndex : this.state.hoveredColumn === colIndex}
         content={() => {
           return (
             <div
@@ -361,21 +421,28 @@ export default class StringAxisSelector extends React.Component {
               >
                 <div
                   className='axis-selector-container date-bucket-submenu'
+                  onClick={(e) => {
+                    // Stop propagation to prevent clicks from going through overlapping menus
+                    e.stopPropagation()
+                  }}
                   onMouseEnter={(e) => {
                     this.setState({ hoveredColumn: colIndex, hoveredSubmenu: colIndex })
                     e.stopPropagation()
                   }}
                   onMouseMove={(e) => {
-                    // Check if mouse is over a menu item (Chronological/Cyclical) and open submenu
-                    const target = e.target
-                    if (target && target.closest) {
-                      const listItem = target.closest('li[data-menu-item]')
-                      if (listItem) {
-                        const menuItemType = listItem.getAttribute('data-menu-item')
-                        if (menuItemType === 'chronological' && this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
-                          this.handleMenuItemHover('chronological', colIndex)
-                        } else if (menuItemType === 'cyclical' && this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
-                          this.handleMenuItemHover('cyclical', colIndex)
+                    // Only handle mouse move on desktop
+                    if (!isMobile) {
+                      // Check if mouse is over a menu item (Chronological/Cyclical) and open submenu
+                      const target = e.target
+                      if (target && target.closest) {
+                        const listItem = target.closest('li[data-menu-item]')
+                        if (listItem) {
+                          const menuItemType = listItem.getAttribute('data-menu-item')
+                          if (menuItemType === 'chronological' && this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
+                            this.handleMenuItemHover('chronological', colIndex)
+                          } else if (menuItemType === 'cyclical' && this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
+                            this.handleMenuItemHover('cyclical', colIndex)
+                          }
                         }
                       }
                     }
@@ -387,7 +454,9 @@ export default class StringAxisSelector extends React.Component {
                     const container = e.currentTarget
                     const isMovingToChild = relatedTarget && container.contains(relatedTarget)
                     // Check if moving to a menu item submenu
-                    const isMovingToSubmenu = relatedTarget && relatedTarget.closest('.date-bucket-submenu')
+                    const isMovingToSubmenu = relatedTarget && 
+                      typeof relatedTarget.closest === 'function' && 
+                      relatedTarget.closest('.date-bucket-submenu')
                     // Also check if a menu item submenu is open for this column
                     const hasOpenMenuItemSubmenu = this.state.hoveredMenuItem && 
                       (this.state.hoveredMenuItem.startsWith(`${colIndex}-chronological`) ||
@@ -402,108 +471,152 @@ export default class StringAxisSelector extends React.Component {
                   <ul 
                     className='axis-selector-content'
                     onMouseEnter={(e) => {
-                      // Keep parent menu open when hovering over list items
-                      this.setState({ 
-                        hoveredColumn: colIndex, 
-                        hoveredSubmenu: colIndex 
-                      })
+                      // Keep parent menu open when hovering over list items (desktop only)
+                      if (!isMobile) {
+                        this.setState({ 
+                          hoveredColumn: colIndex, 
+                          hoveredSubmenu: colIndex 
+                        })
+                      }
                     }}
                   >
-                    {(() => {
-                      const chronologicalLi = (
-                        <li
-                          className='string-select-list-item date-column'
-                          key={`${colIndex}-chronological`}
-                          data-menu-item='chronological'
-                          onClick={(e) => {
-                            e.stopPropagation()
-                          }}
-                          onMouseEnter={(e) => {
-                            e.stopPropagation()
-                            this.handleMenuItemHover('chronological', colIndex)
-                          }}
-                          onMouseLeave={(e) => {
-                            // Only close if we're really leaving (not moving to submenu)
-                            const relatedTarget = e.relatedTarget
-                            const isMovingToSubmenu = relatedTarget && relatedTarget.closest('.date-bucket-submenu')
-                            if (!isMovingToSubmenu) {
-                              // Clear the hover state when leaving
-                              setTimeout(() => {
-                                // Only close if submenu is not open (if it's still set, submenu is open)
-                                if (this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
+                    {[
+                      (() => {
+                        const chronologicalLi = (
+                          <li
+                            className='string-select-list-item date-column'
+                            key={`${colIndex}-chronological`}
+                            data-menu-item='chronological'
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (isMobile) {
+                                // On mobile: toggle the third menu open/closed
+                                if (this.state.tappedMenuItem === `${colIndex}-chronological`) {
+                                  // If already open, close it
                                   this.setState({
-                                    hoveredMenuItem: null,
+                                    tappedMenuItem: null,
+                                  })
+                                } else {
+                                  // Open the third menu
+                                  this.setState({
+                                    tappedMenuItem: `${colIndex}-chronological`,
                                   })
                                 }
-                              }, 150) // Small delay to allow moving to submenu
-                            }
-                          }}
-                        >
-                          Chronological
-                          <span
-                            style={{
-                              float: 'right',
-                              fontSize: '12px',
-                              marginLeft: '10px',
+                              }
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isMobile) {
+                                e.stopPropagation()
+                                this.handleMenuItemHover('chronological', colIndex)
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              // Only close if we're really leaving (not moving to submenu)
+                              const relatedTarget = e.relatedTarget
+                              const isMovingToSubmenu = relatedTarget && 
+                                typeof relatedTarget.closest === 'function' && 
+                                relatedTarget.closest('.date-bucket-submenu')
+                              if (!isMovingToSubmenu) {
+                                // Clear the hover state when leaving
+                                setTimeout(() => {
+                                  // Only close if submenu is not open (if it's still set, submenu is open)
+                                  if (this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
+                                    this.setState({
+                                      hoveredMenuItem: null,
+                                    })
+                                  }
+                                }, 150) // Small delay to allow moving to submenu
+                              }
                             }}
                           >
-                            <Icon type='caret-right' />
-                          </span>
-                        </li>
-                      )
-                      return this.renderMenuItemSubmenu(chronologicalLi, colIndex, 'chronological', selectedColumnIndex)
-                    })()}
-                    {(() => {
-                      const cyclicalLi = (
-                        <li
-                          className='string-select-list-item date-column'
-                          key={`${colIndex}-cyclical`}
-                          data-menu-item='cyclical'
-                          onClick={(e) => {
-                            e.stopPropagation()
-                          }}
-                          onMouseEnter={(e) => {
-                            e.stopPropagation()
-                            this.handleMenuItemHover('cyclical', colIndex)
-                          }}
-                          onMouseLeave={(e) => {
-                            // Only close if we're really leaving (not moving to submenu)
-                            const relatedTarget = e.relatedTarget
-                            const isMovingToSubmenu = relatedTarget && relatedTarget.closest('.date-bucket-submenu')
-                            if (!isMovingToSubmenu) {
-                              // Clear the hover state when leaving
-                              setTimeout(() => {
-                                // Only close if submenu is not open (if it's still set, submenu is open)
-                                if (this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
+                            Chronological
+                            <span
+                              style={{
+                                float: 'right',
+                                fontSize: '12px',
+                                marginLeft: '10px',
+                              }}
+                            >
+                              <Icon type='caret-right' />
+                            </span>
+                          </li>
+                        )
+                        return this.renderMenuItemSubmenu(chronologicalLi, colIndex, 'chronological', selectedColumnIndex)
+                      })(),
+                      (() => {
+                        const cyclicalLi = (
+                          <li
+                            className='string-select-list-item date-column'
+                            key={`${colIndex}-cyclical`}
+                            data-menu-item='cyclical'
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (isMobile) {
+                                // On mobile: toggle the third menu open/closed
+                                if (this.state.tappedMenuItem === `${colIndex}-cyclical`) {
+                                  // If already open, close it
                                   this.setState({
-                                    hoveredMenuItem: null,
+                                    tappedMenuItem: null,
+                                  })
+                                } else {
+                                  // Open the third menu
+                                  this.setState({
+                                    tappedMenuItem: `${colIndex}-cyclical`,
                                   })
                                 }
-                              }, 150) // Small delay to allow moving to submenu
-                            }
-                          }}
-                        >
-                          Cyclical
-                          <span
-                            style={{
-                              float: 'right',
-                              fontSize: '12px',
-                              marginLeft: '10px',
+                              }
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isMobile) {
+                                e.stopPropagation()
+                                this.handleMenuItemHover('cyclical', colIndex)
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              // Only close if we're really leaving (not moving to submenu)
+                              const relatedTarget = e.relatedTarget
+                              const isMovingToSubmenu = relatedTarget && 
+                                typeof relatedTarget.closest === 'function' && 
+                                relatedTarget.closest('.date-bucket-submenu')
+                              if (!isMovingToSubmenu) {
+                                // Clear the hover state when leaving
+                                setTimeout(() => {
+                                  // Only close if submenu is not open (if it's still set, submenu is open)
+                                  if (this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
+                                    this.setState({
+                                      hoveredMenuItem: null,
+                                    })
+                                  }
+                                }, 150) // Small delay to allow moving to submenu
+                              }
                             }}
                           >
-                            <Icon type='caret-right' />
-                          </span>
-                        </li>
-                      )
-                      return this.renderMenuItemSubmenu(cyclicalLi, colIndex, 'cyclical', selectedColumnIndex)
-                    })()}
+                            Cyclical
+                            <span
+                              style={{
+                                float: 'right',
+                                fontSize: '12px',
+                                marginLeft: '10px',
+                              }}
+                            >
+                              <Icon type='caret-right' />
+                            </span>
+                          </li>
+                        )
+                        return this.renderMenuItemSubmenu(cyclicalLi, colIndex, 'cyclical', selectedColumnIndex)
+                      })()
+                    ].map((item, index) => (
+                      <React.Fragment key={`${colIndex}-menu-item-${index === 0 ? 'chronological' : 'cyclical'}`}>
+                        {item}
+                      </React.Fragment>
+                    ))}
                   </ul>
                 </div>
               </CustomScrollbars>
             </div>
           )
         }}
-        onClickOutside={this.handleColumnLeave}
+        onClickOutside={isMobile ? this.handleMenuItemTapLeave : this.handleColumnLeave}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
         positions={['right', 'top', 'bottom', 'left']}
@@ -592,14 +705,32 @@ export default class StringAxisSelector extends React.Component {
                       colIndex === origColumn?.index ? 'active' : ''
                     } ${isDateColumn ? 'date-column' : ''}`}
                     key={`string-column-select-${colIndex}`}
-                    onClick={() => {
-                      // Master behavior: clicking always selects immediately
-                      // For date columns, hover menu provides additional options but clicking still works
-                      this.props.closeSelector()
-                      this.props.changeStringColumnIndex(colIndex)
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (isMobile && isDateColumn) {
+                        // On mobile: toggle the menu open/closed
+                        if (this.state.tappedColumn === colIndex) {
+                          // If already open, close it
+                          this.setState({
+                            tappedColumn: null,
+                            tappedMenuItem: null,
+                          })
+                        } else {
+                          // Open the menu
+                          this.setState({
+                            tappedColumn: colIndex,
+                            tappedMenuItem: null,
+                          })
+                        }
+                      } else {
+                        // Desktop: clicking always selects immediately
+                        // For date columns, hover menu provides additional options but clicking still works
+                        this.props.closeSelector()
+                        this.props.changeStringColumnIndex(colIndex)
+                      }
                     }}
                     onMouseEnter={(e) => {
-                      if (isDateColumn) {
+                      if (!isMobile && isDateColumn) {
                         this.handleColumnHover(colIndex, e)
                       }
                     }}
