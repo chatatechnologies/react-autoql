@@ -6,6 +6,7 @@ import {
   normalizeCoalesceParentheses,
   CustomColumnTypes,
   CustomColumnValues,
+  WINDOW_FUNCTIONS,
 } from 'autoql-fe-utils'
 
 jest.mock('../../ChataTable/ChataTable', () => {
@@ -400,6 +401,118 @@ describe('CustomColumnModal edge cases', () => {
     expect(structural.valid).toBe(true)
   })
 
+  it('buildProtoTableColumn wraps divisions for PERCENT_OF_TOTAL and CUMULATIVE_PERCENT and SUM-derived percent', () => {
+    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'colA' }]
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
+    const inst = wrapper.instance()
+
+    // PERCENT_OF_TOTAL
+    const fnPercentTotal = [
+      { type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.PERCENT_OF_TOTAL, column: { name: 'colA' } },
+    ]
+    const protoPercentTotal = inst.buildProtoTableColumn({ columnFnArray: fnPercentTotal })
+    const normPercentTotal = protoPercentTotal.replace(/\s+/g, '')
+    expect(normPercentTotal).toContain(`COALESCE(${`colA`}/NULLIF(SUM(${`colA`})OVER(),0),0)*100`)
+
+    // CUMULATIVE_PERCENT
+    const fnCumPercent = [
+      { type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.CUMULATIVE_PERCENT, column: { name: 'colA' } },
+    ]
+    const protoCumPercent = inst.buildProtoTableColumn({ columnFnArray: fnCumPercent })
+    const normCumPercent = protoCumPercent.replace(/\s+/g, '')
+    expect(normCumPercent).toContain(`COALESCE((SUM(${'colA'})OVER(`)
+    expect(normCumPercent).toContain(`NULLIF(SUM(${'colA'})OVER(),0)),0)*100`)
+
+    // SUM-derived percent: find a window function whose nextSelector is SUM
+    const sumFnKey = Object.keys(WINDOW_FUNCTIONS).find(
+      (k) => WINDOW_FUNCTIONS[k]?.nextSelector === CustomColumnTypes.SUM,
+    )
+    if (sumFnKey) {
+      const fnSumDerived = [{ type: CustomColumnTypes.FUNCTION, fn: sumFnKey, column: { name: 'SUM(colB)' } }]
+      const protoSumDerived = inst.buildProtoTableColumn({ columnFnArray: fnSumDerived })
+      const normSumDerived = protoSumDerived.replace(/\s+/g, '')
+      // expect denominator to be NULLIF(SUM(colB),0) and numerator to reference inner column 'colB'
+      expect(normSumDerived).toContain(`COALESCE((colB/NULLIF(SUM(colB),0)),0)*100`)
+    }
+  })
+
+  it('buildPartitionClause and buildOrderByClause helpers produce expected clauses', () => {
+    const columns = [
+      { field: 'g', title: 'G', is_visible: true, name: 'p.player' },
+      { field: 'o', title: 'O', is_visible: true, name: 'colA' },
+    ]
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
+    const inst = wrapper.instance()
+
+    const part = inst.buildPartitionClause({ groupby: 'g' })
+    expect(part).toBe('PARTITION BY p.player')
+
+    const order = inst.buildOrderByClause({ orderby: 'o', orderbyDirection: 'asc' }, false)
+    expect(order).toBe('ORDER BY colA ASC')
+
+    const orderWithRange = inst.buildOrderByClause(
+      {
+        orderby: 'o',
+        orderbyDirection: 'desc',
+        rowsOrRange: 'ROWS',
+        rowsOrRangeOptionPreNValue: 'UNBOUNDED',
+        rowsOrRangeOptionPre: 'PRECEDING',
+        rowsOrRangeOptionPostNValue: '0',
+        rowsOrRangeOptionPost: 'FOLLOWING',
+      },
+      true,
+    )
+    const norm = orderWithRange.replace(/\s+/g, ' ')
+    expect(norm).toContain('ORDER BY colA DESC')
+    expect(norm).toContain('ROWS')
+    expect(norm).toContain('Between')
+    expect(norm).toContain('UNBOUNDED')
+  })
+
+  it('preserves ORDER BY direction from function chunk and from modal state', () => {
+    const initialColumns = [
+      { field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'pgs.a' },
+      { field: '1', title: 'B', display_name: 'B', is_visible: true, name: 'pgs.b' },
+    ]
+
+    const wrapper = mount(
+      <CustomColumnModal isOpen={true} columns={initialColumns} queryResponse={{ data: { data: {} } }} />,
+    )
+    const inst = wrapper.instance()
+
+    // Case 1: chunk-level orderbyDirection should be included
+    const customColumnChunk = {
+      columnFnArray: [
+        {
+          type: CustomColumnTypes.FUNCTION,
+          fn: CustomColumnValues.RANK,
+          column: initialColumns[0],
+          orderby: initialColumns[1].field,
+          orderbyDirection: 'ASC',
+        },
+      ],
+    }
+
+    const proto1 = inst.buildProtoTableColumn(customColumnChunk)
+    expect(proto1).toContain(`ORDER BY ${initialColumns[1].name} ASC`)
+
+    // Case 2: modal-level selectedFnOrderByDirection should be used when chunk lacks it
+    const customColumnModal = {
+      columnFnArray: [
+        {
+          type: CustomColumnTypes.FUNCTION,
+          fn: CustomColumnValues.RANK,
+          column: initialColumns[0],
+          orderby: initialColumns[1].field,
+        },
+      ],
+    }
+
+    inst.setState({ selectedFnOrderByDirection: 'DESC', selectedFnOrderBy: initialColumns[1].field })
+    const proto2 = inst.buildProtoTableColumn(customColumnModal)
+    expect(proto2).toContain(`ORDER BY ${initialColumns[1].name} DESC`)
+  })
+
   it('division-by-zero normalization is applied on save', () => {
     const columns = [
       { field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' },
@@ -434,5 +547,61 @@ describe('CustomColumnModal edge cases', () => {
 
     // proto column should be transformed
     expect(captured.table_column).toBe(transformDivisionExpression(inst2.buildProtoTableColumn(captured)))
+  })
+})
+
+describe('CustomColumnModal reproducer - window fn orderby update', () => {
+  it('uses the updated chunk.orderby when saving', (done) => {
+    const initialColumns = [
+      { field: '0', title: 'Sacks', display_name: 'Sacks', is_visible: true, name: 'pgs.sacks' },
+      { field: '1', title: 'Turnovers', display_name: 'Turnovers', is_visible: true, name: 'pgs.turnovers' },
+    ]
+
+    const captured = {}
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={initialColumns}
+        queryResponse={{ data: { data: {} } }}
+        onAddColumn={(newCol) => Object.assign(captured, newCol)}
+      />,
+    )
+
+    // Wait for lazy-loaded ChataTable to mount
+    setTimeout(() => {
+      wrapper.update()
+      const inst = wrapper.find('CustomColumnModal').first().instance()
+
+      // make name valid so confirm flow isn't blocked by name validation
+      inst.setState({ isColumnNameValid: true, columnName: 'RankBy' })
+
+      // Add a configured RANK function chunk pointing at column 0
+      const fnChunk = {
+        type: CustomColumnTypes.FUNCTION,
+        fn: CustomColumnValues.RANK,
+        column: initialColumns[0],
+        orderby: initialColumns[0].field,
+      }
+
+      inst.setState({ columnFn: [fnChunk] })
+
+      // Now change the chunk orderby to column 1 via the same handler used by the UI
+      inst.changeChunkOrderby(initialColumns[1].field, CustomColumnTypes.FUNCTION, 0)
+
+      // Call confirm to add column
+      inst.onAddColumnConfirm()
+
+      setTimeout(() => {
+        try {
+          expect(captured).toBeTruthy()
+          // The saved table_column should include the updated column name (pgs.turnovers)
+          expect(captured.table_column).toBeDefined()
+          expect(captured.table_column).toContain(initialColumns[1].name)
+          done()
+        } catch (err) {
+          done(err)
+        }
+      }, 0)
+    }, 0)
   })
 })
