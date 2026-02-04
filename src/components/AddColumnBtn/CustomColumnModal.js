@@ -248,6 +248,45 @@ export default class CustomColumnModal extends React.Component {
     return 'DESC'
   }
 
+  // Build PARTITION BY clause from columnFn (returns empty string if none)
+  buildPartitionClause = (columnFn) => {
+    const groupbyField = columnFn?.groupby ?? this.state.selectedFnGroupby
+    if (!groupbyField) return ''
+    const colName = getVisibleColumns(this.props.columns).find((column) => column.field === groupbyField)?.name
+    return colName ? `PARTITION BY ${colName}` : ''
+  }
+
+  // Build ORDER BY clause (optionally include rows/range details)
+  buildOrderByClause = (columnFn, includeRowsRange = true) => {
+    const orderbyField = columnFn?.orderby ?? this.state.selectedFnOrderBy
+    if (!orderbyField) return ''
+    const colName = getVisibleColumns(this.props.columns).find((column) => column.field === orderbyField)?.name
+    if (!colName) return ''
+
+    let clause = `ORDER BY ${colName} ${this.getOrderByDirection(
+      columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection,
+    )}`
+
+    if (includeRowsRange) {
+      const rowsOrRange = columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange
+      if (rowsOrRange) {
+        clause += ' ' + rowsOrRange
+        clause += !!rowsOrRange ? ' Between ' : ''
+        const preN = columnFn?.rowsOrRangeOptionPreNValue ?? this.state?.selectedFnRowsOrRangeOptionPreNValue
+        if (preN) clause += ' ' + preN
+        const pre = columnFn?.rowsOrRangeOptionPre ?? this.state?.selectedFnRowsOrRangeOptionPre
+        if (pre) clause += ' ' + pre
+        clause += !!rowsOrRange ? ' AND ' : ''
+        const postN = columnFn?.rowsOrRangeOptionPostNValue ?? this.state?.selectedFnRowsOrRangeOptionPostNValue
+        if (postN) clause += ' ' + postN
+        const post = columnFn?.rowsOrRangeOptionPost ?? this.state?.selectedFnRowsOrRangeOptionPost
+        if (post) clause += ' ' + post
+      }
+    }
+
+    return clause
+  }
+
   updateTabulatorColumnFn = () => {
     const columns = _cloneDeep(this.state.columns)
 
@@ -373,6 +412,73 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
+  // Build SQL string for a function chunk (extracted from nested ternary for readability)
+  buildFunctionSql = (columnFn, customColumn) => {
+    const colName = columnFn?.column?.name
+
+    // PERCENT_OF_TOTAL
+    if (columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL) {
+      const windowClause =
+        columnFn?.groupby ?? this.state.selectedFnGroupby
+          ? `PARTITION BY ${
+              getVisibleColumns(this.props.columns).find((column) => {
+                return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
+              })?.name
+            }`
+          : ''
+
+      return `(COALESCE(${columnFn?.column?.name} / NULLIF(SUM(${columnFn?.column?.name}) OVER (${windowClause}), 0), 0) * 100)`
+    }
+
+    // MOVING_AVG
+    if (columnFn.fn === CustomColumnValues.MOVING_AVG) {
+      const orderClause = this.buildOrderByClause(columnFn, false)
+      return `AVG(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN ${
+        columnFn?.movingAvgTimeInterval ?? this.state.selectedFnMovingAverageTimeInterval
+      } PRECEDING AND CURRENT ROW)`
+    }
+
+    // CHANGE
+    if (columnFn.fn === CustomColumnValues.CHANGE) {
+      const orderClause = this.buildOrderByClause(columnFn, false)
+      return `${columnFn?.column?.name} - LAG(${columnFn?.column?.name}) OVER(${orderClause})`
+    }
+
+    // CUMULATIVE_SUM
+    if (columnFn.fn === CustomColumnValues.CUMULATIVE_SUM) {
+      const orderClause = this.buildOrderByClause(columnFn, false)
+      return `SUM(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )`
+    }
+
+    // CUMULATIVE_PERCENT
+    if (columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT) {
+      const orderClause = this.buildOrderByClause(columnFn, false)
+      return `(COALESCE((SUM(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${columnFn?.column?.name}) OVER(), 0)), 0) * 100)`
+    }
+
+    // SUM-derived percent (window function whose nextSelector is SUM)
+    if (WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM) {
+      return `(COALESCE((${colName?.substring(
+        colName?.indexOf('SUM(') + 4,
+        colName?.indexOf(')'),
+      )} / NULLIF(${colName}, 0)), 0) * 100)`
+    }
+
+    // Default: generic function with window clause
+    const valueArg =
+      WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
+        ? columnFn?.column?.name
+        : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.NUMBER
+        ? columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber
+        : this.state.selected ?? ''
+
+    const partitionClause = this.buildPartitionClause(columnFn)
+    const orderClause = this.buildOrderByClause(columnFn, true)
+    const overInner = `${partitionClause}${partitionClause && orderClause ? ' ' : ''}${orderClause}`
+
+    return `${columnFn.fn}(${valueArg}) OVER(${overInner})`
+  }
+
   buildProtoTableColumn = (customColumn) => {
     if (customColumn?.columnFnArray) {
       let protoTableColumn = ''
@@ -380,6 +486,7 @@ export default class CustomColumnModal extends React.Component {
 
       for (const columnFn of customColumn?.columnFnArray) {
         const colName = columnFn?.column?.name
+
         if (columnFn?.type === CustomColumnTypes.COLUMN) {
           protoTableColumn += columnFn?.column?.name
         } else if (columnFn?.type === CustomColumnTypes.OPERATOR) {
@@ -387,111 +494,7 @@ export default class CustomColumnModal extends React.Component {
         } else if (columnFn?.type === CustomColumnTypes.NUMBER) {
           protoTableColumn += columnFn?.value || 0
         } else if (columnFn?.type === CustomColumnTypes.FUNCTION) {
-          protoTableColumn +=
-            columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL
-              ? `((${columnFn?.column?.name}) / SUM(${columnFn?.column?.name}) OVER (
-              ${
-                columnFn?.groupby ?? this.state.selectedFnGroupby
-                  ? `PARTITION BY ${
-                      getVisibleColumns(this.props.columns).find((column) => {
-                        return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
-                      })?.name
-                    }`
-                  : ''
-              }
-                )) * 100`
-              : columnFn.fn === CustomColumnValues.MOVING_AVG
-              ? `AVG(${columnFn?.column?.name}) OVER(ORDER BY ${
-                  getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
-                  })?.name
-                } ROWS BETWEEN ${
-                  columnFn?.movingAvgTimeInterval ?? this.state.selectedFnMovingAverageTimeInterval
-                } PRECEDING AND CURRENT ROW)`
-              : columnFn.fn === CustomColumnValues.CHANGE
-              ? `${columnFn?.column?.name} - LAG(${columnFn?.column?.name}) 
-              OVER(ORDER BY ${
-                getVisibleColumns(this.props.columns).find((column) => {
-                  return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
-                })?.name
-              })`
-              : columnFn.fn === CustomColumnValues.CUMULATIVE_SUM
-              ? `SUM(${columnFn?.column?.name}) OVER(ORDER BY ${
-                  getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
-                  })?.name
-                } ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )`
-              : columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT
-              ? `(SUM(${columnFn?.column?.name}) OVER(ORDER BY ${
-                  getVisibleColumns(this.props.columns).find((column) => {
-                    return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
-                  })?.name
-                } ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / SUM(${columnFn?.column?.name}) OVER()) * 100`
-              : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
-              ? `${colName?.substring(colName?.indexOf('SUM(') + 4, colName?.indexOf(')'))} / ${colName} * 100`
-              : `${columnFn.fn}(` +
-                `${
-                  WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
-                    ? columnFn?.column?.name
-                    : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector ===
-                      CustomColumnTypes.NUMBER
-                    ? columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber
-                    : this.state.selected ?? ''
-                })` +
-                `${
-                  ' OVER(' +
-                  `${
-                    columnFn?.groupby ?? this.state.selectedFnGroupby
-                      ? 'PARTITION BY ' +
-                        getVisibleColumns(this.props.columns).find((column) => {
-                          return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
-                        })?.name
-                      : ''
-                  }` +
-                  `${
-                    columnFn?.orderby ?? this.state.selectedFnOrderBy
-                      ? (columnFn?.groupby ?? this.state.selectedFnGroupby ? ' ' : '') +
-                        'ORDER BY ' +
-                        getVisibleColumns(this.props.columns).find((column) => {
-                          return column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy)
-                        })?.name +
-                        (' ' +
-                          this.getOrderByDirection(
-                            columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection,
-                          )) +
-                        `${
-                          columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange
-                            ? ' ' + (columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange)
-                            : ''
-                        }` +
-                        `${!!(columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange) ? ' Between ' : ''}` +
-                        `${
-                          columnFn?.rowsOrRangeOptionPreNValue ?? this.state?.selectedFnRowsOrRangeOptionPreNValue
-                            ? ' ' +
-                              (columnFn?.rowsOrRangeOptionPreNValue ?? this.state?.selectedFnRowsOrRangeOptionPreNValue)
-                            : ''
-                        }` +
-                        `${
-                          columnFn?.rowsOrRangeOptionPre ?? this.state?.selectedFnRowsOrRangeOptionPre
-                            ? ' ' + (columnFn?.rowsOrRangeOptionPre ?? this.state?.selectedFnRowsOrRangeOptionPre)
-                            : ''
-                        }` +
-                        `${!!(columnFn?.rowsOrRange ?? this.state?.selectedFnRowsOrRange) ? ' AND ' : ''}` +
-                        `${
-                          columnFn?.rowsOrRangeOptionPostNValue ?? this.state?.selectedFnRowsOrRangeOptionPostNValue
-                            ? ' ' +
-                              (columnFn?.rowsOrRangeOptionPostNValue ??
-                                this.state?.selectedFnRowsOrRangeOptionPostNValue)
-                            : ''
-                        }` +
-                        `${
-                          columnFn?.rowsOrRangeOptionPost ?? this.state?.selectedFnRowsOrRangeOptionPost
-                            ? ' ' + (columnFn?.rowsOrRangeOptionPost ?? this.state?.selectedFnRowsOrRangeOptionPost)
-                            : ''
-                        }`
-                      : ''
-                  })`
-                }`
+          protoTableColumn += this.buildFunctionSql(columnFn, customColumn)
         } else {
           console.error('Unknown columnFn type')
         }

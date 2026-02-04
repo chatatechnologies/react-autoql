@@ -6,6 +6,7 @@ import {
   normalizeCoalesceParentheses,
   CustomColumnTypes,
   CustomColumnValues,
+  WINDOW_FUNCTIONS,
 } from 'autoql-fe-utils'
 
 jest.mock('../../ChataTable/ChataTable', () => {
@@ -398,6 +399,74 @@ describe('CustomColumnModal edge cases', () => {
     inst.setState({ columnFn: fn })
     const structural = inst.isStructurallyValidColumnFn()
     expect(structural.valid).toBe(true)
+  })
+
+  it('buildProtoTableColumn wraps divisions for PERCENT_OF_TOTAL and CUMULATIVE_PERCENT and SUM-derived percent', () => {
+    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'colA' }]
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
+    const inst = wrapper.instance()
+
+    // PERCENT_OF_TOTAL
+    const fnPercentTotal = [
+      { type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.PERCENT_OF_TOTAL, column: { name: 'colA' } },
+    ]
+    const protoPercentTotal = inst.buildProtoTableColumn({ columnFnArray: fnPercentTotal })
+    const normPercentTotal = protoPercentTotal.replace(/\s+/g, '')
+    expect(normPercentTotal).toContain(`COALESCE(${`colA`}/NULLIF(SUM(${`colA`})OVER(),0),0)*100`)
+
+    // CUMULATIVE_PERCENT
+    const fnCumPercent = [
+      { type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.CUMULATIVE_PERCENT, column: { name: 'colA' } },
+    ]
+    const protoCumPercent = inst.buildProtoTableColumn({ columnFnArray: fnCumPercent })
+    const normCumPercent = protoCumPercent.replace(/\s+/g, '')
+    expect(normCumPercent).toContain(`COALESCE((SUM(${'colA'})OVER(`)
+    expect(normCumPercent).toContain(`NULLIF(SUM(${'colA'})OVER(),0)),0)*100`)
+
+    // SUM-derived percent: find a window function whose nextSelector is SUM
+    const sumFnKey = Object.keys(WINDOW_FUNCTIONS).find(
+      (k) => WINDOW_FUNCTIONS[k]?.nextSelector === CustomColumnTypes.SUM,
+    )
+    if (sumFnKey) {
+      const fnSumDerived = [{ type: CustomColumnTypes.FUNCTION, fn: sumFnKey, column: { name: 'SUM(colB)' } }]
+      const protoSumDerived = inst.buildProtoTableColumn({ columnFnArray: fnSumDerived })
+      const normSumDerived = protoSumDerived.replace(/\s+/g, '')
+      // expect denominator to be NULLIF(SUM(colB),0) and numerator to reference inner column 'colB'
+      expect(normSumDerived).toContain(`COALESCE((colB/NULLIF(SUM(colB),0)),0)*100`)
+    }
+  })
+
+  it('buildPartitionClause and buildOrderByClause helpers produce expected clauses', () => {
+    const columns = [
+      { field: 'g', title: 'G', is_visible: true, name: 'p.player' },
+      { field: 'o', title: 'O', is_visible: true, name: 'colA' },
+    ]
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
+    const inst = wrapper.instance()
+
+    const part = inst.buildPartitionClause({ groupby: 'g' })
+    expect(part).toBe('PARTITION BY p.player')
+
+    const order = inst.buildOrderByClause({ orderby: 'o', orderbyDirection: 'asc' }, false)
+    expect(order).toBe('ORDER BY colA ASC')
+
+    const orderWithRange = inst.buildOrderByClause(
+      {
+        orderby: 'o',
+        orderbyDirection: 'desc',
+        rowsOrRange: 'ROWS',
+        rowsOrRangeOptionPreNValue: 'UNBOUNDED',
+        rowsOrRangeOptionPre: 'PRECEDING',
+        rowsOrRangeOptionPostNValue: '0',
+        rowsOrRangeOptionPost: 'FOLLOWING',
+      },
+      true,
+    )
+    const norm = orderWithRange.replace(/\s+/g, ' ')
+    expect(norm).toContain('ORDER BY colA DESC')
+    expect(norm).toContain('ROWS')
+    expect(norm).toContain('Between')
+    expect(norm).toContain('UNBOUNDED')
   })
 
   it('preserves ORDER BY direction from function chunk and from modal state', () => {
