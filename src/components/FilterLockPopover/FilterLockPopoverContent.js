@@ -193,15 +193,15 @@ export default class FilterLockPopover extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
+      this.axiosSource.abort(REQUEST_CANCELLED_ERROR)
     }
 
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
     })
       .then((response) => {
         const body = response?.data?.data

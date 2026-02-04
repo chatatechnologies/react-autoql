@@ -69,7 +69,7 @@ export default class SampleQueryList extends React.Component {
   }
 
   cancelSampleQueries = () => {
-    this.axiosSourceSampleQueries?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceSampleQueries?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceSampleQueries = undefined
   }
 
@@ -81,8 +81,8 @@ export default class SampleQueryList extends React.Component {
     // Cancel any previous request before making a new one
     this.cancelSampleQueries()
 
-    // Create new cancel token for this request
-    this.axiosSourceSampleQueries = axios.CancelToken.source()
+    // Create new abort controller for this request
+    this.axiosSourceSampleQueries = new AbortController()
 
     const newState = {
       loading: true,
@@ -101,7 +101,7 @@ export default class SampleQueryList extends React.Component {
       text: this.props.searchText,
       context: this.props.context,
       columns: this.props.columns,
-      cancelToken: this.axiosSourceSampleQueries.token,
+      signal: this.axiosSourceSampleQueries.signal,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -120,7 +120,8 @@ export default class SampleQueryList extends React.Component {
         const isCancelled =
           error?.data?.message === REQUEST_CANCELLED_ERROR ||
           error?.message === REQUEST_CANCELLED_ERROR ||
-          axios.isCancel(error)
+          error?.name === 'CanceledError' ||
+          error?.code === 'ERR_CANCELED'
 
         if (!isCancelled) {
           console.error(error)

@@ -310,8 +310,8 @@ export class DashboardTile extends React.Component {
   }
 
   cancelAllQueries = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -577,7 +577,7 @@ export class DashboardTile extends React.Component {
       const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
-      const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
+      const signal = useSecondAxiosSource ? this.secondAxiosSource?.signal : this.axiosSource?.signal
 
       const requestData = {
         ...getAuthentication(this.props.authentication),
@@ -596,7 +596,7 @@ export class DashboardTile extends React.Component {
         source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
-        cancelToken,
+        signal,
         pageSize,
         query,
       }
@@ -772,12 +772,12 @@ export class DashboardTile extends React.Component {
     isCachedRefresh,
   } = {}) => {
     // If tile is already processing, cancel current process
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.abort(REQUEST_CANCELLED_ERROR)
 
-    // Create new cancel tokens for each query
-    this.axiosSource = axios.CancelToken?.source()
-    this.secondAxiosSource = axios.CancelToken.source()
+    // Create new abort controllers for each query
+    this.axiosSource = new AbortController()
+    this.secondAxiosSource = new AbortController()
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
     const q2 = secondQuery || this.props.tile.secondDefaultSelectedSuggestion || this.state.secondQuery

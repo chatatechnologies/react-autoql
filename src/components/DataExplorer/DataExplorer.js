@@ -99,7 +99,7 @@ export default class DataExplorer extends React.Component {
         fetchSubjectListV2({
           ...this.props.authentication,
           valueLabel: this.state.selectedSubject.valueLabel.canonical,
-          cancelToken: this.axiosSourceSubjectList?.token,
+          signal: this.axiosSourceSubjectList?.signal,
         })
           .then((subjects) => {
             const subjectList = []
@@ -141,24 +141,24 @@ export default class DataExplorer extends React.Component {
   }
 
   cancelValidation = () => {
-    this.axiosSourceValidation?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceValidation?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceValidation = undefined
   }
 
   cancelFetchSubjectList = () => {
-    this.axiosSourceSubjectList?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceSubjectList?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceSubjectList = undefined
   }
 
   validateSearchTerm = (term) => {
-    this.axiosSourceValidation = axios.CancelToken?.source?.()
+    this.axiosSourceValidation = new AbortController()
 
     this.setState({ validating: true })
 
     runQueryValidation({
       ...getAuthentication(this.props.authentication),
       text: term.displayName,
-      cancelToken: this.axiosSourceValidation?.token,
+      signal: this.axiosSourceValidation?.signal,
     })
       .then((response) => {
         if (this._isMounted) {

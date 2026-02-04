@@ -745,7 +745,7 @@ describe('ChataTable', () => {
       expect(props.queryFn).toHaveBeenCalledWith({
         tableFilters: [],
         orders: [],
-        cancelToken: expect.any(Object), // axios CancelToken
+        signal: expect.any(Object), // AbortController signal
       })
 
       // Should return the unfiltered data

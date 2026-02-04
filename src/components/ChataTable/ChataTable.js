@@ -663,7 +663,7 @@ export default class ChataTable extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   ajaxRequesting = (props, params) => {
@@ -700,7 +700,7 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       this.cancelCurrentRequest()
-      this.axiosSource = axios.CancelToken?.source()
+      this.axiosSource = new AbortController()
       this.tableParams = params
 
       if (params?.page > 1) {
@@ -721,7 +721,7 @@ export default class ChataTable extends React.Component {
         const responseWrapper = await this.queryFn({
           tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
-          cancelToken: this.axiosSource.token,
+          signal: this.axiosSource?.signal,
         })
 
         const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft

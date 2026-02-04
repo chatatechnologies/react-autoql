@@ -147,19 +147,19 @@ export default class VLAutocompleteInput extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
+      this.axiosSource.abort(REQUEST_CANCELLED_ERROR)
     }
 
     this.setState({ isLoadingAutocomplete: true })
 
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     return fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -201,7 +201,8 @@ export default class VLAutocompleteInput extends React.Component {
         return this.autoCompleteArray
       })
       .catch((error) => {
-        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.message === REQUEST_CANCELLED_ERROR
+        if (!isCancelled && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
           console.error(error)
         }
 

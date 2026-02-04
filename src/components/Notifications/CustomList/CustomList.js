@@ -128,15 +128,15 @@ export default class CustomList extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
+      this.axiosSource.abort(REQUEST_CANCELLED_ERROR)
     }
 
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -171,7 +171,8 @@ export default class CustomList extends React.Component {
         })
       })
       .catch((error) => {
-        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.data?.message === REQUEST_CANCELLED_ERROR || error?.message === REQUEST_CANCELLED_ERROR
+        if (!isCancelled) {
           console.error(error)
         }
 

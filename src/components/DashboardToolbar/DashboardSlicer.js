@@ -80,17 +80,17 @@ const DashboardSlicer = (props) => {
   const fetchSuggestions = useCallback(({ value, isSlicerSuggestion = false }) => {
     // If already fetching autocomplete, cancel it
     if (axiosSourceRef.current) {
-      axiosSourceRef.current.cancel(REQUEST_CANCELLED_ERROR)
+      axiosSourceRef.current.abort(REQUEST_CANCELLED_ERROR)
     }
 
     setIsLoadingAutocomplete(true)
-    axiosSourceRef.current = axios.CancelToken?.source()
+    axiosSourceRef.current = new AbortController()
 
     fetchVLAutocomplete({
       ...getAuthentication(props.authentication),
       suggestion: value,
       context: props.context,
-      cancelToken: axiosSourceRef.current.token,
+      signal: axiosSourceRef.current.signal,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -127,7 +127,8 @@ const DashboardSlicer = (props) => {
         }
       })
       .catch((error) => {
-        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.message === REQUEST_CANCELLED_ERROR
+        if (!isCancelled && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
           console.error(error)
         }
         setIsLoadingAutocomplete(false)
@@ -166,7 +167,7 @@ const DashboardSlicer = (props) => {
   useEffect(() => {
     return () => {
       if (axiosSourceRef.current) {
-        axiosSourceRef.current.cancel(REQUEST_CANCELLED_ERROR)
+        axiosSourceRef.current.abort(REQUEST_CANCELLED_ERROR)
       }
       if (autocompleteTimerRef.current) {
         clearTimeout(autocompleteTimerRef.current)

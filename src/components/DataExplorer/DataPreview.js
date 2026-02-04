@@ -74,12 +74,12 @@ export default class DataPreview extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   getDataPreview = () => {
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
@@ -88,7 +88,7 @@ export default class DataPreview extends React.Component {
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -106,7 +106,8 @@ export default class DataPreview extends React.Component {
       })
       .catch((error) => {
         if (this._isMounted) {
-          if (error?.message !== REQUEST_CANCELLED_ERROR) {
+          const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.message === REQUEST_CANCELLED_ERROR
+          if (!isCancelled) {
             console.error(error)
             this.setState({ loading: false, error: error?.response?.data })
           }

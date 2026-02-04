@@ -1293,7 +1293,7 @@ export class QueryOutput extends React.Component {
     const allFilters = this.getCombinedFilters(args?.tableFilters)
 
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     this.setState({ isLoadingData: true })
 
@@ -1317,7 +1317,7 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
-          cancelToken: this.axiosSource.token,
+          signal: this.axiosSource.signal,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           ...args,
@@ -1341,7 +1341,7 @@ export class QueryOutput extends React.Component {
           orders: this.formattedTableParams?.sorters,
           source: this.props.source,
           scope: this.props.scope,
-          cancelToken: this.axiosSource.token,
+          signal: this.axiosSource.signal,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           ...args,
@@ -1393,7 +1393,7 @@ export class QueryOutput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter, useOrLogic }) => {

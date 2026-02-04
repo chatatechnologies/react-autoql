@@ -35,11 +35,11 @@ const VLAutocompleteInputV2 = ({
 
   const handleSearch = useCallback(async (searchValue) => {
     if (axiosSource.current) {
-      axiosSource.current.cancel(REQUEST_CANCELLED_ERROR)
+      axiosSource.current.abort(REQUEST_CANCELLED_ERROR)
     }
 
     setIsLoading(true)
-    axiosSource.current = axios.CancelToken?.source()
+    axiosSource.current = new AbortController()
 
     try {
       const response = await fetchVLAutocomplete({
@@ -47,7 +47,7 @@ const VLAutocompleteInputV2 = ({
         suggestion: searchValue,
         context,
         filter: column,
-        cancelToken: axiosSource.current.token,
+        signal: axiosSource.current.signal,
       })
 
       const matches = response?.data?.data?.matches || []
@@ -65,7 +65,8 @@ const VLAutocompleteInputV2 = ({
 
       setSuggestions(transformedSuggestions)
     } catch (error) {
-      if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+      const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.data?.message === REQUEST_CANCELLED_ERROR || error?.message === REQUEST_CANCELLED_ERROR
+      if (!isCancelled) {
         console.error(error)
       }
     } finally {

@@ -1050,7 +1050,7 @@ export default class RuleSimple extends React.Component {
   }
 
   cancelSecondValidation = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   runSecondValidation = () => {
@@ -1058,7 +1058,7 @@ export default class RuleSimple extends React.Component {
       return
     }
 
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     runQueryOnly({
       query: this.state.secondInputValue,
@@ -1066,7 +1066,7 @@ export default class RuleSimple extends React.Component {
       ...getAutoQLConfig(this.props.autoQLConfig),
       source: 'data_alert_validation',
       pageSize: 2, // No need to fetch more than 2 rows to determine validity
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
       allowSuggestions: false,
     })
       .then((response) => {

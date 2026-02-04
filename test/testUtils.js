@@ -1,4 +1,4 @@
-import checkPropTypes from 'check-prop-types'
+import checkPropTypes from 'prop-types/checkPropTypes'
 
 export const findByTestAttr = (wrapper, val) => wrapper.find(`[data-test='${val}']`)
 

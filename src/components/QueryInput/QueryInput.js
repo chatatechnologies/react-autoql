@@ -163,7 +163,7 @@ class QueryInput extends React.Component {
     clearTimeout(this.caretMoveTimeout)
     document.removeEventListener('keydown', this.onEscKeypress)
     document.removeEventListener('mousedown', this.handleClickOutside)
-    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   fetchTopics = () => {
@@ -330,15 +330,15 @@ class QueryInput extends React.Component {
     }
 
     // Cancel any previous data preview request
-    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
-    this.axiosSourceDataPreview = axios.CancelToken.source()
+    this.axiosSourceDataPreview?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = new AbortController()
 
     fetchDataPreview({
       ...this.props.authentication,
       subject: this.state.selectedTopic?.context,
       numRows: 1,
       source: 'query_input.query_suggestions',
-      cancelToken: this.axiosSourceDataPreview.token,
+      signal: this.axiosSourceDataPreview.signal,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -440,8 +440,8 @@ class QueryInput extends React.Component {
     this.setState({ isQueryRunning: true })
 
     // Cancel any previous data preview request
-    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
-    this.axiosSourceDataPreview = axios.CancelToken.source()
+    this.axiosSourceDataPreview?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = new AbortController()
 
     // Fetch data preview with more rows for display
     fetchDataPreview({
@@ -450,7 +450,7 @@ class QueryInput extends React.Component {
       numRows: numRows,
       source: 'query_input.data_preview_query',
       scope: this.props.scope,
-      cancelToken: this.axiosSourceDataPreview.token,
+      signal: this.axiosSourceDataPreview.signal,
     })
       .then((response) => {
         // Mark this response as a data preview type
@@ -514,7 +514,7 @@ class QueryInput extends React.Component {
   }
 
   cancelQuery = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
@@ -549,7 +549,7 @@ class QueryInput extends React.Component {
       this.setState(newState)
     }
 
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
 
     const requestData = {
       query,
@@ -561,7 +561,7 @@ class QueryInput extends React.Component {
       AutoAEId: this.props.AutoAEId,
       filters: this.props.queryFilters,
       pageSize: this.props.dataPageSize,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
     }
 
     if (query.trim()) {

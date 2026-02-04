@@ -25,7 +25,7 @@ class DashboardFilterAutocomplete extends Component {
       highlightedIndex: -1,
     }
 
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = new AbortController()
 
     // Wrap fetchSuggestions with debounce 300ms
     this.fetchSuggestionsDebounced = debounce(this.fetchSuggestions, 300)
@@ -37,7 +37,7 @@ class DashboardFilterAutocomplete extends Component {
   }
 
   componentWillUnmount() {
-    this.axiosSource.cancel('Component unmounted')
+    this.axiosSource.abort('Component unmounted')
     this.fetchSuggestionsDebounced.cancel()
   }
 
@@ -191,8 +191,8 @@ class DashboardFilterAutocomplete extends Component {
     }
 
     // Cancel previous axios request
-    this.axiosSource.cancel('Operation canceled due to new request.')
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource.abort('Operation canceled due to new request.')
+    this.axiosSource = new AbortController()
 
     this.setState({ loading: true })
 
@@ -201,7 +201,7 @@ class DashboardFilterAutocomplete extends Component {
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -219,7 +219,8 @@ class DashboardFilterAutocomplete extends Component {
         })
       })
       .catch((error) => {
-        if (axios.isCancel(error)) return
+        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.message === 'Operation canceled due to new request.'
+        if (isCancelled) return
         this.setState({ error: 'Error fetching suggestions', loading: false })
       })
   }

@@ -294,7 +294,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   requestSuggestions = (value) => {
@@ -302,12 +302,12 @@ export default class DataExplorerInput extends React.Component {
 
     clearTimeout(this.autoCompleteTimer)
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = new AbortController()
     this.autoCompleteTimer = setTimeout(() => {
       fetchDataExplorerAutocomplete({
         suggestion: value,
         ...this.props.authentication,
-        cancelToken: this.axiosSource?.token,
+        signal: this.axiosSource?.signal,
       })
         .then((suggestions) => {
           this.setState({
@@ -316,7 +316,8 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+          const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.data?.message === REQUEST_CANCELLED_ERROR || error?.message === REQUEST_CANCELLED_ERROR
+          if (!isCancelled) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
           }
