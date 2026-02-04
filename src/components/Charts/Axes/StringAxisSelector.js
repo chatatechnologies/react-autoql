@@ -15,6 +15,7 @@ export default class StringAxisSelector extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.state = {
       hoveredColumn: null,
+      hoveredMenuItem: null, // Track which menu item (chronological/cyclical) is hovered
     }
     this.dateBucketMenuRefs = {} // Store refs for date bucket menu items
     this.dateBucketScrollbarRef = null // Ref for the scrollbar container
@@ -107,6 +108,23 @@ export default class StringAxisSelector extends React.Component {
     }, 100)
   }
 
+  handleMenuItemHover = (menuItemType, colIndex) => {
+    this.setState({
+      hoveredMenuItem: `${colIndex}-${menuItemType}`,
+      hoveredColumn: colIndex,
+      hoveredSubmenu: colIndex,
+    })
+  }
+
+  handleMenuItemLeave = () => {
+    // Add a small delay to prevent menu from disappearing when moving to submenu
+    setTimeout(() => {
+      this.setState({
+        hoveredMenuItem: null,
+      })
+    }, 100)
+  }
+
   changeDateColumnBucket = (colIndex, bucketOption) => {
     const { columns } = this.props
     const newColumns = columns.map((col) => {
@@ -126,6 +144,7 @@ export default class StringAxisSelector extends React.Component {
   handleDateBucketSelect = (colIndex, bucketOption) => {
     this.setState({
       hoveredColumn: null,
+      hoveredMenuItem: null,
       dateBucketMenuPosition: null,
     })
 
@@ -173,6 +192,133 @@ export default class StringAxisSelector extends React.Component {
     }
   }
 
+  renderMenuItemSubmenu = (element, colIndex, menuItemType, selectedColumnIndex) => {
+    let maxHeight = 300
+    const minHeight = 35
+    const padding = 50
+
+    const chartHeight = this.props.chartContainerRef?.clientHeight
+    if (chartHeight && chartHeight > minHeight + padding) {
+      maxHeight = chartHeight - padding
+    } else if (chartHeight && chartHeight < minHeight + padding) {
+      maxHeight = minHeight
+    }
+
+    if (maxHeight > window.innerHeight) {
+      maxHeight = window.innerHeight
+    }
+
+    // Filter options based on menu item type
+    const filteredOptions = this.dateBucketOptions.filter((option) => {
+      if (menuItemType === 'chronological') {
+        return option.type === ColumnTypes.DATE
+      } else if (menuItemType === 'cyclical') {
+        return option.type === ColumnTypes.DATE_STRING
+      }
+      return false
+    })
+
+    // Only show active state if this is the currently selected column
+    const isSelectedColumn = colIndex === selectedColumnIndex
+
+    return (
+      <Popover
+        id={`string-axis-selector-menu-item-${this.COMPONENT_KEY}`}
+        isOpen={this.state.hoveredMenuItem === `${colIndex}-${menuItemType}`}
+        content={() => {
+          return (
+            <div
+              className={
+                isMobile ? 'mobile-string-axis-selector-popover-content' : 'string-axis-selector-popover-content'
+              }
+            >
+              <CustomScrollbars
+                autoHeight
+                autoHeightMin={minHeight}
+                maxHeight={maxHeight}
+                suppressScrollY
+                suppressScrollX
+              >
+                <div
+                  className='axis-selector-container date-bucket-submenu'
+                  onMouseEnter={(e) => {
+                    this.setState({ 
+                      hoveredMenuItem: `${colIndex}-${menuItemType}`,
+                      hoveredColumn: colIndex,
+                      hoveredSubmenu: colIndex
+                    })
+                    e.stopPropagation()
+                  }}
+                  onMouseLeave={(e) => {
+                    // Only close if we're really leaving the submenu
+                    const relatedTarget = e.relatedTarget
+                    if (!relatedTarget || !relatedTarget.closest('.date-bucket-submenu')) {
+                      this.setState({
+                        hoveredMenuItem: null,
+                      })
+                    }
+                  }}
+                >
+                  <ul className='axis-selector-content'>
+                    {filteredOptions.map((option, optionIndex) => {
+                      // Check if this option is the active one
+                      const column = this.props.columns[colIndex]
+                      const columnOverrides = this.props.columnOverrides || {}
+                      const override = columnOverrides[colIndex]
+                      
+                      // Determine current precision: use override if exists, otherwise use column's precision
+                      const currentPrecision = override?.precision || column?.precision
+                      const currentType = override?.type || column?.type
+                      
+                      // Only show as active if this is the selected column AND the precision/type matches
+                      const isActive = 
+                        isSelectedColumn &&
+                        currentPrecision != null &&
+                        currentType != null &&
+                        currentPrecision === option.precision && 
+                        currentType === option.type
+                      
+                      // Find the original index in dateBucketOptions for ref
+                      const originalIndex = this.dateBucketOptions.findIndex(
+                        (opt) => opt.precision === option.precision && opt.type === option.type
+                      )
+                      
+                      return (
+                        <li
+                          ref={(r) => {
+                            if (r) {
+                              this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
+                            }
+                          }}
+                          className={`string-select-list-item ${isActive ? 'active' : ''} ${option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''}`}
+                          key={`${colIndex}-${menuItemType}-${option.precision}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            this.handleDateBucketSelect(colIndex, option)
+                          }}
+                        >
+                          {option.label}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              </CustomScrollbars>
+            </div>
+          )
+        }}
+        onClickOutside={this.handleMenuItemLeave}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
+        positions={['right', 'top', 'bottom', 'left']}
+        align='top'
+        padding={0}
+      >
+        {element}
+      </Popover>
+    )
+  }
+
   renderDateBucketMenu = (element, colIndex, selectedColumnIndex) => {
     let maxHeight = 300
     const minHeight = 35
@@ -210,7 +356,8 @@ export default class StringAxisSelector extends React.Component {
                 autoHeight
                 autoHeightMin={minHeight}
                 maxHeight={maxHeight}
-                options={{ suppressScrollX: true }}
+                suppressScrollY
+                suppressScrollX
               >
                 <div
                   className='axis-selector-container date-bucket-submenu'
@@ -218,104 +365,138 @@ export default class StringAxisSelector extends React.Component {
                     this.setState({ hoveredColumn: colIndex, hoveredSubmenu: colIndex })
                     e.stopPropagation()
                   }}
+                  onMouseMove={(e) => {
+                    // Check if mouse is over a menu item (Chronological/Cyclical) and open submenu
+                    const target = e.target
+                    if (target && target.closest) {
+                      const listItem = target.closest('li[data-menu-item]')
+                      if (listItem) {
+                        const menuItemType = listItem.getAttribute('data-menu-item')
+                        if (menuItemType === 'chronological' && this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
+                          this.handleMenuItemHover('chronological', colIndex)
+                        } else if (menuItemType === 'cyclical' && this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
+                          this.handleMenuItemHover('cyclical', colIndex)
+                        }
+                      }
+                    }
+                  }}
                   onMouseLeave={(e) => {
                     // Only close if we're really leaving the submenu
                     const relatedTarget = e.relatedTarget
-                    if (!relatedTarget || !relatedTarget.closest('.date-bucket-submenu')) {
+                    // Check if moving to any child of this container (including list items)
+                    const container = e.currentTarget
+                    const isMovingToChild = relatedTarget && container.contains(relatedTarget)
+                    // Check if moving to a menu item submenu
+                    const isMovingToSubmenu = relatedTarget && relatedTarget.closest('.date-bucket-submenu')
+                    // Also check if a menu item submenu is open for this column
+                    const hasOpenMenuItemSubmenu = this.state.hoveredMenuItem && 
+                      (this.state.hoveredMenuItem.startsWith(`${colIndex}-chronological`) ||
+                       this.state.hoveredMenuItem.startsWith(`${colIndex}-cyclical`))
+                    if (!isMovingToChild && !isMovingToSubmenu && !hasOpenMenuItemSubmenu) {
                       this.setState({
                         hoveredSubmenu: null,
                       })
                     }
                   }}
                 >
-                  <ul className='axis-selector-content'>
-                    {/* Absolute date options (DATE type) */}
-                    <li key={`${colIndex}-absolute-header`} className='axis-selector-header'>Absolute</li>
-                    {this.dateBucketOptions
-                      .filter((option) => option.type === ColumnTypes.DATE)
-                      .map((option, optionIndex) => {
-                        // Check if this option is the active one
-                        const column = this.props.columns[colIndex]
-                        const columnOverrides = this.props.columnOverrides || {}
-                        const override = columnOverrides[colIndex]
-                        
-                        // Determine current precision: use override if exists, otherwise use column's precision
-                        const currentPrecision = override?.precision || column?.precision
-                        const currentType = override?.type || column?.type
-                        
-                        // Only show as active if this is the selected column AND the precision/type matches
-                        const isActive = 
-                          isSelectedColumn &&
-                          currentPrecision === option.precision && 
-                          currentType === option.type
-                        
-                        // Find the original index in dateBucketOptions for ref
-                        const originalIndex = this.dateBucketOptions.findIndex(
-                          (opt) => opt.precision === option.precision && opt.type === option.type
-                        )
-                        
-                        return (
-                          <li
-                            ref={(r) => {
-                              if (r) {
-                                this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
-                              }
-                            }}
-                            className={`string-select-list-item ${isActive ? 'active' : ''} ${option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''}`}
-                            key={`${colIndex}-absolute-${option.precision}`}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              this.handleDateBucketSelect(this.state.hoveredColumn, option)
-                            }}
-                          >
-                            {option.label}
-                          </li>
-                        )
-                      })}
-                    
-                    {/* Cyclical date options (DATE_STRING type) */}
-                    <li key={`${colIndex}-cyclical-header`} className='axis-selector-header'>Cyclical</li>
-                    {this.dateBucketOptions
-                      .filter((option) => option.type === ColumnTypes.DATE_STRING)
-                      .map((option, optionIndex) => {
-                      // Check if this option is the active one
-                      const column = this.props.columns[colIndex]
-                      const columnOverrides = this.props.columnOverrides || {}
-                      const override = columnOverrides[colIndex]
-                      
-                      // Determine current precision: use override if exists, otherwise use column's precision
-                      const currentPrecision = override?.precision || column?.precision
-                      const currentType = override?.type || column?.type
-                      
-                        // Only show as active if this is the selected column AND the precision/type matches
-                      const isActive = 
-                          isSelectedColumn &&
-                        currentPrecision === option.precision && 
-                        currentType === option.type
-                      
-                        // Find the original index in dateBucketOptions for ref
-                        const originalIndex = this.dateBucketOptions.findIndex(
-                          (opt) => opt.precision === option.precision && opt.type === option.type
-                        )
-                        
-                      return (
+                  <ul 
+                    className='axis-selector-content'
+                    onMouseEnter={(e) => {
+                      // Keep parent menu open when hovering over list items
+                      this.setState({ 
+                        hoveredColumn: colIndex, 
+                        hoveredSubmenu: colIndex 
+                      })
+                    }}
+                  >
+                    {(() => {
+                      const chronologicalLi = (
                         <li
-                          ref={(r) => {
-                            if (r) {
-                                this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
-                            }
-                          }}
-                          className={`string-select-list-item ${isActive ? 'active' : ''}`}
-                            key={`${colIndex}-cyclical-${option.precision}`}
+                          className='string-select-list-item date-column'
+                          key={`${colIndex}-chronological`}
+                          data-menu-item='chronological'
                           onClick={(e) => {
                             e.stopPropagation()
-                            this.handleDateBucketSelect(this.state.hoveredColumn, option)
+                          }}
+                          onMouseEnter={(e) => {
+                            e.stopPropagation()
+                            this.handleMenuItemHover('chronological', colIndex)
+                          }}
+                          onMouseLeave={(e) => {
+                            // Only close if we're really leaving (not moving to submenu)
+                            const relatedTarget = e.relatedTarget
+                            const isMovingToSubmenu = relatedTarget && relatedTarget.closest('.date-bucket-submenu')
+                            if (!isMovingToSubmenu) {
+                              // Clear the hover state when leaving
+                              setTimeout(() => {
+                                // Only close if submenu is not open (if it's still set, submenu is open)
+                                if (this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
+                                  this.setState({
+                                    hoveredMenuItem: null,
+                                  })
+                                }
+                              }, 150) // Small delay to allow moving to submenu
+                            }
                           }}
                         >
-                          {option.label}
+                          Chronological
+                          <span
+                            style={{
+                              float: 'right',
+                              fontSize: '12px',
+                              marginLeft: '10px',
+                            }}
+                          >
+                            <Icon type='caret-right' />
+                          </span>
                         </li>
                       )
-                    })}
+                      return this.renderMenuItemSubmenu(chronologicalLi, colIndex, 'chronological', selectedColumnIndex)
+                    })()}
+                    {(() => {
+                      const cyclicalLi = (
+                        <li
+                          className='string-select-list-item date-column'
+                          key={`${colIndex}-cyclical`}
+                          data-menu-item='cyclical'
+                          onClick={(e) => {
+                            e.stopPropagation()
+                          }}
+                          onMouseEnter={(e) => {
+                            e.stopPropagation()
+                            this.handleMenuItemHover('cyclical', colIndex)
+                          }}
+                          onMouseLeave={(e) => {
+                            // Only close if we're really leaving (not moving to submenu)
+                            const relatedTarget = e.relatedTarget
+                            const isMovingToSubmenu = relatedTarget && relatedTarget.closest('.date-bucket-submenu')
+                            if (!isMovingToSubmenu) {
+                              // Clear the hover state when leaving
+                              setTimeout(() => {
+                                // Only close if submenu is not open (if it's still set, submenu is open)
+                                if (this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
+                                  this.setState({
+                                    hoveredMenuItem: null,
+                                  })
+                                }
+                              }, 150) // Small delay to allow moving to submenu
+                            }
+                          }}
+                        >
+                          Cyclical
+                          <span
+                            style={{
+                              float: 'right',
+                              fontSize: '12px',
+                              marginLeft: '10px',
+                            }}
+                          >
+                            <Icon type='caret-right' />
+                          </span>
+                        </li>
+                      )
+                      return this.renderMenuItemSubmenu(cyclicalLi, colIndex, 'cyclical', selectedColumnIndex)
+                    })()}
                   </ul>
                 </div>
               </CustomScrollbars>
