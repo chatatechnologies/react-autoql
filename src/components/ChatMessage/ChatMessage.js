@@ -31,6 +31,15 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 
 import './ChatMessage.scss'
 
+// Custom components for markdown rendering
+const MARKDOWN_COMPONENTS = {
+  ul: ({ children }) => <ul>{children}</ul>,
+  li: ({ children }) => <li>{children}</li>,
+  strong: ({ children }) => <strong>{children}</strong>,
+  em: ({ children }) => <em>{children}</em>,
+  br: () => <br />,
+}
+
 export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
@@ -74,7 +83,19 @@ export default class ChatMessage extends React.Component {
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
     onSuggestionClick: PropTypes.func,
-    response: PropTypes.shape({}),
+    response: PropTypes.shape({
+      status: PropTypes.number,
+      data: PropTypes.shape({
+        data: PropTypes.shape({
+          rows: PropTypes.array,
+          columns: PropTypes.array,
+          text: PropTypes.string,
+          interpretation: PropTypes.string,
+          query_id: PropTypes.string,
+          isDataPreview: PropTypes.bool,
+        }),
+      }),
+    }),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
@@ -97,6 +118,7 @@ export default class ChatMessage extends React.Component {
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    isChataThinking: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -129,6 +151,7 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
     enableMagicWand: false,
+    isChataThinking: false,
   }
 
   componentDidMount = () => {
@@ -330,23 +353,11 @@ export default class ChatMessage extends React.Component {
 
     // Replace literal "\n" strings with actual newlines if they exist
     // (in case the API returns escaped newlines)
-    contentStr = contentStr.replace(/\\n/g, '\n')
+    contentStr = contentStr.replaceAll(String.raw`\n`, '\n')
 
     // Pass content directly to react-markdown without any manipulation
     return (
-      <ReactMarkdown
-        remarkPlugins={[remarkBreaks]}
-        components={{
-          // Handle lists
-          ul: ({ children }) => <ul>{children}</ul>,
-          li: ({ children }) => <li>{children}</li>,
-          // Handle formatting
-          strong: ({ children }) => <strong>{children}</strong>,
-          em: ({ children }) => <em>{children}</em>,
-          // Handle line breaks (remark-breaks will create these automatically)
-          br: () => <br />,
-        }}
-      >
+      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={MARKDOWN_COMPONENTS}>
         {contentStr}
       </ReactMarkdown>
     )
@@ -377,7 +388,7 @@ export default class ChatMessage extends React.Component {
           text: this.props.response.data.data.text,
           interpretation: this.props.response.data.data.interpretation,
           rows: filteredRows,
-          columns: this.props.response.data.data.columns
+          columns: this.props.response.data.data.columns,
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -442,18 +453,18 @@ export default class ChatMessage extends React.Component {
       const text = this.markdownContentRef.current.innerText
 
       // Copy as plain text using Clipboard API
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text)
         this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
       } else {
-        // Fallback for older browsers
-        const textarea = document.createElement('textarea')
-        textarea.value = text
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        // Fallback for older browsers using async clipboard API
+        try {
+          await navigator.clipboard.writeText(text)
+          this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        } catch (fallbackError) {
+          console.error('Failed to copy with fallback method:', fallbackError)
+          this.props.onErrorCallback?.(fallbackError)
+        }
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)

@@ -707,8 +707,7 @@ export default class CustomColumnModal extends React.Component {
     }
 
     let balance = 0
-    for (let i = 0; i < columnFn.length; i++) {
-      const chunk = columnFn[i]
+    for (const chunk of columnFn) {
       if (chunk?.type === CustomColumnTypes.OPERATOR) {
         if (chunk.value === CustomColumnValues.LEFT_BRACKET) balance++
         if (chunk.value === CustomColumnValues.RIGHT_BRACKET) balance--

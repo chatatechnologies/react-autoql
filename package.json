@@ -63,7 +63,7 @@
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
     "autoql-fe-utils": "1.11.0",
-    "axios": "1.13.4",
+    "axios": "1.4.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
     "d3-array": "2.3.3",

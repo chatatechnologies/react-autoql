@@ -94,9 +94,7 @@ export default class StringAxisSelector extends React.Component {
               {columnIndices.map((colIndex, i) => {
                 return (
                   <li
-                    className={`string-select-list-item ${
-                      colIndex === origColumn?.index ? 'active' : ''
-                    }`}
+                    className={`string-select-list-item ${colIndex === origColumn?.index ? 'active' : ''}`}
                     key={`string-column-select-${i}`}
                     onClick={() => {
                       this.props.closeSelector()
@@ -139,7 +137,6 @@ export default class StringAxisSelector extends React.Component {
 
 StringAxisSelector.propTypes = {
   columns: PropTypes.array,
-  originalColumns: PropTypes.array,
   numberColumnIndices: PropTypes.array,
   numberColumnIndices2: PropTypes.array,
   hasSecondAxis: PropTypes.bool,

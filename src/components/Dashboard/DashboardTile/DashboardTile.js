@@ -476,9 +476,9 @@ export class DashboardTile extends React.Component {
             tableFilters:
               currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
             secondTableFilters:
-              currentTile.secondTableFilters != null
-                ? currentTile.secondTableFilters
-                : this.savedTileConfig.secondTableFilters,
+              currentTile.secondTableFilters === null || currentTile.secondTableFilters === undefined
+                ? this.savedTileConfig.secondTableFilters
+                : currentTile.secondTableFilters,
             axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
             secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
             networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
@@ -636,11 +636,8 @@ export class DashboardTile extends React.Component {
     const propsDataConfig = this.props.tile.dataConfig
     const hasValidPropsDataConfig =
       propsDataConfig && (propsDataConfig.tableConfig != null || propsDataConfig.pivotTableConfig != null)
-    const dataConfig = queryChanged
-      ? undefined
-      : hasValidPropsDataConfig
-      ? propsDataConfig
-      : this.savedTileConfig.dataConfig
+    const fallbackDataConfig = hasValidPropsDataConfig ? propsDataConfig : this.savedTileConfig.dataConfig
+    const dataConfig = queryChanged ? undefined : fallbackDataConfig
 
     const columns = queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns
     const tableFilters = queryChanged ? undefined : this.props.tile.tableFilters || this.savedTileConfig.tableFilters

@@ -156,7 +156,7 @@ export default class DataExplorerInput extends React.Component {
       return []
     }
 
-    var reg = new RegExp(`^${input.toLowerCase()}`)
+    const reg = new RegExp(`^${input.toLowerCase()}`)
     return this.state.allSubjects.filter((subject) => {
       const term = subject.displayName.toLowerCase()
       if (term.match(reg)) {
@@ -316,7 +316,11 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.data?.message === REQUEST_CANCELLED_ERROR || error?.message === REQUEST_CANCELLED_ERROR
+          const isCancelled =
+            error?.name === 'CanceledError' ||
+            error?.code === 'ERR_CANCELED' ||
+            error?.data?.message === REQUEST_CANCELLED_ERROR ||
+            error?.message === REQUEST_CANCELLED_ERROR
           if (!isCancelled) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
@@ -408,9 +412,7 @@ export default class DataExplorerInput extends React.Component {
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {
-      const title = this.props.disableColumnSelection
-        ? 'Topics'
-        : `Related to "${this.state.loadingAutocompleteText}"`
+      const title = this.props.disableColumnSelection ? 'Topics' : `Related to "${this.state.loadingAutocompleteText}"`
       sections.push({
         title,
         suggestions: this.state.suggestions,

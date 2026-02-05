@@ -1904,12 +1904,7 @@ export class QueryOutput extends React.Component {
     // If the new string column index equals the legend column index, change the legend column to a different value
     if (this.tableConfig.legendColumnIndex === index) {
       const columns = this.getColumns()
-      const differentColumn = columns.find(
-        (col) =>
-          col.is_visible &&
-          col.index !== index &&
-          col.groupable,
-      )
+      const differentColumn = columns.find((col) => col.is_visible && col.index !== index && col.groupable)
       if (differentColumn?.index >= 0) {
         this.tableConfig.legendColumnIndex = differentColumn.index
       }
@@ -1979,12 +1974,7 @@ export class QueryOutput extends React.Component {
     // If the new legend column index equals the string column index, change the string column to a different value
     if (this.tableConfig.stringColumnIndex === index) {
       const columns = this.getColumns()
-      const differentColumn = columns.find(
-        (col) =>
-          col.is_visible &&
-          col.index !== index &&
-          col.groupable,
-      )
+      const differentColumn = columns.find((col) => col.is_visible && col.index !== index && col.groupable)
       if (differentColumn?.index >= 0) {
         this.tableConfig.stringColumnIndex = differentColumn.index
       }
@@ -2109,8 +2099,6 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
-
-
   hasIndex = (indices, index) => {
     return indices?.findIndex((i) => index === i) !== -1
   }
@@ -2135,7 +2123,7 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    
+
     // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
@@ -3594,6 +3582,7 @@ export class QueryOutput extends React.Component {
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
           isLoadingLocal={this.props.isLoadingLocal}
+          drilldownFilters={this.props.drilldownFilters}
         />
       </ErrorBoundary>
     )
