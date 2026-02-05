@@ -378,7 +378,7 @@ export default class ChatMessage extends React.Component {
           additional_context:{
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            focus_prompt:""
+            focus_prompt: ""
           },
           rows: filteredRows,
           columns: this.props.response.data.data.columns
