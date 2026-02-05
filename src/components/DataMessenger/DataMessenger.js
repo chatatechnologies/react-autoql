@@ -195,6 +195,7 @@ export class DataMessenger extends React.Component {
     notificationCount: undefined,
     defaultOpen: false,
     popoverParentElement: undefined,
+    enableCyclicalDates: false,
 
     // Projects
     projectSelectList: undefined,

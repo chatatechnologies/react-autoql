@@ -113,7 +113,7 @@ class DashboardWithoutTheme extends React.Component {
     cancelQueriesOnUnmount: false,
     showToolbar: false,
     refreshInterval: 60,
-    enableCyclicalDates: true,
+    enableCyclicalDates: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
