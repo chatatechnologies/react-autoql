@@ -245,6 +245,7 @@ export default class DrilldownModal extends React.Component {
                           initialTableConfigs={{
                             tableConfig: this.props.activeDrilldownRef.tableConfig,
                             pivotTableConfig: this.props.activeDrilldownRef.pivotTableConfig,
+                            columnOverrides: this.props.activeDrilldownRef?.state?.columnOverrides || {},
                           }}
                           isAnimating={this.props.isAnimating}
                           isResizing={this.state.isResizingDrilldown || !this.props.isOpen}

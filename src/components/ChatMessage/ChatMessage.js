@@ -119,6 +119,7 @@ export default class ChatMessage extends React.Component {
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     isChataThinking: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -385,8 +386,11 @@ export default class ChatMessage extends React.Component {
 
       const response = await fetchLLMSummary({
         data: {
-          text: this.props.response.data.data.text,
-          interpretation: this.props.response.data.data.interpretation,
+          additional_context:{
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            focus_prompt: ""
+          },
           rows: filteredRows,
           columns: this.props.response.data.data.columns,
         },
@@ -584,6 +588,7 @@ export default class ChatMessage extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           allowColumnAddition={!isDataPreview}
           onNewData={this.onNewDataCallback}
+          enableCyclicalDates={this.props.enableCyclicalDates}
           isUserResizing={this.state.isUserResizing}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {

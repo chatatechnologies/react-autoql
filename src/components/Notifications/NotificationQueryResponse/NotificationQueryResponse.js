@@ -30,6 +30,7 @@ export default class NotificationQueryResponse extends React.Component {
     reportProblemCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -77,6 +78,7 @@ export default class NotificationQueryResponse extends React.Component {
               useInfiniteScroll={false}
               onUpdateFilterResponse={this.onUpdateFilterResponse}
               enableCustomColumns={this.props.enableCustomColumns}
+              enableCyclicalDates={this.props.enableCyclicalDates}
               preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
               autoHeight={true}
             />
