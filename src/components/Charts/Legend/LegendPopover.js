@@ -93,14 +93,28 @@ export default class LegendPopover extends React.Component {
     const { legendLabels } = this.props
     const { searchQuery, sortOrder } = this.state
 
-    // Filter by search query
-    let filtered = legendLabels.filter((label) => label.label.toLowerCase().includes(searchQuery.toLowerCase()))
+    // Filter by search query - ensure label.label exists and is a string
+    let filtered = legendLabels.filter((label) => {
+      const labelText = label?.label
+      if (!labelText || typeof labelText !== 'string') {
+        return false // Skip invalid labels
+      }
+      return labelText.toLowerCase().includes(searchQuery.toLowerCase())
+    })
 
-    // Sort
+    // Sort - ensure labels have valid label property
     if (sortOrder === 'asc') {
-      filtered = [...filtered].sort((a, b) => a.label.localeCompare(b.label))
+      filtered = [...filtered].sort((a, b) => {
+        const aLabel = a?.label || ''
+        const bLabel = b?.label || ''
+        return aLabel.localeCompare(bLabel)
+      })
     } else if (sortOrder === 'desc') {
-      filtered = [...filtered].sort((a, b) => b.label.localeCompare(a.label))
+      filtered = [...filtered].sort((a, b) => {
+        const aLabel = a?.label || ''
+        const bLabel = b?.label || ''
+        return bLabel.localeCompare(aLabel)
+      })
     }
     // null keeps original order
 
@@ -129,7 +143,9 @@ export default class LegendPopover extends React.Component {
 
     if (tempHiddenLabels.length === 0) {
       // Currently all selected - deselect all
-      const allLabels = legendLabels.map((l) => l.label)
+      const allLabels = legendLabels
+        .map((l) => l?.label)
+        .filter((label) => label != null && typeof label === 'string')
       this.setState({
         tempHiddenLabels: allLabels,
       })
@@ -146,7 +162,12 @@ export default class LegendPopover extends React.Component {
     const { legendLabels, onFilterApply, onClose } = this.props
 
     // Calculate which labels should be visible (not in tempHiddenLabels)
-    const visibleLabels = legendLabels.filter((l) => !tempHiddenLabels.includes(l.label)).map((l) => l.label)
+    const visibleLabels = legendLabels
+      .filter((l) => {
+        const labelText = l?.label
+        return labelText != null && typeof labelText === 'string' && !tempHiddenLabels.includes(labelText)
+      })
+      .map((l) => l.label)
 
     // Call the filter apply callback with visible labels
     onFilterApply?.(visibleLabels)
@@ -218,21 +239,24 @@ export default class LegendPopover extends React.Component {
               {filteredLabels.length === 0 ? (
                 <div className='legend-no-results'>No items found</div>
               ) : (
-                filteredLabels.map((label, i) => {
-                  const isHidden = tempHiddenLabels?.includes(label.label)
-                  const isChecked = !isHidden
+                filteredLabels
+                  .filter((label) => label?.label != null && typeof label.label === 'string')
+                  .map((label, i) => {
+                    const labelText = label.label
+                    const isHidden = tempHiddenLabels?.includes(labelText)
+                    const isChecked = !isHidden
 
-                  return (
-                    <div
-                      key={`legend-item-${i}`}
-                      className={`legend-item ${isHidden ? 'hidden' : ''}`}
-                      onClick={() => this.handleCheckboxChange(label.label)}
-                    >
-                      <Checkbox checked={isChecked} clickable={false} className='legend-item-checkbox' />
-                      <span className='legend-item-label'>{label.label}</span>
-                    </div>
-                  )
-                })
+                    return (
+                      <div
+                        key={`legend-item-${i}`}
+                        className={`legend-item ${isHidden ? 'hidden' : ''}`}
+                        onClick={() => this.handleCheckboxChange(labelText)}
+                      >
+                        <Checkbox checked={isChecked} clickable={false} className='legend-item-checkbox' />
+                        <span className='legend-item-label'>{labelText}</span>
+                      </div>
+                    )
+                  })
               )}
             </div>
           </CustomScrollbars>

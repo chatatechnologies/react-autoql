@@ -92,6 +92,7 @@ class DashboardWithoutTheme extends React.Component {
     refreshInterval: PropTypes.number,
     dashboardId: PropTypes.string,
     enableAutoRefresh: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -112,6 +113,7 @@ class DashboardWithoutTheme extends React.Component {
     cancelQueriesOnUnmount: false,
     showToolbar: false,
     refreshInterval: 60,
+    enableCyclicalDates: true,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -857,6 +859,7 @@ class DashboardWithoutTheme extends React.Component {
             dashboardId={this.props.dashboardId}
             tileKey={tile.key}
             useInfiniteScroll={!this.props.offline}
+            enableCyclicalDates={this.props.enableCyclicalDates}
           />
         ))}
       </ReactGridLayout>
@@ -928,6 +931,7 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             source={this.SOURCE}
+            enableCyclicalDates={this.props.enableCyclicalDates}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />

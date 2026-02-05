@@ -196,6 +196,7 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -1078,6 +1079,7 @@ export class DashboardTile extends React.Component {
 
   onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, filters) => {
     this.debouncedSetParamsForTile({
+      columns,
       columnSelects,
       queryResponse,
       dataConfig,
@@ -1461,6 +1463,7 @@ export class DashboardTile extends React.Component {
         enableCustomColumns={this.props.enableCustomColumns}
         preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
         useInfiniteScroll={this.props.useInfiniteScroll}
+        enableCyclicalDates={this.props.enableCyclicalDates}
         {...queryOutputProps}
       />
     )
@@ -1513,7 +1516,45 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
-        initialTableConfigs: this.props.tile.dataConfig,
+        initialTableConfigs: (() => {
+          const dataConfig = this.props.tile?.dataConfig || {}
+          // Extract columnOverrides from tile.columns if it exists (for date precision persistence)
+          // Compare tile.columns with queryResponse columns to find overrides
+          // Use columnOverrides from dataConfig if it exists (preferred method)
+          let columnOverrides = dataConfig?.columnOverrides || {}
+          
+          // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
+          // This handles backwards compatibility with dashboards saved before columnOverrides was added
+          if (!dataConfig?.columnOverrides && this.props.tile?.columns && this.props.tile?.queryResponse?.data?.data?.columns) {
+            const savedColumns = this.props.tile.columns
+            const originalColumns = this.props.tile.queryResponse.data.data.columns
+            savedColumns.forEach((savedCol) => {
+              if (savedCol?.index !== undefined) {
+                const originalCol = originalColumns.find(
+                  (oc) =>
+                    oc.index === savedCol.index ||
+                    oc.name === savedCol.name ||
+                    oc.id === savedCol.id ||
+                    oc.display_name === savedCol.display_name,
+                )
+                if (
+                  originalCol &&
+                  originalCol.index !== undefined &&
+                  (savedCol.type !== originalCol.type || savedCol.precision !== originalCol.precision)
+                ) {
+                  columnOverrides[originalCol.index] = {
+                    type: savedCol.type,
+                    precision: savedCol.precision,
+                  }
+                }
+              }
+            })
+          }
+          return {
+            ...dataConfig,
+            columnOverrides,
+          }
+        })(),
         initialAggConfig: this.props.tile.aggConfig,
         onTableConfigChange: this.onDataConfigChange,
         onTableParamsChange: this.onTableParamsChange,
@@ -1609,7 +1650,46 @@ export class DashboardTile extends React.Component {
         vizToolbarRef: this.secondVizToolbarRef,
         initialDisplayType,
         queryResponse: this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse,
-        initialTableConfigs: this.props.tile.secondDataConfig,
+        initialTableConfigs: (() => {
+          const dataConfig = this.props.tile?.secondDataConfig || {}
+          // Extract columnOverrides from tile.secondColumns if it exists (for date precision persistence)
+          // Compare tile.secondColumns with queryResponse columns to find overrides
+          // Use columnOverrides from dataConfig if it exists (preferred method)
+          let columnOverrides = dataConfig?.columnOverrides || {}
+          
+          // Fallback: Extract columnOverrides from tile.secondColumns if dataConfig doesn't have it
+          // This handles backwards compatibility with dashboards saved before columnOverrides was added
+          const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
+          if (!dataConfig?.columnOverrides && this.props.tile?.secondColumns && queryResponse?.data?.data?.columns) {
+            const savedColumns = this.props.tile.secondColumns
+            const originalColumns = queryResponse.data.data.columns
+            savedColumns.forEach((savedCol) => {
+              if (savedCol?.index !== undefined) {
+                const originalCol = originalColumns.find(
+                  (oc) =>
+                    oc.index === savedCol.index ||
+                    oc.name === savedCol.name ||
+                    oc.id === savedCol.id ||
+                    oc.display_name === savedCol.display_name,
+                )
+                if (
+                  originalCol &&
+                  originalCol.index !== undefined &&
+                  (savedCol.type !== originalCol.type || savedCol.precision !== originalCol.precision)
+                ) {
+                  columnOverrides[originalCol.index] = {
+                    type: savedCol.type,
+                    precision: savedCol.precision,
+                  }
+                }
+              }
+            })
+          }
+          return {
+            ...dataConfig,
+            columnOverrides,
+          }
+        })(),
         initialAggConfig: this.props.tile.secondAggConfig,
         onTableConfigChange: this.onSecondDataConfigChange,
         onTableParamsChange: this.onSecondTableParamsChange,
