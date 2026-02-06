@@ -5,7 +5,6 @@ import _has from 'lodash.has'
 import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
 import {
-  REQUEST_CANCELLED_ERROR,
   UNAUTHENTICATED_ERROR,
   GENERAL_QUERY_ERROR,
   dataFormattingDefault,
@@ -69,6 +68,7 @@ export default class ChatContent extends React.Component {
     hideChatBarAfterInitialResponse: PropTypes.bool,
     executeQuery: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {

@@ -73,7 +73,7 @@ import {
   createFilterFunction,
   extractOperatorFromValue,
 } from 'autoql-fe-utils'
-import { isAbortError, createCancelPair } from '../../utils/abortUtils'
+import { isAbortError, createCancelPair } from '../../utils/cancelPair'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -168,15 +168,15 @@ export class QueryOutput extends React.Component {
         Array.isArray(initial.filters) && initial.filters.length
           ? initial.filters
           : Array.isArray(feReq.filters)
-          ? feReq.filters
-          : []
+            ? feReq.filters
+            : []
 
       const sorters =
         Array.isArray(initial.sorters) && initial.sorters.length
           ? initial.sorters
           : Array.isArray(feReq.orders)
-          ? feReq.orders.map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
-          : []
+            ? feReq.orders.map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
+            : []
 
       if (filters.length) this.tableParams.filter = formatFiltersForTabulator(filters, columns)
       if (sorters.length) this.tableParams.sort = formatSortersForTabulator(sorters, columns)
@@ -220,7 +220,11 @@ export class QueryOutput extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    initialTableConfigs: PropTypes.shape({}),
+    initialTableConfigs: PropTypes.shape({
+      tableConfig: PropTypes.shape({}),
+      pivotTableConfig: PropTypes.shape({}),
+      columnOverrides: PropTypes.object,
+    }),
     initialAggConfig: PropTypes.shape({}),
 
     queryResponse: PropTypes.shape({}),
@@ -775,8 +779,8 @@ export class QueryOutput extends React.Component {
     return foundIndex
       ? foundIndex
       : this.tableConfig.numberColumnIndices.length > 0
-      ? this.tableConfig.numberColumnIndices[0]
-      : 0
+        ? this.tableConfig.numberColumnIndices[0]
+        : 0
   }
 
   checkAndUpdateTableConfigs = (displayType) => {

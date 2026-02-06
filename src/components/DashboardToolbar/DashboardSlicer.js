@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import PropTypes from 'prop-types'
-import axios from 'axios'
 import Autosuggest from 'react-autosuggest'
 import { fetchVLAutocomplete, REQUEST_CANCELLED_ERROR, getAuthentication, authenticationDefault } from 'autoql-fe-utils'
 import { isAbortError, createCancelPair } from '../../utils/abortUtils'
@@ -115,12 +114,12 @@ const DashboardSlicer = (props) => {
           sortingArray.sort((a, b) => {
             const aText = a.format_txt ?? a.keyword
             const bText = b.format_txt ?? b.keyword
-            return aText.toUpperCase() < bText.toUpperCase() ? -1 : aText > bText ? 1 : 0
+            return aText.toUpperCase().localeCompare(bText.toUpperCase())
           })
 
-          for (let idx = 0; idx < sortingArray.length; idx++) {
+          for (const item of sortingArray) {
             const anObject = {
-              name: sortingArray[idx],
+              name: item,
             }
             autoCompleteArrayRef.current.push(anObject)
           }
@@ -439,7 +438,15 @@ const DashboardSlicer = (props) => {
 DashboardSlicer.propTypes = {
   authentication: authenticationType,
   context: PropTypes.string,
-  value: PropTypes.shape({}),
+  value: PropTypes.shape({
+    format_txt: PropTypes.string,
+    value: PropTypes.string,
+    show_message: PropTypes.string,
+    key: PropTypes.string,
+    filter_type: PropTypes.string,
+    canonical_key: PropTypes.string,
+    isSession: PropTypes.bool,
+  }),
   onChange: PropTypes.func,
   placeholder: PropTypes.string,
   dashboardId: PropTypes.string,

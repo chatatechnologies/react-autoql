@@ -27,7 +27,7 @@ import {
   fetchDataPreview,
   transformQueryResponse,
 } from 'autoql-fe-utils'
-import { isAbortError, createCancelPair } from '../../utils/abortUtils'
+import { isAbortError, createCancelPair } from '../../utils/cancelPair'
 
 import { Icon } from '../Icon'
 import LoadingDots from '../LoadingDots/LoadingDots.js'

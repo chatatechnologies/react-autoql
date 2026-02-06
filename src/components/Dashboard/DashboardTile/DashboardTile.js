@@ -166,8 +166,20 @@ export class DashboardTile extends React.Component {
       chartControls: PropTypes.object,
       secondChartControls: PropTypes.object,
       legendFilterConfig: PropTypes.any,
-      queryResponse: PropTypes.shape({}),
-      secondQueryResponse: PropTypes.shape({}),
+      queryResponse: PropTypes.shape({
+        data: PropTypes.shape({
+          data: PropTypes.shape({
+            columns: PropTypes.array,
+          }),
+        }),
+      }),
+      secondQueryResponse: PropTypes.shape({
+        data: PropTypes.shape({
+          data: PropTypes.shape({
+            columns: PropTypes.array,
+          }),
+        }),
+      }),
       defaultSelectedSuggestion: PropTypes.string,
       secondDefaultSelectedSuggestion: PropTypes.string,
       queryValidationSelections: PropTypes.any,

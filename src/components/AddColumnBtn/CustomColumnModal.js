@@ -1242,13 +1242,13 @@ export default class CustomColumnModal extends React.Component {
               })}
             </div>
           </div>
-          {!!this.state.columnFn?.length && (
+          {this.state.columnFn?.length > 0 && (
             <div className='react-autoql-formula-builder-validation-message'>
               {!this.hasVariablesInColumnFn() ? (
                 <span className='react-autoql-formula-builder-validation-message-warning'>
                   <Icon type='warning-triangle' warning /> Formula must include at least one variable
                 </span>
-              ) : !!this.state.fnError ? (
+              ) : this.state.fnError ? (
                 <span className='react-autoql-formula-builder-validation-message-warning'>
                   <Icon type='warning-triangle' warning /> {this.state.fnError}
                 </span>

@@ -12,7 +12,7 @@ export function createCancelPair(reason = DEFAULT_ABORT_REASON) {
   const controller = new AbortController()
   let cancelToken
   let cancel
-  if (axios && axios.CancelToken && typeof axios.CancelToken.source === 'function') {
+  if (typeof axios?.CancelToken?.source === 'function') {
     const source = axios.CancelToken.source()
     cancelToken = source.token
     cancel = source.cancel

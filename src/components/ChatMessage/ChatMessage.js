@@ -352,9 +352,9 @@ export default class ChatMessage extends React.Component {
     // Convert content to string if it's not already
     let contentStr = typeof content === 'string' ? content : String(content)
 
-    // Replace literal "\n" strings with actual newlines if they exist
+    // Replace literal "\\n" strings with actual newlines if they exist
     // (in case the API returns escaped newlines)
-    contentStr = contentStr.replaceAll(String.raw`\n`, '\n')
+    contentStr = contentStr.replaceAll('\\n', '\n')
 
     // Pass content directly to react-markdown without any manipulation
     return (
