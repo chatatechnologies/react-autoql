@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import debounce from 'lodash.debounce'
 import axios from 'axios'
 import { fetchVLAutocomplete, getAuthentication } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 import { Input } from '../Input'
 import { Popover } from '../Popover'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
@@ -25,7 +26,7 @@ class DashboardFilterAutocomplete extends Component {
       highlightedIndex: -1,
     }
 
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
 
     // Wrap fetchSuggestions with debounce 300ms
     this.fetchSuggestionsDebounced = debounce(this.fetchSuggestions, 300)
@@ -37,7 +38,7 @@ class DashboardFilterAutocomplete extends Component {
   }
 
   componentWillUnmount() {
-    this.axiosSource.abort('Component unmounted')
+    this.axiosSource.controller?.abort('Component unmounted')
     this.fetchSuggestionsDebounced.cancel()
   }
 
@@ -191,8 +192,8 @@ class DashboardFilterAutocomplete extends Component {
     }
 
     // Cancel previous axios request
-    this.axiosSource.abort('Operation canceled due to new request.')
-    this.axiosSource = new AbortController()
+    this.axiosSource.controller?.abort('Operation canceled due to new request.')
+    this.axiosSource = createCancelPair()
 
     this.setState({ loading: true })
 
@@ -201,7 +202,8 @@ class DashboardFilterAutocomplete extends Component {
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      signal: this.axiosSource.signal,
+      signal: this.axiosSource.signal ?? this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -219,8 +221,7 @@ class DashboardFilterAutocomplete extends Component {
         })
       })
       .catch((error) => {
-        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.message === 'Operation canceled due to new request.'
-        if (isCancelled) return
+        if (isAbortError(error)) return
         this.setState({ error: 'Error fetching suggestions', loading: false })
       })
   }

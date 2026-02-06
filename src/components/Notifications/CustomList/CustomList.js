@@ -16,6 +16,7 @@ import {
   authenticationDefault,
   getAuthentication,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../../utils/abortUtils'
 
 import { Icon } from '../../Icon'
 import { Chip } from '../../Chip'
@@ -128,15 +129,16 @@ export default class CustomList extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.abort(REQUEST_CANCELLED_ERROR)
+      this.axiosSource.controller?.abort(REQUEST_CANCELLED_ERROR)
     }
 
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
 
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
-      signal: this.axiosSource.signal,
+      signal: this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -171,8 +173,7 @@ export default class CustomList extends React.Component {
         })
       })
       .catch((error) => {
-        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.data?.message === REQUEST_CANCELLED_ERROR || error?.message === REQUEST_CANCELLED_ERROR
-        if (!isCancelled) {
+        if (!isAbortError(error)) {
           console.error(error)
         }
 

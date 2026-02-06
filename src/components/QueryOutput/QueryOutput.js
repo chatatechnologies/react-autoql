@@ -73,6 +73,7 @@ import {
   createFilterFunction,
   extractOperatorFromValue,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -107,7 +108,7 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       isEditing: false,
     }
-    
+
     // Ref to store latest column overrides for synchronous access (avoids stale state issues)
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
@@ -740,7 +741,7 @@ export class QueryOutput extends React.Component {
   applyColumnOverrides = (columns, overridesOverride) => {
     // Use provided override, then ref (latest), then state (fallback)
     const overrides = overridesOverride || this.latestColumnOverrides || this.state?.columnOverrides || {}
-    
+
     if (!columns || !overrides || Object.keys(overrides).length === 0) {
       return columns
     }
@@ -1306,11 +1307,11 @@ export class QueryOutput extends React.Component {
     }
   }
   handleQueryFnError = (error) => {
-    if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
+    if (isAbortError(error)) {
       return this.queryResponse
-    } else {
-      return error
     }
+
+    return error
   }
 
   queryFn = async (args = {}) => {
@@ -1328,7 +1329,7 @@ export class QueryOutput extends React.Component {
     const allFilters = this.getCombinedFilters(args?.tableFilters)
 
     this.cancelCurrentRequest()
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
 
     this.setState({ isLoadingData: true })
 
@@ -1352,7 +1353,8 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
-          signal: this.axiosSource.signal,
+          signal: this.axiosSource.controller.signal,
+          cancelToken: this.axiosSource.cancelToken,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           ...args,
@@ -1428,7 +1430,7 @@ export class QueryOutput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   processDrilldown = async ({ groupBys, supportedByAPI, row, activeKey, stringColumnIndex, filter, useOrLogic }) => {
@@ -1986,17 +1988,17 @@ export class QueryOutput extends React.Component {
       // Always store overrides from newColumns since they represent the user's explicit choice
       // Don't compare with getColumns() which may already have overrides applied
       const overrides = { ...this.state.columnOverrides }
-      
+
       newColumns.forEach((newCol) => {
         // Store override from newColumns - these represent the user's explicit choice
         // Compare against existing override in state, not getColumns() which may have stale/already-applied values
         const existingOverride = overrides[newCol.index]
-        
+
         // Update override if type or precision is different from existing override
-        const needsUpdate = 
+        const needsUpdate =
           (newCol.type && newCol.type !== existingOverride?.type) ||
           (newCol.precision && newCol.precision !== existingOverride?.precision)
-        
+
         if (needsUpdate) {
           overrides[newCol.index] = {
             type: newCol.type || existingOverride?.type,
@@ -2004,7 +2006,7 @@ export class QueryOutput extends React.Component {
           }
         }
       })
-      
+
       // Update ref immediately for synchronous access (avoids stale state)
       // Deep clone to avoid reference issues
       this.latestColumnOverrides = _cloneDeep(overrides)
@@ -2014,7 +2016,7 @@ export class QueryOutput extends React.Component {
     } else {
       this.onTableConfigChange()
     }
-    
+
     this.forceUpdate()
   }
 
@@ -3772,7 +3774,7 @@ export class QueryOutput extends React.Component {
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
-    
+
     // Disable cyclical dates if any column has groupable: true
     const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
     const effectiveEnableCyclicalDates = hasGroupableColumns ? false : this.props.enableCyclicalDates
@@ -3912,7 +3914,7 @@ export class QueryOutput extends React.Component {
       if (typeof error === 'object') {
         let errorMessage = GENERAL_QUERY_ERROR
 
-        if (error?.message === REQUEST_CANCELLED_ERROR) {
+        if (isAbortError(error)) {
           errorMessage = (
             <span>
               Query cancelled{' '}

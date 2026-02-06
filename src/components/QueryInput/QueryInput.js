@@ -27,6 +27,7 @@ import {
   fetchDataPreview,
   transformQueryResponse,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
@@ -163,7 +164,7 @@ class QueryInput extends React.Component {
     clearTimeout(this.caretMoveTimeout)
     document.removeEventListener('keydown', this.onEscKeypress)
     document.removeEventListener('mousedown', this.handleClickOutside)
-    this.axiosSourceDataPreview?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   fetchTopics = () => {
@@ -330,8 +331,8 @@ class QueryInput extends React.Component {
     }
 
     // Cancel any previous data preview request
-    this.axiosSourceDataPreview?.abort(REQUEST_CANCELLED_ERROR)
-    this.axiosSourceDataPreview = new AbortController()
+    this.axiosSourceDataPreview?.controller?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = createCancelPair()
 
     fetchDataPreview({
       ...this.props.authentication,
@@ -361,7 +362,7 @@ class QueryInput extends React.Component {
       })
       .catch((error) => {
         if (this._isMounted) {
-          if (error?.message !== REQUEST_CANCELLED_ERROR) {
+          if (!isAbortError(error)) {
             console.error(error)
             this.setState({ isDataPreviewLoading: false })
           }
@@ -440,8 +441,8 @@ class QueryInput extends React.Component {
     this.setState({ isQueryRunning: true })
 
     // Cancel any previous data preview request
-    this.axiosSourceDataPreview?.abort(REQUEST_CANCELLED_ERROR)
-    this.axiosSourceDataPreview = new AbortController()
+    this.axiosSourceDataPreview?.controller?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceDataPreview = createCancelPair()
 
     // Fetch data preview with more rows for display
     fetchDataPreview({
@@ -480,7 +481,7 @@ class QueryInput extends React.Component {
         }, 100)
       })
       .catch((error) => {
-        if (error?.message !== REQUEST_CANCELLED_ERROR) {
+        if (!isAbortError(error)) {
           console.error(error)
           this.onResponse(error, queryText, id)
         }
@@ -514,7 +515,7 @@ class QueryInput extends React.Component {
   }
 
   cancelQuery = () => {
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
@@ -549,7 +550,7 @@ class QueryInput extends React.Component {
       this.setState(newState)
     }
 
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
 
     const requestData = {
       query,

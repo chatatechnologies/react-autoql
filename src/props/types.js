@@ -28,7 +28,6 @@ export const autoQLConfigType = PropTypes.shape({
   enableNotifications: PropTypes.bool,
   projectId: PropTypes.string,
   enableProjectSelect: PropTypes.bool,
-  enableProjectSelect: PropTypes.bool,
   enableEditReverseTranslation: PropTypes.bool,
 })
 

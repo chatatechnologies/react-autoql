@@ -14,6 +14,7 @@ import {
   parseJwt,
   normalizeString,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import { SubjectName } from './SubjectName'
@@ -294,7 +295,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   requestSuggestions = (value) => {
@@ -302,12 +303,13 @@ export default class DataExplorerInput extends React.Component {
 
     clearTimeout(this.autoCompleteTimer)
     this.cancelCurrentRequest()
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
     this.autoCompleteTimer = setTimeout(() => {
       fetchDataExplorerAutocomplete({
         suggestion: value,
         ...this.props.authentication,
-        signal: this.axiosSource?.signal,
+        signal: this.axiosSource?.controller.signal,
+        cancelToken: this.axiosSource?.cancelToken,
       })
         .then((suggestions) => {
           this.setState({
@@ -316,12 +318,7 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          const isCancelled =
-            error?.name === 'CanceledError' ||
-            error?.code === 'ERR_CANCELED' ||
-            error?.data?.message === REQUEST_CANCELLED_ERROR ||
-            error?.message === REQUEST_CANCELLED_ERROR
-          if (!isCancelled) {
+          if (!isAbortError(error)) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
           }

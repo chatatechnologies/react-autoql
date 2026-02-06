@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import axios from 'axios'
 import Autosuggest from 'react-autosuggest'
 import { fetchVLAutocomplete, REQUEST_CANCELLED_ERROR, getAuthentication, authenticationDefault } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { Icon } from '../Icon'
 
@@ -87,17 +88,18 @@ const DashboardSlicer = (props) => {
     ({ value, isSlicerSuggestion = false }) => {
       // If already fetching autocomplete, cancel it
       if (axiosSourceRef.current) {
-        axiosSourceRef.current.abort(REQUEST_CANCELLED_ERROR)
+        axiosSourceRef.current.controller?.abort(REQUEST_CANCELLED_ERROR)
       }
 
       setIsLoadingAutocomplete(true)
-      axiosSourceRef.current = new AbortController()
+      axiosSourceRef.current = createCancelPair()
 
       fetchVLAutocomplete({
         ...getAuthentication(props.authentication),
         suggestion: value,
         context: props.context,
-        signal: axiosSourceRef.current.signal,
+        signal: axiosSourceRef.current.controller.signal,
+        cancelToken: axiosSourceRef.current.cancelToken,
       })
         .then((response) => {
           const body = response?.data?.data
@@ -134,11 +136,7 @@ const DashboardSlicer = (props) => {
           }
         })
         .catch((error) => {
-          const isCancelled =
-            error?.name === 'CanceledError' ||
-            error?.code === 'ERR_CANCELED' ||
-            error?.message === REQUEST_CANCELLED_ERROR
-          if (!isCancelled && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+          if (!isAbortError(error)) {
             console.error(error)
           }
           setIsLoadingAutocomplete(false)
@@ -179,7 +177,7 @@ const DashboardSlicer = (props) => {
   useEffect(() => {
     return () => {
       if (axiosSourceRef.current) {
-        axiosSourceRef.current.abort(REQUEST_CANCELLED_ERROR)
+        axiosSourceRef.current.controller?.abort(REQUEST_CANCELLED_ERROR)
       }
       if (autocompleteTimerRef.current) {
         clearTimeout(autocompleteTimerRef.current)

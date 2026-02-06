@@ -13,6 +13,7 @@ import {
   getAuthentication,
   deepEqual,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType } from '../../props/types'
@@ -147,19 +148,20 @@ export default class VLAutocompleteInput extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.abort(REQUEST_CANCELLED_ERROR)
+      this.axiosSource.controller?.abort(REQUEST_CANCELLED_ERROR)
     }
 
     this.setState({ isLoadingAutocomplete: true })
 
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
 
     return fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      signal: this.axiosSource.signal,
+      signal: this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -201,8 +203,7 @@ export default class VLAutocompleteInput extends React.Component {
         return this.autoCompleteArray
       })
       .catch((error) => {
-        const isCancelled = error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED' || error?.message === REQUEST_CANCELLED_ERROR
-        if (!isCancelled && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        if (!isAbortError(error)) {
           console.error(error)
         }
 

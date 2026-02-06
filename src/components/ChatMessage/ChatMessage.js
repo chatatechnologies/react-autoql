@@ -386,10 +386,10 @@ export default class ChatMessage extends React.Component {
 
       const response = await fetchLLMSummary({
         data: {
-          additional_context:{
+          additional_context: {
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            focus_prompt: ""
+            focus_prompt: '',
           },
           rows: filteredRows,
           columns: this.props.response.data.data.columns,
@@ -457,18 +457,37 @@ export default class ChatMessage extends React.Component {
       const text = this.markdownContentRef.current.innerText
 
       // Copy as plain text using Clipboard API
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
-      } else {
-        // Fallback for older browsers using async clipboard API
-        try {
+      // Try modern Clipboard API first
+      try {
+        if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(text)
           this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
-        } catch (fallbackError) {
-          console.error('Failed to copy with fallback method:', fallbackError)
-          this.props.onErrorCallback?.(fallbackError)
+          return
         }
+      } catch (err) {
+        // swallow and fall back
+      }
+
+      // Fallback for older browsers: use a temporary textarea + execCommand
+      try {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        textarea.style.top = '0'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        const successful = document.execCommand('copy')
+        document.body.removeChild(textarea)
+        if (successful) {
+          this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        } else {
+          throw new Error('Copy command was unsuccessful')
+        }
+      } catch (fallbackError) {
+        console.error('Failed to copy summary to clipboard:', fallbackError)
+        this.props.onErrorCallback?.(fallbackError)
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)

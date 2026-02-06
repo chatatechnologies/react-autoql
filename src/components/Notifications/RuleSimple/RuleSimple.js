@@ -38,6 +38,7 @@ import {
   fetchFilters,
   normalizeString,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../../utils/abortUtils'
 import LoadingDots from '../../LoadingDots/LoadingDots'
 import JoinColumnSelectionTable from '../JoinColumnSelectionTable/JoinColumnSelectionTable'
 import { Icon } from '../../Icon'
@@ -1050,7 +1051,7 @@ export default class RuleSimple extends React.Component {
   }
 
   cancelSecondValidation = () => {
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   runSecondValidation = () => {
@@ -1058,7 +1059,7 @@ export default class RuleSimple extends React.Component {
       return
     }
 
-    this.axiosSource = new AbortController()
+    this.axiosSource = createCancelPair()
 
     runQueryOnly({
       query: this.state.secondInputValue,
@@ -1066,7 +1067,8 @@ export default class RuleSimple extends React.Component {
       ...getAutoQLConfig(this.props.autoQLConfig),
       source: 'data_alert_validation',
       pageSize: 2, // No need to fetch more than 2 rows to determine validity
-      signal: this.axiosSource.signal,
+      signal: this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
       allowSuggestions: false,
     })
       .then((response) => {
@@ -1079,7 +1081,7 @@ export default class RuleSimple extends React.Component {
         })
       })
       .catch((error) => {
-        if (error?.response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        if (!isAbortError(error)) {
           this.setState({ secondQueryValidating: false, secondQueryInvalid: true })
         }
       })

@@ -12,6 +12,7 @@ import {
   getAuthentication,
   fetchSubjectList,
 } from 'autoql-fe-utils'
+import { isAbortError } from '../../utils/abortUtils'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
@@ -312,7 +313,7 @@ export default class ChatContent extends React.Component {
     if (this._isMounted) {
       this.setState({ isQueryRunning: false, isInputDisabled: false })
 
-      if (response?.data?.message === REQUEST_CANCELLED_ERROR && this.state.isClearingAllMessages) {
+      if (isAbortError(response) && this.state.isClearingAllMessages) {
         this.setState({
           isClearingAllMessages: false,
           isQueryRunning: false,

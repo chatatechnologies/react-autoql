@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import PropTypes from 'prop-types'
-import axios from 'axios'
 import { fetchVLAutocomplete, REQUEST_CANCELLED_ERROR, authenticationDefault, getAuthentication } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 import { authenticationType } from '../../props/types'
 import AutocompleteInputPopover from './AutocompleteInputPopover'
 import './VLAutocompleteInputPopover.scss'
@@ -31,11 +31,11 @@ const VLAutocompleteInputV2 = ({
   const handleSearch = useCallback(
     async (searchValue) => {
       if (axiosSource.current) {
-        axiosSource.current.abort(REQUEST_CANCELLED_ERROR)
+        axiosSource.current.controller?.abort(REQUEST_CANCELLED_ERROR)
       }
 
       setIsLoading(true)
-      axiosSource.current = new AbortController()
+      axiosSource.current = createCancelPair()
 
       try {
         const response = await fetchVLAutocomplete({
@@ -43,7 +43,8 @@ const VLAutocompleteInputV2 = ({
           suggestion: searchValue,
           context,
           filter: column,
-          signal: axiosSource.current.signal,
+          signal: axiosSource.current.controller.signal,
+          cancelToken: axiosSource.current.cancelToken,
         })
 
         const matches = response?.data?.data?.matches || []
@@ -59,12 +60,7 @@ const VLAutocompleteInputV2 = ({
 
         setSuggestions(transformedSuggestions)
       } catch (error) {
-        const isCancelled =
-          error?.name === 'CanceledError' ||
-          error?.code === 'ERR_CANCELED' ||
-          error?.data?.message === REQUEST_CANCELLED_ERROR ||
-          error?.message === REQUEST_CANCELLED_ERROR
-        if (!isCancelled) {
+        if (!isAbortError(error)) {
           console.error(error)
         }
       } finally {

@@ -29,6 +29,7 @@ import {
   TranslationTypes,
   formatFiltersForTabulator,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import ReactDOMServer from 'react-dom/server'
@@ -665,7 +666,7 @@ export default class ChataTable extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   ajaxRequesting = (props, params) => {
@@ -702,7 +703,7 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       this.cancelCurrentRequest()
-      this.axiosSource = new AbortController()
+      this.axiosSource = createCancelPair()
       this.tableParams = params
 
       if (params?.page > 1) {
@@ -775,7 +776,7 @@ export default class ChataTable extends React.Component {
 
       return response
     } catch (error) {
-      if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+      if (!isAbortError(error)) {
         console.error(error)
         this.clearLoadingIndicators()
       } else {

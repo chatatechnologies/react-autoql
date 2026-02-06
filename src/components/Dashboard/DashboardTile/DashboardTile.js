@@ -19,11 +19,8 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
-  QueryErrorTypes,
-  transformQueryResponse,
-  fetchSuggestions,
-  isError500Type,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../../utils/abortUtils'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
@@ -311,8 +308,8 @@ export class DashboardTile extends React.Component {
   }
 
   cancelAllQueries = () => {
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -441,7 +438,7 @@ export class DashboardTile extends React.Component {
   }
 
   endTopQuery = ({ response }) => {
-    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+    if (!isAbortError(response)) {
       const isError = this.hasError(response)
 
       // Build params to set - always include queryResponse
@@ -508,7 +505,7 @@ export class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
-    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+    if (!isAbortError(response)) {
       const isError = this.hasError(response)
 
       // Build params to set - always include secondQueryResponse
@@ -675,7 +672,7 @@ export class DashboardTile extends React.Component {
         return this.endTopQuery({ response })
       })
       .catch((response) => {
-        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
+        if (isAbortError(response)) {
           return undefined
         }
 
@@ -727,7 +724,7 @@ export class DashboardTile extends React.Component {
     })
       .then((response) => this.endBottomQuery({ response }))
       .catch((response) => {
-        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
+        if (isAbortError(response)) {
           return undefined
         }
 
@@ -770,12 +767,12 @@ export class DashboardTile extends React.Component {
     isCachedRefresh,
   } = {}) => {
     // If tile is already processing, cancel current process
-    this.axiosSource?.abort(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
 
-    // Create new abort controllers for each query
-    this.axiosSource = new AbortController()
-    this.secondAxiosSource = new AbortController()
+    // Create new abort controllers for each query (paired with axios cancelToken)
+    this.axiosSource = createCancelPair()
+    this.secondAxiosSource = createCancelPair()
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
     const q2 = secondQuery || this.props.tile.secondDefaultSelectedSuggestion || this.state.secondQuery
@@ -1519,10 +1516,14 @@ export class DashboardTile extends React.Component {
           // Compare tile.columns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
           let columnOverrides = dataConfig?.columnOverrides || {}
-          
+
           // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
-          if (!dataConfig?.columnOverrides && this.props.tile?.columns && this.props.tile?.queryResponse?.data?.data?.columns) {
+          if (
+            !dataConfig?.columnOverrides &&
+            this.props.tile?.columns &&
+            this.props.tile?.queryResponse?.data?.data?.columns
+          ) {
             const savedColumns = this.props.tile.columns
             const originalColumns = this.props.tile.queryResponse.data.data.columns
             savedColumns.forEach((savedCol) => {
@@ -1653,7 +1654,7 @@ export class DashboardTile extends React.Component {
           // Compare tile.secondColumns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
           let columnOverrides = dataConfig?.columnOverrides || {}
-          
+
           // Fallback: Extract columnOverrides from tile.secondColumns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
           const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse

@@ -19,6 +19,7 @@ import {
   formatElement,
   getDataFormatting,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import DataPreview from './DataPreview'
 import SampleQueryList from './SampleQueryList'
@@ -117,7 +118,7 @@ export default class DataExplorer extends React.Component {
           })
           .catch((error) => {
             console.error(error)
-            if (this.state.selectedSubject && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+            if (this.state.selectedSubject && !isAbortError(error)) {
               this.setState({ loadingSubjects: false, subjectListError: error })
             }
           })
@@ -141,17 +142,17 @@ export default class DataExplorer extends React.Component {
   }
 
   cancelValidation = () => {
-    this.axiosSourceValidation?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceValidation?.controller?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceValidation = undefined
   }
 
   cancelFetchSubjectList = () => {
-    this.axiosSourceSubjectList?.abort(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceSubjectList?.controller?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceSubjectList = undefined
   }
 
   validateSearchTerm = (term) => {
-    this.axiosSourceValidation = new AbortController()
+    this.axiosSourceValidation = createCancelPair()
 
     this.setState({ validating: true })
 
@@ -171,7 +172,7 @@ export default class DataExplorer extends React.Component {
       })
       .catch((error) => {
         console.error(error)
-        if (this._isMounted && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        if (this._isMounted && !isAbortError(error)) {
           this.setState({ validating: false, validationError: error })
         }
       })
