@@ -25,6 +25,7 @@ import { Spinner } from '../Spinner'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
+import { Input } from '../Input'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -42,6 +43,12 @@ export default class ChatMessage extends React.Component {
     this.MESSAGE_WIDTH_MARGINS = 40
     this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
+    // Store original summary content and response data if this is a summary message
+    // Set in constructor so content renders before animation to know message bubble size
+    const isSummaryMessage = (this.props.type === 'markdown' || this.props.type === 'md') && this.props.content
+    const originalSummary = isSummaryMessage ? this.props.content : null
+    const summaryResponseData = isSummaryMessage ? (this.props.summaryResponseData || null) : null
+
     this.state = {
       csvDownloadProgress: this.props.initialCSVDownloadProgress,
       isAnimatingMessageBubble: true,
@@ -57,6 +64,11 @@ export default class ChatMessage extends React.Component {
       isUserResizing: false,
       currentHeight: 400,
       isGeneratingSummary: false,
+      focusPrompt: '',
+      originalSummary,
+      isFocusingSummary: false,
+      summaryResponseData, // Store response data for focusing summaries
+      focusError: null, // Error message for focus summary
     }
 
     // Minimum height for the message container
@@ -127,6 +139,8 @@ export default class ChatMessage extends React.Component {
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
+    scrollToMessageTop: () => {},
+    scrollToMessageFit: () => {},
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
     enableMagicWand: false,
@@ -134,12 +148,9 @@ export default class ChatMessage extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
-    this.props.scrollToBottom()
-    this.scrollToBottomTimeout = setTimeout(() => {
-      this.props.scrollToBottom()
-    }, 100)
-
+    
     // Wait until message bubble animation finishes to show query output content
+    // The scroll will happen after animation completes (500ms) in clearIsAnimatingIn500ms
     this.setIsAnimating()
   }
 
@@ -179,6 +190,16 @@ export default class ChatMessage extends React.Component {
     if (shouldUpdateWidth && this.ref?.style) {
       this.ref.style.width = messageWidth
     }
+
+    // Update original summary and response data if content changes and we don't have one stored
+    if ((this.props.type === 'markdown' || this.props.type === 'md') && this.props.content) {
+      if (!this.state.originalSummary || prevProps.content !== this.props.content) {
+        this.setState({ 
+          originalSummary: this.props.content,
+          summaryResponseData: this.props.summaryResponseData || this.state.summaryResponseData
+        })
+      }
+    }
   }
 
   componentWillUnmount = () => {
@@ -205,7 +226,7 @@ export default class ChatMessage extends React.Component {
     clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
-      this.props.scrollToBottom()
+      // Scroll is now handled in ChatContent.componentDidUpdate to avoid conflicts
     }, 500)
   }
 
@@ -320,7 +341,7 @@ export default class ChatMessage extends React.Component {
       this.ref.style.removeProperty('--message-height')
     }
 
-    this.scrollIntoView()
+    // No scrolling on visualization change - only scroll when message is first created
   }
 
   renderMarkdown = (content) => {
@@ -392,11 +413,29 @@ export default class ChatMessage extends React.Component {
       const summary = response?.data?.data?.summary
 
       if (summary) {
-        // Add summary as a new message bubble
+        // Store original summary and response data in state for this component
+        this.setState({ 
+          originalSummary: summary,
+          summaryResponseData: {
+            rows: filteredRows,
+            columns: this.props.response.data.data.columns,
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            query_id: this.props.response.data.data.query_id
+          }
+        })
+        // Add summary as a new message bubble, including response data for focusing
         this.props.addMessageToDM?.({
           content: summary,
           type: 'markdown',
           isResponse: true,
+          summaryResponseData: {
+            rows: filteredRows,
+            columns: this.props.response.data.data.columns,
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            query_id: this.props.response.data.data.query_id
+          }
         })
       } else {
         // No summary returned - check for error message in response
@@ -429,6 +468,123 @@ export default class ChatMessage extends React.Component {
       this.setState({ isGeneratingSummary: false })
       // Clear loading state in parent
       this.props.setGeneratingSummary?.(false)
+    }
+  }
+
+
+  handleFocusPromptChange = (e) => {
+    const value = e.target.value
+    if (value.length <= 100) {
+      this.setState({ focusPrompt: value, focusError: null })
+    }
+  }
+
+  handleFocusPromptKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      const { focusPrompt, isFocusingSummary } = this.state
+      if (focusPrompt.trim() && !isFocusingSummary) {
+        this.handleFocusSummary()
+      }
+    }
+  }
+
+  handleFocusSummary = async () => {
+    const { focusPrompt, summaryResponseData } = this.state
+    if (!focusPrompt.trim()) {
+      return
+    }
+
+    // Use stored response data or props response data
+    const responseData = summaryResponseData || (this.props.response?.data?.data ? {
+      rows: this.responseRef?.tableData || this.props.response.data.data.rows,
+      columns: this.props.response.data.data.columns,
+      text: this.props.response.data.data.text,
+      interpretation: this.props.response.data.data.interpretation,
+      query_id: this.props.response.data.data.query_id
+    } : null)
+
+    if (!responseData?.rows || !responseData?.columns) {
+      this.props.onErrorCallback?.('Unable to focus summary: missing response data')
+      return
+    }
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.props.onErrorCallback?.('Missing authentication credentials for summary focusing')
+      return
+    }
+
+    // Set loading state and clear any previous errors
+    this.setState({ isFocusingSummary: true, focusError: null })
+    this.props.setGeneratingSummary?.(true)
+
+    try {
+      const response = await fetchLLMSummary({
+        data: {
+          additional_context: {
+            text: responseData.text,
+            interpretation: responseData.interpretation,
+            focus_prompt: focusPrompt.trim()
+          },
+          rows: responseData.rows,
+          columns: responseData.columns
+        },
+        queryID: responseData.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const focusedSummary = response?.data?.data?.summary
+
+      if (focusedSummary) {
+        // Create a new message with focused summary
+        this.props.addMessageToDM?.({
+          content: focusedSummary,
+          type: 'markdown',
+          isResponse: true,
+          focusPromptUsed: focusPrompt.trim(), // Store the focus prompt that was used
+        })
+        // Clear the focus prompt
+        this.setState({ 
+          focusPrompt: '',
+          focusError: null
+        })
+      } else {
+        // No summary returned - check for error message in response
+        const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
+        const displayMessage = errorMessage || 'Failed to focus summary. Please try again.'
+
+        this.setState({ focusError: displayMessage })
+        this.props.onErrorCallback?.(displayMessage)
+      }
+    } catch (error) {
+      // Handle API errors
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to focus summary. Please try again.'
+
+      this.setState({ focusError: errorMessage })
+      this.props.onErrorCallback?.(errorMessage)
+    } finally {
+      // Clear loading state
+      this.setState({ isFocusingSummary: false })
+      this.props.setGeneratingSummary?.(false)
+    }
+  }
+
+  handleResetSummary = () => {
+    if (this.state.originalSummary) {
+      // Update message with original summary
+      this.props.addMessageToDM?.({
+        content: this.state.originalSummary,
+        type: 'markdown',
+        isResponse: true,
+      })
+      this.setState({ focusPrompt: '' })
     }
   }
 
@@ -466,7 +622,71 @@ export default class ChatMessage extends React.Component {
   }
 
   renderSummaryFooter = () => {
-    // Only show footer for response messages with data
+    // Show focus section for summary messages (markdown type)
+    // Check if we have summaryResponseData (from props or state) - this indicates it's a summary message
+    const hasSummaryResponseData = !!(this.props.summaryResponseData || this.state.summaryResponseData)
+    if ((this.props.type === 'markdown' || this.props.type === 'md') && hasSummaryResponseData) {
+      const { focusPrompt, isFocusingSummary, originalSummary, focusError } = this.state
+      const hasOriginalSummary = !!originalSummary
+      const showReset = hasOriginalSummary && this.props.content !== originalSummary
+
+      return (
+        <div className='chat-message-summary-footer'>
+          <div className='chat-message-summary-focus-section'>
+            <div className='chat-message-summary-focus-content'>
+              <div className='chat-message-summary-focus-header'>
+                <label className='chat-message-summary-focus-label'>
+                  Need a different perspective?
+                </label>
+                <div className='chat-message-summary-focus-description'>
+                  Enter a specific topic or theme to generate a new summary tailored to that focus area
+                </div>
+              </div>
+              <div className='chat-message-summary-focus-input-group'>
+                <Input
+                  value={focusPrompt}
+                  onChange={this.handleFocusPromptChange}
+                  onKeyDown={this.handleFocusPromptKeyDown}
+                  placeholder='e.g., sales growth trends'
+                  maxLength={100}
+                  disabled={isFocusingSummary}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  type='primary'
+                  size='medium'
+                  style={{ marginBottom: '8px' }}
+                  onClick={this.handleFocusSummary}
+                  disabled={!focusPrompt.trim() || isFocusingSummary}
+                  loading={isFocusingSummary}
+                  icon='refresh'
+                >
+                  Regenerate
+                </Button>
+                {showReset && (
+                  <Button
+                    type='default'
+                    size='medium'
+                    onClick={this.handleResetSummary}
+                    disabled={isFocusingSummary}
+                    style={{ marginLeft: '8px' }}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+              {focusError && (
+                <div className='chat-message-summary-focus-error'>
+                  {focusError}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Only show footer for response messages with data (for Generate Summary button)
     if (
       !this.props.enableMagicWand ||
       !this.props.isResponse ||
@@ -526,6 +746,11 @@ export default class ChatMessage extends React.Component {
               <Icon type='magic-wand' />
               <strong>Summary:</strong>
             </div>
+            {this.props.focusPromptUsed && (
+              <div className='chat-message-summary-focus-prompt'>
+                Focused on: {this.props.focusPromptUsed}
+              </div>
+            )}
             <div ref={this.markdownContentRef}>{this.renderMarkdown(this.props.content)}</div>
           </div>
         )
@@ -568,7 +793,7 @@ export default class ChatMessage extends React.Component {
           scope={this.props.scope}
           drilldownFilters={this.props.drilldownFilters}
           onRowChange={this.scrollIntoView}
-          onDisplayTypeChange={this.scrollIntoView}
+          onDisplayTypeChange={this.onDisplayTypeChange}
           mutable={false}
           tooltipID={this.props.tooltipID}
           chartTooltipID={this.props.chartTooltipID}

@@ -27,6 +27,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 // Styles
 import './ChatContent.scss'
 
+const TOOLBAR_OFFSET = 90 // Offset in pixels to account for toolbar at the top
+
 export default class ChatContent extends React.Component {
   constructor(props) {
     super(props)
@@ -34,6 +36,9 @@ export default class ChatContent extends React.Component {
     this.messageRefs = {}
     this.csvProgressLog = {}
     this.keepLoading = false
+    this.scrollTimeout = null
+    this.lastScrollMessageId = null
+    this.lastScrollTime = 0
 
     this.state = {
       messages: [],
@@ -42,6 +47,7 @@ export default class ChatContent extends React.Component {
       isDrilldownRunning: false,
       isInputDisabled: false,
       isGeneratingSummary: false,
+      isAtBottom: true,
     }
   }
 
@@ -96,6 +102,7 @@ export default class ChatContent extends React.Component {
     }
 
     this.fetchAllSubjects()
+    this.setupScrollListener()
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -108,13 +115,57 @@ export default class ChatContent extends React.Component {
       this.fetchAllSubjects()
     }
 
+    // Check if a new message was added (user request or system response) and scroll to it
+    if (this.state.messages.length > prevState.messages.length) {
+      const newMessages = this.state.messages.slice(prevState.messages.length)
+      // Scroll to the last new message (whether it's a user request or system response)
+      const lastNewMessage = newMessages[newMessages.length - 1]
+      if (lastNewMessage) {
+        // Clear any pending scrolls
+        if (this.scrollTimeout) {
+          clearTimeout(this.scrollTimeout)
+          this.scrollTimeout = null
+        }
+        
+        // Request messages don't have animations, so scroll immediately
+        // Response messages need delay for CSS animation to complete
+        if (!lastNewMessage.isResponse) {
+          // Scroll immediately for request messages
+          requestAnimationFrame(() => {
+            this.scrollToMessageTop(lastNewMessage.id)
+          })
+        } else {
+          // Use requestAnimationFrame to ensure DOM is ready, then wait for animation (500ms)
+          requestAnimationFrame(() => {
+            // Wait for CSS animation to complete (0.5s) plus small buffer for DOM to settle
+            this.scrollTimeout = setTimeout(() => {
+              this.scrollToMessageTop(lastNewMessage.id)
+              this.scrollTimeout = null
+            }, 550)
+          })
+        }
+      }
+    }
+
+    // Setup scroll listener if not already set up
+    if (this.messengerScrollComponent && !this.handleScroll) {
+      this.setupScrollListener()
+    }
+
     this.messengerScrollComponent?.update()
+    // Check scroll position after update
+    setTimeout(() => this.checkIfAtBottom(), 0)
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.feedbackTimeout)
     clearTimeout(this.responseDelayTimeout)
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout)
+      this.scrollTimeout = null
+    }
+    this.removeScrollListener()
   }
 
   fetchAllSubjects = () => {
@@ -140,6 +191,272 @@ export default class ChatContent extends React.Component {
     this.messengerScrollComponent?.scrollToBottom()
   }
 
+  setupScrollListener = () => {
+    // Don't set up if already set up
+    if (this.handleScroll) return
+
+    const container = this.messengerScrollComponent?.getContainer()
+    if (container) {
+      this.handleScroll = () => {
+        this.checkIfAtBottom()
+      }
+      container.addEventListener('scroll', this.handleScroll)
+      // Initial check
+      this.checkIfAtBottom()
+    }
+  }
+
+  removeScrollListener = () => {
+    const container = this.messengerScrollComponent?.getContainer()
+    if (container && this.handleScroll) {
+      container.removeEventListener('scroll', this.handleScroll)
+    }
+  }
+
+  checkIfAtBottom = () => {
+    const container = this.messengerScrollComponent?.getContainer()
+    if (!container) return
+
+    const scrollTop = container.scrollTop
+    const scrollHeight = container.scrollHeight
+    const clientHeight = container.clientHeight
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10 // 10px threshold
+
+    if (this.state.isAtBottom !== isAtBottom) {
+      this.setState({ isAtBottom })
+    }
+  }
+
+  smoothScrollToBottom = () => {
+    const container = this.messengerScrollComponent?.getContainer()
+    if (!container) return
+
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+    const startScrollTop = container.scrollTop
+    const distance = maxScrollTop - startScrollTop
+    const duration = 300 // ms
+    const startTime = performance.now()
+
+    const animateScroll = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+
+      // Easing function (ease-out)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      const currentScrollTop = startScrollTop + (distance * easeOut)
+      container.scrollTop = currentScrollTop
+
+      // Update scrollbars during animation
+      this.messengerScrollComponent?.update()
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll)
+      } else {
+        // Final update after animation completes
+        container.scrollTop = maxScrollTop
+        this.messengerScrollComponent?.update()
+        this.checkIfAtBottom()
+      }
+    }
+
+    requestAnimationFrame(animateScroll)
+  }
+
+  scrollToMessageFit = (messageId) => {
+    // Debounce: if we just scrolled to this message recently, skip
+    const now = Date.now()
+    if (this.lastScrollMessageId === messageId && now - this.lastScrollTime < 500) {
+      return
+    }
+
+    // Clear any pending scrolls
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout)
+      this.scrollTimeout = null
+    }
+
+    const container = this.messengerScrollComponent?.getContainer()
+    if (!container) {
+      this.scrollToBottom()
+      return
+    }
+
+    // Try to find the element, with retries if needed
+    const attemptScroll = (retries = 10) => {
+      // Find the message element by ID
+      const messageElement = document.getElementById(`message-${messageId}`)
+      if (!messageElement) {
+        if (retries > 0) {
+          // Retry after a short delay
+          setTimeout(() => attemptScroll(retries - 1), 100)
+          return
+        }
+        // Fallback to bottom if message element not found after retries
+        this.scrollToBottom()
+        return
+      }
+
+      // Use getBoundingClientRect to get accurate positions
+      const containerRect = container.getBoundingClientRect()
+      const messageRect = messageElement.getBoundingClientRect()
+      
+      const containerHeight = container.clientHeight
+      const messageHeight = messageRect.height
+
+      // Calculate message positions relative to container
+      const messageTopOffset = messageRect.top - containerRect.top
+      const messageBottomOffset = messageRect.bottom - containerRect.bottom
+      
+      // Find the scrollable content container to calculate absolute position
+      const scrollContent = container.querySelector('.chat-content-container')
+      if (!scrollContent) {
+        this.scrollToBottom()
+        return
+      }
+      
+      // Calculate the absolute position of the message within the scrollable content
+      let messageAbsoluteTop = 0
+      let element = messageElement
+      while (element && element !== scrollContent) {
+        messageAbsoluteTop += element.offsetTop
+        element = element.offsetParent
+      }
+      
+      // If message is bigger than screen, align top with top (with toolbar offset)
+      if (messageHeight > containerHeight) {
+        // Scroll so message top is TOOLBAR_OFFSET above container top
+        const targetScrollTop = messageAbsoluteTop - TOOLBAR_OFFSET
+        container.scrollTop = targetScrollTop
+        this.messengerScrollComponent?.update()
+        return
+      }
+      
+      // Message is smaller than screen - fit it in viewport
+      // Check if message top is above the desired position (TOOLBAR_OFFSET above container top)
+      const desiredTopPosition = TOOLBAR_OFFSET
+
+      if (messageTopOffset < desiredTopPosition) {
+        // Scroll so message top is TOOLBAR_OFFSET above container top
+        const targetScrollTop = messageAbsoluteTop - TOOLBAR_OFFSET
+        container.scrollTop = targetScrollTop
+        this.messengerScrollComponent?.update()
+        return
+      }
+      
+      // If bottom is below screen, scroll up to align bottom with bottom
+      if (messageBottomOffset > 0) {
+        // Calculate absolute bottom position
+        const messageAbsoluteBottom = messageAbsoluteTop + messageHeight
+        // Scroll so message bottom aligns with container bottom
+        const targetScrollTop = messageAbsoluteBottom - containerHeight
+        container.scrollTop = targetScrollTop
+        this.messengerScrollComponent?.update()
+        this.lastScrollMessageId = messageId
+        this.lastScrollTime = Date.now()
+        return
+      }
+      
+      // Message is already fully visible, no need to scroll
+      this.lastScrollMessageId = messageId
+      this.lastScrollTime = Date.now()
+    }
+
+    // Start attempting to scroll
+    attemptScroll()
+  }
+
+  scrollToMessageTop = (messageId) => {
+    // Debounce: if we just scrolled to this message recently, skip
+    const now = Date.now()
+    if (this.lastScrollMessageId === messageId && now - this.lastScrollTime < 500) {
+      return
+    }
+
+    // Clear any pending scrolls
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout)
+      this.scrollTimeout = null
+    }
+
+    const container = this.messengerScrollComponent?.getContainer()
+    if (!container) {
+      return
+    }
+
+    // Try to find the element, with retries if needed
+    const attemptScroll = (retries = 3) => {
+      // Find the message element by ID
+      const messageElement = document.getElementById(`message-${messageId}`)
+      if (!messageElement) {
+        if (retries > 0) {
+          // Retry after a short delay
+          setTimeout(() => attemptScroll(retries - 1), 50)
+          return
+        }
+        return
+      }
+
+      // Find the scrollable content container to calculate absolute position
+      const scrollContent = container.querySelector('.chat-content-container')
+      if (!scrollContent) {
+        return
+      }
+      
+      // Calculate the absolute position of the message within the scrollable content
+      let messageAbsoluteTop = 0
+      let element = messageElement
+      while (element && element !== scrollContent) {
+        messageAbsoluteTop += element.offsetTop
+        element = element.offsetParent
+      }
+      
+      // Calculate target scroll: align message top with container top (minus toolbar offset)
+      // If this would scroll past the bottom, cap at the max scroll position
+      const maxScrollTop = container.scrollHeight - container.clientHeight
+      const targetScrollTop = Math.min(maxScrollTop, Math.max(0, messageAbsoluteTop - TOOLBAR_OFFSET))
+
+      // Scroll to align message top with container top (with toolbar offset)
+      // If message is small, this will naturally scroll as far as possible (toward bottom)
+      const startScrollTop = container.scrollTop
+      const distance = targetScrollTop - startScrollTop
+      const duration = 300 // ms
+      const startTime = performance.now()
+      
+      const animateScroll = (currentTime) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        
+        // Easing function (ease-out)
+        const easeOut = 1 - Math.pow(1 - progress, 3)
+        
+        const currentScrollTop = startScrollTop + (distance * easeOut)
+        container.scrollTop = currentScrollTop
+        
+        // Update scrollbars during animation
+        this.messengerScrollComponent?.update()
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateScroll)
+        } else {
+          // Final update after animation completes
+          container.scrollTop = targetScrollTop
+          this.messengerScrollComponent?.update()
+          this.checkIfAtBottom()
+        }
+      }
+      
+      requestAnimationFrame(animateScroll)
+      
+      this.lastScrollMessageId = messageId
+      this.lastScrollTime = Date.now()
+    }
+
+    // Start attempting to scroll
+    requestAnimationFrame(() => {
+      attemptScroll()
+    })
+  }
   onCSVDownloadProgress = ({ id, progress }) => {
     this.csvProgressLog[id] = progress
     if (this.messageRefs[id] && this.messageRefs[id]?._isMounted) {
@@ -255,7 +572,20 @@ export default class ChatContent extends React.Component {
 
   addMessages = (newMessages) => {
     const { messages } = this.state
-    let updatedMessages = [...messages, ...newMessages]
+    let updatedMessages = [...messages]
+    
+    // Update existing messages or add new ones
+    newMessages.forEach((newMessage) => {
+      const existingIndex = updatedMessages.findIndex((msg) => msg.id === newMessage.id)
+      if (existingIndex >= 0) {
+        // Update existing message
+        updatedMessages[existingIndex] = newMessage
+      } else {
+        // Add new message
+        updatedMessages.push(newMessage)
+      }
+    })
+    
     if (updatedMessages.length > this.props.maxMessages) {
       updatedMessages = updatedMessages.slice(-this.props.maxMessages)
     }
@@ -415,13 +745,8 @@ export default class ChatContent extends React.Component {
     }
 
     this.messengerScrollComponent.update()
-    const { messages } = this.state
-    const lastMessage = messages[messages.length - 1]
-    if (lastMessage && lastMessage.id === messageId) {
-      setTimeout(() => {
-        this.scrollToBottom()
-      }, 100)
-    }
+    // Don't scroll on resize - let the initial scroll handle positioning
+    // This prevents multiple conflicting scrolls
   }
 
   render = () => {
@@ -485,10 +810,14 @@ export default class ChatContent extends React.Component {
                     customToolbarOptions={this.props.customToolbarOptions}
                     content={message.content}
                     scrollToBottom={this.scrollToBottom}
+                    scrollToMessageTop={this.scrollToMessageTop}
+                    scrollToMessageFit={this.scrollToMessageFit}
                     dataFormatting={this.props.dataFormatting}
                     response={message.response}
                     type={message.type}
                     drilldownFilters={message.drilldownFilters}
+                    summaryResponseData={message.summaryResponseData}
+                    focusPromptUsed={message.focusPromptUsed}
                     onErrorCallback={this.props.onErrorCallback}
                     enableCyclicalDates={this.props.enableCyclicalDates}
                     onSuccessAlert={this.props.onSuccessAlert}
@@ -528,6 +857,16 @@ export default class ChatContent extends React.Component {
               <LoadingDots />
             </div>
           )}
+          {!this.state.isAtBottom && (
+            <button
+              className='scroll-to-bottom-button'
+              onClick={this.smoothScrollToBottom}
+              aria-label='Scroll to bottom'
+            >
+              <Icon type='caret-down' />
+            </button>
+          )}
+          <div className='watermark-fade' />
           <div className='watermark'>
             <Icon type='react-autoql-bubbles-outlined' />
             {lang.run}

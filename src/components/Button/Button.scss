@@ -42,6 +42,12 @@
     margin-left: -3px;
     font-size: 1.1em;
   }
+
+  .spinner-loader {
+    margin-right: 6px;
+    margin-left: -3px;
+    color: inherit;
+  }
 }
 
 // State
@@ -91,6 +97,10 @@
     0px 1px 5px 0px rgba(0, 0, 0, 0.12);
   &:hover {
     opacity: 0.8;
+  }
+
+  .spinner-loader {
+    color: inherit !important;
   }
 }
 
