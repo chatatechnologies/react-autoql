@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 import { fetchDataExplorerSampleQueries, REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import SampleQuery from './SampleQuery'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -69,7 +70,7 @@ export default class SampleQueryList extends React.Component {
   }
 
   cancelSampleQueries = () => {
-    this.axiosSourceSampleQueries?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceSampleQueries?.controller?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceSampleQueries = undefined
   }
 
@@ -81,8 +82,8 @@ export default class SampleQueryList extends React.Component {
     // Cancel any previous request before making a new one
     this.cancelSampleQueries()
 
-    // Create new cancel token for this request
-    this.axiosSourceSampleQueries = axios.CancelToken.source()
+    // Create new abort controller for this request
+    this.axiosSourceSampleQueries = createCancelPair()
 
     const newState = {
       loading: true,
@@ -101,7 +102,8 @@ export default class SampleQueryList extends React.Component {
       text: this.props.searchText,
       context: this.props.context,
       columns: this.props.columns,
-      cancelToken: this.axiosSourceSampleQueries.token,
+      signal: this.axiosSourceSampleQueries.controller.signal,
+      cancelToken: this.axiosSourceSampleQueries.cancelToken,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -117,16 +119,11 @@ export default class SampleQueryList extends React.Component {
         }
       })
       .catch((error) => {
-        const isCancelled =
-          error?.data?.message === REQUEST_CANCELLED_ERROR ||
-          error?.message === REQUEST_CANCELLED_ERROR ||
-          axios.isCancel(error)
-
-        if (!isCancelled) {
+        if (!isAbortError(error)) {
           console.error(error)
         }
 
-        if (this._isMounted && !isCancelled) {
+        if (this._isMounted && !isAbortError(error)) {
           this.props.onSuggestionListResponse()
           return this.setState({ loading: false, error })
         }

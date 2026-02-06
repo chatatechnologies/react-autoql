@@ -17,6 +17,7 @@ import {
   authenticationDefault,
   getAuthentication,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import { Radio } from '../Radio'
@@ -193,15 +194,16 @@ export default class FilterLockPopover extends React.Component {
   fetchSuggestions = ({ value }) => {
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
-      this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
+      this.axiosSource.controller?.abort(REQUEST_CANCELLED_ERROR)
     }
 
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = createCancelPair()
 
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -230,7 +232,7 @@ export default class FilterLockPopover extends React.Component {
         })
       })
       .catch((error) => {
-        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        if (!isAbortError(error)) {
           console.error(error)
         }
 

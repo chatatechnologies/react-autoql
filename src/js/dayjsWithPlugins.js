@@ -29,7 +29,7 @@ dayjs.extend(customParseFormat)
   // Use dynamic import instead of require to support webpack
   // Load locale asynchronously - dayjs will work with default locale until loaded
   import(`dayjs/locale/${specificLanguageCode}.js`)
-    .then((locale) => {
+    .then(() => {
       dayjs.locale(specificLanguageCode)
     })
     .catch(() => {

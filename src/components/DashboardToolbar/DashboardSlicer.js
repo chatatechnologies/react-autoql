@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import PropTypes from 'prop-types'
-import axios from 'axios'
 import Autosuggest from 'react-autosuggest'
 import { fetchVLAutocomplete, REQUEST_CANCELLED_ERROR, getAuthentication, authenticationDefault } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { Icon } from '../Icon'
 
@@ -44,14 +44,17 @@ const DashboardSlicer = (props) => {
     }
   }, [getRecentSelectionsKey])
 
-  const saveRecentSelections = useCallback((selections) => {
-    try {
-      const key = getRecentSelectionsKey()
-      localStorage.setItem(key, JSON.stringify(selections))
-    } catch (error) {
-      console.error('Error saving recent selections:', error)
-    }
-  }, [getRecentSelectionsKey])
+  const saveRecentSelections = useCallback(
+    (selections) => {
+      try {
+        const key = getRecentSelectionsKey()
+        localStorage.setItem(key, JSON.stringify(selections))
+      } catch (error) {
+        console.error('Error saving recent selections:', error)
+      }
+    },
+    [getRecentSelectionsKey],
+  )
 
   const clearRecentSelections = useCallback(() => {
     setRecentSelections([])
@@ -63,76 +66,83 @@ const DashboardSlicer = (props) => {
     }
   }, [getRecentSelectionsKey])
 
-  const addToRecentSelections = useCallback((selection) => {
-    setRecentSelections((prev) => {
-      // Remove if already exists
-      const filtered = prev.filter((s) => {
-        return s.key !== selection.key || s.value !== selection.value
-      })
-
-      // Add to beginning
-      const updated = [selection, ...filtered].slice(0, MAX_RECENT_SELECTIONS)
-      saveRecentSelections(updated)
-      return updated
-    })
-  }, [saveRecentSelections])
-
-  const fetchSuggestions = useCallback(({ value, isSlicerSuggestion = false }) => {
-    // If already fetching autocomplete, cancel it
-    if (axiosSourceRef.current) {
-      axiosSourceRef.current.cancel(REQUEST_CANCELLED_ERROR)
-    }
-
-    setIsLoadingAutocomplete(true)
-    axiosSourceRef.current = axios.CancelToken?.source()
-
-    fetchVLAutocomplete({
-      ...getAuthentication(props.authentication),
-      suggestion: value,
-      context: props.context,
-      cancelToken: axiosSourceRef.current.token,
-    })
-      .then((response) => {
-        const body = response?.data?.data
-        const sortingArray = []
-        let suggestionsMatchArray = []
-        autoCompleteArrayRef.current = []
-        suggestionsMatchArray = body.matches || []
-
-        for (let i = 0; i < suggestionsMatchArray.length; i++) {
-          sortingArray.push(suggestionsMatchArray[i])
-        }
-
-        sortingArray.sort((a, b) => {
-          const aText = a.format_txt ?? a.keyword
-          const bText = b.format_txt ?? b.keyword
-          return aText.toUpperCase() < bText.toUpperCase() ? -1 : aText > bText ? 1 : 0
+  const addToRecentSelections = useCallback(
+    (selection) => {
+      setRecentSelections((prev) => {
+        // Remove if already exists
+        const filtered = prev.filter((s) => {
+          return s.key !== selection.key || s.value !== selection.value
         })
 
-        for (let idx = 0; idx < sortingArray.length; idx++) {
-          const anObject = {
-            name: sortingArray[idx],
-          }
-          autoCompleteArrayRef.current.push(anObject)
-        }
+        // Add to beginning
+        const updated = [selection, ...filtered].slice(0, MAX_RECENT_SELECTIONS)
+        saveRecentSelections(updated)
+        return updated
+      })
+    },
+    [saveRecentSelections],
+  )
 
-        // If this is for the slicer suggestion prop, store separately
-        if (isSlicerSuggestion) {
-          setSuggestedSlicerItems([...autoCompleteArrayRef.current])
-          setIsLoadingAutocomplete(false)
-        } else {
-          // Otherwise, store in regular suggestions (for user typing)
-          setSuggestions([...autoCompleteArrayRef.current])
-          setIsLoadingAutocomplete(false)
-        }
+  const fetchSuggestions = useCallback(
+    ({ value, isSlicerSuggestion = false }) => {
+      // If already fetching autocomplete, cancel it
+      if (axiosSourceRef.current) {
+        axiosSourceRef.current.controller?.abort(REQUEST_CANCELLED_ERROR)
+      }
+
+      setIsLoadingAutocomplete(true)
+      axiosSourceRef.current = createCancelPair()
+
+      fetchVLAutocomplete({
+        ...getAuthentication(props.authentication),
+        suggestion: value,
+        context: props.context,
+        signal: axiosSourceRef.current.controller.signal,
+        cancelToken: axiosSourceRef.current.cancelToken,
       })
-      .catch((error) => {
-        if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
-          console.error(error)
-        }
-        setIsLoadingAutocomplete(false)
-      })
-  }, [props.authentication, props.context])
+        .then((response) => {
+          const body = response?.data?.data
+          const sortingArray = []
+          let suggestionsMatchArray = []
+          autoCompleteArrayRef.current = []
+          suggestionsMatchArray = body.matches || []
+
+          for (const suggestion of suggestionsMatchArray) {
+            sortingArray.push(suggestion)
+          }
+
+          sortingArray.sort((a, b) => {
+            const aText = a.format_txt ?? a.keyword
+            const bText = b.format_txt ?? b.keyword
+            return aText.toUpperCase().localeCompare(bText.toUpperCase())
+          })
+
+          for (const item of sortingArray) {
+            const anObject = {
+              name: item,
+            }
+            autoCompleteArrayRef.current.push(anObject)
+          }
+
+          // If this is for the slicer suggestion prop, store separately
+          if (isSlicerSuggestion) {
+            setSuggestedSlicerItems([...autoCompleteArrayRef.current])
+            setIsLoadingAutocomplete(false)
+          } else {
+            // Otherwise, store in regular suggestions (for user typing)
+            setSuggestions([...autoCompleteArrayRef.current])
+            setIsLoadingAutocomplete(false)
+          }
+        })
+        .catch((error) => {
+          if (!isAbortError(error)) {
+            console.error(error)
+          }
+          setIsLoadingAutocomplete(false)
+        })
+    },
+    [props.authentication, props.context],
+  )
 
   // Initialize on mount
   useEffect(() => {
@@ -140,7 +150,7 @@ const DashboardSlicer = (props) => {
       setInputValue(props.value.format_txt || '')
     }
     loadRecentSelections()
-    
+
     // Fetch suggestions for slicerSuggestion prop in the background
     if (props.slicerSuggestion) {
       fetchSuggestions({ value: props.slicerSuggestion, isSlicerSuggestion: true })
@@ -166,7 +176,7 @@ const DashboardSlicer = (props) => {
   useEffect(() => {
     return () => {
       if (axiosSourceRef.current) {
-        axiosSourceRef.current.cancel(REQUEST_CANCELLED_ERROR)
+        axiosSourceRef.current.controller?.abort(REQUEST_CANCELLED_ERROR)
       }
       if (autocompleteTimerRef.current) {
         clearTimeout(autocompleteTimerRef.current)
@@ -174,29 +184,32 @@ const DashboardSlicer = (props) => {
     }
   }, [])
 
-  const onSuggestionsFetchRequested = useCallback(({ value }) => {
-    // If input is empty and no user typing, we're just showing suggested items - don't fetch
-    if (!value && !userTypedValueRef.current) {
-      return
-    }
+  const onSuggestionsFetchRequested = useCallback(
+    ({ value }) => {
+      // If input is empty and no user typing, we're just showing suggested items - don't fetch
+      if (!value && !userTypedValueRef.current) {
+        return
+      }
 
-    // Track when user starts typing
-    if (value && !userTypedValueRef.current) {
-      userTypedValueRef.current = value
-    }
+      // Track when user starts typing
+      if (value && !userTypedValueRef.current) {
+        userTypedValueRef.current = value
+      }
 
-    setIsLoadingAutocomplete(true)
+      setIsLoadingAutocomplete(true)
 
-    // Only debounce if a request has already been made
-    if (axiosSourceRef.current) {
-      clearTimeout(autocompleteTimerRef.current)
-      autocompleteTimerRef.current = setTimeout(() => {
+      // Only debounce if a request has already been made
+      if (axiosSourceRef.current) {
+        clearTimeout(autocompleteTimerRef.current)
+        autocompleteTimerRef.current = setTimeout(() => {
+          fetchSuggestions({ value, isSlicerSuggestion: false })
+        }, autocompleteDelay)
+      } else {
         fetchSuggestions({ value, isSlicerSuggestion: false })
-      }, autocompleteDelay)
-    } else {
-      fetchSuggestions({ value, isSlicerSuggestion: false })
-    }
-  }, [fetchSuggestions])
+      }
+    },
+    [fetchSuggestions],
+  )
 
   const onSuggestionsClearRequested = useCallback(() => {
     // Only clear user-typed suggestions, not the slicer suggestion items
@@ -219,45 +232,51 @@ const DashboardSlicer = (props) => {
     return newFilter
   }, [])
 
-  const getSuggestionValue = useCallback((sugg) => {
-    // If it's a recent selection (already a filter object), return it directly
-    if (sugg.format_txt || sugg.value) {
-      return sugg
-    }
-
-    // Otherwise, it's an autocomplete suggestion with a 'name' property
-    const name = sugg.name
-    const selectedFilter = createNewFilterFromSuggestion(name)
-    return selectedFilter
-  }, [createNewFilterFromSuggestion])
-
-  const onInputChange = useCallback((e, { newValue, method }) => {
-    if (method === 'up' || method === 'down') {
-      return
-    }
-
-    if (method === 'enter' || method === 'click') {
-      // newValue is the filter object returned from getSuggestionValue
-      const sessionFilterLock = newValue
-
-      // Add to recent selections
-      addToRecentSelections(sessionFilterLock)
-
-      setInputValue(sessionFilterLock.format_txt || '')
-      userTypedValueRef.current = null // Reset typing state
-      props.onChange(sessionFilterLock)
-    }
-
-    if (typeof e?.target?.value === 'string') {
-      setInputValue(e.target.value)
-      // Track when user starts typing
-      if (e.target.value && !userTypedValueRef.current) {
-        userTypedValueRef.current = e.target.value
-      } else if (!e.target.value) {
-        userTypedValueRef.current = null // Reset when cleared
+  const getSuggestionValue = useCallback(
+    (sugg) => {
+      // If it's a recent selection (already a filter object), return it directly
+      if (sugg.format_txt || sugg.value) {
+        return sugg
       }
-    }
-  }, [addToRecentSelections, props])
+
+      // Otherwise, it's an autocomplete suggestion with a 'name' property
+      const name = sugg.name
+      const selectedFilter = createNewFilterFromSuggestion(name)
+      return selectedFilter
+    },
+    [createNewFilterFromSuggestion],
+  )
+
+  const onInputChange = useCallback(
+    (e, { newValue, method }) => {
+      if (method === 'up' || method === 'down') {
+        return
+      }
+
+      if (method === 'enter' || method === 'click') {
+        // newValue is the filter object returned from getSuggestionValue
+        const sessionFilterLock = newValue
+
+        // Add to recent selections
+        addToRecentSelections(sessionFilterLock)
+
+        setInputValue(sessionFilterLock.format_txt || '')
+        userTypedValueRef.current = null // Reset typing state
+        props.onChange(sessionFilterLock)
+      }
+
+      if (typeof e?.target?.value === 'string') {
+        setInputValue(e.target.value)
+        // Track when user starts typing
+        if (e.target.value && !userTypedValueRef.current) {
+          userTypedValueRef.current = e.target.value
+        } else if (!e.target.value) {
+          userTypedValueRef.current = null // Reset when cleared
+        }
+      }
+    },
+    [addToRecentSelections, props],
+  )
 
   const onInputFocus = useCallback(() => {
     // Reset typing state when input is focused (if empty)
@@ -343,7 +362,7 @@ const DashboardSlicer = (props) => {
       // When user is typing, show "Related to..." section
       const hasSuggestions = !!suggestions?.length && doneLoading
       const noSuggestions = !suggestions?.length && doneLoading && inputValue
-      
+
       if (hasSuggestions) {
         sections.push({
           title: `Related to "${inputValue}"`,
@@ -419,7 +438,15 @@ const DashboardSlicer = (props) => {
 DashboardSlicer.propTypes = {
   authentication: authenticationType,
   context: PropTypes.string,
-  value: PropTypes.shape({}),
+  value: PropTypes.shape({
+    format_txt: PropTypes.string,
+    value: PropTypes.string,
+    show_message: PropTypes.string,
+    key: PropTypes.string,
+    filter_type: PropTypes.string,
+    canonical_key: PropTypes.string,
+    isSession: PropTypes.bool,
+  }),
   onChange: PropTypes.func,
   placeholder: PropTypes.string,
   dashboardId: PropTypes.string,

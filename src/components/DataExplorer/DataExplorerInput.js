@@ -14,6 +14,7 @@ import {
   parseJwt,
   normalizeString,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import { SubjectName } from './SubjectName'
@@ -156,7 +157,7 @@ export default class DataExplorerInput extends React.Component {
       return []
     }
 
-    var reg = new RegExp(`^${input.toLowerCase()}`)
+    const reg = new RegExp(`^${input.toLowerCase()}`)
     return this.state.allSubjects.filter((subject) => {
       const term = subject.displayName.toLowerCase()
       if (term.match(reg)) {
@@ -294,7 +295,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   requestSuggestions = (value) => {
@@ -302,12 +303,13 @@ export default class DataExplorerInput extends React.Component {
 
     clearTimeout(this.autoCompleteTimer)
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = createCancelPair()
     this.autoCompleteTimer = setTimeout(() => {
       fetchDataExplorerAutocomplete({
         suggestion: value,
         ...this.props.authentication,
-        cancelToken: this.axiosSource?.token,
+        signal: this.axiosSource?.controller.signal,
+        cancelToken: this.axiosSource?.cancelToken,
       })
         .then((suggestions) => {
           this.setState({
@@ -316,7 +318,7 @@ export default class DataExplorerInput extends React.Component {
           })
         })
         .catch((error) => {
-          if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+          if (!isAbortError(error)) {
             console.error(error)
             this.setState({ suggestions: [], loadingAutocomplete: false })
           }
@@ -407,9 +409,7 @@ export default class DataExplorerInput extends React.Component {
         suggestions: this.state.allSubjects,
       })
     } else if (hasSuggestions) {
-      const title = this.props.disableColumnSelection
-        ? 'Topics'
-        : `Related to "${this.state.loadingAutocompleteText}"`
+      const title = this.props.disableColumnSelection ? 'Topics' : `Related to "${this.state.loadingAutocompleteText}"`
       sections.push({
         title,
         suggestions: this.state.suggestions,

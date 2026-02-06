@@ -94,6 +94,17 @@ export default class Legend extends React.Component {
     height: PropTypes.number,
     width: PropTypes.number,
     onRenderComplete: PropTypes.func,
+    queryID: PropTypes.string,
+    chartTooltipID: PropTypes.string,
+    chartPadding: PropTypes.number,
+    outerWidth: PropTypes.number,
+    outerHeight: PropTypes.number,
+    isAggregated: PropTypes.bool,
+    columns: PropTypes.arrayOf(PropTypes.object),
+    colorScale: PropTypes.func,
+    hasSecondAxis: PropTypes.bool,
+    colorScale2: PropTypes.func,
+    numberColumnIndices2: PropTypes.arrayOf(PropTypes.number),
   }
 
   static defaultProps = {

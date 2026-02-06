@@ -31,6 +31,15 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 
 import './ChatMessage.scss'
 
+// Custom components for markdown rendering
+const MARKDOWN_COMPONENTS = {
+  ul: ({ children }) => <ul>{children}</ul>,
+  li: ({ children }) => <li>{children}</li>,
+  strong: ({ children }) => <strong>{children}</strong>,
+  em: ({ children }) => <em>{children}</em>,
+  br: () => <br />,
+}
+
 export default class ChatMessage extends React.Component {
   constructor(props) {
     super(props)
@@ -74,7 +83,19 @@ export default class ChatMessage extends React.Component {
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
     onSuggestionClick: PropTypes.func,
-    response: PropTypes.shape({}),
+    response: PropTypes.shape({
+      status: PropTypes.number,
+      data: PropTypes.shape({
+        data: PropTypes.shape({
+          rows: PropTypes.array,
+          columns: PropTypes.array,
+          text: PropTypes.string,
+          interpretation: PropTypes.string,
+          query_id: PropTypes.string,
+          isDataPreview: PropTypes.bool,
+        }),
+      }),
+    }),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
@@ -97,6 +118,7 @@ export default class ChatMessage extends React.Component {
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    isChataThinking: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
   }
 
@@ -130,6 +152,7 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
     enableMagicWand: false,
+    isChataThinking: false,
   }
 
   componentDidMount = () => {
@@ -329,25 +352,13 @@ export default class ChatMessage extends React.Component {
     // Convert content to string if it's not already
     let contentStr = typeof content === 'string' ? content : String(content)
 
-    // Replace literal "\n" strings with actual newlines if they exist
+    // Replace literal "\\n" strings with actual newlines if they exist
     // (in case the API returns escaped newlines)
-    contentStr = contentStr.replace(/\\n/g, '\n')
+    contentStr = contentStr.replaceAll('\\n', '\n')
 
     // Pass content directly to react-markdown without any manipulation
     return (
-      <ReactMarkdown
-        remarkPlugins={[remarkBreaks]}
-        components={{
-          // Handle lists
-          ul: ({ children }) => <ul>{children}</ul>,
-          li: ({ children }) => <li>{children}</li>,
-          // Handle formatting
-          strong: ({ children }) => <strong>{children}</strong>,
-          em: ({ children }) => <em>{children}</em>,
-          // Handle line breaks (remark-breaks will create these automatically)
-          br: () => <br />,
-        }}
-      >
+      <ReactMarkdown remarkPlugins={[remarkBreaks]} components={MARKDOWN_COMPONENTS}>
         {contentStr}
       </ReactMarkdown>
     )
@@ -375,13 +386,13 @@ export default class ChatMessage extends React.Component {
 
       const response = await fetchLLMSummary({
         data: {
-          additional_context:{
+          additional_context: {
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            focus_prompt: ""
+            focus_prompt: '',
           },
           rows: filteredRows,
-          columns: this.props.response.data.data.columns
+          columns: this.props.response.data.data.columns,
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -446,18 +457,37 @@ export default class ChatMessage extends React.Component {
       const text = this.markdownContentRef.current.innerText
 
       // Copy as plain text using Clipboard API
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
-      } else {
-        // Fallback for older browsers
+      // Try modern Clipboard API first
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text)
+          this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+          return
+        }
+      } catch (err) {
+        // swallow and fall back
+      }
+
+      // Fallback for older browsers: use a temporary textarea + execCommand
+      try {
         const textarea = document.createElement('textarea')
         textarea.value = text
+        textarea.style.position = 'fixed'
+        textarea.style.left = '-9999px'
+        textarea.style.top = '0'
         document.body.appendChild(textarea)
+        textarea.focus()
         textarea.select()
-        document.execCommand('copy')
+        const successful = document.execCommand('copy')
         document.body.removeChild(textarea)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        if (successful) {
+          this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        } else {
+          throw new Error('Copy command was unsuccessful')
+        }
+      } catch (fallbackError) {
+        console.error('Failed to copy summary to clipboard:', fallbackError)
+        this.props.onErrorCallback?.(fallbackError)
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)

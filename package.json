@@ -63,7 +63,7 @@
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
     "autoql-fe-utils": "1.11.0",
-    "axios": "1.4.0",
+    "axios": "1.13.4",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
     "d3-array": "2.3.3",
@@ -159,12 +159,15 @@
     "npm-watch": "0.11.0",
     "postcss": "8.4.31",
     "prettier": "2.7.1",
+    "react": "16.14.0",
+    "react-dom": "16.14.0",
     "rimraf": "2.7.1",
     "rollup": "2.79.2",
     "rollup-plugin-gzip": "3.0.0",
     "rollup-plugin-scss": "4.0.0",
     "rollup-plugin-svg": "2.0.0",
     "sass": "1.67.0"
+
   },
   "peerDependencies": {
     "react": ">=16.8.1",

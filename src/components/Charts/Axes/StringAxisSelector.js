@@ -61,11 +61,9 @@ export default class StringAxisSelector extends React.Component {
         if (col.groupable && isColumnStringType(col)) {
           columnIndices.push(i)
         }
-      } else {
+      } else if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && isColumnStringType(col))) {
         // Original logic: include columns not on number axes, or groupable string columns
-        if ((!isOnNumberAxis && !isOnSecondNumberAxis) || (col.groupable && isColumnStringType(col))) {
-          columnIndices.push(i)
-        }
+        columnIndices.push(i)
       }
     })
     return columnIndices
@@ -813,8 +811,6 @@ StringAxisSelector.propTypes = {
   dateColumnsOnly: PropTypes.bool,
   chartContainerRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
   hidden: PropTypes.bool,
-  useLegendHandler: PropTypes.bool,
-  changeLegendColumnIndex: PropTypes.func,
   changeStringColumnIndex: PropTypes.func,
   closeSelector: PropTypes.func,
   scale: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),

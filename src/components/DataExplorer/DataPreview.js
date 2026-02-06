@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
 import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { SelectableTable } from '../SelectableTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -74,12 +75,12 @@ export default class DataPreview extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   getDataPreview = () => {
     this.cancelCurrentRequest()
-    this.axiosSource = axios.CancelToken?.source()
+    this.axiosSource = createCancelPair()
 
     this.setState({ loading: true, error: undefined, dataPreview: undefined })
     fetchDataPreview({
@@ -88,7 +89,8 @@ export default class DataPreview extends React.Component {
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -106,7 +108,7 @@ export default class DataPreview extends React.Component {
       })
       .catch((error) => {
         if (this._isMounted) {
-          if (error?.message !== REQUEST_CANCELLED_ERROR) {
+          if (!isAbortError(error)) {
             console.error(error)
             this.setState({ loading: false, error: error?.response?.data })
           }

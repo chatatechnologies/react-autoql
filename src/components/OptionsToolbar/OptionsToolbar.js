@@ -58,7 +58,6 @@ export class OptionsToolbar extends React.Component {
     enableFilterBtn: PropTypes.bool,
     enableCopyBtn: PropTypes.bool,
     isMarkdownMessage: PropTypes.bool,
-    markdownContent: PropTypes.string,
     onCopyMarkdown: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     onErrorCallback: PropTypes.func,
@@ -660,8 +659,13 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
-    const isMarkdownOnly = this.props.isMarkdownMessage && !shouldShowButton.showFilterButton && !shouldShowButton.showHideColumnsButton && !shouldShowButton.showReportProblemButton && !shouldShowButton.showRefreshDataButton
-    
+    const isMarkdownOnly =
+      this.props.isMarkdownMessage &&
+      !shouldShowButton.showFilterButton &&
+      !shouldShowButton.showHideColumnsButton &&
+      !shouldShowButton.showReportProblemButton &&
+      !shouldShowButton.showRefreshDataButton
+
     return (
       <ErrorBoundary>
         <div
@@ -745,10 +749,10 @@ export class OptionsToolbar extends React.Component {
       const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
-      
+
       // For markdown messages, only show copy and delete buttons
       const isMarkdownOnly = props.isMarkdownMessage && props.onCopyMarkdown
-      
+
       shouldShowButton = {
         showFilterButton:
           !isMarkdownOnly &&
@@ -768,23 +772,22 @@ export class OptionsToolbar extends React.Component {
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton: !isMarkdownOnly && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
-        showReportProblemButton: !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+        showReportProblemButton:
+          !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           !isMarkdownOnly &&
-          (isMobile
-            ? false
-            : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
+          (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
         showRefreshDataButton: false,
       }
 
       // Don't show more options button if it's a markdown-only message
-      shouldShowButton.showMoreOptionsButton = !isMarkdownOnly && (
-        shouldShowButton.showCopyButton ||
-        shouldShowButton.showSQLButton ||
-        shouldShowButton.showCreateNotificationIcon ||
-        shouldShowButton.showSaveAsCSVButton ||
-        shouldShowButton.showSaveAsPNGButton
-      )
+      shouldShowButton.showMoreOptionsButton =
+        !isMarkdownOnly &&
+        (shouldShowButton.showCopyButton ||
+          shouldShowButton.showSQLButton ||
+          shouldShowButton.showCreateNotificationIcon ||
+          shouldShowButton.showSaveAsCSVButton ||
+          shouldShowButton.showSaveAsPNGButton)
     } catch (error) {
       console.error(error)
     }

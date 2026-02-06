@@ -19,6 +19,7 @@ import {
   formatElement,
   getDataFormatting,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import DataPreview from './DataPreview'
 import SampleQueryList from './SampleQueryList'
@@ -99,7 +100,7 @@ export default class DataExplorer extends React.Component {
         fetchSubjectListV2({
           ...this.props.authentication,
           valueLabel: this.state.selectedSubject.valueLabel.canonical,
-          cancelToken: this.axiosSourceSubjectList?.token,
+          signal: this.axiosSourceSubjectList?.signal,
         })
           .then((subjects) => {
             const subjectList = []
@@ -117,7 +118,7 @@ export default class DataExplorer extends React.Component {
           })
           .catch((error) => {
             console.error(error)
-            if (this.state.selectedSubject && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+            if (this.state.selectedSubject && !isAbortError(error)) {
               this.setState({ loadingSubjects: false, subjectListError: error })
             }
           })
@@ -141,24 +142,24 @@ export default class DataExplorer extends React.Component {
   }
 
   cancelValidation = () => {
-    this.axiosSourceValidation?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceValidation?.controller?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceValidation = undefined
   }
 
   cancelFetchSubjectList = () => {
-    this.axiosSourceSubjectList?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSourceSubjectList?.controller?.abort(REQUEST_CANCELLED_ERROR)
     this.axiosSourceSubjectList = undefined
   }
 
   validateSearchTerm = (term) => {
-    this.axiosSourceValidation = axios.CancelToken?.source?.()
+    this.axiosSourceValidation = createCancelPair()
 
     this.setState({ validating: true })
 
     runQueryValidation({
       ...getAuthentication(this.props.authentication),
       text: term.displayName,
-      cancelToken: this.axiosSourceValidation?.token,
+      signal: this.axiosSourceValidation?.signal,
     })
       .then((response) => {
         if (this._isMounted) {
@@ -171,7 +172,7 @@ export default class DataExplorer extends React.Component {
       })
       .catch((error) => {
         console.error(error)
-        if (this._isMounted && error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+        if (this._isMounted && !isAbortError(error)) {
           this.setState({ validating: false, validationError: error })
         }
       })

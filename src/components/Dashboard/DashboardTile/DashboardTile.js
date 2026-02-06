@@ -19,11 +19,8 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
-  QueryErrorTypes,
-  transformQueryResponse,
-  fetchSuggestions,
-  isError500Type,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../../utils/abortUtils'
 
 import { Icon } from '../../Icon'
 import { Button } from '../../Button'
@@ -169,8 +166,20 @@ export class DashboardTile extends React.Component {
       chartControls: PropTypes.object,
       secondChartControls: PropTypes.object,
       legendFilterConfig: PropTypes.any,
-      queryResponse: PropTypes.shape({}),
-      secondQueryResponse: PropTypes.shape({}),
+      queryResponse: PropTypes.shape({
+        data: PropTypes.shape({
+          data: PropTypes.shape({
+            columns: PropTypes.array,
+          }),
+        }),
+      }),
+      secondQueryResponse: PropTypes.shape({
+        data: PropTypes.shape({
+          data: PropTypes.shape({
+            columns: PropTypes.array,
+          }),
+        }),
+      }),
       defaultSelectedSuggestion: PropTypes.string,
       secondDefaultSelectedSuggestion: PropTypes.string,
       queryValidationSelections: PropTypes.any,
@@ -311,8 +320,8 @@ export class DashboardTile extends React.Component {
   }
 
   cancelAllQueries = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -441,7 +450,7 @@ export class DashboardTile extends React.Component {
   }
 
   endTopQuery = ({ response }) => {
-    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+    if (!isAbortError(response)) {
       const isError = this.hasError(response)
 
       // Build params to set - always include queryResponse
@@ -477,9 +486,9 @@ export class DashboardTile extends React.Component {
             tableFilters:
               currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
             secondTableFilters:
-              currentTile.secondTableFilters != null
-                ? currentTile.secondTableFilters
-                : this.savedTileConfig.secondTableFilters,
+              currentTile.secondTableFilters === null || currentTile.secondTableFilters === undefined
+                ? this.savedTileConfig.secondTableFilters
+                : currentTile.secondTableFilters,
             axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
             secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
             networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
@@ -508,7 +517,7 @@ export class DashboardTile extends React.Component {
   }
 
   endBottomQuery = ({ response }) => {
-    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
+    if (!isAbortError(response)) {
       const isError = this.hasError(response)
 
       // Build params to set - always include secondQueryResponse
@@ -578,7 +587,7 @@ export class DashboardTile extends React.Component {
       const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
-      const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
+      const signal = useSecondAxiosSource ? this.secondAxiosSource?.signal : this.axiosSource?.signal
 
       const requestData = {
         ...getAuthentication(this.props.authentication),
@@ -597,7 +606,7 @@ export class DashboardTile extends React.Component {
         source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
-        cancelToken,
+        signal,
         pageSize,
         query,
       }
@@ -637,11 +646,8 @@ export class DashboardTile extends React.Component {
     const propsDataConfig = this.props.tile.dataConfig
     const hasValidPropsDataConfig =
       propsDataConfig && (propsDataConfig.tableConfig != null || propsDataConfig.pivotTableConfig != null)
-    const dataConfig = queryChanged
-      ? undefined
-      : hasValidPropsDataConfig
-      ? propsDataConfig
-      : this.savedTileConfig.dataConfig
+    const fallbackDataConfig = hasValidPropsDataConfig ? propsDataConfig : this.savedTileConfig.dataConfig
+    const dataConfig = queryChanged ? undefined : fallbackDataConfig
 
     const columns = queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns
     const tableFilters = queryChanged ? undefined : this.props.tile.tableFilters || this.savedTileConfig.tableFilters
@@ -678,7 +684,7 @@ export class DashboardTile extends React.Component {
         return this.endTopQuery({ response })
       })
       .catch((response) => {
-        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
+        if (isAbortError(response)) {
           return undefined
         }
 
@@ -730,7 +736,7 @@ export class DashboardTile extends React.Component {
     })
       .then((response) => this.endBottomQuery({ response }))
       .catch((response) => {
-        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
+        if (isAbortError(response)) {
           return undefined
         }
 
@@ -773,12 +779,12 @@ export class DashboardTile extends React.Component {
     isCachedRefresh,
   } = {}) => {
     // If tile is already processing, cancel current process
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
+    this.secondAxiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
 
-    // Create new cancel tokens for each query
-    this.axiosSource = axios.CancelToken?.source()
-    this.secondAxiosSource = axios.CancelToken.source()
+    // Create new abort controllers for each query (paired with axios cancelToken)
+    this.axiosSource = createCancelPair()
+    this.secondAxiosSource = createCancelPair()
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
     const q2 = secondQuery || this.props.tile.secondDefaultSelectedSuggestion || this.state.secondQuery
@@ -1522,10 +1528,14 @@ export class DashboardTile extends React.Component {
           // Compare tile.columns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
           let columnOverrides = dataConfig?.columnOverrides || {}
-          
+
           // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
-          if (!dataConfig?.columnOverrides && this.props.tile?.columns && this.props.tile?.queryResponse?.data?.data?.columns) {
+          if (
+            !dataConfig?.columnOverrides &&
+            this.props.tile?.columns &&
+            this.props.tile?.queryResponse?.data?.data?.columns
+          ) {
             const savedColumns = this.props.tile.columns
             const originalColumns = this.props.tile.queryResponse.data.data.columns
             savedColumns.forEach((savedCol) => {
@@ -1656,7 +1666,7 @@ export class DashboardTile extends React.Component {
           // Compare tile.secondColumns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
           let columnOverrides = dataConfig?.columnOverrides || {}
-          
+
           // Fallback: Extract columnOverrides from tile.secondColumns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
           const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse

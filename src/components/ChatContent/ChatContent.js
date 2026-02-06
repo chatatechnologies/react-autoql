@@ -5,13 +5,13 @@ import _has from 'lodash.has'
 import _isEqual from 'lodash.isequal'
 import { isMobile } from 'react-device-detect'
 import {
-  REQUEST_CANCELLED_ERROR,
   UNAUTHENTICATED_ERROR,
   GENERAL_QUERY_ERROR,
   dataFormattingDefault,
   getAuthentication,
   fetchSubjectList,
 } from 'autoql-fe-utils'
+import { isAbortError } from '../../utils/abortUtils'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
@@ -68,6 +68,7 @@ export default class ChatContent extends React.Component {
     hideChatBarAfterInitialResponse: PropTypes.bool,
     executeQuery: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -312,7 +313,7 @@ export default class ChatContent extends React.Component {
     if (this._isMounted) {
       this.setState({ isQueryRunning: false, isInputDisabled: false })
 
-      if (response?.data?.message === REQUEST_CANCELLED_ERROR && this.state.isClearingAllMessages) {
+      if (isAbortError(response) && this.state.isClearingAllMessages) {
         this.setState({
           isClearingAllMessages: false,
           isQueryRunning: false,

@@ -24,11 +24,12 @@ import {
   setColumnVisibility,
   sortDataByColumn,
   filterDataByColumn,
-  getAuthentication,
   getAutoQLConfig,
   runQueryOnly,
   TranslationTypes,
+  formatFiltersForTabulator,
 } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import ReactDOMServer from 'react-dom/server'
@@ -195,6 +196,7 @@ export default class ChataTable extends React.Component {
     originalColumns: PropTypes.arrayOf(PropTypes.shape({})),
     // Pivot table sizing info
     maxColumns: PropTypes.number,
+    drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -232,6 +234,7 @@ export default class ChataTable extends React.Component {
     originalColumns: [],
     // Pivot table sizing info
     maxColumns: 100,
+    drilldownFilters: [],
   }
 
   componentDidMount = () => {
@@ -663,7 +666,7 @@ export default class ChataTable extends React.Component {
   }
 
   cancelCurrentRequest = () => {
-    this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    this.axiosSource?.controller?.abort(REQUEST_CANCELLED_ERROR)
   }
 
   ajaxRequesting = (props, params) => {
@@ -700,7 +703,7 @@ export default class ChataTable extends React.Component {
       const nextTableParamsFormatted = formatTableParams(params, this.props.columns)
 
       this.cancelCurrentRequest()
-      this.axiosSource = axios.CancelToken?.source()
+      this.axiosSource = createCancelPair()
       this.tableParams = params
 
       if (params?.page > 1) {
@@ -721,7 +724,7 @@ export default class ChataTable extends React.Component {
         const responseWrapper = await this.queryFn({
           tableFilters: nextTableParamsFormatted?.filters,
           orders: nextTableParamsFormatted?.sorters,
-          cancelToken: this.axiosSource.token,
+          signal: this.axiosSource?.signal,
         })
 
         const currentScrollValue = this.ref?.tabulator?.rowManager?.element?.scrollLeft
@@ -773,7 +776,7 @@ export default class ChataTable extends React.Component {
 
       return response
     } catch (error) {
-      if (error?.data?.message !== REQUEST_CANCELLED_ERROR) {
+      if (!isAbortError(error)) {
         console.error(error)
         this.clearLoadingIndicators()
       } else {
@@ -1211,7 +1214,17 @@ export default class ChataTable extends React.Component {
       const allColumns = this.ref?.tabulator?.getColumns?.()
       if (!allColumns) return
 
-      const filters = this.tableParams?.filter ?? []
+      const drilldownFilters = formatFiltersForTabulator(this.props.drilldownFilters, this.props.columns)
+      const currentFilters = this.tableParams?.filter ?? []
+      const filters = currentFilters.filter((filter) => {
+        return !drilldownFilters.some(
+          (drilldownFilter) =>
+            drilldownFilter.field === filter.field &&
+            drilldownFilter.value === filter.value &&
+            drilldownFilter.type === filter.type,
+        )
+      })
+
       const filteredFields = new Set(filters.map((f) => f?.field).filter(Boolean))
 
       if (!filteredFields.size) {

@@ -411,17 +411,19 @@ describe('CustomColumnModal edge cases', () => {
       { type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.PERCENT_OF_TOTAL, column: { name: 'colA' } },
     ]
     const protoPercentTotal = inst.buildProtoTableColumn({ columnFnArray: fnPercentTotal })
-    const normPercentTotal = protoPercentTotal.replace(/\s+/g, '')
-    expect(normPercentTotal).toContain(`COALESCE(${`colA`}/NULLIF(SUM(${`colA`})OVER(),0),0)*100`)
+    const normPercentTotal = protoPercentTotal.replaceAll(/\s+/g, '')
+    const colAPercentTotal = 'colA'
+    expect(normPercentTotal).toContain(`COALESCE(${colAPercentTotal}/NULLIF(SUM(${colAPercentTotal})OVER(),0),0)*100`)
 
     // CUMULATIVE_PERCENT
     const fnCumPercent = [
       { type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.CUMULATIVE_PERCENT, column: { name: 'colA' } },
     ]
     const protoCumPercent = inst.buildProtoTableColumn({ columnFnArray: fnCumPercent })
-    const normCumPercent = protoCumPercent.replace(/\s+/g, '')
-    expect(normCumPercent).toContain(`COALESCE((SUM(${'colA'})OVER(`)
-    expect(normCumPercent).toContain(`NULLIF(SUM(${'colA'})OVER(),0)),0)*100`)
+    const normCumPercent = protoCumPercent.replaceAll(/\s+/g, '')
+    const colACumulativePercent = 'colA'
+    expect(normCumPercent).toContain(`COALESCE((SUM(${colACumulativePercent})OVER(`)
+    expect(normCumPercent).toContain(`NULLIF(SUM(${colACumulativePercent})OVER(),0)),0)*100`)
 
     // SUM-derived percent: find a window function whose nextSelector is SUM
     const sumFnKey = Object.keys(WINDOW_FUNCTIONS).find(
@@ -430,7 +432,7 @@ describe('CustomColumnModal edge cases', () => {
     if (sumFnKey) {
       const fnSumDerived = [{ type: CustomColumnTypes.FUNCTION, fn: sumFnKey, column: { name: 'SUM(colB)' } }]
       const protoSumDerived = inst.buildProtoTableColumn({ columnFnArray: fnSumDerived })
-      const normSumDerived = protoSumDerived.replace(/\s+/g, '')
+      const normSumDerived = protoSumDerived.replaceAll(/\s+/g, '')
       // expect denominator to be NULLIF(SUM(colB),0) and numerator to reference inner column 'colB'
       expect(normSumDerived).toContain(`COALESCE((colB/NULLIF(SUM(colB),0)),0)*100`)
     }
@@ -462,7 +464,7 @@ describe('CustomColumnModal edge cases', () => {
       },
       true,
     )
-    const norm = orderWithRange.replace(/\s+/g, ' ')
+    const norm = orderWithRange.replaceAll(/\s+/g, ' ')
     expect(norm).toContain('ORDER BY colA DESC')
     expect(norm).toContain('ROWS')
     expect(norm).toContain('Between')

@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import debounce from 'lodash.debounce'
 import axios from 'axios'
 import { fetchVLAutocomplete, getAuthentication } from 'autoql-fe-utils'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 import { Input } from '../Input'
 import { Popover } from '../Popover'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
@@ -25,7 +26,7 @@ class DashboardFilterAutocomplete extends Component {
       highlightedIndex: -1,
     }
 
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource = createCancelPair()
 
     // Wrap fetchSuggestions with debounce 300ms
     this.fetchSuggestionsDebounced = debounce(this.fetchSuggestions, 300)
@@ -37,7 +38,7 @@ class DashboardFilterAutocomplete extends Component {
   }
 
   componentWillUnmount() {
-    this.axiosSource.cancel('Component unmounted')
+    this.axiosSource.controller?.abort('Component unmounted')
     this.fetchSuggestionsDebounced.cancel()
   }
 
@@ -191,8 +192,8 @@ class DashboardFilterAutocomplete extends Component {
     }
 
     // Cancel previous axios request
-    this.axiosSource.cancel('Operation canceled due to new request.')
-    this.axiosSource = axios.CancelToken.source()
+    this.axiosSource.controller?.abort('Operation canceled due to new request.')
+    this.axiosSource = createCancelPair()
 
     this.setState({ loading: true })
 
@@ -201,7 +202,8 @@ class DashboardFilterAutocomplete extends Component {
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      cancelToken: this.axiosSource.token,
+      signal: this.axiosSource.signal ?? this.axiosSource.controller.signal,
+      cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
         const body = response?.data?.data
@@ -219,7 +221,7 @@ class DashboardFilterAutocomplete extends Component {
         })
       })
       .catch((error) => {
-        if (axios.isCancel(error)) return
+        if (isAbortError(error)) return
         this.setState({ error: 'Error fetching suggestions', loading: false })
       })
   }
