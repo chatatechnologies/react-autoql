@@ -12,6 +12,7 @@ import {
   isDrilldown,
   fetchLLMSummary,
   MAX_DATA_PAGE_SIZE,
+  isSingleValueResponse,
 } from 'autoql-fe-utils'
 
 import ReactMarkdown from 'react-markdown'
@@ -386,7 +387,7 @@ export default class ChatMessage extends React.Component {
     }
 
     // Set loading state for this specific message
-    this.setState({ isGeneratingSummary: true })
+    this.setState({ isGeneratingSummary: true, focusError: null })
     // Also set loading state in parent ChatContent to show loading dots at bottom
     this.props.setGeneratingSummary?.(true)
 
@@ -399,7 +400,7 @@ export default class ChatMessage extends React.Component {
           additional_context:{
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            focus_prompt: ""
+            focus_prompt: this.state.focusPrompt.trim() || ""
           },
           rows: filteredRows,
           columns: this.props.response.data.data.columns
@@ -429,6 +430,7 @@ export default class ChatMessage extends React.Component {
           content: summary,
           type: 'markdown',
           isResponse: true,
+          focusPromptUsed: this.state.focusPrompt.trim() || undefined,
           summaryResponseData: {
             rows: filteredRows,
             columns: this.props.response.data.data.columns,
@@ -457,6 +459,9 @@ export default class ChatMessage extends React.Component {
         error?.message ||
         'Failed to generate summary. Please try again.'
 
+      // Set error state for dropdown display
+      this.setState({ focusError: errorMessage })
+
       // Add error message as a new message bubble
       this.props.addMessageToDM?.({
         content: errorMessage,
@@ -482,10 +487,8 @@ export default class ChatMessage extends React.Component {
   handleFocusPromptKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      const { focusPrompt, isFocusingSummary } = this.state
-      if (focusPrompt.trim() && !isFocusingSummary) {
-        this.handleFocusSummary()
-      }
+      this.handleGenerateSummary()
+      // Popover will close automatically via Button component
     }
   }
 
@@ -622,69 +625,8 @@ export default class ChatMessage extends React.Component {
   }
 
   renderSummaryFooter = () => {
-    // Show focus section for summary messages (markdown type)
-    // Check if we have summaryResponseData (from props or state) - this indicates it's a summary message
-    const hasSummaryResponseData = !!(this.props.summaryResponseData || this.state.summaryResponseData)
-    if ((this.props.type === 'markdown' || this.props.type === 'md') && hasSummaryResponseData) {
-      const { focusPrompt, isFocusingSummary, originalSummary, focusError } = this.state
-      const hasOriginalSummary = !!originalSummary
-      const showReset = hasOriginalSummary && this.props.content !== originalSummary
-
-      return (
-        <div className='chat-message-summary-footer'>
-          <div className='chat-message-summary-focus-section'>
-            <div className='chat-message-summary-focus-content'>
-              <div className='chat-message-summary-focus-header'>
-                <label className='chat-message-summary-focus-label'>
-                  Need a different perspective?
-                </label>
-                <div className='chat-message-summary-focus-description'>
-                  Enter a specific topic or theme to generate a new summary tailored to that focus area
-                </div>
-              </div>
-              <div className='chat-message-summary-focus-input-group'>
-                <Input
-                  value={focusPrompt}
-                  onChange={this.handleFocusPromptChange}
-                  onKeyDown={this.handleFocusPromptKeyDown}
-                  placeholder='e.g., sales growth trends'
-                  maxLength={100}
-                  disabled={isFocusingSummary}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  type='primary'
-                  size='medium'
-                  style={{ marginBottom: '8px' }}
-                  onClick={this.handleFocusSummary}
-                  disabled={!focusPrompt.trim() || isFocusingSummary}
-                  loading={isFocusingSummary}
-                  icon='refresh'
-                >
-                  Regenerate
-                </Button>
-                {showReset && (
-                  <Button
-                    type='default'
-                    size='medium'
-                    onClick={this.handleResetSummary}
-                    disabled={isFocusingSummary}
-                    style={{ marginLeft: '8px' }}
-                  >
-                    Reset
-                  </Button>
-                )}
-              </div>
-              {focusError && (
-                <div className='chat-message-summary-focus-error'>
-                  {focusError}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )
-    }
+    // Focus section has been moved to the dropdown on the Generate Summary button
+    // This method is kept for potential future use
 
     // Only show footer for response messages with data (for Generate Summary button)
     if (
@@ -693,7 +635,8 @@ export default class ChatMessage extends React.Component {
       !this.props.response?.data?.data?.rows ||
       !this.props.response?.data?.data?.columns ||
       this.props.type === 'text' ||
-      this.props.isCSVProgressMessage
+      this.props.isCSVProgressMessage ||
+      isSingleValueResponse(this.props.response)
     ) {
       return null
     }
@@ -712,21 +655,78 @@ export default class ChatMessage extends React.Component {
       ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
       : undefined
 
+    const { focusPrompt, focusError } = this.state
+
     return (
       <div className='chat-message-summary-footer'>
         <div
+          className='chat-message-summary-button-group'
           data-tooltip-html={tooltipContent}
           data-tooltip-id={tooltipContent ? tooltipId : undefined}
-          style={{ display: 'inline-block' }}
         >
           <Button
             type='default'
-            size='large'
+            size='medium'
             icon='magic-wand'
             onClick={this.handleGenerateSummary}
             disabled={isDisabled}
             loading={isGenerating}
-            border={false}
+            border={true}
+            splitButton={{
+              popoverContent: ({ closePopover }) => (
+                <div className='chat-message-summary-dropdown-content'>
+                  <div className='chat-message-summary-dropdown-header'>
+                    <label className='chat-message-summary-dropdown-label'>
+                      Focus on a specific topic (optional)
+                    </label>
+                    <div className='chat-message-summary-dropdown-description'>
+                      Enter a topic to generate a summary tailored to that focus area
+                    </div>
+                  </div>
+                  <div className='chat-message-summary-dropdown-input-group'>
+                    <Input
+                      value={focusPrompt}
+                      onChange={this.handleFocusPromptChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          this.handleGenerateSummary()
+                          closePopover()
+                        } else {
+                          this.handleFocusPromptKeyDown(e)
+                        }
+                      }}
+                      placeholder='e.g., sales growth trends'
+                      maxLength={100}
+                      disabled={isGenerating}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      type='primary'
+                      size='medium'
+                      onClick={() => {
+                        this.handleGenerateSummary()
+                        closePopover()
+                      }}
+                      disabled={isDisabled || !focusPrompt.trim()}
+                      loading={isGenerating}
+                      icon='magic-wand'
+                    >
+                      Generate
+                    </Button>
+                  </div>
+                  {focusError && (
+                    <div className='chat-message-summary-focus-error'>
+                      {focusError}
+                    </div>
+                  )}
+                </div>
+              ),
+              popoverProps: {
+                align: 'end',
+                contentClassName: 'chat-message-summary-dropdown-popover',
+              },
+            }}
           >
             Generate Summary
           </Button>
