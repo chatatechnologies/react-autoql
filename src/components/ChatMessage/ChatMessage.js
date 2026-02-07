@@ -414,9 +414,11 @@ export default class ChatMessage extends React.Component {
       const summary = response?.data?.data?.summary
 
       if (summary) {
+        const focusPromptUsed = this.state.focusPrompt.trim() || undefined
         // Store original summary and response data in state for this component
         this.setState({ 
           originalSummary: summary,
+          focusPrompt: '', // Clear the focus prompt input
           summaryResponseData: {
             rows: filteredRows,
             columns: this.props.response.data.data.columns,
@@ -430,7 +432,7 @@ export default class ChatMessage extends React.Component {
           content: summary,
           type: 'markdown',
           isResponse: true,
-          focusPromptUsed: this.state.focusPrompt.trim() || undefined,
+          focusPromptUsed: focusPromptUsed,
           summaryResponseData: {
             rows: filteredRows,
             columns: this.props.response.data.data.columns,
