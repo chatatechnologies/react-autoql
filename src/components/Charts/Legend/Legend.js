@@ -682,6 +682,15 @@ export default class Legend extends React.Component {
       select(legendElement)
         .selectAll('.cell')
         .style('font-size', `${this.props.fontSize - 2}px`)
+        .each(function () {
+          const cell = this
+          const textElement = select(cell).select('text').node()
+          
+          if (!textElement) return
+          
+          // Get all text content (including from tspan elements)
+          const allTextNodes = [textElement, ...select(textElement).selectAll('tspan').nodes()]
+          
           allTextNodes.forEach((textNode) => {
             const textContent = textNode.textContent || ''
             if (!textContent.trim()) return
