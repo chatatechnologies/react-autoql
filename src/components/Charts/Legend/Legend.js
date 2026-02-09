@@ -682,6 +682,36 @@ export default class Legend extends React.Component {
       select(legendElement)
         .selectAll('.cell')
         .style('font-size', `${this.props.fontSize - 2}px`)
+        .each(function () {
+          const cell = this
+          const textElement = select(cell).select('text').node()
+          
+          if (!textElement) return
+          
+          // Get all text content (including from tspan elements)
+          const allTextNodes = [textElement, ...select(textElement).selectAll('tspan').nodes()]
+          
+          allTextNodes.forEach((textNode) => {
+            const textContent = textNode.textContent || ''
+            if (!textContent.trim()) return
+            
+            // Split text into words and truncate words longer than 25 characters
+            const words = textContent.split(/(\s+)/)
+            const processedWords = words.map((word) => {
+              const trimmedWord = word.trim()
+              // Check if it's a word (not whitespace) and longer than 25 characters
+              if (trimmedWord.length > 0 && trimmedWord.length > 25) {
+                return word.replace(trimmedWord, trimmedWord.substring(0, 25) + '...')
+              }
+              return word
+            })
+            
+            const processedText = processedWords.join('')
+            if (processedText !== textContent) {
+              textNode.textContent = processedText
+            }
+          })
+        })
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBoundingClientRects(
@@ -699,7 +729,72 @@ export default class Legend extends React.Component {
 
       this.applyTitleStyles(title, isFirstSection, legendElement)
 
-      const mergedBBox = mergeBoundingClientRects(this.legendElements.map((el) => el?.getBoundingClientRect()))
+      // Get filtered out labels to exclude from width calculation
+      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+      
+      // Calculate bounding box only from visible cells (excluding filtered/hidden labels)
+      // Collect bounding boxes of only visible cells from all legend elements
+      const visibleCellBBoxes = []
+      this.legendElements.forEach((el, index) => {
+        if (!el) return
+        
+        // Get the legend labels for this section to check visibility
+        const sectionLabels = index === 0 ? this.legendLabels1 : this.legendLabels2
+        const legendLabelsForSection = sectionLabels || []
+        
+        // Get bounding boxes of only visible cells
+        select(el).selectAll('.cell').each(function () {
+          const cellData = select(this).data()?.[0]
+          if (!cellData) return
+          
+          // Check if this label is filtered out
+          if (filteredOutLabels.includes(cellData)) return
+          
+          // Check if this label is marked as hidden
+          const labelObj = legendLabelsForSection.find((l) => l.label === cellData)
+          if (labelObj?.hidden) return
+          
+          // This cell is visible, include its bounding box
+          const cellBBox = this.getBoundingClientRect()
+          if (cellBBox) {
+            visibleCellBBoxes.push(cellBBox)
+          }
+        })
+      })
+
+      // Include title and filter button in width calculation
+      const allBBoxes = [...visibleCellBBoxes]
+      
+      // Add title width - use maxSectionWidth since title should wrap to that width
+      // The title's actual bounding box might be wider if it hasn't wrapped yet,
+      // so we use the configured titleWidth instead
+      if (this.titleBBox && legendElement) {
+        const titleElement = select(legendElement).select('.legendTitle').node()
+        if (titleElement) {
+          const titleClientRect = titleElement.getBoundingClientRect()
+          if (titleClientRect) {
+            // Use the minimum of actual width and maxSectionWidth (title should wrap)
+            const titleWidth = Math.min(titleClientRect.width, maxSectionWidth)
+            // Create a rect that represents the wrapped title width
+            const wrappedTitleRect = {
+              ...titleClientRect,
+              width: titleWidth,
+              right: titleClientRect.left + titleWidth
+            }
+            allBBoxes.push(wrappedTitleRect)
+          }
+        }
+      }
+      
+      // Add filter button bounding box if it exists
+      if (this.filterButtonD3Element) {
+        const filterButtonBBox = this.filterButtonD3Element.getBoundingClientRect()
+        if (filterButtonBBox) {
+          allBBoxes.push(filterButtonBBox)
+        }
+      }
+
+      const mergedBBox = mergeBoundingClientRects(allBBoxes)
 
       this.combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
       this.combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0
