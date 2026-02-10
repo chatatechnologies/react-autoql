@@ -2977,6 +2977,12 @@ export class QueryOutput extends React.Component {
       const columns = this.getColumns() || []
       if (!this.tableConfig || !this.isColumnIndexValid(this.tableConfig.stringColumnIndex, columns)) {
         this.setTableConfig(columns)
+      } else if (
+        this.tableConfig.legendColumnIndex === undefined &&
+        getNumberOfGroupables(columns) >= 2
+      ) {
+        // Saved config had no legendColumnIndex (incomplete); set it so pivot can build
+        this.setTableConfig(columns)
       }
 
       // Use validated indices from tableConfig
