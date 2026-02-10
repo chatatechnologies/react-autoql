@@ -213,6 +213,76 @@
     padding-top: 12px;
     border-top: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
 
+    .chat-message-summary-feedback-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .chat-message-feedback-label {
+        font-size: 13px;
+        color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+        margin-right: 4px;
+      }
+
+      .chat-message-feedback-button {
+        &.active {
+          color: white !important;
+          border-color: transparent !important;
+
+          &:hover {
+            opacity: 0.9;
+          }
+
+          &:active,
+          &:focus,
+          &:focus-visible {
+            color: white !important;
+            border-color: transparent !important;
+            outline: none !important;
+          }
+        }
+
+        // Positive feedback (thumbs up) - green
+        &.active.positive {
+          background-color: var(--react-autoql-success-color, #28a745) !important;
+          border-color: var(--react-autoql-success-color, #28a745) !important;
+
+          &:hover {
+            background-color: var(--react-autoql-success-color, #28a745) !important;
+          }
+
+          &:active,
+          &:focus,
+          &:focus-visible {
+            background-color: var(--react-autoql-success-color, #28a745) !important;
+            border-color: var(--react-autoql-success-color, #28a745) !important;
+          }
+        }
+
+        // Negative feedback (thumbs down) - red
+        &.active.negative {
+          background-color: var(--react-autoql-error-color, #dc3545) !important;
+          border-color: var(--react-autoql-error-color, #dc3545) !important;
+
+          &:hover {
+            background-color: var(--react-autoql-error-color, #dc3545) !important;
+          }
+
+          &:active,
+          &:focus,
+          &:focus-visible {
+            background-color: var(--react-autoql-error-color, #dc3545) !important;
+            border-color: var(--react-autoql-error-color, #dc3545) !important;
+          }
+        }
+
+        // Prevent white background on click for non-active buttons too
+        &:active:not(.active) {
+          background-color: var(--react-autoql-mask-color, rgba(0, 0, 0, 0.05)) !important;
+        }
+      }
+    }
+
     .response-loading {
       width: 48px;
       height: 48px;

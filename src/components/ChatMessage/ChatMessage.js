@@ -27,6 +27,7 @@ import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { Input } from '../Input'
+import SummaryFooter from './SummaryFooter'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -111,6 +112,7 @@ export default class ChatMessage extends React.Component {
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
+    onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
   }
 
   static defaultProps = {
@@ -627,23 +629,38 @@ export default class ChatMessage extends React.Component {
   }
 
   renderSummaryFooter = () => {
-    // Focus section has been moved to the dropdown on the Generate Summary button
-    // This method is kept for potential future use
+    const isSummaryMessage = this.props.type === 'markdown' || this.props.type === 'md'
+    
+    // Show feedback buttons for summary messages
+    if (isSummaryMessage && this.props.content) {
+      return (
+        <SummaryFooter
+          messageId={this.props.id}
+          onSummaryFeedback={this.props.onSummaryFeedback}
+          onSuccessAlert={this.props.onSuccessAlert}
+          tooltipID={this.props.tooltipID}
+        />
+      )
+    }
+
+    // Get the current response from QueryOutput ref if available, otherwise use props
+    // This ensures we check the most up-to-date data (e.g., after columns are added)
+    const currentResponse = this.responseRef?.queryResponse || this.props.response
 
     // Only show footer for response messages with data (for Generate Summary button)
     if (
       !this.props.enableMagicWand ||
       !this.props.isResponse ||
-      !this.props.response?.data?.data?.rows ||
-      !this.props.response?.data?.data?.columns ||
+      !currentResponse?.data?.data?.rows ||
+      !currentResponse?.data?.data?.columns ||
       this.props.type === 'text' ||
       this.props.isCSVProgressMessage ||
-      isSingleValueResponse(this.props.response)
+      isSingleValueResponse(currentResponse)
     ) {
       return null
     }
 
-    const rows = this.props.response?.data?.data?.rows || []
+    const rows = currentResponse?.data?.data?.rows || []
     const rowCount = rows.length
     const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
     // Only show loading for this specific message, not when any query is running
