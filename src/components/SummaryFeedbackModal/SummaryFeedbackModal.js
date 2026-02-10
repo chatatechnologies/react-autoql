@@ -14,17 +14,18 @@ export default class SummaryFeedbackModal extends React.Component {
     onFeedback: PropTypes.func,
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
+    isSubmitting: PropTypes.bool, // Loading state from parent
   }
 
   static defaultProps = {
     isVisible: false,
     onFeedback: () => {},
     onClose: () => {},
+    isSubmitting: false,
   }
 
   state = {
     feedbackMessage: '',
-    isSubmitting: false,
   }
 
   componentDidMount = () => {
@@ -46,13 +47,12 @@ export default class SummaryFeedbackModal extends React.Component {
   }
 
   onConfirm = () => {
-    this.setState({ isSubmitting: true })
     this.props.onFeedback({
       feedback: 'negative',
       message: this.state.feedbackMessage,
       onComplete: () => {
         if (this._isMounted) {
-          this.setState({ isSubmitting: false, feedbackMessage: '' })
+          this.setState({ feedbackMessage: '' })
         }
       },
     })
@@ -74,12 +74,12 @@ export default class SummaryFeedbackModal extends React.Component {
           isVisible={this.props.isVisible}
           onClose={this.onClose}
           onConfirm={this.onConfirm}
-          confirmLoading={this.state.isSubmitting}
+          confirmLoading={this.props.isSubmitting}
           title='Provide Feedback'
           enableBodyScroll={true}
           width='600px'
           confirmText='Submit'
-          confirmDisabled={!this.state.feedbackMessage.trim()}
+          confirmDisabled={!this.state.feedbackMessage.trim() || this.props.isSubmitting}
         >
           <div className='summary-feedback-modal-body'>
             <div className='summary-feedback-modal-header'>
@@ -96,6 +96,7 @@ export default class SummaryFeedbackModal extends React.Component {
                 })
               }
               rows={6}
+              disabled={this.props.isSubmitting}
             />
           </div>
         </Modal>

@@ -633,11 +633,17 @@ export default class ChatMessage extends React.Component {
     
     // Show feedback buttons for summary messages
     if (isSummaryMessage && this.props.content) {
+      // Get query ID from summaryResponseData (stored when summary was generated)
+      const queryId = this.props.summaryResponseData?.query_id || this.state.summaryResponseData?.query_id
+
       return (
         <SummaryFooter
           messageId={this.props.id}
+          queryId={queryId}
+          authentication={this.props.authentication}
           onSummaryFeedback={this.props.onSummaryFeedback}
           onSuccessAlert={this.props.onSuccessAlert}
+          onErrorCallback={this.props.onErrorCallback}
           tooltipID={this.props.tooltipID}
         />
       )
