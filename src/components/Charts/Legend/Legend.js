@@ -10,6 +10,7 @@ import { symbol, symbolSquare } from 'd3-shape'
 import { Icon } from '../../Icon'
 import LegendSelector from '../Legend/LegendSelector'
 import LegendPopover from '../Legend/LegendPopover'
+import './Legend.scss'
 
 import {
   legendColor,
@@ -514,13 +515,24 @@ export default class Legend extends React.Component {
       select(legendElement).select('.legend-filter-button-d3').remove()
 
       const iconSize = 14
+      const titleElement = select(legendElement).select('.legendTitle').node()
+      
+      // Position button using explicit x/y attributes relative to title, similar to how selector border works
+      // This approach works consistently across browsers including Safari
       const buttonX = titleBBox.x + titleBBox.width + 20 // 20px spacing to the right
       const buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
+
+      console.log('Filter button positioning:', {
+        titleBBox,
+        buttonX,
+        buttonY,
+        iconSize,
+        legendElement: legendElement?.getBBox?.(),
+      })
 
       const buttonGroup = select(legendElement)
         .append('g')
         .attr('class', 'legend-filter-button-d3')
-        .attr('transform', `translate(${buttonX}, ${buttonY})`)
         .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
         .style('cursor', 'pointer')
         .on('click', (event) => {
@@ -528,11 +540,16 @@ export default class Legend extends React.Component {
           this.openLegendPopover()
         })
 
-      // Background rect for hover
+      // Background rect for hover - positioned using explicit x/y attributes
+      const rectX = buttonX - iconSize / 2 - 2
+      const rectY = buttonY - iconSize / 2 - 2
+      
+      console.log('Rect positioning:', { rectX, rectY })
+      
       buttonGroup
         .append('rect')
-        .attr('x', -iconSize / 2 - 2)
-        .attr('y', -iconSize / 2 - 2)
+        .attr('x', rectX)
+        .attr('y', rectY)
         .attr('width', iconSize + 4)
         .attr('height', iconSize + 4)
         .attr('fill', 'transparent')
@@ -540,49 +557,35 @@ export default class Legend extends React.Component {
         .attr('rx', 3)
         .attr('class', 'legend-filter-button-bg')
 
-      // Use foreignObject to render the icon
-      const foreignObject = buttonGroup
-        .append('foreignObject')
-        .attr('x', -iconSize / 2)
-        .attr('y', -iconSize / 2)
-        .attr('width', iconSize)
-        .attr('height', iconSize)
+      // Use native SVG icon instead of foreignObject for better Safari compatibility
+      const iconX = buttonX - iconSize / 2
+      const iconY = buttonY - iconSize / 2
+      
+      console.log('Icon positioning:', { iconX, iconY, scale: iconSize / 24 })
+      
+      // Create a group for the icon and scale it to the desired size
+      const iconGroup = buttonGroup
+        .append('g')
+        .attr('class', 'legend-filter-icon')
+        .attr('transform', `translate(${iconX}, ${iconY}) scale(${iconSize / 24})`)
         .style('pointer-events', 'none')
-        .style('overflow', 'visible')
+        .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
 
-      // Create a div for the React icon
-      const iconContainer = foreignObject
-        .append('xhtml:div')
-        .style('width', '100%')
-        .style('height', '100%')
-        .style('display', 'flex')
-        .style('align-items', 'center')
-        .style('justify-content', 'center')
+      iconGroup
+        .append('path')
+        .attr('fill', 'none')
+        .attr('d', 'M0 0H24V24H0z')
+
+      iconGroup
+        .append('path')
+        .attr('fill', 'currentColor')
+        .attr('stroke', 'currentColor')
+        .attr('stroke-width', '0')
+        .attr('d', 'M21 4v2h-1l-5 7.5V22H9v-8.5L4 6H3V4h18zM6.404 6L11 12.894V20h2v-7.106L17.596 6H6.404z')
 
       // Store reference for button element and position
       this.filterButtonD3Element = buttonGroup.node()
       this.filterButtonPosition = { x: buttonX, y: buttonY }
-
-      // Render the icon directly into the container
-      const tooltipID = this.props.chartTooltipID
-      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
-      const isFiltered = filteredOutLabels.length > 0
-
-      ReactDOM.render(
-        <Icon
-          type='filter'
-          showBadge={isFiltered}
-          style={{
-            width: `${iconSize}px`,
-            height: `${iconSize}px`,
-            color: 'var(--react-autoql-text-color-secondary)',
-            display: 'block',
-          }}
-          data-tooltip-content='Filter legend items'
-          data-tooltip-id={tooltipID}
-        />,
-        iconContainer.node(),
-      )
     } catch (error) {
       console.warn('Error rendering filter button with D3:', error)
     }
