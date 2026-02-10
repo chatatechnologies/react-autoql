@@ -26,22 +26,18 @@ dayjs.extend(customParseFormat)
   const specificLanguageCode = window.navigator.language || 'en'
   const genericLanguageCode = specificLanguageCode.split('-')[0]
 
-  // Use dynamic import instead of require to support webpack
-  // Load locale asynchronously - dayjs will work with default locale until loaded
-  import(`dayjs/locale/${specificLanguageCode}.js`)
-    .then((locale) => {
-      dayjs.locale(specificLanguageCode)
-    })
-    .catch(() => {
-      // Try generic language code
-      import(`dayjs/locale/${genericLanguageCode}.js`)
-        .then(() => {
-          dayjs.locale(genericLanguageCode)
-        })
-        .catch(() => {
-          // Use default locale (en)
-        })
-    })
+  try {
+    // Check if file exists, then use it
+    require(`dayjs/locale/${specificLanguageCode}.js`)
+    dayjs.locale(specificLanguageCode)
+  } catch (error) {
+    try {
+      require(`dayjs/locale/${genericLanguageCode}.js`)
+      dayjs.locale(genericLanguageCode)
+    } catch (error2) {
+      // do nothing
+    }
+  }
 })()
 
 export default dayjs
