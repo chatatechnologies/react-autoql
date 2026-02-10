@@ -414,15 +414,8 @@ export default class Legend extends React.Component {
     // Remove red arrow if it has been rendered already
     select(legendElement).select('.legend-hidden-field-arrow').remove()
 
-    // Use getBBox() for SVG coordinates instead of getBoundingClientRect() for screen coordinates
-    // This is more reliable, especially for bottom-placed legends
-    const legendBorderBBox = this.legendBorder?.getBBox?.()
-    if (!legendBorderBBox || !legendBorderBBox.height) {
-      // Border not sized yet, don't remove any items
-      return
-    }
-    
-    const legendBottom = (legendBorderBBox?.y ?? 0) + (legendBorderBBox?.height ?? 0) - this.BORDER_PADDING
+    const legendContainerBBox = this.legendBorder?.getBoundingClientRect()
+    const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.BORDER_PADDING
 
     let hasRemovedElement = false
     let removedElementYBottom = undefined
@@ -434,14 +427,12 @@ export default class Legend extends React.Component {
         if (hasRemovedElement) {
           select(this).remove()
         } else {
-          // Use getBBox() for SVG coordinates
-          const cellBBox = this.getBBox?.()
-          if (!cellBBox) return
-          
-          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
+          const cellBBox = this.getBoundingClientRect()
+          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
 
           if (cellBottom > legendBottom) {
-            removedElementYBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
+            const bbox = this.getBBox()
+            removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
             removedElementTransform = select(this).attr('transform')
             select(this).remove()
 
@@ -819,8 +810,10 @@ export default class Legend extends React.Component {
         .attr('height', height + totalVerticalPadding)
         .attr('width', width + totalHorizontalPadding)
 
+      // Set border height to maxLegendHeight when there's overflow so removeHiddenLegendLabels can properly detect overflow
+      const borderHeight = this.combinedLegendHeight > maxLegendHeight ? maxLegendHeight : height
       select(this.legendBorder)
-        .attr('height', height + 2 * this.BORDER_PADDING)
+        .attr('height', borderHeight + 2 * this.BORDER_PADDING)
         .attr('width', width + 2 * this.BORDER_PADDING)
 
       this.removeHiddenLegendLabels(legendElement)
@@ -926,7 +919,8 @@ export default class Legend extends React.Component {
           stroke: 'var(--react-autoql-border-color)',
           fill: 'transparent',
           pointerEvents: 'none',
-          strokeOpacity: 0.6,
+          strokeOpacity: 0.8,
+          strokeWidth: 1,
         }}
       />
     )
