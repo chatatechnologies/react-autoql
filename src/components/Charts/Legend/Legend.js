@@ -414,8 +414,15 @@ export default class Legend extends React.Component {
     // Remove red arrow if it has been rendered already
     select(legendElement).select('.legend-hidden-field-arrow').remove()
 
-    const legendContainerBBox = this.legendBorder?.getBoundingClientRect()
-    const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.BORDER_PADDING
+    // Use getBBox() for SVG coordinates instead of getBoundingClientRect() for screen coordinates
+    // This is more reliable, especially for bottom-placed legends
+    const legendBorderBBox = this.legendBorder?.getBBox?.()
+    if (!legendBorderBBox || !legendBorderBBox.height) {
+      // Border not sized yet, don't remove any items
+      return
+    }
+    
+    const legendBottom = (legendBorderBBox?.y ?? 0) + (legendBorderBBox?.height ?? 0) - this.BORDER_PADDING
 
     let hasRemovedElement = false
     let removedElementYBottom = undefined
@@ -427,12 +434,14 @@ export default class Legend extends React.Component {
         if (hasRemovedElement) {
           select(this).remove()
         } else {
-          const cellBBox = this.getBoundingClientRect()
-          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
+          // Use getBBox() for SVG coordinates
+          const cellBBox = this.getBBox?.()
+          if (!cellBBox) return
+          
+          const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
 
           if (cellBottom > legendBottom) {
-            const bbox = this.getBBox()
-            removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
+            removedElementYBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0)
             removedElementTransform = select(this).attr('transform')
             select(this).remove()
 
@@ -522,14 +531,6 @@ export default class Legend extends React.Component {
       const buttonX = titleBBox.x + titleBBox.width + 20 // 20px spacing to the right
       const buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
 
-      console.log('Filter button positioning:', {
-        titleBBox,
-        buttonX,
-        buttonY,
-        iconSize,
-        legendElement: legendElement?.getBBox?.(),
-      })
-
       const buttonGroup = select(legendElement)
         .append('g')
         .attr('class', 'legend-filter-button-d3')
@@ -543,8 +544,6 @@ export default class Legend extends React.Component {
       // Background rect for hover - positioned using explicit x/y attributes
       const rectX = buttonX - iconSize / 2 - 2
       const rectY = buttonY - iconSize / 2 - 2
-      
-      console.log('Rect positioning:', { rectX, rectY })
       
       buttonGroup
         .append('rect')
@@ -560,8 +559,6 @@ export default class Legend extends React.Component {
       // Use native SVG icon instead of foreignObject for better Safari compatibility
       const iconX = buttonX - iconSize / 2
       const iconY = buttonY - iconSize / 2
-      
-      console.log('Icon positioning:', { iconX, iconY, scale: iconSize / 24 })
       
       // Create a group for the icon and scale it to the desired size
       const iconGroup = buttonGroup
@@ -736,7 +733,7 @@ export default class Legend extends React.Component {
       const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
       
       // Calculate bounding box only from visible cells (excluding filtered/hidden labels)
-      // Collect bounding boxes of only visible cells from all legend elements
+      // Use getBoundingClientRect() like side-placed legends do - this works correctly
       const visibleCellBBoxes = []
       this.legendElements.forEach((el, index) => {
         if (!el) return
@@ -757,7 +754,7 @@ export default class Legend extends React.Component {
           const labelObj = legendLabelsForSection.find((l) => l.label === cellData)
           if (labelObj?.hidden) return
           
-          // This cell is visible, include its bounding box
+          // Use getBoundingClientRect() like side-placed legends
           const cellBBox = this.getBoundingClientRect()
           if (cellBBox) {
             visibleCellBBoxes.push(cellBBox)
@@ -768,14 +765,14 @@ export default class Legend extends React.Component {
       // Include title and filter button in width calculation
       const allBBoxes = [...visibleCellBBoxes]
       
-      // Add title width - use maxSectionWidth since title should wrap to that width
-      // The title's actual bounding box might be wider if it hasn't wrapped yet,
-      // so we use the configured titleWidth instead
-      if (this.titleBBox && legendElement) {
-        const titleElement = select(legendElement).select('.legendTitle').node()
+      // Add title width from ALL legend sections (for horizontal legends with multiple sections)
+      // Use maxSectionWidth since title should wrap to that width
+      this.legendElements.forEach((el, index) => {
+        if (!el) return
+        const titleElement = select(el).select('.legendTitle').node()
         if (titleElement) {
           const titleClientRect = titleElement.getBoundingClientRect()
-          if (titleClientRect) {
+          if (titleClientRect && titleClientRect.width > 0 && titleClientRect.height > 0) {
             // Use the minimum of actual width and maxSectionWidth (title should wrap)
             const titleWidth = Math.min(titleClientRect.width, maxSectionWidth)
             // Create a rect that represents the wrapped title width
@@ -787,7 +784,14 @@ export default class Legend extends React.Component {
             allBBoxes.push(wrappedTitleRect)
           }
         }
-      }
+        
+        // Also include the entire legend element's bounding box to ensure we capture everything
+        // This is a fallback in case individual elements don't capture the full extent
+        const legendElementRect = el.getBoundingClientRect()
+        if (legendElementRect && legendElementRect.width > 0 && legendElementRect.height > 0) {
+          allBBoxes.push(legendElementRect)
+        }
+      })
       
       // Add filter button bounding box if it exists
       if (this.filterButtonD3Element) {
