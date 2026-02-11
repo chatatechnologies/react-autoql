@@ -2,7 +2,13 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { ColumnTypes, DateStringPrecisionTypes, PrecisionTypes, isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
+import {
+  ColumnTypes,
+  DateStringPrecisionTypes,
+  PrecisionTypes,
+  isColumnDateType,
+  isColumnStringType,
+} from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
@@ -15,10 +21,9 @@ export default class StringAxisSelector extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.state = {
       hoveredColumn: null,
-      hoveredMenuItem: null, // Track which menu item (chronological/cyclical) is hovered
-      // Mobile state: track which items are tapped/opened
-      tappedColumn: null, // Track which column menu is open on mobile
-      tappedMenuItem: null, // Track which menu item (chronological/cyclical) is open on mobile
+      hoveredMenuItem: null, // hovered menu item id
+      tappedColumn: null, // mobile: which column menu is open
+      tappedMenuItem: null, // mobile: which menu item is open
     }
     this.dateBucketMenuRefs = {} // Store refs for date bucket menu items
     this.dateBucketScrollbarRef = null // Ref for the scrollbar container
@@ -100,12 +105,9 @@ export default class StringAxisSelector extends React.Component {
   }
 
   handleColumnLeave = () => {
-    // Add a small delay to prevent menu from disappearing when moving to submenu
+    // small delay to avoid flicker when moving to submenu
     setTimeout(() => {
-      this.setState({
-        hoveredColumn: null,
-        dateBucketMenuPosition: null,
-      })
+      this.setState({ hoveredColumn: null, dateBucketMenuPosition: null })
     }, 100)
   }
 
@@ -118,21 +120,14 @@ export default class StringAxisSelector extends React.Component {
   }
 
   handleMenuItemLeave = () => {
-    // Add a small delay to prevent menu from disappearing when moving to submenu
-    setTimeout(() => {
-      this.setState({
-        hoveredMenuItem: null,
-      })
-    }, 100)
+    // small delay to avoid submenu flicker
+    setTimeout(() => this.setState({ hoveredMenuItem: null }), 100)
   }
 
   handleMenuItemTapLeave = () => {
-    // Close tapped menus on mobile when clicking outside
+    // close tapped mobile menus
     if (isMobile) {
-      this.setState({
-        tappedColumn: null,
-        tappedMenuItem: null,
-      })
+      this.setState({ tappedColumn: null, tappedMenuItem: null })
     }
   }
 
@@ -153,38 +148,38 @@ export default class StringAxisSelector extends React.Component {
   }
 
   handleDateBucketSelect = (colIndex, bucketOption, e) => {
-    // Stop propagation to prevent clicks from going through overlapping menus
     if (e) {
       e.stopPropagation()
       e.preventDefault()
     }
-    
-    // Clear all menu states immediately, especially important for mobile
+
+    // Apply change and clear menu state; mobile applies immediately
     if (isMobile) {
-      // On mobile: apply the change immediately, then close menus
       this.changeDateColumnBucket(colIndex, bucketOption)
-      this.setState({
-        hoveredColumn: null,
-        hoveredMenuItem: null,
-        tappedColumn: null,
-        tappedMenuItem: null,
-        dateBucketMenuPosition: null,
-      }, () => {
-        // After state is cleared, close the selector
-        this.props.closeSelector()
-      })
+      this.setState(
+        {
+          hoveredColumn: null,
+          hoveredMenuItem: null,
+          tappedColumn: null,
+          tappedMenuItem: null,
+          dateBucketMenuPosition: null,
+        },
+        () => this.props.closeSelector(),
+      )
     } else {
-      this.setState({
-        hoveredColumn: null,
-        hoveredMenuItem: null,
-        tappedColumn: null,
-        tappedMenuItem: null,
-        dateBucketMenuPosition: null,
-      }, () => {
-        // After state is cleared, close the selector and apply the change
-        this.props.closeSelector()
-        this.changeDateColumnBucket(colIndex, bucketOption)
-      })
+      this.setState(
+        {
+          hoveredColumn: null,
+          hoveredMenuItem: null,
+          tappedColumn: null,
+          tappedMenuItem: null,
+          dateBucketMenuPosition: null,
+        },
+        () => {
+          this.props.closeSelector()
+          this.changeDateColumnBucket(colIndex, bucketOption)
+        },
+      )
     }
   }
 
@@ -193,15 +188,15 @@ export default class StringAxisSelector extends React.Component {
     const column = this.props.columns[colIndex]
     const columnOverrides = this.props.columnOverrides || {}
     const override = columnOverrides[colIndex]
-    
+
     const currentPrecision = override?.precision || column?.precision
     const currentType = override?.type || column?.type
-    
+
     // Find the index of the active option
     const activeOptionIndex = this.dateBucketOptions.findIndex(
-      (option) => option.precision === currentPrecision && option.type === currentType
+      (option) => option.precision === currentPrecision && option.type === currentType,
     )
-    
+
     if (activeOptionIndex >= 0) {
       const activeItemRef = this.dateBucketMenuRefs[`${colIndex}-${activeOptionIndex}`]
       if (activeItemRef && this.dateBucketScrollbarRef) {
@@ -214,11 +209,11 @@ export default class StringAxisSelector extends React.Component {
               const itemHeight = activeItemRef.offsetHeight
               const containerHeight = scrollContainer.clientHeight
               const scrollTop = scrollContainer.scrollTop
-              
+
               // Check if item is not visible
               if (itemTop < scrollTop || itemTop + itemHeight > scrollTop + containerHeight) {
                 // Scroll to center the item
-                scrollContainer.scrollTop = itemTop - (containerHeight / 2) + (itemHeight / 2)
+                scrollContainer.scrollTop = itemTop - containerHeight / 2 + itemHeight / 2
               }
             }
           }
@@ -259,7 +254,11 @@ export default class StringAxisSelector extends React.Component {
     return (
       <Popover
         id={`string-axis-selector-menu-item-${this.COMPONENT_KEY}`}
-        isOpen={isMobile ? this.state.tappedMenuItem === `${colIndex}-${menuItemType}` : this.state.hoveredMenuItem === `${colIndex}-${menuItemType}`}
+        isOpen={
+          isMobile
+            ? this.state.tappedMenuItem === `${colIndex}-${menuItemType}`
+            : this.state.hoveredMenuItem === `${colIndex}-${menuItemType}`
+        }
         content={() => {
           return (
             <div
@@ -281,18 +280,19 @@ export default class StringAxisSelector extends React.Component {
                     e.stopPropagation()
                   }}
                   onMouseEnter={(e) => {
-                    this.setState({ 
+                    this.setState({
                       hoveredMenuItem: `${colIndex}-${menuItemType}`,
                       hoveredColumn: colIndex,
-                      hoveredSubmenu: colIndex
+                      hoveredSubmenu: colIndex,
                     })
                     e.stopPropagation()
                   }}
                   onMouseLeave={(e) => {
                     // Only close if we're really leaving the submenu
                     const relatedTarget = e.relatedTarget
-                    const isMovingToSubmenu = relatedTarget && 
-                      typeof relatedTarget.closest === 'function' && 
+                    const isMovingToSubmenu =
+                      relatedTarget &&
+                      typeof relatedTarget.closest === 'function' &&
                       relatedTarget.closest('.date-bucket-submenu')
                     if (!isMovingToSubmenu) {
                       this.setState({
@@ -307,24 +307,24 @@ export default class StringAxisSelector extends React.Component {
                       const column = this.props.columns[colIndex]
                       const columnOverrides = this.props.columnOverrides || {}
                       const override = columnOverrides[colIndex]
-                      
+
                       // Determine current precision: use override if exists, otherwise use column's precision
                       const currentPrecision = override?.precision || column?.precision
                       const currentType = override?.type || column?.type
-                      
+
                       // Only show as active if this is the selected column AND the precision/type matches
-                      const isActive = 
+                      const isActive =
                         isSelectedColumn &&
-                        currentPrecision != null &&
-                        currentType != null &&
-                        currentPrecision === option.precision && 
+                        currentPrecision !== null &&
+                        currentType !== null &&
+                        currentPrecision === option.precision &&
                         currentType === option.type
-                      
+
                       // Find the original index in dateBucketOptions for ref
                       const originalIndex = this.dateBucketOptions.findIndex(
-                        (opt) => opt.precision === option.precision && opt.type === option.type
+                        (opt) => opt.precision === option.precision && opt.type === option.type,
                       )
-                      
+
                       return (
                         <li
                           ref={(r) => {
@@ -332,9 +332,16 @@ export default class StringAxisSelector extends React.Component {
                               this.dateBucketMenuRefs[`${colIndex}-${originalIndex}`] = r
                             }
                           }}
-                          className={`string-select-list-item ${isActive ? 'active' : ''} ${option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''}`}
+                          className={`string-select-list-item ${isActive ? 'active' : ''} ${
+                            option.precision === PrecisionTypes.DATE_MINUTE ? 'date-minute-option' : ''
+                          }`}
                           key={`${colIndex}-${menuItemType}-${option.precision}`}
-                          style={{ cursor: 'pointer', userSelect: 'none', pointerEvents: 'auto', WebkitTapHighlightColor: 'transparent' }}
+                          style={{
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            pointerEvents: 'auto',
+                            WebkitTapHighlightColor: 'transparent',
+                          }}
                           onTouchStart={(e) => {
                             // Don't prevent default on touchstart to allow normal touch behavior
                           }}
@@ -436,9 +443,15 @@ export default class StringAxisSelector extends React.Component {
                         const listItem = target.closest('li[data-menu-item]')
                         if (listItem) {
                           const menuItemType = listItem.getAttribute('data-menu-item')
-                          if (menuItemType === 'chronological' && this.state.hoveredMenuItem !== `${colIndex}-chronological`) {
+                          if (
+                            menuItemType === 'chronological' &&
+                            this.state.hoveredMenuItem !== `${colIndex}-chronological`
+                          ) {
                             this.handleMenuItemHover('chronological', colIndex)
-                          } else if (menuItemType === 'cyclical' && this.state.hoveredMenuItem !== `${colIndex}-cyclical`) {
+                          } else if (
+                            menuItemType === 'cyclical' &&
+                            this.state.hoveredMenuItem !== `${colIndex}-cyclical`
+                          ) {
                             this.handleMenuItemHover('cyclical', colIndex)
                           }
                         }
@@ -452,13 +465,15 @@ export default class StringAxisSelector extends React.Component {
                     const container = e.currentTarget
                     const isMovingToChild = relatedTarget && container.contains(relatedTarget)
                     // Check if moving to a menu item submenu
-                    const isMovingToSubmenu = relatedTarget && 
-                      typeof relatedTarget.closest === 'function' && 
+                    const isMovingToSubmenu =
+                      relatedTarget &&
+                      typeof relatedTarget.closest === 'function' &&
                       relatedTarget.closest('.date-bucket-submenu')
                     // Also check if a menu item submenu is open for this column
-                    const hasOpenMenuItemSubmenu = this.state.hoveredMenuItem && 
+                    const hasOpenMenuItemSubmenu =
+                      this.state.hoveredMenuItem &&
                       (this.state.hoveredMenuItem.startsWith(`${colIndex}-chronological`) ||
-                       this.state.hoveredMenuItem.startsWith(`${colIndex}-cyclical`))
+                        this.state.hoveredMenuItem.startsWith(`${colIndex}-cyclical`))
                     if (!isMovingToChild && !isMovingToSubmenu && !hasOpenMenuItemSubmenu) {
                       this.setState({
                         hoveredSubmenu: null,
@@ -466,14 +481,14 @@ export default class StringAxisSelector extends React.Component {
                     }
                   }}
                 >
-                  <ul 
+                  <ul
                     className='axis-selector-content'
                     onMouseEnter={(e) => {
                       // Keep parent menu open when hovering over list items (desktop only)
                       if (!isMobile) {
-                        this.setState({ 
-                          hoveredColumn: colIndex, 
-                          hoveredSubmenu: colIndex 
+                        this.setState({
+                          hoveredColumn: colIndex,
+                          hoveredSubmenu: colIndex,
                         })
                       }
                     }}
@@ -511,8 +526,9 @@ export default class StringAxisSelector extends React.Component {
                             onMouseLeave={(e) => {
                               // Only close if we're really leaving (not moving to submenu)
                               const relatedTarget = e.relatedTarget
-                              const isMovingToSubmenu = relatedTarget && 
-                                typeof relatedTarget.closest === 'function' && 
+                              const isMovingToSubmenu =
+                                relatedTarget &&
+                                typeof relatedTarget.closest === 'function' &&
                                 relatedTarget.closest('.date-bucket-submenu')
                               if (!isMovingToSubmenu) {
                                 // Clear the hover state when leaving
@@ -539,7 +555,12 @@ export default class StringAxisSelector extends React.Component {
                             </span>
                           </li>
                         )
-                        return this.renderMenuItemSubmenu(chronologicalLi, colIndex, 'chronological', selectedColumnIndex)
+                        return this.renderMenuItemSubmenu(
+                          chronologicalLi,
+                          colIndex,
+                          'chronological',
+                          selectedColumnIndex,
+                        )
                       })(),
                       (() => {
                         const cyclicalLi = (
@@ -573,8 +594,9 @@ export default class StringAxisSelector extends React.Component {
                             onMouseLeave={(e) => {
                               // Only close if we're really leaving (not moving to submenu)
                               const relatedTarget = e.relatedTarget
-                              const isMovingToSubmenu = relatedTarget && 
-                                typeof relatedTarget.closest === 'function' && 
+                              const isMovingToSubmenu =
+                                relatedTarget &&
+                                typeof relatedTarget.closest === 'function' &&
                                 relatedTarget.closest('.date-bucket-submenu')
                               if (!isMovingToSubmenu) {
                                 // Clear the hover state when leaving
@@ -602,7 +624,7 @@ export default class StringAxisSelector extends React.Component {
                           </li>
                         )
                         return this.renderMenuItemSubmenu(cyclicalLi, colIndex, 'cyclical', selectedColumnIndex)
-                      })()
+                      })(),
                     ].map((item, index) => (
                       <React.Fragment key={`${colIndex}-menu-item-${index === 0 ? 'chronological' : 'cyclical'}`}>
                         {item}
@@ -652,7 +674,7 @@ export default class StringAxisSelector extends React.Component {
     } else {
       columnIndices = this.getAllStringColumnIndices()
     }
-    
+
     // Don't exclude the legend column - it will be shown in the list
     // When clicked, onChangeStringColumnIndex will swap it with the current string column
 
@@ -673,35 +695,33 @@ export default class StringAxisSelector extends React.Component {
             <ul className='axis-selector-content'>
               {columnIndices.map((colIndex, i) => {
                 const column = this.props.columns[colIndex]
-                
+
                 // Check if there's a column override for this column (meaning it was changed on FE)
                 const columnOverrides = this.props.columnOverrides || {}
                 const hasColumnOverride = columnOverrides[colIndex] !== undefined
-                
+
                 // Find the original column to check its type
                 const originalColumn = this.props.originalColumns?.find(
-                  (oc) => oc.index === colIndex || oc.name === column.name || oc.display_name === column.display_name
+                  (oc) => oc.index === colIndex || oc.name === column.name || oc.display_name === column.display_name,
                 )
                 const originalColumnType = originalColumn?.type
-                
+
                 // Show hover menu if:
                 // 1. enableCyclicalDates is enabled, AND
                 // 2. NOT using pivot data (isAggregated), AND
                 // 3. Column is a DATE type (not DATE_STRING) - check original column type or current column type
                 const enableCyclicalDates = this.props.enableCyclicalDates !== false // Default to true if not specified
                 // Check if column is DATE type (not DATE_STRING)
-                const isDateType = originalColumnType === ColumnTypes.DATE || 
-                                  (column?.type === ColumnTypes.DATE && column?.type !== ColumnTypes.DATE_STRING)
-                const isDateColumn = 
-                  enableCyclicalDates && 
-                  !this.props.isAggregated &&
-                  isDateType
+                const isDateType =
+                  originalColumnType === ColumnTypes.DATE ||
+                  (column?.type === ColumnTypes.DATE && column?.type !== ColumnTypes.DATE_STRING)
+                const isDateColumn = enableCyclicalDates && !this.props.isAggregated && isDateType
 
                 const li = (
                   <li
-                    className={`string-select-list-item ${
-                      colIndex === origColumn?.index ? 'active' : ''
-                    } ${isDateColumn ? 'date-column' : ''}`}
+                    className={`string-select-list-item ${colIndex === origColumn?.index ? 'active' : ''} ${
+                      isDateColumn ? 'date-column' : ''
+                    }`}
                     key={`string-column-select-${colIndex}`}
                     onClick={(e) => {
                       e.stopPropagation()

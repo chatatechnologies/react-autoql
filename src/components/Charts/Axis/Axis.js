@@ -400,7 +400,7 @@ export default class Axis extends Component {
       // Make tick line at 0 darker
       select(this.axisElement)
         .selectAll('g.tick')
-        .filter((d) => d == 0)
+        .filter((d) => d === 0)
         .select('line')
         .style('opacity', 0.3)
     }
@@ -471,7 +471,7 @@ export default class Axis extends Component {
   renderLegend = () => {
     const legendOrientation = this.getLegendOrientation()
 
-    let legendPadding = { top: 0, bottom: 0, left: 20, right: 0 }
+    const legendPadding = { top: 0, bottom: 0, left: 20, right: 0 }
     if (legendOrientation === 'horizontal') {
       legendPadding.right = legendPadding.left = this.props.chartPadding
     }
@@ -780,7 +780,9 @@ export default class Axis extends Component {
   }
 
   getPrecisionLabel = (override) => {
-    if (!override) return null
+    if (!override) {
+      return null
+    }
 
     const { type, precision } = override
 
@@ -808,19 +810,19 @@ export default class Axis extends Component {
   renderAxisTitleText = () => {
     const { scale, columnOverrides, originalColumns } = this.props
     const title = scale?.title ?? ''
-    
+
     // Check if there's a column override for this axis
     // For pivot tables, scale.column.index might be 0, so we need to find the original column by name
     let override = null
     const columnIndex = scale?.column?.index
     const columnName = scale?.column?.name
-    
+
     if (columnOverrides && (columnIndex !== undefined || columnName)) {
       // First try to find override by column index
       if (columnIndex !== undefined) {
         override = columnOverrides[columnIndex]
       }
-      
+
       // If not found and we have a column name, try to find the original column and use its index
       if (!override && columnName && originalColumns) {
         const originalColumn = originalColumns.find((col) => col.name === columnName)
@@ -829,9 +831,9 @@ export default class Axis extends Component {
         }
       }
     }
-    
+
     const precisionLabel = this.getPrecisionLabel(override)
-    
+
     // Append precision label in brackets if override exists
     const displayTitle = precisionLabel ? `${title} (${precisionLabel})` : title
 

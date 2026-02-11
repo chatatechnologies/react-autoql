@@ -1,9 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
-import axios from 'axios'
-import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+// Removed unused imports to satisfy ESLint
 import { isMobile } from 'react-device-detect'
 import Autosuggest from 'react-autosuggest'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
@@ -27,7 +25,7 @@ import {
   fetchDataPreview,
   transformQueryResponse,
 } from 'autoql-fe-utils'
-import { isAbortError, createCancelPair } from '../../utils/cancelPair'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
@@ -308,7 +306,7 @@ class QueryInput extends React.Component {
       return undefined
     }
 
-    let columns = {}
+    const columns = {}
 
     this.state.selectedColumns.forEach((columnIndex) => {
       const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
@@ -710,7 +708,7 @@ class QueryInput extends React.Component {
   }
 
   onKeyPress = (e) => {
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       this.submitQuery()
     }
   }
@@ -902,7 +900,7 @@ class QueryInput extends React.Component {
       onFocus: this.moveCaretAtEnd,
       onBlur: () => this.setState({ suggestions: [] }),
       onClick: this.showQueryHistorySuggestions,
-      spellCheck: false,
+      spellCheck: true,
       autoFocus: true,
       autoComplete: 'one-time-code',
     }

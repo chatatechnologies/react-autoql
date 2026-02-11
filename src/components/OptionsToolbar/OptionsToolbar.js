@@ -193,7 +193,7 @@ export class OptionsToolbar extends React.Component {
         link.click()
 
         const exportLimit = parseInt(response?.headers?.export_limit)
-        const limitReached = response?.headers?.limit_reached?.toLowerCase() == 'true' ? true : false
+        const limitReached = response?.headers?.limit_reached?.toLowerCase() === 'true' ? true : false
 
         this.props.onCSVDownloadFinish({
           id: uniqueId,
@@ -410,9 +410,9 @@ export class OptionsToolbar extends React.Component {
               style={
                 this.state.isCSVDownloading
                   ? {
-                      pointerEvents: 'none', // This makes it not clickable
-                      opacity: 0.6, // This grays it out to look disabled
-                    }
+                    pointerEvents: 'none', // This makes it not clickable
+                    opacity: 0.6, // This grays it out to look disabled
+                  }
                   : null
               }
             >

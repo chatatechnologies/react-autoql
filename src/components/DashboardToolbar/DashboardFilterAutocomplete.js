@@ -42,7 +42,7 @@ class DashboardFilterAutocomplete extends Component {
     this.fetchSuggestionsDebounced.cancel()
   }
 
-  /************** localStorage helpers **************/
+  /** ************ localStorage helpers **************/
   getRecentKey = () => {
     // namespaced per context + column so recents are scoped
     const contextPart = this.props.context ?? 'global'
@@ -104,10 +104,14 @@ class DashboardFilterAutocomplete extends Component {
     }
   }
 
-  /************** helpers **************/
+  /** ************ helpers **************/
   getDisplayName = (s) => {
-    if (!s) return ''
-    if (typeof s === 'string') return s
+    if (!s) {
+      return ''
+    }
+    if (typeof s === 'string') {
+      return s
+    }
     return s.format_txt ?? s.keyword ?? s.name ?? ''
   }
 
@@ -161,7 +165,9 @@ class DashboardFilterAutocomplete extends Component {
     const merged = this.mergeResults(value, recentSuggestions, suggestions)
     const len = merged.length
 
-    if (!popoverOpen || len === 0) return
+    if (!popoverOpen || len === 0) {
+      return
+    }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -202,7 +208,7 @@ class DashboardFilterAutocomplete extends Component {
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      signal: this.axiosSource.signal ?? this.axiosSource.controller.signal,
+      signal: this.axiosSource.signal,
       cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {
@@ -221,7 +227,9 @@ class DashboardFilterAutocomplete extends Component {
         })
       })
       .catch((error) => {
-        if (isAbortError(error)) return
+        if (isAbortError(error)) {
+          return
+        }
         this.setState({ error: 'Error fetching suggestions', loading: false })
       })
   }
@@ -233,7 +241,9 @@ class DashboardFilterAutocomplete extends Component {
     this.inputRef?.blur()
 
     this.setState({ value: '', suggestions: [], popoverOpen: false, highlightedIndex: -1 })
-    if (this.props.onSelect) this.props.onSelect(suggestion)
+    if (this.props.onSelect) {
+      this.props.onSelect(suggestion)
+    }
   }
 
   handlePopoverClickOutside = () => {
@@ -263,9 +273,11 @@ class DashboardFilterAutocomplete extends Component {
 
       recentSuggestions.forEach((s, i) => {
         const displayName = s.format_txt ?? s.keyword
-        if (!displayName) return
+        if (!displayName) {
+          return
+        }
 
-        let displayNameType = s.show_message ? `(${s.show_message})` : ''
+        const displayNameType = s.show_message ? `(${s.show_message})` : ''
         const isHighlighted = itemIndex === highlightedIndex
 
         elements.push(
@@ -311,12 +323,16 @@ class DashboardFilterAutocomplete extends Component {
 
       suggestions.forEach((s, i) => {
         // Avoid showing duplicate that already exists in recents
-        if (recentSuggestions.some((r) => r.keyword === s.keyword)) return
+        if (recentSuggestions.some((r) => r.keyword === s.keyword)) {
+          return
+        }
 
         const displayName = s.format_txt ?? s.keyword
-        if (!displayName) return
+        if (!displayName) {
+          return
+        }
 
-        let displayNameType = s.show_message ? `(${s.show_message})` : ''
+        const displayNameType = s.show_message ? `(${s.show_message})` : ''
         const isHighlighted = itemIndex === highlightedIndex
 
         elements.push(

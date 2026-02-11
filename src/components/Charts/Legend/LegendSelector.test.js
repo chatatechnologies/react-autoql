@@ -119,16 +119,16 @@ describe('renderSelectorContent', () => {
 
     const wrapper = setup(props)
     const instance = wrapper.find(LegendSelector).instance()
-    
+
     // Mock getAllStringColumnIndices to verify it's called
     const getAllStringColumnIndicesSpy = jest.spyOn(instance, 'getAllStringColumnIndices')
     getAllStringColumnIndicesSpy.mockReturnValue([0, 1])
-    
+
     instance.renderSelectorContent()
-    
+
     // Should call getAllStringColumnIndices when isAggregation is true
     expect(getAllStringColumnIndicesSpy).toHaveBeenCalled()
-    
+
     getAllStringColumnIndicesSpy.mockRestore()
   })
 })

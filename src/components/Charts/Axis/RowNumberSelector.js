@@ -61,9 +61,9 @@ export default class RowNumberSelector extends React.Component {
   }
 
   rowNumberListConstructor = (totalRows) => {
-    let initialRowNumber = DEFAULT_DATA_PAGE_SIZE
+    const initialRowNumber = DEFAULT_DATA_PAGE_SIZE
     let currentRowNumber = initialRowNumber
-    let rowNumberList = []
+    const rowNumberList = []
     while (currentRowNumber < totalRows && currentRowNumber < MAX_DATA_PAGE_SIZE) {
       rowNumberList.push(currentRowNumber)
       currentRowNumber = currentRowNumber * 10

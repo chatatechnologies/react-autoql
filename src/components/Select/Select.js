@@ -114,19 +114,19 @@ export default class Select extends React.Component {
           className={`
             ${this.props.isDisabled ? (this.props.outlined ? 'react-autoql-select' : '') : 'react-autoql-select'}
             ${
-              this.props.isDisabled
-                ? this.props.outlined
-                  ? 'outlined disabled'
-                  : ''
-                : this.props.outlined
-                ? 'outlined'
-                : 'underlined'
-            }
+      this.props.isDisabled
+        ? this.props.outlined
+          ? 'outlined disabled'
+          : ''
+        : this.props.outlined
+          ? 'outlined'
+          : 'underlined'
+      }
             ${this.props.size === 'small' ? 'react-autoql-select-small' : 'react-autoql-select-large'}
             ${this.props.color === 'text' ? 'text-color' : ''}`}
           data-test='react-autoql-select'
           onClick={() => {
-            if (!this.props.isDisabled) this.setState({ isOpen: !this.state.isOpen })
+            if (!this.props.isDisabled) {this.setState({ isOpen: !this.state.isOpen })}
           }}
           style={this.props.style}
           data-tooltip-html={this.props.tooltip}
@@ -140,7 +140,7 @@ export default class Select extends React.Component {
                 {!!selectedOption.icon && (
                   <span>
                     <Icon style={{ marginLeft: this.props.outlined ? '-1px' : '0px' }} type={selectedOption.icon} />
-                      
+
                   </span>
                 )}
                 <span>{selectedOption.label ?? selectedOption.value}</span>

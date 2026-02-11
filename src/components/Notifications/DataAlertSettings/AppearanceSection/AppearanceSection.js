@@ -69,18 +69,18 @@ class AppearanceSection extends React.Component {
     const options =
       this.props?.categories?.length > 0
         ? this.props?.categories?.map((label) => {
-            return {
-              value: label.id,
-              label: label.name,
-            }
-          })
+          return {
+            value: label.id,
+            label: label.name,
+          }
+        })
         : [
-            {
-              value: '-1',
-              label: 'No Categories Available',
-              disabled: true,
-            },
-          ]
+          {
+            value: '-1',
+            label: 'No Categories Available',
+            disabled: true,
+          },
+        ]
     return (
       <Select
         label='Alert Category (optional)'

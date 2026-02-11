@@ -28,7 +28,7 @@ export default class AxisSelector extends React.Component {
   render = () => {
     const { scale } = this.props
 
-    if (!scale) return null
+    if (!scale) {return null}
 
     const props = {
       ...this.props,

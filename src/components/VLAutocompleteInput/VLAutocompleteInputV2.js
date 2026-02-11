@@ -43,7 +43,7 @@ const VLAutocompleteInputV2 = ({
           suggestion: searchValue,
           context,
           filter: column,
-          signal: axiosSource.current.controller.signal,
+          signal: axiosSource.current.signal,
           cancelToken: axiosSource.current.cancelToken,
         })
 
@@ -72,7 +72,9 @@ const VLAutocompleteInputV2 = ({
 
   const findExistingFilter = useCallback(
     ({ filterText, value, key }) => {
-      if (!filters?.length) return
+      if (!filters?.length) {
+        return
+      }
 
       if (value && key) {
         return filters.find((filter) => filter.key === key && filter.value === value)

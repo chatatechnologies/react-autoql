@@ -57,7 +57,7 @@ describe('stacked bar ordering', () => {
     // Test that the component renders without errors with sorted indices
     const stackedBarsComponent = findByTestAttr(wrapper, 'stacked-bars')
     expect(stackedBarsComponent.exists()).toBe(true)
-    
+
     // Verify that the component receives the numberColumnIndices prop (which should be sorted)
     const instance = wrapper.instance()
     expect(instance.props.numberColumnIndices).toEqual(sortedIndices)

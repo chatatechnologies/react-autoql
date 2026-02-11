@@ -1,5 +1,5 @@
 import React from 'react'
-import axios from 'axios'
+// Removed unused axios import to satisfy ESLint
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
@@ -73,7 +73,7 @@ import {
   createFilterFunction,
   extractOperatorFromValue,
 } from 'autoql-fe-utils'
-import { isAbortError, createCancelPair } from '../../utils/cancelPair'
+import { isAbortError, createCancelPair } from '../../utils/abortUtils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -112,7 +112,7 @@ export class QueryOutput extends React.Component {
     // Ref to store latest column overrides for synchronous access (avoids stale state issues)
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
-    let response = props.queryResponse
+    const response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
@@ -178,8 +178,12 @@ export class QueryOutput extends React.Component {
             ? feReq.orders.map((o) => ({ field: o.name, dir: o.sort?.toLowerCase() || 'asc' }))
             : []
 
-      if (filters.length) this.tableParams.filter = formatFiltersForTabulator(filters, columns)
-      if (sorters.length) this.tableParams.sort = formatSortersForTabulator(sorters, columns)
+      if (filters.length) {
+        this.tableParams.filter = formatFiltersForTabulator(filters, columns)
+      }
+      if (sorters.length) {
+        this.tableParams.sort = formatSortersForTabulator(sorters, columns)
+      }
 
       this.formattedTableParams = { filters, sorters }
     } catch (err) {
@@ -485,7 +489,9 @@ export class QueryOutput extends React.Component {
       if (this.state.isResizing !== prevState.isResizing) {
         if (!this.state.isResizing && prevState.isResizing) {
           setTimeout(() => {
-            if (!this._isMounted) return
+            if (!this._isMounted) {
+              return
+            }
             this.refreshLayout()
           }, 50)
         }
@@ -619,7 +625,9 @@ export class QueryOutput extends React.Component {
   }
 
   updateMaxConstraints = () => {
-    if (!this.props.enableResizing) return
+    if (!this.props.enableResizing) {
+      return
+    }
 
     const windowWidth = window.innerWidth
     const windowHeight = window.innerHeight
@@ -635,7 +643,9 @@ export class QueryOutput extends React.Component {
     this.updateMaxConstraints()
   }
   handleResizeStart = (e) => {
-    if (!this.props.enableResizing) return
+    if (!this.props.enableResizing) {
+      return
+    }
 
     e.preventDefault()
     this.updateMaxConstraints()
@@ -656,7 +666,9 @@ export class QueryOutput extends React.Component {
   }
 
   handleMouseMove = (e) => {
-    if (!this.state.isResizing || !this.props.enableResizing) return
+    if (!this.state.isResizing || !this.props.enableResizing) {
+      return
+    }
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
     const isChart = isChartType(this.state.displayType)
@@ -1357,7 +1369,7 @@ export class QueryOutput extends React.Component {
           query: queryRequestData?.text,
           queryID: this.props.originalQueryID,
           orders: this.formattedTableParams?.sorters,
-          signal: this.axiosSource.controller.signal,
+          signal: this.axiosSource.signal,
           cancelToken: this.axiosSource.cancelToken,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
@@ -1481,7 +1493,9 @@ export class QueryOutput extends React.Component {
             // For OR logic, filter client-side instead of sending to backend
             // Use setTimeout to show loading state, just like other filter drilldowns
             setTimeout(() => {
-              if (!this._isMounted) return
+              if (!this._isMounted) {
+                return
+              }
               response = this.getFilterDrilldownWithOr({
                 stringColumnIndices: clickedFilter.stringColumnIndices,
                 rows: clickedFilter.rows,
@@ -1636,7 +1650,7 @@ export class QueryOutput extends React.Component {
       groupBys = getGroupBysFromTable(cell, columns)
     }
 
-    if (!!groupBys?.length) {
+    if (groupBys?.length) {
       this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
     }
   }
@@ -1784,9 +1798,13 @@ export class QueryOutput extends React.Component {
 
   // Resolves a Tabulator header filter field to its corresponding column index in the columns array.
   resolveHeaderFilterColumnIndex = (field, columns) => {
-    if (field === undefined || field === null) return undefined
+    if (field === undefined || field === null) {
+      return undefined
+    }
     const parsed = parseInt(field, 10)
-    if (!isNaN(parsed)) return parsed
+    if (!isNaN(parsed)) {
+      return parsed
+    }
     return columns.find((col) => col.field === field || col.id === field)?.index
   }
 
@@ -1819,7 +1837,9 @@ export class QueryOutput extends React.Component {
 
     // Update filter badge in OptionsToolbar
     setTimeout(() => {
-      if (!this._isMounted) return
+      if (!this._isMounted) {
+        return
+      }
       this.updateToolbars()
     }, 0)
   }
@@ -1901,7 +1921,9 @@ export class QueryOutput extends React.Component {
           this.props.onAxisSortChange(newAxisSorts)
         } catch (err) {
           console.error('onAxisSortChange callback threw:', err)
-          if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+          if (this.props.onErrorCallback) {
+            this.props.onErrorCallback(err)
+          }
         }
       }
 
@@ -1912,7 +1934,9 @@ export class QueryOutput extends React.Component {
   onLegendClick = (d) => {
     d?.label && this.handleLegendClick(d.label)
 
-    if (!d) return
+    if (!d) {
+      return
+    }
 
     const columnIndex = d?.columnIndex
     const usePivotData = this.usePivotDataForChart()
@@ -1941,7 +1965,7 @@ export class QueryOutput extends React.Component {
     }
 
     if (this.tableConfig.legendColumnIndex === index) {
-      let stringColumnIndex = this.tableConfig.stringColumnIndex
+      const stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
       this.tableConfig.legendColumnIndex = stringColumnIndex
     } else {
@@ -2026,7 +2050,9 @@ export class QueryOutput extends React.Component {
 
   getPivotRowSelectorOptions = () => {
     const cols = this.getColumns() || []
-    if (!this.tableConfig) return []
+    if (!this.tableConfig) {
+      return []
+    }
     return cols
       .filter(
         (c) =>
@@ -2202,7 +2228,7 @@ export class QueryOutput extends React.Component {
     const hasValidExistingStringIndex =
       existingStringIndex >= 0 && this.isColumnIndexValid(existingStringIndex, columns)
 
-    let chosenStringIndex = hasValidExistingStringIndex ? existingStringIndex : stringColumnIndex
+    const chosenStringIndex = hasValidExistingStringIndex ? existingStringIndex : stringColumnIndex
 
     this.tableConfig.stringColumnIndices = stringColumnIndices
     this.tableConfig.stringColumnIndex = chosenStringIndex
@@ -2337,7 +2363,7 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    //Second axis indices had hidden columns
+    // Second axis indices had hidden columns
     if (this.tableConfig.numberColumnIndices2.find((i) => !!columns[i] && !columns[i]?.is_visible)) {
       const foundVisibleIndex = columns.findIndex(
         (col, i) =>
@@ -2399,20 +2425,24 @@ export class QueryOutput extends React.Component {
 
   setFilterFunction = (col) => {
     // Provide a robust header filter for numeric columns to support operator prefixes
-    // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
+    // (no-operator => LIKE, '='/ '===' => exact, '!==' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
     if (isColumnNumberType(col)) {
       // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
       const inSetCache = new Map()
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (headerValue === undefined || headerValue === null) return true
+          if (headerValue === undefined || headerValue === null) {
+            return true
+          }
 
           const parsed = extractOperatorFromValue(headerValue)
           const op = parsed?.operator
           const cleanValue = parsed?.cleanValue ?? headerValue
 
           // Empty filter -> no-op
-          if (String(cleanValue).trim() === '') return true
+          if (String(cleanValue).trim() === '') {
+            return true
+          }
 
           const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
           const compareNum = Number(cleanValue)
@@ -2425,11 +2455,15 @@ export class QueryOutput extends React.Component {
 
           switch (op) {
             case '=':
-            case '==':
-              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum === compareNum
+            case '===':
+              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) {
+                return rowNum === compareNum
+              }
               return rowStr.toLowerCase() === String(cleanValue).toLowerCase()
-            case '!=':
-              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum !== compareNum
+            case '!==':
+              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) {
+                return rowNum !== compareNum
+              }
               return rowStr.toLowerCase() !== String(cleanValue).toLowerCase()
             case '!':
               return !rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
@@ -2478,7 +2512,9 @@ export class QueryOutput extends React.Component {
           }
         } catch (error) {
           console.error(error)
-          if (this.props.onErrorCallback) this.props.onErrorCallback(error)
+          if (this.props.onErrorCallback) {
+            this.props.onErrorCallback(error)
+          }
           return false
         }
       }
@@ -2492,14 +2528,18 @@ export class QueryOutput extends React.Component {
     if (filterFn && typeof filterFn === 'function') {
       return (headerValue, rowValue, rowData, filterParams) => {
         try {
-          if (headerValue === undefined || headerValue === null) return true
+          if (headerValue === undefined || headerValue === null) {
+            return true
+          }
 
           const parsed = extractOperatorFromValue(headerValue)
           const op = parsed?.operator
           const cleanValue = parsed?.cleanValue ?? headerValue
 
           // Empty filter -> no-op
-          if (String(cleanValue).trim() === '') return true
+          if (String(cleanValue).trim() === '') {
+            return true
+          }
 
           const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
 
@@ -2678,7 +2718,7 @@ export class QueryOutput extends React.Component {
 
         wrapper.appendChild(valueContainer)
 
-        if (cellValue != null && cellValue !== '') {
+        if (cellValue !== null && cellValue !== '') {
           onRendered(() => {
             const cellElement = cell.getElement()
             this.addCopyToClipboardListener(
@@ -3025,17 +3065,17 @@ export class QueryOutput extends React.Component {
         if (headerFilters) {
           const filters = Array.isArray(headerFilters)
             ? headerFilters.map((f) => ({
-                field: f.field ?? f[0],
-                value: f.value ?? f[1],
-                type: f.type,
-                operator: f.operator,
-              }))
+              field: f.field ?? f[0],
+              value: f.value ?? f[1],
+              type: f.type,
+              operator: f.operator,
+            }))
             : Object.entries(headerFilters).map(([field, value]) => ({
-                field,
-                value,
-                type: undefined,
-                operator: undefined,
-              }))
+              field,
+              value,
+              type: undefined,
+              operator: undefined,
+            }))
 
           filters.forEach(({ field, value, type, operator }, idx) => {
             if (field === undefined || value === undefined) {
@@ -3085,7 +3125,9 @@ export class QueryOutput extends React.Component {
           sortedData = sortDataByColumn(tableData, columns, sortColumnIndex, sortDirection)
         }
       }
-      if (!sortedData) sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      if (!sortedData) {
+        sortedData = sortDataByDate(tableData, columns, 'desc', 'isTable')
+      }
 
       // Build unique header lists, stripping out null/undefined/empty-string values
       // Use sortedData (not tableData) to extract unique column headers
@@ -3321,8 +3363,12 @@ export class QueryOutput extends React.Component {
             const bVal = b[pivotColumnIndex]
 
             // Handle null/undefined values
-            if (aVal === null || aVal === undefined) return 1
-            if (bVal === null || bVal === undefined) return -1
+            if (aVal === null || aVal === undefined) {
+              return 1
+            }
+            if (bVal === null || bVal === undefined) {
+              return -1
+            }
 
             // Numeric comparison
             const aNum = Number(aVal)
@@ -3714,7 +3760,9 @@ export class QueryOutput extends React.Component {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing for chart')
       // If the chart would be hidden (e.g., table view), avoid rendering the error message
-      if (!isChartType(this.state.displayType)) return null
+      if (!isChartType(this.state.displayType)) {
+        return null
+      }
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
@@ -3726,7 +3774,9 @@ export class QueryOutput extends React.Component {
         this.generatePivotTableData()
       } catch (e) {
         console.error('First pivot data generation attempt failed:', e)
-        if (this.props.onErrorCallback) this.props.onErrorCallback(e)
+        if (this.props.onErrorCallback) {
+          this.props.onErrorCallback(e)
+        }
       }
 
       // If still missing, try to recompute valid indices and regenerate
@@ -3748,12 +3798,16 @@ export class QueryOutput extends React.Component {
               this.generatePivotTableData()
             } catch (err) {
               console.error('Regeneration after setting table config failed:', err)
-              if (this.props.onErrorCallback) this.props.onErrorCallback(err)
+              if (this.props.onErrorCallback) {
+                this.props.onErrorCallback(err)
+              }
             }
           }
         } catch (e) {
           console.error('Attempt to recompute pivot number index and regenerate failed:', e)
-          if (this.props.onErrorCallback) this.props.onErrorCallback(e)
+          if (this.props.onErrorCallback) {
+            this.props.onErrorCallback(e)
+          }
         }
       }
 
@@ -3786,7 +3840,9 @@ export class QueryOutput extends React.Component {
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
       // Don't show the error message under a table when charts are hidden
-      if (!isChartType(this.state.displayType)) return null
+      if (!isChartType(this.state.displayType)) {
+        return null
+      }
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
@@ -3796,7 +3852,7 @@ export class QueryOutput extends React.Component {
     const countRows = this.queryResponse?.data?.data?.count_rows
 
     // Check if isDataLimited is working correctly and fix it if broken
-    const expectedIsDataLimited = countRows != null && rowLimitValue != null && countRows > rowLimitValue
+    const expectedIsDataLimited = countRows !== null && rowLimitValue !== null && countRows > rowLimitValue
     const correctedIsDataLimited = expectedIsDataLimited || isDataLimitedResult
     const isDataLimitedValue = correctedIsDataLimited || isPivotDataLimited
 
@@ -4130,9 +4186,9 @@ export class QueryOutput extends React.Component {
   render = () => {
     const containerStyle = this.shouldEnableResize
       ? {
-          height: this.state.height,
-          position: 'relative',
-        }
+        height: this.state.height,
+        position: 'relative',
+      }
       : {}
 
     return (

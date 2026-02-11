@@ -56,10 +56,10 @@ export default class LegendSelector extends React.Component {
         (this.props.tableConfig?.numberColumnIndices2?.includes(i) ||
           this.props.numberColumnIndices2?.includes(col.index) ||
           this.props.numberColumnIndices2?.includes(i))
-      
+
       // Exclude the column that's selected on the string axis
       const stringColumnIndexToExclude = this.props.tableConfig?.stringColumnIndex ?? this.props.stringColumnIndex
-      const isOnStringAxis = stringColumnIndexToExclude !== undefined && 
+      const isOnStringAxis = stringColumnIndexToExclude !== undefined &&
         (i === stringColumnIndexToExclude || col.index === stringColumnIndexToExclude)
 
       // If using pivot data (isAggregation), only include groupable string columns that are NOT on number axes
@@ -80,14 +80,14 @@ export default class LegendSelector extends React.Component {
   renderSelectorContent = () => {
     // If using pivot data (isAggregation), use getAllStringColumnIndices to only show groupable string columns
     // Otherwise, use the original logic with getStringColumnIndices
-    let columnIndices = this.props.isAggregation
+    const columnIndices = this.props.isAggregation
       ? this.getAllStringColumnIndices()
       : getStringColumnIndices(this.props.columns, undefined, true)?.stringColumnIndices?.filter(
-          (i) =>
-            !this.props.tableConfig.numberColumnIndices.includes(i) &&
+        (i) =>
+          !this.props.tableConfig.numberColumnIndices.includes(i) &&
             !this.props.tableConfig.numberColumnIndices2.includes(i),
-        ) ?? []
-    
+      ) ?? []
+
     // Don't exclude the string column - it will be shown in the list
     // When clicked, onChangeLegendColumnIndex will swap it with the current legend column
 

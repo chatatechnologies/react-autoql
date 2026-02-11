@@ -198,13 +198,13 @@ class DataAlerts extends React.Component {
       <div className='data-alerts-list-container'>
         {type === 'custom' && !!list
           ? this.renderDataAlertGroupTitle(
-              'Custom Data Alerts',
-              <span>
+            'Custom Data Alerts',
+            <span>
                 View and manage your Custom Alerts here. To create a new Custom Alert, simply click on the "Create Data
                 Alert" option from a query result in <a onClick={this.props.onDMLinkClick}>Data Messenger</a> or a{' '}
-                <a onClick={this.props.onDashboardLinkClick}>Dashboard</a>.
-              </span>,
-            )
+              <a onClick={this.props.onDashboardLinkClick}>Dashboard</a>.
+            </span>,
+          )
           : null}
         {type === 'custom' && !list?.length && this.renderEmptyListMessage()}
         {type === 'project' &&

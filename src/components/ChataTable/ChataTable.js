@@ -47,7 +47,7 @@ import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
 
 import './ChataTable.scss'
-import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
+import 'tabulator-tables/dist/css/tabulator.min.css' // import Tabulator stylesheet
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -72,8 +72,8 @@ export default class ChataTable extends React.Component {
       this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
         : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
-        ? LOCAL_OR_REMOTE.REMOTE
-        : LOCAL_OR_REMOTE.LOCAL
+          ? LOCAL_OR_REMOTE.REMOTE
+          : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
     if (isNaN(this.totalPages) || !this.totalPages) {
@@ -110,12 +110,12 @@ export default class ChataTable extends React.Component {
       // renderHorizontal: 'virtual', // v4: virtualDomHoz = false
       movableColumns: true,
       downloadEncoder: function (fileContents, mimeType) {
-        //fileContents - the unencoded contents of the file
-        //mimeType - the suggested mime type for the output
+        // fileContents - the unencoded contents of the file
+        // mimeType - the suggested mime type for the output
 
-        //custom action to send blob to server could be included here
+        // custom action to send blob to server could be included here
 
-        return new Blob([fileContents], { type: mimeType }) //must return a blob to proceed with the download, return false to abort download
+        return new Blob([fileContents], { type: mimeType }) // must return a blob to proceed with the download, return false to abort download
       },
       ...this.props.tableOptions,
     }
@@ -448,9 +448,15 @@ export default class ChataTable extends React.Component {
   }
 
   isValidTableParams = (params) => {
-    if (!params || typeof params !== 'object') return false
-    if (Array.isArray(params.filters) && params.filters.some((f) => !f || typeof f !== 'object')) return false
-    if (Array.isArray(params.sorters) && params.sorters.some((s) => !s || typeof s !== 'object')) return false
+    if (!params || typeof params !== 'object') {
+      return false
+    }
+    if (Array.isArray(params.filters) && params.filters.some((f) => !f || typeof f !== 'object')) {
+      return false
+    }
+    if (Array.isArray(params.sorters) && params.sorters.some((s) => !s || typeof s !== 'object')) {
+      return false
+    }
     return true
   }
 
@@ -521,7 +527,7 @@ export default class ChataTable extends React.Component {
       return {
         ...filter,
         ...(filter?.operator === 'between' && typeof filter?.value === 'string'
-          ? { value: filter.value.replace(/^(?:\(+|\)+)$/g, '') }
+          ? { value: filter.value.replace(/^[()]+|[()]+$/g, '') }
           : {}),
         ...(column?.type ? { column_type: column.type } : {}),
       }
@@ -591,9 +597,13 @@ export default class ChataTable extends React.Component {
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
     if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
-      if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
+      if (this._debounceTimeout) {
+        clearTimeout(this._debounceTimeout)
+      }
       this._debounceTimeout = setTimeout(() => {
-        if (!this._isMounted) return
+        if (!this._isMounted) {
+          return
+        }
         try {
           this.getRTForRemoteFilterAndSort()
         } catch (error) {
@@ -789,7 +799,7 @@ export default class ChataTable extends React.Component {
 
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
-    let response = _cloneDeep(this.props.response)
+    const response = _cloneDeep(this.props.response)
     // For pivot tables, use the pivot data, not the original query data
     let data = this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData)
 
@@ -1164,7 +1174,9 @@ export default class ChataTable extends React.Component {
         if (this.props.pivot && i === 0) {
           const captureHandler = (ev) => {
             const btn = ev?.target?.closest?.('.pivot-axis-header-btn')
-            if (!btn) return
+            if (!btn) {
+              return
+            }
             ev.preventDefault()
             ev.stopImmediatePropagation()
             this.openPivotAxisSelectorForElement(headerElement)
@@ -1208,11 +1220,15 @@ export default class ChataTable extends React.Component {
   }
 
   setFilterBadgeClasses = () => {
-    if (!this._isMounted || !this.state.tabulatorMounted) return
+    if (!this._isMounted || !this.state.tabulatorMounted) {
+      return
+    }
 
     try {
       const allColumns = this.ref?.tabulator?.getColumns?.()
-      if (!allColumns) return
+      if (!allColumns) {
+        return
+      }
 
       const drilldownFilters = formatFiltersForTabulator(this.props.drilldownFilters, this.props.columns)
       const currentFilters = this.tableParams?.filter ?? []
@@ -1721,7 +1737,9 @@ export default class ChataTable extends React.Component {
   }
 
   openPivotAxisSelectorAboveRowCount = (e) => {
-    if (!this.tableContainer) return
+    if (!this.tableContainer) {
+      return
+    }
 
     const button = e?.currentTarget
     let location = button ? computePivotAxisSelectorLocation(button, this.tableContainer) : null
@@ -1745,8 +1763,12 @@ export default class ChataTable extends React.Component {
   ensurePivotHeaderButton = (headerElement) => {
     try {
       const t = headerElement.querySelector('.tabulator-col-title')
-      if (!t) return
-      if (headerElement.querySelector('.pivot-axis-header-btn')) return
+      if (!t) {
+        return
+      }
+      if (headerElement.querySelector('.pivot-axis-header-btn')) {
+        return
+      }
 
       const s = document.createElement('span')
       s.className = 'pivot-header-title'
@@ -2070,38 +2092,38 @@ export default class ChataTable extends React.Component {
             {!!this.props.response?.data?.data?.rows &&
               !!this.props.columns &&
               (this.props.autoHeight || !this.state.firstRender) && (
-                <>
-                  <TableWrapper
-                    ref={(r) => (this.ref = r)}
-                    height={this.props.autoHeight ? false : this.initialTableHeight}
-                    tableKey={`react-autoql-table-${this.TABLE_ID}`}
-                    id={`react-autoql-table-${this.TABLE_ID}`}
-                    key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
-                    data-test='autoql-tabulator-table'
-                    columns={this.getFilteredTabulatorColumnDefinitions()}
-                    data={this.getRows(this.props)}
-                    options={this.getTableWrapperOptions()}
-                    hidden={this.props.hidden}
-                    data-custom-attr='test-custom-attribute'
-                    className='react-autoql-table'
-                    onTableBuilt={(...args) => this.onTableBuilt(...args)}
-                    onCellClick={(...args) => this.cellClick(...args)}
-                    onDataSorting={(...args) => this.onDataSorting(...args)}
-                    onDataSorted={(...args) => this.onDataSorted(...args)}
-                    onDataFiltering={(...args) => this.onDataFiltering(...args)}
-                    onDataFiltered={(...args) => this.onDataFiltered(...args)}
-                    onDataProcessed={(...args) => this.onDataProcessed(...args)}
-                    onDataLoadError={(...args) => this.onDataLoadError(...args)}
-                    onScrollVertical={(...args) => this.onScrollVertical(...args)}
-                    pivot={this.props.pivot}
-                    scope={this.props.scope}
-                    isDrilldown={this.props.isDrilldown}
-                  />
-                  {isEmpty && this.renderEmptyPlaceholderText()}
-                  {(this.state.pageLoading || !this.state.tabulatorMounted) && this.renderPageLoader()}
-                  {this.state.scrollLoading && this.renderScrollLoader()}
-                </>
-              )}
+              <>
+                <TableWrapper
+                  ref={(r) => (this.ref = r)}
+                  height={this.props.autoHeight ? false : this.initialTableHeight}
+                  tableKey={`react-autoql-table-${this.TABLE_ID}`}
+                  id={`react-autoql-table-${this.TABLE_ID}`}
+                  key={`react-autoql-table-wrapper-${this.TABLE_ID}`}
+                  data-test='autoql-tabulator-table'
+                  columns={this.getFilteredTabulatorColumnDefinitions()}
+                  data={this.getRows(this.props)}
+                  options={this.getTableWrapperOptions()}
+                  hidden={this.props.hidden}
+                  data-custom-attr='test-custom-attribute'
+                  className='react-autoql-table'
+                  onTableBuilt={(...args) => this.onTableBuilt(...args)}
+                  onCellClick={(...args) => this.cellClick(...args)}
+                  onDataSorting={(...args) => this.onDataSorting(...args)}
+                  onDataSorted={(...args) => this.onDataSorted(...args)}
+                  onDataFiltering={(...args) => this.onDataFiltering(...args)}
+                  onDataFiltered={(...args) => this.onDataFiltered(...args)}
+                  onDataProcessed={(...args) => this.onDataProcessed(...args)}
+                  onDataLoadError={(...args) => this.onDataLoadError(...args)}
+                  onScrollVertical={(...args) => this.onScrollVertical(...args)}
+                  pivot={this.props.pivot}
+                  scope={this.props.scope}
+                  isDrilldown={this.props.isDrilldown}
+                />
+                {isEmpty && this.renderEmptyPlaceholderText()}
+                {(this.state.pageLoading || !this.state.tabulatorMounted) && this.renderPageLoader()}
+                {this.state.scrollLoading && this.renderScrollLoader()}
+              </>
+            )}
           </div>
           {this.renderDateRangePickerPopover()}
           {this.renderCustomColumnPopover()}

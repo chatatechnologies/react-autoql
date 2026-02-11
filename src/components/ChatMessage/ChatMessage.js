@@ -347,7 +347,7 @@ export default class ChatMessage extends React.Component {
   }
 
   renderMarkdown = (content) => {
-    if (!content) return null
+    if (!content) {return null}
 
     // Convert content to string if it's not already
     let contentStr = typeof content === 'string' ? content : String(content)
@@ -644,13 +644,13 @@ export default class ChatMessage extends React.Component {
     const isMarkdownMessage = this.props.type === 'markdown' || this.props.type === 'md'
     const customAutoQLConfig = isDataPreview
       ? {
-          ...this.props.autoQLConfig,
-          enableCSVDownload: false,
-          enableReportProblem: false,
-          enableColumnVisibilityManager: false,
-          enableNotifications: false,
-          translation: 'exclude',
-        }
+        ...this.props.autoQLConfig,
+        enableCSVDownload: false,
+        enableReportProblem: false,
+        enableColumnVisibilityManager: false,
+        enableNotifications: false,
+        translation: 'exclude',
+      }
       : this.props.autoQLConfig
 
     return (

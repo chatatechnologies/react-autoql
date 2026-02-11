@@ -22,13 +22,13 @@ export default class DateRangePicker extends React.Component {
         startDate: this.isValidDate(props.initialRange?.startDate)
           ? props.initialRange?.startDate
           : this.isValidDate(props.validRange?.startDate)
-          ? props.validRange?.startDate
-          : new Date(),
+            ? props.validRange?.startDate
+            : new Date(),
         endDate: this.isValidDate(props.initialRange?.endDate)
           ? props.initialRange?.endDate
           : this.isValidDate(props.validRange?.endDate)
-          ? props.validRange?.endDate
-          : new Date(),
+            ? props.validRange?.endDate
+            : new Date(),
         key: 'selection',
       },
     }

@@ -4,7 +4,7 @@ import _cloneDeep from 'lodash.clonedeep'
 export function sanitizePivotOptions(options, isPivot = false) {
   const opts = _cloneDeep(options || {})
 
-  if (!isPivot) return opts
+  if (!isPivot) {return opts}
 
   // Pivot tables now use ajaxRequestFunc with progressive loading like regular tables
   // No need to remove ajax/pagination options - they should work the same way

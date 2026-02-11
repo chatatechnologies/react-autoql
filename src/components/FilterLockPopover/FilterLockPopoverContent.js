@@ -202,7 +202,7 @@ export default class FilterLockPopover extends React.Component {
     fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
-      signal: this.axiosSource.controller.signal,
+      signal: this.axiosSource.signal,
       cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {

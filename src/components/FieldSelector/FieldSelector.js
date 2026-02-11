@@ -75,7 +75,7 @@ export default class FieldSelector extends React.Component {
             listTitle={fieldsDropdownTitle}
             selected={selectedColumns.map((index) => columns?.[index]?.name).filter(Boolean)}
             onChange={(selectedColumnNames) => {
-              if (disabled || loading || !columns?.length) return
+              if (disabled || loading || !columns?.length) {return}
               const selectedColumnIndexes = selectedColumnNames.map((name) =>
                 columns.findIndex((col) => name === col.name),
               )

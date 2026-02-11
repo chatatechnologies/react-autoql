@@ -119,18 +119,18 @@ export default class SampleQuery extends React.Component {
       return null
     }
 
-    let renderedChunks = []
+    const renderedChunks = []
     if (suggestion.chunked?.length) {
       suggestion.chunked.forEach((chunk, i) => {
         if (chunk?.value) {
           let text = <span>&#20;{chunk.value}</span>
-          if (i === 0 && chunk?.type == SampleQueryReplacementTypes.SAMPLE_QUERY_TEXT_TYPE) {
+          if (i === 0 && chunk?.type === SampleQueryReplacementTypes.SAMPLE_QUERY_TEXT_TYPE) {
             text = <span>{getTitleCase(chunk.value)}</span>
           }
 
           let chunkContent = text
 
-          if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
+          if (chunk.type === SampleQueryReplacementTypes.SAMPLE_QUERY_VL_TYPE) {
             const columnName = chunk.replacement?.display_name
 
             let vlAutocompleteValue
@@ -152,7 +152,7 @@ export default class SampleQuery extends React.Component {
                 placeholder={columnName ? `Search a "${columnName}"` : 'Search values'}
               />
             )
-          } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {
+          } else if (chunk.type === SampleQueryReplacementTypes.SAMPLE_QUERY_AMOUNT_TYPE) {
             chunkContent = (
               <InlineInputEditor
                 value={chunk.value}
@@ -161,7 +161,7 @@ export default class SampleQuery extends React.Component {
                 tooltipID={this.props.tooltipID}
               />
             )
-          } else if (chunk.type == SampleQueryReplacementTypes.SAMPLE_QUERY_TIME_TYPE) {
+          } else if (chunk.type === SampleQueryReplacementTypes.SAMPLE_QUERY_TIME_TYPE) {
             chunkContent = (
               <InlineInputEditor
                 value={chunk.value}

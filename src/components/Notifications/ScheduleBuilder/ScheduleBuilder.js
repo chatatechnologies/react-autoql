@@ -300,7 +300,7 @@ export default class ScheduleBuilder extends React.Component {
   shouldRenderResetPeriodSelector = () => {
     return (
       // (this.props.conditionType !== EXISTS_TYPE || this.props.dataAlertType === SCHEDULED_TYPE) &&
-      this.props.dataAlertType !== SCHEDULED_TYPE //&& this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
+      this.props.dataAlertType !== SCHEDULED_TYPE // && this.SUPPORTED_CONDITION_TYPES.includes(COMPARE_TYPE)
     )
   }
 

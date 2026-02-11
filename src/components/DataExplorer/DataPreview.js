@@ -89,7 +89,7 @@ export default class DataPreview extends React.Component {
       numRows: this.DATA_PREVIEW_ROWS,
       source: 'data_explorer.data_preview',
       scope: 'data_explorer',
-      signal: this.axiosSource.controller.signal,
+      signal: this.axiosSource.signal,
       cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {

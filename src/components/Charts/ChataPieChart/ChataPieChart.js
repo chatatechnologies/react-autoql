@@ -35,12 +35,12 @@ const LegendStateManager = {
   save(legendLabels, columns, columnIndex) {
     this.setSession(columns, columnIndex)
     const key = this.sessionKey
-    if (!key || !Array.isArray(legendLabels)) return
+    if (!key || !Array.isArray(legendLabels)) {return}
 
     try {
       const hiddenStates = {}
       legendLabels.forEach(({ label, hidden }) => {
-        if (hidden) hiddenStates[label] = true
+        if (hidden) {hiddenStates[label] = true}
       })
 
       localStorage.setItem(key, JSON.stringify(hiddenStates))
@@ -52,11 +52,11 @@ const LegendStateManager = {
   load(legendLabels, columns, columnIndex) {
     this.setSession(columns, columnIndex)
     const key = this.sessionKey
-    if (!key || !Array.isArray(legendLabels)) return legendLabels
+    if (!key || !Array.isArray(legendLabels)) {return legendLabels}
 
     try {
       const stored = localStorage.getItem(key)
-      if (!stored) return legendLabels
+      if (!stored) {return legendLabels}
 
       const hiddenStates = JSON.parse(stored)
       return legendLabels.map((label) => ({
@@ -383,7 +383,7 @@ export default class ChataPieChart extends React.Component {
       index = legendObj.dataIndex
       legendLabel = this.state.legendLabels[index]
     }
-    if (!legendLabel || index === -1) return
+    if (!legendLabel || index === -1) {return}
     const onlyLabelVisible = this.state.legendLabels.every((label) => label.label === legendLabel.label || label.hidden)
     if (!onlyLabelVisible || legendLabel.hidden) {
       const newLegendLabels = this.state.legendLabels.map((label) => ({ ...label }))
@@ -612,41 +612,41 @@ export default class ChataPieChart extends React.Component {
 
   renderTitleSelector = () => {
     if (this.shouldRenderColumnSelector())
-      return (
-        <StringAxisSelector
-          {...this.props}
-          chartContainerRef={this.props.chartContainerRef}
-          changeStringColumnIndex={this.props.changeStringColumnIndex}
-          legendColumn={this.props.legendColumn}
-          popoverParentElement={this.props.popoverParentElement}
-          stringColumnIndices={this.props.stringColumnIndices}
-          stringColumnIndex={this.props.stringColumnIndex}
-          numberColumnIndex={this.props.numberColumnIndex}
-          numberColumnIndices={this.props.numberColumnIndices}
-          numberColumnIndices2={this.props.numberColumnIndices2}
-          isAggregation={this.props.isAggregation}
-          tooltipID={this.props.tooltipID}
-          columns={this.props.columns}
-          scale={this.legendScale}
-          align='center'
-          position='bottom'
-          positions={['top', 'bottom', 'right', 'left']}
-          axisSelectorRef={(r) => (this.columnSelector = r)}
-          isOpen={this.state.isColumnSelectorOpen}
-          closeSelector={this.closeSelector}
-        >
-          <rect
-            ref={(r) => (this.columnSelector = r)}
-            className='axis-label-border'
-            data-test='axis-label-border'
-            onClick={this.openSelector}
-            fill='transparent'
-            stroke='transparent'
-            strokeWidth='1px'
-            rx='4'
-          />
-        </StringAxisSelector>
-      )
+    {return (
+      <StringAxisSelector
+        {...this.props}
+        chartContainerRef={this.props.chartContainerRef}
+        changeStringColumnIndex={this.props.changeStringColumnIndex}
+        legendColumn={this.props.legendColumn}
+        popoverParentElement={this.props.popoverParentElement}
+        stringColumnIndices={this.props.stringColumnIndices}
+        stringColumnIndex={this.props.stringColumnIndex}
+        numberColumnIndex={this.props.numberColumnIndex}
+        numberColumnIndices={this.props.numberColumnIndices}
+        numberColumnIndices2={this.props.numberColumnIndices2}
+        isAggregation={this.props.isAggregation}
+        tooltipID={this.props.tooltipID}
+        columns={this.props.columns}
+        scale={this.legendScale}
+        align='center'
+        position='bottom'
+        positions={['top', 'bottom', 'right', 'left']}
+        axisSelectorRef={(r) => (this.columnSelector = r)}
+        isOpen={this.state.isColumnSelectorOpen}
+        closeSelector={this.closeSelector}
+      >
+        <rect
+          ref={(r) => (this.columnSelector = r)}
+          className='axis-label-border'
+          data-test='axis-label-border'
+          onClick={this.openSelector}
+          fill='transparent'
+          stroke='transparent'
+          strokeWidth='1px'
+          rx='4'
+        />
+      </StringAxisSelector>
+    )}
   }
 
   render = () => {

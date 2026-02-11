@@ -162,10 +162,10 @@ const AddColumnBtnWithoutRef = forwardRef((props, ref) => {
     const selects = queryResponse?.data?.data?.available_selects || []
     return selects.filter((col) => {
       const thisColName = normalizeColumnIdentifier(col)
-      if (existingColumnNames.includes(thisColName)) return false
+      if (existingColumnNames.includes(thisColName)) {return false}
 
-      if (disableGroupColumnsOptions) return isColumnNumerical(col.column_type)
-      if (disableFilterColumnsOptions) return !isColumnNumerical(col.column_type)
+      if (disableGroupColumnsOptions) {return isColumnNumerical(col.column_type)}
+      if (disableFilterColumnsOptions) {return !isColumnNumerical(col.column_type)}
       return true
     })
   }, [queryResponse, existingColumnNames, disableGroupColumnsOptions, disableFilterColumnsOptions])

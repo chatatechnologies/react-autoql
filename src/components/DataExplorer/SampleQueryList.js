@@ -102,7 +102,7 @@ export default class SampleQueryList extends React.Component {
       text: this.props.searchText,
       context: this.props.context,
       columns: this.props.columns,
-      signal: this.axiosSourceSampleQueries.controller.signal,
+      signal: this.axiosSourceSampleQueries.signal,
       cancelToken: this.axiosSourceSampleQueries.cancelToken,
     })
       .then((response) => {

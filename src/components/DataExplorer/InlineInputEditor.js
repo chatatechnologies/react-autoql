@@ -149,7 +149,7 @@ export default class InlineInputEditor extends React.Component {
           ) : (
             <div
               className={`inline-number-input-editor-btn ${this.state.isInput ? 'inline-number-input-editor-btn-active' : ''
-                }`}
+              }`}
               onClick={() => {
                 this.setState({ isInput: this.props.disabledOnClickEdit ? false : true })
                 this.props.onClickEdit()

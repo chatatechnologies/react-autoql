@@ -1,9 +1,7 @@
 import React from 'react'
-import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
-import _cloneDeep from 'lodash.clonedeep'
+// Removed unused imports (axios, _isEqual, _cloneDeep) to reduce ESLint noise
 import Autosuggest from 'react-autosuggest'
 
 import {
@@ -160,7 +158,7 @@ export default class VLAutocompleteInput extends React.Component {
       suggestion: value,
       context: this.props.context,
       filter: this.props.column,
-      signal: this.axiosSource.controller.signal,
+      signal: this.axiosSource.signal,
       cancelToken: this.axiosSource.cancelToken,
     })
       .then((response) => {

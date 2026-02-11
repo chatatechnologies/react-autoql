@@ -97,7 +97,7 @@ const DashboardSlicer = (props) => {
         ...getAuthentication(props.authentication),
         suggestion: value,
         context: props.context,
-        signal: axiosSourceRef.current.controller.signal,
+        signal: axiosSourceRef.current.signal,
         cancelToken: axiosSourceRef.current.cancelToken,
       })
         .then((response) => {

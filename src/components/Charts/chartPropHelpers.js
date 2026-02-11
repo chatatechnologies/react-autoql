@@ -80,7 +80,7 @@ export const chartElementDefaultProps = {
 /**
  * Creates a "between" filter for date drilldowns when the string axis is a DATE column.
  * Returns null if the column is not a DATE type or if the date value is invalid.
- * 
+ *
  * @param {Object} params - Parameters object
  * @param {Object} params.stringColumn - The column object for the string axis
  * @param {*} params.dateValue - The date value from the row data
@@ -93,7 +93,7 @@ export const createDateDrilldownFilter = ({ stringColumn, dateValue, dataFormatt
     return null
   }
 
-  if (dateValue == null) {
+  if (dateValue === null) {
     return null
   }
 

@@ -17,7 +17,7 @@ const ContextAutocompleteInput = ({
   shouldRender = true,
 }) => {
   const findExistingFilter = useCallback(({ filterText, value, key }) => {
-    if (!filters?.length) return
+    if (!filters?.length) {return}
 
     if (value && key) {
       return filters.find((filter) => filter.key === key && filter.value === value)
@@ -82,12 +82,12 @@ const ContextAutocompleteInput = ({
       const aIsMatch = a?.description === primaryContext?.displayName
       const bIsMatch = b?.description === primaryContext?.displayName
 
-      if (aIsMatch && !bIsMatch) return -1;
-      if (!aIsMatch && bIsMatch) return 1;
+      if (aIsMatch && !bIsMatch) {return -1}
+      if (!aIsMatch && bIsMatch) {return 1}
 
       return a?.description.localeCompare(b?.description, undefined, { sensitivity: 'base' })
-    });
-  }, [value]);
+    })
+  }, [value])
 
   const renderValue = useCallback((value) => {
     return value?.format_txt ?? placeholder
@@ -105,7 +105,7 @@ const ContextAutocompleteInput = ({
     debounceMs: 100,
     getSuggestionValue: (suggestion) => suggestion,
     alwaysRenderSuggestions: true,
-    inputClassName: "react-autoql-vl-autocomplete-input",
+    inputClassName: 'react-autoql-vl-autocomplete-input',
     multiSection: true,
     renderSectionTitle: (section) => (
       <>

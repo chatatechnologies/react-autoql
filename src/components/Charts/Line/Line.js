@@ -52,8 +52,8 @@ export default class Line extends PureComponent {
     const paths = []
 
     numberColumnIndices.forEach((colIndex, i) => {
-      let vertices = []
-      let pathIndex = 0
+      const vertices = []
+      const pathIndex = 0
       const color = this.props.colorScale(colIndex)
       if (!columns[colIndex].isSeriesHidden) {
         this.props.data.forEach((d, index) => {

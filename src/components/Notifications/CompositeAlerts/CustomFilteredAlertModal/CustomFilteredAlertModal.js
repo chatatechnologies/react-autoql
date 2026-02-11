@@ -115,14 +115,14 @@ class CustomFilteredAlertModal extends React.Component {
 
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
-      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
-        .then((response) => {
-          this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
-        })
-        .catch((error) => {
-          console.error('error fetching data alert categories', error)
-          this.setState({ categories: [], fetchedCategories: true })
-        })
+    {getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
+      .then((response) => {
+        this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
+      })
+      .catch((error) => {
+        console.error('error fetching data alert categories', error)
+        this.setState({ categories: [], fetchedCategories: true })
+      })}
   }
 
   getFilters = (props = this.props) => {
@@ -256,7 +256,7 @@ class CustomFilteredAlertModal extends React.Component {
 
       const customFilters = this.state.customFilters
 
-      let expressionJSON = [
+      const expressionJSON = [
         {
           id: this.state.isEditingDataAlert ? currentDataAlert.expression?.[0]?.id : uuid(),
           term_type: 'DATA_ALERT',
@@ -417,10 +417,10 @@ class CustomFilteredAlertModal extends React.Component {
       this.state.titleInput === '' && this.state.customFilters.length === 0
         ? 'You must provide both an alert title and at least one filter'
         : this.state.titleInput === ''
-        ? 'You must provide an alert title'
-        : this.state.customFilters.length === 0
-        ? 'You must select at least one filter'
-        : ''
+          ? 'You must provide an alert title'
+          : this.state.customFilters.length === 0
+            ? 'You must select at least one filter'
+            : ''
 
     return (
       <span data-tooltip-id={this.TOOLTIP_ID} data-tooltip-content={tooltipContent}>
@@ -586,7 +586,7 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   renderQuerySummary = () => {
-    if (!!this.props.currentDataAlert?.id) {
+    if (this.props.currentDataAlert?.id) {
       return null
     }
     const formattedQueryText = this.expressionRef?.getFormattedQueryText({
@@ -639,8 +639,8 @@ class CustomFilteredAlertModal extends React.Component {
             this.props.isPreviewMode
               ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.PREVIEW
               : this.state.isEditingDataAlert
-              ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
-              : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
+                ? CUSTOM_FILTERED_ALERT_MODAL_TITLES.EDIT
+                : CUSTOM_FILTERED_ALERT_MODAL_TITLES.CREATE
           }
           titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}

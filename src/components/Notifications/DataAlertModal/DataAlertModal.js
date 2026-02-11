@@ -128,14 +128,14 @@ class DataAlertModal extends React.Component {
 
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
-      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
-        .then((response) => {
-          this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
-        })
-        .catch((error) => {
-          console.error('error fetching data alert categories', error)
-          this.setState({ categories: [], fetchedCategories: true })
-        })
+    {getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
+      .then((response) => {
+        this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
+      })
+      .catch((error) => {
+        console.error('error fetching data alert categories', error)
+        this.setState({ categories: [], fetchedCategories: true })
+      })}
   }
 
   showConditionsStep = () => {
@@ -237,7 +237,7 @@ class DataAlertModal extends React.Component {
       const { currentDataAlert, queryResponse } = this.props
       const { titleInput, messageInput, billingUnitsInput, descriptionInput } = this.state
 
-      if (!!this.props.currentDataAlert?.id) {
+      if (this.props.currentDataAlert?.id) {
         return this.settingsViewRef?.getData()
       } else {
         let expressionJSON = _cloneDeep(this.state.expressionJSON)
@@ -333,7 +333,7 @@ class DataAlertModal extends React.Component {
       isSavingDataAlert: true,
     })
 
-    const newDataAlert = !!this.props.currentDataAlert?.id ? this.settingsViewRef?.getData() : this.getDataAlertData()
+    const newDataAlert = this.props.currentDataAlert?.id ? this.settingsViewRef?.getData() : this.getDataAlertData()
 
     const requestParams = {
       dataAlert: newDataAlert,
@@ -418,7 +418,7 @@ class DataAlertModal extends React.Component {
   }
 
   isFinishBtnDisabled = () => {
-    if (!!this.props.currentDataAlert?.id) {
+    if (this.props.currentDataAlert?.id) {
       return !this.state.isSettingsFormComplete
     }
 
@@ -438,7 +438,7 @@ class DataAlertModal extends React.Component {
   }
 
   renderNextBtn = () => {
-    if (!!this.props.currentDataAlert?.id) {
+    if (this.props.currentDataAlert?.id) {
       return (
         <Button
           type='primary'
@@ -703,7 +703,7 @@ class DataAlertModal extends React.Component {
   }
 
   renderQuerySummary = () => {
-    if (!!this.props.currentDataAlert?.id) {
+    if (this.props.currentDataAlert?.id) {
       return null
     }
     const formattedQueryText = this.expressionRef?.getFormattedQueryText({
@@ -729,7 +729,7 @@ class DataAlertModal extends React.Component {
 
     const steps = this.getSteps()
 
-    if (!!this.props.currentDataAlert?.id) {
+    if (this.props.currentDataAlert?.id) {
       return (
         <CustomScrollbars className='data-alert-modal-settings-scroll-container'>
           <DataAlertSettings
@@ -805,7 +805,7 @@ class DataAlertModal extends React.Component {
           contentClassName='react-autoql-data-alert-creation-modal'
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={!!this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'}
+          title={this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'}
           titleIcon={this.getTitleIcon()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}

@@ -17,7 +17,7 @@ const GroupByAutocompleteInput = ({
 }) => {
 
   const findExistingFilter = useCallback(({ filterText, value, key }) => {
-    if (!filters?.length) return
+    if (!filters?.length) {return}
 
     if (value && key) {
       return filters.find((filter) => filter.key === key && filter.value === value)
@@ -102,7 +102,7 @@ const GroupByAutocompleteInput = ({
     debounceMs: 100,
     getSuggestionValue: (suggestion) => suggestion,
     alwaysRenderSuggestions: true,
-    inputClassName: "react-autoql-vl-autocomplete-input",
+    inputClassName: 'react-autoql-vl-autocomplete-input',
     multiSection: true,
     renderSectionTitle: (section) => (
       <>

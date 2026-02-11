@@ -441,8 +441,8 @@ export default class DataAlertListItem extends React.Component {
                 isEnabled
                   ? 'Active'
                   : isIDLECustomCompositeAlert
-                  ? 'To disable this alert, please disable its base alert.'
-                  : 'Inactive'
+                    ? 'To disable this alert, please disable its base alert.'
+                    : 'Inactive'
               }
               data-tooltip-id={this.props.tooltipID}
             >

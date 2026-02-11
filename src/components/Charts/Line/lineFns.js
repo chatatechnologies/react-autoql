@@ -12,10 +12,10 @@ const controlPoint = (current, previous, next, reverse, smoothing = 0.2) => {
   let p = previous
   let n = next
 
-  if (!p) p = current
-  if (!n) n = current
+  if (!p) {p = current}
+  if (!n) {n = current}
 
-  let pn = line(p, n)
+  const pn = line(p, n)
   const pc = line(p, c)
   const cn = line(c, n)
 

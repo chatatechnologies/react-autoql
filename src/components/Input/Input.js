@@ -301,18 +301,18 @@ export default class Input extends React.Component {
             ${hasSelect ? 'with-select' : ''}
             ${size === 'small' ? 'react-autoql-input-small' : 'react-autoql-input-large'}
             ${
-              type === 'text' || type === CustomColumnTypes.NUMBER
-                ? 'react-autoql-input-number'
-                : 'hidden'
-                ? 'react-autoql-input-hidden'
-                : ''
-            }
+      type === 'text' || type === CustomColumnTypes.NUMBER
+        ? 'react-autoql-input-number'
+        : 'hidden'
+          ? 'react-autoql-input-hidden'
+          : ''
+      }
             ${selectLocation === 'left' ? 'react-autoql-input-select-left' : 'react-autoql-input-select-right'}
             ${showSpinWheel ? 'react-autoql-input-number-spin-wheel' : ''}`}
             data-test='react-autoql-input'
           >
             {hasSelect && selectLocation === 'left' && this.renderSelectDropdown()}
-            {!!area ? (
+            {area ? (
               <textarea
                 {...nativeProps}
                 ref={(r) => (this.inputRef = r)}

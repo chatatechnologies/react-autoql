@@ -91,7 +91,7 @@ export default class ChatContent extends React.Component {
       this.addIntroMessages(this.props.introMessages)
     }
 
-    //disable input focus for mobile, as ios keyboard has bug
+    // disable input focus for mobile, as ios keyboard has bug
     if (this.props.shouldRender && !isMobile) {
       this.focusInput()
     }
@@ -100,7 +100,7 @@ export default class ChatContent extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    //disable input focus for mobile, as ios keyboard has bug
+    // disable input focus for mobile, as ios keyboard has bug
     if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
     }
@@ -349,7 +349,7 @@ export default class ChatContent extends React.Component {
 
       clearTimeout(this.responseDelayTimeout)
 
-      //disable input focus for mobile, as ios keyboard has bug
+      // disable input focus for mobile, as ios keyboard has bug
       !isMobile && this.focusInput()
     }
   }

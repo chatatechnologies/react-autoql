@@ -147,7 +147,7 @@ class DashboardWithoutTheme extends React.Component {
       // Execute only tiles that don't have queryResponse
       // Use requestAnimationFrame to ensure tile refs are set
       requestAnimationFrame(() => {
-        if (!this._isMounted) return
+        if (!this._isMounted) {return}
 
         const tiles = this.props.tiles || []
         const tilesToExecute = tiles.filter((tile) => !tile.queryResponse && !tile.secondQueryResponse)
@@ -818,13 +818,13 @@ class DashboardWithoutTheme extends React.Component {
               !this.props.offline
                 ? this.props.autoQLConfig
                 : {
-                    ...getAutoQLConfig(this.props.autoQLConfig),
-                    enableDrilldowns: false,
-                    enableReportProblem: false,
-                    enableColumnVisibilityManager: false,
-                    enableNotifications: false,
-                    enableCSVDownload: false,
-                  }
+                  ...getAutoQLConfig(this.props.autoQLConfig),
+                  enableDrilldowns: false,
+                  enableReportProblem: false,
+                  enableColumnVisibilityManager: false,
+                  enableNotifications: false,
+                  enableCSVDownload: false,
+                }
             }
             tile={{ ...tile, i: tile.key, maxH: 10, minH: 2, minW: 3 }}
             displayType={tile.displayType}

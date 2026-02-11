@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import { sanitizePivotOptions } from './pivotUtils'
-import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
+import { TabulatorFull as Tabulator } from 'tabulator-tables' // import Tabulator library
 import throttle from 'lodash.throttle'
 import { isMobile } from 'react-device-detect'
 
@@ -18,7 +18,7 @@ export default class TableWrapper extends React.Component {
     this.COMPONENT_KEY = uuid()
 
     this.tableRef = React.createRef()
-    this.tabulator = null //variable to hold your table
+    this.tabulator = null // variable to hold your table
     this.redrawRestored = true
     this.defaultOptions = {
       // renderVerticalBuffer: 10, // Change this to help with performance if needed in the future
@@ -120,13 +120,13 @@ export default class TableWrapper extends React.Component {
   }
 
   handleWindowResizeForAlignment = () => {
-    if (!this.tabulator) return
+    if (!this.tabulator) {return}
     this.tabulator.getColumns().forEach((column) => {
       const colDef = column.getDefinition()
       const columnMinWidth = 90
       column.getCells().forEach((cell) => {
         const cellElement = cell.getElement()
-        if (!cellElement) return
+        if (!cellElement) {return}
         if (cellElement.clientWidth < columnMinWidth) {
           cellElement.style.textAlign = 'left'
         } else {
@@ -148,7 +148,7 @@ export default class TableWrapper extends React.Component {
         this.touchStartHandler = (e) => {
           // Only mark as actively touching if the touch is directly on the table
           const target = e.target
-          if (!tableholder.contains(target)) return
+          if (!tableholder.contains(target)) {return}
 
           isActivelyTouchingTable = true
           touchStartTime = Date.now()
@@ -163,8 +163,8 @@ export default class TableWrapper extends React.Component {
 
         this.touchMoveHandler = (e) => {
           // Only stop propagation if user is actively touching the table (not momentum scrolling)
-          if (!isActivelyTouchingTable) return
-          if (!tableholder.contains(e.target)) return
+          if (!isActivelyTouchingTable) {return}
+          if (!tableholder.contains(e.target)) {return}
           // User is actively scrolling the table, prevent parent containers from scrolling
           e.stopPropagation()
         }

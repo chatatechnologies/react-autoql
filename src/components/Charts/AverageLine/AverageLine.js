@@ -241,9 +241,9 @@ export class AverageLine extends React.Component {
       const isSmallChart = chartArea < 200000 // Less than ~447x447 pixels
 
       // Reduce font size for multiple series to prevent overlap (but keep minimum readable)
-      if (seriesCount >= 4) return isSmallChart ? 9 : 10
-      if (seriesCount >= 3) return isSmallChart ? 10 : 11
-      if (seriesCount >= 2) return isSmallChart ? 10.5 : 11
+      if (seriesCount >= 4) {return isSmallChart ? 9 : 10}
+      if (seriesCount >= 3) {return isSmallChart ? 10 : 11}
+      if (seriesCount >= 2) {return isSmallChart ? 10.5 : 11}
 
       // Single series - still consider chart size
       return isSmallChart ? 10.5 : baseFontSize

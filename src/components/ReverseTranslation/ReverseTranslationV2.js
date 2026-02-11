@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _cloneDeep from 'lodash.filter'
+import _cloneDeep from 'lodash.clonedeep'
 
 import {
-  deepEqual,
   constructRTArray,
   getAuthentication,
   fetchVLAutocomplete,
@@ -129,7 +128,9 @@ const ReverseTranslation = ({
       const context = subjects?.find((subject) => subject?.context === primaryContextName) || {}
 
       const valueLabelValidationPromises = rt.map(async (chunk, i) => {
-        if (cancelled) return
+        if (cancelled) {
+          return
+        }
         if (chunk.c_type === 'VALUE_LABEL') {
           try {
             const response = await fetchVLAutocomplete({
@@ -307,7 +308,9 @@ const ReverseTranslation = ({
         data-test='react-autoql-condition-link'
         onClick={(e) => {
           e.stopPropagation()
-          if (disableAction || !onValueLabelClick) return
+          if (disableAction || !onValueLabelClick) {
+            return
+          }
           onValueLabelClick(chunk.eng)
         }}
       >

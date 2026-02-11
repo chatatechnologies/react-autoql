@@ -279,10 +279,10 @@ export default class Legend extends React.Component {
 
     this.legendLabels2 = this.props.hasSecondAxis
       ? (this.legendLabels2 = getLegendLabelsForMultiSeries(
-          this.props.columns,
-          this.props.colorScale2,
-          this.props.numberColumnIndices2,
-        ))
+        this.props.columns,
+        this.props.colorScale2,
+        this.props.numberColumnIndices2,
+      ))
       : []
 
     // Store all legend labels before filtering for the popover
@@ -319,8 +319,8 @@ export default class Legend extends React.Component {
 
     let list1NumSections = Math.round(list1Distribution * numSections)
     if (list2Size) {
-      if (list1NumSections === numSections && numSections > 1) list1NumSections = numSections - 1
-      if (list1NumSections === 0 && numSections > 1) list1NumSections = 1
+      if (list1NumSections === numSections && numSections > 1) {list1NumSections = numSections - 1}
+      if (list1NumSections === 0 && numSections > 1) {list1NumSections = 1}
     }
 
     const sections = [...new Array(numSections)].map(() => [])
@@ -903,7 +903,7 @@ export default class Legend extends React.Component {
   }
 
   renderLegendPopover = (buttonPosition, iconSize) => {
-    if (!buttonPosition) return null
+    if (!buttonPosition) {return null}
 
     const { x, y } = buttonPosition
 
@@ -940,9 +940,9 @@ export default class Legend extends React.Component {
     const iconSize = 14
     const buttonPosition = this.filterButtonPosition
       ? {
-          x: this.filterButtonPosition.x,
-          y: this.filterButtonPosition.y,
-        }
+        x: this.filterButtonPosition.x,
+        y: this.filterButtonPosition.y,
+      }
       : null
 
     return (

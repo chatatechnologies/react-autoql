@@ -558,7 +558,7 @@ class NotificationFeed extends React.Component {
   renderDeleteAllButton = () => {
     const projectName =
       this.props.selectedProjectName === this.ALL_PROJECTS ? 'all data sources' : this.props.selectedProjectName
-    let title = `Delete all notifications for ${projectName}?`
+    const title = `Delete all notifications for ${projectName}?`
 
     return (
       <ConfirmPopover
@@ -742,7 +742,7 @@ class NotificationFeed extends React.Component {
       landscape: this.props.isMobileLandscape,
     })
 
-    let style = {}
+    const style = {}
     if (!this.props.shouldRender) {
       style.visibility = 'hidden'
       style.opacity = '0'

@@ -144,7 +144,7 @@ const AutocompleteInputPopover = ({
         key={`autcomplete-input-popover-${popoverId.current}`}
         containerClassName={`react-tiny-popover-container react-autoql-autocomplete-input-popover-container 
           react-autoql-vlautocomplete-popover-container--bottom react-autoql-popover${isMobile ? '-mobile' : ''
-          } ${popupClassname} react-tiny-popover-container-${popoverId.current}`}
+    } ${popupClassname} react-tiny-popover-container-${popoverId.current}`}
         padding={0}
         isOpen={isOpen}
         onClickOutside={() => setIsOpen(false)}
@@ -154,7 +154,7 @@ const AutocompleteInputPopover = ({
       >
         <div
           className={`autcomplete-input-popover-btn ${isOpen ? 'autcomplete-input-popover-btn-active' : ''
-            }`}
+          }`}
           onClick={() => setIsOpen(true)}
           data-tooltip-content={getTooltipContent(value)}
           data-tooltip-id={tooltipID}

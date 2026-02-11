@@ -57,7 +57,7 @@ export default class SingleNumberAxisSelector extends React.Component {
                   const scaleOrigColumn = scale.column?.origColumn ?? scale.column
                   const colIndex = scaleOrigColumn?.index
                   const isActive = col.index === colIndex
-                  
+
                   return (
                     <li
                       className={`string-select-list-item ${isActive ? 'active' : ''}`}

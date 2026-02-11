@@ -92,7 +92,7 @@ export default class DataExplorerInput extends React.Component {
       }
 
       const filteredRecentSearchesArray = recentSearchesArray.filter((subject, i, self) => {
-        return self.findIndex((subj) => subj.displayName == subject.displayName) === i
+        return self.findIndex((subj) => subj.displayName === subject.displayName) === i
       })
 
       if (filteredRecentSearchesArray?.length) {
@@ -153,7 +153,7 @@ export default class DataExplorerInput extends React.Component {
 
   // Filter subjects from the local list based on input
   subjectAutocompleteMatch = (input) => {
-    if (input == '') {
+    if (input === '') {
       return []
     }
 
@@ -170,7 +170,7 @@ export default class DataExplorerInput extends React.Component {
     const recentSearches = _cloneDeep(this.state.recentSearches)
 
     // If value already exists in recent list, move it to the top
-    const index = recentSearches.findIndex((subj) => subj.displayName == subject.displayName)
+    const index = recentSearches.findIndex((subj) => subj.displayName === subject.displayName)
     if (index > -1) {
       recentSearches.splice(index, 1)
     }
@@ -267,7 +267,7 @@ export default class DataExplorerInput extends React.Component {
   }
 
   onKeyPress = (e) => {
-    if (e.key == 'Enter') {
+    if (e.key === 'Enter') {
       if (this.userSelectedValue) {
         this.selectSubject(this.userSelectedValue)
       } else if (this.state.inputValue) {
@@ -308,7 +308,7 @@ export default class DataExplorerInput extends React.Component {
       fetchDataExplorerAutocomplete({
         suggestion: value,
         ...this.props.authentication,
-        signal: this.axiosSource?.controller.signal,
+        signal: this.axiosSource?.signal,
         cancelToken: this.axiosSource?.cancelToken,
       })
         .then((suggestions) => {

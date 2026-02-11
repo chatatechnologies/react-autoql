@@ -391,10 +391,10 @@ describe('CustomColumnModal edge cases', () => {
     const depth = 10
     const fn = []
     for (let i = 0; i < depth; i++)
-      fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET })
+    {fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET })}
     fn.push({ type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] })
     for (let i = 0; i < depth; i++)
-      fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })
+    {fn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })}
 
     inst.setState({ columnFn: fn })
     const structural = inst.isStructurallyValidColumnFn()

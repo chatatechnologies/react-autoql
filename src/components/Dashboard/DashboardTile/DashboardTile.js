@@ -383,7 +383,7 @@ export class DashboardTile extends React.Component {
 
   // Helper to check if dataConfig has valid values
   hasValidDataConfig = (dataConfig) => {
-    return dataConfig && (dataConfig.tableConfig != null || dataConfig.pivotTableConfig != null)
+    return dataConfig && (dataConfig.tableConfig !== null || dataConfig.pivotTableConfig !== null)
   }
 
   // Helper to filter out null/undefined values from config object
@@ -400,7 +400,7 @@ export class DashboardTile extends React.Component {
       }
       // For tableFilters/secondTableFilters, allow empty arrays but not null/undefined
       else if (key === 'tableFilters' || key === 'secondTableFilters') {
-        if (value != null) {
+        if (value !== null) {
           filtered[key] = value
         }
       }
@@ -415,7 +415,7 @@ export class DashboardTile extends React.Component {
 
   // Save original tile config from DB for restoration after errors
   saveOriginalTileConfig = (tile) => {
-    if (!tile) return
+    if (!tile) {return}
 
     // Only save if we have valid saved data (not just error responses)
     const hasValidResponse = tile.queryResponse && !this.hasError(tile.queryResponse)
@@ -484,7 +484,7 @@ export class DashboardTile extends React.Component {
             columns: currentTile.columns || this.savedTileConfig.columns,
             secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
             tableFilters:
-              currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
+              currentTile.tableFilters !== null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
             secondTableFilters:
               currentTile.secondTableFilters === null || currentTile.secondTableFilters === undefined
                 ? this.savedTileConfig.secondTableFilters
@@ -553,7 +553,7 @@ export class DashboardTile extends React.Component {
             secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
             secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
             secondTableFilters:
-              currentTile.secondTableFilters != null
+              currentTile.secondTableFilters !== null
                 ? currentTile.secondTableFilters
                 : this.savedTileConfig.secondTableFilters,
             secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
@@ -645,7 +645,7 @@ export class DashboardTile extends React.Component {
     // Check if dataConfig actually has valid values (not just an object with undefined properties)
     const propsDataConfig = this.props.tile.dataConfig
     const hasValidPropsDataConfig =
-      propsDataConfig && (propsDataConfig.tableConfig != null || propsDataConfig.pivotTableConfig != null)
+      propsDataConfig && (propsDataConfig.tableConfig !== null || propsDataConfig.pivotTableConfig !== null)
     const fallbackDataConfig = hasValidPropsDataConfig ? propsDataConfig : this.savedTileConfig.dataConfig
     const dataConfig = queryChanged ? undefined : fallbackDataConfig
 
@@ -665,7 +665,7 @@ export class DashboardTile extends React.Component {
     if (this.hasValidDataConfig(dataConfig)) {
       paramsToSet.dataConfig = dataConfig
     }
-    if (tableFilters != null) {
+    if (tableFilters !== null) {
       paramsToSet.tableFilters = tableFilters
     }
 
@@ -1527,7 +1527,7 @@ export class DashboardTile extends React.Component {
           // Extract columnOverrides from tile.columns if it exists (for date precision persistence)
           // Compare tile.columns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
-          let columnOverrides = dataConfig?.columnOverrides || {}
+          const columnOverrides = dataConfig?.columnOverrides || {}
 
           // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
@@ -1665,7 +1665,7 @@ export class DashboardTile extends React.Component {
           // Extract columnOverrides from tile.secondColumns if it exists (for date precision persistence)
           // Compare tile.secondColumns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
-          let columnOverrides = dataConfig?.columnOverrides || {}
+          const columnOverrides = dataConfig?.columnOverrides || {}
 
           // Fallback: Extract columnOverrides from tile.secondColumns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added

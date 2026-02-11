@@ -46,22 +46,22 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     persistedSourceIndex !== undefined && persistedSourceIndex !== null
       ? persistedSourceIndex
       : detectedSourceIndex !== -1
-      ? detectedSourceIndex
-      : null,
+        ? detectedSourceIndex
+        : null,
   )
   const [selectedTargetColumnIndex, setSelectedTargetColumnIndex] = useState(
     persistedTargetIndex !== undefined && persistedTargetIndex !== null
       ? persistedTargetIndex
       : detectedTargetIndex !== -1
-      ? detectedTargetIndex
-      : null,
+        ? detectedTargetIndex
+        : null,
   )
   const [selectedWeightColumnIndex, setSelectedWeightColumnIndex] = useState(
     persistedWeightIndex !== undefined && persistedWeightIndex !== null
       ? persistedWeightIndex
       : detectedWeightIndex !== -1
-      ? detectedWeightIndex
-      : null,
+        ? detectedWeightIndex
+        : null,
   )
 
   const nodeSelectionRef = useRef(null)
@@ -159,7 +159,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Recenter function to fit all nodes in view
   const recenter = useCallback(() => {
-    if (!nodes.length || !chartRef.current) return
+    if (!nodes.length || !chartRef.current) {return}
 
     const { innerHeight, innerWidth, deltaX, deltaY } = props
     const chartWidth = innerWidth || props.width
@@ -243,13 +243,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         weightColumnIndex !== -1 && weightColumnIndex !== null ? props.columns[weightColumnIndex] : null
       const formattedWeight = weightColumn
         ? formatElement({
-            element: d.weight || 0,
-            column: weightColumn,
-            config: formattingConfig,
-          })
+          element: d.weight || 0,
+          column: weightColumn,
+          config: formattingConfig,
+        })
         : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-            maximumFractionDigits: 4,
-          }).format(Number(d.weight || 0))
+          maximumFractionDigits: 4,
+        }).format(Number(d.weight || 0))
 
       return `
        <div>
@@ -296,23 +296,23 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
       const formattedAmountSent = weightColumn
         ? formatElement({
-            element: d.amountSent || 0,
-            column: weightColumn,
-            config: formattingConfig,
-          })
+          element: d.amountSent || 0,
+          column: weightColumn,
+          config: formattingConfig,
+        })
         : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-            maximumFractionDigits: 4,
-          }).format(Number(d.amountSent || 0))
+          maximumFractionDigits: 4,
+        }).format(Number(d.amountSent || 0))
 
       const formattedAmountReceived = weightColumn
         ? formatElement({
-            element: d.amountReceived || 0,
-            column: weightColumn,
-            config: formattingConfig,
-          })
+          element: d.amountReceived || 0,
+          column: weightColumn,
+          config: formattingConfig,
+        })
         : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-            maximumFractionDigits: 4,
-          }).format(Number(d.amountReceived || 0))
+          maximumFractionDigits: 4,
+        }).format(Number(d.amountReceived || 0))
 
       const weightColumnName = weightColumn?.display_name || 'Amount'
       const senderColumnName = sourceColumn?.display_name || 'Sender'
@@ -690,16 +690,16 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   }, [])
 
   const getWeightCategory = useCallback((weight) => {
-    if (weight > 1000) return 'large'
-    if (weight > 100) return 'medium'
+    if (weight > 1000) {return 'large'}
+    if (weight > 100) {return 'medium'}
     return 'small'
   }, [])
 
   const getEdgeType = useCallback((source, target, sourceRole, targetRole) => {
     // Use actual node roles from the data instead of keyword matching
-    if (sourceRole?.isSender && targetRole?.isSender) return 'sender-to-sender'
-    if (sourceRole?.isSender && targetRole?.isReceiver) return 'sender-to-receiver'
-    if (sourceRole?.isReceiver && targetRole?.isReceiver) return 'receiver-to-receiver'
+    if (sourceRole?.isSender && targetRole?.isSender) {return 'sender-to-sender'}
+    if (sourceRole?.isSender && targetRole?.isReceiver) {return 'sender-to-receiver'}
+    if (sourceRole?.isReceiver && targetRole?.isReceiver) {return 'receiver-to-receiver'}
     return 'standard'
   }, [])
 
@@ -714,10 +714,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   const getNodeColor = useCallback((d) => {
     // Add null check
-    if (!d) return '#28A745'
+    if (!d) {return '#28A745'}
     // Nodes that are both sender and receiver get blue color
-    if (d.isSender && d.isReceiver) return '#28A8E0' // Blue for both sender and receiver
-    if (d.isSender) return '#DC3545' // Red for sender only
+    if (d.isSender && d.isReceiver) {return '#28A8E0'} // Blue for both sender and receiver
+    if (d.isSender) {return '#DC3545'} // Red for sender only
     return '#28A745' // Green for other nodes (receivers)
   }, [])
 
@@ -743,7 +743,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     const svg = select(chartRef.current)
     svg.selectAll('[data-tooltip-id]').attr('data-tooltip-id', null).style('pointer-events', 'none')
 
-    if (!event.active) simulationRef.current?.alphaTarget(0.4).restart()
+    if (!event.active) {simulationRef.current?.alphaTarget(0.4).restart()}
     d.fx = d.x
     d.fy = d.y
   }, [])
@@ -764,7 +764,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   const dragended = useCallback(
     (event, d) => {
-      if (!event.active) simulationRef.current?.alphaTarget(0)
+      if (!event.active) {simulationRef.current?.alphaTarget(0)}
 
       // Use the node data from the event (d) instead of dragStateRef
       // If this was a click (not a drag), trigger drilldown
@@ -797,7 +797,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Function to calculate initial scale based on node count and available space
   const calculateInitialScale = useCallback((nodes, links, width, height) => {
-    if (!nodes.length) return 1
+    if (!nodes.length) {return 1}
 
     // Estimate the space needed based on node count and connections
     const nodeCount = nodes.length
@@ -860,15 +860,15 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     // Update node visibility
     nodeSelectionRef.current.each(function (d) {
       // Add null check
-      if (!d) return
+      if (!d) {return}
       const isSenderOnly = d.isSender && !d.isReceiver
       const isReceiverOnly = d.isReceiver && !d.isSender
       const isBoth = d.isSender && d.isReceiver
 
       let shouldShow = false
-      if (isBoth) shouldShow = showBoth
-      else if (isSenderOnly) shouldShow = showSenders
-      else if (isReceiverOnly) shouldShow = showReceivers
+      if (isBoth) {shouldShow = showBoth}
+      else if (isSenderOnly) {shouldShow = showSenders}
+      else if (isReceiverOnly) {shouldShow = showReceivers}
 
       const nodeElement = select(this)
       if (shouldShow) {
@@ -954,7 +954,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Add zoom behavior
       let isProgrammaticZoom = false // Flag to track programmatic zoom updates
-      let currentTransform = { x: deltaX || 0, y: deltaY || 0, k: 1.0 } // Track current transform for smooth interpolation
+      const currentTransform = { x: deltaX || 0, y: deltaY || 0, k: 1.0 } // Track current transform for smooth interpolation
       const zoomBehavior = zoom()
 
       // Store zoom behavior reference for recenter function
@@ -1144,7 +1144,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         .style('stroke-width', '1.5px')
         .style('cursor', (d) => {
           // Only show pointer cursor for nodes that can be clicked (not both sender and receiver)
-          if (!d) return 'move'
+          if (!d) {return 'move'}
           if (d.isSender && d.isReceiver) {
             return 'move'
           }
@@ -1214,7 +1214,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const MAX_CONSECUTIVE_SLOW_TICKS = 60 // e.g., ~1s at 60fps
 
       simulation.on('tick', () => {
-        if (!linkSelectionRef.current) return
+        if (!linkSelectionRef.current) {return}
 
         // Function to calculate link endpoints
         const getLinkCoords = (d) => {
@@ -1283,7 +1283,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             return coords.y2
           })
 
-        if (!nodeSelectionRef.current) return
+        if (!nodeSelectionRef.current) {return}
         nodeSelectionRef.current.attr('cx', (d) => d.x).attr('cy', (d) => d.y)
 
         // Dynamic zooming during initial simulation to keep everything in view
@@ -1485,7 +1485,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown && !showSourceDropdown && !showTargetDropdown && !showAmountDropdown) return
+    if (!showFilterDropdown && !showSourceDropdown && !showTargetDropdown && !showAmountDropdown) {return}
 
     let mouseDownPos = null
     let mouseDownTarget = null
@@ -1522,7 +1522,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Check if click is inside dropdown
       const checkElement = (el) => {
-        if (!el) return false
+        if (!el) {return false}
 
         // Check for SVG elements (filter dropdown)
         const svgClass = el.getAttribute?.('class') || ''
@@ -1611,14 +1611,14 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
     const handleClick = (event) => {
       const svgElement = chartRef.current
-      if (!svgElement) return
+      if (!svgElement) {return}
 
       const clickTarget = event.target
       const isInsideSVG = svgElement.contains(clickTarget) || svgElement === clickTarget
 
       // Check if click is inside dropdown
       const checkElement = (el) => {
-        if (!el) return false
+        if (!el) {return false}
 
         // Check for SVG elements (filter dropdown)
         const svgClass = el.getAttribute?.('class') || ''
@@ -1691,8 +1691,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       if (!isInsideDropdown && isInsideSVG) {
         setShowFilterDropdown(false)
         setShowSourceDropdown(false)
-      setShowTargetDropdown(false)
-      setShowAmountDropdown(false)
+        setShowTargetDropdown(false)
+        setShowAmountDropdown(false)
       }
     }
 
@@ -1739,7 +1739,7 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
           // Helper function to check if element is inside a dropdown or button
           const checkElement = (el) => {
-            if (!el) return false
+            if (!el) {return false}
 
             // Check tag name first
             const elTagName = el.tagName?.toLowerCase() || ''

@@ -5,7 +5,7 @@ import { Popover } from '../Popover'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 const PivotAxisSelector = ({ isOpen, options, activeIndex, location, onClose, onChange }) => {
-  if (!options?.length) return null
+  if (!options?.length) {return null}
 
   return (
     <Popover
@@ -69,7 +69,7 @@ PivotAxisSelector.defaultProps = {
 }
 
 export const computePivotAxisSelectorLocation = (element, tableContainer) => {
-  if (!element) return null
+  if (!element) {return null}
   const rect = element.getBoundingClientRect()
   const tableRect = tableContainer?.getBoundingClientRect?.() || { top: 0, left: 0 }
 
