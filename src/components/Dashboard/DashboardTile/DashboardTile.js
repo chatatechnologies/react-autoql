@@ -111,7 +111,6 @@ export class DashboardTile extends React.Component {
       isBottomExecuting: false,
       suggestions: [],
       isSecondQueryInputOpen: false,
-      isTitleOverFlow: false,
       isTopExecuted: !!tile.queryResponse,
       localRTFilterResponse: null,
       isBottomExecuted:
@@ -263,10 +262,6 @@ export class DashboardTile extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    if (prevProps.tile !== this.props.tile) {
-      this.setState({ isTitleOverFlow: this.isTitleOverFlow() })
-    }
-
     // If query or title change from props (due to undo for example), update state
     if (this.props.tile?.title !== prevProps.tile?.title) {
       this.setState({ title: this.props.tile?.title })
@@ -1001,16 +996,6 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  isTitleOverFlow = () => {
-    const dashboardTileTitleElement = this.dashboardTileTitleRef
-    if (dashboardTileTitleElement) {
-      const elemWidth = dashboardTileTitleElement.getBoundingClientRect().width
-      const parentWidth = dashboardTileTitleElement.parentElement.getBoundingClientRect().width
-      return elemWidth > parentWidth
-    }
-    return false
-  }
-
   onQueryValidationSelectOption = (queryText, selections) => {
     this.setState({ query: queryText })
     this.debouncedSetParamsForTile({
@@ -1292,18 +1277,15 @@ export class DashboardTile extends React.Component {
       )
     }
 
+    const fullTitle = this.props.tile.title || this.props.tile.query || 'Untitled'
     return (
-      <div className='dashboard-tile-title-container'>
+      <div className='dashboard-tile-title-container dashboard-tile-title-wrap'>
         <span
           ref={(r) => (this.dashboardTileTitleRef = r)}
           className='dashboard-tile-title'
           id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
-          data-tooltip-content={
-            this.state.isTitleOverFlow ? this.props.tile.title || this.props.tile.query || 'Untitled' : null
-          }
-          data-tooltip-id='react-autoql-dashboard-tile-title-tooltip'
         >
-          {this.props.tile.title || this.props.tile.query || 'Untitled'}
+          {fullTitle}
         </span>
         <div className='dashboard-tile-title-divider'></div>
       </div>
@@ -1522,10 +1504,14 @@ export class DashboardTile extends React.Component {
           // Compare tile.columns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
           let columnOverrides = dataConfig?.columnOverrides || {}
-          
+
           // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
-          if (!dataConfig?.columnOverrides && this.props.tile?.columns && this.props.tile?.queryResponse?.data?.data?.columns) {
+          if (
+            !dataConfig?.columnOverrides &&
+            this.props.tile?.columns &&
+            this.props.tile?.queryResponse?.data?.data?.columns
+          ) {
             const savedColumns = this.props.tile.columns
             const originalColumns = this.props.tile.queryResponse.data.data.columns
             savedColumns.forEach((savedCol) => {
@@ -1656,7 +1642,7 @@ export class DashboardTile extends React.Component {
           // Compare tile.secondColumns with queryResponse columns to find overrides
           // Use columnOverrides from dataConfig if it exists (preferred method)
           let columnOverrides = dataConfig?.columnOverrides || {}
-          
+
           // Fallback: Extract columnOverrides from tile.secondColumns if dataConfig doesn't have it
           // This handles backwards compatibility with dashboards saved before columnOverrides was added
           const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
