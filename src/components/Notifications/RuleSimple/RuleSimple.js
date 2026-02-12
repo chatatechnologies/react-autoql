@@ -50,6 +50,7 @@ import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 import { CustomList } from '../CustomList'
 import './RuleSimple.scss'
+import ConditionPreview from './ConditionPreview'
 const SELF_COMPARISONS_TYPE = 'selfComparisons'
 
 const CONDITION_TYPE_LABELS = {
@@ -1912,6 +1913,7 @@ export default class RuleSimple extends React.Component {
             <span className='data-alert-description-span'>The result of your query</span>
           )}
         </div>
+        {/* Preview moved below selectors */}
         <div className='react-autoql-notification-rule-container' data-test='rule'>
           {this.allowOperators() && (
             <>
@@ -1935,6 +1937,21 @@ export default class RuleSimple extends React.Component {
           </div>
         )}
         {this.renderJoinColumnSelectionTable()}
+        {/* Preview: show current value vs threshold for the selected column (placed below selectors) */}
+        {this.state.firstQuerySelectedColumns?.length ? (
+          <div style={{ marginTop: '12px' }}>
+            <ConditionPreview
+              firstQueryResult={this.state.firstQueryResult}
+              firstQuerySelectedColumns={this.state.firstQuerySelectedColumns}
+              secondTermType={this.state.secondTermType}
+              secondInputValue={this.state.secondInputValue}
+              secondQueryResult={this.state.secondQueryResult}
+              secondTermMultiplicationFactorType={this.state.secondTermMultiplicationFactorType}
+              secondTermMultiplicationFactorValue={this.state.secondTermMultiplicationFactorValue}
+              selectedOperator={this.state.selectedOperator}
+            />
+          </div>
+        ) : null}
       </>
     )
   }
