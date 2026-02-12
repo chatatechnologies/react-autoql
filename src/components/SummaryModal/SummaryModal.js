@@ -180,7 +180,6 @@ export default class SummaryModal extends React.Component {
               focusPromptUsed={focusPromptUsed}
               className='summary-modal-summary-content'
               titleClassName='summary-modal-title'
-              focusPromptClassName='summary-modal-focus-prompt'
               markdownClassName='summary-modal-markdown'
             />
             <div className='summary-modal-feedback-footer'>
