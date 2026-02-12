@@ -15,8 +15,6 @@ import {
   isSingleValueResponse,
 } from 'autoql-fe-utils'
 
-import ReactMarkdown from 'react-markdown'
-import remarkBreaks from 'remark-breaks'
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
@@ -28,6 +26,7 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { Input } from '../Input'
 import SummaryFooter from './SummaryFooter'
+import SummaryContent from '../SummaryContent/SummaryContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -347,35 +346,6 @@ export default class ChatMessage extends React.Component {
     // No scrolling on visualization change - only scroll when message is first created
   }
 
-  renderMarkdown = (content) => {
-    if (!content) return null
-
-    // Convert content to string if it's not already
-    let contentStr = typeof content === 'string' ? content : String(content)
-
-    // Replace literal "\n" strings with actual newlines if they exist
-    // (in case the API returns escaped newlines)
-    contentStr = contentStr.replace(/\\n/g, '\n')
-
-    // Pass content directly to react-markdown without any manipulation
-    return (
-      <ReactMarkdown
-        remarkPlugins={[remarkBreaks]}
-        components={{
-          // Handle lists
-          ul: ({ children }) => <ul>{children}</ul>,
-          li: ({ children }) => <li>{children}</li>,
-          // Handle formatting
-          strong: ({ children }) => <strong>{children}</strong>,
-          em: ({ children }) => <em>{children}</em>,
-          // Handle line breaks (remark-breaks will create these automatically)
-          br: () => <br />,
-        }}
-      >
-        {contentStr}
-      </ReactMarkdown>
-    )
-  }
 
   handleGenerateSummary = async () => {
     if (!this.props.response?.data?.data?.rows || !this.props.response?.data?.data?.columns) {
@@ -770,16 +740,16 @@ export default class ChatMessage extends React.Component {
       if (this.props.type === 'markdown' || this.props.type === 'md') {
         return (
           <div className='chat-message-bubble-content-container chat-message-markdown'>
-            <div className='chat-message-summary-title'>
-              <Icon type='magic-wand' />
-              <strong>Summary:</strong>
+            <div ref={this.markdownContentRef}>
+              <SummaryContent
+                content={this.props.content}
+                focusPromptUsed={this.props.focusPromptUsed}
+                className='chat-message-summary-content'
+                titleClassName='chat-message-summary-title'
+                focusPromptClassName='chat-message-summary-focus-prompt'
+                markdownClassName='chat-message-summary-markdown'
+              />
             </div>
-            {this.props.focusPromptUsed && (
-              <div className='chat-message-summary-focus-prompt'>
-                Focused on: {this.props.focusPromptUsed}
-              </div>
-            )}
-            <div ref={this.markdownContentRef}>{this.renderMarkdown(this.props.content)}</div>
           </div>
         )
       }

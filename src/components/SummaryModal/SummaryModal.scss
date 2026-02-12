@@ -1,0 +1,149 @@
+.summary-modal {
+  .summary-modal-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .react-autoql-modal-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .summary-modal-scroll-container {
+    .ps__rail-y {
+      right: 0px !important;
+      left: unset !important;
+    }
+  }
+
+  .summary-modal-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 40px;
+
+    p {
+      margin-top: 16px;
+      color: var(--react-autoql-text-color-secondary);
+    }
+  }
+
+  .summary-modal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 40px;
+    text-align: center;
+
+    h3 {
+      margin: 16px 0 8px;
+      color: var(--react-autoql-text-color-primary);
+    }
+
+    p {
+      color: var(--react-autoql-text-color-secondary);
+      margin: 8px 0;
+    }
+
+    .summary-modal-error {
+      color: var(--react-autoql-error-color);
+    }
+  }
+
+  .summary-modal-scroll-container {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .summary-modal-content {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+
+    .summary-modal-summary-content {
+      flex: 1;
+    }
+
+    .summary-modal-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      color: var(--react-autoql-text-color-primary);
+
+      strong {
+        font-size: 18px;
+      }
+    }
+
+    .summary-modal-focus-prompt {
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: var(--react-autoql-background-color-secondary);
+      border-radius: 4px;
+      color: var(--react-autoql-accent-color);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .summary-modal-markdown {
+      color: var(--react-autoql-text-color-primary);
+      line-height: 1.6;
+
+      p {
+        margin-bottom: 12px;
+      }
+
+      ul,
+      ol {
+        margin-bottom: 12px;
+        padding-left: 24px;
+      }
+
+      li {
+        margin-bottom: 4px;
+      }
+
+      strong {
+        font-weight: 600;
+      }
+    }
+
+    .summary-modal-feedback-footer {
+      margin-top: 24px;
+    }
+  }
+
+  .summary-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--react-autoql-border-color);
+
+    .summary-modal-focus-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .summary-modal-focus-error {
+      margin-top: 8px;
+      color: var(--react-autoql-error-color);
+      font-size: 14px;
+    }
+  }
+
+  .summary-modal-footer-with-feedback {
+    padding: 16px 24px;
+    border-top: 1px solid var(--react-autoql-border-color);
+  }
+}

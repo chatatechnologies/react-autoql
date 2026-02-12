@@ -196,6 +196,7 @@ export class DashboardTile extends React.Component {
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -226,6 +227,7 @@ export class DashboardTile extends React.Component {
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
@@ -1401,6 +1403,7 @@ export class DashboardTile extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
+            enableMagicWand={this.props.enableMagicWand}
             {...optionsToolbarProps}
           />
         </div>

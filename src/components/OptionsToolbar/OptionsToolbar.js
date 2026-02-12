@@ -22,12 +22,14 @@ import {
 import { Icon } from '../Icon'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
+import { Input } from '../Input'
 import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
 import { ReportProblemModal } from '../ReportProblemModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
+import SummaryModal from '../SummaryModal/SummaryModal'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -46,6 +48,10 @@ export class OptionsToolbar extends React.Component {
       reportProblemMessage: undefined,
       isCSVDownloading: false,
       isFiltering: !!props.responseRef?.isFilteringTable(),
+      isSummaryModalVisible: false,
+      isSummaryPopoverOpen: false,
+      summaryFocusPrompt: '',
+      summaryFocusError: null,
     }
   }
 
@@ -69,6 +75,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -92,6 +99,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
@@ -640,6 +648,144 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
+  openSummaryModal = (focusPrompt = '') => {
+    this.setState({ 
+      isSummaryModalVisible: true,
+      summaryFocusPrompt: focusPrompt,
+      summaryFocusError: null,
+    })
+  }
+
+  closeSummaryModal = () => {
+    this.setState({ 
+      isSummaryModalVisible: false,
+      summaryFocusPrompt: '',
+      summaryFocusError: null,
+    })
+  }
+
+  handleSummaryFocusPromptChange = (e) => {
+    const value = e.target.value
+    if (value.length <= 100) {
+      this.setState({ summaryFocusPrompt: value, summaryFocusError: null })
+    }
+  }
+
+  handleSummaryFocusPromptKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      this.openSummaryModal(this.state.summaryFocusPrompt)
+    }
+  }
+
+  renderSummaryPopoverContent = () => {
+    const queryResponse = this.props.responseRef?.queryResponse
+    const rows = queryResponse?.data?.data?.rows || []
+    const rowCount = rows.length
+    const hasNoData = rowCount === 0
+
+    return (
+      <div className='options-toolbar-summary-dropdown-content'>
+        <div className='options-toolbar-summary-dropdown-header'>
+          <label className='options-toolbar-summary-dropdown-label'>
+            Focus on a specific topic (optional)
+          </label>
+          <div className='options-toolbar-summary-dropdown-description'>
+            Enter a topic to generate a summary tailored to that focus area
+          </div>
+        </div>
+        <div className='options-toolbar-summary-dropdown-input-group'>
+          <Input
+            value={this.state.summaryFocusPrompt}
+            onChange={this.handleSummaryFocusPromptChange}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                this.openSummaryModal(this.state.summaryFocusPrompt)
+                this.setState({ isSummaryPopoverOpen: false })
+              } else {
+                this.handleSummaryFocusPromptKeyDown(e)
+              }
+            }}
+            placeholder='e.g., sales growth trends'
+            maxLength={100}
+            style={{ flex: 1 }}
+          />
+          <Button
+            type='primary'
+            size='medium'
+            onClick={() => {
+              this.openSummaryModal(this.state.summaryFocusPrompt)
+              this.setState({ isSummaryPopoverOpen: false })
+            }}
+            disabled={hasNoData}
+            icon='magic-wand'
+          >
+            Generate
+          </Button>
+        </div>
+        {this.state.summaryFocusError && (
+          <div className='options-toolbar-summary-focus-error'>
+            {this.state.summaryFocusError}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  renderMagicWandBtn = () => {
+    const queryResponse = this.props.responseRef?.queryResponse
+    const rows = queryResponse?.data?.data?.rows || []
+    const rowCount = rows.length
+    const hasNoData = rowCount === 0
+
+    return (
+      <Popover
+        key={`magic-wand-button-${this.COMPONENT_KEY}`}
+        isOpen={this.state.isSummaryPopoverOpen}
+        padding={8}
+        onClickOutside={() => this.setState({ isSummaryPopoverOpen: false })}
+        content={this.renderSummaryPopoverContent}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
+        positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
+        align={this.props.popoverAlign}
+        contentClassName='options-toolbar-summary-dropdown-popover'
+      >
+        <Button
+          onClick={() => {
+            if (hasNoData) return
+            this.setState({ isSummaryPopoverOpen: !this.state.isSummaryPopoverOpen })
+          }}
+          className={this.getMenuItemClass()}
+          tooltip={hasNoData ? 'No data available to generate a summary' : 'Generate summary'}
+          tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+          size='small'
+          disabled={hasNoData}
+        >
+          <Icon type='magic-wand' />
+        </Button>
+      </Popover>
+    )
+  }
+
+  renderSummaryModal = () => {
+    return (
+      <SummaryModal
+        authentication={this.props.authentication}
+        autoQLConfig={this.props.autoQLConfig}
+        isOpen={this.state.isSummaryModalVisible}
+        onClose={this.closeSummaryModal}
+        responseRef={this.props.responseRef}
+        queryResponse={this.props.responseRef?.queryResponse}
+        onSuccessAlert={this.props.onSuccessAlert}
+        onErrorCallback={this.props.onErrorCallback}
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        initialFocusPrompt={this.state.summaryFocusPrompt}
+      />
+    )
+  }
+
   renderCopyMarkdownBtn = () => {
     return (
       <Button
@@ -666,12 +812,13 @@ export class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <div
           className={`${isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'} options-toolbar
-			${this.state.activeMenu ? 'active' : ''}
+			${this.state.activeMenu || this.state.isSummaryPopoverOpen ? 'active' : ''}
 			${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
           {!isMarkdownOnly && shouldShowButton.showFilterButton && this.renderFilterBtn()}
           {!isMarkdownOnly && shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
+          {!isMarkdownOnly && this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderMagicWandBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {!isMarkdownOnly && shouldShowButton.showRefreshDataButton && (
             <Button
@@ -690,7 +837,7 @@ export class OptionsToolbar extends React.Component {
             <Button
               onClick={this.deleteMessage}
               className={this.getMenuItemClass()}
-              tooltip='Delete data response'
+              tooltip={this.props.isMarkdownMessage ? 'Delete Summary' : 'Delete data response'}
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
               size='small'
@@ -775,6 +922,12 @@ export class OptionsToolbar extends React.Component {
             ? false
             : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
         showRefreshDataButton: false,
+        showMagicWandButton:
+          !isMarkdownOnly &&
+          props.enableMagicWand &&
+          isDataResponse &&
+          hasData &&
+          !this.isDrilldownResponse(props),
       }
 
       // Don't show more options button if it's a markdown-only message
@@ -807,7 +960,8 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
-        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
+        {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
+        <Tooltip tooltipId={this.props.tooltipID ?? this.TOOLTIP_ID} delayShow={800} />
       </ErrorBoundary>
     )
   }
