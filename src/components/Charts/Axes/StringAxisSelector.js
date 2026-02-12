@@ -452,7 +452,10 @@ export default class StringAxisSelector extends React.Component {
                     const relatedTarget = e.relatedTarget
                     // Check if moving to any child of this container (including list items)
                     const container = e.currentTarget
-                    const isMovingToChild = relatedTarget && container.contains(relatedTarget)
+                    // Ensure relatedTarget is a Node before calling contains
+                    const isMovingToChild = relatedTarget && 
+                      relatedTarget instanceof Node && 
+                      container.contains(relatedTarget)
                     // Check if moving to a menu item submenu
                     const isMovingToSubmenu = relatedTarget && 
                       typeof relatedTarget.closest === 'function' && 
@@ -676,25 +679,14 @@ export default class StringAxisSelector extends React.Component {
               {columnIndices.map((colIndex, i) => {
                 const column = this.props.columns[colIndex]
                 
-                // Check if there's a column override for this column (meaning it was changed on FE)
-                const columnOverrides = this.props.columnOverrides || {}
-                const hasColumnOverride = columnOverrides[colIndex] !== undefined
-                
-                // Find the original column to check its type
-                const originalColumn = this.props.originalColumns?.find(
-                  (oc) => oc.index === colIndex || oc.name === column.name || oc.display_name === column.display_name
-                )
-                const originalColumnType = originalColumn?.type
-                
                 // Show hover menu if:
                 // 1. enableCyclicalDates is enabled, AND
                 // 2. NOT using pivot data (isAggregated), AND
-                // 3. Column is a DATE type (not DATE_STRING) - check original column type or current column type
+                // 3. Column has is_timestamp property - check original column type or current column type
                 const enableCyclicalDates = this.props.enableCyclicalDates !== false // Default to true if not specified
-                // Check if column is DATE type (not DATE_STRING)
-                const isDateType = originalColumnType === ColumnTypes.DATE || 
-                                  (column?.type === ColumnTypes.DATE && column?.type !== ColumnTypes.DATE_STRING)
-                const isDateColumn = 
+                const isDateType = column?.is_timestamp
+
+                const showHoverMenu = 
                   enableCyclicalDates && 
                   !this.props.isAggregated &&
                   isDateType
@@ -703,11 +695,11 @@ export default class StringAxisSelector extends React.Component {
                   <li
                     className={`string-select-list-item ${
                       colIndex === origColumn?.index ? 'active' : ''
-                    } ${isDateColumn ? 'date-column' : ''}`}
+                    } ${showHoverMenu ? 'date-column' : ''}`}
                     key={`string-column-select-${colIndex}`}
                     onClick={(e) => {
                       e.stopPropagation()
-                      if (isMobile && isDateColumn) {
+                      if (isMobile && showHoverMenu) {
                         // On mobile: toggle the menu open/closed
                         if (this.state.tappedColumn === colIndex) {
                           // If already open, close it
@@ -730,7 +722,7 @@ export default class StringAxisSelector extends React.Component {
                       }
                     }}
                     onMouseEnter={(e) => {
-                      if (!isMobile && isDateColumn) {
+                      if (!isMobile && showHoverMenu) {
                         this.handleColumnHover(colIndex, e)
                       }
                     }}
@@ -748,7 +740,7 @@ export default class StringAxisSelector extends React.Component {
                     }}
                   >
                     {this.props.columns?.[colIndex]?.display_name}
-                    {isDateColumn && (
+                    {showHoverMenu && (
                       <span
                         style={{
                           float: 'right',
@@ -762,7 +754,7 @@ export default class StringAxisSelector extends React.Component {
                   </li>
                 )
 
-                if (isDateColumn) {
+                if (showHoverMenu) {
                   return this.renderDateBucketMenu(li, colIndex, origColumn?.index)
                 }
 

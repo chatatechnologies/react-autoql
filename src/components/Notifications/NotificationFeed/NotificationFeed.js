@@ -113,6 +113,7 @@ class NotificationFeed extends React.Component {
     selectedProjectName: this.ALL_PROJECTS,
     notificationTitle: '',
     showSelectNotificationsButton: true,
+    enableCyclicalDates: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
