@@ -654,6 +654,9 @@ export default class ChatMessage extends React.Component {
     const currentResponse = this.responseRef?.queryResponse || this.props.response
 
     // Only show footer for response messages with data (for Generate Summary button)
+    const rows = currentResponse?.data?.data?.rows || []
+    const rowCount = rows.length
+    
     if (
       !this.props.enableMagicWand ||
       !this.props.isResponse ||
@@ -665,19 +668,19 @@ export default class ChatMessage extends React.Component {
     ) {
       return null
     }
-
-    const rows = currentResponse?.data?.data?.rows || []
-    const rowCount = rows.length
     const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
+    const hasNoData = rowCount === 0
     // Only show loading for this specific message, not when any query is running
     const isGenerating = this.state.isGeneratingSummary
-    // Disable button if dataset is too large, or if this specific message is generating
+    // Disable button if dataset is too large, has no data, or if this specific message is generating
     // Also disable if Chata is thinking (query/drilldown running) to prevent conflicts
-    const isDisabled = isDatasetTooLarge || isGenerating || Boolean(this.props.isChataThinking)
+    const isDisabled = isDatasetTooLarge || hasNoData || isGenerating || Boolean(this.props.isChataThinking)
 
     const tooltipId = 'chat-message-summary-button-tooltip'
     const tooltipContent = isDatasetTooLarge
       ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
+      : hasNoData
+      ? `No data available to generate a summary.`
       : undefined
 
     const { focusPrompt, focusError } = this.state
