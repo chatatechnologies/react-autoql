@@ -51,12 +51,13 @@ export default class SummaryFooter extends React.Component {
   }
 
   submitFeedbackToAPI = (feedback, userMessage = '') => {
-    // Add [MWT]: prefix for negative feedback with message
-    const message = feedback === 'negative' && userMessage 
-      ? `[MWT]: ${userMessage}`
+    // Add prefix: [MWT]: for positive feedback, [MWF]: for negative feedback
+    const prefix = feedback === 'positive' ? '[MWT]:' : '[MWF]:'
+    const message = userMessage 
+      ? `${prefix} ${userMessage}`
       : feedback === 'positive'
-      ? '[MWT]: Positive feedback'
-      : '[MWT]: Negative feedback'
+      ? `${prefix} Positive feedback`
+      : `${prefix} Negative feedback`
 
     this.setState({ isSubmittingFeedback: true, summaryFeedback: feedback })
 
