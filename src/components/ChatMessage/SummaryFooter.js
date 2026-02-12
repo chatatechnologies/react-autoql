@@ -70,6 +70,7 @@ export default class SummaryFooter extends React.Component {
     reportProblem({
       message,
       queryId: this.props.queryId,
+      isCorrect: feedback === 'positive', // Set to true when thumbs up is clicked
       ...auth,
     })
       .then(() => {
