@@ -37,6 +37,13 @@ export function shouldShowSummaryButton({
     return false
   }
 
+  // Check row count - allow if there's at least 1 row (including exactly 1 row)
+  const rows = queryResponse?.data?.data?.rows || []
+  const rowCount = rows.length
+  if (rowCount <= 1) {
+    return false
+  }
+
   // For ChatMessage context
   if (isResponse !== undefined) {
     // Must be a response message

@@ -644,6 +644,7 @@ export default class ChatMessage extends React.Component {
     })
 
     const tooltipId = 'chat-message-summary-button-tooltip'
+    const isGenerating = this.state.isGeneratingSummary
 
     const { focusPrompt, focusError } = this.state
 
