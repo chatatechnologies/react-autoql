@@ -12,11 +12,9 @@ import {
   isDrilldown,
   fetchLLMSummary,
   MAX_DATA_PAGE_SIZE,
-  isSingleValueResponse,
 } from 'autoql-fe-utils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
-import ReactMarkdown from 'react-markdown'
-import remarkBreaks from 'remark-breaks'
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
@@ -28,6 +26,7 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { Input } from '../Input'
 import SummaryFooter from './SummaryFooter'
+import SummaryContent from '../SummaryContent/SummaryContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -347,35 +346,6 @@ export default class ChatMessage extends React.Component {
     // No scrolling on visualization change - only scroll when message is first created
   }
 
-  renderMarkdown = (content) => {
-    if (!content) return null
-
-    // Convert content to string if it's not already
-    let contentStr = typeof content === 'string' ? content : String(content)
-
-    // Replace literal "\n" strings with actual newlines if they exist
-    // (in case the API returns escaped newlines)
-    contentStr = contentStr.replace(/\\n/g, '\n')
-
-    // Pass content directly to react-markdown without any manipulation
-    return (
-      <ReactMarkdown
-        remarkPlugins={[remarkBreaks]}
-        components={{
-          // Handle lists
-          ul: ({ children }) => <ul>{children}</ul>,
-          li: ({ children }) => <li>{children}</li>,
-          // Handle formatting
-          strong: ({ children }) => <strong>{children}</strong>,
-          em: ({ children }) => <em>{children}</em>,
-          // Handle line breaks (remark-breaks will create these automatically)
-          br: () => <br />,
-        }}
-      >
-        {contentStr}
-      </ReactMarkdown>
-    )
-  }
 
   handleGenerateSummary = async () => {
     if (!this.props.response?.data?.data?.rows || !this.props.response?.data?.data?.columns) {
@@ -653,35 +623,28 @@ export default class ChatMessage extends React.Component {
     // This ensures we check the most up-to-date data (e.g., after columns are added)
     const currentResponse = this.responseRef?.queryResponse || this.props.response
 
-    // Only show footer for response messages with data (for Generate Summary button)
-    const rows = currentResponse?.data?.data?.rows || []
-    const rowCount = rows.length
-    
+    // Use centralized function to determine if summary button should be shown
     if (
-      !this.props.enableMagicWand ||
-      !this.props.isResponse ||
-      !currentResponse?.data?.data?.rows ||
-      !currentResponse?.data?.data?.columns ||
-      this.props.type === 'text' ||
-      this.props.isCSVProgressMessage ||
-      isSingleValueResponse(currentResponse)
+      !shouldShowSummaryButton({
+        enableMagicWand: this.props.enableMagicWand,
+        queryResponse: currentResponse,
+        isResponse: this.props.isResponse,
+        type: this.props.type,
+        isCSVProgressMessage: this.props.isCSVProgressMessage,
+      })
     ) {
       return null
     }
-    const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
-    const hasNoData = rowCount === 0
-    // Only show loading for this specific message, not when any query is running
-    const isGenerating = this.state.isGeneratingSummary
-    // Disable button if dataset is too large, has no data, or if this specific message is generating
-    // Also disable if Chata is thinking (query/drilldown running) to prevent conflicts
-    const isDisabled = isDatasetTooLarge || hasNoData || isGenerating || Boolean(this.props.isChataThinking)
+
+    // Get disabled state and tooltip from centralized function
+    const { isDisabled, tooltip: tooltipContent } = getSummaryButtonDisabledState({
+      queryResponse: currentResponse,
+      isGenerating: this.state.isGeneratingSummary,
+      isChataThinking: this.props.isChataThinking,
+    })
 
     const tooltipId = 'chat-message-summary-button-tooltip'
-    const tooltipContent = isDatasetTooLarge
-      ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
-      : hasNoData
-      ? `No data available to generate a summary.`
-      : undefined
+    const isGenerating = this.state.isGeneratingSummary
 
     const { focusPrompt, focusError } = this.state
 
@@ -770,16 +733,16 @@ export default class ChatMessage extends React.Component {
       if (this.props.type === 'markdown' || this.props.type === 'md') {
         return (
           <div className='chat-message-bubble-content-container chat-message-markdown'>
-            <div className='chat-message-summary-title'>
-              <Icon type='magic-wand' />
-              <strong>Summary:</strong>
+            <div ref={this.markdownContentRef}>
+              <SummaryContent
+                content={this.props.content}
+                focusPromptUsed={this.props.focusPromptUsed}
+                className='chat-message-summary-content'
+                titleClassName='chat-message-summary-title'
+                focusPromptClassName='chat-message-summary-focus-prompt'
+                markdownClassName='chat-message-summary-markdown'
+              />
             </div>
-            {this.props.focusPromptUsed && (
-              <div className='chat-message-summary-focus-prompt'>
-                Focused on: {this.props.focusPromptUsed}
-              </div>
-            )}
-            <div ref={this.markdownContentRef}>{this.renderMarkdown(this.props.content)}</div>
           </div>
         )
       }
