@@ -30,6 +30,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
+import { shouldShowSummaryButton } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -922,12 +923,14 @@ export class OptionsToolbar extends React.Component {
             ? false
             : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
         showRefreshDataButton: false,
-        showMagicWandButton:
-          !isMarkdownOnly &&
-          props.enableMagicWand &&
-          isDataResponse &&
-          hasData &&
-          !this.isDrilldownResponse(props),
+        showMagicWandButton: shouldShowSummaryButton({
+          enableMagicWand: props.enableMagicWand,
+          queryResponse: response,
+          isMarkdownOnly,
+          isDataResponse,
+          hasData,
+          isDrilldownResponse: () => this.isDrilldownResponse(props),
+        }),
       }
 
       // Don't show more options button if it's a markdown-only message

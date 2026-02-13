@@ -12,8 +12,8 @@ import {
   isDrilldown,
   fetchLLMSummary,
   MAX_DATA_PAGE_SIZE,
-  isSingleValueResponse,
 } from 'autoql-fe-utils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
 
 import { QueryOutput } from '../QueryOutput'
@@ -623,35 +623,27 @@ export default class ChatMessage extends React.Component {
     // This ensures we check the most up-to-date data (e.g., after columns are added)
     const currentResponse = this.responseRef?.queryResponse || this.props.response
 
-    // Only show footer for response messages with data (for Generate Summary button)
-    const rows = currentResponse?.data?.data?.rows || []
-    const rowCount = rows.length
-    
+    // Use centralized function to determine if summary button should be shown
     if (
-      !this.props.enableMagicWand ||
-      !this.props.isResponse ||
-      !currentResponse?.data?.data?.rows ||
-      !currentResponse?.data?.data?.columns ||
-      this.props.type === 'text' ||
-      this.props.isCSVProgressMessage ||
-      isSingleValueResponse(currentResponse)
+      !shouldShowSummaryButton({
+        enableMagicWand: this.props.enableMagicWand,
+        queryResponse: currentResponse,
+        isResponse: this.props.isResponse,
+        type: this.props.type,
+        isCSVProgressMessage: this.props.isCSVProgressMessage,
+      })
     ) {
       return null
     }
-    const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
-    const hasNoData = rowCount === 0
-    // Only show loading for this specific message, not when any query is running
-    const isGenerating = this.state.isGeneratingSummary
-    // Disable button if dataset is too large, has no data, or if this specific message is generating
-    // Also disable if Chata is thinking (query/drilldown running) to prevent conflicts
-    const isDisabled = isDatasetTooLarge || hasNoData || isGenerating || Boolean(this.props.isChataThinking)
+
+    // Get disabled state and tooltip from centralized function
+    const { isDisabled, tooltip: tooltipContent } = getSummaryButtonDisabledState({
+      queryResponse: currentResponse,
+      isGenerating: this.state.isGeneratingSummary,
+      isChataThinking: this.props.isChataThinking,
+    })
 
     const tooltipId = 'chat-message-summary-button-tooltip'
-    const tooltipContent = isDatasetTooLarge
-      ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
-      : hasNoData
-      ? `No data available to generate a summary.`
-      : undefined
 
     const { focusPrompt, focusError } = this.state
 
