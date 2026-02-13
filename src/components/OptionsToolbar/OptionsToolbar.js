@@ -961,7 +961,8 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        <Tooltip tooltipId={this.props.tooltipID ?? this.TOOLTIP_ID} delayShow={800} />
+        {/* Only render Tooltip if no tooltipID prop is provided (parent manages it) */}
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
   }
