@@ -504,6 +504,9 @@ export default class Legend extends React.Component {
 
       // Add filter button next to the title
       this.renderFilterButtonWithD3(legendElement, titleBBox)
+      
+      // Add filter badge on top of the filter button if there are filtered labels
+      this.renderFilterBadge(legendElement)
     } catch (error) {
       console.error(error)
     }
@@ -551,6 +554,12 @@ export default class Legend extends React.Component {
       const iconX = buttonX - iconSize / 2
       const iconY = buttonY - iconSize / 2
       
+      // Add react-tooltip data attributes
+      const tooltipID = this.props.chartTooltipID || this.props.tooltipID || `legend-filter-tooltip-${this.LEGEND_ID}`
+      buttonGroup
+        .attr('data-tooltip-id', tooltipID)
+        .attr('data-tooltip-content', 'Filter legend items')
+
       // Create a group for the icon and scale it to the desired size
       const iconGroup = buttonGroup
         .append('g')
@@ -576,6 +585,42 @@ export default class Legend extends React.Component {
       this.filterButtonPosition = { x: buttonX, y: buttonY }
     } catch (error) {
       console.warn('Error rendering filter button with D3:', error)
+    }
+  }
+
+  renderFilterBadge = (legendElement) => {
+    try {
+      // Remove existing badge if any
+      select(legendElement).select('.legend-filter-badge').remove()
+      
+      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+      if (filteredOutLabels.length === 0 || !this.filterButtonPosition) {
+        return
+      }
+
+      // Position badge absolutely on top of the filter button (top-right corner)
+      // Match Icon component badge positioning: top: -4px, right: -4px
+      const iconSize = 14
+      const badgeSize = 4 // 0.5em equivalent for small icon
+      const badgeX = this.filterButtonPosition.x + iconSize / 2 - 4 // Offset to top-right of button
+      const badgeY = this.filterButtonPosition.y - iconSize / 2 - 4 // Offset upward
+      
+      const badgeGroup = select(legendElement)
+        .append('g')
+        .attr('class', 'legend-filter-badge')
+        .attr('opacity', '0') // use css to style so it isn't exported in the png/csv
+      
+      // Add badge circle - simple yellow dot like Icon component
+      badgeGroup
+        .append('circle')
+        .attr('cx', badgeX)
+        .attr('cy', badgeY)
+        .attr('r', badgeSize)
+        .attr('fill', 'var(--react-autoql-warning-color)')
+        .attr('stroke', 'var(--react-autoql-background-color-secondary)')
+        .attr('stroke-width', 1)
+    } catch (error) {
+      console.warn('Error rendering filter badge:', error)
     }
   }
 
@@ -818,6 +863,14 @@ export default class Legend extends React.Component {
 
       this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
+      
+      // Re-render badge after all legend elements are positioned (only on first section where filter button exists)
+      if (this.props.isAggregated && isFirstSection && legendElement) {
+        // Use setTimeout to ensure filterButtonPosition is set after renderFilterButtonWithD3 completes
+        setTimeout(() => {
+          this.renderFilterBadge(legendElement)
+        }, 0)
+      }
     } catch (error) {
       console.error(error)
     }
