@@ -258,9 +258,6 @@ export default class ChataChart extends React.Component {
         this.setState({ visibleLegendLabels: null })
       }
 
-      // Clear sortedNumberColumnIndicesForStacked when columns change (it will be recalculated in getData)
-      this.sortedNumberColumnIndicesForStacked = null
-
       // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
       // The Legend component will automatically load the appropriate filter when the legend column changes
     }
@@ -313,16 +310,7 @@ export default class ChataChart extends React.Component {
     const isStackedChart =
       this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
-      // Filter sorted indices to only include those that exist in the current columns array
-      // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
-      const columns = this.sortedColumnsForHeatmap || this.props.columns
-      const filteredIndices = this.sortedNumberColumnIndicesForStacked.filter(
-        (colIndex) => columns?.[colIndex] !== undefined
-      )
-      // Only use filtered indices if we have valid ones, otherwise fall back to props
-      if (filteredIndices.length > 0) {
-        numberColumnIndices = filteredIndices
-      }
+      numberColumnIndices = this.sortedNumberColumnIndicesForStacked
     }
 
     // Use all column indices (including hidden ones via isSeriesHidden) for the base color scale
@@ -802,19 +790,10 @@ export default class ChataChart extends React.Component {
     // This ensures legend labels match the sorted order of segments
     const isStackedChart =
       this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
-    let numberColumnIndices = this.props.numberColumnIndices
-    
-    if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
-      // Filter sorted indices to only include those that exist in the current columns array
-      // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
-      numberColumnIndices = this.sortedNumberColumnIndicesForStacked.filter(
-        (colIndex) => columns?.[colIndex] !== undefined
-      )
-      // Fall back to props if all sorted indices are invalid
-      if (numberColumnIndices.length === 0) {
-        numberColumnIndices = this.props.numberColumnIndices
-      }
-    }
+    const numberColumnIndices =
+      isStackedChart && this.sortedNumberColumnIndicesForStacked
+        ? this.sortedNumberColumnIndicesForStacked
+        : this.props.numberColumnIndices
 
     return getLegendLabelsForMultiSeries(columns, this.getColorScales()?.colorScale, numberColumnIndices)
   }
@@ -921,6 +900,7 @@ export default class ChataChart extends React.Component {
     // This ensures colors match the sorted order (biggest to smallest)
     const isStackedChart =
       this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       // Filter sorted indices to only include those that exist in the current columns array
       // This prevents errors when columns change (e.g., when legend column changes in pivot tables)

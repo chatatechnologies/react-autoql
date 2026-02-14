@@ -4,6 +4,9 @@ import { findByTestAttr } from '../../../../../test/testUtils'
 import sampleProps from '../../chartTestData'
 import testProps from '../testData'
 import HistogramDistributions from './HistogramDistributions'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const histogramSampleProps = {
   xScale: sampleProps.pivot.stringScale(),

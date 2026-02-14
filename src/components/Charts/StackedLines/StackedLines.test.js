@@ -3,6 +3,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import StackedLines from './StackedLines'
 import sampleProps from '../chartTestData'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = StackedLines.defaultProps

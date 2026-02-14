@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
@@ -10,6 +9,7 @@ import { symbol, symbolSquare } from 'd3-shape'
 import { Icon } from '../../Icon'
 import LegendSelector from '../Legend/LegendSelector'
 import LegendPopover from '../Legend/LegendPopover'
+import './Legend.scss'
 
 import {
   legendColor,
@@ -21,6 +21,8 @@ import {
   mergeBoundingClientRects,
   getTitleCase,
 } from 'autoql-fe-utils'
+
+import safeGetBBox from '../../../utils/safeGetBBox'
 
 // Module-level storage for filtered labels to persist across component remounts
 const legendFilterStore = new Map()
@@ -76,7 +78,11 @@ export default class Legend extends React.Component {
     paddingRight: PropTypes.number,
     paddingTop: PropTypes.number,
     paddingBottom: PropTypes.number,
-    legendColumn: PropTypes.shape({}),
+    legendColumn: PropTypes.shape({
+      name: PropTypes.string,
+      index: PropTypes.number,
+      display_name: PropTypes.string,
+    }),
     orientation: PropTypes.string,
     onLabelChange: PropTypes.func,
     onLegendClick: PropTypes.func,
@@ -94,6 +100,24 @@ export default class Legend extends React.Component {
     height: PropTypes.number,
     width: PropTypes.number,
     onRenderComplete: PropTypes.func,
+    queryID: PropTypes.string,
+
+    // Additional commonly-used props (not exhaustive)
+    columns: PropTypes.array,
+    colorScale: PropTypes.func,
+    colorScale2: PropTypes.func,
+    legendColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    numberColumnIndices2: PropTypes.arrayOf(PropTypes.number),
+    chartPadding: PropTypes.number,
+    outerWidth: PropTypes.number,
+    outerHeight: PropTypes.number,
+    hasSecondAxis: PropTypes.bool,
+    hiddenLegendLabels: PropTypes.array,
+    popoverParentElement: PropTypes.any,
+    fontSize: PropTypes.number,
+    originalColumns: PropTypes.array,
+    tableConfig: PropTypes.object,
+    chartContainerRef: PropTypes.any,
   }
 
   static defaultProps = {
@@ -108,6 +132,22 @@ export default class Legend extends React.Component {
     onRenderComplete: () => {},
     translate: undefined,
     orientation: 'vertical',
+
+    // sensible defaults for commonly-used props
+    columns: [],
+    colorScale: () => {},
+    colorScale2: () => {},
+    legendColumnIndices: [],
+    numberColumnIndices2: [],
+    chartPadding: 10,
+    outerWidth: 800,
+    outerHeight: 600,
+    hasSecondAxis: false,
+    hiddenLegendLabels: [],
+    popoverParentElement: null,
+    originalColumns: [],
+    tableConfig: {},
+    chartContainerRef: null,
   }
 
   componentDidMount = () => {
@@ -142,19 +182,32 @@ export default class Legend extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!deepEqual(this.props.columns, nextProps.columns)) {
-      return true
-    }
+    // deep compare arrays/objects where appropriate
+    if (!deepEqual(this.props.columns, nextProps.columns)) return true
 
-    if (this.props.height !== nextProps.height || this.props.outerHeight !== nextProps.outerHeight) {
-      return true
-    }
-    if (this.state.isColumnSelectorOpen !== nextState.isColumnSelectorOpen) {
-      return true
-    }
-    if (this.state.isLegendPopoverOpen !== nextState.isLegendPopoverOpen) {
-      return true
-    }
+    // primitive checks
+    if (this.props.height !== nextProps.height) return true
+    if (this.props.width !== nextProps.width) return true
+    if (this.props.outerHeight !== nextProps.outerHeight) return true
+    if (this.props.outerWidth !== nextProps.outerWidth) return true
+    if (this.props.chartPadding !== nextProps.chartPadding) return true
+    if (this.props.fontSize !== nextProps.fontSize) return true
+    if (this.props.orientation !== nextProps.orientation) return true
+    if (this.props.hasSecondAxis !== nextProps.hasSecondAxis) return true
+
+    // reference checks for functions/scale objects
+    if (this.props.colorScale !== nextProps.colorScale) return true
+    if (this.props.colorScale2 !== nextProps.colorScale2) return true
+
+    // deep compare arrays for indices and filter config
+    if (!deepEqual(this.props.legendColumnIndices, nextProps.legendColumnIndices)) return true
+    if (!deepEqual(this.props.numberColumnIndices2, nextProps.numberColumnIndices2)) return true
+    if (!deepEqual(this.props.legendFilterConfig, nextProps.legendFilterConfig)) return true
+
+    // UI state
+    if (this.state.isColumnSelectorOpen !== nextState.isColumnSelectorOpen) return true
+    if (this.state.isLegendPopoverOpen !== nextState.isLegendPopoverOpen) return true
+
     return false
   }
 
@@ -194,6 +247,10 @@ export default class Legend extends React.Component {
 
   componentWillUnmount = () => {
     this.legendElements?.forEach((el) => removeFromDOM(el))
+    // Clear D3/DOM references to avoid retaining closures and improve test isolation
+    this.filterButtonD3Element = null
+    this.filterButtonPosition = null
+    this.legendElements = []
   }
 
   getTotalLeftPadding = () => {
@@ -285,7 +342,7 @@ export default class Legend extends React.Component {
       this.legendLabels2 = this.legendLabels2.filter((l) => !filteredOutLabels.includes(l.label))
     }
 
-    this.legendLabelSections = this.getlegendLabelSections(this.legendLabels1, this.legendLabels2)
+    this.legendLabelSections = this.getLegendLabelSections(this.legendLabels1, this.legendLabels2)
 
     this.legendLabelSections?.forEach((legendLabels, i) => {
       this.renderLegend(legendLabels, i)
@@ -338,7 +395,7 @@ export default class Legend extends React.Component {
     return sections
   }
 
-  getlegendLabelSections = (legendLabels1, legendLabels2) => {
+  getLegendLabelSections = (legendLabels1, legendLabels2) => {
     let totalSections = this.totalPossibleSections
     const legendLabels1Size = legendLabels1?.length ?? 0
     const legendLabels2Size = legendLabels2?.length ?? 0
@@ -405,8 +462,8 @@ export default class Legend extends React.Component {
       }
     })
 
-    // Force re-render to update legend display
-    this.forceUpdate()
+    // Trigger a React re-render (prefer setState to forceUpdate)
+    this.setState((s) => ({ __legendRenderToggle: !s.__legendRenderToggle }))
   }
 
   removeHiddenLegendLabels = (legendElement) => {
@@ -430,7 +487,7 @@ export default class Legend extends React.Component {
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
 
           if (cellBottom > legendBottom) {
-            const bbox = this.getBBox()
+            const bbox = safeGetBBox(this)
             removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
             removedElementTransform = select(this).attr('transform')
             select(this).remove()
@@ -489,7 +546,7 @@ export default class Legend extends React.Component {
     this.titleBBox = {}
     try {
       const titleElement = select(legendElement).select('.legendTitle').node()
-      const titleBBox = select(legendElement).select('.legendTitle').node().getBBox()
+      const titleBBox = safeGetBBox(titleElement)
       const titleHeight = titleBBox?.height ?? 0
       const titleWidth = titleBBox?.width ?? 0
       this.titleBBox = titleBBox
@@ -514,25 +571,40 @@ export default class Legend extends React.Component {
       select(legendElement).select('.legend-filter-button-d3').remove()
 
       const iconSize = 14
+      const titleElement = select(legendElement).select('.legendTitle').node()
+
+      // Position button using explicit x/y attributes relative to title, similar to how selector border works
+      // This approach works consistently across browsers including Safari
       const buttonX = titleBBox.x + titleBBox.width + 20 // 20px spacing to the right
       const buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
 
       const buttonGroup = select(legendElement)
         .append('g')
         .attr('class', 'legend-filter-button-d3')
-        .attr('transform', `translate(${buttonX}, ${buttonY})`)
         .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
         .style('cursor', 'pointer')
+        .attr('role', 'button')
+        .attr('tabindex', 0)
         .on('click', (event) => {
           event.stopPropagation()
           this.openLegendPopover()
         })
+        .on('keydown', (event) => {
+          if (event && (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar')) {
+            event.preventDefault()
+            event.stopPropagation()
+            this.openLegendPopover()
+          }
+        })
 
-      // Background rect for hover
+      // Background rect for hover - positioned using explicit x/y attributes
+      const rectX = buttonX - iconSize / 2 - 2
+      const rectY = buttonY - iconSize / 2 - 2
+
       buttonGroup
         .append('rect')
-        .attr('x', -iconSize / 2 - 2)
-        .attr('y', -iconSize / 2 - 2)
+        .attr('x', rectX)
+        .attr('y', rectY)
         .attr('width', iconSize + 4)
         .attr('height', iconSize + 4)
         .attr('fill', 'transparent')
@@ -540,49 +612,30 @@ export default class Legend extends React.Component {
         .attr('rx', 3)
         .attr('class', 'legend-filter-button-bg')
 
-      // Use foreignObject to render the icon
-      const foreignObject = buttonGroup
-        .append('foreignObject')
-        .attr('x', -iconSize / 2)
-        .attr('y', -iconSize / 2)
-        .attr('width', iconSize)
-        .attr('height', iconSize)
-        .style('pointer-events', 'none')
-        .style('overflow', 'visible')
+      // Use native SVG icon instead of foreignObject for better Safari compatibility
+      const iconX = buttonX - iconSize / 2
+      const iconY = buttonY - iconSize / 2
 
-      // Create a div for the React icon
-      const iconContainer = foreignObject
-        .append('xhtml:div')
-        .style('width', '100%')
-        .style('height', '100%')
-        .style('display', 'flex')
-        .style('align-items', 'center')
-        .style('justify-content', 'center')
+      // Create a group for the icon and scale it to the desired size
+      const iconGroup = buttonGroup
+        .append('g')
+        .attr('class', 'legend-filter-icon')
+        .attr('transform', `translate(${iconX}, ${iconY}) scale(${iconSize / 24})`)
+        .style('pointer-events', 'none')
+        .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
+
+      iconGroup.append('path').attr('fill', 'none').attr('d', 'M0 0H24V24H0z')
+
+      iconGroup
+        .append('path')
+        .attr('fill', 'currentColor')
+        .attr('stroke', 'currentColor')
+        .attr('stroke-width', '0')
+        .attr('d', 'M21 4v2h-1l-5 7.5V22H9v-8.5L4 6H3V4h18zM6.404 6L11 12.894V20h2v-7.106L17.596 6H6.404z')
 
       // Store reference for button element and position
       this.filterButtonD3Element = buttonGroup.node()
       this.filterButtonPosition = { x: buttonX, y: buttonY }
-
-      // Render the icon directly into the container
-      const tooltipID = this.props.chartTooltipID
-      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
-      const isFiltered = filteredOutLabels.length > 0
-
-      ReactDOM.render(
-        <Icon
-          type='filter'
-          showBadge={isFiltered}
-          style={{
-            width: `${iconSize}px`,
-            height: `${iconSize}px`,
-            color: 'var(--react-autoql-text-color-secondary)',
-            display: 'block',
-          }}
-          data-tooltip-content='Filter legend items'
-          data-tooltip-id={tooltipID}
-        />,
-        iconContainer.node(),
-      )
     } catch (error) {
       console.warn('Error rendering filter button with D3:', error)
     }
@@ -652,7 +705,7 @@ export default class Legend extends React.Component {
       const legendScale = this.getLegendScale(legendLabels)
       const maxSectionWidth = this.getMaxSectionWidth()
 
-      var legendOrdinal = legendColor()
+      const legendOrdinal = legendColor()
         .orient('vertical')
         .path(symbol().type(symbolSquare).size(this.SHAPE_SIZE)())
         .shapePadding(8)
@@ -682,6 +735,36 @@ export default class Legend extends React.Component {
       select(legendElement)
         .selectAll('.cell')
         .style('font-size', `${this.props.fontSize - 2}px`)
+        .each(function () {
+          const cell = this
+          const textElement = select(cell).select('text').node()
+
+          if (!textElement) return
+
+          // Get all text content (including from tspan elements)
+          const allTextNodes = [textElement, ...select(textElement).selectAll('tspan').nodes()]
+
+          allTextNodes.forEach((textNode) => {
+            const textContent = textNode.textContent || ''
+            if (!textContent.trim()) return
+
+            // Split text into words and truncate words longer than 25 characters
+            const words = textContent.split(/(\s+)/)
+            const processedWords = words.map((word) => {
+              const trimmedWord = word.trim()
+              // Check if it's a word (not whitespace) and longer than 25 characters
+              if (trimmedWord.length > 0 && trimmedWord.length > 25) {
+                return word.replace(trimmedWord, trimmedWord.substring(0, 25) + '...')
+              }
+              return word
+            })
+
+            const processedText = processedWords.join('')
+            if (processedText !== textContent) {
+              textNode.textContent = processedText
+            }
+          })
+        })
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBoundingClientRects(
@@ -699,7 +782,81 @@ export default class Legend extends React.Component {
 
       this.applyTitleStyles(title, isFirstSection, legendElement)
 
-      const mergedBBox = mergeBoundingClientRects(this.legendElements.map((el) => el?.getBoundingClientRect()))
+      // Get filtered out labels to exclude from width calculation
+      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+
+      // Calculate bounding box only from visible cells (excluding filtered/hidden labels)
+      // Use getBoundingClientRect() like side-placed legends do - this works correctly
+      const visibleCellBBoxes = []
+      this.legendElements.forEach((el, index) => {
+        if (!el) return
+
+        // Get the legend labels for this section to check visibility
+        const sectionLabels = index === 0 ? this.legendLabels1 : this.legendLabels2
+        const legendLabelsForSection = sectionLabels || []
+
+        // Get bounding boxes of only visible cells
+        select(el)
+          .selectAll('.cell')
+          .each(function () {
+            const cellData = select(this).data()?.[0]
+            if (!cellData) return
+
+            // Check if this label is filtered out
+            if (filteredOutLabels.includes(cellData)) return
+
+            // Check if this label is marked as hidden
+            const labelObj = legendLabelsForSection.find((l) => l.label === cellData)
+            if (labelObj?.hidden) return
+
+            // Use getBoundingClientRect() like side-placed legends
+            const cellBBox = this.getBoundingClientRect()
+            if (cellBBox) {
+              visibleCellBBoxes.push(cellBBox)
+            }
+          })
+      })
+
+      // Include title and filter button in width calculation
+      const allBBoxes = [...visibleCellBBoxes]
+
+      // Add title width from ALL legend sections (for horizontal legends with multiple sections)
+      // Use maxSectionWidth since title should wrap to that width
+      this.legendElements.forEach((el, index) => {
+        if (!el) return
+        const titleElement = select(el).select('.legendTitle').node()
+        if (titleElement) {
+          const titleClientRect = titleElement.getBoundingClientRect()
+          if (titleClientRect && titleClientRect.width > 0 && titleClientRect.height > 0) {
+            // Use the minimum of actual width and maxSectionWidth (title should wrap)
+            const titleWidth = Math.min(titleClientRect.width, maxSectionWidth)
+            // Create a rect that represents the wrapped title width
+            const wrappedTitleRect = {
+              ...titleClientRect,
+              width: titleWidth,
+              right: titleClientRect.left + titleWidth,
+            }
+            allBBoxes.push(wrappedTitleRect)
+          }
+        }
+
+        // Also include the entire legend element's bounding box to ensure we capture everything
+        // This is a fallback in case individual elements don't capture the full extent
+        const legendElementRect = el.getBoundingClientRect()
+        if (legendElementRect && legendElementRect.width > 0 && legendElementRect.height > 0) {
+          allBBoxes.push(legendElementRect)
+        }
+      })
+
+      // Add filter button bounding box if it exists
+      if (this.filterButtonD3Element) {
+        const filterButtonBBox = this.filterButtonD3Element.getBoundingClientRect()
+        if (filterButtonBBox) {
+          allBBoxes.push(filterButtonBBox)
+        }
+      }
+
+      const mergedBBox = mergeBoundingClientRects(allBBoxes)
 
       this.combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
       this.combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0
@@ -717,8 +874,10 @@ export default class Legend extends React.Component {
         .attr('height', height + totalVerticalPadding)
         .attr('width', width + totalHorizontalPadding)
 
+      // Set border height to maxLegendHeight when there's overflow so removeHiddenLegendLabels can properly detect overflow
+      const borderHeight = this.combinedLegendHeight > maxLegendHeight ? maxLegendHeight : height
       select(this.legendBorder)
-        .attr('height', height + 2 * this.BORDER_PADDING)
+        .attr('height', borderHeight + 2 * this.BORDER_PADDING)
         .attr('width', width + 2 * this.BORDER_PADDING)
 
       this.removeHiddenLegendLabels(legendElement)
@@ -824,7 +983,8 @@ export default class Legend extends React.Component {
           stroke: 'var(--react-autoql-border-color)',
           fill: 'transparent',
           pointerEvents: 'none',
-          strokeOpacity: 0.6,
+          strokeOpacity: 0.8,
+          strokeWidth: 1,
         }}
       />
     )

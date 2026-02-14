@@ -2,7 +2,10 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import Bars from './Bars'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
 import sampleProps from '../chartTestData'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = {
   ...sampleProps.pivot,

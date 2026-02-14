@@ -3,7 +3,8 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import _cloneDeep from 'lodash.clonedeep'
 import { sanitizePivotOptions } from './pivotUtils'
-import { TabulatorFull as Tabulator } from 'tabulator-tables' //import Tabulator library
+import * as TabulatorModule from 'tabulator-tables' //import Tabulator library
+const Tabulator = TabulatorModule?.TabulatorFull || TabulatorModule?.Tabulator || TabulatorModule
 import throttle from 'lodash.throttle'
 import { isMobile } from 'react-device-detect'
 
@@ -295,7 +296,7 @@ export default class TableWrapper extends React.Component {
   blockRedraw = () => {
     if (this.isInitialized) {
       this.redrawRestored = false
-      this.tabulator?.blockRedraw()
+      this.tabulator?.blockRedraw?.()
     }
   }
 
@@ -303,7 +304,7 @@ export default class TableWrapper extends React.Component {
   restoreRedraw = () => {
     if (this.tabulator && this.isInitialized && !this.redrawRestored && this._isMounted) {
       this.redrawRestored = true
-      this.tabulator.restoreRedraw()
+      this.tabulator?.restoreRedraw?.()
     }
   }
 

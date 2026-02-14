@@ -43,6 +43,11 @@ export default class Input extends React.Component {
     errormessage: PropTypes.string,
     isRequired: PropTypes.bool,
     round: PropTypes.bool,
+    dataFormatting: PropTypes.object,
+    queryResponse: PropTypes.any,
+    columnSelectOptions: PropTypes.array,
+    columnSelectValue: PropTypes.any,
+    onColumnSelectValueChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -278,6 +283,12 @@ export default class Input extends React.Component {
       displayColumnSelector,
       isRequired,
       round,
+      // filter props that should NOT be forwarded to native DOM elements
+      dataFormatting,
+      queryResponse,
+      columnSelectOptions,
+      columnSelectValue,
+      onColumnSelectValueChange,
       ...nativeProps
     } = this.props
 
