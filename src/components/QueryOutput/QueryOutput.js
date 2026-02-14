@@ -111,9 +111,6 @@ export class QueryOutput extends React.Component {
     // Ref to store latest column overrides for synchronous access (avoids stale state issues)
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
-    // Ref to store latest column overrides for synchronous access (avoids stale state issues)
-    this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
-
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)

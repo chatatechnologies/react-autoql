@@ -571,10 +571,6 @@ export default class Legend extends React.Component {
       select(legendElement).select('.legend-filter-button-d3').remove()
 
       const iconSize = 14
-      const titleElement = select(legendElement).select('.legendTitle').node()
-
-      // Position button using explicit x/y attributes relative to title, similar to how selector border works
-      // This approach works consistently across browsers including Safari
       const buttonX = titleBBox.x + titleBBox.width + 20 // 20px spacing to the right
       const buttonY = titleBBox.y + titleBBox.height / 2 // Vertically centered
 
@@ -597,10 +593,7 @@ export default class Legend extends React.Component {
           }
         })
 
-      // Background rect for hover - positioned using explicit x/y attributes
-      const rectX = buttonX - iconSize / 2 - 2
-      const rectY = buttonY - iconSize / 2 - 2
-
+      // Background rect for hover
       buttonGroup
         .append('rect')
         .attr('x', rectX)
@@ -612,26 +605,24 @@ export default class Legend extends React.Component {
         .attr('rx', 3)
         .attr('class', 'legend-filter-button-bg')
 
-      // Use native SVG icon instead of foreignObject for better Safari compatibility
-      const iconX = buttonX - iconSize / 2
-      const iconY = buttonY - iconSize / 2
-
-      // Create a group for the icon and scale it to the desired size
-      const iconGroup = buttonGroup
-        .append('g')
-        .attr('class', 'legend-filter-icon')
-        .attr('transform', `translate(${iconX}, ${iconY}) scale(${iconSize / 24})`)
+      // Use foreignObject to render the icon
+      const foreignObject = buttonGroup
+        .append('foreignObject')
+        .attr('x', -iconSize / 2)
+        .attr('y', -iconSize / 2)
+        .attr('width', iconSize)
+        .attr('height', iconSize)
         .style('pointer-events', 'none')
-        .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
+        .style('overflow', 'visible')
 
-      iconGroup.append('path').attr('fill', 'none').attr('d', 'M0 0H24V24H0z')
-
-      iconGroup
-        .append('path')
-        .attr('fill', 'currentColor')
-        .attr('stroke', 'currentColor')
-        .attr('stroke-width', '0')
-        .attr('d', 'M21 4v2h-1l-5 7.5V22H9v-8.5L4 6H3V4h18zM6.404 6L11 12.894V20h2v-7.106L17.596 6H6.404z')
+      // Create a div for the React icon
+      const iconContainer = foreignObject
+        .append('xhtml:div')
+        .style('width', '100%')
+        .style('height', '100%')
+        .style('display', 'flex')
+        .style('align-items', 'center')
+        .style('justify-content', 'center')
 
       // Store reference for button element and position
       this.filterButtonD3Element = buttonGroup.node()
@@ -735,36 +726,6 @@ export default class Legend extends React.Component {
       select(legendElement)
         .selectAll('.cell')
         .style('font-size', `${this.props.fontSize - 2}px`)
-        .each(function () {
-          const cell = this
-          const textElement = select(cell).select('text').node()
-
-          if (!textElement) return
-
-          // Get all text content (including from tspan elements)
-          const allTextNodes = [textElement, ...select(textElement).selectAll('tspan').nodes()]
-
-          allTextNodes.forEach((textNode) => {
-            const textContent = textNode.textContent || ''
-            if (!textContent.trim()) return
-
-            // Split text into words and truncate words longer than 25 characters
-            const words = textContent.split(/(\s+)/)
-            const processedWords = words.map((word) => {
-              const trimmedWord = word.trim()
-              // Check if it's a word (not whitespace) and longer than 25 characters
-              if (trimmedWord.length > 0 && trimmedWord.length > 25) {
-                return word.replace(trimmedWord, trimmedWord.substring(0, 25) + '...')
-              }
-              return word
-            })
-
-            const processedText = processedWords.join('')
-            if (processedText !== textContent) {
-              textNode.textContent = processedText
-            }
-          })
-        })
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBoundingClientRects(
@@ -782,81 +743,7 @@ export default class Legend extends React.Component {
 
       this.applyTitleStyles(title, isFirstSection, legendElement)
 
-      // Get filtered out labels to exclude from width calculation
-      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
-
-      // Calculate bounding box only from visible cells (excluding filtered/hidden labels)
-      // Use getBoundingClientRect() like side-placed legends do - this works correctly
-      const visibleCellBBoxes = []
-      this.legendElements.forEach((el, index) => {
-        if (!el) return
-
-        // Get the legend labels for this section to check visibility
-        const sectionLabels = index === 0 ? this.legendLabels1 : this.legendLabels2
-        const legendLabelsForSection = sectionLabels || []
-
-        // Get bounding boxes of only visible cells
-        select(el)
-          .selectAll('.cell')
-          .each(function () {
-            const cellData = select(this).data()?.[0]
-            if (!cellData) return
-
-            // Check if this label is filtered out
-            if (filteredOutLabels.includes(cellData)) return
-
-            // Check if this label is marked as hidden
-            const labelObj = legendLabelsForSection.find((l) => l.label === cellData)
-            if (labelObj?.hidden) return
-
-            // Use getBoundingClientRect() like side-placed legends
-            const cellBBox = this.getBoundingClientRect()
-            if (cellBBox) {
-              visibleCellBBoxes.push(cellBBox)
-            }
-          })
-      })
-
-      // Include title and filter button in width calculation
-      const allBBoxes = [...visibleCellBBoxes]
-
-      // Add title width from ALL legend sections (for horizontal legends with multiple sections)
-      // Use maxSectionWidth since title should wrap to that width
-      this.legendElements.forEach((el, index) => {
-        if (!el) return
-        const titleElement = select(el).select('.legendTitle').node()
-        if (titleElement) {
-          const titleClientRect = titleElement.getBoundingClientRect()
-          if (titleClientRect && titleClientRect.width > 0 && titleClientRect.height > 0) {
-            // Use the minimum of actual width and maxSectionWidth (title should wrap)
-            const titleWidth = Math.min(titleClientRect.width, maxSectionWidth)
-            // Create a rect that represents the wrapped title width
-            const wrappedTitleRect = {
-              ...titleClientRect,
-              width: titleWidth,
-              right: titleClientRect.left + titleWidth,
-            }
-            allBBoxes.push(wrappedTitleRect)
-          }
-        }
-
-        // Also include the entire legend element's bounding box to ensure we capture everything
-        // This is a fallback in case individual elements don't capture the full extent
-        const legendElementRect = el.getBoundingClientRect()
-        if (legendElementRect && legendElementRect.width > 0 && legendElementRect.height > 0) {
-          allBBoxes.push(legendElementRect)
-        }
-      })
-
-      // Add filter button bounding box if it exists
-      if (this.filterButtonD3Element) {
-        const filterButtonBBox = this.filterButtonD3Element.getBoundingClientRect()
-        if (filterButtonBBox) {
-          allBBoxes.push(filterButtonBBox)
-        }
-      }
-
-      const mergedBBox = mergeBoundingClientRects(allBBoxes)
+      const mergedBBox = mergeBoundingClientRects(this.legendElements.map((el) => el?.getBoundingClientRect()))
 
       this.combinedLegendWidth = !isNaN(mergedBBox?.width) ? mergedBBox?.width : 0
       this.combinedLegendHeight = !isNaN(mergedBBox?.height) ? mergedBBox?.height : 0

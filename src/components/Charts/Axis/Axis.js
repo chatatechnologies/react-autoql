@@ -807,7 +807,34 @@ export default class Axis extends Component {
     return precisionLabelMap[precision] || null
   }
 
+  getPrecisionLabel = (override) => {
+    if (!override) return null
+
+    const { type, precision } = override
+
+    // Map precision values to labels (matching StringAxisSelector dateBucketOptions)
+    const precisionLabelMap = {
+      [PrecisionTypes.YEAR]: 'Year',
+      [PrecisionTypes.QUARTER]: 'Quarter',
+      [PrecisionTypes.MONTH]: 'Month',
+      [PrecisionTypes.WEEK]: 'Week',
+      [PrecisionTypes.DAY]: 'Day',
+      [PrecisionTypes.DATE_HOUR]: 'Hour',
+      [PrecisionTypes.DATE_MINUTE]: 'Minute',
+      [PrecisionTypes.DATE_SECOND]: 'Second',
+      [DateStringPrecisionTypes.QUARTERONLY]: 'Quarter of Year',
+      [DateStringPrecisionTypes.MONTHONLY]: 'Month of Year',
+      [DateStringPrecisionTypes.WEEKONLY]: 'Week of Year',
+      [DateStringPrecisionTypes.DOM]: 'Day of Month',
+      [DateStringPrecisionTypes.DOW]: 'Day of Week',
+      [DateStringPrecisionTypes.HOUR]: 'Hour of Day',
+    }
+
+    return precisionLabelMap[precision] || null
+  }
+
   renderAxisTitleText = () => {
+    const { scale, columnOverrides, originalColumns } = this.props
     const { scale, columnOverrides, originalColumns } = this.props
     const title = scale?.title ?? ''
 
@@ -839,6 +866,8 @@ export default class Axis extends Component {
 
     if (displayTitle.length > 35) {
       return (
+        <tspan data-tooltip-content={displayTitle} data-tooltip-id={this.props.chartTooltipID} data-test='axis-label'>
+          {`${displayTitle.substring(0, 35)}...`}
         <tspan data-tooltip-content={displayTitle} data-tooltip-id={this.props.chartTooltipID} data-test='axis-label'>
           {`${displayTitle.substring(0, 35)}...`}
         </tspan>
