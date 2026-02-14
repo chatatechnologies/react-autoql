@@ -2,6 +2,10 @@ import React from 'react'
 import { mount } from 'enzyme'
 import { scaleBand, scaleLinear } from 'd3-scale'
 import AverageLine from '../AverageLine'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../../test/utils/getBBoxShim'
+
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 // Mock formatElement to return simple string
 jest.mock('autoql-fe-utils', () => ({

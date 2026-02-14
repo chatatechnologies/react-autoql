@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { mean } from 'd3-array'
 import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+import safeGetBBox from '../../../utils/safeGetBBox'
 import './AverageLine.scss'
 
 export class AverageLine extends React.Component {
@@ -69,12 +70,9 @@ export class AverageLine extends React.Component {
 
   updateTextBBox = () => {
     if (this.textRef.current) {
-      try {
-        const bbox = this.textRef.current.getBBox()
+      const bbox = safeGetBBox(this.textRef.current)
+      if (bbox.width || bbox.height || bbox.x || bbox.y) {
         this.setState({ textBBox: bbox })
-      } catch (error) {
-        // getBBox can fail in some browsers/contexts, fail silently
-        console.warn('Failed to get text bounding box:', error)
       }
     }
   }

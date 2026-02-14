@@ -1,6 +1,10 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import AverageLineToggle from '../AverageLineToggle'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../../test/utils/getBBoxShim'
+
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 describe('AverageLineToggle', () => {
   const defaultProps = {

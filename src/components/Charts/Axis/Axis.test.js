@@ -5,6 +5,9 @@ import _cloneDeep from 'lodash.clonedeep'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 import { DisplayTypes } from 'autoql-fe-utils'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot

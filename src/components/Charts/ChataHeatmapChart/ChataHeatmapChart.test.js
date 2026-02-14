@@ -3,6 +3,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import ChataHeatmapChart from './ChataHeatmapChart'
 import sampleProps from '../chartTestData'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = ChataHeatmapChart.defaultProps
