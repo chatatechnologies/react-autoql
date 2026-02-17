@@ -50,8 +50,36 @@
 
   /* Default styles outside of data messenger */
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  background: var(--react-autoql-background-color-secondary);
+  background-color: var(--react-autoql-background-color-secondary);
+  // Glassmorphism: semi-transparent input with blur
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   color: #5d5d5d;
+  position: relative;
+  isolation: isolate;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+
+  // Semi-transparent overlay for glass effect
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--react-autoql-background-color-secondary);
+    opacity: 0.9;
+    border-radius: 24px;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  // Fallback for browsers without backdrop-filter support
+  @supports not (backdrop-filter: blur(10px)) {
+    background-color: var(--react-autoql-background-color-secondary);
+    &::before {
+      opacity: 0.95;
+    }
+  }
 }
 .react-autoql-chatbar-input.left-padding {
   padding-left: 54px;
@@ -60,7 +88,11 @@
   background: rgba(0, 0, 0, 0.03);
 }
 .react-autoql-chatbar-input:not(:disabled):hover {
-  box-shadow: 0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+  border-color: var(--react-autoql-accent-color, rgba(38, 167, 233, 0.3));
 }
 .react-autoql-chatbar-input::placeholder {
   /* Default color outside of data messenger */

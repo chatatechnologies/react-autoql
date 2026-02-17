@@ -45,9 +45,21 @@ export default class Columns extends PureComponent {
 
     let visibleIndex = startIndex
     const allBars = []
+    const gradientDefs = []
     columnIndices.forEach((colIndex, i) => {
       if (!columns[colIndex].isSeriesHidden) {
         const color = this.props.colorScale(colIndex)
+        const gradientId = `column-gradient-${colIndex}-${i}-${startIndex}`
+        
+        // Create vertical gradient for columns (top to bottom)
+        gradientDefs.push(
+          <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity="0.9" />
+            <stop offset="50%" stopColor={color} stopOpacity="0.7" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+          </linearGradient>
+        )
+        
         allBars.push(
           this.props.data.map((d, index) => {
             const value = d[colIndex]
@@ -68,7 +80,8 @@ export default class Columns extends PureComponent {
             }
 
             const x0 = xScale.getValue(d[stringColumnIndex])
-            const dX = visibleIndex * this.barWidth
+            // Add 0.5px gap between series
+            const dX = visibleIndex * (this.barWidth + 0.5)
             const finalBarXPosition = x0 + dX
 
             const tooltip = getTooltipContent({
@@ -82,6 +95,8 @@ export default class Columns extends PureComponent {
             })
 
             const key = getKey(colIndex, index)
+            // Round corners - use smaller of width/height for radius, but cap at 4px
+            const cornerRadius = Math.min(Math.min(this.barWidth, height) / 2, 4)
 
             return (
               <rect
@@ -92,10 +107,12 @@ export default class Columns extends PureComponent {
                 y={y}
                 height={height}
                 width={this.barWidth}
+                rx={cornerRadius}
+                ry={cornerRadius}
                 onClick={() => this.onColumnClick(d, colIndex, index)}
                 data-tooltip-html={tooltip}
                 data-tooltip-id={this.props.chartTooltipID}
-                style={{ fill: color }}
+                fill={`url(#${gradientId})`}
               />
             )
           }),
@@ -103,7 +120,7 @@ export default class Columns extends PureComponent {
         visibleIndex += 1
       }
     })
-    return allBars
+    return { bars: allBars, defs: gradientDefs }
   }
 
   render = () => {
@@ -129,10 +146,22 @@ export default class Columns extends PureComponent {
     const numBarsSeries2 = yScale2 ? visibleSeries2?.length ?? 0 : 0
     const numBars = numBarsSeries1 + numBarsSeries2
 
-    this.barWidth = (xScale.bandwidth ? xScale.bandwidth() : 0) / numBars
+    // Calculate bar width with 0.5px gap between series
+    const totalWidth = xScale.bandwidth ? xScale.bandwidth() : 0
+    const gapWidth = (numBars - 1) * 0.5 // 0.5px gap between each series
+    this.barWidth = numBars > 0 ? (totalWidth - gapWidth) / numBars : 0
 
-    const bars = this.getBars(numberColumnIndices, yScale)
+    const result1 = this.getBars(numberColumnIndices, yScale)
+    const result2 = yScale2 ? this.getBars(numberColumnIndices2, yScale2, numBarsSeries1) : null
 
-    return <g data-test='columns'>{bars}</g>
+    const allDefs = [...(result1?.defs || []), ...(result2?.defs || [])]
+    const allBars = [...(result1?.bars || []), ...(result2?.bars || [])]
+
+    return (
+      <g data-test='columns'>
+        <defs>{allDefs}</defs>
+        {allBars}
+      </g>
+    )
   }
 }

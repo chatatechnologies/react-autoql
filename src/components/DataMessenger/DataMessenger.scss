@@ -69,12 +69,40 @@
   .react-autoql-drawer-content-container {
     width: 100%;
     height: 100%;
-    background: var(--react-autoql-background-color-primary);
+    // Glassmorphism: semi-transparent background with backdrop blur
+    background-color: var(--react-autoql-background-color-primary, #fff);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     overflow: hidden;
-    border-radius: 4px;
+    border-radius: 12px;
+    position: relative;
+    isolation: isolate;
+
+    // Semi-transparent overlay for glass effect
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-color: var(--react-autoql-background-color-primary, #fff);
+      opacity: 0.9;
+      border-radius: 12px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    // Fallback for browsers without backdrop-filter support
+    @supports not (backdrop-filter: blur(20px)) {
+      background-color: var(--react-autoql-background-color-primary, rgba(255, 255, 255, 0.95));
+      &::before {
+        opacity: 0.95;
+      }
+    }
 
     &.data-explorer {
-      background: var(--react-autoql-background-color-secondary);
+      background-color: var(--react-autoql-background-color-secondary, #fff);
+      &::before {
+        background-color: var(--react-autoql-background-color-secondary, #fff);
+      }
     }
   }
 
@@ -83,11 +111,38 @@
     justify-content: space-between;
     width: 100%;
     height: 60px;
-    background: var(--react-autoql-accent-color);
+    // Glassmorphism header: semi-transparent accent color with blur
+    background-color: var(--react-autoql-accent-color);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
     color: var(--react-autoql-text-color-accent);
-    box-shadow: 0 0 12px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      0 1px 3px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     flex: 0 0 auto;
     z-index: 1;
+    position: relative;
+    isolation: isolate;
+
+    // Semi-transparent overlay
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-color: var(--react-autoql-accent-color);
+      opacity: 0.85;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    // Fallback for browsers without backdrop-filter support
+    @supports not (backdrop-filter: blur(10px)) {
+      background-color: var(--react-autoql-accent-color);
+      &::before {
+        opacity: 0.95;
+      }
+    }
 
     &.mobile-hidden {
       display: none !important;
@@ -290,12 +345,41 @@
 /* rc-drawer */
 .react-autoql-drawer {
   .drawer-content {
-    background: white;
-    border-radius: 4px;
+    // Glassmorphism: semi-transparent drawer with blur
+    background-color: var(--react-autoql-background-color-primary, rgba(255, 255, 255, 0.9));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 12px;
     overflow: visible;
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.12),
+      0 2px 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+    isolation: isolate;
+
+    // Semi-transparent overlay
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-color: var(--react-autoql-background-color-primary, #fff);
+      opacity: 0.85;
+      border-radius: 12px;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    // Fallback for browsers without backdrop-filter support
+    @supports not (backdrop-filter: blur(20px)) {
+      background-color: var(--react-autoql-background-color-primary, rgba(255, 255, 255, 0.95));
+      &::before {
+        opacity: 0.95;
+      }
+    }
 
     opacity: 1;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, box-shadow 0.3s ease;
   }
 
   &.closed .drawer-content {

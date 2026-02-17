@@ -37,8 +37,9 @@
   display: flex;
   flex-direction: row;
   background: inherit;
-  padding: 5px;
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 25px;
+  margin-right: 5px;
   line-height: 28px;
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);

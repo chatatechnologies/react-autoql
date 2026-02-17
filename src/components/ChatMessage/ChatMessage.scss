@@ -23,8 +23,13 @@
       align-items: flex-end;
 
       .chat-message-bubble {
-        background: var(--react-autoql-accent-color);
+        background-color: var(--react-autoql-accent-color);
         color: var(--react-autoql-text-color-accent);
+        
+        // Glassmorphism overlay for request bubbles
+        &::before {
+          background-color: var(--react-autoql-accent-color);
+        }
       }
     }
   }
@@ -41,8 +46,13 @@
       justify-content: flex-start;
 
       .chat-message-bubble {
-        background: var(--react-autoql-background-color-secondary);
+        background-color: var(--react-autoql-background-color-secondary);
         color: var(--react-autoql-text-color-primary);
+        
+        // Glassmorphism overlay for response bubbles
+        &::before {
+          background-color: var(--react-autoql-background-color-secondary);
+        }
       }
 
       .chat-message-bubble:not(.text) {
@@ -163,16 +173,41 @@
       flex-direction: column;
       position: relative;
       flex: 1;
-      // overflow: hidden;
-      padding: 13px;
-      border-radius: 6px;
+      padding: 13px 20px;
+      border-radius: 25px;
       max-width: 100%;
       word-wrap: break-word;
       font-family: inherit;
       font-size: 14px;
       letter-spacing: 0.04em;
       box-sizing: border-box;
-      box-shadow: var(--react-autoql-box-shadow-1);
+      // Glassmorphism: semi-transparent bubbles with blur
+      backdrop-filter: blur(10px) saturate(180%);
+      -webkit-backdrop-filter: blur(10px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 2px 8px rgba(0, 0, 0, 0.08),
+        0 1px 3px rgba(0, 0, 0, 0.05);
+      isolation: isolate;
+
+      // Semi-transparent overlay for glass effect
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 25px;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.9;
+      }
+
+      // Fallback for browsers without backdrop-filter support
+      @supports not (backdrop-filter: blur(10px)) {
+        &::before {
+          opacity: 0.95;
+        }
+      }
+
       &:not(.resizable) {
         max-height: 400px;
       }
@@ -186,7 +221,10 @@
       }
 
       &.active {
-        border: 1px solid #c3c3c3;
+        border: 1px solid rgba(195, 195, 195, 0.5);
+        box-shadow: 
+          0 4px 12px rgba(0, 0, 0, 0.12),
+          0 2px 6px rgba(0, 0, 0, 0.08);
       }
 
       // Remove max-height for markdown messages

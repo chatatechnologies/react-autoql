@@ -17,8 +17,11 @@
   height: 100%;
   overflow: hidden;
 
-  border-radius: 6px;
-  box-shadow: var(--react-autoql-box-shadow-1);
+  border-radius: 12px;
+  // Modern subtle border - very light, works in both themes
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
+  // Box shadow matching reference image - subtle depth with soft blur
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
 }
 
 .react-autoql-dashboard-tile-inner-div {
@@ -194,7 +197,8 @@
     align-items: center;
 
     .single-value-response {
-      font-size: 32px;
+      font-size: 36px;
+      font-weight: 600;
     }
   }
 
@@ -292,22 +296,49 @@
 .dashboard-tile-title-container {
   width: 100%;
   text-align: left;
-  padding: 19px 25px 0 25px;
-  height: 47px;
+  padding: 20px 24px 12px 24px;
+  height: auto;
+  min-height: 56px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 0;
   flex-grow: 0;
+  position: relative;
+  letter-spacing: 0.03em;
+
+  // Subtle gradient background for visual interest (like reference image)
+  background: linear-gradient(
+    135deg,
+    rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.04) 0%,
+    transparent 40%,
+    transparent 100%
+  );
 
   .dashboard-tile-title {
-    color: var(--react-autoql-dashboard-title-color);
+    // Modern: Use primary text color with opacity for softer look
+    color: var(--react-autoql-text-color-primary, #1a1a1a);
+    opacity: 0.85;
+    position: relative;
   }
 }
 
 .dashboard-tile-title-container .dashboard-tile-title {
-  font-weight: 600;
-  font-size: 15px;
+  // Modern: Larger, more prominent title (18px is standard for card titles)
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.4;
+  margin: 0;
+  
+  // Optional: Subtle gradient text effect (uncomment if desired)
+  // background: linear-gradient(
+  //   135deg,
+  //   var(--react-autoql-text-color-primary, #1a1a1a) 0%,
+  //   var(--react-autoql-accent-color, #26a7df) 100%
+  // );
+  // -webkit-background-clip: text;
+  // -webkit-text-fill-color: transparent;
+  // background-clip: text;
 }
 
 /* Wrap mode: title uses multiple lines instead of truncation + tooltip */
@@ -379,11 +410,8 @@
 }
 
 .dashboard-tile-title-divider {
-  height: 2px;
-  background: currentColor;
-  width: 75px;
-  margin-top: 4px;
-  opacity: 0.07;
+  // Divider removed - using spacing instead for cleaner modern look
+  display: none;
 }
 
 /* Input box styling for edit mode */

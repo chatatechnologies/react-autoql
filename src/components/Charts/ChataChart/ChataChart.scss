@@ -222,7 +222,6 @@
   .bar,
   .column,
   .line,
-  .slice,
   .stacked-area,
   .stacked-bar,
   .stacked-column {
@@ -233,6 +232,17 @@
     &:hover,
     &.active {
       fill-opacity: 0.7 !important;
+    }
+  }
+
+  .slice {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 0.85 !important; // Pie chart slices are transparent
+    outline: none !important;
+
+    &:hover,
+    &.active {
+      fill-opacity: 1 !important; // Fully opaque on hover
     }
   }
   .line-dot {
@@ -254,8 +264,14 @@
 
       .line-dot-outer-circle,
       .line-dot-inner-circle {
-        transition: fill 0.3s ease, stroke 0.3s ease;
+        transition: fill 0.3s ease, stroke 0.3s ease, opacity 0.3s ease;
       }
+    }
+
+    // Hide dots by default, show on hover
+    .line-dot-inner-circle {
+      opacity: 0 !important;
+      transition: opacity 0.2s ease;
     }
 
     &:hover .line-dot-inner-circle,
@@ -263,6 +279,16 @@
       fill: currentColor !important;
       opacity: 1 !important;
     }
+  }
+
+  .line-gradient-area {
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .line-hover-indicator {
+    pointer-events: none;
+    transition: opacity 0.2s ease;
   }
 
   .vertex-dot {

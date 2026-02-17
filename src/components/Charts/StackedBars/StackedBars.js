@@ -53,9 +53,31 @@ export default class StackedBars extends PureComponent {
       (colIndex) => columns[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
+    const gradientDefs = []
+    const gradientIds = new Map()
+    
+    // Create gradients for each series
+    visibleIndices.forEach((colIndex, i) => {
+      const color = this.props.colorScale(colIndex)
+      const gradientId = `stacked-bar-gradient-${colIndex}-${i}`
+      gradientIds.set(colIndex, gradientId)
+      
+      // Horizontal gradient for stacked bars (left to right)
+      gradientDefs.push(
+        <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.5" />
+          <stop offset="50%" stopColor={color} stopOpacity="0.7" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.9" />
+        </linearGradient>
+      )
+    })
+
     const stackedBars = this.props.data.map((d, index) => {
       let prevPosValue = 0
       let prevNegValue = 0
+      const bandwidth = yScale.bandwidth()
+      const cornerRadius = Math.min(bandwidth / 2, 3) // Slight rounding for modern look
+      
       const bars = visibleIndices
         .map((colIndex) => {
           const rawValue = d[colIndex]
@@ -63,9 +85,9 @@ export default class StackedBars extends PureComponent {
           const value = !isNaN(valueNumber) ? valueNumber : 0
           return { colIndex, value }
         })
-        .filter(({ value }) => value !== 0 && value !== null && value !== undefined) // Filter out zero/null values, keep negatives
+        .filter(({ value }) => value !== 0 && value !== null && value !== undefined)
         .map(({ colIndex, value }) => {
-          const color = this.props.colorScale(colIndex)
+          const gradientId = gradientIds.get(colIndex)
 
           let x
           let width
@@ -102,17 +124,24 @@ export default class StackedBars extends PureComponent {
               x={x}
               y={yScale.getValue(d[stringColumnIndex])}
               width={width}
-              height={yScale.bandwidth()}
+              height={bandwidth}
+              rx={cornerRadius}
+              ry={cornerRadius}
               onClick={() => this.onColumnClick(d, colIndex, index)}
               data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
-              style={{ fill: color }}
+              fill={`url(#${gradientId})`}
             />
           )
         })
       return bars
     })
 
-    return <g data-test='stacked-bars'>{stackedBars}</g>
+    return (
+      <g data-test='stacked-bars'>
+        <defs>{gradientDefs}</defs>
+        {stackedBars}
+      </g>
+    )
   }
 }
