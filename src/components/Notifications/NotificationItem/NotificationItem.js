@@ -76,6 +76,7 @@ export default class NotificationItem extends React.Component {
     chartTooltipID: PropTypes.string,
     shouldRenderSummarySection: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -542,6 +543,7 @@ export default class NotificationItem extends React.Component {
                     chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
                     enableFilterBtn={this.props.enableFilterBtn}
                     enableCustomColumns={this.props.enableCustomColumns}
+                    enableMagicWand={this.props.enableMagicWand}
                   />
                 )}
               </>

@@ -92,6 +92,7 @@ class NotificationFeed extends React.Component {
     showSelectNotificationsButton: PropTypes.bool,
     onConfirmCallback: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -840,6 +841,7 @@ class NotificationFeed extends React.Component {
                           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
                           enableFilterBtn={this.props.enableFilterBtn}
                           enableCustomColumns={this.props.enableCustomColumns}
+                          enableMagicWand={this.props.enableMagicWand}
                         />
                       </div>
                     )
