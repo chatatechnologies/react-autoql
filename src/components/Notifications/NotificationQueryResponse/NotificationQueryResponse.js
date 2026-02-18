@@ -31,6 +31,7 @@ export default class NotificationQueryResponse extends React.Component {
     onSuccessCallback: PropTypes.func,
     onErrorCallback: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -117,6 +118,7 @@ export default class NotificationQueryResponse extends React.Component {
             popoverPositions={['top', 'left', 'bottom', 'right']}
             enableFilterBtn={this.props.enableFilterBtn}
             popoverAlign='end'
+            enableMagicWand={this.props.enableMagicWand}
           />
         </div>
       </div>
