@@ -13,6 +13,9 @@ import {
   AggTypes,
   sendSuggestion,
   runDrilldown,
+  runDrillthrough,
+  isDrilldown,
+  isDrillthrough,
   runQueryOnly,
   getSupportedDisplayTypes,
   getNumberColumnIndices,
@@ -65,7 +68,6 @@ import {
   ColumnTypes,
   isColumnIndexConfigValid,
   getCleanColumnName,
-  isDrilldown,
   CustomColumnTypes,
   formatFiltersForTabulator,
   formatSortersForTabulator,
@@ -73,6 +75,8 @@ import {
   createFilterFunction,
   extractOperatorFromValue,
 } from 'autoql-fe-utils'
+
+// helper moved to autoql-fe-utils; not imported here to avoid unused import
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
@@ -107,7 +111,7 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       isEditing: false,
     }
-    
+
     // Ref to store latest column overrides for synchronous access (avoids stale state issues)
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
@@ -740,7 +744,7 @@ export class QueryOutput extends React.Component {
   applyColumnOverrides = (columns, overridesOverride) => {
     // Use provided override, then ref (latest), then state (fallback)
     const overrides = overridesOverride || this.latestColumnOverrides || this.state?.columnOverrides || {}
-    
+
     if (!columns || !overrides || Object.keys(overrides).length === 0) {
       return columns
     }
@@ -1362,6 +1366,31 @@ export class QueryOutput extends React.Component {
         response = this.handleQueryFnError(error)
         console.error(error)
       }
+    } else if (isDrillthrough(this.queryResponse)) {
+      try {
+        response = await runDrillthrough({
+          ...getAuthentication(this.props.authentication),
+          ...getAutoQLConfig(this.props.autoQLConfig),
+          source: this.props.source,
+          scope: this.props.scope,
+          translation: queryRequestData?.translation,
+          filters: sessionFilters,
+          pageSize: queryRequestData?.page_size,
+          test: queryRequestData?.test,
+          groupBys: queryRequestData?.columns,
+          query: queryRequestData?.text,
+          queryID: this.props.originalQueryID,
+          orders: this.formattedTableParams?.sorters,
+          cancelToken: this.axiosSource.token,
+          newColumns: queryRequestData?.additional_selects,
+          displayOverrides: queryRequestData?.display_overrides,
+          ...args,
+          tableFilters: allFilters,
+        })
+      } catch (error) {
+        response = this.handleQueryFnError(error)
+        console.error(error)
+      }
     } else {
       try {
         response = await runQueryOnly({
@@ -1632,6 +1661,125 @@ export class QueryOutput extends React.Component {
 
     if (!!groupBys?.length) {
       this.processDrilldown({ groupBys: groupBys ?? [], supportedByAPI: true })
+    } else {
+      // No groupBys: if the clicked column enables drillthrough, invoke it.
+      try {
+        const colDef = cell?.getColumn?.()?.getDefinition?.() || {}
+        const colIdentifier = colDef.field || colDef.name || colDef.title
+        const clickedCol = this.state.columns?.find((c) => c.name === colIdentifier || c.field === colIdentifier)
+
+        if (clickedCol && clickedCol.drillthrough_enabled) {
+          return this.processDrillthrough({ cell, groupBys: [], supportedByAPI: true })
+        }
+      } catch (e) {
+        // ignore errors and fallback to no-op
+      }
+    }
+  }
+
+  // Process a drillthrough action for list queries. Mirrors `processDrilldown` behavior but
+  // uses `runDrillthrough` when supported by the API. Frontend should send candidate filters
+  // for all columns; backend chooses which to apply.
+  processDrillthrough = async ({
+    cell,
+    groupBys,
+    supportedByAPI,
+    row,
+    activeKey,
+    stringColumnIndex,
+    filter,
+    useOrLogic,
+  }) => {
+    try {
+      const pageSize = this.getDefaultQueryPageSize()
+
+      if (supportedByAPI) {
+        this.props.onDrilldownStart && this.props.onDrilldownStart(activeKey)
+        try {
+          // Build constructed filters. If a specific filter was provided, use it; otherwise
+          // if stringColumnIndex + row provided, construct a single filter; otherwise build
+          // candidate filters for every column:value in the clicked row (recommended for drillthrough).
+          let constructedFilters = []
+          if (filter) {
+            constructedFilters = Array.isArray(filter) ? filter : [filter]
+          } else if (!isNaN(stringColumnIndex) && !!row?.length) {
+            constructedFilters = [
+              this.constructFilter({ column: this.state.columns[stringColumnIndex], value: row[stringColumnIndex] }),
+            ]
+          } else if (cell?.getData) {
+            const cellRow = cell.getData()
+            constructedFilters = (this.state.columns || []).map((col, idx) =>
+              this.constructFilter({ column: col, value: cellRow[idx] }),
+            )
+          }
+
+          const allFilters = this.getCombinedFilters(constructedFilters)
+
+          // Determine drillthrough_col: prefer explicit groupBys, otherwise derive from clicked column
+          let drillthroughCol
+          if (groupBys && groupBys.length > 0) {
+            drillthroughCol = groupBys[0].name
+          } else {
+            const colDef = cell?.getColumn?.()?.getDefinition?.() || {}
+            const colIdentifier = colDef.field || colDef.name || colDef.title
+            const clickedCol = this.state.columns?.find((c) => c.name === colIdentifier || c.field === colIdentifier)
+            drillthroughCol = clickedCol?.drill_down || clickedCol?.drillDown || clickedCol?.name || colIdentifier
+          }
+
+          const response = await runDrillthrough({
+            ...getAuthentication(this.props.authentication),
+            ...getAutoQLConfig(this.props.autoQLConfig),
+            queryID: this.drilldownQueryID,
+            source: this.props.source,
+            scope: this.props.scope,
+            pageSize,
+            tableFilters: allFilters,
+            orders: this.formattedTableParams?.sorters,
+            drillthrough_col: drillthroughCol,
+          })
+
+          this.props.onDrilldownEnd &&
+            this.props.onDrilldownEnd({ response, originalQueryID: this.queryID, drilldownFilters: allFilters })
+        } catch (error) {
+          this.props.onDrilldownEnd && this.props.onDrilldownEnd({ response: error, drilldownFilters: [] })
+        }
+      } else if ((!isNaN(stringColumnIndex) && !!row?.length) || filter) {
+        // Non-API fallback similar to drilldown: support client-side OR logic or call queryFn
+        this.props.onDrilldownStart && this.props.onDrilldownStart(activeKey)
+
+        let clickedFilter = filter
+        if (!filter && !isNaN(stringColumnIndex) && !!row?.length) {
+          clickedFilter = this.constructFilter({
+            column: this.state.columns[stringColumnIndex],
+            value: row[stringColumnIndex],
+          })
+        }
+
+        // If useOrLogic is true, filter client-side with OR logic
+        if (useOrLogic && clickedFilter?.useOrLogic && clickedFilter?.stringColumnIndices && clickedFilter?.rows) {
+          setTimeout(() => {
+            if (!this._isMounted) return
+            const response = this.getFilterDrilldownWithOr({
+              stringColumnIndices: clickedFilter.stringColumnIndices,
+              rows: clickedFilter.rows,
+            })
+            this.props.onDrilldownEnd({ response, originalQueryID: this.queryID, drilldownFilters: [] })
+          }, 800)
+        } else {
+          const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
+          const allFilters = this.getCombinedFilters(filtersToCombine)
+          let response
+          try {
+            response = await this.queryFn({ tableFilters: allFilters, pageSize })
+          } catch (error) {
+            response = error
+          }
+          this.props.onDrilldownEnd({ response, originalQueryID: this.queryID, drilldownFilters: allFilters })
+        }
+      }
+    } catch (error) {
+      console.error(error)
+      this.props.onDrilldownEnd({ error: 'Error processing drillthrough' })
     }
   }
 
@@ -1986,17 +2134,17 @@ export class QueryOutput extends React.Component {
       // Always store overrides from newColumns since they represent the user's explicit choice
       // Don't compare with getColumns() which may already have overrides applied
       const overrides = { ...this.state.columnOverrides }
-      
+
       newColumns.forEach((newCol) => {
         // Store override from newColumns - these represent the user's explicit choice
         // Compare against existing override in state, not getColumns() which may have stale/already-applied values
         const existingOverride = overrides[newCol.index]
-        
+
         // Update override if type or precision is different from existing override
-        const needsUpdate = 
+        const needsUpdate =
           (newCol.type && newCol.type !== existingOverride?.type) ||
           (newCol.precision && newCol.precision !== existingOverride?.precision)
-        
+
         if (needsUpdate) {
           overrides[newCol.index] = {
             type: newCol.type || existingOverride?.type,
@@ -2004,7 +2152,7 @@ export class QueryOutput extends React.Component {
           }
         }
       })
-      
+
       // Update ref immediately for synchronous access (avoids stale state)
       // Deep clone to avoid reference issues
       this.latestColumnOverrides = _cloneDeep(overrides)
@@ -2014,7 +2162,7 @@ export class QueryOutput extends React.Component {
     } else {
       this.onTableConfigChange()
     }
-    
+
     this.forceUpdate()
   }
 
@@ -2166,8 +2314,6 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
-
-
   hasIndex = (indices, index) => {
     return indices?.findIndex((i) => index === i) !== -1
   }
@@ -2192,7 +2338,7 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    
+
     // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
@@ -3773,7 +3919,7 @@ export class QueryOutput extends React.Component {
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
-    
+
     // Disable cyclical dates if any column has groupable: true
     const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
     const effectiveEnableCyclicalDates = hasGroupableColumns ? false : this.props.enableCyclicalDates
