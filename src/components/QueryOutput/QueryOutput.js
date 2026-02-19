@@ -18,6 +18,7 @@ import {
   isDrillthrough,
   runQueryOnly,
   getSupportedDisplayTypes,
+  buildPermissionsDetailsFromRow,
   getNumberColumnIndices,
   isDisplayTypeValid,
   getDefaultDisplayType,
@@ -1715,6 +1716,18 @@ export class QueryOutput extends React.Component {
 
           const allFilters = this.getCombinedFilters(constructedFilters)
 
+          // Build permissions.details payload for backend permission evaluation when available
+          let permissionsDetails = []
+          if (cell?.getData) {
+            try {
+              const cellRow = cell.getData()
+              permissionsDetails = buildPermissionsDetailsFromRow(this.state.columns || [], cellRow)
+            } catch (e) {
+              console.error('Error building permissions.details from row', e)
+              permissionsDetails = []
+            }
+          }
+
           // Determine drillthrough_col: prefer explicit groupBys, otherwise derive from clicked column
           let drillthroughCol
           if (groupBys && groupBys.length > 0) {
@@ -1734,6 +1747,7 @@ export class QueryOutput extends React.Component {
             scope: this.props.scope,
             pageSize,
             tableFilters: allFilters,
+            permissions: { details: permissionsDetails },
             orders: this.formattedTableParams?.sorters,
             drillthrough_col: drillthroughCol,
           })
