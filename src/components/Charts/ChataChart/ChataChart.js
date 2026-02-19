@@ -308,7 +308,7 @@ export default class ChataChart extends React.Component {
     // For stacked charts, use sorted column indices for color scale calculation
     // This ensures colors are assigned sequentially to segments (biggest to smallest)
     const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR || this.props.type === DisplayTypes.STACKED_LINE
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       numberColumnIndices = this.sortedNumberColumnIndicesForStacked
     }
@@ -518,7 +518,7 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR || props.type === DisplayTypes.STACKED_LINE
         if (isStackedChart) {
           const numberIndices = props.numberColumnIndices || []
           // Calculate total aggregate for each column index across all rows
@@ -593,7 +593,7 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR || props.type === DisplayTypes.STACKED_LINE
         if (isStackedChart) {
           // Calculate total aggregate for each column index across all rows
           const columnTotals = numberIndices.map((colIndex) => {
@@ -789,7 +789,7 @@ export default class ChataChart extends React.Component {
     // For stacked charts, use sorted column indices based on total aggregates
     // This ensures legend labels match the sorted order of segments
     const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR || this.props.type === DisplayTypes.STACKED_LINE
     const numberColumnIndices =
       isStackedChart && this.sortedNumberColumnIndicesForStacked
         ? this.sortedNumberColumnIndicesForStacked
@@ -899,7 +899,7 @@ export default class ChataChart extends React.Component {
     // For stacked charts, use sorted column indices so chart components render in sorted order
     // This ensures colors match the sorted order (biggest to smallest)
     const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR || this.props.type === DisplayTypes.STACKED_LINE
     
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       // Filter sorted indices to only include those that exist in the current columns array
