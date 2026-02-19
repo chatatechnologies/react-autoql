@@ -2751,22 +2751,13 @@ export class QueryOutput extends React.Component {
         newCol.dateRange = dateRange
       }
 
-      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
-        const customSelect = additionalSelects.find((select) => {
-          return (
-            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
-            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
-          )
+      const displayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse)
+      if (displayOverrides && isColumnNumberType(newCol)) {
+        const customSelect = displayOverrides.find((select) => {
+          return select.english === newCol.display_name
         })
 
-        const isCustom = customSelect || newCol?.is_custom
-
-        const cleanName = getCleanColumnName(newCol?.name)
-        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.table_column?.trim() === cleanName
-        })
-
-        if (isCustom && !availableSelect) {
+        if (customSelect || newCol.is_custom) {
           newCol.custom = true
         }
       }
