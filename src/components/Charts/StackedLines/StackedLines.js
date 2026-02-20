@@ -129,7 +129,7 @@ export default class StackedLines extends PureComponent {
     return !(right1 + minSpacing < left2 || right2 + minSpacing < left1)
   }
 
-  createHoverLabel = (x, y, value, colIndex, polygonIndex, vertexIndex, color) => {
+  createHoverLabel = (x, y, value, colIndex, polygonIndex, vertexIndex, color, xScale, yScale, width, height) => {
     const { columns, dataFormatting } = this.props
     const column = columns[colIndex]
     
@@ -142,11 +142,48 @@ export default class StackedLines extends PureComponent {
 
     const fontSize = 11
     const textWidth = this.estimateTextWidth(formattedValue, fontSize)
+    const textHeight = fontSize
     const labelY = y - 8 // Position above the dot
+    
+    // Get chart bounds from scale ranges
+    const xRange = xScale.range()
+    const yRange = yScale.range()
+    const chartLeft = Math.min(xRange[0], xRange[xRange.length - 1])
+    const chartRight = Math.max(xRange[0], xRange[xRange.length - 1])
+    const chartTop = Math.min(yRange[0], yRange[yRange.length - 1])
+    const chartBottom = Math.max(yRange[0], yRange[yRange.length - 1])
+    
+    // Add padding to avoid overlapping with axis labels
+    const paddingX = 10 // Horizontal padding from chart edges
+    const paddingY = 15 // Vertical padding from chart edges (more space for axis labels)
+    
+    // Clamp X position to stay within chart bounds
+    const labelLeft = x - textWidth / 2
+    const labelRight = x + textWidth / 2
+    let clampedX = x
+    
+    if (labelLeft < chartLeft + paddingX) {
+      clampedX = chartLeft + paddingX + textWidth / 2
+    } else if (labelRight > chartRight - paddingX) {
+      clampedX = chartRight - paddingX - textWidth / 2
+    }
+    
+    // Clamp Y position to stay within chart bounds
+    let clampedY = labelY
+    if (clampedY < chartTop + paddingY) {
+      // If too close to top, position below the dot instead
+      clampedY = y + 8 + textHeight
+      // But make sure it's still within bounds
+      if (clampedY > chartBottom - paddingY) {
+        clampedY = chartBottom - paddingY - textHeight
+      }
+    } else if (clampedY + textHeight > chartBottom - paddingY) {
+      clampedY = chartBottom - paddingY - textHeight
+    }
 
     return {
-      x,
-      y: labelY,
+      x: clampedX,
+      y: clampedY,
       text: formattedValue,
       width: textWidth,
       polygonIndex,
@@ -161,7 +198,7 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
-    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale, width, height } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -222,7 +259,7 @@ export default class StackedLines extends PureComponent {
 
           // Store label data for the hovered polygon
           if (this.state.hoveredPolygonIndex === currentPolygonIdx) {
-            const labelData = this.createHoverLabel(x, y, currentValue, colIndex, currentPolygonIdx, index, color)
+            const labelData = this.createHoverLabel(x, y, currentValue, colIndex, currentPolygonIdx, index, color, xScale, yScale, width, height)
             hoverLabelsData.push(labelData)
           }
         })
@@ -265,20 +302,58 @@ export default class StackedLines extends PureComponent {
         {this.state.hoveredPolygonIndex !== null && visibleLabels.length > 0 && (
           <g className='stacked-area-hover-labels' style={{ pointerEvents: 'none' }}>
             {visibleLabels.map((label) => {
-              // Get theme colors for text
-              const tooltipText = getThemeValue('text-color-primary')
-              const backgroundColor = this.props.backgroundColor || '#fff'
+              // Detect light/dark mode by checking background color
+              const backgroundColor = this.props.backgroundColor || getThemeValue('background-color-secondary') || '#fff'
+              
+              // Helper to convert hex to RGB
+              const hexToRgb = (hex) => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+                return result ? {
+                  r: parseInt(result[1], 16),
+                  g: parseInt(result[2], 16),
+                  b: parseInt(result[3], 16)
+                } : null
+              }
+              
+              // Helper to parse rgb/rgba strings
+              const parseRgb = (rgbStr) => {
+                const match = rgbStr.match(/\d+/g)
+                if (match && match.length >= 3) {
+                  return {
+                    r: parseInt(match[0], 10),
+                    g: parseInt(match[1], 10),
+                    b: parseInt(match[2], 10)
+                  }
+                }
+                return null
+              }
+              
+              // Get RGB values
+              let rgb = hexToRgb(backgroundColor)
+              if (!rgb && backgroundColor.includes('rgb')) {
+                rgb = parseRgb(backgroundColor)
+              }
+              // Default to white if we can't parse
+              rgb = rgb || { r: 255, g: 255, b: 255 }
+              
+              // Calculate relative luminance (simplified)
+              const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
+              const isLightMode = luminance > 0.5
+              
+              // Set colors based on theme
+              const textFill = isLightMode ? '#000' : '#fff'
+              const textStroke = isLightMode ? '#fff' : '#000'
               
               return (
                 <g key={`hover-label-${label.polygonIndex}-${label.vertexIndex}`}>
-                  {/* Text with dark stroke for readability on any background */}
+                  {/* Text with stroke for readability on any background */}
                   <text
                     x={label.x}
                     y={label.y}
                     textAnchor='middle'
                     fontSize='11'
-                    fill='#fff'
-                    stroke='#000'
+                    fill={textFill}
+                    stroke={textStroke}
                     strokeWidth={2}
                     strokeOpacity={0.6}
                     strokeLinejoin='round'
@@ -297,7 +372,7 @@ export default class StackedLines extends PureComponent {
                     y={label.y}
                     textAnchor='middle'
                     fontSize='11'
-                    fill='#fff'
+                    fill={textFill}
                     style={{
                       opacity: 1,
                       fontWeight: 500,
