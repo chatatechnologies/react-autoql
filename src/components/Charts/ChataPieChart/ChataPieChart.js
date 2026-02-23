@@ -15,6 +15,8 @@ import {
   DisplayTypes,
 } from 'autoql-fe-utils'
 
+import safeGetBBox from '../../../utils/safeGetBBox'
+
 import StringAxisSelector from '../Axes/StringAxisSelector'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
 import 'd3-transition'
@@ -339,14 +341,10 @@ export default class ChataPieChart extends React.Component {
 
   centerVisualization = () => {
     const containerElement = select(`#pie-chart-container-${this.CHART_ID}`).node()
+    const containerBBox = safeGetBBox(containerElement)
 
-    let containerBBox
-    if (containerElement) {
-      containerBBox = containerElement.getBBox()
-    }
-
-    const containerWidth = containerBBox?.width ?? 0
-    const currentXPosition = containerBBox?.x ?? 0
+    const containerWidth = containerBBox.width ?? 0
+    const currentXPosition = containerBBox.x ?? 0
     const finalXPosition = (this.props.width - containerWidth) / 2
     const xDelta = finalXPosition - currentXPosition
 
@@ -484,7 +482,7 @@ export default class ChataPieChart extends React.Component {
       this.applyColumnSelectorStyles(legendElement)
 
       if (this.legendWrapper) {
-        legendBBox = legendElement.getBBox()
+        legendBBox = safeGetBBox(legendElement)
       }
     }
 
@@ -526,7 +524,7 @@ export default class ChataPieChart extends React.Component {
     this.titleBBox = {}
     try {
       const titleElement = this.legend.select('.legendTitle').node()
-      const titleBBox = titleElement?.getBBox()
+      const titleBBox = safeGetBBox(titleElement)
       const titleHeight = titleBBox?.height ?? 0
       const titleWidth = titleBBox?.width ?? 0
 

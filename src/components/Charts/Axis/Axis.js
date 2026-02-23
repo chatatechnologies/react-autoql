@@ -11,7 +11,12 @@ import {
   mergeBoundingClientRects,
   shouldLabelsRotate,
   DisplayTypes,
+  ColumnTypes,
+  DateStringPrecisionTypes,
+  PrecisionTypes,
 } from 'autoql-fe-utils'
+
+import safeGetBBox from '../../../utils/safeGetBBox'
 
 import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
@@ -63,6 +68,7 @@ export default class Axis extends Component {
     translateY: PropTypes.number,
     axisSorts: PropTypes.object,
     onAxisSortChange: PropTypes.func,
+    columnOverrides: PropTypes.object,
   }
 
   static defaultProps = {
@@ -185,7 +191,7 @@ export default class Axis extends Component {
     } else if (this.props.orient === 'bottom') {
       const centerX = this.props.innerWidth / 2
 
-      const legendBBox = this.legendContainer?.getBBox()
+      const legendBBox = safeGetBBox(this.legendContainer)
       const legendCenterX = legendBBox.x + legendBBox.width / 2
       const deltaCenter = centerX - legendCenterX
 
@@ -404,7 +410,7 @@ export default class Axis extends Component {
     if (this.axisElement) {
       // svg coordinate system is different from clientRect coordinate system
       // we need to get the deltas first, then we can apply them to the bounding rect
-      const axisBBox = this.axisElement.getBBox ? this.axisElement.getBBox() : undefined
+      const axisBBox = safeGetBBox(this.axisElement)
       const axisBoundingRect = this.axisElement.getBoundingClientRect
         ? this.axisElement.getBoundingClientRect()
         : undefined
@@ -645,7 +651,7 @@ export default class Axis extends Component {
       return
     }
 
-    const titleBBox = getBBoxFromRef(this.titleRef)
+    const titleBBox = safeGetBBox(this.titleRef)
     const titleHeight = titleBBox?.height ?? 0
     const titleWidth = titleBBox?.width ?? 0
     const titleX = titleBBox?.x ?? 0
@@ -759,6 +765,7 @@ export default class Axis extends Component {
         originalColumns={this.props.originalColumns}
         closeSelector={this.closeSelector}
         isSecondAxis={isSecondAxis}
+        enableCyclicalDates={this.props.enableCyclicalDates}
       >
         <rect
           ref={(r) => (this.axisSelector = r)}
@@ -774,21 +781,73 @@ export default class Axis extends Component {
     )
   }
 
+  getPrecisionLabel = (override) => {
+    if (!override) return null
+
+    const { type, precision } = override
+
+    // Map precision values to labels (matching StringAxisSelector dateBucketOptions)
+    const precisionLabelMap = {
+      [PrecisionTypes.YEAR]: 'Year',
+      [PrecisionTypes.QUARTER]: 'Quarter',
+      [PrecisionTypes.MONTH]: 'Month',
+      [PrecisionTypes.WEEK]: 'Week',
+      [PrecisionTypes.DAY]: 'Day',
+      [PrecisionTypes.DATE_HOUR]: 'Hour',
+      [PrecisionTypes.DATE_MINUTE]: 'Minute',
+      [PrecisionTypes.DATE_SECOND]: 'Second',
+      [DateStringPrecisionTypes.QUARTERONLY]: 'Quarter of Year',
+      [DateStringPrecisionTypes.MONTHONLY]: 'Month of Year',
+      [DateStringPrecisionTypes.WEEKONLY]: 'Week of Year',
+      [DateStringPrecisionTypes.DOM]: 'Day of Month',
+      [DateStringPrecisionTypes.DOW]: 'Day of Week',
+      [DateStringPrecisionTypes.HOUR]: 'Hour of Day',
+    }
+
+    return precisionLabelMap[precision] || null
+  }
+
   renderAxisTitleText = () => {
-    const { scale } = this.props
+    const { scale, columnOverrides, originalColumns } = this.props
     const title = scale?.title ?? ''
 
-    if (title.length > 35) {
+    // Check if there's a column override for this axis
+    // For pivot tables, scale.column.index might be 0, so we need to find the original column by name
+    let override = null
+    const columnIndex = scale?.column?.index
+    const columnName = scale?.column?.name
+
+    if (columnOverrides && (columnIndex !== undefined || columnName)) {
+      // First try to find override by column index
+      if (columnIndex !== undefined) {
+        override = columnOverrides[columnIndex]
+      }
+
+      // If not found and we have a column name, try to find the original column and use its index
+      if (!override && columnName && originalColumns) {
+        const originalColumn = originalColumns.find((col) => col.name === columnName)
+        if (originalColumn?.index !== undefined) {
+          override = columnOverrides[originalColumn.index]
+        }
+      }
+    }
+
+    const precisionLabel = this.getPrecisionLabel(override)
+
+    // Append precision label in brackets if override exists
+    const displayTitle = precisionLabel ? `${title} (${precisionLabel})` : title
+
+    if (displayTitle.length > 35) {
       return (
-        <tspan data-tooltip-content={title} data-tooltip-id={this.props.chartTooltipID} data-test='axis-label'>
-          {`${title.substring(0, 35)}...`}
+        <tspan data-tooltip-content={displayTitle} data-tooltip-id={this.props.chartTooltipID} data-test='axis-label'>
+          {`${displayTitle.substring(0, 35)}...`}
         </tspan>
       )
     }
 
     return (
       <tspan data-test='axis-label'>
-        <tspan ref={(r) => (this.titleText = r)}>{title}</tspan>
+        <tspan ref={(r) => (this.titleText = r)}>{displayTitle}</tspan>
         {this.shouldRenderAxisSelector() && (
           <tspan
             className='react-autoql-axis-selector-arrow'
@@ -979,7 +1038,7 @@ export default class Axis extends Component {
       const chartContainerWidth = this.props.outerWidth - 2 * this.props.chartPadding
       select(this.titleRef).attr('textLength', null)
 
-      const xTitleBBox = this.titleRef.getBBox()
+      const xTitleBBox = safeGetBBox(this.titleRef)
 
       // ---------------------- Chart width is too small to fit the whole title --------------------
       const xTitleWidth = (xTitleBBox.width ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
@@ -994,7 +1053,7 @@ export default class Axis extends Component {
       // --------------------------------------------------------------------------------------------
 
       // ------------------------- Title will fit, but needs to be shifted left ---------------------
-      const xTitleBBoxAfterTextLength = this.titleRef.getBBox()
+      const xTitleBBoxAfterTextLength = safeGetBBox(this.titleRef)
       const xTitleRight =
         xTitleBBoxAfterTextLength.x +
         xTitleBBoxAfterTextLength.width +
@@ -1026,7 +1085,7 @@ export default class Axis extends Component {
       select(this.titleRef).attr('textLength', null)
 
       // BBox x/width and y/height will be switched due to the rotation
-      const yTitleBBox = this.titleRef.getBBox()
+      const yTitleBBox = safeGetBBox(this.titleRef)
 
       // ---------------------- Chart height is too small to fit the whole title --------------------
       const yTitleHeight = (yTitleBBox.width ?? 0) + 2 * this.AXIS_TITLE_BORDER_PADDING_LEFT
@@ -1041,7 +1100,7 @@ export default class Axis extends Component {
       // --------------------------------------------------------------------------------------------
 
       // ------------------------- Title will fit, but needs to be shifted down ---------------------
-      const yTitleBBoxAfterTextLength = this.titleRef.getBBox()
+      const yTitleBBoxAfterTextLength = safeGetBBox(this.titleRef)
       const yTitleTop =
         -1 * (yTitleBBoxAfterTextLength.x + yTitleBBoxAfterTextLength.width) +
         this.props.deltaY -

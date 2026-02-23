@@ -92,6 +92,8 @@ class DashboardWithoutTheme extends React.Component {
     refreshInterval: PropTypes.number,
     dashboardId: PropTypes.string,
     enableAutoRefresh: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -101,7 +103,7 @@ class DashboardWithoutTheme extends React.Component {
     dataFormatting: dataFormattingDefault,
 
     tiles: [],
-    executeOnMount: true,
+    executeOnMount: false,
     dataPageSize: undefined,
     executeOnStopEditing: false,
     isEditing: false,
@@ -112,6 +114,7 @@ class DashboardWithoutTheme extends React.Component {
     cancelQueriesOnUnmount: false,
     showToolbar: false,
     refreshInterval: 60,
+    enableCyclicalDates: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -124,6 +127,7 @@ class DashboardWithoutTheme extends React.Component {
     onDeleteCallback: () => {},
     dashboardId: undefined,
     enableAutoRefresh: false,
+    enableMagicWand: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -857,6 +861,8 @@ class DashboardWithoutTheme extends React.Component {
             dashboardId={this.props.dashboardId}
             tileKey={tile.key}
             useInfiniteScroll={!this.props.offline}
+            enableCyclicalDates={this.props.enableCyclicalDates}
+            enableMagicWand={this.props.enableMagicWand}
           />
         ))}
       </ReactGridLayout>
@@ -928,6 +934,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             source={this.SOURCE}
+            enableCyclicalDates={this.props.enableCyclicalDates}
+            enableMagicWand={this.props.enableMagicWand}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />

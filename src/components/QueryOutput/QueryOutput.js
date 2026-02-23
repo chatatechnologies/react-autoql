@@ -108,6 +108,9 @@ export class QueryOutput extends React.Component {
       isEditing: false,
     }
 
+    // Ref to store latest column overrides for synchronous access (avoids stale state issues)
+    this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
+
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
@@ -204,6 +207,7 @@ export class QueryOutput extends React.Component {
       networkColumnConfig: props.initialNetworkColumnConfig || null,
       legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
+      columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides without mutating queryResponse
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
@@ -215,7 +219,11 @@ export class QueryOutput extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    initialTableConfigs: PropTypes.shape({}),
+    initialTableConfigs: PropTypes.shape({
+      tableConfig: PropTypes.shape({}),
+      pivotTableConfig: PropTypes.shape({}),
+      columnOverrides: PropTypes.object,
+    }),
     initialAggConfig: PropTypes.shape({}),
 
     queryResponse: PropTypes.shape({}),
@@ -270,6 +278,7 @@ export class QueryOutput extends React.Component {
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
     bucketSize: PropTypes.number,
+    enableCyclicalDates: PropTypes.bool,
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
     enableTableContextMenu: PropTypes.bool,
@@ -521,9 +530,11 @@ export class QueryOutput extends React.Component {
       }
       // If initial data config was changed here, tell the parent
       if (
+        this.props.initialTableConfigs &&
         !_isEqual(this.props.initialTableConfigs, {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
+          columnOverrides: this.state.columnOverrides,
         }) &&
         this.props.onTableConfigChange &&
         !this.hasCalledInitialTableConfigChange
@@ -715,13 +726,41 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onTableConfigChange = (initialized = true) => {
+  onTableConfigChange = (initialized = true, columnOverridesOverride) => {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
+    // Use provided overrides if available, otherwise use state (for async setState cases)
+    const columnOverrides = columnOverridesOverride || this.state?.columnOverrides || {}
 
     this.props.onTableConfigChange({
       tableConfig: tableConfig,
       pivotTableConfig: pivotTableConfig,
+      columnOverrides: _cloneDeep(columnOverrides), // Persist column overrides
+    })
+  }
+
+  // Apply column overrides (e.g., date precision) to columns for charts only
+  // Uses ref for latest overrides to avoid stale state issues
+  applyColumnOverrides = (columns, overridesOverride) => {
+    // Use provided override, then ref (latest), then state (fallback)
+    const overrides = overridesOverride || this.latestColumnOverrides || this.state?.columnOverrides || {}
+
+    if (!columns || !overrides || Object.keys(overrides).length === 0) {
+      return columns
+    }
+
+    return columns.map((col) => {
+      if (col?.index !== undefined) {
+        const override = overrides[col.index]
+        if (override) {
+          return {
+            ...col,
+            type: override.type,
+            precision: override.precision,
+          }
+        }
+      }
+      return col
     })
   }
 
@@ -1539,10 +1578,11 @@ export class QueryOutput extends React.Component {
     }
 
     return allFilters.map((filter) => {
-      const foundColumn = this.getColumns()?.find((column) => column.name === filter.name)
+      const column = this.getColumns()?.find((col) => col.name === filter.name)
       return {
         ...filter,
-        columnName: foundColumn?.title,
+        columnName: column?.title,
+        ...(column?.type ? { column_type: column.type } : {}),
       }
     })
   }
@@ -1893,25 +1933,17 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onChangeStringColumnIndex = (index) => {
+  onChangeStringColumnIndex = (index, newColumns) => {
     if (index < 0) {
       return
     }
 
-    this.tableConfig.stringColumnIndex = index
-
-    // If the new string column index equals the legend column index, change the legend column to a different value
     if (this.tableConfig.legendColumnIndex === index) {
-      const columns = this.getColumns()
-      const differentColumn = columns.find(
-        (col) =>
-          col.is_visible &&
-          col.index !== index &&
-          col.groupable,
-      )
-      if (differentColumn?.index >= 0) {
-        this.tableConfig.legendColumnIndex = differentColumn.index
-      }
+      let stringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
+      this.tableConfig.legendColumnIndex = stringColumnIndex
+    } else {
+      this.tableConfig.stringColumnIndex = index
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
@@ -1953,7 +1985,41 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    this.onTableConfigChange()
+    if (newColumns) {
+      // Store column overrides (e.g., date precision) without mutating queryResponse
+      // Always store overrides from newColumns since they represent the user's explicit choice
+      // Don't compare with getColumns() which may already have overrides applied
+      const overrides = { ...this.state.columnOverrides }
+
+      newColumns.forEach((newCol) => {
+        // Store override from newColumns - these represent the user's explicit choice
+        // Compare against existing override in state, not getColumns() which may have stale/already-applied values
+        const existingOverride = overrides[newCol.index]
+
+        // Update override if type or precision is different from existing override
+        const needsUpdate =
+          (newCol.type && newCol.type !== existingOverride?.type) ||
+          (newCol.precision && newCol.precision !== existingOverride?.precision)
+
+        if (needsUpdate) {
+          overrides[newCol.index] = {
+            type: newCol.type || existingOverride?.type,
+            precision: newCol.precision || existingOverride?.precision,
+          }
+        }
+      })
+
+      // Update ref immediately for synchronous access (avoids stale state)
+      // Deep clone to avoid reference issues
+      this.latestColumnOverrides = _cloneDeep(overrides)
+      // Persist column overrides in setState callback to ensure state is updated
+      this.setState({ columnOverrides: overrides }, () => {
+        this.onTableConfigChange(true, overrides)
+      })
+    } else {
+      this.onTableConfigChange()
+    }
+
     this.forceUpdate()
   }
 
@@ -1973,21 +2039,18 @@ export class QueryOutput extends React.Component {
   onChangeLegendColumnIndex = (index) => {
     const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
 
-    this.tableConfig.legendColumnIndex = index
-
-    // If the new legend column index equals the string column index, change the string column to a different value
+    // If clicking on the column that's currently on the string axis, swap them
     if (this.tableConfig.stringColumnIndex === index) {
-      const columns = this.getColumns()
-      const differentColumn = columns.find(
-        (col) =>
-          col.is_visible &&
-          col.index !== index &&
-          col.groupable,
-      )
-      if (differentColumn?.index >= 0) {
-        this.tableConfig.stringColumnIndex = differentColumn.index
-      }
-    } else if (this.tableConfig.numberColumnIndices.includes(index)) {
+      // Swap: string column becomes the old legend column, legend column becomes the old string column
+      const oldStringColumnIndex = this.tableConfig.stringColumnIndex
+      this.tableConfig.stringColumnIndex = currentLegendColumnIndex
+      this.tableConfig.legendColumnIndex = oldStringColumnIndex
+    } else {
+      // Normal case: just set the legend column index
+      this.tableConfig.legendColumnIndex = index
+    }
+
+    if (this.tableConfig.numberColumnIndices.includes(index)) {
       if (this.tableConfig.numberColumnIndices.length > 1) {
         this.tableConfig.numberColumnIndices = this.tableConfig.numberColumnIndices.filter((i) => i !== index)
         this.tableConfig.numberColumnIndex = this.tableConfig.numberColumnIndices[0]
@@ -2108,8 +2171,6 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
-
-
   hasIndex = (indices, index) => {
     return indices?.findIndex((i) => index === i) !== -1
   }
@@ -2134,7 +2195,7 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    
+
     // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
@@ -2338,7 +2399,7 @@ export class QueryOutput extends React.Component {
   setFilterFunction = (col) => {
     // Provide a robust header filter for numeric columns to support operator prefixes
     // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
-    if (isColumnNumberType(col) || col?.type === ColumnTypes.NUMBER) {
+    if (isColumnNumberType(col)) {
       // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
       const inSetCache = new Map()
       return (headerValue, rowValue, rowData, filterParams) => {
@@ -2384,7 +2445,10 @@ export class QueryOutput extends React.Component {
               return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
             case 'regex':
               try {
-                const re = new RegExp(cleanValue)
+                const pattern = String(cleanValue || '')
+                if (pattern.length > 10000) return false
+                const re = new RegExp(pattern)
+                re.test(rowStr.substring(0, Math.min(100, rowStr.length)))
                 return re.test(rowStr)
               } catch (e) {
                 return false
@@ -2693,13 +2757,22 @@ export class QueryOutput extends React.Component {
         newCol.dateRange = dateRange
       }
 
-      const displayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse)
-      if (displayOverrides && isColumnNumberType(newCol)) {
-        const customSelect = displayOverrides.find((select) => {
-          return select.english === newCol.display_name
+      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
+        const customSelect = additionalSelects.find((select) => {
+          return (
+            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
+            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
+          )
         })
 
-        if (customSelect || newCol.is_custom) {
+        const isCustom = customSelect || newCol?.is_custom
+
+        const cleanName = getCleanColumnName(newCol?.name)
+        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
+          return select?.table_column?.trim() === cleanName
+        })
+
+        if (isCustom && !availableSelect) {
           newCol.custom = true
         }
       }
@@ -3257,7 +3330,7 @@ export class QueryOutput extends React.Component {
             const aNum = Number(aVal)
             const bNum = Number(bVal)
 
-            if (!isNaN(aNum) && !isNaN(bNum)) {
+            if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
               return sortDirection === 'asc' ? aNum - bNum : bNum - aNum
             }
 
@@ -3699,7 +3772,17 @@ export class QueryOutput extends React.Component {
     }
 
     const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
-    const columns = usePivotData ? this.pivotTableColumns : this.state.columns
+    const baseColumns = usePivotData ? this.pivotTableColumns : this.state.columns
+    // Apply column overrides (e.g., date precision) for charts only - don't mutate original queryResponse
+    // Don't apply overrides when using pivot data - pivot columns have different structure
+    const columns = usePivotData ? baseColumns : this.applyColumnOverrides(baseColumns)
+    // originalColumns should be the original columns from queryResponse, not overridden
+    // Always use getColumns() to match master branch behavior
+    const originalColumns = this.getColumns()
+
+    // Disable cyclical dates if any column has groupable: true
+    const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
+    const effectiveEnableCyclicalDates = hasGroupableColumns ? false : this.props.enableCyclicalDates
 
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
@@ -3725,7 +3808,7 @@ export class QueryOutput extends React.Component {
           isResizable={this.state.isResizable}
           {...tableConfig}
           tableConfig={this.tableConfig}
-          originalColumns={this.getColumns()}
+          originalColumns={originalColumns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
           authentication={this.props.authentication}
@@ -3735,6 +3818,7 @@ export class QueryOutput extends React.Component {
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
           columns={columns}
+          columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
@@ -3767,6 +3851,7 @@ export class QueryOutput extends React.Component {
           queryFn={this.queryFn}
           onBucketSizeChange={this.props.onBucketSizeChange}
           bucketSize={this.props.bucketSize}
+          enableCyclicalDates={effectiveEnableCyclicalDates}
           queryID={this.queryResponse?.data?.data?.query_id}
           isEditing={this.props.isEditing}
           hiddenLegendLabels={this.state.hiddenLegendLabels}

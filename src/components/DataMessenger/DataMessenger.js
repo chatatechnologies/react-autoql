@@ -143,6 +143,7 @@ export class DataMessenger extends React.Component {
     enableQueryInputTopics: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -194,6 +195,7 @@ export class DataMessenger extends React.Component {
     notificationCount: undefined,
     defaultOpen: false,
     popoverParentElement: undefined,
+    enableCyclicalDates: false,
 
     // Projects
     projectSelectList: undefined,
@@ -989,6 +991,7 @@ export class DataMessenger extends React.Component {
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           popoverParentElement={this.props.popoverParentElement}
           enableCustomColumns={this.props.enableCustomColumns}
+          enableCyclicalDates={this.props.enableCyclicalDates}
         />
       </ErrorBoundary>
     )

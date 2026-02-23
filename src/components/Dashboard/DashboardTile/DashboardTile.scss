@@ -310,6 +310,20 @@
   font-size: 15px;
 }
 
+/* Wrap mode: title uses multiple lines instead of truncation + tooltip */
+.dashboard-tile-title-container.dashboard-tile-title-wrap {
+  height: auto;
+  min-height: 47px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+
+  .dashboard-tile-title {
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
 .dashboard-tile-edit-wrapper {
   display: flex;
   width: 100%;

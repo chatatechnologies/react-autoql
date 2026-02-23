@@ -512,6 +512,18 @@ export default class ChataTable extends React.Component {
       return
     }
 
+    // Enrich filters: sanitize BETWEEN values and add column_type
+    const sanitizedFilters = (tableParamsFormatted?.filters || []).map((filter) => {
+      const column = this.props.columns?.find((col) => col.name === filter.name)
+      return {
+        ...filter,
+        ...(filter?.operator === 'between' && typeof filter?.value === 'string'
+          ? { value: filter.value.replace(/^(?:\(+|\)+)$/g, '') }
+          : {}),
+        ...(column?.type ? { column_type: column.type } : {}),
+      }
+    })
+
     try {
       await runQueryOnly({
         ...getAuthentication(this.props.authentication),
@@ -519,7 +531,7 @@ export default class ChataTable extends React.Component {
         query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
         orders: tableParamsFormatted?.sorters,
-        tableFilters: tableParamsFormatted?.filters,
+        tableFilters: sanitizedFilters,
         source: 'data_messenger',
         allowSuggestions: false,
       }).then((response) => {
@@ -738,7 +750,7 @@ export default class ChataTable extends React.Component {
           const totalPages = Math.ceil(pivotData.length / this.pageSize) || 1
           this.totalPages = totalPages
           this.filteredResponseData = pivotData
-          this.filterCount = pivotData.length
+          this.filterCount = responseWrapper?.data?.data?.count_rows ?? pivotData.length
 
           response = {
             rows: pivotData.slice(0, this.pageSize) ?? [],
@@ -749,7 +761,7 @@ export default class ChataTable extends React.Component {
           const totalPages = this.getTotalPages(responseWrapper)
           this.totalPages = totalPages
           this.filteredResponseData = responseWrapper?.data?.data?.rows ?? []
-          this.filterCount = this.filteredResponseData.length
+          this.filterCount = responseWrapper?.data?.data?.count_rows ?? this.filteredResponseData.length
 
           response = {
             rows: this.filteredResponseData.slice(0, this.pageSize) ?? [],
@@ -1225,8 +1237,11 @@ export default class ChataTable extends React.Component {
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
       const element = column.getElement?.()
-      if (element?.classList) {
-        element.classList.toggle('is-filtered', isFiltered)
+      const cls = element?.classList
+      if (cls) {
+        // Use `toggle` when available; fall back to `add`/`remove` for lightweight mocks
+        if (typeof cls.toggle === 'function') cls.toggle('is-filtered', isFiltered)
+        else (isFiltered ? cls.add : cls.remove)?.('is-filtered')
       }
     })
   }
@@ -1242,7 +1257,11 @@ export default class ChataTable extends React.Component {
     const hasFilters = filters && filters.length > 0
 
     if (container) {
-      container.classList.toggle('pivot-table-has-filters', hasFilters)
+      const cls = container.classList
+      if (cls) {
+        if (typeof cls.toggle === 'function') cls.toggle('pivot-table-has-filters', hasFilters)
+        else (hasFilters ? cls.add : cls.remove)?.('pivot-table-has-filters')
+      }
     }
   }
 
@@ -1256,7 +1275,7 @@ export default class ChataTable extends React.Component {
         // Batch header filter updates without triggering repeated Tabulator
         // redraws; this prevents intermediate layout thrashing. Use the
         // TableWrapper API so wrapper state (redrawRestored) stays in sync.
-        this.ref?.blockRedraw()
+        this.ref?.blockRedraw?.()
 
         try {
           filterValues.forEach((filter) => {
@@ -1268,7 +1287,7 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
-          this.ref?.restoreRedraw()
+          this.ref?.restoreRedraw?.()
         }
 
         this._filterCheckTimeout = setTimeout(() => {
@@ -1770,7 +1789,6 @@ export default class ChataTable extends React.Component {
         const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
           this.props.response?.data?.data?.count_rows,
         )
-        const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 

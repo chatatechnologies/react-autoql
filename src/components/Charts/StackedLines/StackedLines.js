@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react'
-import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValue } from 'autoql-fe-utils'
+import { getAutoQLConfig, getKey, getTooltipContent } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
 
@@ -9,7 +9,6 @@ export default class StackedLines extends PureComponent {
 
   state = {
     activeKey: this.props.activeChartElementKey,
-    hoveredPolygonIndex: null,
   }
 
   onDotClick = (row, colIndex, rowIndex) => {
@@ -80,117 +79,9 @@ export default class StackedLines extends PureComponent {
           `}
         data-tooltip-id={this.props.chartTooltipID}
         data-effect='float'
-        data-place='bottom'
         style={{ fill: color }}
-        onMouseEnter={() => this.setState({ hoveredPolygonIndex: i })}
-        onMouseLeave={() => this.setState({ hoveredPolygonIndex: null })}
       />
     )
-  }
-
-  createHoverDot = (x, y, color, polygonIndex, vertexIndex) => {
-    return (
-      <circle
-        key={`hover-dot-${polygonIndex}-${vertexIndex}`}
-        cx={x}
-        cy={y}
-        r={2}
-        style={{
-          fill: color,
-          fillOpacity: 0.8,
-          stroke: this.props.backgroundColor || '#fff',
-          strokeWidth: 1,
-          opacity: this.state.hoveredPolygonIndex === polygonIndex ? 1 : 0,
-          pointerEvents: 'none',
-        }}
-      />
-    )
-  }
-
-  // Helper function to estimate text width
-  estimateTextWidth = (text, fontSize = 12) => {
-    // Rough estimate: average character width * character count + padding
-    return text.length * (fontSize * 0.6) + 10
-  }
-
-  // Check if two labels overlap
-  labelsOverlap = (label1, label2, minSpacing = 5) => {
-    const x1 = label1.x
-    const x2 = label2.x
-    const width1 = label1.width
-    const width2 = label2.width
-    
-    // Check if the bounding boxes overlap
-    const left1 = x1 - width1 / 2
-    const right1 = x1 + width1 / 2
-    const left2 = x2 - width2 / 2
-    const right2 = x2 + width2 / 2
-    
-    return !(right1 + minSpacing < left2 || right2 + minSpacing < left1)
-  }
-
-  createHoverLabel = (x, y, value, colIndex, polygonIndex, vertexIndex, color, xScale, yScale, width, height) => {
-    const { columns, dataFormatting } = this.props
-    const column = columns[colIndex]
-    
-    // Format the value
-    const formattedValue = formatElement({
-      element: value,
-      column: column,
-      config: dataFormatting,
-    })
-
-    const fontSize = 11
-    const textWidth = this.estimateTextWidth(formattedValue, fontSize)
-    const textHeight = fontSize
-    const labelY = y - 8 // Position above the dot
-    
-    // Get chart bounds from scale ranges
-    const xRange = xScale.range()
-    const yRange = yScale.range()
-    const chartLeft = Math.min(xRange[0], xRange[xRange.length - 1])
-    const chartRight = Math.max(xRange[0], xRange[xRange.length - 1])
-    const chartTop = Math.min(yRange[0], yRange[yRange.length - 1])
-    const chartBottom = Math.max(yRange[0], yRange[yRange.length - 1])
-    
-    // Add padding to avoid overlapping with axis labels
-    const paddingX = 10 // Horizontal padding from chart edges
-    const paddingY = 15 // Vertical padding from chart edges (more space for axis labels)
-    
-    // Clamp X position to stay within chart bounds
-    const labelLeft = x - textWidth / 2
-    const labelRight = x + textWidth / 2
-    let clampedX = x
-    
-    if (labelLeft < chartLeft + paddingX) {
-      clampedX = chartLeft + paddingX + textWidth / 2
-    } else if (labelRight > chartRight - paddingX) {
-      clampedX = chartRight - paddingX - textWidth / 2
-    }
-    
-    // Clamp Y position to stay within chart bounds
-    let clampedY = labelY
-    if (clampedY < chartTop + paddingY) {
-      // If too close to top, position below the dot instead
-      clampedY = y + 8 + textHeight
-      // But make sure it's still within bounds
-      if (clampedY > chartBottom - paddingY) {
-        clampedY = chartBottom - paddingY - textHeight
-      }
-    } else if (clampedY + textHeight > chartBottom - paddingY) {
-      clampedY = chartBottom - paddingY - textHeight
-    }
-
-    return {
-      x: clampedX,
-      y: clampedY,
-      text: formattedValue,
-      width: textWidth,
-      polygonIndex,
-      vertexIndex,
-      originalY: y,
-      color,
-    }
   }
 
   render = () => {
@@ -198,7 +89,7 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
-    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale, width, height } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -210,8 +101,6 @@ export default class StackedLines extends PureComponent {
 
     const polygons = []
     const polygonVertexDots = []
-    const hoverDots = []
-    const hoverLabelsData = [] // Store label data for overlap detection
 
     let minValue = yScale.domain()[0]
     if (minValue < 0) {
@@ -225,15 +114,11 @@ export default class StackedLines extends PureComponent {
       prevPolygonVertices.push([xScale(xLabel), yScale(minValue)])
     })
 
-    // Track visible polygon index separately
-    let visiblePolygonIndex = 0
     numberColumnIndices.forEach((colIndex, i) => {
       const currentValues = []
       const currentPolygonVertices = []
       if (!columns[colIndex].isSeriesHidden) {
         const color = this.props.colorScale(colIndex)
-        const currentPolygonIdx = visiblePolygonIndex
-        
         this.props.data.forEach((d, index) => {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
@@ -247,145 +132,26 @@ export default class StackedLines extends PureComponent {
           currentValues[index] = currentValue
           currentPolygonVertices.push([x, y])
 
-          // Create original vertex dots (for click/active functionality)
           if (value !== 0) {
             const polygonVertexDot = this.createPolygonVertexDot(d, i, x, y, colIndex, index, color)
             polygonVertexDots.push(polygonVertexDot)
-          }
-
-          // Create small hover dots for all top vertices
-          const hoverDot = this.createHoverDot(x, y, color, currentPolygonIdx, index)
-          hoverDots.push(hoverDot)
-
-          // Store label data for the hovered polygon
-          // Use the individual series value (not cumulative) for the label
-          if (this.state.hoveredPolygonIndex === currentPolygonIdx) {
-            const labelData = this.createHoverLabel(x, y, value, colIndex, currentPolygonIdx, index, color, xScale, yScale, width, height)
-            hoverLabelsData.push(labelData)
           }
         })
 
         // Add polygon to list
         const reversedPrevVertices = prevPolygonVertices.reverse()
         const polygon = reversedPrevVertices.concat(currentPolygonVertices)
-        polygons.push(this.createPolygon(currentPolygonIdx, polygon, color))
+        polygons.push(this.createPolygon(i, polygon, color))
 
         prevValues = currentValues
         prevPolygonVertices = currentPolygonVertices
-        visiblePolygonIndex++
       }
     })
-
-    // Filter labels to remove overlaps and limit to 20
-    const visibleLabels = []
-    if (hoverLabelsData.length > 0 && hoverLabelsData.length <= 20) {
-      // Sort labels by x position
-      const sortedLabels = [...hoverLabelsData].sort((a, b) => a.x - b.x)
-      
-      // Filter out overlapping labels
-      sortedLabels.forEach((label) => {
-        const overlaps = visibleLabels.some((existingLabel) =>
-          this.labelsOverlap(label, existingLabel)
-        )
-        if (!overlaps) {
-          visibleLabels.push(label)
-        }
-      })
-    }
 
     return (
       <g data-test='stacked-lines'>
         {polygons}
         {polygonVertexDots}
-        <g className='stacked-area-hover-dots' style={{ pointerEvents: 'none' }}>
-          {hoverDots}
-        </g>
-        {this.state.hoveredPolygonIndex !== null && visibleLabels.length > 0 && (
-          <g className='stacked-area-hover-labels' style={{ pointerEvents: 'none' }}>
-            {visibleLabels.map((label) => {
-              // Detect light/dark mode by checking background color
-              const backgroundColor = this.props.backgroundColor || getThemeValue('background-color-secondary') || '#fff'
-              
-              // Helper to convert hex to RGB
-              const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-                return result ? {
-                  r: parseInt(result[1], 16),
-                  g: parseInt(result[2], 16),
-                  b: parseInt(result[3], 16)
-                } : null
-              }
-              
-              // Helper to parse rgb/rgba strings
-              const parseRgb = (rgbStr) => {
-                const match = rgbStr.match(/\d+/g)
-                if (match && match.length >= 3) {
-                  return {
-                    r: parseInt(match[0], 10),
-                    g: parseInt(match[1], 10),
-                    b: parseInt(match[2], 10)
-                  }
-                }
-                return null
-              }
-              
-              // Get RGB values
-              let rgb = hexToRgb(backgroundColor)
-              if (!rgb && backgroundColor.includes('rgb')) {
-                rgb = parseRgb(backgroundColor)
-              }
-              // Default to white if we can't parse
-              rgb = rgb || { r: 255, g: 255, b: 255 }
-              
-              // Calculate relative luminance (simplified)
-              const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
-              const isLightMode = luminance > 0.5
-              
-              // Set colors based on theme
-              const textFill = isLightMode ? '#000' : '#fff'
-              const textStroke = isLightMode ? '#fff' : '#000'
-              
-              return (
-                <g key={`hover-label-${label.polygonIndex}-${label.vertexIndex}`}>
-                  {/* Text with stroke for readability on any background */}
-                  <text
-                    x={label.x}
-                    y={label.y}
-                    textAnchor='middle'
-                    fontSize='11'
-                    fill={textFill}
-                    stroke={textStroke}
-                    strokeWidth={2}
-                    strokeOpacity={0.6}
-                    strokeLinejoin='round'
-                    strokeLinecap='round'
-                    paintOrder='stroke'
-                    style={{
-                      opacity: 1,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {label.text}
-                  </text>
-                  {/* Text on top (without stroke) */}
-                  <text
-                    x={label.x}
-                    y={label.y}
-                    textAnchor='middle'
-                    fontSize='11'
-                    fill={textFill}
-                    style={{
-                      opacity: 1,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {label.text}
-                  </text>
-                </g>
-              )
-            })}
-          </g>
-        )}
       </g>
     )
   }

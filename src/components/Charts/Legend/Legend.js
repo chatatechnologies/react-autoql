@@ -1,5 +1,4 @@
 import React from 'react'
-import ReactDOM from 'react-dom'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { select } from 'd3-selection'
@@ -10,6 +9,7 @@ import { symbol, symbolSquare } from 'd3-shape'
 import { Icon } from '../../Icon'
 import LegendSelector from '../Legend/LegendSelector'
 import LegendPopover from '../Legend/LegendPopover'
+import './Legend.scss'
 
 import {
   legendColor,
@@ -21,6 +21,8 @@ import {
   mergeBoundingClientRects,
   getTitleCase,
 } from 'autoql-fe-utils'
+
+import safeGetBBox from '../../../utils/safeGetBBox'
 
 // Module-level storage for filtered labels to persist across component remounts
 const legendFilterStore = new Map()
@@ -76,7 +78,11 @@ export default class Legend extends React.Component {
     paddingRight: PropTypes.number,
     paddingTop: PropTypes.number,
     paddingBottom: PropTypes.number,
-    legendColumn: PropTypes.shape({}),
+    legendColumn: PropTypes.shape({
+      name: PropTypes.string,
+      index: PropTypes.number,
+      display_name: PropTypes.string,
+    }),
     orientation: PropTypes.string,
     onLabelChange: PropTypes.func,
     onLegendClick: PropTypes.func,
@@ -94,6 +100,24 @@ export default class Legend extends React.Component {
     height: PropTypes.number,
     width: PropTypes.number,
     onRenderComplete: PropTypes.func,
+    queryID: PropTypes.string,
+
+    // Additional commonly-used props (not exhaustive)
+    columns: PropTypes.array,
+    colorScale: PropTypes.func,
+    colorScale2: PropTypes.func,
+    legendColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    numberColumnIndices2: PropTypes.arrayOf(PropTypes.number),
+    chartPadding: PropTypes.number,
+    outerWidth: PropTypes.number,
+    outerHeight: PropTypes.number,
+    hasSecondAxis: PropTypes.bool,
+    hiddenLegendLabels: PropTypes.array,
+    popoverParentElement: PropTypes.any,
+    fontSize: PropTypes.number,
+    originalColumns: PropTypes.array,
+    tableConfig: PropTypes.object,
+    chartContainerRef: PropTypes.any,
   }
 
   static defaultProps = {
@@ -108,6 +132,22 @@ export default class Legend extends React.Component {
     onRenderComplete: () => {},
     translate: undefined,
     orientation: 'vertical',
+
+    // sensible defaults for commonly-used props
+    columns: [],
+    colorScale: () => {},
+    colorScale2: () => {},
+    legendColumnIndices: [],
+    numberColumnIndices2: [],
+    chartPadding: 10,
+    outerWidth: 800,
+    outerHeight: 600,
+    hasSecondAxis: false,
+    hiddenLegendLabels: [],
+    popoverParentElement: null,
+    originalColumns: [],
+    tableConfig: {},
+    chartContainerRef: null,
   }
 
   componentDidMount = () => {
@@ -142,19 +182,32 @@ export default class Legend extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (!deepEqual(this.props.columns, nextProps.columns)) {
-      return true
-    }
+    // deep compare arrays/objects where appropriate
+    if (!deepEqual(this.props.columns, nextProps.columns)) return true
 
-    if (this.props.height !== nextProps.height || this.props.outerHeight !== nextProps.outerHeight) {
-      return true
-    }
-    if (this.state.isColumnSelectorOpen !== nextState.isColumnSelectorOpen) {
-      return true
-    }
-    if (this.state.isLegendPopoverOpen !== nextState.isLegendPopoverOpen) {
-      return true
-    }
+    // primitive checks
+    if (this.props.height !== nextProps.height) return true
+    if (this.props.width !== nextProps.width) return true
+    if (this.props.outerHeight !== nextProps.outerHeight) return true
+    if (this.props.outerWidth !== nextProps.outerWidth) return true
+    if (this.props.chartPadding !== nextProps.chartPadding) return true
+    if (this.props.fontSize !== nextProps.fontSize) return true
+    if (this.props.orientation !== nextProps.orientation) return true
+    if (this.props.hasSecondAxis !== nextProps.hasSecondAxis) return true
+
+    // reference checks for functions/scale objects
+    if (this.props.colorScale !== nextProps.colorScale) return true
+    if (this.props.colorScale2 !== nextProps.colorScale2) return true
+
+    // deep compare arrays for indices and filter config
+    if (!deepEqual(this.props.legendColumnIndices, nextProps.legendColumnIndices)) return true
+    if (!deepEqual(this.props.numberColumnIndices2, nextProps.numberColumnIndices2)) return true
+    if (!deepEqual(this.props.legendFilterConfig, nextProps.legendFilterConfig)) return true
+
+    // UI state
+    if (this.state.isColumnSelectorOpen !== nextState.isColumnSelectorOpen) return true
+    if (this.state.isLegendPopoverOpen !== nextState.isLegendPopoverOpen) return true
+
     return false
   }
 
@@ -194,6 +247,10 @@ export default class Legend extends React.Component {
 
   componentWillUnmount = () => {
     this.legendElements?.forEach((el) => removeFromDOM(el))
+    // Clear D3/DOM references to avoid retaining closures and improve test isolation
+    this.filterButtonD3Element = null
+    this.filterButtonPosition = null
+    this.legendElements = []
   }
 
   getTotalLeftPadding = () => {
@@ -285,7 +342,7 @@ export default class Legend extends React.Component {
       this.legendLabels2 = this.legendLabels2.filter((l) => !filteredOutLabels.includes(l.label))
     }
 
-    this.legendLabelSections = this.getlegendLabelSections(this.legendLabels1, this.legendLabels2)
+    this.legendLabelSections = this.getLegendLabelSections(this.legendLabels1, this.legendLabels2)
 
     this.legendLabelSections?.forEach((legendLabels, i) => {
       this.renderLegend(legendLabels, i)
@@ -338,7 +395,7 @@ export default class Legend extends React.Component {
     return sections
   }
 
-  getlegendLabelSections = (legendLabels1, legendLabels2) => {
+  getLegendLabelSections = (legendLabels1, legendLabels2) => {
     let totalSections = this.totalPossibleSections
     const legendLabels1Size = legendLabels1?.length ?? 0
     const legendLabels2Size = legendLabels2?.length ?? 0
@@ -405,8 +462,8 @@ export default class Legend extends React.Component {
       }
     })
 
-    // Force re-render to update legend display
-    this.forceUpdate()
+    // Trigger a React re-render (prefer setState to forceUpdate)
+    this.setState((s) => ({ __legendRenderToggle: !s.__legendRenderToggle }))
   }
 
   removeHiddenLegendLabels = (legendElement) => {
@@ -430,7 +487,7 @@ export default class Legend extends React.Component {
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
 
           if (cellBottom > legendBottom) {
-            const bbox = this.getBBox()
+            const bbox = safeGetBBox(this)
             removedElementYBottom = (bbox?.y ?? 0) + (bbox?.height ?? 0)
             removedElementTransform = select(this).attr('transform')
             select(this).remove()
@@ -489,7 +546,7 @@ export default class Legend extends React.Component {
     this.titleBBox = {}
     try {
       const titleElement = select(legendElement).select('.legendTitle').node()
-      const titleBBox = select(legendElement).select('.legendTitle').node().getBBox()
+      const titleBBox = safeGetBBox(titleElement)
       const titleHeight = titleBBox?.height ?? 0
       const titleWidth = titleBBox?.width ?? 0
       this.titleBBox = titleBBox
@@ -503,6 +560,9 @@ export default class Legend extends React.Component {
 
       // Add filter button next to the title
       this.renderFilterButtonWithD3(legendElement, titleBBox)
+
+      // Add filter badge on top of the filter button if there are filtered labels
+      this.renderFilterBadge(legendElement)
     } catch (error) {
       console.error(error)
     }
@@ -520,19 +580,27 @@ export default class Legend extends React.Component {
       const buttonGroup = select(legendElement)
         .append('g')
         .attr('class', 'legend-filter-button-d3')
-        .attr('transform', `translate(${buttonX}, ${buttonY})`)
         .attr('opacity', '0') // use css to style so it isnt exported in the png/csv
         .style('cursor', 'pointer')
+        .attr('role', 'button')
+        .attr('tabindex', 0)
         .on('click', (event) => {
           event.stopPropagation()
           this.openLegendPopover()
+        })
+        .on('keydown', (event) => {
+          if (event && (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar')) {
+            event.preventDefault()
+            event.stopPropagation()
+            this.openLegendPopover()
+          }
         })
 
       // Background rect for hover
       buttonGroup
         .append('rect')
-        .attr('x', -iconSize / 2 - 2)
-        .attr('y', -iconSize / 2 - 2)
+        .attr('x', rectX)
+        .attr('y', rectY)
         .attr('width', iconSize + 4)
         .attr('height', iconSize + 4)
         .attr('fill', 'transparent')
@@ -540,13 +608,19 @@ export default class Legend extends React.Component {
         .attr('rx', 3)
         .attr('class', 'legend-filter-button-bg')
 
-      // Use foreignObject to render the icon
-      const foreignObject = buttonGroup
-        .append('foreignObject')
-        .attr('x', -iconSize / 2)
-        .attr('y', -iconSize / 2)
-        .attr('width', iconSize)
-        .attr('height', iconSize)
+      // Use native SVG icon instead of foreignObject for better Safari compatibility
+      const iconX = buttonX - iconSize / 2
+      const iconY = buttonY - iconSize / 2
+
+      // Add react-tooltip data attributes
+      const tooltipID = this.props.chartTooltipID || this.props.tooltipID || `legend-filter-tooltip-${this.LEGEND_ID}`
+      buttonGroup.attr('data-tooltip-id', tooltipID).attr('data-tooltip-content', 'Filter legend items')
+
+      // Create a group for the icon and scale it to the desired size
+      const iconGroup = buttonGroup
+        .append('g')
+        .attr('class', 'legend-filter-icon')
+        .attr('transform', `translate(${iconX}, ${iconY}) scale(${iconSize / 24})`)
         .style('pointer-events', 'none')
         .style('overflow', 'visible')
 
@@ -562,29 +636,41 @@ export default class Legend extends React.Component {
       // Store reference for button element and position
       this.filterButtonD3Element = buttonGroup.node()
       this.filterButtonPosition = { x: buttonX, y: buttonY }
-
-      // Render the icon directly into the container
-      const tooltipID = this.props.chartTooltipID
-      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
-      const isFiltered = filteredOutLabels.length > 0
-
-      ReactDOM.render(
-        <Icon
-          type='filter'
-          showBadge={isFiltered}
-          style={{
-            width: `${iconSize}px`,
-            height: `${iconSize}px`,
-            color: 'var(--react-autoql-text-color-secondary)',
-            display: 'block',
-          }}
-          data-tooltip-content='Filter legend items'
-          data-tooltip-id={tooltipID}
-        />,
-        iconContainer.node(),
-      )
     } catch (error) {
       console.warn('Error rendering filter button with D3:', error)
+    }
+  }
+
+  renderFilterBadge = (legendElement) => {
+    try {
+      // Remove existing badge if any
+      select(legendElement).select('.legend-filter-badge').remove()
+
+      const filteredOutLabels = legendFilterStore.get(this.LEGEND_FILTER_KEY) || []
+      if (filteredOutLabels.length === 0 || !this.filterButtonPosition) {
+        return
+      }
+
+      // Position badge absolutely on top of the filter button (top-right corner)
+      // Match Icon component badge positioning: top: -4px, right: -4px
+      const iconSize = 14
+      const badgeSize = 4 // 0.5em equivalent for small icon
+      const badgeX = this.filterButtonPosition.x + iconSize / 2 - 4 // Offset to top-right of button
+      const badgeY = this.filterButtonPosition.y - iconSize / 2 - 4 // Offset upward
+
+      const badgeGroup = select(legendElement).append('g').attr('class', 'legend-filter-badge').attr('opacity', '0') // use css to style so it isn't exported in the png/csv
+
+      // Add badge circle - simple yellow dot like Icon component
+      badgeGroup
+        .append('circle')
+        .attr('cx', badgeX)
+        .attr('cy', badgeY)
+        .attr('r', badgeSize)
+        .attr('fill', 'var(--react-autoql-warning-color)')
+        .attr('stroke', 'var(--react-autoql-background-color-secondary)')
+        .attr('stroke-width', 1)
+    } catch (error) {
+      console.warn('Error rendering filter badge:', error)
     }
   }
 
@@ -652,7 +738,7 @@ export default class Legend extends React.Component {
       const legendScale = this.getLegendScale(legendLabels)
       const maxSectionWidth = this.getMaxSectionWidth()
 
-      var legendOrdinal = legendColor()
+      const legendOrdinal = legendColor()
         .orient('vertical')
         .path(symbol().type(symbolSquare).size(this.SHAPE_SIZE)())
         .shapePadding(8)
@@ -717,12 +803,22 @@ export default class Legend extends React.Component {
         .attr('height', height + totalVerticalPadding)
         .attr('width', width + totalHorizontalPadding)
 
+      // Set border height to maxLegendHeight when there's overflow so removeHiddenLegendLabels can properly detect overflow
+      const borderHeight = this.combinedLegendHeight > maxLegendHeight ? maxLegendHeight : height
       select(this.legendBorder)
-        .attr('height', height + 2 * this.BORDER_PADDING)
+        .attr('height', borderHeight + 2 * this.BORDER_PADDING)
         .attr('width', width + 2 * this.BORDER_PADDING)
 
       this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
+
+      // Re-render badge after all legend elements are positioned (only on first section where filter button exists)
+      if (this.props.isAggregated && isFirstSection && legendElement) {
+        // Use setTimeout to ensure filterButtonPosition is set after renderFilterButtonWithD3 completes
+        setTimeout(() => {
+          this.renderFilterBadge(legendElement)
+        }, 0)
+      }
     } catch (error) {
       console.error(error)
     }
@@ -824,7 +920,8 @@ export default class Legend extends React.Component {
           stroke: 'var(--react-autoql-border-color)',
           fill: 'transparent',
           pointerEvents: 'none',
-          strokeOpacity: 0.6,
+          strokeOpacity: 0.8,
+          strokeWidth: 1,
         }}
       />
     )

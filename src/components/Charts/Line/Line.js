@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react'
 import { getThemeValue, createSVGPath, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
 export default class Line extends PureComponent {
   constructor(props) {
@@ -19,14 +19,24 @@ export default class Line extends PureComponent {
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    // Create date drilldown filter if string axis is a DATE column
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
 
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey: newActiveKey,
+      filter, // Pass filter if date column, otherwise let QueryOutput construct it
     })
 
     this.setState({ activeKey: newActiveKey })

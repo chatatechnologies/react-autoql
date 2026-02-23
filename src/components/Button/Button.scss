@@ -4,13 +4,20 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 
   width: auto;
-  height: auto;
   border-radius: 4px;
   outline: none !important;
   transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease, color 0.2s ease;
   cursor: pointer;
+
+  // Make button content fill 100% height
+  > * {
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
 
   &.btn-no-border {
     border: none !important;
@@ -31,6 +38,17 @@
       margin-right: 0;
       margin-left: 0;
     }
+
+    // Override icon-only styles for split buttons
+    &.btn-split-right {
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      // Don't override top-right and bottom-right - let .btn-split-right handle those
+      width: auto !important;
+      margin: 0 !important;
+      padding: 0 !important; // Reset padding, will be set by size-specific styles
+      // Height will be set by size-specific styles
+    }
   }
 
   .react-autoql-icon {
@@ -41,6 +59,12 @@
     margin-right: 6px;
     margin-left: -3px;
     font-size: 1.1em;
+  }
+
+  .spinner-loader {
+    margin-right: 6px;
+    margin-left: -3px;
+    color: inherit;
   }
 }
 
@@ -53,15 +77,18 @@
 
 // Size
 .react-autoql-btn.react-autoql-btn-small {
-  padding: 2px 8px;
+  height: 24px;
+  padding: 0 8px;
   margin: 2px 3px;
 }
 .react-autoql-btn.react-autoql-btn-medium {
-  padding: 6px 12px;
+  height: 32px;
+  padding: 0 12px;
   margin: 3px 3px;
 }
 .react-autoql-btn.react-autoql-btn-large {
-  padding: 8px 16px;
+  height: 40px;
+  padding: 0 16px;
   margin: 2px 5px;
 }
 
@@ -92,6 +119,10 @@
   &:hover {
     opacity: 0.8;
   }
+
+  .spinner-loader {
+    color: inherit !important;
+  }
 }
 
 .react-autoql-btn.react-autoql-btn-danger {
@@ -114,6 +145,74 @@
 
     &:hover {
       opacity: 0.8;
+    }
+  }
+}
+
+// Split button styles
+.react-autoql-btn.btn-split-left {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  margin-right: 0 !important;
+}
+
+.react-autoql-btn.btn-split-right {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-left: none;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  // Match the left button's border radius on the right side (4px)
+  border-top-right-radius: 4px !important;
+  border-bottom-right-radius: 4px !important;
+  
+  // For large buttons, match the height and padding
+  &.react-autoql-btn-large {
+    height: 40px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+  }
+  
+  // For medium buttons
+  &.react-autoql-btn-medium {
+    height: 32px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 3px !important;
+    margin-bottom: 3px !important;
+  }
+  
+  // For small buttons
+  &.react-autoql-btn-small {
+    height: 24px !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+  }
+}
+
+.react-autoql-btn-split-container {
+  display: flex;
+  align-items: center;
+  gap: 0;
+
+  &.with-border {
+    .react-autoql-btn.btn-split-left {
+      border-right: 1px solid var(--react-autoql-accent-color);
+    }
+
+    .react-autoql-btn.btn-split-right {
+      border-left: none;
     }
   }
 }

@@ -12,6 +12,11 @@
     "sourceType": "module"
   },
   "plugins": ["react", "prettier"],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
   "rules": {
     "indent": [2, 2, { "SwitchCase": 1 }],
     "linebreak-style": [2, "unix"],

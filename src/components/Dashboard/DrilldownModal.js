@@ -49,6 +49,7 @@ export default class DrilldownModal extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     onPNGDownloadFinish: PropTypes.func,
     cancelQueriesOnUnmount: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -74,6 +75,7 @@ export default class DrilldownModal extends React.Component {
     onCSVDownloadProgress: () => {},
     onCSVDownloadFinish: () => {},
     onPNGDownloadFinish: () => {},
+    enableMagicWand: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -151,6 +153,7 @@ export default class DrilldownModal extends React.Component {
         onCSVDownloadProgress={this.props.onCSVDownloadProgress}
         onCSVDownloadFinish={this.props.onCSVDownloadFinish}
         onPNGDownloadFinish={this.props.onPNGDownloadFinish}
+        enableMagicWand={this.props.enableMagicWand}
       />
     )
   }
@@ -245,6 +248,7 @@ export default class DrilldownModal extends React.Component {
                           initialTableConfigs={{
                             tableConfig: this.props.activeDrilldownRef.tableConfig,
                             pivotTableConfig: this.props.activeDrilldownRef.pivotTableConfig,
+                            columnOverrides: this.props.activeDrilldownRef?.state?.columnOverrides || {},
                           }}
                           isAnimating={this.props.isAnimating}
                           isResizing={this.state.isResizingDrilldown || !this.props.isOpen}

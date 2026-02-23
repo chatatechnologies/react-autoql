@@ -27,7 +27,11 @@ export function createQueryDB(data) {
   request.onupgradeneeded = function () {
     const db = request.result
 
-    if (db.objectStoreNames?.hasOwnProperty(queryID)) {
+    if (
+      db.objectStoreNames &&
+      typeof db.objectStoreNames.contains === 'function' &&
+      db.objectStoreNames.contains(queryID)
+    ) {
       db.deleteObjectStore(queryID)
     }
 
@@ -44,8 +48,8 @@ export function createQueryDB(data) {
       data.rows.forEach((row, i) => {
         const rowData = {}
 
-        row.map((value, i) => {
-          rowData[i] = value
+        row.forEach((value, j) => {
+          rowData[j] = value
         })
 
         store.add(rowData, `row-${i}`)

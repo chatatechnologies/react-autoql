@@ -3,6 +3,8 @@ import { shallow, mount } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import { DashboardTile } from './DashboardTile'
 import sampleResponses from '../../../../test/responseTestCases'
+// Use per-test Tabulator mock to avoid relying on global test-only mocks
+jest.mock('tabulator-tables', () => require('../../../../test/utils/tabulatorMockFactory')())
 import Tabulator from 'tabulator-tables'
 
 const sampleTile = {
@@ -82,9 +84,10 @@ describe('dashboard tile pivot after filtering', () => {
         tableFilters: [
           {
             // Filter by Region using name match (QueryOutput resolves by id/field/name)
-            name: tileWithTable.dataConfig.tableConfig.legendColumnIndex === 0
-              ? sampleTile.dataConfig.tableConfig.legendColumnIndex
-              : null,
+            name:
+              tileWithTable.dataConfig.tableConfig.legendColumnIndex === 0
+                ? sampleTile.dataConfig.tableConfig.legendColumnIndex
+                : null,
             // Using actual column name from response
             id: sampleTile.queryResponse.data.data.columns[0].name,
             value: 'West',
