@@ -2016,6 +2016,8 @@ export class QueryOutput extends React.Component {
       this.setState({ columnOverrides: overrides }, () => {
         this.onTableConfigChange(true, overrides)
       })
+      // // Persist column overrides immediately with the new overrides (before setState completes)
+      // this.onTableConfigChange(true, overrides)
     } else {
       this.onTableConfigChange()
     }
