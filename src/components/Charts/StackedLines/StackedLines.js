@@ -258,8 +258,9 @@ export default class StackedLines extends PureComponent {
           hoverDots.push(hoverDot)
 
           // Store label data for the hovered polygon
+          // Use the individual series value (not cumulative) for the label
           if (this.state.hoveredPolygonIndex === currentPolygonIdx) {
-            const labelData = this.createHoverLabel(x, y, currentValue, colIndex, currentPolygonIdx, index, color, xScale, yScale, width, height)
+            const labelData = this.createHoverLabel(x, y, value, colIndex, currentPolygonIdx, index, color, xScale, yScale, width, height)
             hoverLabelsData.push(labelData)
           }
         })
