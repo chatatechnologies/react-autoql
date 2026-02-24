@@ -113,6 +113,7 @@ import {
   median,
   networkIcon,
   magicWandIcon,
+  thinkingBubbleIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -554,6 +555,10 @@ export default class Icon extends React.Component {
       }
       case 'tag': {
         icon = <AiOutlineTag />
+        break
+      }
+      case 'thinking-bubble': {
+        icon = thinkingBubbleIcon
         break
       }
       case 'title': {

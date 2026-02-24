@@ -22,6 +22,19 @@
   border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
   // Box shadow matching reference image - subtle depth with soft blur
   box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    // Inset shadow for drag handles - subtle, darker, modern fade effect
+    // Creates a 15px wide shadow at edges that fades inward
+    box-shadow: 
+      rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, 
+      rgba(0, 0, 0, 0.06) 0px 2px 4px -1px,
+      inset rgba(0, 0, 0, 0.2) 0px 15px 15px -15px,
+      inset rgba(0, 0, 0, 0.15) 15px 0px 15px -15px,
+      inset rgba(0, 0, 0, 0.2) 0px -15px 15px -15px,
+      inset rgba(0, 0, 0, 0.15) -15px 0px 15px -15px;
+  }
 }
 
 .react-autoql-dashboard-tile-inner-div {
@@ -40,7 +53,7 @@
 .react-autoql-dashboard-tile-drag-handle {
   transition: opacity 0.3s ease;
   position: absolute;
-  background-color: var(--react-autoql-border-color, #f7f7f7);
+  background-color: transparent;
   cursor: move;
   opacity: 0;
 
@@ -432,6 +445,61 @@
     outline: none !important;
     color: var(--react-autoql-text-color-primary, #356f90);
     background: var(--react-autoql-background-color-secondary, #fff);
+  }
+
+  .dashboard-tile-left-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .query-input-icon-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .query-input-interpretation-badge {
+      position: absolute;
+      top: -32px;
+      left: -26px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--react-autoql-accent-color, #26a7df);
+      z-index: 10;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+
+      .react-autoql-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    .dashboard-tile-input.query,
+    .dashboard-tile-autocomplete-input {
+      padding-right: 35px; // Make room for the RT button icon
+    }
+
+    .dashboard-tile-rt-container {
+      position: absolute;
+      right: 8px;
+      z-index: 5;
+      pointer-events: auto;
+
+      .react-autoql-reverse-translation-container.compact {
+        position: relative;
+      }
+    }
   }
 }
 
