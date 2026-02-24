@@ -2030,9 +2030,14 @@ export class DashboardTile extends React.Component {
 
   renderDeleteBtn = () => {
     return (
-      <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
-        <Icon style={{ fontSize: '18px' }} type='close' />
-      </div>
+      <button
+        className='dashboard-tile-delete-button'
+        onClick={() => this.props.deleteTile(this.props.tile.i)}
+        type='button'
+        aria-label='Delete tile'
+      >
+        <Icon type='close' />
+      </button>
     )
   }
 
