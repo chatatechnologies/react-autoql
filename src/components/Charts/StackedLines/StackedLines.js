@@ -60,13 +60,20 @@ export default class StackedLines extends PureComponent {
     )
   }
 
-  createPolygon = (i, polygonVertices, color) => {
-    const { stringColumnIndex } = this.props
+  createPolygon = (i, polygonVertices, color, colIndex) => {
+    const { stringColumnIndex, legendLabels, numberColumnIndices } = this.props
     const polygonPoints = polygonVertices
       .map((xy) => {
         return xy.join(',')
       })
       .join(' ')
+
+    // Find the legend label that matches this column index
+    // legendLabels corresponds to numberColumnIndices, so find the index of colIndex in numberColumnIndices
+    const legendLabelIndex = numberColumnIndices.indexOf(colIndex)
+    const legendLabel = legendLabelIndex !== -1 && legendLabels[legendLabelIndex] 
+      ? legendLabels[legendLabelIndex].label 
+      : (this.props.columns[colIndex]?.display_name || `Series ${i + 1}`)
 
     return (
       <polygon
@@ -75,7 +82,7 @@ export default class StackedLines extends PureComponent {
         points={polygonPoints}
         data-tooltip-html={`
             <div>
-              <strong>Field</strong>: ${this.props.legendLabels[i].label}
+              <strong>Field</strong>: ${legendLabel}
             </div>
           `}
         data-tooltip-id={this.props.chartTooltipID}
@@ -268,7 +275,7 @@ export default class StackedLines extends PureComponent {
         // Add polygon to list
         const reversedPrevVertices = prevPolygonVertices.reverse()
         const polygon = reversedPrevVertices.concat(currentPolygonVertices)
-        polygons.push(this.createPolygon(currentPolygonIdx, polygon, color))
+        polygons.push(this.createPolygon(currentPolygonIdx, polygon, color, colIndex))
 
         prevValues = currentValues
         prevPolygonVertices = currentPolygonVertices
