@@ -65,6 +65,8 @@
     max-height: 100%;
     min-height: 140px;
     overflow: hidden;
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border-radius: 8px;
 
     .tabulator-cell,
     .tabulator-col {
@@ -373,7 +375,7 @@
     background-color: inherit;
     border-color: transparent;
     margin-bottom: 0 !important;
-    font-size: 11px;
+    font-size: 12.5px;
 
     .comparison-value-positive {
       color: #2ecc40;
@@ -383,7 +385,8 @@
     }
 
     .tabulator-header {
-      border-bottom: 2px solid var(--react-autoql-border-color);
+      border-bottom: 1px solid var(--react-autoql-border-color);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 
       input:placeholder-shown + .react-autoql-input-clear-btn {
         visibility: hidden;
@@ -420,49 +423,52 @@
     }
 
     .tabulator-row,
-    .tabulator-header,
     .tabulator-headers,
-    .tabulator-header .tabulator-col,
     .tabulator-tableholder .tabulator-table {
       background-color: inherit;
     }
 
     .tabulator-row {
       /* user-select: none; This breaks copy/paste */
-      border-bottom: 1px solid var(--react-autoql-table-border-color);
+      border-bottom: none;
       background-color: var(--react-autoql-background-color-secondary);
+      height: 36px !important; // Must match rowHeight in TableWrapper.js
       z-index: 1;
-
-      &:last-child {
-        border-bottom: none;
-        margin-bottom: 15px;
-      }
 
       .tabulator-cell {
         line-height: 1.5em;
+        border: none !important;
 
-        &:not(:first-child) {
-          border-left: 1px solid !important;
-          border-color: var(--react-autoql-table-border-color) !important;
-        }
         &.pivot-category {
           font-weight: 600;
         }
+
+        // Remove all borders from elements inside cells
+        * {
+          border: none !important;
+        }
       }
+    }
+
+    .tabulator-header {
+      background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.07);
     }
 
     .tabulator-header .tabulator-col {
       text-align: center !important;
       border-color: transparent;
-      background-color: var(--react-autoql-background-color-secondary);
+      background-color: transparent;
       min-height: 35px;
 
       .tabulator-col-title {
         padding-left: 12px !important;
         padding-right: 15px !important;
+        font-weight: 600;
+        font-size: 11px;
+        letter-spacing: 0.05em;
       }
       .tabulator-col-content {
-        padding: 8px 5px;
+        padding: 10px 8px;
 
         .tabulator-arrow {
           border-left: 4px solid transparent !important;
@@ -473,7 +479,7 @@
       }
 
       &.tabulator-sortable:hover {
-        background-color: var(--react-autoql-hover-color) !important;
+        background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.14) !important;
       }
 
       &.tabulator-sortable[aria-sort='descending'] .tabulator-col-content .tabulator-arrow {
@@ -499,8 +505,23 @@
     }
 
     .tabulator-cell {
-      border-color: var(--react-autoql-table-border-color);
+      border: none !important;
       background-color: var(--react-autoql-background-color-secondary);
+      padding: 7px 14px !important;
+      transition: background-color 0.1s ease, color 0.1s ease;
+
+      // Remove all borders from elements inside cells
+      * {
+        border: none !important;
+      }
+    }
+
+    .tabulator-row:nth-child(even) .tabulator-cell {
+      background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.05) !important;
+    }
+
+    .tabulator-row:hover .tabulator-cell {
+      background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.09) !important;
     }
 
     .tabulator-tableholder {
