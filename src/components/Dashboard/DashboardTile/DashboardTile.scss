@@ -577,6 +577,11 @@
   width: 70%;
 }
 
+.query-focused .dashboard-tile-left-input-container .query-input-icon,
+.title-focused .dashboard-tile-right-input-container .title-input-icon {
+  color: var(--react-autoql-accent-color) !important;
+}
+
 .dashboard-tile-right-input-container {
   z-index: 2;
 }
@@ -590,9 +595,10 @@
 
   .query-input-icon,
   .title-input-icon {
-    color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.4));
     position: absolute;
     z-index: 1;
+    transition: color 0.2s ease;
   }
 
   .react-autoql-icon {
