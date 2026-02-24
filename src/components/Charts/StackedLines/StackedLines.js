@@ -3,6 +3,33 @@ import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValu
 
 import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
+// Module-level helpers (pure, no dependencies on instance)
+const hexToRgb = (hex) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+    : null
+}
+
+const parseRgb = (rgbStr) => {
+  const match = rgbStr.match(/\d+/g)
+  return match && match.length >= 3
+    ? { r: parseInt(match[0], 10), g: parseInt(match[1], 10), b: parseInt(match[2], 10) }
+    : null
+}
+
+const getLabelThemeColors = (backgroundColor) => {
+  let rgb = hexToRgb(backgroundColor)
+  if (!rgb && backgroundColor?.includes('rgb')) rgb = parseRgb(backgroundColor)
+  rgb = rgb || { r: 255, g: 255, b: 255 }
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
+  return luminance > 0.5
+    ? { textFill: '#000', textStroke: '#fff' }
+    : { textFill: '#fff', textStroke: '#000' }
+}
+
+const HOVER_LABEL_TEXT_STYLE = { fontWeight: 500 }
+
 export default class StackedLines extends PureComponent {
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
@@ -366,51 +393,12 @@ export default class StackedLines extends PureComponent {
         {this.state.hoveredPolygonIndex !== null && visibleLabels.length > 0 && (
           <g className='stacked-area-hover-labels' style={{ pointerEvents: 'none' }}>
             {visibleLabels.map((label) => {
-              // Detect light/dark mode by checking background color
               const backgroundColor = this.props.backgroundColor || getThemeValue('background-color-secondary') || '#fff'
-              
-              // Helper to convert hex to RGB
-              const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-                return result ? {
-                  r: parseInt(result[1], 16),
-                  g: parseInt(result[2], 16),
-                  b: parseInt(result[3], 16)
-                } : null
-              }
-              
-              // Helper to parse rgb/rgba strings
-              const parseRgb = (rgbStr) => {
-                const match = rgbStr.match(/\d+/g)
-                if (match && match.length >= 3) {
-                  return {
-                    r: parseInt(match[0], 10),
-                    g: parseInt(match[1], 10),
-                    b: parseInt(match[2], 10)
-                  }
-                }
-                return null
-              }
-              
-              // Get RGB values
-              let rgb = hexToRgb(backgroundColor)
-              if (!rgb && backgroundColor.includes('rgb')) {
-                rgb = parseRgb(backgroundColor)
-              }
-              // Default to white if we can't parse
-              rgb = rgb || { r: 255, g: 255, b: 255 }
-              
-              // Calculate relative luminance (simplified)
-              const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
-              const isLightMode = luminance > 0.5
-              
-              // Set colors based on theme
-              const textFill = isLightMode ? '#000' : '#fff'
-              const textStroke = isLightMode ? '#fff' : '#000'
-              
+              const { textFill, textStroke } = getLabelThemeColors(backgroundColor)
+
               return (
                 <g key={`hover-label-${label.polygonIndex}-${label.vertexIndex}`}>
-                  {/* Text with stroke for readability on any background */}
+                  {/* Stroke pass — creates a readable halo on any background */}
                   <text
                     x={label.x}
                     y={label.y}
@@ -423,24 +411,18 @@ export default class StackedLines extends PureComponent {
                     strokeLinejoin='round'
                     strokeLinecap='round'
                     paintOrder='stroke'
-                    style={{
-                      opacity: 1,
-                      fontWeight: 500,
-                    }}
+                    style={HOVER_LABEL_TEXT_STYLE}
                   >
                     {label.text}
                   </text>
-                  {/* Text on top (without stroke) */}
+                  {/* Fill pass — rendered on top for crisp edges */}
                   <text
                     x={label.x}
                     y={label.y}
                     textAnchor='middle'
                     fontSize='11'
                     fill={textFill}
-                    style={{
-                      opacity: 1,
-                      fontWeight: 500,
-                    }}
+                    style={HOVER_LABEL_TEXT_STYLE}
                   >
                     {label.text}
                   </text>
