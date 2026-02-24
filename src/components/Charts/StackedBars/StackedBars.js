@@ -65,9 +65,9 @@ export default class StackedBars extends PureComponent {
       // Horizontal gradient for stacked bars (left to right)
       gradientDefs.push(
         <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor={color} stopOpacity="0.5" />
-          <stop offset="50%" stopColor={color} stopOpacity="0.7" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.9" />
+          <stop offset="0%" stopColor={color} stopOpacity="0.65" />
+          <stop offset="50%" stopColor={color} stopOpacity="0.75" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.85" />
         </linearGradient>
       )
     })

@@ -753,16 +753,20 @@ export default class ChatContent extends React.Component {
     const { messages } = this.state
     let chatMessageVisibility
     let chatMessageOpacity
+    let chatMessageDisplay
     let queryInputVisibility
     let queryInputOpacity
+    let queryInputDisplay
 
     const hideQueryInput = this.shouldHideQueryInputComponent()
 
     if (!this.props.shouldRender) {
       chatMessageVisibility = 'hidden'
       chatMessageOpacity = '0'
+      chatMessageDisplay = 'none'
       queryInputVisibility = 'hidden'
       queryInputOpacity = '0'
+      queryInputDisplay = 'none'
     } else if (hideQueryInput) {
       queryInputVisibility = 'hidden'
       queryInputOpacity = '0'
@@ -775,7 +779,7 @@ export default class ChatContent extends React.Component {
           className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}
             ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
             ${isMobile ? 'mobile-padding' : ''}`}
-          style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity }}
+          style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity, display: chatMessageDisplay }}
         >
           <CustomScrollbars
             ref={(r) => (this.messengerScrollComponent = r)}
@@ -873,7 +877,7 @@ export default class ChatContent extends React.Component {
           </div>
         </div>
         <div
-          style={{ visibility: queryInputVisibility, opacity: queryInputOpacity }}
+          style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
           className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
         >
           <QueryInput

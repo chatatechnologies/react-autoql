@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react'
-import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValue } from 'autoql-fe-utils'
+import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValue, createSVGPath } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
 export default class StackedLines extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -14,14 +14,24 @@ export default class StackedLines extends PureComponent {
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    // Create date drilldown filter if string axis is a DATE column
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
 
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey: newActiveKey,
+      filter, // Pass filter if date column, otherwise let QueryOutput construct it
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -60,7 +70,7 @@ export default class StackedLines extends PureComponent {
     )
   }
 
-  createPolygon = (i, polygonVertices, color) => {
+  createPolygon = (i, polygonVertices, color, gradientId) => {
     const { stringColumnIndex } = this.props
     const polygonPoints = polygonVertices
       .map((xy) => {
@@ -81,7 +91,7 @@ export default class StackedLines extends PureComponent {
         data-tooltip-id={this.props.chartTooltipID}
         data-effect='float'
         data-place='bottom'
-        style={{ fill: color }}
+        fill={gradientId ? `url(#${gradientId})` : color}
         onMouseEnter={() => this.setState({ hoveredPolygonIndex: i })}
         onMouseLeave={() => this.setState({ hoveredPolygonIndex: null })}
       />
@@ -208,7 +218,24 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
+    // Build gradient defs for each visible series (vertical, top-to-bottom depth effect)
+    const gradientDefs = []
+    const gradientIds = new Map()
+    visibleSeries.forEach((colIndex) => {
+      const color = this.props.colorScale(colIndex)
+      const gradientId = `stacked-area-gradient-${colIndex}`
+      gradientIds.set(colIndex, gradientId)
+      gradientDefs.push(
+        <linearGradient key={gradientId} id={gradientId} x1='0%' y1='0%' x2='0%' y2='100%'>
+          <stop offset='0%' stopColor={color} stopOpacity='0.55' />
+          <stop offset='50%' stopColor={color} stopOpacity='0.35' />
+          <stop offset='100%' stopColor={color} stopOpacity='0.15' />
+        </linearGradient>,
+      )
+    })
+
     const polygons = []
+    const linePaths = [] // smooth stroke lines along top edge of each layer
     const polygonVertexDots = []
     const hoverDots = []
     const hoverLabelsData = [] // Store label data for overlap detection
@@ -265,10 +292,44 @@ export default class StackedLines extends PureComponent {
           }
         })
 
-        // Add polygon to list
-        const reversedPrevVertices = prevPolygonVertices.reverse()
-        const polygon = reversedPrevVertices.concat(currentPolygonVertices)
-        polygons.push(this.createPolygon(currentPolygonIdx, polygon, color))
+        const gradientId = gradientIds.get(colIndex)
+
+        // Build smooth line path for the top edge
+        const linePathD = createSVGPath(currentPolygonVertices, 0.2)
+        if (linePathD) {
+          // Area fill: same smooth top edge + smooth bottom edge (reversed prev layer)
+          // Replace the leading "M" with "L" so we line-to the start of the reversed bottom edge
+          const reversedPrevVertices = [...prevPolygonVertices].reverse()
+          const reversedPrevPathD = createSVGPath(reversedPrevVertices, 0.2)
+          const smoothBottomEdge = reversedPrevPathD ? reversedPrevPathD.replace(/^M/, 'L') : ''
+          const smoothAreaPathD = `${linePathD} ${smoothBottomEdge} Z`
+
+          polygons.push(
+            <path
+              key={`area-${getKey(stringColumnIndex, currentPolygonIdx)}`}
+              className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, currentPolygonIdx) ? ' active' : ''}`}
+              d={smoothAreaPathD}
+              data-tooltip-html={`<div><strong>Field</strong>: ${this.props.legendLabels[currentPolygonIdx]?.label}</div>`}
+              data-tooltip-id={this.props.chartTooltipID}
+              data-effect='float'
+              data-place='bottom'
+              fill={gradientId ? `url(#${gradientId})` : color}
+              onMouseEnter={() => this.setState({ hoveredPolygonIndex: currentPolygonIdx })}
+              onMouseLeave={() => this.setState({ hoveredPolygonIndex: null })}
+            />,
+          )
+
+          linePaths.push(
+            <path
+              key={`stacked-line-path-${colIndex}`}
+              className='line'
+              d={linePathD}
+              fill='none'
+              stroke={color}
+              strokeWidth={2}
+            />,
+          )
+        }
 
         prevValues = currentValues
         prevPolygonVertices = currentPolygonVertices
@@ -295,7 +356,9 @@ export default class StackedLines extends PureComponent {
 
     return (
       <g data-test='stacked-lines'>
+        <defs>{gradientDefs}</defs>
         {polygons}
+        {linePaths}
         {polygonVertexDots}
         <g className='stacked-area-hover-dots' style={{ pointerEvents: 'none' }}>
           {hoverDots}

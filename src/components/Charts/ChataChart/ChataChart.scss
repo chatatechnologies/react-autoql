@@ -222,12 +222,23 @@
   .bar,
   .column,
   .line,
-  .stacked-area,
   .stacked-bar,
   .stacked-column {
     transition: fill-opacity 0.3s ease;
     fill-opacity: 1 !important;
     outline: none !important;
+
+    &:hover,
+    &.active {
+      fill-opacity: 0.7 !important;
+    }
+  }
+
+  .stacked-area {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 1 !important;
+    outline: none !important;
+    cursor: default;
 
     &:hover,
     &.active {
