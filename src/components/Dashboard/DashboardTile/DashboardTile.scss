@@ -395,25 +395,52 @@
   flex-grow: 0;
 }
 
-.dashboard-tile-play-button {
-  cursor: default;
-  flex: 0 0 auto;
-  font-size: 25px;
-  margin-left: 6px;
-  margin-bottom: 3px;
+.dashboard-tile-send-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--react-autoql-accent-color);
+  cursor: pointer;
   display: flex;
   align-items: center;
-}
-.dashboard-tile-play-button span.react-autoql-icon svg {
-  cursor: pointer;
-  color: var(--react-autoql-accent-color);
-}
-.dashboard-tile-play-button.disabled svg {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.dashboard-tile-play-button:not(.disabled) svg:hover {
-  opacity: 0.8;
+  justify-content: center;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.2s ease;
+
+  .react-autoql-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+    margin-left: 0;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-50%) scale(1.1);
+    color: var(--react-autoql-accent-color);
+    opacity: 0.8;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    color: var(--react-autoql-text-color-placeholder);
+  }
 }
 
 .dashboard-tile-delete-button {
@@ -530,12 +557,12 @@
 
   .dashboard-tile-input.query,
   .dashboard-tile-autocomplete-input {
-    padding-right: 35px; // Make room for the RT button icon
+    padding-right: 36px; // Make room for the send button
   }
 
   .dashboard-tile-rt-container {
     position: absolute;
-    right: 8px;
+    right: 44px; // leave room for the send button
     z-index: 5;
     pointer-events: auto;
 
@@ -573,6 +600,10 @@
     height: 100%;
     font-size: 17px;
     margin-left: 10px;
+  }
+
+  .dashboard-tile-send-button .react-autoql-icon {
+    margin-left: 0;
   }
 }
 

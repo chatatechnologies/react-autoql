@@ -1304,6 +1304,14 @@ export class DashboardTile extends React.Component {
                   />
                 </div>
               )}
+              <button
+                className='dashboard-tile-send-button'
+                onClick={() => this.processTile()}
+                disabled={!this.isQueryValid(this.state.query)}
+                type='button'
+              >
+                <Icon type='send' />
+              </button>
             </div>
 
             <div className='dashboard-tile-right-input-container'>
@@ -1317,9 +1325,6 @@ export class DashboardTile extends React.Component {
                 onBlur={() => this.setState({ isTitleInputFocused: false })}
               />
             </div>
-          </div>
-          <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
-            <Icon type='play' onClick={() => this.processTile()} data-tooltip-content='Run tile' data-place='left' />
           </div>
         </div>
       )
@@ -1493,6 +1498,14 @@ export class DashboardTile extends React.Component {
                   />
                 </div>
               )}
+              <button
+                className='dashboard-tile-send-button'
+                onClick={() => this.processTile()}
+                disabled={!this.isQueryValid(this.state.query)}
+                type='button'
+              >
+                <Icon type='send' />
+              </button>
             </div>
 
             <div className='dashboard-tile-right-input-container'>
@@ -1506,9 +1519,6 @@ export class DashboardTile extends React.Component {
                 onBlur={() => this.setState({ isTitleInputFocused: false })}
               />
             </div>
-          </div>
-          <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
-            <Icon type='play' onClick={() => this.processTile()} data-tooltip-content='Run tile' data-place='left' />
           </div>
         </div>
       )
@@ -1545,7 +1555,7 @@ export class DashboardTile extends React.Component {
           <div className='dashboard-tile-placeholder-text'>
             {this.props.isEditing ? (
               <span>
-                To get started, enter a query and click <Icon className='play-icon' type='play' />
+                To get started, enter a query and click <Icon className='send-icon' type='send' />
               </span>
             ) : (
               <span>No query was supplied for this tile.</span>
