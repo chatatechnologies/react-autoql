@@ -685,19 +685,47 @@
   -webkit-transform: translate3d(0, 0, 0);
   z-index: 1;
   position: absolute;
-  width: 11px;
-  height: 11px;
-  bottom: 4px;
-  right: 4px;
+  width: 16px;
+  height: 16px;
+  bottom: 5px;
+  right: 5px;
   opacity: 0;
-  border-right: 1px solid var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
-  border-bottom: 1px solid var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.4)) !important;
-  transition: opacity 0.3s ease;
+  background: none;
+  border: none;
   cursor: se-resize;
+  transition: opacity 0.2s ease;
+
+  // Classic macOS-style diagonal parallel lines clipped to a triangle
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      135deg,
+      var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.15)) 0px,
+      var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.15)) 1.5px,
+      transparent 1.5px,
+      transparent 5px
+    );
+    opacity: 0.5;
+    // Clip to bottom-right triangle
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    transition: background-image 0.2s ease;
+  }
 }
 
 .react-autoql-dashboard-tile.editing:hover .react-resizable-handle {
   opacity: 1;
+
+  &:hover::before {
+    background-image: repeating-linear-gradient(
+      135deg,
+      var(--react-autoql-accent-color, #26a7df) 0px,
+      var(--react-autoql-accent-color, #26a7df) 1.5px,
+      transparent 1.5px,
+      transparent 5px
+    );
+  }
 }
 
 .react-grid-placeholder {
