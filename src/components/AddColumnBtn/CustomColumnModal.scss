@@ -94,6 +94,7 @@
       .react-autoql-formula-builder-calculator-container {
         flex: 1 0 0;
         max-width: 160px;
+        min-width: 120px;
 
         .react-autoql-btn {
           padding: 0 16px;
@@ -125,6 +126,8 @@
             box-sizing: border-box;
             justify-content: start;
             height: 38px;
+            min-width: 48px;
+            min-height: 44px;
           }
         }
       }
