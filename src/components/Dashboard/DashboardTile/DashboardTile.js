@@ -131,6 +131,8 @@ export class DashboardTile extends React.Component {
         sessionFilters: tile?.filters,
       },
       isRTHovered: false,
+      isSecondRTHovered: false,
+      currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
     }
   }
 
@@ -1142,6 +1144,9 @@ export class DashboardTile extends React.Component {
   }
 
   renderSplitResponse = () => {
+    const topContent = this.renderTopResponse()
+    const bottomContent = this.renderBottomResponse()
+
     return (
       <SplitterLayout
         key={`dashboard-tile-splitter-layout-${this.COMPONENT_KEY}`}
@@ -1162,15 +1167,18 @@ export class DashboardTile extends React.Component {
               this.debouncedSetParamsForTile({
                 secondDisplayPercentage: percentNumber,
               })
+              this.setState({ currentSplitPercent: percentNumber })
             }
 
             this.setState({ isDraggingSplitter: false })
           }, 1000)
         }}
       >
-        <div className='dashboard-tile-split-pane-container'>{this.renderTopResponse()}</div>
         <div className='dashboard-tile-split-pane-container'>
-          {this.renderBottomResponse()}
+          {topContent}
+        </div>
+        <div className='dashboard-tile-split-pane-container'>
+          {bottomContent}
           {this.props.isEditing && (
             <div
               className={`split-view-query-btn-container react-autoql-toolbar ${
@@ -1180,18 +1188,46 @@ export class DashboardTile extends React.Component {
               <div
                 className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn react-autoql-toolbar-btn'
                 data-test='split-view-query-btn'
+                style={{ position: 'relative' }}
               >
-                <Button
-                  onClick={() => this.toggleSecondQueryInput()}
-                  className='react-autoql-toolbar-btn'
-                  tooltip='Query'
-                  tooltipID={this.props.tooltipID}
-                >
-                  <div className='split-view-query-btn-icon-container'>
-                    <Icon type='react-autoql-bubbles-outlined' />
-                    <Icon type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'} />
-                  </div>
-                </Button>
+                <div className='query-input-icon-wrapper'>
+                  <Button
+                    onClick={() => this.toggleSecondQueryInput()}
+                    className='react-autoql-toolbar-btn'
+                    tooltip='Query'
+                    tooltipID={this.props.tooltipID}
+                  >
+                    <div className='split-view-query-btn-icon-container'>
+                      <Icon type='react-autoql-bubbles-outlined' />
+                      <Icon type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'} />
+                    </div>
+                  </Button>
+                  {(() => {
+                    const secondResponse = this.areTopAndBottomSameQuery()
+                      ? this.props.tile?.queryResponse
+                      : this.props.tile?.secondQueryResponse
+                    return secondResponse &&
+                      (secondResponse?.data?.data?.parsed_interpretation ||
+                        secondResponse?.data?.data?.interpretation) ? (
+                      <Popover
+                        isOpen={this.state.isSecondRTHovered}
+                        positions={['top', 'bottom']}
+                        align='start'
+                        padding={8}
+                        onClickOutside={() => this.setState({ isSecondRTHovered: false })}
+                        content={this.renderRTPopoverContent(secondResponse)}
+                      >
+                        <div
+                          className='query-input-interpretation-badge'
+                          onMouseEnter={() => this.setState({ isSecondRTHovered: true })}
+                          onMouseLeave={() => this.setState({ isSecondRTHovered: false })}
+                        >
+                          <Icon type='thinking-bubble' />
+                        </div>
+                      </Popover>
+                    ) : null
+                  })()}
+                </div>
                 <input
                   className={'dashboard-tile-input query second'}
                   value={this.state.secondQuery}
@@ -1345,11 +1381,12 @@ export class DashboardTile extends React.Component {
     )
   }
 
-  renderRTPopoverContent = () => {
-    if (!this.props.tile?.queryResponse) return null
+  renderRTPopoverContent = (queryResponse) => {
+    const response = queryResponse || this.props.tile?.queryResponse
+    if (!response) return null
 
-    const parsedInterpretation = this.props.tile.queryResponse?.data?.data?.parsed_interpretation
-    const interpretation = this.props.tile.queryResponse?.data?.data?.interpretation
+    const parsedInterpretation = response?.data?.data?.parsed_interpretation
+    const interpretation = response?.data?.data?.interpretation
 
     const renderChunk = (chunk) => {
       switch (chunk?.c_type) {
@@ -1630,7 +1667,12 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-toolbars-left-container'>
           {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
           {this.props.isEditing && (
-            <VizToolbar {...vizToolbarProps} shouldRender={!this.props.isDragging} tooltipID={this.props.tooltipID} />
+            <VizToolbar
+              {...vizToolbarProps}
+              shouldRender={!this.props.isDragging}
+              tooltipID={this.props.tooltipID}
+              compact={true}
+            />
           )}
         </div>
         <div className='dashboard-tile-toolbars-right-container'>
@@ -1709,13 +1751,6 @@ export class DashboardTile extends React.Component {
     isExecuted,
     renderPlaceholder,
   }) => {
-    // Store toolbar props for rendering outside the inner div (in main render)
-    if (isSecondHalf) {
-      this._bottomToolbarProps = { vizToolbarProps, optionsToolbarProps, isSecondHalf }
-    } else {
-      this._topToolbarProps = { vizToolbarProps, optionsToolbarProps, isSecondHalf }
-    }
-
     return (
       <div className='loading-container-centered' id={queryOutputProps.key}>
         {this.renderResponseContent({
@@ -1725,20 +1760,14 @@ export class DashboardTile extends React.Component {
           renderPlaceholder,
           isSecondHalf,
         })}
+        {this.renderToolbars({
+          queryOutputProps,
+          vizToolbarProps,
+          optionsToolbarProps,
+          isSecondHalf,
+        })}
       </div>
     )
-  }
-
-  renderAllToolbars = () => {
-    if (this.getIsSplitView()) {
-      return (
-        <>
-          {this._topToolbarProps && this.renderToolbars(this._topToolbarProps)}
-          {this._bottomToolbarProps && this.renderToolbars(this._bottomToolbarProps)}
-        </>
-      )
-    }
-    return this._topToolbarProps ? this.renderToolbars(this._topToolbarProps) : null
   }
 
   renderTopResponse = () => {
@@ -2092,7 +2121,6 @@ export class DashboardTile extends React.Component {
               {this.renderContent()}
             </>
           </div>
-          {this.renderAllToolbars()}
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
         </div>

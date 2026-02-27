@@ -24,7 +24,6 @@
   width: 100%;
   background: var(--react-autoql-background-color-secondary, #fff);
   position: relative;
-  z-index: 2; // Sits above the toolbar so the tile covers the toolbar's top edge
   text-align: center;
   display: flex;
   justify-content: flex-start;
@@ -96,12 +95,14 @@
 .dashboard-tile-toolbars-container {
   display: flex;
   position: absolute;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  padding: 4px 8px;
+  transition: opacity 0.3s ease, color 0.3s ease;
+  padding: 7px;
   width: 100%;
-  left: 0;
+  z-index: 3;
+  bottom: 0;
+  right: 0;
 
   pointer-events: none;
   opacity: 0;
@@ -110,7 +111,7 @@
   .dashboard-tile-toolbars-left-container {
     display: flex;
     pointer-events: auto;
-    align-items: center;
+    align-items: flex-end;
     flex-wrap: wrap;
 
     .react-autoql-toolbar {
@@ -132,33 +133,9 @@
   }
 }
 
-// Non-edit mode: toolbar inside the tile at the bottom (original behaviour)
-.react-autoql-dashboard-tile:not(.editing) .dashboard-tile-toolbars-container {
-  bottom: 0;
-  z-index: 3;
-}
-
-.react-autoql-dashboard-tile:not(.editing):hover .dashboard-tile-toolbars-container {
+.react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container {
   opacity: 1;
   pointer-events: auto;
-}
-
-// Edit mode: toolbar floats below the tile
-.react-autoql-dashboard-tile.editing .dashboard-tile-toolbars-container {
-  z-index: 1; // Below the inner div (z-index: 2) so tile covers the toolbar top
-  top: calc(100% - 12px);
-  padding-top: 16px; // Extra top padding to compensate for the overlap
-  background: var(--react-autoql-background-color-secondary);
-  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
-  border-radius: 0 0 12px 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 3px 8px rgba(0, 0, 0, 0.15);
-  transform: translateY(-4px);
-}
-
-.react-autoql-dashboard-tile.editing:hover .dashboard-tile-toolbars-container {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
 }
 
 .react-autoql-dashboard .react-grid-item:hover {
@@ -181,6 +158,7 @@
   top: 7px;
   z-index: 1;
   opacity: 0;
+  overflow: visible;
 
   &.open .split-view-query-btn {
     flex-grow: 1;
@@ -195,7 +173,7 @@
     flex-shrink: 0;
     flex-grow: 0;
     flex-basis: auto;
-    overflow: hidden;
+    overflow: visible;
     pointer-events: all;
     color: var(--react-autoql-accent-color);
     transition: opacity 0.3s ease, color 0.3s ease, flex-grow 0.3s ease;
@@ -230,6 +208,40 @@
       flex: 1;
 
       display: none;
+    }
+
+    .query-input-icon-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .query-input-interpretation-badge {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: -26px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--react-autoql-accent-color, #26a7df);
+      z-index: 10;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+
+      // Flip icon vertically so the tail points up toward the icon
+      .react-autoql-icon {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: scaleY(-1);
+      }
     }
   }
 }
@@ -812,6 +824,11 @@
   align-items: stretch;
   justify-content: center;
   width: 100%;
+}
+
+// Split pane containers need a positioning context
+.dashboard-tile-split-pane-container {
+  position: relative;
 }
 .dashboard-tile-response-container .splitter-layout,
 .dashboard-tile-response-container .layout-pane,
