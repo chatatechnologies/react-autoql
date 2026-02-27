@@ -1709,6 +1709,13 @@ export class DashboardTile extends React.Component {
     isExecuted,
     renderPlaceholder,
   }) => {
+    // Store toolbar props for rendering outside the inner div (in main render)
+    if (isSecondHalf) {
+      this._bottomToolbarProps = { vizToolbarProps, optionsToolbarProps, isSecondHalf }
+    } else {
+      this._topToolbarProps = { vizToolbarProps, optionsToolbarProps, isSecondHalf }
+    }
+
     return (
       <div className='loading-container-centered' id={queryOutputProps.key}>
         {this.renderResponseContent({
@@ -1718,14 +1725,20 @@ export class DashboardTile extends React.Component {
           renderPlaceholder,
           isSecondHalf,
         })}
-        {this.renderToolbars({
-          queryOutputProps,
-          vizToolbarProps,
-          optionsToolbarProps,
-          isSecondHalf,
-        })}
       </div>
     )
+  }
+
+  renderAllToolbars = () => {
+    if (this.getIsSplitView()) {
+      return (
+        <>
+          {this._topToolbarProps && this.renderToolbars(this._topToolbarProps)}
+          {this._bottomToolbarProps && this.renderToolbars(this._bottomToolbarProps)}
+        </>
+      )
+    }
+    return this._topToolbarProps ? this.renderToolbars(this._topToolbarProps) : null
   }
 
   renderTopResponse = () => {
@@ -2079,6 +2092,7 @@ export class DashboardTile extends React.Component {
               {this.renderContent()}
             </>
           </div>
+          {this.renderAllToolbars()}
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
         </div>

@@ -281,8 +281,6 @@ export default class ChataPieChart extends React.Component {
   renderPieSlices = () => {
     const self = this
 
-    const cornerRadius = Math.min(this.outerRadius * 0.05, 4) // 5% of radius, max 4px
-
     // Remove existing slices
     this.pieChartContainer.selectAll('.slice').remove()
 
@@ -293,7 +291,7 @@ export default class ChataPieChart extends React.Component {
       .enter()
       .append('path')
       .attr('class', 'slice')
-      .attr('d', arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius).cornerRadius(cornerRadius))
+      .attr('d', arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius))
       .attr('fill', (d) => d?.data?.value?.legendLabel?.color)
       .style('fill-opacity', 0.85) // Slightly transparent
       .attr('data-tooltip-id', this.props.chartTooltipID)
