@@ -12,6 +12,7 @@ import {
   isDrilldown,
   fetchLLMSummary,
   MAX_DATA_PAGE_SIZE,
+  isChartType,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
@@ -300,6 +301,61 @@ export default class ChatMessage extends React.Component {
     }, delay)
   }
 
+  // Animate scroll so the bottom of the message bubble (excluding RT) is visible
+  animatedScrollToMessageBottom = () => {
+    const container = this.props.scrollContainerRef?.getContainer?.()
+    if (!container) return
+
+    const messageElement = this.messageContainerRef
+    if (!messageElement) return
+
+    // Walk up the DOM to find the absolute offset within the scroll content
+    const scrollContent = container.querySelector('.chat-content-container')
+    if (!scrollContent) return
+
+    let messageAbsoluteTop = 0
+    let el = messageElement
+    while (el && el !== scrollContent) {
+      messageAbsoluteTop += el.offsetTop
+      el = el.offsetParent
+    }
+
+    const messageHeight = messageElement.offsetHeight
+    const containerHeight = container.clientHeight
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+
+    // Align the bottom of the message bubble with the bottom of the viewport,
+    // leaving a small gap at the top so the chat toolbars above the bubble stay visible.
+    const TOP_PADDING = 50
+    const targetScrollTop = Math.min(maxScrollTop, Math.max(0, messageAbsoluteTop + messageHeight - containerHeight - TOP_PADDING))
+
+    const startScrollTop = container.scrollTop
+    const distance = targetScrollTop - startScrollTop
+
+    if (Math.abs(distance) < 5) return
+
+    const duration = 400
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      container.scrollTop = startScrollTop + distance * easeOut
+      this.props.scrollContainerRef?.update?.()
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        container.scrollTop = targetScrollTop
+        this.props.scrollContainerRef?.update?.()
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+
   isValidConfig = (config) => {
     return config && typeof config === 'object' && !Array.isArray(config)
   }
@@ -343,7 +399,14 @@ export default class ChatMessage extends React.Component {
       this.ref.style.removeProperty('--message-height')
     }
 
-    // No scrolling on visualization change - only scroll when message is first created
+    // When switching to a chart the message grows taller — animate scroll so the
+    // bottom of the message bubble (excluding reverse translation) is visible.
+    // Delay slightly so the chart has time to render before we measure its position.
+    if (isChartType(displayType)) {
+      setTimeout(() => {
+        this.animatedScrollToMessageBottom()
+      }, 150)
+    }
   }
 
 
