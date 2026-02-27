@@ -97,13 +97,21 @@ export default class StackedLines extends PureComponent {
     )
   }
 
-  createPolygon = (i, polygonVertices, color, gradientId) => {
-    const { stringColumnIndex } = this.props
+  createPolygon = (i, polygonVertices, color, colIndex, gradientId) => {
+    const { stringColumnIndex, legendLabels, numberColumnIndices, columns } = this.props
     const polygonPoints = polygonVertices
       .map((xy) => {
         return xy.join(',')
       })
       .join(' ')
+
+    // Find the legend label that matches this column index
+    // legendLabels corresponds to numberColumnIndices, so find the index of colIndex in numberColumnIndices
+    const legendLabelIndex = numberColumnIndices?.indexOf(colIndex)
+    const legendLabel =
+      legendLabelIndex !== -1 && legendLabels?.[legendLabelIndex]?.label
+        ? legendLabels[legendLabelIndex].label
+        : columns?.[colIndex]?.display_name || `Series ${i + 1}`
 
     return (
       <polygon
@@ -112,7 +120,7 @@ export default class StackedLines extends PureComponent {
         points={polygonPoints}
         data-tooltip-html={`
             <div>
-              <strong>Field</strong>: ${this.props.legendLabels[i].label}
+              <strong>Field</strong>: ${legendLabel}
             </div>
           `}
         data-tooltip-id={this.props.chartTooltipID}
@@ -235,7 +243,7 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
-    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale, width, height } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, legendLabels, yScale, xScale, width, height } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -331,12 +339,18 @@ export default class StackedLines extends PureComponent {
           const smoothBottomEdge = reversedPrevPathD ? reversedPrevPathD.replace(/^M/, 'L') : ''
           const smoothAreaPathD = `${linePathD} ${smoothBottomEdge} Z`
 
+          const legendLabelIndex = numberColumnIndices?.indexOf(colIndex)
+          const legendLabel =
+            legendLabelIndex !== -1 && legendLabels?.[legendLabelIndex]?.label
+              ? legendLabels[legendLabelIndex].label
+              : columns?.[colIndex]?.display_name || `Series ${currentPolygonIdx + 1}`
+
           polygons.push(
             <path
               key={`area-${getKey(stringColumnIndex, currentPolygonIdx)}`}
               className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, currentPolygonIdx) ? ' active' : ''}`}
               d={smoothAreaPathD}
-              data-tooltip-html={`<div><strong>Field</strong>: ${this.props.legendLabels[currentPolygonIdx]?.label}</div>`}
+              data-tooltip-html={`<div><strong>Field</strong>: ${legendLabel}</div>`}
               data-tooltip-id={this.props.chartTooltipID}
               data-effect='float'
               data-place='bottom'
