@@ -15,6 +15,11 @@
   &.request {
     align-items: flex-end;
 
+    // Only animate on first mount (when message is newly created)
+    &.animate-on-mount {
+      animation: scale-up-br 0.5s ease;
+    }
+
     &.pwa {
       margin-bottom: 30px;
     }
@@ -34,6 +39,11 @@
   }
 
   &.response {
+    // Only animate on first mount (when message is newly created)
+    &.animate-on-mount {
+      animation: scale-up-bl 0.5s ease;
+    }
+
     &.pwa {
       margin-bottom: 15px;
       &.text {
@@ -504,5 +514,28 @@
         border-left: 3px solid var(--react-autoql-error-color, #d32f2f);
       }
     }
+  }
+}
+
+/* animations */
+@keyframes scale-up-br {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 100% 100%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 100% 100%;
+  }
+}
+
+@keyframes scale-up-bl {
+  0% {
+    transform: scale(0.5);
+    transform-origin: 0% 100%;
+  }
+  100% {
+    transform: scale(1);
+    transform-origin: 0% 100%;
   }
 }

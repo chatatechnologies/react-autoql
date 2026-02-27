@@ -35,6 +35,10 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './ChatMessage.scss'
 
 export default class ChatMessage extends React.Component {
+  // Static Set to track which message IDs have already animated
+  // This persists across component mounts/unmounts (e.g., when DM closes/reopens)
+  static animatedMessageIds = new Set()
+
   constructor(props) {
     super(props)
     this.markdownContentRef = React.createRef()
@@ -51,9 +55,16 @@ export default class ChatMessage extends React.Component {
     const originalSummary = isSummaryMessage ? this.props.content : null
     const summaryResponseData = isSummaryMessage ? (this.props.summaryResponseData || null) : null
 
+    // Check if this message has already been animated
+    const hasAnimated = ChatMessage.animatedMessageIds.has(this.props.id)
+    if (!hasAnimated) {
+      // Mark this message as animated so it won't animate again
+      ChatMessage.animatedMessageIds.add(this.props.id)
+    }
+
     this.state = {
       csvDownloadProgress: this.props.initialCSVDownloadProgress,
-      isAnimatingMessageBubble: true,
+      isAnimatingMessageBubble: !hasAnimated, // Only animate if it hasn't been animated before
       isSettingColumnVisibility: false,
       activeMenu: undefined,
       localRTFilterResponse: null,
@@ -973,6 +984,9 @@ export default class ChatMessage extends React.Component {
     const isResizable =
       this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable
 
+    // Only animate if this message hasn't been animated before
+    const shouldAnimate = this.state.isAnimatingMessageBubble
+
     return (
       <ErrorBoundary>
         <div
@@ -981,7 +995,8 @@ export default class ChatMessage extends React.Component {
 			${isMobile ? 'pwa' : ''}
 			${this.props.type === 'text' ? 'text' : ''}
 			${this.props.isActive ? 'active' : ''}
-			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
+			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
+			${shouldAnimate ? ' animate-on-mount' : ''}`}
           ref={(r) => (this.messageAndRTContainerRef = r)}
         >
           <div
