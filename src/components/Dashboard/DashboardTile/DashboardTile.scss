@@ -135,7 +135,9 @@
 
 .react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container {
   opacity: 1;
-  pointer-events: auto;
+  // Keep pointer-events: none on the container so the empty space between
+  // toolbar groups doesn't block clicks on the chart/table beneath it.
+  // Individual buttons already have pointer-events: auto via their child containers.
 }
 
 .react-autoql-dashboard .react-grid-item:hover {
