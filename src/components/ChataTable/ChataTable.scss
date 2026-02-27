@@ -73,6 +73,19 @@
       color: var(--react-autoql-text-color-primary);
     }
 
+    // Frozen (pinned) column borders/shadows — basic structure
+    .tabulator-frozen {
+      &.tabulator-frozen-left {
+        border-right: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+        box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.1);
+      }
+
+      &.tabulator-frozen-right {
+        border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+        box-shadow: -4px 0 8px -2px rgba(0, 0, 0, 0.1);
+      }
+    }
+
     // Improve touch handling on mobile devices
     @media (hover: none) and (pointer: coarse) {
       overflow: auto;
@@ -522,6 +535,29 @@
 
     .tabulator-row:hover .tabulator-cell {
       background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.09) !important;
+    }
+
+    // Frozen cells always need a solid background so they stay readable on scroll.
+    // These rules must come AFTER the even/hover rules above to win the cascade.
+    .tabulator-cell.tabulator-frozen,
+    .tabulator-row:nth-child(even) .tabulator-cell.tabulator-frozen,
+    .tabulator-row:hover .tabulator-cell.tabulator-frozen {
+      background-color: var(--react-autoql-background-color-secondary) !important;
+    }
+
+    // Match the frozen column header borders on body cells too
+    .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
+      border-right: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+    }
+
+    .tabulator-cell.tabulator-frozen.tabulator-frozen-right {
+      border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+    }
+
+    // Frozen header columns — solid background so they stay opaque when scrolling
+    .tabulator-header .tabulator-col.tabulator-frozen,
+    .tabulator-header .tabulator-col.tabulator-frozen.tabulator-sortable:hover {
+      background-color: var(--react-autoql-background-color-secondary) !important;
     }
 
     .tabulator-tableholder {
