@@ -61,6 +61,7 @@
   background-color: transparent;
   cursor: move;
   opacity: 0;
+  z-index: 4;
 
   &.top {
     top: 0;
@@ -100,20 +101,10 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
   padding: 4px 8px;
   width: 100%;
-  z-index: 1; // Below the inner div (z-index: 2) so tile covers the toolbar top
-  top: calc(100% - 12px);
   left: 0;
-  padding-top: 16px; // Extra top padding to compensate for the overlap
-
-  // Float below the tile as a subtle bar
-  background: var(--react-autoql-background-color-secondary);
-  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
-  border-radius: 0 0 12px 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 3px 8px rgba(0, 0, 0, 0.15);
 
   pointer-events: none;
   opacity: 0;
-  transform: translateY(-4px);
 
   .dashboard-tile-toolbars-right-container,
   .dashboard-tile-toolbars-left-container {
@@ -141,7 +132,30 @@
   }
 }
 
-.react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container {
+// Non-edit mode: toolbar inside the tile at the bottom (original behaviour)
+.react-autoql-dashboard-tile:not(.editing) .dashboard-tile-toolbars-container {
+  bottom: 0;
+  z-index: 3;
+}
+
+.react-autoql-dashboard-tile:not(.editing):hover .dashboard-tile-toolbars-container {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+// Edit mode: toolbar floats below the tile
+.react-autoql-dashboard-tile.editing .dashboard-tile-toolbars-container {
+  z-index: 1; // Below the inner div (z-index: 2) so tile covers the toolbar top
+  top: calc(100% - 12px);
+  padding-top: 16px; // Extra top padding to compensate for the overlap
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 3px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+.react-autoql-dashboard-tile.editing:hover .dashboard-tile-toolbars-container {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -727,7 +741,7 @@
 /* React Grid Layout overrides */
 .react-grid-item .react-resizable-handle {
   -webkit-transform: translate3d(0, 0, 0);
-  z-index: 3; // Above inner div (z-index: 2)
+  z-index: 5; // Above inner div (z-index: 2) and drag handles (z-index: 4)
   position: absolute;
   width: 16px;
   height: 16px;
