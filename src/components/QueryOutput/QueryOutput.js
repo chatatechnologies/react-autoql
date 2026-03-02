@@ -231,6 +231,7 @@ export class QueryOutput extends React.Component {
     renderSuggestionsAsDropdown: PropTypes.bool,
     defaultSelectedSuggestion: PropTypes.string,
     reverseTranslationPlacement: PropTypes.string,
+    reverseTranslationCompact: PropTypes.bool,
     activeChartElementKey: PropTypes.string,
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
@@ -315,6 +316,7 @@ export class QueryOutput extends React.Component {
     renderSuggestionsAsDropdown: false,
     defaultSelectedSuggestion: undefined,
     reverseTranslationPlacement: 'bottom',
+    reverseTranslationCompact: false,
     activeChartElementKey: undefined,
     useInfiniteScroll: undefined,
     isResizing: false,
@@ -4074,17 +4076,26 @@ export class QueryOutput extends React.Component {
           this.props.autoQLConfig?.enableEditReverseTranslation && !isDrilldown(this.queryResponse)
         }
         localRTFilterResponse={this.props.localRTFilterResponse}
+        compact={this.props.reverseTranslationCompact}
       />
     )
   }
 
   renderFooter = () => {
     const shouldRenderRT = this.shouldRenderReverseTranslation()
-    const footerClassName = `query-output-footer ${!shouldRenderRT ? 'no-margin' : ''} ${
+    const isCompact = this.props.reverseTranslationCompact
+    const footerClassName = `query-output-footer ${!shouldRenderRT || isCompact ? 'no-margin' : ''} ${
       this.props.reverseTranslationPlacement
     }`
 
-    return <div className={footerClassName}>{shouldRenderRT && this.renderReverseTranslation()}</div>
+    return <div className={footerClassName}>{shouldRenderRT && !isCompact && this.renderReverseTranslation()}</div>
+  }
+
+  renderCompactReverseTranslation = () => {
+    if (!this.shouldRenderReverseTranslation() || !this.props.reverseTranslationCompact) {
+      return null
+    }
+    return this.renderReverseTranslation()
   }
   renderResizeHandle = () => {
     const self = this
@@ -4139,6 +4150,7 @@ export class QueryOutput extends React.Component {
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
+          {this.renderCompactReverseTranslation()}
         </div>
         {!this.props.tooltipID && !this.props.isResizing && !this.props.isUserResizing && (
           <Tooltip tooltipId={this.TOOLTIP_ID} />

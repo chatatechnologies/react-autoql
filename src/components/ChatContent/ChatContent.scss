@@ -16,8 +16,32 @@
       height: 100%;
       width: 100%;
       padding-bottom: 200px;
+      // Glassmorphism: semi-transparent background with blur
       background-color: var(--react-autoql-background-color-primary);
+      backdrop-filter: blur(10px) saturate(180%);
+      -webkit-backdrop-filter: blur(10px) saturate(180%);
       overflow: hidden;
+      position: relative;
+      isolation: isolate;
+
+      // Semi-transparent overlay for glass effect
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: var(--react-autoql-background-color-primary);
+        opacity: 0.85;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      // Fallback for browsers without backdrop-filter support
+      @supports not (backdrop-filter: blur(10px)) {
+        background-color: var(--react-autoql-background-color-primary);
+        &::before {
+          opacity: 0.95;
+        }
+      }
 
       &.no-topics {
         padding-bottom: 146px;

@@ -387,6 +387,14 @@ body.react-autoql-no-select {
       padding-bottom: 1.5px;
     }
   }
+
+  // When compact, don't take up footer space
+  &.compact {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+  }
 }
 
 .report-like-text-button {

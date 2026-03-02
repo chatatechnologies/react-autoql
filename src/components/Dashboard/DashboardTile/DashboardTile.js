@@ -19,10 +19,8 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
-  QueryErrorTypes,
-  transformQueryResponse,
-  fetchSuggestions,
-  isError500Type,
+  constructRTArray,
+  titlelizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -32,6 +30,8 @@ import { QueryOutput } from '../../QueryOutput'
 import { OptionsToolbar } from '../../OptionsToolbar'
 import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
+import { ReverseTranslation } from '../../ReverseTranslation'
+import { Popover } from '../../Popover'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
@@ -125,6 +125,9 @@ export class DashboardTile extends React.Component {
         sorters: tile?.secondOrders,
         sessionFilters: tile?.filters,
       },
+      isRTHovered: false,
+      isSecondRTHovered: false,
+      currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
     }
   }
 
@@ -1136,6 +1139,9 @@ export class DashboardTile extends React.Component {
   }
 
   renderSplitResponse = () => {
+    const topContent = this.renderTopResponse()
+    const bottomContent = this.renderBottomResponse()
+
     return (
       <SplitterLayout
         key={`dashboard-tile-splitter-layout-${this.COMPONENT_KEY}`}
@@ -1156,15 +1162,18 @@ export class DashboardTile extends React.Component {
               this.debouncedSetParamsForTile({
                 secondDisplayPercentage: percentNumber,
               })
+              this.setState({ currentSplitPercent: percentNumber })
             }
 
             this.setState({ isDraggingSplitter: false })
           }, 1000)
         }}
       >
-        <div className='dashboard-tile-split-pane-container'>{this.renderTopResponse()}</div>
         <div className='dashboard-tile-split-pane-container'>
-          {this.renderBottomResponse()}
+          {topContent}
+        </div>
+        <div className='dashboard-tile-split-pane-container'>
+          {bottomContent}
           {this.props.isEditing && (
             <div
               className={`split-view-query-btn-container react-autoql-toolbar ${
@@ -1174,18 +1183,46 @@ export class DashboardTile extends React.Component {
               <div
                 className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn react-autoql-toolbar-btn'
                 data-test='split-view-query-btn'
+                style={{ position: 'relative' }}
               >
-                <Button
-                  onClick={() => this.toggleSecondQueryInput()}
-                  className='react-autoql-toolbar-btn'
-                  tooltip='Query'
-                  tooltipID={this.props.tooltipID}
-                >
-                  <div className='split-view-query-btn-icon-container'>
-                    <Icon type='react-autoql-bubbles-outlined' />
-                    <Icon type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'} />
-                  </div>
-                </Button>
+                <div className='query-input-icon-wrapper'>
+                  <Button
+                    onClick={() => this.toggleSecondQueryInput()}
+                    className='react-autoql-toolbar-btn'
+                    tooltip='Query'
+                    tooltipID={this.props.tooltipID}
+                  >
+                    <div className='split-view-query-btn-icon-container'>
+                      <Icon type='react-autoql-bubbles-outlined' />
+                      <Icon type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'} />
+                    </div>
+                  </Button>
+                  {(() => {
+                    const secondResponse = this.areTopAndBottomSameQuery()
+                      ? this.props.tile?.queryResponse
+                      : this.props.tile?.secondQueryResponse
+                    return secondResponse &&
+                      (secondResponse?.data?.data?.parsed_interpretation ||
+                        secondResponse?.data?.data?.interpretation) ? (
+                      <Popover
+                        isOpen={this.state.isSecondRTHovered}
+                        positions={['top', 'bottom']}
+                        align='start'
+                        padding={8}
+                        onClickOutside={() => this.setState({ isSecondRTHovered: false })}
+                        content={this.renderRTPopoverContent(secondResponse)}
+                      >
+                        <div
+                          className='query-input-interpretation-badge'
+                          onMouseEnter={() => this.setState({ isSecondRTHovered: true })}
+                          onMouseLeave={() => this.setState({ isSecondRTHovered: false })}
+                        >
+                          <Icon type='thinking-bubble' />
+                        </div>
+                      </Popover>
+                    ) : null
+                  })()}
+                </div>
                 <input
                   className={'dashboard-tile-input query second'}
                   value={this.state.secondQuery}
@@ -1212,12 +1249,34 @@ export class DashboardTile extends React.Component {
             ${this.state.isTitleInputFocused ? 'title-focused' : ''}`}
           >
             <div className='dashboard-tile-left-input-container'>
-              <Icon
-                className='query-input-icon'
-                type='react-autoql-bubbles-outlined'
-                tooltip='Query'
-                tooltipID={this.props.tooltipID}
-              />
+              <div className='query-input-icon-wrapper'>
+                <Icon
+                  className='query-input-icon'
+                  type='react-autoql-bubbles-outlined'
+                  tooltip='Query'
+                  tooltipID={this.props.tooltipID}
+                />
+                {this.props.tile?.queryResponse &&
+                  (this.props.tile.queryResponse?.data?.data?.parsed_interpretation ||
+                    this.props.tile.queryResponse?.data?.data?.interpretation) && (
+                    <Popover
+                      isOpen={this.state.isRTHovered}
+                      positions={['top', 'bottom']}
+                      align='start'
+                      padding={8}
+                      onClickOutside={() => this.setState({ isRTHovered: false })}
+                      content={this.renderRTPopoverContent()}
+                    >
+                      <div 
+                        className='query-input-interpretation-badge'
+                        onMouseEnter={() => this.setState({ isRTHovered: true })}
+                        onMouseLeave={() => this.setState({ isRTHovered: false })}
+                      >
+                        <Icon type='thinking-bubble' />
+                      </div>
+                    </Popover>
+                  )}
+              </div>
               {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                 <Autosuggest
                   onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -1258,6 +1317,32 @@ export class DashboardTile extends React.Component {
                   onBlur={() => this.setState({ isQueryInputFocused: false })}
                 />
               )}
+              {this.props.tile?.queryResponse && (
+                <div 
+                  className='dashboard-tile-rt-container'
+                  onMouseEnter={() => this.setState({ isRTHovered: true })}
+                  onMouseLeave={() => this.setState({ isRTHovered: false })}
+                >
+                  <ReverseTranslation
+                    authentication={this.props.authentication}
+                    queryResponse={this.props.tile.queryResponse}
+                    tooltipID={this.props.tooltipID}
+                    enableEditReverseTranslation={
+                      this.props.autoQLConfig?.enableEditReverseTranslation
+                    }
+                    compact={true}
+                    isHovered={this.state.isRTHovered}
+                  />
+                </div>
+              )}
+              <button
+                className='dashboard-tile-send-button'
+                onClick={() => this.processTile()}
+                disabled={!this.isQueryValid(this.state.query)}
+                type='button'
+              >
+                <Icon type='send' />
+              </button>
             </div>
 
             <div className='dashboard-tile-right-input-container'>
@@ -1272,8 +1357,200 @@ export class DashboardTile extends React.Component {
               />
             </div>
           </div>
-          <div className={`dashboard-tile-play-button${!this.isQueryValid(this.state.query) ? ' disabled' : ''}`}>
-            <Icon type='play' onClick={() => this.processTile()} data-tooltip-content='Run tile' data-place='left' />
+        </div>
+      )
+    }
+
+    const fullTitle = this.props.tile.title || this.props.tile.query || 'Untitled'
+    return (
+      <div className='dashboard-tile-title-container dashboard-tile-title-wrap'>
+        <span
+          ref={(r) => (this.dashboardTileTitleRef = r)}
+          className='dashboard-tile-title'
+          id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
+        >
+          {fullTitle}
+        </span>
+        <div className='dashboard-tile-title-divider'></div>
+      </div>
+    )
+  }
+
+  renderRTPopoverContent = (queryResponse) => {
+    const response = queryResponse || this.props.tile?.queryResponse
+    if (!response) return null
+
+    const parsedInterpretation = response?.data?.data?.parsed_interpretation
+    const interpretation = response?.data?.data?.interpretation
+
+    const renderChunk = (chunk) => {
+      switch (chunk?.c_type) {
+        case 'VALIDATED_VALUE_LABEL':
+        case 'VALIDATED_GROUP_BY':
+        case 'VALIDATED_SEED':
+        case 'DATE':
+        case 'TEXT':
+        case 'FILTER':
+          return chunk.eng
+        case 'SEED':
+        case 'GROUP_BY':
+        case 'PREFIX':
+          return titlelizeString(chunk.eng)
+        default:
+          return chunk.eng
+      }
+    }
+
+    const rtArray = parsedInterpretation ? constructRTArray(parsedInterpretation) : []
+
+    return (
+      <div className='react-autoql-reverse-translation-popover-content'>
+        <div className='react-autoql-reverse-translation'>
+          <div className='react-autoql-reverse-translation-header'>
+            <Icon
+              type='info'
+              data-tooltip-content={
+                'This statement reflects how your query was interpreted in order to return this data response.'
+              }
+              data-tooltip-id={this.props.tooltipID}
+            />
+            <strong> Interpreted as: </strong>
+          </div>
+          <div className='react-autoql-reverse-translation-content'>
+            {parsedInterpretation && rtArray.length > 0 ? (
+              <>
+                {rtArray.map((chunk, i) => (
+                  <div className='react-autoql-reverse-translation-chunk' key={i}>
+                    {renderChunk(chunk)}
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div>{interpretation}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  renderHeader = () => {
+    if (this.props.isEditing) {
+      return (
+        <div className='dashboard-tile-edit-wrapper'>
+          <div
+            className={`dashboard-tile-input-container
+            ${this.state.isQueryInputFocused ? 'query-focused' : ''}
+            ${this.state.isTitleInputFocused ? 'title-focused' : ''}`}
+          >
+            <div className='dashboard-tile-left-input-container'>
+              <div className='query-input-icon-wrapper'>
+                <Icon
+                  className='query-input-icon'
+                  type='react-autoql-bubbles-outlined'
+                  tooltip='Query'
+                  tooltipID={this.props.tooltipID}
+                />
+                {this.props.tile?.queryResponse &&
+                  (this.props.tile.queryResponse?.data?.data?.parsed_interpretation ||
+                    this.props.tile.queryResponse?.data?.data?.interpretation) && (
+                    <Popover
+                      isOpen={this.state.isRTHovered}
+                      positions={['top', 'bottom']}
+                      align='start'
+                      padding={8}
+                      onClickOutside={() => this.setState({ isRTHovered: false })}
+                      content={this.renderRTPopoverContent()}
+                    >
+                      <div 
+                        className='query-input-interpretation-badge'
+                        onMouseEnter={() => this.setState({ isRTHovered: true })}
+                        onMouseLeave={() => this.setState({ isRTHovered: false })}
+                      >
+                        <Icon type='thinking-bubble' />
+                      </div>
+                    </Popover>
+                  )}
+              </div>
+              {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
+                <Autosuggest
+                  onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
+                  onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+                  getSuggestionValue={this.userSelectedSuggestionHandler}
+                  suggestions={this.state.suggestions}
+                  ref={(ref) => {
+                    this.autoSuggest = ref
+                  }}
+                  renderSuggestion={(suggestion) => {
+                    return <>{suggestion.name}</>
+                  }}
+                  inputProps={{
+                    className: 'dashboard-tile-autocomplete-input',
+                    placeholder: 'Type a query in your own words',
+                    value: this.state.query,
+                    onFocus: (e) => {
+                      e.stopPropagation()
+                      this.setState({ isQueryInputFocused: true })
+                    },
+                    onChange: this.onQueryInputChange,
+                    onKeyDown: this.onQueryTextKeyDown,
+                    onBlur: () => this.setState({ isQueryInputFocused: false }),
+                  }}
+                />
+              ) : (
+                <input
+                  className='dashboard-tile-input query'
+                  placeholder='Type a query in your own words'
+                  value={this.state.query}
+                  data-tooltip-content='Query'
+                  data-tooltip-id={this.props.tooltipID}
+                  data-place='bottom'
+                  spellCheck={false}
+                  onChange={this.onQueryInputChange}
+                  onKeyDown={this.onQueryTextKeyDown}
+                  onFocus={() => this.setState({ isQueryInputFocused: true })}
+                  onBlur={() => this.setState({ isQueryInputFocused: false })}
+                />
+              )}
+              {this.props.tile?.queryResponse && (
+                <div 
+                  className='dashboard-tile-rt-container'
+                  onMouseEnter={() => this.setState({ isRTHovered: true })}
+                  onMouseLeave={() => this.setState({ isRTHovered: false })}
+                >
+                  <ReverseTranslation
+                    authentication={this.props.authentication}
+                    queryResponse={this.props.tile.queryResponse}
+                    tooltipID={this.props.tooltipID}
+                    enableEditReverseTranslation={
+                      this.props.autoQLConfig?.enableEditReverseTranslation
+                    }
+                    compact={true}
+                    isHovered={this.state.isRTHovered}
+                  />
+                </div>
+              )}
+              <button
+                className='dashboard-tile-send-button'
+                onClick={() => this.processTile()}
+                disabled={!this.isQueryValid(this.state.query)}
+                type='button'
+              >
+                <Icon type='send' />
+              </button>
+            </div>
+
+            <div className='dashboard-tile-right-input-container'>
+              <Icon className='title-input-icon' type='title' tooltip='Title' tooltipID={this.props.tooltipID} />
+              <input
+                className='dashboard-tile-input title'
+                placeholder='Add descriptive title (optional)'
+                value={this.state.title}
+                onChange={(e) => this.debounceTitleInputChange(e.target.value)}
+                onFocus={() => this.setState({ isTitleInputFocused: true })}
+                onBlur={() => this.setState({ isTitleInputFocused: false })}
+              />
+            </div>
           </div>
         </div>
       )
@@ -1310,7 +1587,7 @@ export class DashboardTile extends React.Component {
           <div className='dashboard-tile-placeholder-text'>
             {this.props.isEditing ? (
               <span>
-                To get started, enter a query and click <Icon className='play-icon' type='play' />
+                To get started, enter a query and click <Icon className='send-icon' type='send' />
               </span>
             ) : (
               <span>No query was supplied for this tile.</span>
@@ -1385,7 +1662,12 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-toolbars-left-container'>
           {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
           {this.props.isEditing && (
-            <VizToolbar {...vizToolbarProps} shouldRender={!this.props.isDragging} tooltipID={this.props.tooltipID} />
+            <VizToolbar
+              {...vizToolbarProps}
+              shouldRender={!this.props.isDragging}
+              tooltipID={this.props.tooltipID}
+              compact={true}
+            />
           )}
         </div>
         <div className='dashboard-tile-toolbars-right-container'>
@@ -1431,8 +1713,9 @@ export class DashboardTile extends React.Component {
         renderSuggestionsAsDropdown={this.props.tile.h < 4}
         enableDynamicCharting={this.props.enableDynamicCharting}
         backgroundColor={document.documentElement.style.getPropertyValue('--react-autoql-background-color-secondary')}
-        showQueryInterpretation={this.props.isEditing}
+        showQueryInterpretation={false}
         reverseTranslationPlacement='bottom'
+        reverseTranslationCompact={false}
         tooltipID={this.props.tooltipID}
         chartTooltipID={this.props.chartTooltipID}
         shouldRender={!this.props.isDragging}
@@ -1794,9 +2077,14 @@ export class DashboardTile extends React.Component {
 
   renderDeleteBtn = () => {
     return (
-      <div className='dashboard-tile-delete-button' onClick={() => this.props.deleteTile(this.props.tile.i)}>
-        <Icon style={{ fontSize: '18px' }} type='close' />
-      </div>
+      <button
+        className='dashboard-tile-delete-button'
+        onClick={() => this.props.deleteTile(this.props.tile.i)}
+        type='button'
+        aria-label='Delete tile'
+      >
+        <Icon type='close' />
+      </button>
     )
   }
 

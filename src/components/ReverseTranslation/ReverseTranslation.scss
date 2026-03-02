@@ -29,3 +29,99 @@
   height: 12px;
   transition: width 0.2s ease, height 0.2s ease;
 }
+
+.react-autoql-reverse-translation-popover-content {
+  .react-autoql-reverse-translation {
+    min-width: 500px;
+    max-width: 600px;
+    max-height: 400px;
+    padding: 16px;
+  }
+}
+
+// Compact collapsible mode for dashboard tiles
+.react-autoql-reverse-translation-container.compact {
+  position: relative;
+  margin-top: 0;
+
+  .react-autoql-reverse-translation-toggle-wrapper {
+    position: relative;
+    z-index: 1;
+  }
+
+  .react-autoql-reverse-translation-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    width: 24px;
+    height: 24px;
+    color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+    cursor: pointer;
+    transition: all 0.2s ease;
+    pointer-events: none; // Let hover work on container
+
+    .react-autoql-icon {
+      font-size: 16px;
+    }
+
+    span {
+      display: none; // Hide text, show only icon
+    }
+  }
+
+  .react-autoql-reverse-translation {
+    background: var(--react-autoql-background-color-secondary, #fff);
+    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border-radius: 8px;
+    padding: 16px;
+    min-width: 500px;
+    max-width: 600px;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: normal;
+
+    .react-autoql-reverse-translation-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+
+      strong {
+        font-weight: 500;
+      }
+
+      .react-autoql-reverse-translation-close {
+        margin-left: auto;
+        background: transparent;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.05));
+          color: var(--react-autoql-text-color-primary);
+        }
+
+        .react-autoql-icon {
+          font-size: 16px;
+        }
+      }
+    }
+
+    .react-autoql-reverse-translation-content {
+      padding-top: 4px;
+    }
+  }
+}

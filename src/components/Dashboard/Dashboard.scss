@@ -1,11 +1,12 @@
 .react-autoql-dashboard-container {
   background: transparent;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
   margin-top: -18px;
 }
 
 .react-autoql-dashboard-container.edit-mode {
+  padding-top: 11px;
   padding-bottom: 200px;
 }
 

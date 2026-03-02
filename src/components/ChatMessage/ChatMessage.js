@@ -12,6 +12,7 @@ import {
   isDrilldown,
   fetchLLMSummary,
   MAX_DATA_PAGE_SIZE,
+  isChartType,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
@@ -34,6 +35,10 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './ChatMessage.scss'
 
 export default class ChatMessage extends React.Component {
+  // Static Set to track which message IDs have already animated
+  // This persists across component mounts/unmounts (e.g., when DM closes/reopens)
+  static animatedMessageIds = new Set()
+
   constructor(props) {
     super(props)
     this.markdownContentRef = React.createRef()
@@ -50,9 +55,16 @@ export default class ChatMessage extends React.Component {
     const originalSummary = isSummaryMessage ? this.props.content : null
     const summaryResponseData = isSummaryMessage ? (this.props.summaryResponseData || null) : null
 
+    // Check if this message has already been animated
+    const hasAnimated = ChatMessage.animatedMessageIds.has(this.props.id)
+    if (!hasAnimated) {
+      // Mark this message as animated so it won't animate again
+      ChatMessage.animatedMessageIds.add(this.props.id)
+    }
+
     this.state = {
       csvDownloadProgress: this.props.initialCSVDownloadProgress,
-      isAnimatingMessageBubble: true,
+      isAnimatingMessageBubble: !hasAnimated, // Only animate if it hasn't been animated before
       isSettingColumnVisibility: false,
       activeMenu: undefined,
       localRTFilterResponse: null,
@@ -300,6 +312,61 @@ export default class ChatMessage extends React.Component {
     }, delay)
   }
 
+  // Animate scroll so the bottom of the message bubble (excluding RT) is visible
+  animatedScrollToMessageBottom = () => {
+    const container = this.props.scrollContainerRef?.getContainer?.()
+    if (!container) return
+
+    const messageElement = this.messageContainerRef
+    if (!messageElement) return
+
+    // Walk up the DOM to find the absolute offset within the scroll content
+    const scrollContent = container.querySelector('.chat-content-container')
+    if (!scrollContent) return
+
+    let messageAbsoluteTop = 0
+    let el = messageElement
+    while (el && el !== scrollContent) {
+      messageAbsoluteTop += el.offsetTop
+      el = el.offsetParent
+    }
+
+    const messageHeight = messageElement.offsetHeight
+    const containerHeight = container.clientHeight
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+
+    // Align the bottom of the message bubble with the bottom of the viewport,
+    // leaving a small gap at the top so the chat toolbars above the bubble stay visible.
+    const TOP_PADDING = 50
+    const targetScrollTop = Math.min(maxScrollTop, Math.max(0, messageAbsoluteTop + messageHeight - containerHeight - TOP_PADDING))
+
+    const startScrollTop = container.scrollTop
+    const distance = targetScrollTop - startScrollTop
+
+    if (Math.abs(distance) < 5) return
+
+    const duration = 400
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      container.scrollTop = startScrollTop + distance * easeOut
+      this.props.scrollContainerRef?.update?.()
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        container.scrollTop = targetScrollTop
+        this.props.scrollContainerRef?.update?.()
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+
   isValidConfig = (config) => {
     return config && typeof config === 'object' && !Array.isArray(config)
   }
@@ -343,7 +410,42 @@ export default class ChatMessage extends React.Component {
       this.ref.style.removeProperty('--message-height')
     }
 
-    // No scrolling on visualization change - only scroll when message is first created
+    // When switching to a chart the message grows taller — animate scroll so the
+    // bottom of the message bubble (excluding reverse translation) is visible.
+    // Delay slightly so the chart has time to render before we measure its position.
+    // Only scroll if the message is not already fully visible in the viewport.
+    if (isChartType(displayType)) {
+      setTimeout(() => {
+        const container = this.props.scrollContainerRef?.getContainer?.()
+        const messageElement = this.messageContainerRef
+        if (!container || !messageElement) return
+
+        // Check if message is already fully visible
+        const scrollTop = container.scrollTop
+        const scrollBottom = scrollTop + container.clientHeight
+        const scrollContent = container.querySelector('.chat-content-container')
+        if (!scrollContent) return
+
+        let messageAbsoluteTop = 0
+        let el = messageElement
+        while (el && el !== scrollContent) {
+          messageAbsoluteTop += el.offsetTop
+          el = el.offsetParent
+        }
+
+        const messageHeight = messageElement.offsetHeight
+        const messageBottom = messageAbsoluteTop + messageHeight
+        const TOP_PADDING = 50
+
+        // Check if message is already fully visible (with padding)
+        const isFullyVisible = messageAbsoluteTop >= scrollTop + TOP_PADDING && messageBottom <= scrollBottom
+
+        // Only scroll if not already fully visible
+        if (!isFullyVisible) {
+          this.animatedScrollToMessageBottom()
+        }
+      }, 150)
+    }
   }
 
 
@@ -910,6 +1012,9 @@ export default class ChatMessage extends React.Component {
     const isResizable =
       this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable
 
+    // Only animate if this message hasn't been animated before
+    const shouldAnimate = this.state.isAnimatingMessageBubble
+
     return (
       <ErrorBoundary>
         <div
@@ -918,7 +1023,8 @@ export default class ChatMessage extends React.Component {
 			${isMobile ? 'pwa' : ''}
 			${this.props.type === 'text' ? 'text' : ''}
 			${this.props.isActive ? 'active' : ''}
-			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
+			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
+			${shouldAnimate ? ' animate-on-mount' : ''}`}
           ref={(r) => (this.messageAndRTContainerRef = r)}
         >
           <div
