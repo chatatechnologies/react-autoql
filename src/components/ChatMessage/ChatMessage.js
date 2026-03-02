@@ -413,9 +413,37 @@ export default class ChatMessage extends React.Component {
     // When switching to a chart the message grows taller — animate scroll so the
     // bottom of the message bubble (excluding reverse translation) is visible.
     // Delay slightly so the chart has time to render before we measure its position.
+    // Only scroll if the message is not already fully visible in the viewport.
     if (isChartType(displayType)) {
       setTimeout(() => {
-        this.animatedScrollToMessageBottom()
+        const container = this.props.scrollContainerRef?.getContainer?.()
+        const messageElement = this.messageContainerRef
+        if (!container || !messageElement) return
+
+        // Check if message is already fully visible
+        const scrollTop = container.scrollTop
+        const scrollBottom = scrollTop + container.clientHeight
+        const scrollContent = container.querySelector('.chat-content-container')
+        if (!scrollContent) return
+
+        let messageAbsoluteTop = 0
+        let el = messageElement
+        while (el && el !== scrollContent) {
+          messageAbsoluteTop += el.offsetTop
+          el = el.offsetParent
+        }
+
+        const messageHeight = messageElement.offsetHeight
+        const messageBottom = messageAbsoluteTop + messageHeight
+        const TOP_PADDING = 50
+
+        // Check if message is already fully visible (with padding)
+        const isFullyVisible = messageAbsoluteTop >= scrollTop + TOP_PADDING && messageBottom <= scrollBottom
+
+        // Only scroll if not already fully visible
+        if (!isFullyVisible) {
+          this.animatedScrollToMessageBottom()
+        }
       }, 150)
     }
   }

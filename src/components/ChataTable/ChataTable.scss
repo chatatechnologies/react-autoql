@@ -65,7 +65,7 @@
     max-height: 100%;
     min-height: 140px;
     overflow: hidden;
-    border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.1)));
     border-radius: 8px;
 
     .tabulator-cell,
@@ -76,12 +76,12 @@
     // Frozen (pinned) column borders/shadows — basic structure
     .tabulator-frozen {
       &.tabulator-frozen-left {
-        border-right: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+        border-right: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
         box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.1);
       }
 
       &.tabulator-frozen-right {
-        border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+        border-left: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
         box-shadow: -4px 0 8px -2px rgba(0, 0, 0, 0.1);
       }
     }
@@ -142,13 +142,13 @@
         overflow: hidden;
       }
       .tabulator-header {
-        border-bottom: 2px solid var(--react-autoql-border-color);
+        border-bottom: 2px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
         overflow: hidden;
 
         .tabulator-header-contents {
           overflow: hidden;
           .tabulator-headers {
-            border-bottom: 2px solid var(--react-autoql-border-color);
+            border-bottom: 2px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
             .tabulator-col {
               background: transparent;
             }
@@ -204,7 +204,7 @@
       .react-autoql-table.tabulator .tabulator-header {
         border: none;
         .tabulator-headers {
-          border-bottom: 2px solid var(--react-autoql-border-color);
+          border-bottom: 2px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
         }
       }
     }
@@ -235,7 +235,7 @@
 
   .tabulator-header-filter {
     input {
-      border: 1px solid var(--react-autoql-border-color);
+      border: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
       border-radius: 4px;
       background: transparent;
       padding: 4px 16px 4px 8px !important;
@@ -398,7 +398,7 @@
     }
 
     .tabulator-header {
-      border-bottom: 1px solid var(--react-autoql-border-color);
+      border-bottom: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 
       input:placeholder-shown + .react-autoql-input-clear-btn {
@@ -547,11 +547,11 @@
 
     // Match the frozen column header borders on body cells too
     .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
-      border-right: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+      border-right: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
     }
 
     .tabulator-cell.tabulator-frozen.tabulator-frozen-right {
-      border-left: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.12)) !important;
+      border-left: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
     }
 
     // Frozen header columns — solid background so they stay opaque when scrolling
@@ -690,7 +690,7 @@
       width: 40px;
       height: 40px;
       background-color: var(--react-autoql-background-color-secondary);
-      border: 1px solid var(--react-autoql-border-color);
+      border: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
       box-shadow: var(--react-autoql-box-shadow-1);
       border-radius: 4px;
 
@@ -724,7 +724,7 @@
 // Summary row styles
 .custom-summary-row {
   flex-shrink: 0;
-  border-top: 2px solid var(--react-autoql-border-color);
+  border-top: 2px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color));
 
   // Show scrollbar on summary row
   &::-webkit-scrollbar {
