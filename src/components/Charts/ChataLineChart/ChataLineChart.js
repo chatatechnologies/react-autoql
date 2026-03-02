@@ -43,6 +43,8 @@ export default class ChataLineChart extends Component {
         ...props,
         columnIndex: props.stringColumnIndex,
         axis: 'x',
+        innerPadding: 1,
+        outerPadding: 0,
       })
     }
 

@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react'
 import { getKey, getTooltipContent } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
 export default class StackedColumns extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -13,14 +13,24 @@ export default class StackedColumns extends PureComponent {
 
   onColumnClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    // Create date drilldown filter if string axis is a DATE column
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
 
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey: newActiveKey,
+      filter, // Pass filter if date column, otherwise let QueryOutput construct it
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -47,9 +57,31 @@ export default class StackedColumns extends PureComponent {
       return null
     }
 
+    const gradientDefs = []
+    const gradientIds = new Map()
+    
+    // Create gradients for each series
+    visibleIndices.forEach((colIndex, i) => {
+      const color = this.props.colorScale(colIndex)
+      const gradientId = `stacked-column-gradient-${colIndex}-${i}`
+      gradientIds.set(colIndex, gradientId)
+      
+      // Vertical gradient for stacked columns (top to bottom)
+      gradientDefs.push(
+        <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.85" />
+          <stop offset="50%" stopColor={color} stopOpacity="0.75" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.65" />
+        </linearGradient>
+      )
+    })
+
     const stackedColumns = this.props.data.map((d, index) => {
       let prevPosValue = 0
       let prevNegValue = 0
+      const bandwidth = xScale.bandwidth()
+      const cornerRadius = Math.min(bandwidth / 2, 3) // Slight rounding for modern look
+      
       const bars = visibleIndices
         .map((colIndex) => {
           const rawValue = d[colIndex]
@@ -57,9 +89,9 @@ export default class StackedColumns extends PureComponent {
           const value = !isNaN(valueNumber) ? valueNumber : 0
           return { colIndex, value }
         })
-        .filter(({ value }) => value !== 0 && value !== null && value !== undefined) // Filter out zero/null values, keep negatives
+        .filter(({ value }) => value !== 0 && value !== null && value !== undefined)
         .map(({ colIndex, value }) => {
-          const color = this.props.colorScale(colIndex)
+          const gradientId = gradientIds.get(colIndex)
 
           let y
           let height
@@ -96,17 +128,25 @@ export default class StackedColumns extends PureComponent {
               className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
               x={xScale.getValue(d[stringColumnIndex])}
               y={y}
-              width={xScale.bandwidth()}
+              width={bandwidth}
               height={Math.abs(height)}
+              rx={cornerRadius}
+              ry={cornerRadius}
               onClick={() => this.onColumnClick(d, colIndex, index)}
               data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
-              style={{ fill: color }}
+              fill={`url(#${gradientId})`}
             />
           )
         })
       return bars
     })
-    return <g data-test='stacked-columns'>{stackedColumns}</g>
+    
+    return (
+      <g data-test='stacked-columns'>
+        <defs>{gradientDefs}</defs>
+        {stackedColumns}
+      </g>
+    )
   }
 }

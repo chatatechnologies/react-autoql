@@ -281,15 +281,19 @@ export default class ChataPieChart extends React.Component {
   renderPieSlices = () => {
     const self = this
 
+    // Remove existing slices
+    this.pieChartContainer.selectAll('.slice').remove()
+
     // build the pie chart
-    this.pieChartContainer
-      .selectAll('.slices')
+    const slices = this.pieChartContainer
+      .selectAll('.slice')
       .data(self.pieChartFn)
       .enter()
       .append('path')
       .attr('class', 'slice')
       .attr('d', arc().innerRadius(self.innerRadius).outerRadius(self.outerRadius))
       .attr('fill', (d) => d?.data?.value?.legendLabel?.color)
+      .style('fill-opacity', 0.85) // Slightly transparent
       .attr('data-tooltip-id', this.props.chartTooltipID)
       .attr('data-tooltip-html', function (d) {
         return getTooltipContent({
@@ -302,7 +306,6 @@ export default class ChataPieChart extends React.Component {
           aggregated: self.props.isAggregated,
         })
       })
-      .style('fill-opacity', 1)
       .style('cursor', function (d) {
         if (isOtherCategory(d)) {
           return 'default'
@@ -311,10 +314,10 @@ export default class ChataPieChart extends React.Component {
       .attr('stroke-width', '0.5px')
       .attr('stroke', this.props.backgroundColor)
       .on('mouseover', function (d) {
-        select(this).style('fill-opacity', 1)
+        select(this).style('fill-opacity', 1) // Fully opaque on hover
       })
       .on('mouseout', function (d) {
-        select(this).style('fill-opacity', 1)
+        select(this).style('fill-opacity', 0.85) // Back to slightly transparent
       })
       .on('click', function (e, d) {
         self.onSliceClick(d, e)

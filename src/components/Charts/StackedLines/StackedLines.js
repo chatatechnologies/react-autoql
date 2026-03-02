@@ -1,7 +1,34 @@
 import React, { PureComponent } from 'react'
-import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValue } from 'autoql-fe-utils'
+import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValue, createSVGPath } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+
+// Module-level helpers (pure, no dependencies on instance)
+const hexToRgb = (hex) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result
+    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+    : null
+}
+
+const parseRgb = (rgbStr) => {
+  const match = rgbStr.match(/\d+/g)
+  return match && match.length >= 3
+    ? { r: parseInt(match[0], 10), g: parseInt(match[1], 10), b: parseInt(match[2], 10) }
+    : null
+}
+
+const getLabelThemeColors = (backgroundColor) => {
+  let rgb = hexToRgb(backgroundColor)
+  if (!rgb && backgroundColor?.includes('rgb')) rgb = parseRgb(backgroundColor)
+  rgb = rgb || { r: 255, g: 255, b: 255 }
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
+  return luminance > 0.5
+    ? { textFill: '#000', textStroke: '#fff' }
+    : { textFill: '#fff', textStroke: '#000' }
+}
+
+const HOVER_LABEL_TEXT_STYLE = { fontWeight: 500 }
 
 export default class StackedLines extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -14,14 +41,24 @@ export default class StackedLines extends PureComponent {
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    // Create date drilldown filter if string axis is a DATE column
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
 
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey: newActiveKey,
+      filter, // Pass filter if date column, otherwise let QueryOutput construct it
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -60,8 +97,8 @@ export default class StackedLines extends PureComponent {
     )
   }
 
-  createPolygon = (i, polygonVertices, color, colIndex) => {
-    const { stringColumnIndex, legendLabels, numberColumnIndices } = this.props
+  createPolygon = (i, polygonVertices, color, colIndex, gradientId) => {
+    const { stringColumnIndex, legendLabels, numberColumnIndices, columns } = this.props
     const polygonPoints = polygonVertices
       .map((xy) => {
         return xy.join(',')
@@ -70,10 +107,11 @@ export default class StackedLines extends PureComponent {
 
     // Find the legend label that matches this column index
     // legendLabels corresponds to numberColumnIndices, so find the index of colIndex in numberColumnIndices
-    const legendLabelIndex = numberColumnIndices.indexOf(colIndex)
-    const legendLabel = legendLabelIndex !== -1 && legendLabels[legendLabelIndex] 
-      ? legendLabels[legendLabelIndex].label 
-      : (this.props.columns[colIndex]?.display_name || `Series ${i + 1}`)
+    const legendLabelIndex = numberColumnIndices?.indexOf(colIndex)
+    const legendLabel =
+      legendLabelIndex !== -1 && legendLabels?.[legendLabelIndex]?.label
+        ? legendLabels[legendLabelIndex].label
+        : columns?.[colIndex]?.display_name || `Series ${i + 1}`
 
     return (
       <polygon
@@ -88,7 +126,7 @@ export default class StackedLines extends PureComponent {
         data-tooltip-id={this.props.chartTooltipID}
         data-effect='float'
         data-place='bottom'
-        style={{ fill: color }}
+        fill={gradientId ? `url(#${gradientId})` : color}
         onMouseEnter={() => this.setState({ hoveredPolygonIndex: i })}
         onMouseLeave={() => this.setState({ hoveredPolygonIndex: null })}
       />
@@ -205,7 +243,7 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
-    const { columns, numberColumnIndices, stringColumnIndex, yScale, xScale, width, height } = this.props
+    const { columns, numberColumnIndices, stringColumnIndex, legendLabels, yScale, xScale, width, height } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
       return !columns[colIndex].isSeriesHidden
@@ -215,7 +253,24 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
+    // Build gradient defs for each visible series (vertical, top-to-bottom depth effect)
+    const gradientDefs = []
+    const gradientIds = new Map()
+    visibleSeries.forEach((colIndex) => {
+      const color = this.props.colorScale(colIndex)
+      const gradientId = `stacked-area-gradient-${colIndex}`
+      gradientIds.set(colIndex, gradientId)
+      gradientDefs.push(
+        <linearGradient key={gradientId} id={gradientId} x1='0%' y1='0%' x2='0%' y2='100%'>
+          <stop offset='0%' stopColor={color} stopOpacity='0.55' />
+          <stop offset='50%' stopColor={color} stopOpacity='0.35' />
+          <stop offset='100%' stopColor={color} stopOpacity='0.15' />
+        </linearGradient>,
+      )
+    })
+
     const polygons = []
+    const linePaths = [] // smooth stroke lines along top edge of each layer
     const polygonVertexDots = []
     const hoverDots = []
     const hoverLabelsData = [] // Store label data for overlap detection
@@ -272,10 +327,50 @@ export default class StackedLines extends PureComponent {
           }
         })
 
-        // Add polygon to list
-        const reversedPrevVertices = prevPolygonVertices.reverse()
-        const polygon = reversedPrevVertices.concat(currentPolygonVertices)
-        polygons.push(this.createPolygon(currentPolygonIdx, polygon, color, colIndex))
+        const gradientId = gradientIds.get(colIndex)
+
+        // Build smooth line path for the top edge
+        const linePathD = createSVGPath(currentPolygonVertices, 0.2)
+        if (linePathD) {
+          // Area fill: same smooth top edge + smooth bottom edge (reversed prev layer)
+          // Replace the leading "M" with "L" so we line-to the start of the reversed bottom edge
+          const reversedPrevVertices = [...prevPolygonVertices].reverse()
+          const reversedPrevPathD = createSVGPath(reversedPrevVertices, 0.2)
+          const smoothBottomEdge = reversedPrevPathD ? reversedPrevPathD.replace(/^M/, 'L') : ''
+          const smoothAreaPathD = `${linePathD} ${smoothBottomEdge} Z`
+
+          const legendLabelIndex = numberColumnIndices?.indexOf(colIndex)
+          const legendLabel =
+            legendLabelIndex !== -1 && legendLabels?.[legendLabelIndex]?.label
+              ? legendLabels[legendLabelIndex].label
+              : columns?.[colIndex]?.display_name || `Series ${currentPolygonIdx + 1}`
+
+          polygons.push(
+            <path
+              key={`area-${getKey(stringColumnIndex, currentPolygonIdx)}`}
+              className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, currentPolygonIdx) ? ' active' : ''}`}
+              d={smoothAreaPathD}
+              data-tooltip-html={`<div><strong>Field</strong>: ${legendLabel}</div>`}
+              data-tooltip-id={this.props.chartTooltipID}
+              data-effect='float'
+              data-place='bottom'
+              fill={gradientId ? `url(#${gradientId})` : color}
+              onMouseEnter={() => this.setState({ hoveredPolygonIndex: currentPolygonIdx })}
+              onMouseLeave={() => this.setState({ hoveredPolygonIndex: null })}
+            />,
+          )
+
+          linePaths.push(
+            <path
+              key={`stacked-line-path-${colIndex}`}
+              className='line'
+              d={linePathD}
+              fill='none'
+              stroke={color}
+              strokeWidth={2}
+            />,
+          )
+        }
 
         prevValues = currentValues
         prevPolygonVertices = currentPolygonVertices
@@ -302,7 +397,9 @@ export default class StackedLines extends PureComponent {
 
     return (
       <g data-test='stacked-lines'>
+        <defs>{gradientDefs}</defs>
         {polygons}
+        {linePaths}
         {polygonVertexDots}
         <g className='stacked-area-hover-dots' style={{ pointerEvents: 'none' }}>
           {hoverDots}
@@ -310,51 +407,12 @@ export default class StackedLines extends PureComponent {
         {this.state.hoveredPolygonIndex !== null && visibleLabels.length > 0 && (
           <g className='stacked-area-hover-labels' style={{ pointerEvents: 'none' }}>
             {visibleLabels.map((label) => {
-              // Detect light/dark mode by checking background color
               const backgroundColor = this.props.backgroundColor || getThemeValue('background-color-secondary') || '#fff'
-              
-              // Helper to convert hex to RGB
-              const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-                return result ? {
-                  r: parseInt(result[1], 16),
-                  g: parseInt(result[2], 16),
-                  b: parseInt(result[3], 16)
-                } : null
-              }
-              
-              // Helper to parse rgb/rgba strings
-              const parseRgb = (rgbStr) => {
-                const match = rgbStr.match(/\d+/g)
-                if (match && match.length >= 3) {
-                  return {
-                    r: parseInt(match[0], 10),
-                    g: parseInt(match[1], 10),
-                    b: parseInt(match[2], 10)
-                  }
-                }
-                return null
-              }
-              
-              // Get RGB values
-              let rgb = hexToRgb(backgroundColor)
-              if (!rgb && backgroundColor.includes('rgb')) {
-                rgb = parseRgb(backgroundColor)
-              }
-              // Default to white if we can't parse
-              rgb = rgb || { r: 255, g: 255, b: 255 }
-              
-              // Calculate relative luminance (simplified)
-              const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
-              const isLightMode = luminance > 0.5
-              
-              // Set colors based on theme
-              const textFill = isLightMode ? '#000' : '#fff'
-              const textStroke = isLightMode ? '#fff' : '#000'
-              
+              const { textFill, textStroke } = getLabelThemeColors(backgroundColor)
+
               return (
                 <g key={`hover-label-${label.polygonIndex}-${label.vertexIndex}`}>
-                  {/* Text with stroke for readability on any background */}
+                  {/* Stroke pass — creates a readable halo on any background */}
                   <text
                     x={label.x}
                     y={label.y}
@@ -367,24 +425,18 @@ export default class StackedLines extends PureComponent {
                     strokeLinejoin='round'
                     strokeLinecap='round'
                     paintOrder='stroke'
-                    style={{
-                      opacity: 1,
-                      fontWeight: 500,
-                    }}
+                    style={HOVER_LABEL_TEXT_STYLE}
                   >
                     {label.text}
                   </text>
-                  {/* Text on top (without stroke) */}
+                  {/* Fill pass — rendered on top for crisp edges */}
                   <text
                     x={label.x}
                     y={label.y}
                     textAnchor='middle'
                     fontSize='11'
                     fill={textFill}
-                    style={{
-                      opacity: 1,
-                      fontWeight: 500,
-                    }}
+                    style={HOVER_LABEL_TEXT_STYLE}
                   >
                     {label.text}
                   </text>

@@ -512,6 +512,18 @@ export default class ChataTable extends React.Component {
       return
     }
 
+    // Enrich filters: sanitize BETWEEN values and add column_type
+    const sanitizedFilters = (tableParamsFormatted?.filters || []).map((filter) => {
+      const column = this.props.columns?.find((col) => col.name === filter.name)
+      return {
+        ...filter,
+        ...(filter?.operator === 'between' && typeof filter?.value === 'string'
+          ? { value: filter.value.replace(/^(?:\(+|\)+)$/g, '') }
+          : {}),
+        ...(column?.type ? { column_type: column.type } : {}),
+      }
+    })
+
     try {
       await runQueryOnly({
         ...getAuthentication(this.props.authentication),
@@ -519,7 +531,7 @@ export default class ChataTable extends React.Component {
         query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
         orders: tableParamsFormatted?.sorters,
-        tableFilters: tableParamsFormatted?.filters,
+        tableFilters: sanitizedFilters,
         source: 'data_messenger',
         allowSuggestions: false,
       }).then((response) => {
@@ -1770,7 +1782,6 @@ export default class ChataTable extends React.Component {
         const totalRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(
           this.props.response?.data?.data?.count_rows,
         )
-        const totalPivotRowsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalRows)
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 

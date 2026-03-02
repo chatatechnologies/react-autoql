@@ -258,9 +258,6 @@ export default class ChataChart extends React.Component {
         this.setState({ visibleLegendLabels: null })
       }
 
-      // Clear sortedNumberColumnIndicesForStacked when columns change (it will be recalculated in getData)
-      this.sortedNumberColumnIndicesForStacked = null
-
       // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
       // The Legend component will automatically load the appropriate filter when the legend column changes
     }
@@ -313,16 +310,7 @@ export default class ChataChart extends React.Component {
     const isStackedChart =
       this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR || this.props.type === DisplayTypes.STACKED_LINE
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
-      // Filter sorted indices to only include those that exist in the current columns array
-      // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
-      const columns = this.sortedColumnsForHeatmap || this.props.columns
-      const filteredIndices = this.sortedNumberColumnIndicesForStacked.filter(
-        (colIndex) => columns?.[colIndex] !== undefined
-      )
-      // Only use filtered indices if we have valid ones, otherwise fall back to props
-      if (filteredIndices.length > 0) {
-        numberColumnIndices = filteredIndices
-      }
+      numberColumnIndices = this.sortedNumberColumnIndicesForStacked
     }
 
     // Use all column indices (including hidden ones via isSeriesHidden) for the base color scale
@@ -803,7 +791,7 @@ export default class ChataChart extends React.Component {
     const isStackedChart =
       this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR || this.props.type === DisplayTypes.STACKED_LINE
     let numberColumnIndices = this.props.numberColumnIndices
-    
+
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       // Filter sorted indices to only include those that exist in the current columns array
       // This prevents errors when columns change (e.g., when legend column changes in pivot tables)
@@ -1317,6 +1305,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}

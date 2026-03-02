@@ -3,8 +3,8 @@
   flex-wrap: nowrap;
   flex-direction: row;
   background: inherit;
-  padding: 5px;
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 25px;
   line-height: 28px;
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
@@ -35,6 +35,62 @@
     display: flex;
     align-items: center;
   }
+}
+
+.options-toolbar-summary-dropdown-popover {
+  z-index: 10000;
+}
+
+.options-toolbar-summary-dropdown-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 320px;
+  max-width: 400px;
+  padding: 12px;
+}
+
+.options-toolbar-summary-dropdown-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.options-toolbar-summary-dropdown-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--react-autoql-text-color-primary);
+  margin: 0;
+}
+
+.options-toolbar-summary-dropdown-description {
+  font-size: 13px;
+  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+  margin: 0;
+  line-height: 1.4;
+}
+
+.options-toolbar-summary-dropdown-input-group {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: nowrap;
+
+  .react-autoql-input-and-label-container {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.options-toolbar-summary-focus-error {
+  font-size: 13px;
+  color: var(--react-autoql-error-color, #d32f2f);
+  margin-top: 0;
+  padding: 8px 12px;
+  background-color: var(--react-autoql-error-background-color, rgba(211, 47, 47, 0.1));
+  border-radius: 4px;
+  border-left: 3px solid var(--react-autoql-error-color, #d32f2f);
 }
 
 .report-problem-modal-body {

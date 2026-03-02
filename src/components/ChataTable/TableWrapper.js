@@ -28,7 +28,7 @@ export default class TableWrapper extends React.Component {
       minHeight: 100,
       reactiveData: false,
       autoResize: this.props.isDrilldown ? false : this.props.scope === 'dashboards' ? true : false,
-      rowHeight: 25,
+      rowHeight: 36,
       layout: this.props.isDrilldown ? 'fitDataFill' : this.props.scope === 'dashboards' ? 'fitColumns' : 'fitDataFill',
       clipboard: true,
       columnGroups: this.props.pivot, // Enable column groups for pivot tables to support grouped headers
