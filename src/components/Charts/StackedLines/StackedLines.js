@@ -245,28 +245,22 @@ export default class StackedLines extends PureComponent {
 
     const { columns, numberColumnIndices, stringColumnIndex, legendLabels, yScale, xScale, width, height } = this.props
 
-    const visibleSeries = numberColumnIndices.filter((colIndex) => {
-      return !columns[colIndex].isSeriesHidden
-    })
-
-    if (!visibleSeries.length) {
-      return null
-    }
-
     // Build gradient defs for each visible series (vertical, top-to-bottom depth effect)
     const gradientDefs = []
     const gradientIds = new Map()
-    visibleSeries.forEach((colIndex) => {
-      const color = this.props.colorScale(colIndex)
-      const gradientId = `stacked-area-gradient-${colIndex}`
-      gradientIds.set(colIndex, gradientId)
-      gradientDefs.push(
-        <linearGradient key={gradientId} id={gradientId} x1='0%' y1='0%' x2='0%' y2='100%'>
-          <stop offset='0%' stopColor={color} stopOpacity='0.55' />
-          <stop offset='50%' stopColor={color} stopOpacity='0.35' />
-          <stop offset='100%' stopColor={color} stopOpacity='0.15' />
-        </linearGradient>,
-      )
+    numberColumnIndices.forEach((colIndex, i) => {
+      if (!columns[colIndex].isSeriesHidden) {
+        const color = this.props.colorScale(colIndex)
+        const gradientId = `stacked-area-gradient-${this.props.chartTooltipID || 'default'}-${colIndex}-${i}`
+        gradientIds.set(colIndex, gradientId)
+        gradientDefs.push(
+          <linearGradient key={gradientId} id={gradientId} x1='0%' y1='0%' x2='0%' y2='100%'>
+            <stop offset='0%' stopColor={color} stopOpacity='0.55' />
+            <stop offset='50%' stopColor={color} stopOpacity='0.35' />
+            <stop offset='100%' stopColor={color} stopOpacity='0.15' />
+          </linearGradient>,
+        )
+      }
     })
 
     const polygons = []
@@ -327,8 +321,6 @@ export default class StackedLines extends PureComponent {
           }
         })
 
-        const gradientId = gradientIds.get(colIndex)
-
         // Build smooth line path for the top edge
         const linePathD = createSVGPath(currentPolygonVertices, 0.2)
         if (linePathD) {
@@ -339,6 +331,7 @@ export default class StackedLines extends PureComponent {
           const smoothBottomEdge = reversedPrevPathD ? reversedPrevPathD.replace(/^M/, 'L') : ''
           const smoothAreaPathD = `${linePathD} ${smoothBottomEdge} Z`
 
+          const gradientId = gradientIds.get(colIndex)
           const legendLabelIndex = numberColumnIndices?.indexOf(colIndex)
           const legendLabel =
             legendLabelIndex !== -1 && legendLabels?.[legendLabelIndex]?.label
