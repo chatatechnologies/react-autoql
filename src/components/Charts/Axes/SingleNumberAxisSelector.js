@@ -14,8 +14,10 @@ export default class SingleNumberAxisSelector extends React.Component {
   }
 
   renderSelectorContent = ({ position, childRect, popoverRect }) => {
-    const { hidden, scale, columns } = this.props
-    if (hidden || !scale || !columns) {
+    const { hidden, scale, columns, originalColumns } = this.props
+
+    const cols = originalColumns ?? columns
+    if (hidden || !scale || !cols) {
       return null
     }
 
@@ -34,7 +36,7 @@ export default class SingleNumberAxisSelector extends React.Component {
       maxHeight = Window.innerHeight
     }
 
-    const filteredColumns = columns.filter((col) => col.is_visible)
+    const filteredColumns = cols.filter((col) => col.is_visible)
 
     return (
       <div
@@ -52,15 +54,17 @@ export default class SingleNumberAxisSelector extends React.Component {
               {filteredColumns
                 .filter((col) => isColumnNumberType(col))
                 .map((col) => {
-                  const colIndex = columns.find((origColumn) => origColumn.id === col.id)?.index
-
+                  const scaleOrigColumn = scale.column?.origColumn ?? scale.column
+                  const colIndex = scaleOrigColumn?.index
+                  const isActive = col.index === colIndex
+                  
                   return (
                     <li
-                      className={`string-select-list-item ${col.id === scale.column?.id ? 'active' : ''}`}
+                      className={`string-select-list-item ${isActive ? 'active' : ''}`}
                       key={`string-column-select-${col.id}`}
                       onClick={() => {
                         this.props.closeSelector()
-                        scale.changeColumnIndices([colIndex])
+                        scale.changeColumnIndices([col.index])
                       }}
                     >
                       {col.display_name}

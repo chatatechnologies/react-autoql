@@ -99,6 +99,8 @@ class DashboardWithoutTheme extends React.Component {
     slicerSuggestion: PropTypes.string,
     importedSlicer: PropTypes.shape({}),
     initialSlice: PropTypes.shape({}),
+    enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -119,6 +121,7 @@ class DashboardWithoutTheme extends React.Component {
     cancelQueriesOnUnmount: false,
     showToolbar: false,
     refreshInterval: 60,
+    enableCyclicalDates: false,
     onErrorCallback: () => {},
     onSuccessCallback: () => {},
     onChange: () => {},
@@ -134,6 +137,7 @@ class DashboardWithoutTheme extends React.Component {
     dashboardId: undefined,
     enableAutoRefresh: false,
     slicerSuggestion: undefined,
+    enableMagicWand: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -903,6 +907,8 @@ class DashboardWithoutTheme extends React.Component {
             dashboardId={this.props.dashboardId}
             tileKey={tile.key}
             useInfiniteScroll={!this.props.offline}
+            enableCyclicalDates={this.props.enableCyclicalDates}
+            enableMagicWand={this.props.enableMagicWand}
           />
         ))}
       </ReactGridLayout>
@@ -990,6 +996,8 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             onPNGDownloadFinish={this.props.onPNGDownloadFinish}
             source={this.SOURCE}
+            enableCyclicalDates={this.props.enableCyclicalDates}
+            enableMagicWand={this.props.enableMagicWand}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />

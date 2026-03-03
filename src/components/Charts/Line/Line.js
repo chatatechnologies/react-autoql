@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react'
 import { getThemeValue, createSVGPath, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
 export default class Line extends PureComponent {
   constructor(props) {
@@ -11,6 +11,8 @@ export default class Line extends PureComponent {
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
+      hoveredKey: null,
+      hoveredVertex: null, // { x, y } coordinates of hovered vertex
     }
   }
 
@@ -19,14 +21,24 @@ export default class Line extends PureComponent {
 
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    // Create date drilldown filter if string axis is a DATE column
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
 
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey: newActiveKey,
+      filter, // Pass filter if date column, otherwise let QueryOutput construct it
     })
 
     this.setState({ activeKey: newActiveKey })
@@ -40,6 +52,14 @@ export default class Line extends PureComponent {
 
     const innerCircles = []
     const paths = []
+    const gradientAreas = []
+    const hoverLines = []
+
+    // Get visible series for gradient fill (now supports multi-series)
+    const visibleSeries = numberColumnIndices.filter((colIndex) => !columns[colIndex]?.isSeriesHidden)
+    
+    // Get bottom of chart for hover line (yScale domain[0] is the minimum value, which maps to bottom)
+    const bottomY = yScale(yScale.domain()[0])
 
     numberColumnIndices.forEach((colIndex, i) => {
       let vertices = []
@@ -123,7 +143,7 @@ export default class Line extends PureComponent {
                 strokeWidth: 4,
                 paintOrder: 'stroke',
                 color: color,
-                opacity: largeDataset ? 0 : 1,
+                opacity: 0, // Hide dots by default, show on hover
                 fill: this.state.activeKey === key ? color : backgroundColor || '#fff',
               }}
             />
@@ -131,9 +151,11 @@ export default class Line extends PureComponent {
 
           innerCircles.push(
             <g
-              className={`line-dot${this.state.activeKey === key ? ' active' : ''}${largeDataset ? ' hidden-dot' : ''}`}
+              className={`line-dot${this.state.activeKey === key ? ' active' : ''}${this.state.hoveredKey === key ? ' hovered' : ''}${largeDataset ? ' hidden-dot' : ''}`}
               key={`circle-group-${key}`}
               onClick={() => this.onDotClick(d, colIndex, index)}
+              onMouseEnter={() => this.setState({ hoveredKey: key, hoveredVertex: { x, y, color } })}
+              onMouseLeave={() => this.setState({ hoveredKey: null, hoveredVertex: null })}
               data-tooltip-html={tooltip}
               data-tooltip-id={this.props.chartTooltipID}
             >
@@ -158,9 +180,68 @@ export default class Line extends PureComponent {
       )
 
       paths.push(path)
+
+      // Add gradient area fill for all series (single and multi-series)
+      if (vertices.length > 0) {
+        // Get the bottom of the chart (yScale domain max - the minimum value)
+        const bottomY = yScale(yScale.domain()[0])
+        
+        // Create area path: start from bottom-left, follow the smoothed line path, then close back
+        const firstX = vertices[0][0]
+        const firstY = vertices[0][1]
+        const lastX = vertices[vertices.length - 1][0]
+        
+        // The path `d` contains the full smoothed line path like "M x,y C ..." or "M x,y L ..."
+        // Extract everything after the initial "M x,y " command to get the curve/line commands
+        // Split by spaces and skip first two tokens ("M" and coordinates), then rejoin
+        const pathParts = d.trim().split(/\s+/)
+        const linePathCommands = pathParts.length > 2 ? pathParts.slice(2).join(' ') : ''
+        
+        // Build area path: start at bottom-left, line to first vertex, follow line path, close
+        const areaPath = `M${firstX},${bottomY} L${firstX},${firstY} ${linePathCommands} L${lastX},${bottomY} Z`
+        
+        const gradientId = `line-gradient-${colIndex}-${i}-${pathIndex}`
+        
+        gradientAreas.push(
+          <g key={`gradient-area-${getKey(0, i, pathIndex)}`}>
+            <defs>
+              <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                <stop offset="50%" stopColor={color} stopOpacity="0.15" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.05" />
+              </linearGradient>
+            </defs>
+            <path
+              className='line-gradient-area'
+              d={areaPath}
+              fill={`url(#${gradientId})`}
+              stroke='none'
+            />
+          </g>
+        )
+      }
     })
 
-    return { paths, innerCircles }
+    // Add dashed vertical line for hovered vertex (render once, not per series)
+    if (this.state.hoveredKey && this.state.hoveredVertex) {
+      hoverLines.push(
+        <line
+          key={`hover-line-${this.state.hoveredKey}`}
+          className='line-hover-indicator'
+          x1={this.state.hoveredVertex.x}
+          y1={this.state.hoveredVertex.y}
+          x2={this.state.hoveredVertex.x}
+          y2={bottomY}
+          stroke={this.state.hoveredVertex.color}
+          strokeWidth={1}
+          strokeDasharray="4,4"
+          opacity={0.5}
+          pointerEvents="none"
+        />
+      )
+    }
+
+    return { paths, innerCircles, gradientAreas, hoverLines }
   }
 
   render = () => {
@@ -177,11 +258,13 @@ export default class Line extends PureComponent {
       return null
     }
 
-    const { paths, innerCircles } = this.makeChartElements()
+    const { paths, innerCircles, gradientAreas, hoverLines } = this.makeChartElements()
 
     return (
       <g data-test='line'>
+        {gradientAreas}
         {paths}
+        {hoverLines}
         {innerCircles}
       </g>
     )

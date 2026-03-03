@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.filter'
@@ -41,12 +41,17 @@ const ReverseTranslation = ({
   allowColumnAddition = false,
   enableEditReverseTranslation = false,
   localRTFilterResponse,
+  compact = false,
+  isHovered: externalIsHovered = undefined,
 }) => {
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
   const initialParsedInterpretations = useRef()
   const validatedParsedInterpretations = useRef(null)
   const [log, setLog] = useState([])
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [internalIsHovered, setInternalIsHovered] = useState(false)
+  const isHovered = externalIsHovered !== undefined ? externalIsHovered : internalIsHovered
 
   const initialReverseTranslationArray =
     termId && queryResponse?.data?.parsed_interpretations
@@ -543,6 +548,7 @@ const ReverseTranslation = ({
   const hasInterpretationArray = !!reverseTranslationArray?.length
   const hasTextInterpretation = !!queryResponse?.data?.data?.interpretation
 
+
   if (!hasInterpretationArray && !hasTextInterpretation) {
     return null
   }
@@ -551,6 +557,26 @@ const ReverseTranslation = ({
     <ErrorBoundary>
       {textOnly ? (
         <span>{getText()}</span>
+      ) : compact ? (
+        // In compact mode, content is rendered via Popover in DashboardTile
+        // This just renders the toggle button (hidden) for the RT container hover
+        <div
+          id={COMPONENT_KEY.current}
+          className='react-autoql-reverse-translation-container compact'
+          data-test='react-autoql-reverse-translation-container'
+          onMouseEnter={() => externalIsHovered === undefined && setInternalIsHovered(true)}
+          onMouseLeave={() => externalIsHovered === undefined && setInternalIsHovered(false)}
+        >
+          <div className='react-autoql-reverse-translation-toggle-wrapper'>
+            <button
+              className='react-autoql-reverse-translation-toggle'
+              type='button'
+            >
+              <Icon type='info' />
+              <span>View interpretation</span>
+            </button>
+          </div>
+        </div>
       ) : (
         <>
           <div
@@ -607,6 +633,8 @@ ReverseTranslation.propTypes = {
   queryResponseRef: PropTypes.shape({}),
   allowColumnAddition: PropTypes.bool,
   localRTFilterResponse: PropTypes.shape({}),
+  compact: PropTypes.bool,
+  isHovered: PropTypes.bool,
 }
 
 export default ReverseTranslation

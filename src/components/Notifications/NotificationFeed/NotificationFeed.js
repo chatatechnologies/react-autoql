@@ -91,6 +91,8 @@ class NotificationFeed extends React.Component {
     notificationTitle: PropTypes.string,
     showSelectNotificationsButton: PropTypes.bool,
     onConfirmCallback: PropTypes.func,
+    enableCyclicalDates: PropTypes.bool,
+    enableMagicWand: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -112,6 +114,7 @@ class NotificationFeed extends React.Component {
     selectedProjectName: this.ALL_PROJECTS,
     notificationTitle: '',
     showSelectNotificationsButton: true,
+    enableCyclicalDates: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -822,6 +825,7 @@ class NotificationFeed extends React.Component {
                           onDeleteSuccessCallback={() => {
                             this.props.onChange(this.state.notificationList)
                           }}
+                          enableCyclicalDates={this.props.enableCyclicalDates}
                           onExpandCallback={this.onNotificationExpand}
                           onCollapseCallback={this.onNotificationCollapse}
                           autoChartAggregations={this.props.autoChartAggregations}
@@ -837,6 +841,7 @@ class NotificationFeed extends React.Component {
                           chartTooltipID={this.props.chartTooltipID ?? this.CHART_TOOLTIP_ID}
                           enableFilterBtn={this.props.enableFilterBtn}
                           enableCustomColumns={this.props.enableCustomColumns}
+                          enableMagicWand={this.props.enableMagicWand}
                         />
                       </div>
                     )

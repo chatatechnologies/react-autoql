@@ -37,8 +37,9 @@
   display: flex;
   flex-direction: row;
   background: inherit;
-  padding: 5px;
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 25px;
+  margin-right: 5px;
   line-height: 28px;
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
@@ -75,6 +76,78 @@
 
   .react-autoql-toolbar-btn:hover {
     opacity: 0.7;
+  }
+}
+
+/* Compact viz toolbar – single trigger that slides open to the right */
+.viz-toolbar.viz-toolbar-compact {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  overflow: hidden;
+  // closed width = trigger button only (~52px for icon + caret + padding)
+  // open width is handled by the panel expanding
+  flex-wrap: nowrap;
+
+  .viz-toolbar-compact-trigger {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 28px;
+    padding: 0 4px 0 2px;
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: var(--react-autoql-accent-color);
+    flex-shrink: 0;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+
+  .viz-toolbar-compact-current-icon {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
+    justify-content: center;
+  }
+
+  .viz-toolbar-compact-caret {
+    display: flex;
+    align-items: center;
+    font-size: 10px;
+    color: var(--react-autoql-text-color-placeholder);
+    transition: transform 0.25s ease;
+  }
+
+  // Sliding panel containing all buttons
+  .viz-toolbar-compact-panel {
+    max-width: 0;
+    overflow: hidden;
+    transition: max-width 0.3s ease;
+  }
+
+  .viz-toolbar-compact-panel-inner {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 4px;
+    border-left: 1px solid var(--react-autoql-border-color);
+  }
+
+  // Open state
+  &.open {
+    .viz-toolbar-compact-caret {
+      transform: rotate(90deg);
+    }
+
+    .viz-toolbar-compact-panel {
+      max-width: 500px; // large enough for all buttons
+    }
   }
 }
 

@@ -35,8 +35,19 @@ export default class HistogramColumns extends Component {
     }
 
     const color = getChartColorVars()?.chartColors?.[0]
+    const gradientId = `histogram-gradient-${this.props.chartTooltipID || 'default'}`
+    const gradientDefs = []
 
-    return this.props.buckets.map((d, index) => {
+    // Create vertical gradient for histogram bars (top to bottom) - matching column charts
+    gradientDefs.push(
+      <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor={color} stopOpacity="0.9" />
+        <stop offset="50%" stopColor={color} stopOpacity="0.7" />
+        <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+      </linearGradient>
+    )
+
+    const bars = this.props.buckets.map((d, index) => {
       if (!d) {
         return null
       }
@@ -62,6 +73,8 @@ export default class HistogramColumns extends Component {
       <div><strong>Count:</strong> ${d.length}</div>`
 
       const key = getKey(index)
+      // Round corners - use smaller of width/height for radius, but cap at 4px
+      const cornerRadius = Math.min(Math.min(width, height) / 2, 4)
 
       return (
         <rect
@@ -72,13 +85,17 @@ export default class HistogramColumns extends Component {
           y={y}
           height={height}
           width={width}
+          rx={cornerRadius}
+          ry={cornerRadius}
           onClick={() => this.onColumnClick(d.x0, d.x1, index)}
           data-tooltip-html={tooltip}
           data-tooltip-id={this.props.chartTooltipID}
-          style={{ fill: color }}
+          fill={`url(#${gradientId})`}
         />
       )
     })
+
+    return { bars, defs: gradientDefs }
   }
 
   render = () => {
@@ -86,8 +103,13 @@ export default class HistogramColumns extends Component {
       return null
     }
 
-    const bars = this.getBars()
+    const { bars, defs } = this.getBars() || { bars: [], defs: [] }
 
-    return <g data-test='columns'>{bars}</g>
+    return (
+      <g data-test='columns'>
+        <defs>{defs}</defs>
+        {bars}
+      </g>
+    )
   }
 }

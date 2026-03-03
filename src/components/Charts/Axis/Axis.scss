@@ -299,6 +299,25 @@ g.legendOrdinal tspan {
       color: var(--react-autoql-text-color-accent);
     }
   }
+
+  .axis-selector-header {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 24px;
+    padding: 4px 12px;
+    color: var(--react-autoql-text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: default;
+    user-select: none;
+    border-bottom: 1px solid var(--react-autoql-border-color);
+    margin-top: 4px;
+    margin-bottom: 2px;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
 }
 .string-axis-selector-popover-content {
   display: flex;
@@ -316,6 +335,25 @@ g.legendOrdinal tspan {
     &.active {
       background: var(--react-autoql-accent-color);
       color: var(--react-autoql-text-color-accent);
+    }
+  }
+
+  .axis-selector-header {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 24px;
+    padding: 4px 12px;
+    color: var(--react-autoql-text-color-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: default;
+    user-select: none;
+    border-bottom: 1px solid var(--react-autoql-border-color);
+    margin-top: 4px;
+    margin-bottom: 2px;
+
+    &:first-child {
+      margin-top: 0;
     }
   }
 }

@@ -21,6 +21,7 @@ class VizToolbar extends React.Component {
     this.state = {
       displayType: props.responseRef?.state?.displayType,
       supportedDisplayTypes: props.responseRef?._isMounted ? props.responseRef?.getCurrentSupportedDisplayTypes() : [],
+      isPopoverOpen: false,
     }
   }
 
@@ -28,6 +29,7 @@ class VizToolbar extends React.Component {
     shouldRender: PropTypes.bool,
     disableCharts: PropTypes.bool,
     vertical: PropTypes.bool,
+    compact: PropTypes.bool,
     onDisplayTypeChange: PropTypes.func,
   }
 
@@ -35,6 +37,7 @@ class VizToolbar extends React.Component {
     shouldRender: true,
     disableCharts: false,
     vertical: false,
+    compact: false,
     onDisplayTypeChange: undefined,
   }
 
@@ -75,6 +78,83 @@ class VizToolbar extends React.Component {
     if (this.props.onDisplayTypeChange) {
       this.props.onDisplayTypeChange(displayType)
     }
+
+    // Close the compact popover after selecting a viz type
+    if (this.props.compact) {
+      this.setState({ isPopoverOpen: false })
+    }
+  }
+
+  getIconForDisplayType = (displayType) => {
+    const map = {
+      [DisplayTypes.TABLE]: 'table',
+      [DisplayTypes.PIVOT_TABLE]: 'pivot-table',
+      [DisplayTypes.COLUMN]: 'column-chart',
+      [DisplayTypes.BAR]: 'bar-chart',
+      [DisplayTypes.LINE]: 'line-chart',
+      [DisplayTypes.PIE]: 'pie-chart',
+      [DisplayTypes.HEATMAP]: 'heatmap',
+      [DisplayTypes.BUBBLE]: 'bubble-chart',
+      [DisplayTypes.STACKED_BAR]: 'stacked-bar-chart',
+      [DisplayTypes.STACKED_COLUMN]: 'stacked-column-chart',
+      [DisplayTypes.STACKED_LINE]: 'stacked-line-chart',
+      [DisplayTypes.COLUMN_LINE]: 'column-line-chart',
+      [DisplayTypes.HISTOGRAM]: 'histogram-chart',
+      [DisplayTypes.SCATTERPLOT]: 'scatterplot',
+      [DisplayTypes.NETWORK_GRAPH]: 'network',
+    }
+    return map[displayType] || 'column-chart'
+  }
+
+  renderCompact = () => {
+    const { displayType, isPopoverOpen } = this.state
+
+    return (
+      <ErrorBoundary>
+        <div
+          className={`react-autoql-toolbar viz-toolbar viz-toolbar-compact ${isPopoverOpen ? 'open' : ''}`}
+          data-test='viz-toolbar'
+        >
+          {/* Trigger: current icon + caret */}
+          <button
+            className='viz-toolbar-compact-trigger'
+            onClick={() => this.setState((s) => ({ isPopoverOpen: !s.isPopoverOpen }))}
+            title='Change Visualization'
+          >
+            <span className='viz-toolbar-compact-current-icon'>
+              <Icon type={this.getIconForDisplayType(displayType)} />
+            </span>
+            <span className='viz-toolbar-compact-caret'>
+              <Icon type='caret-right' />
+            </span>
+          </button>
+
+          {/* Sliding panel of all chart buttons */}
+          <div className='viz-toolbar-compact-panel'>
+            <div className='viz-toolbar-compact-panel-inner'>
+              {this.createVisButton(DisplayTypes.TABLE, 'Table', <Icon type='table' />)}
+              {this.createVisButton(DisplayTypes.PIVOT_TABLE, 'Pivot View', <Icon type='pivot-table' />)}
+              {this.createVisButton(DisplayTypes.COLUMN, 'Column Chart', <Icon type='column-chart' />)}
+              {this.createVisButton(DisplayTypes.BAR, 'Bar Chart', <Icon type='bar-chart' />)}
+              {this.createVisButton(DisplayTypes.LINE, 'Line Chart', <Icon type='line-chart' />)}
+              {this.createVisButton(DisplayTypes.PIE, 'Pie Chart', <Icon type='pie-chart' />)}
+              {this.createVisButton(DisplayTypes.HEATMAP, 'Heatmap', <Icon type='heatmap' />)}
+              {this.createVisButton(DisplayTypes.BUBBLE, 'Bubble Chart', <Icon type='bubble-chart' />)}
+              {this.createVisButton(DisplayTypes.STACKED_BAR, 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
+              {this.createVisButton(DisplayTypes.STACKED_COLUMN, 'Stacked Column Chart', <Icon type='stacked-column-chart' />)}
+              {this.createVisButton(DisplayTypes.STACKED_LINE, 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
+              {this.createVisButton(DisplayTypes.COLUMN_LINE, 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
+              {this.createVisButton(DisplayTypes.HISTOGRAM, 'Histogram', <Icon type='histogram-chart' />)}
+              {this.createVisButton(DisplayTypes.SCATTERPLOT, 'Scatterplot', <Icon type='scatterplot' />)}
+              {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
+            </div>
+          </div>
+        </div>
+        {!this.props.tooltipID && (
+          <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />
+        )}
+      </ErrorBoundary>
+    )
   }
 
   createVisButton = (displayType, name, icon) => {
@@ -117,6 +197,10 @@ class VizToolbar extends React.Component {
     }
 
     if (TABLE_TYPES.includes(displayType) || isChartType(displayType)) {
+      if (this.props.compact) {
+        return this.renderCompact()
+      }
+
       return (
         <ErrorBoundary>
           <div

@@ -10,15 +10,24 @@ import {
   dataFormattingDefault,
   getAuthentication,
   isDrilldown,
-  isTableType,
+  fetchLLMSummary,
+  MAX_DATA_PAGE_SIZE,
   isChartType,
 } from 'autoql-fe-utils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
+
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
+import { Button } from '../Button'
+import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
+import { Input } from '../Input'
+import SummaryFooter from './SummaryFooter'
+import SummaryContent from '../SummaryContent/SummaryContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -26,8 +35,13 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './ChatMessage.scss'
 
 export default class ChatMessage extends React.Component {
+  // Static Set to track which message IDs have already animated
+  // This persists across component mounts/unmounts (e.g., when DM closes/reopens)
+  static animatedMessageIds = new Set()
+
   constructor(props) {
     super(props)
+    this.markdownContentRef = React.createRef()
 
     this.filtering = false
     this.PIE_CHART_HEIGHT = 330
@@ -35,9 +49,22 @@ export default class ChatMessage extends React.Component {
     this.MESSAGE_WIDTH_MARGINS = 40
     this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
+    // Store original summary content and response data if this is a summary message
+    // Set in constructor so content renders before animation to know message bubble size
+    const isSummaryMessage = (this.props.type === 'markdown' || this.props.type === 'md') && this.props.content
+    const originalSummary = isSummaryMessage ? this.props.content : null
+    const summaryResponseData = isSummaryMessage ? (this.props.summaryResponseData || null) : null
+
+    // Check if this message has already been animated
+    const hasAnimated = ChatMessage.animatedMessageIds.has(this.props.id)
+    if (!hasAnimated) {
+      // Mark this message as animated so it won't animate again
+      ChatMessage.animatedMessageIds.add(this.props.id)
+    }
+
     this.state = {
       csvDownloadProgress: this.props.initialCSVDownloadProgress,
-      isAnimatingMessageBubble: true,
+      isAnimatingMessageBubble: !hasAnimated, // Only animate if it hasn't been animated before
       isSettingColumnVisibility: false,
       activeMenu: undefined,
       localRTFilterResponse: null,
@@ -49,6 +76,12 @@ export default class ChatMessage extends React.Component {
       isResizable: false,
       isUserResizing: false,
       currentHeight: 400,
+      isGeneratingSummary: false,
+      focusPrompt: '',
+      originalSummary,
+      isFocusingSummary: false,
+      summaryResponseData, // Store response data for focusing summaries
+      focusError: null, // Error message for focus summary
     }
 
     // Minimum height for the message container
@@ -87,6 +120,10 @@ export default class ChatMessage extends React.Component {
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    setGeneratingSummary: PropTypes.func,
+    enableMagicWand: PropTypes.bool,
+    enableCyclicalDates: PropTypes.bool,
+    onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
   }
 
   static defaultProps = {
@@ -116,18 +153,18 @@ export default class ChatMessage extends React.Component {
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
+    scrollToMessageTop: () => {},
+    scrollToMessageFit: () => {},
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
+    enableMagicWand: false,
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    this.props.scrollToBottom()
-    this.scrollToBottomTimeout = setTimeout(() => {
-      this.props.scrollToBottom()
-    }, 100)
-
+    
     // Wait until message bubble animation finishes to show query output content
+    // The scroll will happen after animation completes (500ms) in clearIsAnimatingIn500ms
     this.setIsAnimating()
   }
 
@@ -167,6 +204,16 @@ export default class ChatMessage extends React.Component {
     if (shouldUpdateWidth && this.ref?.style) {
       this.ref.style.width = messageWidth
     }
+
+    // Update original summary and response data if content changes and we don't have one stored
+    if ((this.props.type === 'markdown' || this.props.type === 'md') && this.props.content) {
+      if (!this.state.originalSummary || prevProps.content !== this.props.content) {
+        this.setState({ 
+          originalSummary: this.props.content,
+          summaryResponseData: this.props.summaryResponseData || this.state.summaryResponseData
+        })
+      }
+    }
   }
 
   componentWillUnmount = () => {
@@ -193,7 +240,7 @@ export default class ChatMessage extends React.Component {
     clearTimeout(this.animationTimeout)
     this.animationTimeout = setTimeout(() => {
       this.setState({ isAnimatingMessageBubble: false })
-      this.props.scrollToBottom()
+      // Scroll is now handled in ChatContent.componentDidUpdate to avoid conflicts
     }, 500)
   }
 
@@ -265,6 +312,61 @@ export default class ChatMessage extends React.Component {
     }, delay)
   }
 
+  // Animate scroll so the bottom of the message bubble (excluding RT) is visible
+  animatedScrollToMessageBottom = () => {
+    const container = this.props.scrollContainerRef?.getContainer?.()
+    if (!container) return
+
+    const messageElement = this.messageContainerRef
+    if (!messageElement) return
+
+    // Walk up the DOM to find the absolute offset within the scroll content
+    const scrollContent = container.querySelector('.chat-content-container')
+    if (!scrollContent) return
+
+    let messageAbsoluteTop = 0
+    let el = messageElement
+    while (el && el !== scrollContent) {
+      messageAbsoluteTop += el.offsetTop
+      el = el.offsetParent
+    }
+
+    const messageHeight = messageElement.offsetHeight
+    const containerHeight = container.clientHeight
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+
+    // Align the bottom of the message bubble with the bottom of the viewport,
+    // leaving a small gap at the top so the chat toolbars above the bubble stay visible.
+    const TOP_PADDING = 50
+    const targetScrollTop = Math.min(maxScrollTop, Math.max(0, messageAbsoluteTop + messageHeight - containerHeight - TOP_PADDING))
+
+    const startScrollTop = container.scrollTop
+    const distance = targetScrollTop - startScrollTop
+
+    if (Math.abs(distance) < 5) return
+
+    const duration = 400
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      container.scrollTop = startScrollTop + distance * easeOut
+      this.props.scrollContainerRef?.update?.()
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        container.scrollTop = targetScrollTop
+        this.props.scrollContainerRef?.update?.()
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+
   isValidConfig = (config) => {
     return config && typeof config === 'object' && !Array.isArray(config)
   }
@@ -308,12 +410,444 @@ export default class ChatMessage extends React.Component {
       this.ref.style.removeProperty('--message-height')
     }
 
-    this.scrollIntoView()
+    // When switching to a chart the message grows taller — animate scroll so the
+    // bottom of the message bubble (excluding reverse translation) is visible.
+    // Delay slightly so the chart has time to render before we measure its position.
+    // Only scroll if the message is not already fully visible in the viewport.
+    if (isChartType(displayType)) {
+      setTimeout(() => {
+        const container = this.props.scrollContainerRef?.getContainer?.()
+        const messageElement = this.messageContainerRef
+        if (!container || !messageElement) return
+
+        // Check if message is already fully visible
+        const scrollTop = container.scrollTop
+        const scrollBottom = scrollTop + container.clientHeight
+        const scrollContent = container.querySelector('.chat-content-container')
+        if (!scrollContent) return
+
+        let messageAbsoluteTop = 0
+        let el = messageElement
+        while (el && el !== scrollContent) {
+          messageAbsoluteTop += el.offsetTop
+          el = el.offsetParent
+        }
+
+        const messageHeight = messageElement.offsetHeight
+        const messageBottom = messageAbsoluteTop + messageHeight
+        const TOP_PADDING = 50
+
+        // Check if message is already fully visible (with padding)
+        const isFullyVisible = messageAbsoluteTop >= scrollTop + TOP_PADDING && messageBottom <= scrollBottom
+
+        // Only scroll if not already fully visible
+        if (!isFullyVisible) {
+          this.animatedScrollToMessageBottom()
+        }
+      }, 150)
+    }
+  }
+
+
+  handleGenerateSummary = async () => {
+    if (!this.props.response?.data?.data?.rows || !this.props.response?.data?.data?.columns) {
+      return
+    }
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.props.onErrorCallback?.('Missing authentication credentials for summary generation')
+      return
+    }
+
+    // Set loading state for this specific message
+    this.setState({ isGeneratingSummary: true, focusError: null })
+    // Also set loading state in parent ChatContent to show loading dots at bottom
+    this.props.setGeneratingSummary?.(true)
+
+    try {
+      // Get filtered data from QueryOutput's tableData (already filtered)
+      const filteredRows = this.responseRef?.tableData || this.props.response.data.data.rows
+
+      const response = await fetchLLMSummary({
+        data: {
+          additional_context:{
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            focus_prompt: this.state.focusPrompt.trim() || ""
+          },
+          rows: filteredRows,
+          columns: this.props.response.data.data.columns
+        },
+        queryID: this.props.response.data.data.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const summary = response?.data?.data?.summary
+
+      if (summary) {
+        const focusPromptUsed = this.state.focusPrompt.trim() || undefined
+        // Store original summary and response data in state for this component
+        this.setState({ 
+          originalSummary: summary,
+          focusPrompt: '', // Clear the focus prompt input
+          summaryResponseData: {
+            rows: filteredRows,
+            columns: this.props.response.data.data.columns,
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            query_id: this.props.response.data.data.query_id
+          }
+        })
+        // Add summary as a new message bubble, including response data for focusing
+        this.props.addMessageToDM?.({
+          content: summary,
+          type: 'markdown',
+          isResponse: true,
+          focusPromptUsed: focusPromptUsed,
+          summaryResponseData: {
+            rows: filteredRows,
+            columns: this.props.response.data.data.columns,
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            query_id: this.props.response.data.data.query_id
+          }
+        })
+      } else {
+        // No summary returned - check for error message in response
+        const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
+        const displayMessage = errorMessage || 'Failed to generate summary. Please try again.'
+
+        // Add error message as a new message bubble
+        this.props.addMessageToDM?.({
+          content: displayMessage,
+          type: 'text',
+          isResponse: true,
+        })
+      }
+    } catch (error) {
+      // Handle API errors - check if error response has a message
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to generate summary. Please try again.'
+
+      // Set error state for dropdown display
+      this.setState({ focusError: errorMessage })
+
+      // Add error message as a new message bubble
+      this.props.addMessageToDM?.({
+        content: errorMessage,
+        type: 'text',
+        isResponse: true,
+      })
+    } finally {
+      // Clear loading state for this specific message
+      this.setState({ isGeneratingSummary: false })
+      // Clear loading state in parent
+      this.props.setGeneratingSummary?.(false)
+    }
+  }
+
+
+  handleFocusPromptChange = (e) => {
+    const value = e.target.value
+    if (value.length <= 100) {
+      this.setState({ focusPrompt: value, focusError: null })
+    }
+  }
+
+  handleFocusPromptKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      this.handleGenerateSummary()
+      // Popover will close automatically via Button component
+    }
+  }
+
+  handleFocusSummary = async () => {
+    const { focusPrompt, summaryResponseData } = this.state
+    if (!focusPrompt.trim()) {
+      return
+    }
+
+    // Use stored response data or props response data
+    const responseData = summaryResponseData || (this.props.response?.data?.data ? {
+      rows: this.responseRef?.tableData || this.props.response.data.data.rows,
+      columns: this.props.response.data.data.columns,
+      text: this.props.response.data.data.text,
+      interpretation: this.props.response.data.data.interpretation,
+      query_id: this.props.response.data.data.query_id
+    } : null)
+
+    if (!responseData?.rows || !responseData?.columns) {
+      this.props.onErrorCallback?.('Unable to focus summary: missing response data')
+      return
+    }
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.props.onErrorCallback?.('Missing authentication credentials for summary focusing')
+      return
+    }
+
+    // Set loading state and clear any previous errors
+    this.setState({ isFocusingSummary: true, focusError: null })
+    this.props.setGeneratingSummary?.(true)
+
+    try {
+      const response = await fetchLLMSummary({
+        data: {
+          additional_context: {
+            text: responseData.text,
+            interpretation: responseData.interpretation,
+            focus_prompt: focusPrompt.trim()
+          },
+          rows: responseData.rows,
+          columns: responseData.columns
+        },
+        queryID: responseData.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const focusedSummary = response?.data?.data?.summary
+
+      if (focusedSummary) {
+        // Create a new message with focused summary
+        this.props.addMessageToDM?.({
+          content: focusedSummary,
+          type: 'markdown',
+          isResponse: true,
+          focusPromptUsed: focusPrompt.trim(), // Store the focus prompt that was used
+        })
+        // Clear the focus prompt
+        this.setState({ 
+          focusPrompt: '',
+          focusError: null
+        })
+      } else {
+        // No summary returned - check for error message in response
+        const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
+        const displayMessage = errorMessage || 'Failed to focus summary. Please try again.'
+
+        this.setState({ focusError: displayMessage })
+        this.props.onErrorCallback?.(displayMessage)
+      }
+    } catch (error) {
+      // Handle API errors
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to focus summary. Please try again.'
+
+      this.setState({ focusError: errorMessage })
+      this.props.onErrorCallback?.(errorMessage)
+    } finally {
+      // Clear loading state
+      this.setState({ isFocusingSummary: false })
+      this.props.setGeneratingSummary?.(false)
+    }
+  }
+
+  handleResetSummary = () => {
+    if (this.state.originalSummary) {
+      // Update message with original summary
+      this.props.addMessageToDM?.({
+        content: this.state.originalSummary,
+        type: 'markdown',
+        isResponse: true,
+      })
+      this.setState({ focusPrompt: '' })
+    }
+  }
+
+  copyMarkdownAsPlainText = async () => {
+    if (!this.props.content || (this.props.type !== 'markdown' && this.props.type !== 'md')) {
+      return
+    }
+
+    try {
+      // Extract plain text from the rendered markdown content
+      if (!this.markdownContentRef.current) {
+        return
+      }
+
+      const text = this.markdownContentRef.current.innerText
+
+      // Copy as plain text using Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      } else {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      }
+    } catch (error) {
+      console.error('Failed to copy markdown:', error)
+      this.props.onErrorCallback?.(error)
+    }
+  }
+
+  renderSummaryFooter = () => {
+    const isSummaryMessage = this.props.type === 'markdown' || this.props.type === 'md'
+    
+    // Show feedback buttons for summary messages
+    if (isSummaryMessage && this.props.content) {
+      // Get query ID from summaryResponseData (stored when summary was generated)
+      const queryId = this.props.summaryResponseData?.query_id || this.state.summaryResponseData?.query_id
+
+      return (
+        <SummaryFooter
+          messageId={this.props.id}
+          queryId={queryId}
+          authentication={this.props.authentication}
+          onSummaryFeedback={this.props.onSummaryFeedback}
+          onSuccessAlert={this.props.onSuccessAlert}
+          onErrorCallback={this.props.onErrorCallback}
+          tooltipID={this.props.tooltipID}
+        />
+      )
+    }
+
+    // Get the current response from QueryOutput ref if available, otherwise use props
+    // This ensures we check the most up-to-date data (e.g., after columns are added)
+    const currentResponse = this.responseRef?.queryResponse || this.props.response
+
+    // Use centralized function to determine if summary button should be shown
+    if (
+      !shouldShowSummaryButton({
+        enableMagicWand: this.props.enableMagicWand,
+        queryResponse: currentResponse,
+        isResponse: this.props.isResponse,
+        type: this.props.type,
+        isCSVProgressMessage: this.props.isCSVProgressMessage,
+      })
+    ) {
+      return null
+    }
+
+    // Get disabled state and tooltip from centralized function
+    const { isDisabled, tooltip: tooltipContent } = getSummaryButtonDisabledState({
+      queryResponse: currentResponse,
+      isGenerating: this.state.isGeneratingSummary,
+      isChataThinking: this.props.isChataThinking,
+    })
+
+    const tooltipId = 'chat-message-summary-button-tooltip'
+    const isGenerating = this.state.isGeneratingSummary
+
+    const { focusPrompt, focusError } = this.state
+
+    return (
+      <div className='chat-message-summary-footer'>
+        <div
+          className='chat-message-summary-button-group'
+          data-tooltip-html={tooltipContent}
+          data-tooltip-id={tooltipContent ? tooltipId : undefined}
+        >
+          <Button
+            type='default'
+            size='medium'
+            icon='magic-wand'
+            onClick={this.handleGenerateSummary}
+            disabled={isDisabled}
+            loading={isGenerating}
+            border={true}
+            splitButton={{
+              popoverContent: ({ closePopover }) => (
+                <div className='chat-message-summary-dropdown-content'>
+                  <div className='chat-message-summary-dropdown-header'>
+                    <label className='chat-message-summary-dropdown-label'>
+                      Focus on a specific topic (optional)
+                    </label>
+                    <div className='chat-message-summary-dropdown-description'>
+                      Enter a topic to generate a summary tailored to that focus area
+                    </div>
+                  </div>
+                  <div className='chat-message-summary-dropdown-input-group'>
+                    <Input
+                      value={focusPrompt}
+                      onChange={this.handleFocusPromptChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          this.handleGenerateSummary()
+                          closePopover()
+                        } else {
+                          this.handleFocusPromptKeyDown(e)
+                        }
+                      }}
+                      placeholder='e.g., sales growth trends'
+                      maxLength={100}
+                      disabled={isGenerating}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      type='primary'
+                      size='medium'
+                      onClick={() => {
+                        this.handleGenerateSummary()
+                        closePopover()
+                      }}
+                      disabled={isDisabled || !focusPrompt.trim()}
+                      loading={isGenerating}
+                      icon='magic-wand'
+                    >
+                      Generate
+                    </Button>
+                  </div>
+                  {focusError && (
+                    <div className='chat-message-summary-focus-error'>
+                      {focusError}
+                    </div>
+                  )}
+                </div>
+              ),
+              popoverProps: {
+                align: 'end',
+                contentClassName: 'chat-message-summary-dropdown-popover',
+              },
+            }}
+          >
+            Generate Summary
+          </Button>
+        </div>
+        {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
+      </div>
+    )
   }
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
     } else if (this.props.content) {
+      if (this.props.type === 'markdown' || this.props.type === 'md') {
+        return (
+          <div className='chat-message-bubble-content-container chat-message-markdown'>
+            <div ref={this.markdownContentRef}>
+              <SummaryContent
+                content={this.props.content}
+                focusPromptUsed={this.props.focusPromptUsed}
+                className='chat-message-summary-content'
+                titleClassName='chat-message-summary-title'
+                focusPromptClassName='chat-message-summary-focus-prompt'
+                markdownClassName='chat-message-summary-markdown'
+              />
+            </div>
+          </div>
+        )
+      }
       return <div className='chat-message-bubble-content-container'>{this.props.content}</div>
     } else if (this.props.response?.status === 401) {
       return <div className='chat-message-bubble-content-container'>{UNAUTHENTICATED_ERROR}</div>
@@ -352,7 +886,7 @@ export default class ChatMessage extends React.Component {
           scope={this.props.scope}
           drilldownFilters={this.props.drilldownFilters}
           onRowChange={this.scrollIntoView}
-          onDisplayTypeChange={this.scrollIntoView}
+          onDisplayTypeChange={this.onDisplayTypeChange}
           mutable={false}
           tooltipID={this.props.tooltipID}
           chartTooltipID={this.props.chartTooltipID}
@@ -361,6 +895,7 @@ export default class ChatMessage extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           allowColumnAddition={!isDataPreview}
           onNewData={this.onNewDataCallback}
+          enableCyclicalDates={this.props.enableCyclicalDates}
           isUserResizing={this.state.isUserResizing}
           reportProblemCallback={() => {
             if (this.optionsToolbarRef?._isMounted) {
@@ -394,6 +929,7 @@ export default class ChatMessage extends React.Component {
   renderRightToolbar = () => {
     // For data preview responses, only show delete button
     const isDataPreview = this.props.response?.data?.data?.isDataPreview
+    const isMarkdownMessage = this.props.type === 'markdown' || this.props.type === 'md'
     const customAutoQLConfig = isDataPreview
       ? {
           ...this.props.autoQLConfig,
@@ -407,7 +943,7 @@ export default class ChatMessage extends React.Component {
 
     return (
       <div className='chat-message-toolbar chat-message-toolbar-right'>
-        {this.props.isResponse ? (
+        {this.props.isResponse || isMarkdownMessage ? (
           <OptionsToolbar
             ref={(r) => (this.optionsToolbarRef = r)}
             responseRef={this.responseRef}
@@ -425,6 +961,9 @@ export default class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage}
             enableFilterBtn={!isDataPreview}
             enableCopyBtn={!isDataPreview}
+            isMarkdownMessage={isMarkdownMessage}
+            markdownContent={isMarkdownMessage ? this.props.content : undefined}
+            onCopyMarkdown={this.copyMarkdownAsPlainText}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
@@ -473,6 +1012,9 @@ export default class ChatMessage extends React.Component {
     const isResizable =
       this.props.response && !this.props.isCSVProgressMessage && !this.props.content && this.state.isResizable
 
+    // Only animate if this message hasn't been animated before
+    const shouldAnimate = this.state.isAnimatingMessageBubble
+
     return (
       <ErrorBoundary>
         <div
@@ -481,7 +1023,8 @@ export default class ChatMessage extends React.Component {
 			${isMobile ? 'pwa' : ''}
 			${this.props.type === 'text' ? 'text' : ''}
 			${this.props.isActive ? 'active' : ''}
-			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}`}
+			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
+			${shouldAnimate ? ' animate-on-mount' : ''}`}
           ref={(r) => (this.messageAndRTContainerRef = r)}
         >
           <div
@@ -497,9 +1040,11 @@ export default class ChatMessage extends React.Component {
             <div
               className={`chat-message-bubble 
         ${isResizable ? 'resizable' : ''} 
-        ${this.state.isUserResizing ? 'user-resizing' : ''}`}
+        ${this.state.isUserResizing ? 'user-resizing' : ''}
+        ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}`}
             >
               {this.renderContent()}
+              {this.renderSummaryFooter()}
             </div>
           </div>
           {!!this.responseRef && (

@@ -52,6 +52,7 @@ import { FiRefreshCw } from '@react-icons/all-files/fi/FiRefreshCw'
 import { FiTool } from '@react-icons/all-files/fi/FiTool'
 import { FiMinus } from '@react-icons/all-files/fi/FiMinus'
 import { FiSave } from 'react-icons/fi'
+import { FiThumbsUp, FiThumbsDown } from 'react-icons/fi'
 import { RiFilterLine } from '@react-icons/all-files/ri/RiFilterLine'
 import { RiFilterOffLine } from '@react-icons/all-files/ri/RiFilterOffLine'
 import { RiListSettingsLine } from '@react-icons/all-files/ri/RiListSettingsLine'
@@ -111,6 +112,8 @@ import {
   sum,
   median,
   networkIcon,
+  magicWandIcon,
+  thinkingBubbleIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -246,6 +249,10 @@ export default class Icon extends React.Component {
       }
       case 'layers-plus': {
         icon = <BiLayerPlus />
+        break
+      }
+      case 'magic-wand': {
+        icon = magicWandIcon
         break
       }
       case 'mark-read': {
@@ -550,6 +557,10 @@ export default class Icon extends React.Component {
         icon = <AiOutlineTag />
         break
       }
+      case 'thinking-bubble': {
+        icon = thinkingBubbleIcon
+        break
+      }
       case 'title': {
         icon = <AiOutlineBook />
         break
@@ -580,6 +591,14 @@ export default class Icon extends React.Component {
       }
       case 'warning-triangle': {
         icon = <FiAlertTriangle />
+        break
+      }
+      case 'thumbs-up': {
+        icon = <FiThumbsUp />
+        break
+      }
+      case 'thumbs-down': {
+        icon = <FiThumbsDown />
         break
       }
       default: {
