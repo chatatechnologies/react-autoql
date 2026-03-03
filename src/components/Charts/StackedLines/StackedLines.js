@@ -82,7 +82,7 @@ export default class StackedLines extends PureComponent {
         cy={y}
         cx={x}
         r={4}
-        onClick={() => this.onDotClick(d, colIndex, i)}
+        onClick={() => this.onDotClick(d, colIndex, index)}
         data-tooltip-html={tooltip}
         data-tooltip-id={this.props.chartTooltipID}
         style={{
