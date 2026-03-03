@@ -31,6 +31,7 @@ if (typeof global.CSS === 'undefined') {
 // Provide getComputedTextLength used by d3 legend helpers in tests
 if (typeof SVGElement !== 'undefined' && !SVGElement.prototype.getComputedTextLength) {
   SVGElement.prototype.getComputedTextLength = function () {
+    // crude approximation: character count * average width
     const text = this.textContent || ''
     const avgCharWidth = 8
     return text.length * avgCharWidth
