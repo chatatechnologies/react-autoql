@@ -187,6 +187,7 @@ export class DashboardTile extends React.Component {
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
+    onRetry: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,
@@ -219,6 +220,7 @@ export class DashboardTile extends React.Component {
     cancelQueriesOnUnmount: true,
     deleteTile: () => {},
     onErrorCallback: () => {},
+    onRetry: () => {},
     onSuccessCallback: () => {},
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
@@ -370,6 +372,25 @@ export class DashboardTile extends React.Component {
       console.error(error)
     }
     return true
+  }
+
+  // Detect server/internal errors for retry decision
+  isServerError = (resp) => {
+    try {
+      const ref = resp?.data?.reference_id || resp?.data?.referenceId || resp?.reference_id
+      const msg = (resp?.data?.message || resp?.message || '').toString()
+      const status = resp?.status || resp?.data?.status
+      const numericStatus = Number(status)
+      const is5xx = Number.isFinite(numericStatus) && numericStatus >= 500 && numericStatus < 600
+
+      if (typeof isError500Type === 'function' && isError500Type(resp)) return true
+      if (is5xx) return true
+      if (msg.toLowerCase().includes('internal server error')) return true
+      if (typeof ref === 'string' && ref.endsWith('.500')) return true
+    } catch (e) {
+      // ignore and treat as non-server-error
+    }
+    return false
   }
 
   // Helper to check if dataConfig has valid values
@@ -600,6 +621,7 @@ export class DashboardTile extends React.Component {
         cancelToken,
         pageSize,
         query,
+        force: false,
       }
 
       const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
@@ -610,7 +632,7 @@ export class DashboardTile extends React.Component {
         requestData.queryIndex = isSecondHalf ? 1 : 0
       }
 
-      return queryFunction(requestData)
+      return this.executeQueryWithForceRetry(requestData, queryFunction)
         .then((response) => {
           if (isSecondHalf) {
             this.bottomRequestData = requestData
@@ -622,6 +644,41 @@ export class DashboardTile extends React.Component {
         .catch((error) => Promise.reject(error))
     }
     return Promise.reject()
+  }
+
+  executeQueryWithForceRetry(requestData, queryFunction) {
+    const tryRequest = (data) => queryFunction(data)
+
+    return tryRequest(requestData).catch((err) => {
+      try {
+        const resp = err?.response || err
+
+        // Retry once for server/internal errors (do not retry translation errors).
+        const isServerError = this.isServerError(resp)
+
+        if (isServerError && !requestData.force) {
+          const retryData = { ...requestData, force: true }
+          // Use original query function for retry so cached helper sees `force:true`.
+          const retryFunc = tryRequest
+
+          // Emit telemetry for retry (prefer `onRetry`, fallback to `onErrorCallback`).
+          try {
+            const payload = { type: 'retry', retryData }
+            if (typeof this?.props?.onRetry === 'function') this.props.onRetry(payload)
+            else if (typeof this?.props?.onErrorCallback === 'function') this.props.onErrorCallback(payload)
+          } catch (e) {
+            // ignore telemetry errors
+          }
+
+          // Immediate retry (no artificial delay)
+          return retryFunc(retryData)
+        }
+      } catch (e) {
+        // swallow detection errors and fallthrough to rethrow original
+      }
+
+      return Promise.reject(err)
+    })
   }
 
   processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize, isCachedRefresh }) => {
