@@ -268,9 +268,9 @@ export class RegressionLine extends React.Component {
     const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
     const isScatterplot = this.isScatterplot()
 
-    // For scatterplots or single series, use combined trend line
-    // For multi-series charts (including stacked), use individual trend lines
-    if (isScatterplot || !isMultiSeries) {
+    // For scatterplots, stacked charts, or single series, use combined trend line
+    // For multi-series non-stacked regular charts, use individual trend lines
+    if (isScatterplot || isStacked || !isMultiSeries) {
       return this.renderCombinedTrendLine()
     } else {
       return this.renderIndividualTrendLines()
@@ -534,6 +534,11 @@ export class RegressionLine extends React.Component {
       chartType,
     } = this.props
 
+    // Skip individual trend lines for stacked charts - they should use combined trend line
+    const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
+    if (isStacked) {
+      return null
+    }
 
     if (!visibleSeriesIndices?.length) {
       return null
