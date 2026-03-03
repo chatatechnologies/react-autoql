@@ -21,6 +21,7 @@ import {
   runCachedDashboardQuery,
   constructRTArray,
   titlelizeString,
+  isError500Type,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -187,6 +188,7 @@ export class DashboardTile extends React.Component {
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
+    onRetry: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,
@@ -219,6 +221,7 @@ export class DashboardTile extends React.Component {
     cancelQueriesOnUnmount: true,
     deleteTile: () => {},
     onErrorCallback: () => {},
+    onRetry: () => {},
     onSuccessCallback: () => {},
     onCSVDownloadStart: () => {},
     onCSVDownloadProgress: () => {},
@@ -370,6 +373,23 @@ export class DashboardTile extends React.Component {
       console.error(error)
     }
     return true
+  }
+
+  // Return true for server/internal errors that should be retried
+  isServerError = (resp) => {
+    try {
+      const ref = resp?.data?.reference_id || resp?.data?.referenceId || resp?.reference_id
+      const msg = String(resp?.data?.message || resp?.message || '')
+      const status = Number(resp?.status ?? resp?.data?.status)
+
+      if (typeof isError500Type === 'function' && isError500Type(resp)) return true
+      if (Number.isFinite(status) && status >= 500 && status < 600) return true
+      if (msg.toLowerCase().includes('internal server error')) return true
+      if (typeof ref === 'string' && ref.endsWith('.500')) return true
+    } catch (e) {
+      // treat unknown shapes as non-server-error
+    }
+    return false
   }
 
   // Helper to check if dataConfig has valid values
@@ -600,6 +620,7 @@ export class DashboardTile extends React.Component {
         cancelToken,
         pageSize,
         query,
+        force: false,
       }
 
       const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
@@ -610,7 +631,7 @@ export class DashboardTile extends React.Component {
         requestData.queryIndex = isSecondHalf ? 1 : 0
       }
 
-      return queryFunction(requestData)
+      return this.executeQueryWithForceRetry(requestData, queryFunction)
         .then((response) => {
           if (isSecondHalf) {
             this.bottomRequestData = requestData
@@ -622,6 +643,36 @@ export class DashboardTile extends React.Component {
         .catch((error) => Promise.reject(error))
     }
     return Promise.reject()
+  }
+
+  executeQueryWithForceRetry(requestData, queryFunction) {
+    const tryRequest = (data) => queryFunction(data)
+
+    return tryRequest(requestData).catch((err) => {
+      const resp = err?.response || err
+
+      try {
+        if (this.isServerError(resp) && !requestData.force) {
+          const retryData = { ...requestData, force: true }
+
+          // Emit telemetry (prefer `onRetry`, fallback to `onErrorCallback`).
+          try {
+            const payload = { type: 'retry', retryData }
+            if (typeof this.props?.onRetry === 'function') this.props.onRetry(payload)
+            else if (typeof this.props?.onErrorCallback === 'function') this.props.onErrorCallback(payload)
+          } catch (e) {
+            // ignore
+          }
+
+          // Immediate retry using the original query function
+          return tryRequest(retryData)
+        }
+      } catch (e) {
+        // detection error - fall through to rethrow original
+      }
+
+      return Promise.reject(err)
+    })
   }
 
   processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize, isCachedRefresh }) => {
@@ -1169,9 +1220,7 @@ export class DashboardTile extends React.Component {
           }, 1000)
         }}
       >
-        <div className='dashboard-tile-split-pane-container'>
-          {topContent}
-        </div>
+        <div className='dashboard-tile-split-pane-container'>{topContent}</div>
         <div className='dashboard-tile-split-pane-container'>
           {bottomContent}
           {this.props.isEditing && (
@@ -1267,7 +1316,7 @@ export class DashboardTile extends React.Component {
                       onClickOutside={() => this.setState({ isRTHovered: false })}
                       content={this.renderRTPopoverContent()}
                     >
-                      <div 
+                      <div
                         className='query-input-interpretation-badge'
                         onMouseEnter={() => this.setState({ isRTHovered: true })}
                         onMouseLeave={() => this.setState({ isRTHovered: false })}
@@ -1318,7 +1367,7 @@ export class DashboardTile extends React.Component {
                 />
               )}
               {this.props.tile?.queryResponse && (
-                <div 
+                <div
                   className='dashboard-tile-rt-container'
                   onMouseEnter={() => this.setState({ isRTHovered: true })}
                   onMouseLeave={() => this.setState({ isRTHovered: false })}
@@ -1327,9 +1376,7 @@ export class DashboardTile extends React.Component {
                     authentication={this.props.authentication}
                     queryResponse={this.props.tile.queryResponse}
                     tooltipID={this.props.tooltipID}
-                    enableEditReverseTranslation={
-                      this.props.autoQLConfig?.enableEditReverseTranslation
-                    }
+                    enableEditReverseTranslation={this.props.autoQLConfig?.enableEditReverseTranslation}
                     compact={true}
                     isHovered={this.state.isRTHovered}
                   />
@@ -1462,7 +1509,7 @@ export class DashboardTile extends React.Component {
                       onClickOutside={() => this.setState({ isRTHovered: false })}
                       content={this.renderRTPopoverContent()}
                     >
-                      <div 
+                      <div
                         className='query-input-interpretation-badge'
                         onMouseEnter={() => this.setState({ isRTHovered: true })}
                         onMouseLeave={() => this.setState({ isRTHovered: false })}
@@ -1513,7 +1560,7 @@ export class DashboardTile extends React.Component {
                 />
               )}
               {this.props.tile?.queryResponse && (
-                <div 
+                <div
                   className='dashboard-tile-rt-container'
                   onMouseEnter={() => this.setState({ isRTHovered: true })}
                   onMouseLeave={() => this.setState({ isRTHovered: false })}
@@ -1522,9 +1569,7 @@ export class DashboardTile extends React.Component {
                     authentication={this.props.authentication}
                     queryResponse={this.props.tile.queryResponse}
                     tooltipID={this.props.tooltipID}
-                    enableEditReverseTranslation={
-                      this.props.autoQLConfig?.enableEditReverseTranslation
-                    }
+                    enableEditReverseTranslation={this.props.autoQLConfig?.enableEditReverseTranslation}
                     compact={true}
                     isHovered={this.state.isRTHovered}
                   />
