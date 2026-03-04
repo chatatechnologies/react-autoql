@@ -811,7 +811,7 @@ export default class ChatMessage extends React.Component {
                       loading={isGenerating}
                       icon='magic-wand'
                     >
-                      Generate
+                      Analyze
                     </Button>
                   </div>
                   {focusError && (
@@ -827,10 +827,20 @@ export default class ChatMessage extends React.Component {
               },
             }}
           >
-            Generate Summary
+            <span className='analyze-button-content'>
+              Analyze
+            </span>
+            <span
+              className='analyze-beta-badge'
+              data-tooltip-content='This feature is in beta'
+              data-tooltip-id={`${tooltipId}-beta`}
+            >
+              Beta
+            </span>
           </Button>
         </div>
         {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
+        <Tooltip tooltipId={`${tooltipId}-beta`} delayShow={500} />
       </div>
     )
   }

@@ -202,7 +202,7 @@ export default class SummaryModal extends React.Component {
       return (
         <div className='summary-modal-empty'>
           <Icon type='magic-wand' size='large' />
-          <h3>Generate Summary</h3>
+          <h3>Analyze</h3>
           <p className='summary-modal-error'>{this.state.focusError}</p>
         </div>
       )
@@ -211,7 +211,7 @@ export default class SummaryModal extends React.Component {
     return (
       <div className='summary-modal-empty'>
         <Icon type='magic-wand' size='large' />
-        <h3>Generate Summary</h3>
+        <h3>Analyze</h3>
         <p>Generating an AI-powered summary of your data...</p>
         {hasNoData && (
           <p className='summary-modal-error'>No data available to generate a summary.</p>
@@ -227,7 +227,7 @@ export default class SummaryModal extends React.Component {
 
   render = () => {
     const queryResponse = this.props.queryResponse || this.props.responseRef?.queryResponse
-    const title = queryResponse?.data?.data?.text || 'Generate Summary'
+    const title = queryResponse?.data?.data?.text || 'Analyze'
     const footer = this.renderFooter()
 
     return (
