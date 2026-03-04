@@ -687,6 +687,13 @@ export class OptionsToolbar extends React.Component {
 
     return (
       <div className='options-toolbar-summary-dropdown-content'>
+        <span
+          className='analyze-beta-badge-popover'
+          data-tooltip-content='This feature is in beta'
+          data-tooltip-id={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`}
+        >
+          Beta
+        </span>
         <div className='options-toolbar-summary-dropdown-header'>
           <label className='options-toolbar-summary-dropdown-label'>
             Focus on a specific topic (optional)
@@ -722,7 +729,7 @@ export class OptionsToolbar extends React.Component {
             disabled={hasNoData}
             icon='magic-wand'
           >
-            Generate
+            Analyze
           </Button>
         </div>
         {this.state.summaryFocusError && (
@@ -730,6 +737,7 @@ export class OptionsToolbar extends React.Component {
             {this.state.summaryFocusError}
           </div>
         )}
+        <Tooltip tooltipId={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`} delayShow={500} />
       </div>
     )
   }
@@ -759,7 +767,7 @@ export class OptionsToolbar extends React.Component {
             this.setState({ isSummaryPopoverOpen: !this.state.isSummaryPopoverOpen })
           }}
           className={this.getMenuItemClass()}
-          tooltip={hasNoData ? 'No data available to generate a summary' : 'Generate summary'}
+          tooltip={hasNoData ? 'No data available to analyze' : 'Analyze'}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           size='small'
           disabled={hasNoData}

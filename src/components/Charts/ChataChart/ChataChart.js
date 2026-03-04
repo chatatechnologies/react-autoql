@@ -1305,7 +1305,6 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
-                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
@@ -1335,7 +1334,6 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
-                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}

@@ -468,6 +468,10 @@ export default class ChatMessage extends React.Component {
     try {
       // Get filtered data from QueryOutput's tableData (already filtered)
       const filteredRows = this.responseRef?.tableData || this.props.response.data.data.rows
+      
+      // Get updated columns from QueryOutput if available (includes custom columns)
+      // Use queryResponse columns which should have the latest columns from API responses
+      const currentColumns = this.responseRef?.queryResponse?.data?.data?.columns || this.props.response.data.data.columns
 
       const response = await fetchLLMSummary({
         data: {
@@ -477,7 +481,7 @@ export default class ChatMessage extends React.Component {
             focus_prompt: this.state.focusPrompt.trim() || ""
           },
           rows: filteredRows,
-          columns: this.props.response.data.data.columns
+          columns: currentColumns
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -495,7 +499,7 @@ export default class ChatMessage extends React.Component {
           focusPrompt: '', // Clear the focus prompt input
           summaryResponseData: {
             rows: filteredRows,
-            columns: this.props.response.data.data.columns,
+            columns: currentColumns,
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
             query_id: this.props.response.data.data.query_id
@@ -509,7 +513,7 @@ export default class ChatMessage extends React.Component {
           focusPromptUsed: focusPromptUsed,
           summaryResponseData: {
             rows: filteredRows,
-            columns: this.props.response.data.data.columns,
+            columns: currentColumns,
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
             query_id: this.props.response.data.data.query_id
@@ -575,9 +579,11 @@ export default class ChatMessage extends React.Component {
     }
 
     // Use stored response data or props response data
+    // Get updated columns from QueryOutput if available (includes custom columns)
+    const currentColumns = this.responseRef?.queryResponse?.data?.data?.columns || this.props.response?.data?.data?.columns
     const responseData = summaryResponseData || (this.props.response?.data?.data ? {
       rows: this.responseRef?.tableData || this.props.response.data.data.rows,
-      columns: this.props.response.data.data.columns,
+      columns: currentColumns,
       text: this.props.response.data.data.text,
       interpretation: this.props.response.data.data.interpretation,
       query_id: this.props.response.data.data.query_id
@@ -805,7 +811,7 @@ export default class ChatMessage extends React.Component {
                       loading={isGenerating}
                       icon='magic-wand'
                     >
-                      Generate
+                      Analyze
                     </Button>
                   </div>
                   {focusError && (
@@ -821,10 +827,20 @@ export default class ChatMessage extends React.Component {
               },
             }}
           >
-            Generate Summary
+            <span className='analyze-button-content'>
+              Analyze
+            </span>
+            <span
+              className='analyze-beta-badge'
+              data-tooltip-content='This feature is in beta'
+              data-tooltip-id={`${tooltipId}-beta`}
+            >
+              Beta
+            </span>
           </Button>
         </div>
         {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
+        <Tooltip tooltipId={`${tooltipId}-beta`} delayShow={500} />
       </div>
     )
   }
