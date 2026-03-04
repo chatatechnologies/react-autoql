@@ -7,6 +7,10 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import testCases from '../../../../test/responseTestCases'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot

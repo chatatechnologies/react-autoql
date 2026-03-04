@@ -1,8 +1,11 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import NumberAxisSelector from './NumberAxisSelector'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
 import sampleProps from '../chartTestData'
 import { findByTestAttr } from '../../../../test/testUtils'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = NumberAxisSelector.defaultProps

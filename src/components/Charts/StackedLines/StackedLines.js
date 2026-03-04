@@ -1,14 +1,19 @@
 import React, { PureComponent } from 'react'
-import { getAutoQLConfig, getKey, getTooltipContent, formatElement, getThemeValue, createSVGPath } from 'autoql-fe-utils'
+import {
+  getAutoQLConfig,
+  getKey,
+  getTooltipContent,
+  formatElement,
+  getThemeValue,
+  createSVGPath,
+} from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
 // Module-level helpers (pure, no dependencies on instance)
 const hexToRgb = (hex) => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result
-    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
-    : null
+  return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null
 }
 
 const parseRgb = (rgbStr) => {
@@ -23,9 +28,7 @@ const getLabelThemeColors = (backgroundColor) => {
   if (!rgb && backgroundColor?.includes('rgb')) rgb = parseRgb(backgroundColor)
   rgb = rgb || { r: 255, g: 255, b: 255 }
   const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255
-  return luminance > 0.5
-    ? { textFill: '#000', textStroke: '#fff' }
-    : { textFill: '#fff', textStroke: '#000' }
+  return luminance > 0.5 ? { textFill: '#000', textStroke: '#fff' } : { textFill: '#fff', textStroke: '#000' }
 }
 
 const HOVER_LABEL_TEXT_STYLE = { fontWeight: 500 }
@@ -164,20 +167,20 @@ export default class StackedLines extends PureComponent {
     const x2 = label2.x
     const width1 = label1.width
     const width2 = label2.width
-    
+
     // Check if the bounding boxes overlap
     const left1 = x1 - width1 / 2
     const right1 = x1 + width1 / 2
     const left2 = x2 - width2 / 2
     const right2 = x2 + width2 / 2
-    
+
     return !(right1 + minSpacing < left2 || right2 + minSpacing < left1)
   }
 
   createHoverLabel = (x, y, value, colIndex, polygonIndex, vertexIndex, color, xScale, yScale, width, height) => {
     const { columns, dataFormatting } = this.props
     const column = columns[colIndex]
-    
+
     // Format the value
     const formattedValue = formatElement({
       element: value,
@@ -189,7 +192,7 @@ export default class StackedLines extends PureComponent {
     const textWidth = this.estimateTextWidth(formattedValue, fontSize)
     const textHeight = fontSize
     const labelY = y - 8 // Position above the dot
-    
+
     // Get chart bounds from scale ranges
     const xRange = xScale.range()
     const yRange = yScale.range()
@@ -197,22 +200,22 @@ export default class StackedLines extends PureComponent {
     const chartRight = Math.max(xRange[0], xRange[xRange.length - 1])
     const chartTop = Math.min(yRange[0], yRange[yRange.length - 1])
     const chartBottom = Math.max(yRange[0], yRange[yRange.length - 1])
-    
+
     // Add padding to avoid overlapping with axis labels
     const paddingX = 10 // Horizontal padding from chart edges
     const paddingY = 15 // Vertical padding from chart edges (more space for axis labels)
-    
+
     // Clamp X position to stay within chart bounds
     const labelLeft = x - textWidth / 2
     const labelRight = x + textWidth / 2
     let clampedX = x
-    
+
     if (labelLeft < chartLeft + paddingX) {
       clampedX = chartLeft + paddingX + textWidth / 2
     } else if (labelRight > chartRight - paddingX) {
       clampedX = chartRight - paddingX - textWidth / 2
     }
-    
+
     // Clamp Y position to stay within chart bounds
     let clampedY = labelY
     if (clampedY < chartTop + paddingY) {
@@ -245,22 +248,28 @@ export default class StackedLines extends PureComponent {
 
     const { columns, numberColumnIndices, stringColumnIndex, legendLabels, yScale, xScale, width, height } = this.props
 
+    const visibleSeries = numberColumnIndices.filter((colIndex) => {
+      return !columns[colIndex].isSeriesHidden
+    })
+
+    if (!visibleSeries.length) {
+      return null
+    }
+
     // Build gradient defs for each visible series (vertical, top-to-bottom depth effect)
     const gradientDefs = []
     const gradientIds = new Map()
-    numberColumnIndices.forEach((colIndex, i) => {
-      if (!columns[colIndex].isSeriesHidden) {
-        const color = this.props.colorScale(colIndex)
-        const gradientId = `stacked-area-gradient-${this.props.chartTooltipID || 'default'}-${colIndex}-${i}`
-        gradientIds.set(colIndex, gradientId)
-        gradientDefs.push(
-          <linearGradient key={gradientId} id={gradientId} x1='0%' y1='0%' x2='0%' y2='100%'>
-            <stop offset='0%' stopColor={color} stopOpacity='0.55' />
-            <stop offset='50%' stopColor={color} stopOpacity='0.35' />
-            <stop offset='100%' stopColor={color} stopOpacity='0.15' />
-          </linearGradient>,
-        )
-      }
+    visibleSeries.forEach((colIndex) => {
+      const color = this.props.colorScale(colIndex)
+      const gradientId = `stacked-area-gradient-${colIndex}`
+      gradientIds.set(colIndex, gradientId)
+      gradientDefs.push(
+        <linearGradient key={gradientId} id={gradientId} x1='0%' y1='0%' x2='0%' y2='100%'>
+          <stop offset='0%' stopColor={color} stopOpacity='0.55' />
+          <stop offset='50%' stopColor={color} stopOpacity='0.35' />
+          <stop offset='100%' stopColor={color} stopOpacity='0.15' />
+        </linearGradient>,
+      )
     })
 
     const polygons = []
@@ -289,7 +298,7 @@ export default class StackedLines extends PureComponent {
       if (!columns[colIndex].isSeriesHidden) {
         const color = this.props.colorScale(colIndex)
         const currentPolygonIdx = visiblePolygonIndex
-        
+
         this.props.data.forEach((d, index) => {
           const rawValue = d[colIndex]
           const valueNumber = Number(rawValue)
@@ -316,10 +325,24 @@ export default class StackedLines extends PureComponent {
           // Store label data for the hovered polygon
           // Use the individual series value (not cumulative) for the label
           if (this.state.hoveredPolygonIndex === currentPolygonIdx) {
-            const labelData = this.createHoverLabel(x, y, value, colIndex, currentPolygonIdx, index, color, xScale, yScale, width, height)
+            const labelData = this.createHoverLabel(
+              x,
+              y,
+              value,
+              colIndex,
+              currentPolygonIdx,
+              index,
+              color,
+              xScale,
+              yScale,
+              width,
+              height,
+            )
             hoverLabelsData.push(labelData)
           }
         })
+
+        const gradientId = gradientIds.get(colIndex)
 
         // Build smooth line path for the top edge
         const linePathD = createSVGPath(currentPolygonVertices, 0.2)
@@ -331,7 +354,6 @@ export default class StackedLines extends PureComponent {
           const smoothBottomEdge = reversedPrevPathD ? reversedPrevPathD.replace(/^M/, 'L') : ''
           const smoothAreaPathD = `${linePathD} ${smoothBottomEdge} Z`
 
-          const gradientId = gradientIds.get(colIndex)
           const legendLabelIndex = numberColumnIndices?.indexOf(colIndex)
           const legendLabel =
             legendLabelIndex !== -1 && legendLabels?.[legendLabelIndex]?.label
@@ -341,7 +363,9 @@ export default class StackedLines extends PureComponent {
           polygons.push(
             <path
               key={`area-${getKey(stringColumnIndex, currentPolygonIdx)}`}
-              className={`stacked-area${this.state.activeKey === getKey(stringColumnIndex, currentPolygonIdx) ? ' active' : ''}`}
+              className={`stacked-area${
+                this.state.activeKey === getKey(stringColumnIndex, currentPolygonIdx) ? ' active' : ''
+              }`}
               d={smoothAreaPathD}
               data-tooltip-html={`<div><strong>Field</strong>: ${legendLabel}</div>`}
               data-tooltip-id={this.props.chartTooltipID}
@@ -376,12 +400,10 @@ export default class StackedLines extends PureComponent {
     if (hoverLabelsData.length > 0 && hoverLabelsData.length <= 20) {
       // Sort labels by x position
       const sortedLabels = [...hoverLabelsData].sort((a, b) => a.x - b.x)
-      
+
       // Filter out overlapping labels
       sortedLabels.forEach((label) => {
-        const overlaps = visibleLabels.some((existingLabel) =>
-          this.labelsOverlap(label, existingLabel)
-        )
+        const overlaps = visibleLabels.some((existingLabel) => this.labelsOverlap(label, existingLabel))
         if (!overlaps) {
           visibleLabels.push(label)
         }
@@ -400,7 +422,8 @@ export default class StackedLines extends PureComponent {
         {this.state.hoveredPolygonIndex !== null && visibleLabels.length > 0 && (
           <g className='stacked-area-hover-labels' style={{ pointerEvents: 'none' }}>
             {visibleLabels.map((label) => {
-              const backgroundColor = this.props.backgroundColor || getThemeValue('background-color-secondary') || '#fff'
+              const backgroundColor =
+                this.props.backgroundColor || getThemeValue('background-color-secondary') || '#fff'
               const { textFill, textStroke } = getLabelThemeColors(backgroundColor)
 
               return (
