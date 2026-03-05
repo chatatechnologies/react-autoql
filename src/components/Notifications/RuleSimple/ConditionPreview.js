@@ -157,7 +157,7 @@ const ConditionPreview = ({
           <div
             className='condition-preview-reference'
             style={{ left: `${referencePct}%` }}
-            title={`Reference X: ${referenceValue}`}
+            title={`Reference value: ${referenceValue}`}
           />
         )}
 
@@ -186,7 +186,7 @@ const ConditionPreview = ({
           )}
           {hasReference && (
             <span className='legend-item'>
-              <span className='legend-swatch reference' /> Reference X {`(${referenceValue})`}
+              <span className='legend-swatch reference' /> Reference value {`(${referenceValue})`}
             </span>
           )}
         </div>

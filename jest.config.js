@@ -17,5 +17,7 @@ module.exports = {
   moduleDirectories: ['node_modules', 'example/node_modules', 'src'],
   coverageReporters: ['json-summary', 'text', 'lcov'],
   transformIgnorePatterns: ['/node_modules/(?!uuid)/'],
+  // forceExit ensures Jest will terminate even if open handles (timers, mocked sockets,
+  // or lingering async operations) keep the process alive during some tests.
   forceExit: true,
 }
