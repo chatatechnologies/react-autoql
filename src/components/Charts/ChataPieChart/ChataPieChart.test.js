@@ -3,6 +3,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import ChataPieChart from './ChataPieChart'
 import sampleProps from '../chartTestData'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const datePivotSampleProps = sampleProps.datePivot
 const defaultProps = ChataPieChart.defaultProps

@@ -3,6 +3,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import StackedColumns from './StackedColumns'
 import sampleProps from '../chartTestData'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = StackedColumns.defaultProps
@@ -58,7 +61,7 @@ describe('stacked column ordering', () => {
     // Test that the component renders without errors with sorted indices
     const stackedColumnsComponent = findByTestAttr(wrapper, 'stacked-columns')
     expect(stackedColumnsComponent.exists()).toBe(true)
-    
+
     // Verify that the component receives the numberColumnIndices prop (which should be sorted)
     const instance = wrapper.instance()
     expect(instance.props.numberColumnIndices).toEqual(sortedIndices)
@@ -88,7 +91,7 @@ describe('stacked column ordering', () => {
     // Test that the component renders without errors and filters hidden series
     const stackedColumnsComponent = findByTestAttr(wrapper, 'stacked-columns')
     expect(stackedColumnsComponent.exists()).toBe(true)
-    
+
     // The component should filter out hidden series in its render method
     // We verify it renders without error (the filtering happens internally)
     const instance = wrapper.instance()
@@ -123,4 +126,3 @@ describe('stacked column ordering', () => {
     expect(instance.props.numberColumnIndices).toEqual(numberColumnIndices)
   })
 })
-

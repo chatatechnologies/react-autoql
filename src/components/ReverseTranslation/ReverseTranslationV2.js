@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.filter'
@@ -288,7 +288,7 @@ const ReverseTranslation = ({
     }
   }, [queryResponse?.data?.data?.parsed_interpretation])
 
-  // todo: consolidate with queryResponse effect
+  // TODO: consolidate with queryResponse effect
   useEffect(() => {
     if (!textOnly && (onValueLabelClick || enableEditReverseTranslation)) {
       const newParsedInterpretation = localRTFilterResponse?.data?.data?.parsed_interpretation
@@ -548,7 +548,6 @@ const ReverseTranslation = ({
   const hasInterpretationArray = !!reverseTranslationArray?.length
   const hasTextInterpretation = !!queryResponse?.data?.data?.interpretation
 
-
   if (!hasInterpretationArray && !hasTextInterpretation) {
     return null
   }
@@ -568,10 +567,7 @@ const ReverseTranslation = ({
           onMouseLeave={() => externalIsHovered === undefined && setInternalIsHovered(false)}
         >
           <div className='react-autoql-reverse-translation-toggle-wrapper'>
-            <button
-              className='react-autoql-reverse-translation-toggle'
-              type='button'
-            >
+            <button className='react-autoql-reverse-translation-toggle' type='button'>
               <Icon type='info' />
               <span>View interpretation</span>
             </button>

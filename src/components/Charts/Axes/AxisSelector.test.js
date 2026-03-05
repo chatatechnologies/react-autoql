@@ -1,9 +1,12 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import AxisSelector from './AxisSelector'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
 import sampleProps from '../chartTestData'
 import { findByTestAttr } from '../../../../test/testUtils'
 import { getBandScale, getLinearScale, getNumberColumnIndices, getStringColumnIndices } from 'autoql-fe-utils'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = AxisSelector.defaultProps
