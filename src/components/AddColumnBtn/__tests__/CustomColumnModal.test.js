@@ -65,6 +65,21 @@ describe('customColumnHelpers', () => {
     expect(transformDivisionExpression(s)).toBe('COALESCE(pgs.completions / NULLIF(pgs.passing_attempts, 0), 0)')
   })
 
+  test('transformDivisionExpression handles negative numeric denominators', () => {
+    const input = 'A / (-1)'
+    expect(transformDivisionExpression(input)).toBe('COALESCE(A / NULLIF((-1), 0), 0)')
+  })
+
+  test('transformDivisionExpression handles decimal denominators', () => {
+    const input = 'A / 1.5'
+    expect(transformDivisionExpression(input)).toBe('COALESCE(A / NULLIF(1.5, 0), 0)')
+  })
+
+  test('transformDivisionExpression skips wrapping when division is inside function args', () => {
+    const input = 'foo(A / B, C)'
+    expect(transformDivisionExpression(input)).toBe(input)
+  })
+
   test('normalizeCoalesceParentheses collapses double parentheses', () => {
     const s = 'COALESCE((x / NULLIF(y, 0), 0))'
     expect(normalizeCoalesceParentheses(s)).toBe('COALESCE(x / NULLIF(y, 0), 0)')
@@ -420,8 +435,8 @@ describe('CustomColumnModal edge cases', () => {
     ]
     const protoCumPercent = inst.buildProtoTableColumn({ columnFnArray: fnCumPercent })
     const normCumPercent = protoCumPercent.replace(/\s+/g, '')
-    expect(normCumPercent).toContain(`COALESCE((SUM(${'colA'})OVER(`)
-    expect(normCumPercent).toContain(`NULLIF(SUM(${'colA'})OVER(),0)),0)*100`)
+    expect(normCumPercent).toContain(`(COALESCE(SUM(${'colA'})OVER(`)
+    expect(normCumPercent).toContain(`NULLIF(SUM(${'colA'})OVER(),0),0)*100)`)
 
     // SUM-derived percent: find a window function whose nextSelector is SUM
     const sumFnKey = Object.keys(WINDOW_FUNCTIONS).find(
@@ -432,7 +447,7 @@ describe('CustomColumnModal edge cases', () => {
       const protoSumDerived = inst.buildProtoTableColumn({ columnFnArray: fnSumDerived })
       const normSumDerived = protoSumDerived.replace(/\s+/g, '')
       // expect denominator to be NULLIF(SUM(colB),0) and numerator to reference inner column 'colB'
-      expect(normSumDerived).toContain(`COALESCE((colB/NULLIF(SUM(colB),0)),0)*100`)
+      expect(normSumDerived).toContain(`(COALESCE(colB/NULLIF(SUM(colB),0),0)*100)`)
     }
   })
 
