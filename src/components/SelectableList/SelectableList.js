@@ -170,7 +170,7 @@ export default class SelectableList extends React.Component {
             items.map((item, index) => {
               return (
                 <div
-                  key={item.id ?? item.key ?? `${item.name ?? 'item'}-${index}-${this.KEY}`}
+                  key={item.key ?? `list-item-${index}-${this.KEY}`}
                   className={`react-autoql-list-item
                 ${this.state.selected.includes(index) ? 'selected' : ''}
                 ${item.disabled ? 'disabled' : ''}
