@@ -453,15 +453,15 @@ export default class CustomColumnModal extends React.Component {
     // CUMULATIVE_PERCENT
     if (columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT) {
       const orderClause = this.buildOrderByClause(columnFn, false)
-      return `(COALESCE((SUM(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${columnFn?.column?.name}) OVER(), 0)), 0) * 100)`
+      return `(COALESCE(SUM(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${columnFn?.column?.name}) OVER(), 0), 0) * 100)`
     }
 
     // SUM-derived percent (window function whose nextSelector is SUM)
     if (WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM) {
-      return `(COALESCE((${colName?.substring(
+      return `(COALESCE(${colName?.substring(
         colName?.indexOf('SUM(') + 4,
         colName?.indexOf(')'),
-      )} / NULLIF(${colName}, 0)), 0) * 100)`
+      )} / NULLIF(${colName}, 0), 0) * 100)`
     }
 
     // Default: generic function with window clause
