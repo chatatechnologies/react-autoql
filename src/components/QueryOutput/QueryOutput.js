@@ -995,10 +995,12 @@ export class QueryOutput extends React.Component {
       const aggConfig = this.getAggConfig(newColumns)
 
       // If data is a single value, change display type to table
+      // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
       let displayType = this.state.displayType
+      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
-      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse)) {
+      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse) && !hasFilters) {
         displayType = 'single-value'
       }
 
@@ -1038,9 +1040,11 @@ export class QueryOutput extends React.Component {
       // Determine appropriate display type based on column visibility
       let displayType = this.state.displayType
       const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
+      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
 
-      if (isSingleValueResponse(this.queryResponse)) {
+      if (isSingleValueResponse(this.queryResponse) && !hasFilters) {
         // Single visible column AND single row (or no data) → single-value display
+        // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
         displayType = 'single-value'
       } else if (displayType === DisplayTypes.TABLE && visibleColumns.length === 0) {
         // All columns hidden → show text
@@ -4019,7 +4023,9 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
-      } else if (isSingleValueResponse(this.queryResponse)) {
+      } else if (isSingleValueResponse(this.queryResponse) && displayType === 'single-value') {
+        // Only render single-value if displayType is explicitly set to 'single-value'
+        // This prevents showing single-value when filters reduce data to 1 row
         return this.renderSingleValueResponse()
       } else if (!isTableType(displayType) && !isChartType(displayType)) {
         console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
