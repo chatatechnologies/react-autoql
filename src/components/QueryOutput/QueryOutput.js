@@ -1272,7 +1272,7 @@ export class QueryOutput extends React.Component {
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[columnIndex]?.[0] ?? 0,
+              element: this.queryResponse.data.data.rows[0]?.[columnIndex] ?? 0,
               column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
