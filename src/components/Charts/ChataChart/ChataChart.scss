@@ -282,14 +282,37 @@
     // Hide dots by default, show on hover
     .line-dot-inner-circle {
       opacity: 0 !important;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.1s ease;
     }
 
-    &:hover .line-dot-inner-circle,
-    &.active .line-dot-inner-circle {
+    // Show smaller dots when line is hovered (all dots on the line)
+    &.line-hovered .line-dot-inner-circle {
       fill: currentColor !important;
       opacity: 1 !important;
+      transition: opacity 0.1s ease;
     }
+
+    // Show larger dots when specific vertex is hovered or active
+    // Note: When hovering a vertex, the line-hovered class is also present, so all dots show
+    &:hover .line-dot-inner-circle,
+    &.active .line-dot-inner-circle,
+    &.hovered .line-dot-inner-circle {
+      fill: currentColor !important;
+      opacity: 1 !important;
+      transition: opacity 0.1s ease;
+    }
+
+    // When not hovered and not active, hide dots immediately without transition to prevent size flash
+    &:not(.line-hovered):not(:hover):not(.hovered):not(.active) .line-dot-inner-circle {
+      opacity: 0 !important;
+      transition: none !important;
+    }
+  }
+
+  // Transparent hover overlay for line paths (not included in PNG export)
+  .line-hover-overlay {
+    pointer-events: stroke;
+    opacity: 0;
   }
 
   .line-gradient-area {

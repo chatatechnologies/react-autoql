@@ -1698,14 +1698,6 @@ export class QueryOutput extends React.Component {
       })
     }
 
-    if (filter) {
-      return this.processDrilldown({
-        supportedByAPI: false,
-        activeKey,
-        filter,
-      })
-    }
-
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1713,6 +1705,18 @@ export class QueryOutput extends React.Component {
     const column = columns[columnIndex]
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
+
+    // Check if string column supports drilldown - if so, use groupBys instead of filter
+    const shouldUseGroupBys = stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
+
+    if (filter && !shouldUseGroupBys) {
+      // Only use filter if column doesn't support drilldown
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter,
+      })
+    }
 
     if (columns?.[stringColumnIndex]?.datePivot) {
       const year = Number(columns?.[columnIndex]?.name)
@@ -1724,7 +1728,8 @@ export class QueryOutput extends React.Component {
         drill_down: stringColumn.drill_down,
         value,
       })
-    } else if (stringColumn?.groupable) {
+    } else if (stringColumn?.groupable || stringColumn?.drill_down) {
+      // Add groupBy for string column if it supports drilldown (groupable or has drill_down)
       groupBys.push({
         name: stringColumn.name,
         drill_down: stringColumn.drill_down,
