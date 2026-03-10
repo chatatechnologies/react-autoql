@@ -110,7 +110,7 @@ class DashboardWithoutTheme extends React.Component {
     dataFormatting: dataFormattingDefault,
 
     tiles: [],
-    executeOnMount: true,
+    executeOnMount: false,
     dataPageSize: undefined,
     executeOnStopEditing: false,
     isEditing: false,

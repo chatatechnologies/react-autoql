@@ -286,6 +286,84 @@ describe('ChataTable', () => {
     })
   })
 
+  describe('Filter badge classList handling', () => {
+    test('uses classList.toggle when available for non-pivot columns', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      const toggleSpy = jest.fn()
+      const allColumns = [
+        {
+          getField: () => '1',
+          getDefinition: () => ({ name: '1', origColumn: { field: '1' } }),
+          getElement: () => ({ classList: { toggle: toggleSpy } }),
+        },
+      ]
+
+      const filteredFields = new Set(['1'])
+
+      instance.setNonPivotFilterBadges(allColumns, filteredFields)
+
+      expect(toggleSpy).toHaveBeenCalledWith('is-filtered', true)
+    })
+
+    test('falls back to add/remove when toggle is not present for non-pivot columns', () => {
+      const wrapper = setup()
+      const instance = wrapper.instance()
+
+      const addSpy = jest.fn()
+      const removeSpy = jest.fn()
+
+      const col1 = {
+        getField: () => '1',
+        getDefinition: () => ({ name: '1', origColumn: { field: '1' } }),
+        getElement: () => ({ classList: { add: addSpy, remove: removeSpy } }),
+      }
+      const col2 = {
+        getField: () => '2',
+        getDefinition: () => ({ name: '2', origColumn: { field: '2' } }),
+        getElement: () => ({ classList: { add: addSpy, remove: removeSpy } }),
+      }
+
+      const allColumns = [col1, col2]
+      const filteredFields = new Set(['1'])
+
+      instance.setNonPivotFilterBadges(allColumns, filteredFields)
+
+      expect(addSpy).toHaveBeenCalledWith('is-filtered')
+      expect(removeSpy).toHaveBeenCalledWith('is-filtered')
+    })
+
+    test('toggles container class for pivot tables using toggle or fallback', () => {
+      const wrapper = setup({ pivot: true })
+      const instance = wrapper.instance()
+
+      // ensure container exists
+      const containerId = `react-autoql-table-container-${instance.TABLE_ID}`
+      const container = document.createElement('div')
+      container.id = containerId
+      document.body.appendChild(container)
+
+      // case A: toggle present — attach spy to existing DOMTokenList.toggle
+      const toggleSpy = jest.fn()
+      container.classList.toggle = toggleSpy
+      instance.setPivotFilterBadges([], [{ field: '1' }])
+      expect(toggleSpy).toHaveBeenCalledWith('pivot-table-has-filters', true)
+
+      // case B: toggle missing, add/remove present
+      const addSpy = jest.fn()
+      const removeSpy = jest.fn()
+      // shadow toggle to force fallback path
+      container.classList.toggle = undefined
+      container.classList.add = addSpy
+      container.classList.remove = removeSpy
+      instance.setPivotFilterBadges([], [])
+      expect(removeSpy).toHaveBeenCalledWith('pivot-table-has-filters')
+
+      container.remove()
+    })
+  })
+
   describe('filterCount functionality', () => {
     test('should initialize filterCount based on initial data', () => {
       const wrapper = setup()
@@ -923,5 +1001,4 @@ describe('ChataTable', () => {
       expect(JSON.stringify(result)).toContain('Scrolled 4')
     })
   })
-
 })

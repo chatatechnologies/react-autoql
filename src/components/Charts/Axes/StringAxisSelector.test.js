@@ -1,8 +1,11 @@
 import React from 'react'
 import { mount } from 'enzyme'
 import StringAxisSelector from './StringAxisSelector'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
 import sampleProps from '../chartTestData'
 import { findByTestAttr } from '../../../../test/testUtils'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const defaultProps = StringAxisSelector.defaultProps

@@ -388,21 +388,10 @@
 }
 
 .dashboard-tile-title-container .dashboard-tile-title {
-  // Modern: Larger, more prominent title (18px is standard for card titles)
-  font-weight: 500;
+  font-weight: 600;
   font-size: 15px;
   line-height: 1.4;
   margin: 0;
-  
-  // Optional: Subtle gradient text effect (uncomment if desired)
-  // background: linear-gradient(
-  //   135deg,
-  //   var(--react-autoql-text-color-primary, #1a1a1a) 0%,
-  //   var(--react-autoql-accent-color, #26a7df) 100%
-  // );
-  // -webkit-background-clip: text;
-  // -webkit-text-fill-color: transparent;
-  // background-clip: text;
 }
 
 /* Wrap mode: title uses multiple lines instead of truncation + tooltip */
