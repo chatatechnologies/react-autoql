@@ -12,6 +12,7 @@ import { Tooltip } from '../Tooltip'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
 import DashboardSlicer from './DashboardSlicer'
+import SlicerChip from './SlicerChip'
 
 import './DashboardToolbar.scss'
 
@@ -81,100 +82,29 @@ export class DashboardToolbarWithoutRef extends React.Component {
   }
 
   componentDidMount = () => {
-
     // If an initial slicer value is provided (e.g., from imported dashboard), use it
     if (this.props.value) {
       this.setState({ selectedSlicer: this.props.value })
-      // Also save it to localStorage for persistence
-      this.saveSlicerToStorage(this.props.value)
-    } else {
-      // Otherwise, load from localStorage
-      this.loadSlicerFromStorage()
-    }
-  }
-
-  getStorageKey = () => {
-    const dashboardId = this.props.dashboardId || 'default'
-    return `react-autoql-dashboard-slicer-${dashboardId}`
-  }
-
-  loadSlicerFromStorage = () => {
-    try {
-      const storageKey = this.getStorageKey()
-      const storedSlicer = localStorage.getItem(storageKey)
-      if (storedSlicer) {
-        const slicer = JSON.parse(storedSlicer)
-        this.setState({ selectedSlicer: slicer })
-        // Notify parent so it can be applied to queries
-        this.props.onSlicerChange(slicer)
-      }
-    } catch (error) {
-      console.error('Error loading slicer from localStorage:', error)
-    }
-  }
-
-  saveSlicerToStorage = (slicer) => {
-    try {
-      const storageKey = this.getStorageKey()
-      if (slicer) {
-        localStorage.setItem(storageKey, JSON.stringify(slicer))
-      } else {
-        localStorage.removeItem(storageKey)
-      }
-    } catch (error) {
-      console.error('Error saving slicer to localStorage:', error)
     }
   }
 
   handleSlicerChange = (slicer) => {
     this.setState({ selectedSlicer: slicer })
-    // Save to localStorage as fallback
-    this.saveSlicerToStorage(slicer)
     // Notify parent to apply to tiles
     this.props.onSlicerChange(slicer)
   }
 
   handleRemoveSlicer = () => {
     this.setState({ selectedSlicer: null })
-    // Clear localStorage
-    this.saveSlicerToStorage(null)
     // Notify parent to remove from tiles
     this.props.onSlicerChange(null)
   }
 
-  renderSlicerChip = () => {
-    if (!this.state.selectedSlicer) {
-      return null
-    }
-
-    const displayName = this.state.selectedSlicer.format_txt || this.state.selectedSlicer.value
-    const showMessage = this.state.selectedSlicer.show_message
-    const tooltipText = showMessage 
-      ? `Applied only to tiles whose underlying data contains "${showMessage}"`
-      : 'Applied only to tiles whose underlying data contains this value'
-
-    return (
-      <Chip 
-        onDelete={this.handleRemoveSlicer}
-        tooltip={tooltipText}
-        tooltipID={this.props.tooltipID}
-      >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <Icon type='filter' />
-          <span>
-            <strong>{displayName}</strong> {showMessage && <em>({showMessage})</em>}
-          </span>
-        </span>
-      </Chip>
-    )
-  }
 
   componentDidUpdate = (prevProps, prevState) => {
-    // If value prop changes, update the slicer and override localStorage
+    // If value prop changes, update the slicer
     if (this.props.value !== prevProps.value && this.props.value) {
       this.setState({ selectedSlicer: this.props.value })
-      // Save to localStorage to override any existing value
-      this.saveSlicerToStorage(this.props.value)
     }
 
     if (!prevState.isRenameModalOpen && this.state.isRenameModalOpen) {
@@ -459,7 +389,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
           {this.props.hasTiles && (
             <div className='react-autoql-dashboard-slicer-container'>
               {this.state.selectedSlicer ? (
-                this.renderSlicerChip()
+                <SlicerChip
+                  slicer={this.state.selectedSlicer}
+                  onDelete={this.handleRemoveSlicer}
+                  tooltipID={this.props.tooltipID}
+                />
               ) : (
                 <DashboardSlicer
                   authentication={this.props.authentication}
