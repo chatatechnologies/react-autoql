@@ -2049,7 +2049,7 @@ export default class ChataTable extends React.Component {
           style={this.props.style}
           className={`react-autoql-table-container 
             ${isLoading ? 'loading' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
+            ${this.props.supportsDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
             ${this.state.isFiltering ? 'filtering' : ''}
             ${this.props.isAnimating ? 'animating' : ''}
             ${this.useInfiniteScroll ? 'infinite' : 'limited'}
