@@ -43,6 +43,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     authentication: PropTypes.shape({}),
     context: PropTypes.string,
     slicerSuggestion: PropTypes.string,
+    enableSlicers: PropTypes.bool,
     isDashboardFullyExecuted: PropTypes.bool,
     hasTiles: PropTypes.bool,
   }
@@ -66,6 +67,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     dashboardId: undefined,
     authentication: undefined,
     context: undefined,
+    enableSlicers: false,
     value: null,
     slicerSuggestion: undefined,
     isDashboardFullyExecuted: false,
@@ -386,7 +388,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
-          {this.props.hasTiles && (
+          {this.props.hasTiles && this.props.enableSlicers && (
             <div className='react-autoql-dashboard-slicer-container'>
               {this.state.selectedSlicer ? (
                 <SlicerChip

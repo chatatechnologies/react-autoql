@@ -108,6 +108,7 @@ class DashboardWithoutTheme extends React.Component {
         data: PropTypes.shape({}),
       }),
     ),
+    enableSlicers: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
   }
@@ -144,6 +145,7 @@ class DashboardWithoutTheme extends React.Component {
     dashboardId: undefined,
     enableAutoRefresh: false,
     slicerSuggestion: undefined,
+    enableSlicers: false,
     enableMagicWand: false,
   }
 
@@ -312,7 +314,8 @@ class DashboardWithoutTheme extends React.Component {
           if (this.onChangeTiles) {
             // Always use state slicers (even if empty) to reflect user changes
             // If state is explicitly set to empty array, send empty array, not initialSlicers
-            const slicers = Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
+            // If slicers are disabled, always send empty array
+            const slicers = this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
             this.props.onChange(this.onChangeTiles, slicers)
             this.onChangeTiles = null
             if (this.callbackSubsciptions?.length) {
@@ -921,7 +924,7 @@ class DashboardWithoutTheme extends React.Component {
               minH: 2,
               minW: 3,
             }}
-            dashboardSlicer={this.state.dashboardSlicer}
+            dashboardSlicer={this.props.enableSlicers && this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
@@ -1004,13 +1007,14 @@ class DashboardWithoutTheme extends React.Component {
                 this.debouncedOnChange(this.state.uneditedDashboardTiles)
                 this.props.stopEditingCallback()
               }}
-              onSlicerChange={this.handleSlicerChange}
+              onSlicerChange={this.props.enableSlicers ? this.handleSlicerChange : undefined}
               dashboardId={this.props.dashboardId}
-              value={this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
+              value={this.props.enableSlicers && this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
               refreshInterval={this.props.refreshInterval}
               enableAutoRefresh={this.props.enableAutoRefresh}
               slicerSuggestion={this.props.slicerSuggestion}
               hasTiles={tiles.length > 0}
+              enableSlicers={this.props.enableSlicers}
             />
           )}
           <div
