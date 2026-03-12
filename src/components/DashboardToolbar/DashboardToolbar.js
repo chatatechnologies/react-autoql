@@ -11,6 +11,8 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
+import DashboardSlicer from './DashboardSlicer'
+import SlicerChip from './SlicerChip'
 
 import './DashboardToolbar.scss'
 
@@ -32,10 +34,18 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
     onDownloadClick: PropTypes.func,
+    onSlicerChange: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
     enableAutoRefresh: PropTypes.bool,
+    dashboardId: PropTypes.string,
+    authentication: PropTypes.shape({}),
+    context: PropTypes.string,
+    slicerSuggestion: PropTypes.string,
+    enableSlicers: PropTypes.bool,
+    isDashboardFullyExecuted: PropTypes.bool,
+    hasTiles: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -49,10 +59,19 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRedoClick: () => {},
     onRenameClick: () => {},
     onDownloadClick: () => {},
+    onSlicerChange: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
     enableAutoRefresh: false,
+    dashboardId: undefined,
+    authentication: undefined,
+    context: undefined,
+    enableSlicers: false,
+    value: null,
+    slicerSuggestion: undefined,
+    isDashboardFullyExecuted: false,
+    hasTiles: false,
   }
 
   state = {
@@ -61,9 +80,35 @@ export class DashboardToolbarWithoutRef extends React.Component {
     isRenameModalOpen: false,
     dashboardFilters: [],
     dashboardName: '',
+    selectedSlicer: null,
   }
 
+  componentDidMount = () => {
+    // If an initial slicer value is provided (e.g., from imported dashboard), use it
+    if (this.props.value) {
+      this.setState({ selectedSlicer: this.props.value })
+    }
+  }
+
+  handleSlicerChange = (slicer) => {
+    this.setState({ selectedSlicer: slicer })
+    // Notify parent to apply to tiles
+    this.props.onSlicerChange(slicer)
+  }
+
+  handleRemoveSlicer = () => {
+    this.setState({ selectedSlicer: null })
+    // Notify parent to remove from tiles
+    this.props.onSlicerChange(null)
+  }
+
+
   componentDidUpdate = (prevProps, prevState) => {
+    // If value prop changes, update the slicer
+    if (this.props.value !== prevProps.value && this.props.value) {
+      this.setState({ selectedSlicer: this.props.value })
+    }
+
     if (!prevState.isRenameModalOpen && this.state.isRenameModalOpen) {
       requestAnimationFrame(() => {
         this.inputRef?.focus()
@@ -126,6 +171,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
         <MenuItem
           title='Export Snapshot (.aqldash)'
           icon='download'
+          disabled={!this.props.isDashboardFullyExecuted}
           onClick={() => {
             this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
@@ -342,6 +388,27 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
+          {this.props.hasTiles && this.props.enableSlicers && (
+            <div className='react-autoql-dashboard-slicer-container'>
+              {this.state.selectedSlicer ? (
+                <SlicerChip
+                  slicer={this.state.selectedSlicer}
+                  onDelete={this.handleRemoveSlicer}
+                  tooltipID={this.props.tooltipID}
+                />
+              ) : (
+                <DashboardSlicer
+                  authentication={this.props.authentication}
+                  context={this.props.context}
+                  value={this.state.selectedSlicer}
+                  onChange={this.handleSlicerChange}
+                  placeholder='Select a slicer...'
+                  dashboardId={this.props.dashboardId}
+                  slicerSuggestion={this.props.slicerSuggestion}
+                />
+              )}
+            </div>
+          )}
         </div>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalOpen}
