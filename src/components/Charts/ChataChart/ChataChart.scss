@@ -132,7 +132,7 @@
 
   .legendCells {
     .cell {
-      &.hidden {
+      &.legend-cell-hidden {
         text {
           color: var(--react-autoql-background-disabled);
           opacity: 0.4 !important;
