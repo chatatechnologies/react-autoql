@@ -848,7 +848,7 @@ export default class ChataChart extends React.Component {
         style={{ paddingLeft }}
         className={`react-autoql-chart-header-container ${
           (this.state.isLoading || this.props.isResizing) && this.props.type !== DisplayTypes.NETWORK_GRAPH
-            ? 'loading'
+            ? 'react-autoql-chart-loading'
             : ''
         }`}
       >
@@ -1261,8 +1261,8 @@ export default class ChataChart extends React.Component {
             ref={(r) => (this.chartContainerRef = r)}
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
-            ${this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'loading' : ''}
-            ${this.props.hidden ? 'hidden' : ''}
+            ${this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''}
+            ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
             {!this.firstRender && !this.props.isAnimating && (

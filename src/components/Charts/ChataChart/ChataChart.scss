@@ -4,7 +4,7 @@
   box-sizing: border-box;
   flex: 0 0 auto;
 
-  &.loading {
+  &.react-autoql-chart-loading {
     visibility: hidden;
   }
 
@@ -68,7 +68,7 @@
   background: var(--react-autoql-background-color-secondary);
   transition: opacity 0.2s ease;
 
-  &.hidden {
+  &.react-autoql-chart-hidden {
     position: absolute;
     display: none;
     flex: 0 0 0;
@@ -97,7 +97,7 @@
     overflow: visible;
   }
 
-  &.loading {
+  &.react-autoql-chart-loading {
     opacity: 0;
     transition: none;
   }
