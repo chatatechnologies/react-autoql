@@ -3,7 +3,7 @@ import { isSingleValueResponse, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
 /**
  * Determines whether the magic wand (summary) button should be shown.
  * This function centralizes the logic used across ChatMessage and OptionsToolbar.
- * 
+ *
  * @param {Object} params - Parameters object
  * @param {boolean} params.enableMagicWand - Whether magic wand feature is enabled
  * @param {Object} params.queryResponse - The query response object (from responseRef?.queryResponse or props.response)
@@ -100,7 +100,7 @@ export function shouldShowSummaryButton({
 
 /**
  * Determines whether the summary button should be disabled.
- * 
+ *
  * @param {Object} params - Parameters object
  * @param {Object} params.queryResponse - The query response object
  * @param {boolean} params.isGenerating - Whether a summary is currently being generated

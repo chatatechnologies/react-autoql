@@ -53,6 +53,7 @@ import { AverageLine } from '../AverageLine'
 import { AverageLineToggle } from '../AverageLineToggle'
 import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
+import { isContainerCollapsed, getSafeContainerDimensions } from '../chartContainerHelpers'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
@@ -308,7 +309,9 @@ export default class ChataChart extends React.Component {
     // For stacked charts, use sorted column indices for color scale calculation
     // This ensures colors are assigned sequentially to segments (biggest to smallest)
     const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+      this.props.type === DisplayTypes.STACKED_COLUMN ||
+      this.props.type === DisplayTypes.STACKED_BAR ||
+      this.props.type === DisplayTypes.STACKED_LINE
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       numberColumnIndices = this.sortedNumberColumnIndicesForStacked
     }
@@ -518,7 +521,10 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        const isStackedChart =
+          props.type === DisplayTypes.STACKED_COLUMN ||
+          props.type === DisplayTypes.STACKED_BAR ||
+          props.type === DisplayTypes.STACKED_LINE
         if (isStackedChart) {
           const numberIndices = props.numberColumnIndices || []
           // Calculate total aggregate for each column index across all rows
@@ -593,7 +599,10 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        const isStackedChart =
+          props.type === DisplayTypes.STACKED_COLUMN ||
+          props.type === DisplayTypes.STACKED_BAR ||
+          props.type === DisplayTypes.STACKED_LINE
         if (isStackedChart) {
           // Calculate total aggregate for each column index across all rows
           const columnTotals = numberIndices.map((colIndex) => {
@@ -758,7 +767,12 @@ export default class ChataChart extends React.Component {
       outerWidth: this.outerWidth,
     }
 
-    if (this.props.hidden || this.props.isAnimating || this.firstRender) {
+    if (
+      this.props.hidden ||
+      this.props.isAnimating ||
+      this.firstRender ||
+      isContainerCollapsed(this.chartContainerRef)
+    ) {
       return defaultDimensions
     }
 
@@ -1309,6 +1323,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
@@ -1338,6 +1353,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
