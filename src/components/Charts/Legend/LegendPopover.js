@@ -249,7 +249,7 @@ export default class LegendPopover extends React.Component {
                     return (
                       <div
                         key={`legend-item-${i}`}
-                        className={`legend-item ${isHidden ? 'hidden' : ''}`}
+                        className={`legend-item ${isHidden ? 'legend-item-hidden' : ''}`}
                         onClick={() => this.handleCheckboxChange(labelText)}
                       >
                         <Checkbox checked={isChecked} clickable={false} className='legend-item-checkbox' />
