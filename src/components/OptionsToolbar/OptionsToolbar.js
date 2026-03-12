@@ -53,6 +53,7 @@ export class OptionsToolbar extends React.Component {
       isSummaryPopoverOpen: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
+      previousDisplayType: null, // Track display type before switching to table for filtering
     }
   }
 
@@ -596,13 +597,41 @@ export class OptionsToolbar extends React.Component {
     return (
       <Button
         onClick={() => {
-          const toggleFiltersOn = isTable ? !this.props.responseRef?.isFilteringTable() : true
-
-          this.setState({ isFiltering: toggleFiltersOn })
-
           if (this.props.responseRef?.state?.displayType === 'table') {
-            this.props.responseRef?.toggleTableFilter(toggleFiltersOn)
+            // Currently on table - toggle filters
+            const currentlyFiltering = this.props.responseRef?.isFilteringTable()
+            const toggleFiltersOn = !currentlyFiltering
+            
+            if (toggleFiltersOn) {
+              // Turning filters on
+              this.setState({ isFiltering: true })
+              this.props.responseRef?.toggleTableFilter(true)
+            } else {
+              // Turning filters off - switch back to chart (filters will be applied to chart if they exist)
+              const previousDisplayType = this.state.previousDisplayType
+              
+              this.setState({ isFiltering: false })
+              this.props.responseRef?.toggleTableFilter(false)
+              
+              // If we have a previous display type, switch back to it
+              // The chart will automatically show filtered data if filters are active
+              if (previousDisplayType) {
+                setTimeout(() => {
+                  if (this.state.previousDisplayType === previousDisplayType) {
+                    this.props.responseRef?.changeDisplayType(previousDisplayType)
+                    this.setState({ previousDisplayType: null })
+                  }
+                }, 100)
+              }
+            }
           } else {
+            // Currently on chart - switch to table and enable filters
+            // Store the current display type so we can switch back
+            console.log('Switching from chart to table, storing previousDisplayType:', displayType)
+            this.setState({
+              previousDisplayType: displayType,
+              isFiltering: true,
+            })
             this.props.responseRef?.changeDisplayType('table', () => {
               this.props.responseRef?.toggleTableFilter(true, true)
             })
