@@ -523,15 +523,6 @@ export class QueryOutput extends React.Component {
           () => {
             this.props.onDisplayTypeChange?.(this.state.displayType)
             
-            // If switching back to chart, refresh layout to adjust chart position
-            // Use setTimeout to ensure chart has rendered before adjusting position
-            if (isSwitchingToChart) {
-              setTimeout(() => {
-                if (this._isMounted) {
-                  this.refreshLayout()
-                }
-              }, 100)
-            }
           },
         )
 

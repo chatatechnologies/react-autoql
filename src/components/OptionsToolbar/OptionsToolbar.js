@@ -613,15 +613,11 @@ export class OptionsToolbar extends React.Component {
               this.setState({ isFiltering: false })
               this.props.responseRef?.toggleTableFilter(false)
               
-              // If we have a previous display type, switch back to it
+              // If we have a previous display type, switch back to it immediately
               // The chart will automatically show filtered data if filters are active
               if (previousDisplayType) {
-                setTimeout(() => {
-                  if (this.state.previousDisplayType === previousDisplayType) {
-                    this.props.responseRef?.changeDisplayType(previousDisplayType)
-                    this.setState({ previousDisplayType: null })
-                  }
-                }, 100)
+                this.props.responseRef?.changeDisplayType(previousDisplayType)
+                this.setState({ previousDisplayType: null })
               }
             }
           } else {
