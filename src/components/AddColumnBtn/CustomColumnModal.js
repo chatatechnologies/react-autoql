@@ -906,6 +906,7 @@ export default class CustomColumnModal extends React.Component {
       !!this.state.selectedFnOrderBy &&
       !!this.state.selectedFnMovingAverageTimeInterval &&
       this.state.selectedFnMovingAverageTimeInterval > 0
+    const medianComplete = this.state.selectedFnOperation === CustomColumnValues.MEDIAN && !!this.state.selectedFnColumn
     const cumulateiveSumComplete =
       this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM &&
       !!this.state.selectedFnColumn &&
@@ -925,6 +926,7 @@ export default class CustomColumnModal extends React.Component {
       totalPercentComplete ||
       rankComplete ||
       movingAvgComplete ||
+      medianComplete ||
       cumulateiveSumComplete ||
       cumulateivePercentComplete ||
       changeComplete
@@ -1783,6 +1785,31 @@ export default class CustomColumnModal extends React.Component {
                   options={ORDERBY_DIRECTIONS}
                   isDisabled={!this.state.selectedFnOrderBy}
                   outlined={true}
+                />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.MEDIAN && (
+            <>
+              <div>Median</div>
+              <div>
+                <Select
+                  label='Median Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
                 />
               </div>
             </>
