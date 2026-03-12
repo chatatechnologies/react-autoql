@@ -513,13 +513,26 @@ export class QueryOutput extends React.Component {
         }
 
         const newChartLegendState = updatedLegendStateByChart[this.state.displayType] || []
+        const isSwitchingToChart = isChartType(this.state.displayType) && !isChartType(prevState.displayType)
 
         this.setState(
           {
             hiddenLegendLabels: newChartLegendState,
             legendStateByChart: updatedLegendStateByChart,
           },
-          () => this.props.onDisplayTypeChange?.(this.state.displayType),
+          () => {
+            this.props.onDisplayTypeChange?.(this.state.displayType)
+            
+            // If switching back to chart, refresh layout to adjust chart position
+            // Use setTimeout to ensure chart has rendered before adjusting position
+            if (isSwitchingToChart) {
+              setTimeout(() => {
+                if (this._isMounted) {
+                  this.refreshLayout()
+                }
+              }, 100)
+            }
+          },
         )
 
         // Preserve saved config while resolving number-column conflicts
