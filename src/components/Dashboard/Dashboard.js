@@ -53,7 +53,7 @@ class DashboardWithoutTheme extends React.Component {
 
     // initialSlicers comes from API and is in format: [{ type: "VL", data: {...} }]
     const getSlicersArray = () => {
-      if (props.initialSlicers && Array.isArray(props.initialSlicers)) {
+      if (Array.isArray(props.initialSlicers)) {
         return props.initialSlicers
       }
       return []
@@ -194,7 +194,7 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   getSlicersArrayFromProps = (props) => {
-    if (props.initialSlicers && Array.isArray(props.initialSlicers)) {
+    if (Array.isArray(props.initialSlicers)) {
       return props.initialSlicers
     }
     return []
