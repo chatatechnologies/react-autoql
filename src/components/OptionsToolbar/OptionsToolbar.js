@@ -623,7 +623,6 @@ export class OptionsToolbar extends React.Component {
           } else {
             // Currently on chart - switch to table and enable filters
             // Store the current display type so we can switch back
-            console.log('Switching from chart to table, storing previousDisplayType:', displayType)
             this.setState({
               previousDisplayType: displayType,
               isFiltering: true,
