@@ -53,7 +53,7 @@ import { AverageLine } from '../AverageLine'
 import { AverageLineToggle } from '../AverageLineToggle'
 import { RegressionLine } from '../RegressionLine'
 import { RegressionLineToggle } from '../RegressionLineToggle'
-import { isContainerCollapsed, getSafeContainerDimensions } from '../chartContainerHelpers'
+import { isContainerCollapsed } from '../chartContainerHelpers'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
