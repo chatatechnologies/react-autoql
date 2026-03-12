@@ -97,7 +97,7 @@ export class FilterLockPopover extends React.Component {
         }
       })
       .catch((error) => {
-        console.error(error)
+        console.error('FilterLockPopover - initialize - Error fetching filters:', error)
         if (this._isMounted) {
           this.setState({ isFetchingFilters: false })
         }

@@ -294,6 +294,16 @@
   }
 }
 .react-autoql-vl-autocomplete-input-wrapper {
+  .react-autoql-dashboard-slicer-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    opacity: 0.5;
+    z-index: 1;
+  }
+
   .react-autosuggest__container--open {
     position: relative;
 
@@ -345,6 +355,24 @@
         padding-left: 15px;
         font-size: 12px;
         color: var(--react-autoql-text-color-placeholder);
+
+        .react-autoql-section-title-container {
+          width: 100%;
+          display: inline-flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .data-explorer-clear-history-btn {
+            text-decoration: underline;
+            font-weight: 400;
+            cursor: pointer;
+            padding-right: 15px;
+
+            &:hover {
+              color: var(--react-autoql-accent-color);
+            }
+          }
+        }
       }
       .filter-locking-no-suggestions-text {
         padding-left: 8px;

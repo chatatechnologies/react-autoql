@@ -7,16 +7,24 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import { Icon } from '../Icon'
 
 import { authenticationType } from '../../props/types'
-
 import '../FilterLockPopover/FilterLockPopover.scss'
+import './DashboardSlicer.scss'
 
-const DashboardSlicer = (props) => {
+const DashboardSlicer = ({
+  authentication = authenticationDefault,
+  context,
+  value = null,
+  onChange = () => {},
+  placeholder = 'Select a slicer...',
+  dashboardId,
+  slicerSuggestion,
+}) => {
   const autoCompleteArrayRef = useRef([])
+  const autocompleteDelay = 100
   const axiosSourceRef = useRef(null)
   const autocompleteTimerRef = useRef(null)
-  const userTypedValueRef = useRef(null)
   const MAX_RECENT_SELECTIONS = 5
-  const autocompleteDelay = 100
+  const userTypedValueRef = useRef(null)
 
   const [suggestions, setSuggestions] = useState([])
   const [suggestedSlicerItems, setSuggestedSlicerItems] = useState([])
@@ -25,9 +33,9 @@ const DashboardSlicer = (props) => {
   const [recentSelections, setRecentSelections] = useState([])
 
   const getRecentSelectionsKey = useCallback(() => {
-    const dashboardId = props.dashboardId || 'default'
-    return `react-autoql-dashboard-slicer-recent-${dashboardId}`
-  }, [props.dashboardId])
+    const id = dashboardId || 'default'
+    return `react-autoql-dashboard-slicer-recent-${id}`
+  }, [dashboardId])
 
   const loadRecentSelections = useCallback(() => {
     try {
@@ -77,6 +85,42 @@ const DashboardSlicer = (props) => {
     })
   }, [saveRecentSelections])
 
+  useEffect(() => {
+    if (value) {
+      setInputValue(value.format_txt || '')
+    }
+    loadRecentSelections()
+    
+    // Fetch suggestions for slicerSuggestion prop in the background
+    if (slicerSuggestion) {
+      fetchSuggestions({ value: slicerSuggestion, isSlicerSuggestion: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (value) {
+      setInputValue(value?.format_txt || '')
+    }
+  }, [value])
+
+  useEffect(() => {
+    // Fetch suggestions if slicerSuggestion prop changes
+    if (slicerSuggestion) {
+      fetchSuggestions({ value: slicerSuggestion, isSlicerSuggestion: true })
+    }
+  }, [slicerSuggestion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    return () => {
+      if (axiosSourceRef.current) {
+        axiosSourceRef.current.cancel(REQUEST_CANCELLED_ERROR)
+      }
+      if (autocompleteTimerRef.current) {
+        clearTimeout(autocompleteTimerRef.current)
+      }
+    }
+  }, [])
+
   const fetchSuggestions = useCallback(({ value, isSlicerSuggestion = false }) => {
     // If already fetching autocomplete, cancel it
     if (axiosSourceRef.current) {
@@ -87,9 +131,9 @@ const DashboardSlicer = (props) => {
     axiosSourceRef.current = axios.CancelToken?.source()
 
     fetchVLAutocomplete({
-      ...getAuthentication(props.authentication),
+      ...getAuthentication(authentication),
       suggestion: value,
-      context: props.context,
+      context,
       cancelToken: axiosSourceRef.current.token,
     })
       .then((response) => {
@@ -118,11 +162,11 @@ const DashboardSlicer = (props) => {
 
         // If this is for the slicer suggestion prop, store separately
         if (isSlicerSuggestion) {
-          setSuggestedSlicerItems([...autoCompleteArrayRef.current])
+          setSuggestedSlicerItems(autoCompleteArrayRef.current)
           setIsLoadingAutocomplete(false)
         } else {
           // Otherwise, store in regular suggestions (for user typing)
-          setSuggestions([...autoCompleteArrayRef.current])
+          setSuggestions(autoCompleteArrayRef.current)
           setIsLoadingAutocomplete(false)
         }
       })
@@ -132,47 +176,7 @@ const DashboardSlicer = (props) => {
         }
         setIsLoadingAutocomplete(false)
       })
-  }, [props.authentication, props.context])
-
-  // Initialize on mount
-  useEffect(() => {
-    if (props.value) {
-      setInputValue(props.value.format_txt || '')
-    }
-    loadRecentSelections()
-    
-    // Fetch suggestions for slicerSuggestion prop in the background
-    if (props.slicerSuggestion) {
-      fetchSuggestions({ value: props.slicerSuggestion, isSlicerSuggestion: true })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Handle value prop changes
-  useEffect(() => {
-    if (props.value) {
-      setInputValue(props.value.format_txt || '')
-    }
-  }, [props.value])
-
-  // Handle slicerSuggestion prop changes
-  useEffect(() => {
-    if (props.slicerSuggestion) {
-      fetchSuggestions({ value: props.slicerSuggestion, isSlicerSuggestion: true })
-    }
-  }, [props.slicerSuggestion, fetchSuggestions])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (axiosSourceRef.current) {
-        axiosSourceRef.current.cancel(REQUEST_CANCELLED_ERROR)
-      }
-      if (autocompleteTimerRef.current) {
-        clearTimeout(autocompleteTimerRef.current)
-      }
-    }
-  }, [])
+  }, [authentication, context])
 
   const onSuggestionsFetchRequested = useCallback(({ value }) => {
     // If input is empty and no user typing, we're just showing suggested items - don't fetch
@@ -245,7 +249,7 @@ const DashboardSlicer = (props) => {
 
       setInputValue(sessionFilterLock.format_txt || '')
       userTypedValueRef.current = null // Reset typing state
-      props.onChange(sessionFilterLock)
+      onChange(sessionFilterLock)
     }
 
     if (typeof e?.target?.value === 'string') {
@@ -257,7 +261,7 @@ const DashboardSlicer = (props) => {
         userTypedValueRef.current = null // Reset when cleared
       }
     }
-  }, [addToRecentSelections, props])
+  }, [addToRecentSelections, onChange])
 
   const onInputFocus = useCallback(() => {
     // Reset typing state when input is focused (if empty)
@@ -302,9 +306,9 @@ const DashboardSlicer = (props) => {
     const maxHeight = 300
 
     return (
-      <div {...containerProps}>
+      <div {...containerProps} className={`${containerProps.className || ''} react-autoql-dashboard-slicer-suggestions`.trim()}>
         <div className='react-autoql-filter-suggestion-container'>
-          <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight}>
+          <CustomScrollbars autoHeight autoHeightMin={0} maxHeight={maxHeight} suppressScrollX>
             {children}
           </CustomScrollbars>
         </div>
@@ -383,10 +387,10 @@ const DashboardSlicer = (props) => {
     return true
   }, [])
 
-  const displayInputValue = props.value?.format_txt || inputValue
+  const displayInputValue = value?.format_txt || inputValue
 
   return (
-    <span className='react-autoql-vl-autocomplete-input-wrapper' style={{ position: 'relative' }}>
+    <span className='react-autoql-dashboard-slicer-wrapper'>
       <Icon type='filter' className='react-autoql-dashboard-slicer-icon' />
       <Autosuggest
         id='react-autoql-dashboard-slicer-input'
@@ -406,9 +410,9 @@ const DashboardSlicer = (props) => {
           onChange: onInputChange,
           onFocus: onInputFocus,
           value: displayInputValue,
-          placeholder: props.placeholder,
-          className: 'react-autoql-vl-autocomplete-input',
-          style: { paddingLeft: '35px' },
+          placeholder: placeholder,
+          className: 'react-autoql-vl-autocomplete-input react-autoql-dashboard-slicer-input',
+          style: { paddingLeft: '40px' },
           ['data-test']: 'react-autoql-dashboard-slicer-input',
         }}
       />
@@ -424,16 +428,6 @@ DashboardSlicer.propTypes = {
   placeholder: PropTypes.string,
   dashboardId: PropTypes.string,
   slicerSuggestion: PropTypes.string,
-}
-
-DashboardSlicer.defaultProps = {
-  authentication: authenticationDefault,
-  context: undefined,
-  value: null,
-  onChange: () => {},
-  placeholder: 'Select a slicer...',
-  dashboardId: undefined,
-  slicerSuggestion: undefined,
 }
 
 export default DashboardSlicer

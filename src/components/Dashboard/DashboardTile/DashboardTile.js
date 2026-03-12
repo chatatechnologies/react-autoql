@@ -119,12 +119,12 @@ export class DashboardTile extends React.Component {
       initialFormattedTableParams: {
         filters: tile?.tableFilters,
         sorters: tile?.orders,
-        sessionFilters: tile?.filters,
+        sessionFilters: tile?.filters || [],
       },
       initialSecondFormattedTableParams: {
         filters: tile?.secondTableFilters,
         sorters: tile?.secondOrders,
-        sessionFilters: tile?.filters,
+        sessionFilters: tile?.filters || [],
       },
       isRTHovered: false,
       isSecondRTHovered: false,
@@ -200,6 +200,7 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
+    dashboardSlicer: PropTypes.shape({}),
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
   }
@@ -233,6 +234,7 @@ export class DashboardTile extends React.Component {
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
+    dashboardSlicer: null,
     enableMagicWand: false,
   }
 
@@ -595,7 +597,14 @@ export class DashboardTile extends React.Component {
       const currentDisplayOverrides = isSecondHalf
         ? this.props.tile?.secondDisplayOverrides
         : this.props.tile?.displayOverrides
-      const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
+      // Get session filters from tile (existing tile-specific filters)
+      let currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || []
+
+      // Merge dashboard slicer if present (applied at query execution time)
+      if (this.props.dashboardSlicer && !isSecondHalf) {
+        // Combine tile filters with dashboard slicer
+        currentSessionFilters = [...currentSessionFilters, this.props.dashboardSlicer]
+      }
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
@@ -714,6 +723,14 @@ export class DashboardTile extends React.Component {
       paramsToSet.tableFilters = tableFilters
     }
 
+    // Reset all tile configs when query changes
+    if (queryChanged) {
+      paramsToSet.columnSelects = undefined
+      paramsToSet.filters = undefined
+      paramsToSet.orders = undefined
+      paramsToSet.displayOverrides = undefined
+    }
+
     this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
@@ -760,7 +777,7 @@ export class DashboardTile extends React.Component {
       : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters
 
     // New query is running, reset temporary state fields
-    this.debouncedSetParamsForTile({
+    const paramsToSet = {
       secondQuery: query,
       secondDataConfig,
       secondskipQueryValidation: skipValidation,
@@ -769,7 +786,17 @@ export class DashboardTile extends React.Component {
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
       secondTableFilters,
-    })
+    }
+
+    // Reset all tile configs when query changes
+    if (queryChanged) {
+      paramsToSet.secondColumnSelects = undefined
+      paramsToSet.secondFilters = undefined
+      paramsToSet.secondOrders = undefined
+      paramsToSet.secondDisplayOverrides = undefined
+    }
+
+    this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
       query,
@@ -1905,7 +1932,7 @@ export class DashboardTile extends React.Component {
           return {
             filters: filtersToUse,
             sorters: this.props.tile?.orders,
-            sessionFilters: this.props.tile?.filters,
+            sessionFilters: this.props.tile?.filters || [],
           }
         })(),
         enableChartControls: true,

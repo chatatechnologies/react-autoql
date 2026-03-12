@@ -337,16 +337,19 @@ export default class FilterLockPopover extends React.Component {
             return filter
           })
           this.setState({ filters: updatedFilters })
+          this.props.onChange(updatedFilters)
         } else {
+          const newFilters = [...this.state.filters, updatedFilter]
           this.setState({
-            filters: [...this.state.filters, updatedFilter],
+            filters: newFilters,
             inputValue: '',
           })
+          this.props.onChange(newFilters)
         }
         return Promise.resolve()
       })
       .catch((error) => {
-        console.error(error)
+        console.error('FilterLockPopover - setFilter - Error:', error)
         toast.error('Something went wrong. Please try again.')
         return Promise.reject()
       })
