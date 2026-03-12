@@ -1674,7 +1674,7 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-placeholder-text'>
           {this.props.isEditing ? (
             <span>
-              Hit <Icon className='edit-mode-placeholder-icon' type='play' /> to run this tile
+              Hit <Icon className='edit-mode-placeholder-icon' type='send' /> to run this tile
             </span>
           ) : (
             <span>{this.props.notExecutedText}</span>
