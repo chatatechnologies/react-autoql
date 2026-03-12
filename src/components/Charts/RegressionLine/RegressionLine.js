@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+import safeGetBBox from '../../../utils/safeGetBBox'
 
 import './RegressionLine.scss'
 
@@ -81,12 +82,9 @@ export class RegressionLine extends React.Component {
 
   updateTextBBox = () => {
     if (this.textRef.current) {
-      try {
-        const bbox = this.textRef.current.getBBox()
+      const bbox = safeGetBBox(this.textRef.current)
+      if (bbox.width || bbox.height || bbox.x || bbox.y) {
         this.setState({ textBBox: bbox })
-      } catch (error) {
-        // getBBox can fail in some browsers/contexts, fail silently
-        console.warn('Failed to get text bounding box:', error)
       }
     }
   }
@@ -96,10 +94,9 @@ export class RegressionLine extends React.Component {
     Object.keys(this.individualTextRefs).forEach((key) => {
       const ref = this.individualTextRefs[key]
       if (ref) {
-        try {
-          bboxes[key] = ref.getBBox()
-        } catch (error) {
-          console.warn(`Failed to get text bounding box for ${key}:`, error)
+        const bbox = safeGetBBox(ref)
+        if (bbox.width || bbox.height || bbox.x || bbox.y) {
+          bboxes[key] = bbox
         }
       }
     })
@@ -268,9 +265,9 @@ export class RegressionLine extends React.Component {
     const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
     const isScatterplot = this.isScatterplot()
 
-    // For scatterplots or single series, use combined trend line
-    // For multi-series charts (including stacked), use individual trend lines
-    if (isScatterplot || !isMultiSeries) {
+    // For scatterplots, stacked charts, or single series, use combined trend line
+    // For multi-series non-stacked regular charts, use individual trend lines
+    if (isScatterplot || isStacked || !isMultiSeries) {
       return this.renderCombinedTrendLine()
     } else {
       return this.renderIndividualTrendLines()
@@ -534,6 +531,11 @@ export class RegressionLine extends React.Component {
       chartType,
     } = this.props
 
+    // Skip individual trend lines for stacked charts - they should use combined trend line
+    const isStacked = chartType === 'stacked_column' || chartType === 'stacked_bar' || chartType === 'stacked_line'
+    if (isStacked) {
+      return null
+    }
 
     if (!visibleSeriesIndices?.length) {
       return null

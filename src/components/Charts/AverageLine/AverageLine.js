@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { mean } from 'd3-array'
 import { DisplayTypes, formatElement, getChartColorVars, getThemeValue } from 'autoql-fe-utils'
+import safeGetBBox from '../../../utils/safeGetBBox'
 import './AverageLine.scss'
 
 export class AverageLine extends React.Component {
@@ -69,12 +70,9 @@ export class AverageLine extends React.Component {
 
   updateTextBBox = () => {
     if (this.textRef.current) {
-      try {
-        const bbox = this.textRef.current.getBBox()
+      const bbox = safeGetBBox(this.textRef.current)
+      if (bbox.width || bbox.height || bbox.x || bbox.y) {
         this.setState({ textBBox: bbox })
-      } catch (error) {
-        // getBBox can fail in some browsers/contexts, fail silently
-        console.warn('Failed to get text bounding box:', error)
       }
     }
   }
@@ -283,40 +281,10 @@ export class AverageLine extends React.Component {
           element: averageValue,
           column: columnForFormatting,
           config: dataFormatting,
-          isChart: true,
         })
 
         // Convert the average value to coordinate using the correct scale
-        // For stacked charts, always use getValue (same as StackedColumns/StackedBars)
-        // For multi-series charts, the scale domain includes individual values, so this works too
-        const scale = this.isBarChart() ? xScale : yScale
-        
-        // Check if value is within scale domain (for stacked charts, domain is based on stack totals)
-        // Individual series averages might be outside the domain, but getValue should still work
-        let position
-        if (scale.getValue) {
-          position = scale.getValue(averageValue)
-        } else {
-          // Fallback for scales without getValue (shouldn't happen in practice)
-          position = scale(averageValue)
-        }
-
-        // Check if the position is valid
-        // For stacked charts, getValue might return NaN if value is outside domain
-        // In that case, we should still try to render if it's close to the domain bounds
-        if (isNaN(position) && scale.domain) {
-          const scaleDomain = scale.domain()
-          if (scaleDomain && scaleDomain.length >= 2) {
-            const minDomain = Math.min(scaleDomain[0], scaleDomain[scaleDomain.length - 1])
-            const maxDomain = Math.max(scaleDomain[0], scaleDomain[scaleDomain.length - 1])
-            
-            // If average is within or very close to domain, clamp it and recalculate
-            if (averageValue >= minDomain * 0.99 && averageValue <= maxDomain * 1.01) {
-              const clampedValue = Math.max(minDomain, Math.min(maxDomain, averageValue))
-              position = scale.getValue ? scale.getValue(clampedValue) : scale(clampedValue)
-            }
-          }
-        }
+        const position = this.isBarChart() ? xScale(averageValue) : yScale(averageValue)
 
         // Check if the position is valid and within chart bounds
         const maxBound = this.isBarChart() ? width : height
@@ -552,8 +520,8 @@ export class AverageLine extends React.Component {
     const isScatterplot = chartType === DisplayTypes.SCATTERPLOT
 
     // For scatterplots, always render a single average line
-    // For multi-series charts (including stacked), render individual average lines
-    if (isMultiSeries && !isScatterplot) {
+    // For multi-series non-stacked charts, render individual average lines
+    if (isMultiSeries && !isStacked && !isScatterplot) {
       return this.renderIndividualAverageLines()
     }
 

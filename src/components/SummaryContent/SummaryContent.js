@@ -73,7 +73,7 @@ export default class SummaryContent extends React.Component {
         {showTitle && (
           <div className={`summary-content-title ${titleClassName}`}>
             <Icon type='magic-wand' />
-            <strong>Summary:</strong>
+            <strong>Analysis:</strong>
           </div>
         )}
         {focusPromptUsed && (

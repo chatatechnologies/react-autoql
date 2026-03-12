@@ -107,8 +107,8 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       isEditing: false,
     }
-    
-    // Ref to store latest column overrides for synchronous access (avoids stale state issues)
+
+    // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
     let response = props.queryResponse
@@ -207,7 +207,7 @@ export class QueryOutput extends React.Component {
       networkColumnConfig: props.initialNetworkColumnConfig || null,
       legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
-      columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides without mutating queryResponse
+      columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
@@ -219,7 +219,11 @@ export class QueryOutput extends React.Component {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    initialTableConfigs: PropTypes.shape({}),
+    initialTableConfigs: PropTypes.shape({
+      tableConfig: PropTypes.shape({}),
+      pivotTableConfig: PropTypes.shape({}),
+      columnOverrides: PropTypes.object,
+    }),
     initialAggConfig: PropTypes.shape({}),
 
     queryResponse: PropTypes.shape({}),
@@ -727,22 +731,19 @@ export class QueryOutput extends React.Component {
   onTableConfigChange = (initialized = true, columnOverridesOverride) => {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
-    // Use provided overrides if available, otherwise use state (for async setState cases)
     const columnOverrides = columnOverridesOverride || this.state?.columnOverrides || {}
 
     this.props.onTableConfigChange({
       tableConfig: tableConfig,
       pivotTableConfig: pivotTableConfig,
-      columnOverrides: _cloneDeep(columnOverrides), // Persist column overrides
+      columnOverrides: _cloneDeep(columnOverrides),
     })
   }
 
-  // Apply column overrides (e.g., date precision) to columns for charts only
-  // Uses ref for latest overrides to avoid stale state issues
+  // Apply column overrides (type/precision) to columns for charts; uses ref to avoid stale state
   applyColumnOverrides = (columns, overridesOverride) => {
-    // Use provided override, then ref (latest), then state (fallback)
     const overrides = overridesOverride || this.latestColumnOverrides || this.state?.columnOverrides || {}
-    
+
     if (!columns || !overrides || Object.keys(overrides).length === 0) {
       return columns
     }
@@ -1697,14 +1698,6 @@ export class QueryOutput extends React.Component {
       })
     }
 
-    if (filter) {
-      return this.processDrilldown({
-        supportedByAPI: false,
-        activeKey,
-        filter,
-      })
-    }
-
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1712,6 +1705,18 @@ export class QueryOutput extends React.Component {
     const column = columns[columnIndex]
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
+
+    // Check if string column supports drilldown - if so, use groupBys instead of filter
+    const shouldUseGroupBys = stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
+
+    if (filter && !shouldUseGroupBys) {
+      // Only use filter if column doesn't support drilldown
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter,
+      })
+    }
 
     if (columns?.[stringColumnIndex]?.datePivot) {
       const year = Number(columns?.[columnIndex]?.name)
@@ -1723,7 +1728,8 @@ export class QueryOutput extends React.Component {
         drill_down: stringColumn.drill_down,
         value,
       })
-    } else if (stringColumn?.groupable) {
+    } else if (stringColumn?.groupable || stringColumn?.drill_down) {
+      // Add groupBy for string column if it supports drilldown (groupable or has drill_down)
       groupBys.push({
         name: stringColumn.name,
         drill_down: stringColumn.drill_down,
@@ -1984,21 +1990,14 @@ export class QueryOutput extends React.Component {
     }
 
     if (newColumns) {
-      // Store column overrides (e.g., date precision) without mutating queryResponse
-      // Always store overrides from newColumns since they represent the user's explicit choice
-      // Don't compare with getColumns() which may already have overrides applied
       const overrides = { ...this.state.columnOverrides }
-      
+
       newColumns.forEach((newCol) => {
-        // Store override from newColumns - these represent the user's explicit choice
-        // Compare against existing override in state, not getColumns() which may have stale/already-applied values
         const existingOverride = overrides[newCol.index]
-        
-        // Update override if type or precision is different from existing override
-        const needsUpdate = 
+        const needsUpdate =
           (newCol.type && newCol.type !== existingOverride?.type) ||
           (newCol.precision && newCol.precision !== existingOverride?.precision)
-        
+
         if (needsUpdate) {
           overrides[newCol.index] = {
             type: newCol.type || existingOverride?.type,
@@ -2006,17 +2005,20 @@ export class QueryOutput extends React.Component {
           }
         }
       })
-      
+
       // Update ref immediately for synchronous access (avoids stale state)
       // Deep clone to avoid reference issues
       this.latestColumnOverrides = _cloneDeep(overrides)
-      this.setState({ columnOverrides: overrides })
-      // Persist column overrides immediately with the new overrides (before setState completes)
-      this.onTableConfigChange(true, overrides)
+      // Persist column overrides in setState callback to ensure state is updated
+      this.setState({ columnOverrides: overrides }, () => {
+        this.onTableConfigChange(true, overrides)
+      })
+      // Persist column overrides immediately via setState callback
+      // this.onTableConfigChange(true, overrides)
     } else {
       this.onTableConfigChange()
     }
-    
+
     this.forceUpdate()
   }
 
@@ -2168,8 +2170,6 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
-
-
   hasIndex = (indices, index) => {
     return indices?.findIndex((i) => index === i) !== -1
   }
@@ -2194,7 +2194,7 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    
+
     // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
@@ -2444,7 +2444,10 @@ export class QueryOutput extends React.Component {
               return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
             case 'regex':
               try {
-                const re = new RegExp(cleanValue)
+                const pattern = String(cleanValue || '')
+                if (pattern.length > 10000) return false
+                const re = new RegExp(pattern)
+                re.test(rowStr.substring(0, Math.min(100, rowStr.length)))
                 return re.test(rowStr)
               } catch (e) {
                 return false
@@ -2753,13 +2756,22 @@ export class QueryOutput extends React.Component {
         newCol.dateRange = dateRange
       }
 
-      const displayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse)
-      if (displayOverrides && isColumnNumberType(newCol)) {
-        const customSelect = displayOverrides.find((select) => {
-          return select.english === newCol.display_name
+      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
+        const customSelect = additionalSelects.find((select) => {
+          return (
+            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
+            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
+          )
         })
 
-        if (customSelect || newCol.is_custom) {
+        const isCustom = customSelect || newCol?.is_custom
+
+        const cleanName = getCleanColumnName(newCol?.name)
+        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
+          return select?.table_column?.trim() === cleanName
+        })
+
+        if (isCustom && !availableSelect) {
           newCol.custom = true
         }
       }
@@ -3766,7 +3778,7 @@ export class QueryOutput extends React.Component {
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
-    
+
     // Disable cyclical dates if any column has groupable: true
     const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
     const effectiveEnableCyclicalDates = hasGroupableColumns ? false : this.props.enableCyclicalDates

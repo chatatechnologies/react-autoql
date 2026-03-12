@@ -50,6 +50,7 @@ import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 import { CustomList } from '../CustomList'
 import './RuleSimple.scss'
+import ConditionPreview from './ConditionPreview'
 const SELF_COMPARISONS_TYPE = 'selfComparisons'
 
 const CONDITION_TYPE_LABELS = {
@@ -1106,8 +1107,8 @@ export default class RuleSimple extends React.Component {
       newState.secondQueryValidating = false
     }
     if (this.state.secondTermType === NUMBER_TERM_TYPE) {
-      const numberRegex = /^-?(?!0\d)(\d*[,.$]?)+\d*%?$/
-      // This regex matches positive integers, decimals, and percentages. It allows % sign at the end rather than the beginning.
+      // Allow incremental typing of numbers (ints, decimals, commas) with optional trailing % (e.g. 1, 1.0, .5, 1,000, 100%)
+      const numberRegex = /^-?(?:\d+([.,]\d*)?|\.\d+)%?$/
       if (numberRegex.test(secondInputValue) || secondInputValue === '') {
         this.setState(newState)
       }
@@ -1935,6 +1936,20 @@ export default class RuleSimple extends React.Component {
           </div>
         )}
         {this.renderJoinColumnSelectionTable()}
+        {this.state.firstQuerySelectedColumns?.length ? (
+          <div style={{ marginTop: '12px' }}>
+            <ConditionPreview
+              firstQueryResult={this.state.firstQueryResult}
+              firstQuerySelectedColumns={this.state.firstQuerySelectedColumns}
+              secondTermType={this.state.secondTermType}
+              secondInputValue={this.state.secondInputValue}
+              secondQueryResult={this.state.secondQueryResult}
+              secondTermMultiplicationFactorType={this.state.secondTermMultiplicationFactorType}
+              secondTermMultiplicationFactorValue={this.state.secondTermMultiplicationFactorValue}
+              selectedOperator={this.state.selectedOperator}
+            />
+          </div>
+        ) : null}
       </>
     )
   }
