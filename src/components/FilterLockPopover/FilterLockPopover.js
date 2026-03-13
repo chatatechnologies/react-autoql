@@ -44,11 +44,9 @@ export class FilterLockPopover extends React.Component {
     this.updateDrawerWidth()
     if (this.props.boundaryElement) {
       // prefer centralized helper that handles no-RO environments
-      this._cleanupBoundaryObserver = observeContainer(
-        this.props.boundaryElement,
-        () => this.updateDrawerWidth(),
-        { debounceMs: 80 },
-      )
+      this._cleanupBoundaryObserver = observeContainer(this.props.boundaryElement, () => this.updateDrawerWidth(), {
+        debounceMs: 80,
+      })
     }
   }
 
@@ -68,11 +66,9 @@ export class FilterLockPopover extends React.Component {
         this._cleanupBoundaryObserver = null
       }
       if (this.props.boundaryElement) {
-        this._cleanupBoundaryObserver = observeContainer(
-          this.props.boundaryElement,
-          () => this.updateDrawerWidth(),
-          { debounceMs: 80 },
-        )
+        this._cleanupBoundaryObserver = observeContainer(this.props.boundaryElement, () => this.updateDrawerWidth(), {
+          debounceMs: 80,
+        })
       }
     }
   }

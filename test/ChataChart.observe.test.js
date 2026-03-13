@@ -47,11 +47,11 @@ describe('ChataChart observe lifecycle', () => {
     // assign the node and call the attach method
     inst.chartContainerRef = node
     expect(inst.cleanupObserve).toBeNull()
-    inst.attachResizeObserver({ debounceMs: 1 })
+    inst.attachResizeObserver()
 
     // observeContainer should have been called once with our node
     expect(observeContainer).toHaveBeenCalledTimes(1)
-    expect(observeContainer).toHaveBeenCalledWith(node, expect.any(Function), { debounceMs: 1 })
+    expect(observeContainer).toHaveBeenCalledWith(node, expect.any(Function), { debounceMs: 0 })
 
     // The instance should have stored the cleanup function
     expect(typeof inst.cleanupObserve).toBe('function')
@@ -80,10 +80,12 @@ describe('ChataChart observe lifecycle', () => {
     instA.chartContainerRef = nodeA
     instB.chartContainerRef = nodeB
 
-    instA.attachResizeObserver({ debounceMs: 1 })
-    instB.attachResizeObserver({ debounceMs: 1 })
+    instA.attachResizeObserver()
+    instB.attachResizeObserver()
 
     expect(observeContainer).toHaveBeenCalledTimes(2)
+    expect(observeContainer).toHaveBeenNthCalledWith(1, nodeA, expect.any(Function), { debounceMs: 0 })
+    expect(observeContainer).toHaveBeenNthCalledWith(2, nodeB, expect.any(Function), { debounceMs: 0 })
 
     const wrapA = instA.cleanupObserve
     const wrapB = instB.cleanupObserve
