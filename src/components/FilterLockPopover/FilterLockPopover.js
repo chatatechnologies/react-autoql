@@ -5,6 +5,7 @@ import { fetchFilters, authenticationDefault, getAuthentication } from 'autoql-f
 
 import { Popover } from '../Popover'
 import FilterLockPopoverContent from './FilterLockPopoverContent'
+import { observeContainer } from '../Charts/measureObserver'
 
 import { withTheme } from '../../theme'
 import { authenticationType } from '../../props/types'
@@ -42,10 +43,12 @@ export class FilterLockPopover extends React.Component {
     this.initialize()
     this.updateDrawerWidth()
     if (this.props.boundaryElement) {
-      this.resizeObserver = new ResizeObserver(() => {
-        this.updateDrawerWidth()
-      })
-      this.resizeObserver.observe(this.props.boundaryElement)
+      // prefer centralized helper that handles no-RO environments
+      this._cleanupBoundaryObserver = observeContainer(
+        this.props.boundaryElement,
+        () => this.updateDrawerWidth(),
+        { debounceMs: 80 },
+      )
     }
   }
 
@@ -58,14 +61,18 @@ export class FilterLockPopover extends React.Component {
       this.updateDrawerWidth()
     }
     if (prevProps.boundaryElement !== this.props.boundaryElement) {
-      if (this.resizeObserver) {
-        this.resizeObserver.disconnect()
+      if (this._cleanupBoundaryObserver) {
+        try {
+          this._cleanupBoundaryObserver()
+        } catch (e) {}
+        this._cleanupBoundaryObserver = null
       }
       if (this.props.boundaryElement) {
-        this.resizeObserver = new ResizeObserver(() => {
-          this.updateDrawerWidth()
-        })
-        this.resizeObserver.observe(this.props.boundaryElement)
+        this._cleanupBoundaryObserver = observeContainer(
+          this.props.boundaryElement,
+          () => this.updateDrawerWidth(),
+          { debounceMs: 80 },
+        )
       }
     }
   }
@@ -81,8 +88,11 @@ export class FilterLockPopover extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect()
+    if (this._cleanupBoundaryObserver) {
+      try {
+        this._cleanupBoundaryObserver()
+      } catch (e) {}
+      this._cleanupBoundaryObserver = null
     }
   }
 

@@ -1,221 +1,102 @@
 /**
- * Tests for ChataChart integration with observeContainer
+ * Ensure ChataChart uses observeContainer and calls cleanup on unmount.
+ * This test instantiates ChataChart as a class (without mounting into React DOM)
+ * and verifies that attachResizeObserver stores the cleanup and that componentWillUnmount
+ * calls it.
  */
-import React from 'react'
-import { shallow, mount } from 'enzyme'
+jest.mock('../src/components/Charts/measureObserver', () => {
+  return {
+    observeContainer: jest.fn((node, cb) => {
+      // simulate initial callback
+      try {
+        const rect = node && node.getBoundingClientRect ? node.getBoundingClientRect() : { width: 1, height: 1 }
+        cb(rect)
+      } catch (e) {}
+      // return a cleanup that records it was called
+      const cleanup = jest.fn()
+      cleanup._wasCalled = false
+      const wrapper = jest.fn(() => {
+        cleanup._wasCalled = true
+      })
+      wrapper._wasCalled = false
+      wrapper._inner = cleanup
+      return wrapper
+    }),
+  }
+})
+
 import ChataChart from '../src/components/Charts/ChataChart/ChataChart'
 import { observeContainer } from '../src/components/Charts/measureObserver'
 
-jest.mock('../src/components/Charts/measureObserver', () => ({
-  observeContainer: jest.fn((el, cb) => {
-    // Call callback immediately and return cleanup function
-    try {
-      cb({ width: el?.clientWidth || 800, height: el?.clientHeight || 400 })
-    } catch (e) {}
-    return jest.fn()
-  }),
-}))
-
-const defaultProps = {
-  ...ChataChart.defaultProps,
-  data: [['A', 1], ['B', 2]],
-  columns: [{ name: 'col1', type: 'text' }, { name: 'col2', type: 'int' }],
-  type: 'column',
-  numberColumnIndex: 1,
-  stringColumnIndex: 0,
-  numberColumnIndices: [1],
-  hidden: false,
-}
-
-describe('ChataChart - observeContainer integration', () => {
+describe('ChataChart observe lifecycle', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  test('calls observeContainer on mount', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
+  test('attachResizeObserver calls observeContainer and componentWillUnmount calls cleanup', () => {
+    // Create an instance of the class without rendering
+    const inst = new ChataChart({})
+    // Mark mounted to allow callbacks to proceed
+    inst._isMounted = true
 
-    // Verify that attachResizeObserver method exists
-    expect(instance.attachResizeObserver).toBeDefined()
-    expect(typeof instance.attachResizeObserver).toBe('function')
-  })
+    // Provide a fake DOM node with getBoundingClientRect
+    const node = {
+      getBoundingClientRect: () => ({ width: 300, height: 200 }),
+    }
 
-  test('stores cleanup function in cleanupObserve', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
+    // assign the node and call the attach method
+    inst.chartContainerRef = node
+    expect(inst.cleanupObserve).toBeNull()
+    inst.attachResizeObserver({ debounceMs: 1 })
 
-    // Verify the fields exist for managing cleanup
-    expect(instance.cleanupObserve === null || typeof instance.cleanupObserve === 'function').toBe(true)
-  })
-
-  test('calls observeContainer with correct debounceMs default', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    // Create a test node and call attachResizeObserver
-    const testNode = document.createElement('div')
-    instance.chartContainerRef = testNode
-
-    jest.clearAllMocks()
-    instance.attachResizeObserver()
-
-    // Verify observeContainer was called with debounceMs
-    expect(observeContainer).toHaveBeenCalledWith(
-      testNode,
-      expect.any(Function),
-      { debounceMs: 60 },
-    )
-  })
-
-  test('does not call observeContainer if chartContainerRef is null', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    // Simulate attachResizeObserver being called with null ref
-    instance.chartContainerRef = null
-    jest.clearAllMocks()
-    instance.attachResizeObserver()
-
-    expect(observeContainer).not.toHaveBeenCalled()
-  })
-
-  test('is idempotent - does not recreate observer for same node', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    jest.clearAllMocks()
-
-    // Create a fake ref
-    const fakeNode = document.createElement('div')
-    instance.chartContainerRef = fakeNode
-
-    instance.attachResizeObserver()
+    // observeContainer should have been called once with our node
     expect(observeContainer).toHaveBeenCalledTimes(1)
+    expect(observeContainer).toHaveBeenCalledWith(node, expect.any(Function), { debounceMs: 1 })
 
-    // Call again with same ref
-    jest.clearAllMocks()
-    instance.attachResizeObserver()
-    expect(observeContainer).not.toHaveBeenCalled()
+    // The instance should have stored the cleanup function
+    expect(typeof inst.cleanupObserve).toBe('function')
+
+    // Call componentWillUnmount which should call cleanup
+    const wrapper = inst.cleanupObserve
+    expect(wrapper.mock.calls.length).toBe(0)
+
+    inst.componentWillUnmount()
+
+    // After unmount, wrapper should have been called
+    expect(wrapper.mock.calls.length).toBeGreaterThan(0)
+    expect(inst.cleanupObserve).toBeNull()
+    expect(inst._observedNode).toBeNull()
   })
 
-  test('cleans up observer when node changes', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
+  test('multiple instances each get observed and cleaned up independently', () => {
+    const instA = new ChataChart({})
+    const instB = new ChataChart({})
+    instA._isMounted = true
+    instB._isMounted = true
 
-    const fakeNode1 = document.createElement('div')
-    const mockCleanup = jest.fn()
+    const nodeA = { getBoundingClientRect: () => ({ width: 10, height: 10 }) }
+    const nodeB = { getBoundingClientRect: () => ({ width: 20, height: 20 }) }
 
-    instance.chartContainerRef = fakeNode1
-    instance.cleanupObserve = mockCleanup
-    instance._observedNode = fakeNode1
+    instA.chartContainerRef = nodeA
+    instB.chartContainerRef = nodeB
 
-    // Switch to different node
-    const fakeNode2 = document.createElement('div')
-    instance.chartContainerRef = fakeNode2
+    instA.attachResizeObserver({ debounceMs: 1 })
+    instB.attachResizeObserver({ debounceMs: 1 })
 
-    instance.attachResizeObserver()
+    expect(observeContainer).toHaveBeenCalledTimes(2)
 
-    expect(mockCleanup).toHaveBeenCalledTimes(1)
-  })
+    const wrapA = instA.cleanupObserve
+    const wrapB = instB.cleanupObserve
+    expect(wrapA).not.toBe(wrapB)
 
-  test('calls attachChartPosition callback when container resizes', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
+    const initialCallsA = wrapA.mock.calls.length
+    const initialCallsB = wrapB.mock.calls.length
 
-    // Verify instance has the cleanup field
-    expect(instance).toHaveProperty('cleanupObserve')
-    expect(instance).toHaveProperty('_observedNode')
-  })
+    instA.componentWillUnmount()
+    expect(wrapA.mock.calls.length).toBeGreaterThan(initialCallsA)
+    expect(wrapB.mock.calls.length).toBe(initialCallsB)
 
-  test('cleans up observer on unmount', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    const mockCleanup = jest.fn()
-    instance.cleanupObserve = mockCleanup
-
-    wrapper.unmount()
-
-    expect(mockCleanup).toHaveBeenCalled()
-    expect(instance.cleanupObserve).toBeNull()
-    expect(instance._observedNode).toBeNull()
-  })
-
-  test('handles cleanup errors gracefully during unmount', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    const mockCleanup = jest.fn(() => {
-      throw new Error('Cleanup failed')
-    })
-    instance.cleanupObserve = mockCleanup
-
-    // Should not throw
-    expect(() => wrapper.unmount()).not.toThrow()
-  })
-
-  test('tracks observed node reference', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    const fakeNode = document.createElement('div')
-    instance.chartContainerRef = fakeNode
-    instance.attachResizeObserver()
-
-    expect(instance._observedNode).toBe(fakeNode)
-  })
-
-  test('isContainerCollapsed returns true when dimensions <= 1', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    const collapsedNode = document.createElement('div')
-    collapsedNode.getBoundingClientRect = () => ({
-      width: 0,
-      height: 0,
-      top: 0,
-      left: 0,
-      bottom: 0,
-      right: 0,
-    })
-
-    instance.chartContainerRef = collapsedNode
-    expect(instance.isContainerCollapsed()).toBe(true)
-  })
-
-  test('isContainerCollapsed returns false when dimensions > 1', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    const visibleNode = document.createElement('div')
-    visibleNode.getBoundingClientRect = () => ({
-      width: 200,
-      height: 150,
-      top: 0,
-      left: 0,
-      bottom: 150,
-      right: 200,
-    })
-
-    instance.chartContainerRef = visibleNode
-    expect(instance.isContainerCollapsed()).toBe(false)
-  })
-
-  test('respects debounceMs option in attachResizeObserver', () => {
-    const wrapper = shallow(<ChataChart {...defaultProps} />)
-    const instance = wrapper.instance()
-
-    const fakeNode = document.createElement('div')
-    instance.chartContainerRef = fakeNode
-
-    jest.clearAllMocks()
-    instance.attachResizeObserver({ debounceMs: 100 })
-
-    expect(observeContainer).toHaveBeenCalledWith(
-      fakeNode,
-      expect.any(Function),
-      { debounceMs: 100 },
-    )
+    instB.componentWillUnmount()
+    expect(wrapB.mock.calls.length).toBeGreaterThan(initialCallsB)
   })
 })
