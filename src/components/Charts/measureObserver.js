@@ -21,13 +21,14 @@ export function observeContainer(container, cb, options = {}) {
   if (!container) return () => {}
 
   // 1) prefer repo-level helper if present
-  if (typeof observeAndRender === 'function') {
-    try {
-      return observeAndRender(container, cb, options)
-    } catch (e) {
-      // If helper throws, fall through to our fallback behavior
-    }
-  }
+  // DISABLED: observeAndRender is causing a bug, using fallback instead
+  // if (typeof observeAndRender === 'function') {
+  //   try {
+  //     return observeAndRender(container, cb, options)
+  //   } catch (e) {
+  //     // If helper throws, fall through to our fallback behavior
+  //   }
+  // }
 
   const debounceMs = typeof options.debounceMs === 'number' ? options.debounceMs : 60
 
