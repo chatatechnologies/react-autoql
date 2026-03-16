@@ -200,7 +200,7 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
-    dashboardSlicer: PropTypes.shape({}),
+    dashboardSlicers: PropTypes.arrayOf(PropTypes.shape({})),
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
   }
@@ -234,7 +234,7 @@ export class DashboardTile extends React.Component {
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
-    dashboardSlicer: null,
+    dashboardSlicers: [],
     enableMagicWand: false,
   }
 
@@ -600,10 +600,10 @@ export class DashboardTile extends React.Component {
       // Get session filters from tile (existing tile-specific filters)
       let currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || []
 
-      // Merge dashboard slicer if present (applied at query execution time)
-      if (this.props.dashboardSlicer && !isSecondHalf) {
-        // Combine tile filters with dashboard slicer
-        currentSessionFilters = [...currentSessionFilters, this.props.dashboardSlicer]
+      // Merge dashboard slicers if present (applied at query execution time)
+      if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0 && !isSecondHalf) {
+        // Combine tile filters with dashboard slicers
+        currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
       }
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
