@@ -395,9 +395,9 @@ export default class StackedLines extends PureComponent {
       }
     })
 
-    // Filter labels to remove overlaps and limit to 50
+    // Filter labels to remove overlaps and limit to 75
     const visibleLabels = []
-    if (hoverLabelsData.length > 0 && hoverLabelsData.length <= 50) {
+    if (hoverLabelsData.length > 0 && hoverLabelsData.length <= 75) {
       // Sort labels by x position
       const sortedLabels = [...hoverLabelsData].sort((a, b) => a.x - b.x)
 
