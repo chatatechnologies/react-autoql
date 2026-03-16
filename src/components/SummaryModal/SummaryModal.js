@@ -163,7 +163,7 @@ export default class SummaryModal extends React.Component {
       return (
         <div className='summary-modal-loading'>
           <LoadingDots />
-          <p>Generating summary...</p>
+          <p>Analyzing data...</p>
         </div>
       )
     }

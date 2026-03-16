@@ -25,7 +25,7 @@ export default class Chip extends React.Component {
 
   static defaultProps = {
     onClick: () => {},
-    onDelete: () => {},
+    onDelete: undefined,
     disabled: false,
     multiline: false,
     selected: false,
@@ -44,6 +44,10 @@ export default class Chip extends React.Component {
   }
 
   renderDeleteButton = () => {
+    if (!this.props.onDelete) {
+      return null
+    }
+
     if (this.props.confirmDelete) {
       return (
         <ConfirmPopover

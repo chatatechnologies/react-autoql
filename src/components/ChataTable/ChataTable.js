@@ -750,7 +750,7 @@ export default class ChataTable extends React.Component {
           const totalPages = Math.ceil(pivotData.length / this.pageSize) || 1
           this.totalPages = totalPages
           this.filteredResponseData = pivotData
-          this.filterCount = pivotData.length
+          this.filterCount = responseWrapper?.data?.data?.count_rows ?? pivotData.length
 
           response = {
             rows: pivotData.slice(0, this.pageSize) ?? [],
@@ -761,7 +761,7 @@ export default class ChataTable extends React.Component {
           const totalPages = this.getTotalPages(responseWrapper)
           this.totalPages = totalPages
           this.filteredResponseData = responseWrapper?.data?.data?.rows ?? []
-          this.filterCount = this.filteredResponseData.length
+          this.filterCount = responseWrapper?.data?.data?.count_rows ?? this.filteredResponseData.length
 
           response = {
             rows: this.filteredResponseData.slice(0, this.pageSize) ?? [],
@@ -1237,8 +1237,11 @@ export default class ChataTable extends React.Component {
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
       const element = column.getElement?.()
-      if (element?.classList) {
-        element.classList.toggle('is-filtered', isFiltered)
+      const cls = element?.classList
+      if (cls) {
+        // Use `toggle` when available; fall back to `add`/`remove` for lightweight mocks
+        if (typeof cls.toggle === 'function') cls.toggle('is-filtered', isFiltered)
+        else (isFiltered ? cls.add : cls.remove)?.('is-filtered')
       }
     })
   }
@@ -1254,7 +1257,11 @@ export default class ChataTable extends React.Component {
     const hasFilters = filters && filters.length > 0
 
     if (container) {
-      container.classList.toggle('pivot-table-has-filters', hasFilters)
+      const cls = container.classList
+      if (cls) {
+        if (typeof cls.toggle === 'function') cls.toggle('pivot-table-has-filters', hasFilters)
+        else (hasFilters ? cls.add : cls.remove)?.('pivot-table-has-filters')
+      }
     }
   }
 
@@ -1268,7 +1275,7 @@ export default class ChataTable extends React.Component {
         // Batch header filter updates without triggering repeated Tabulator
         // redraws; this prevents intermediate layout thrashing. Use the
         // TableWrapper API so wrapper state (redrawRestored) stays in sync.
-        this.ref?.blockRedraw()
+        this.ref?.blockRedraw?.()
 
         try {
           filterValues.forEach((filter) => {
@@ -1280,7 +1287,7 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
-          this.ref?.restoreRedraw()
+          this.ref?.restoreRedraw?.()
         }
 
         this._filterCheckTimeout = setTimeout(() => {
@@ -2041,15 +2048,15 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-            ${isLoading ? 'loading' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
-            ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isAnimating ? 'animating' : ''}
-            ${this.useInfiniteScroll ? 'infinite' : 'limited'}
-            ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
-            ${this.props.pivot ? 'pivot' : ''}
-            ${this.props.hidden ? 'hidden' : ''}
-            ${isEmpty ? 'empty' : ''}`}
+            ${isLoading ? 'react-autoql-table-loading' : ''}
+            ${this.props.supportsDrilldowns ? 'react-autoql-table-supports-drilldown' : 'react-autoql-table-disable-drilldown'}
+            ${this.state.isFiltering ? 'react-autoql-table-filtering' : ''}
+            ${this.props.isAnimating ? 'react-autoql-table-animating' : ''}
+            ${this.useInfiniteScroll ? 'react-autoql-table-infinite' : 'react-autoql-table-limited'}
+            ${this.useInfiniteScroll && this.state.isLastPage ? 'react-autoql-table-last-page' : ''}
+            ${this.props.pivot ? 'react-autoql-table-pivot' : ''}
+            ${this.props.hidden ? 'react-autoql-table-hidden' : ''}
+            ${isEmpty ? 'react-autoql-table-empty' : ''}`}
         >
           {this.renderTableWarnings()}
           {this.renderTableRowWarning()}
