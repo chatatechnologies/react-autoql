@@ -258,8 +258,6 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   handleSlicerChange = (slicer) => {
-    // Convert single slicer object to array format and store in state
-    const slicers = slicer
     // Add new slicer to array
     if (slicer) {
       // Check if slicer already exists (by key or canonical_key)
