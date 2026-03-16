@@ -2048,15 +2048,15 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-            ${isLoading ? 'loading' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
-            ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isAnimating ? 'animating' : ''}
-            ${this.useInfiniteScroll ? 'infinite' : 'limited'}
-            ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
-            ${this.props.pivot ? 'pivot' : ''}
-            ${this.props.hidden ? 'hidden' : ''}
-            ${isEmpty ? 'empty' : ''}`}
+            ${isLoading ? 'react-autoql-table-loading' : ''}
+            ${this.props.supportsDrilldowns ? 'react-autoql-table-supports-drilldown' : 'react-autoql-table-disable-drilldown'}
+            ${this.state.isFiltering ? 'react-autoql-table-filtering' : ''}
+            ${this.props.isAnimating ? 'react-autoql-table-animating' : ''}
+            ${this.useInfiniteScroll ? 'react-autoql-table-infinite' : 'react-autoql-table-limited'}
+            ${this.useInfiniteScroll && this.state.isLastPage ? 'react-autoql-table-last-page' : ''}
+            ${this.props.pivot ? 'react-autoql-table-pivot' : ''}
+            ${this.props.hidden ? 'react-autoql-table-hidden' : ''}
+            ${isEmpty ? 'react-autoql-table-empty' : ''}`}
         >
           {this.renderTableWarnings()}
           {this.renderTableRowWarning()}

@@ -957,7 +957,7 @@ export default class Legend extends React.Component {
           if (legendLabel) {
             select(this).select('.swatch').attr('stroke', legendLabel.color).attr('stroke-location', 'outside')
             if (legendLabel.hidden) {
-              select(this).attr('class', 'cell hidden')
+              select(this).attr('class', 'cell legend-cell-hidden')
             } else {
               select(this).attr('class', 'cell visible')
             }
