@@ -362,10 +362,7 @@ export default class ChataChart extends React.Component {
 
     // For stacked charts, use sorted column indices for color scale calculation
     // This ensures colors are assigned sequentially to segments (biggest to smallest)
-    const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN ||
-      this.props.type === DisplayTypes.STACKED_BAR ||
-      this.props.type === DisplayTypes.STACKED_LINE
+    const isStackedChart = this.isStackedChartType(this.props.type)
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       numberColumnIndices = this.sortedNumberColumnIndicesForStacked
     }
@@ -423,6 +420,12 @@ export default class ChataChart extends React.Component {
 
   dataIsBinned = () => {
     return this.props.type === DisplayTypes.HISTOGRAM
+  }
+
+  isStackedChartType = (type) => {
+    return (
+      type === DisplayTypes.STACKED_COLUMN || type === DisplayTypes.STACKED_BAR || type === DisplayTypes.STACKED_LINE
+    )
   }
 
   getData = (props) => {
@@ -575,10 +578,7 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart =
-          props.type === DisplayTypes.STACKED_COLUMN ||
-          props.type === DisplayTypes.STACKED_BAR ||
-          props.type === DisplayTypes.STACKED_LINE
+        const isStackedChart = this.isStackedChartType(props.type)
         if (isStackedChart) {
           const numberIndices = props.numberColumnIndices || []
           // Calculate total aggregate for each column index across all rows
@@ -653,10 +653,7 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart =
-          props.type === DisplayTypes.STACKED_COLUMN ||
-          props.type === DisplayTypes.STACKED_BAR ||
-          props.type === DisplayTypes.STACKED_LINE
+        const isStackedChart = this.isStackedChartType(props.type)
         if (isStackedChart) {
           // Calculate total aggregate for each column index across all rows
           const columnTotals = numberIndices.map((colIndex) => {
@@ -851,10 +848,7 @@ export default class ChataChart extends React.Component {
 
     // For stacked charts, use sorted column indices based on total aggregates
     // This ensures legend labels match the sorted order of segments
-    const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN ||
-      this.props.type === DisplayTypes.STACKED_BAR ||
-      this.props.type === DisplayTypes.STACKED_LINE
+    const isStackedChart = this.isStackedChartType(this.props.type)
     let numberColumnIndices = this.props.numberColumnIndices
 
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
@@ -911,7 +905,7 @@ export default class ChataChart extends React.Component {
         style={{ paddingLeft }}
         className={`react-autoql-chart-header-container ${
           (this.state.isLoading || this.props.isResizing) && this.props.type !== DisplayTypes.NETWORK_GRAPH
-            ? 'loading'
+            ? 'react-autoql-chart-loading'
             : ''
         }`}
       >
@@ -972,10 +966,7 @@ export default class ChataChart extends React.Component {
 
     // For stacked charts, use sorted column indices so chart components render in sorted order
     // This ensures colors match the sorted order (biggest to smallest)
-    const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN ||
-      this.props.type === DisplayTypes.STACKED_BAR ||
-      this.props.type === DisplayTypes.STACKED_LINE
+    const isStackedChart = this.isStackedChartType(this.props.type)
 
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       // Filter sorted indices to only include those that exist in the current columns array
@@ -1327,8 +1318,10 @@ export default class ChataChart extends React.Component {
             }}
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
-            ${this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'loading' : ''}
-            ${this.props.hidden ? 'hidden' : ''}
+            ${
+              this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''
+            }
+            ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
             {!this.firstRender && !this.props.isAnimating && (
@@ -1375,7 +1368,6 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
-                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
@@ -1405,7 +1397,6 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
-                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}

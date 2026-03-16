@@ -53,6 +53,7 @@ export class OptionsToolbar extends React.Component {
       isSummaryPopoverOpen: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
+      previousDisplayType: null, // Track display type before switching to table for filtering
     }
   }
 
@@ -596,13 +597,36 @@ export class OptionsToolbar extends React.Component {
     return (
       <Button
         onClick={() => {
-          const toggleFiltersOn = isTable ? !this.props.responseRef?.isFilteringTable() : true
-
-          this.setState({ isFiltering: toggleFiltersOn })
-
           if (this.props.responseRef?.state?.displayType === 'table') {
-            this.props.responseRef?.toggleTableFilter(toggleFiltersOn)
+            // Currently on table - toggle filters
+            const currentlyFiltering = this.props.responseRef?.isFilteringTable()
+            const toggleFiltersOn = !currentlyFiltering
+            
+            if (toggleFiltersOn) {
+              // Turning filters on
+              this.setState({ isFiltering: true })
+              this.props.responseRef?.toggleTableFilter(true)
+            } else {
+              // Turning filters off - switch back to chart (filters will be applied to chart if they exist)
+              const previousDisplayType = this.state.previousDisplayType
+              
+              this.setState({ isFiltering: false })
+              this.props.responseRef?.toggleTableFilter(false)
+              
+              // If we have a previous display type, switch back to it immediately
+              // The chart will automatically show filtered data if filters are active
+              if (previousDisplayType) {
+                this.props.responseRef?.changeDisplayType(previousDisplayType)
+                this.setState({ previousDisplayType: null })
+              }
+            }
           } else {
+            // Currently on chart - switch to table and enable filters
+            // Store the current display type so we can switch back
+            this.setState({
+              previousDisplayType: displayType,
+              isFiltering: true,
+            })
             this.props.responseRef?.changeDisplayType('table', () => {
               this.props.responseRef?.toggleTableFilter(true, true)
             })
@@ -687,6 +711,13 @@ export class OptionsToolbar extends React.Component {
 
     return (
       <div className='options-toolbar-summary-dropdown-content'>
+        <span
+          className='analyze-beta-badge-popover'
+          data-tooltip-content='This feature is in beta'
+          data-tooltip-id={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`}
+        >
+          Beta
+        </span>
         <div className='options-toolbar-summary-dropdown-header'>
           <label className='options-toolbar-summary-dropdown-label'>
             Focus on a specific topic (optional)
@@ -722,7 +753,7 @@ export class OptionsToolbar extends React.Component {
             disabled={hasNoData}
             icon='magic-wand'
           >
-            Generate
+            Analyze
           </Button>
         </div>
         {this.state.summaryFocusError && (
@@ -730,6 +761,7 @@ export class OptionsToolbar extends React.Component {
             {this.state.summaryFocusError}
           </div>
         )}
+        <Tooltip tooltipId={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`} delayShow={500} />
       </div>
     )
   }
@@ -759,7 +791,7 @@ export class OptionsToolbar extends React.Component {
             this.setState({ isSummaryPopoverOpen: !this.state.isSummaryPopoverOpen })
           }}
           className={this.getMenuItemClass()}
-          tooltip={hasNoData ? 'No data available to generate a summary' : 'Generate summary'}
+          tooltip={hasNoData ? 'No data available to analyze' : 'Analyze'}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           size='small'
           disabled={hasNoData}

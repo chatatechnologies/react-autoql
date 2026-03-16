@@ -3,6 +3,9 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import ChataHistogram from './ChataHistogram'
 import sampleProps from '../chartTestData'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const listSampleProps = sampleProps.list
 const defaultProps = ChataHistogram.defaultProps
