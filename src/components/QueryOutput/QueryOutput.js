@@ -513,7 +513,6 @@ export class QueryOutput extends React.Component {
         }
 
         const newChartLegendState = updatedLegendStateByChart[this.state.displayType] || []
-        const isSwitchingToChart = isChartType(this.state.displayType) && !isChartType(prevState.displayType)
 
         this.setState(
           {
