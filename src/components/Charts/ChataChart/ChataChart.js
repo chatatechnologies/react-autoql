@@ -1,4 +1,5 @@
 import React from 'react'
+import { observeContainer } from '../measureObserver'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
@@ -71,6 +72,8 @@ export default class ChataChart extends React.Component {
     this.shouldRecalculateDimensions = false
     this.disableTimeScale = true
     this.sortedColumnsForHeatmap = null // Initialize sorted columns tracking
+    this.cleanupObserve = null
+    this._observedNode = null
 
     // Vars for handling refresh layout throttle during resize
     this.throttleDelay = 100 // Default at 200 but adjust on the fly for data size
@@ -124,6 +127,50 @@ export default class ChataChart extends React.Component {
     axisSorts: {},
   }
 
+  isContainerCollapsed = () => {
+    const rect = this.chartContainerRef?.getBoundingClientRect?.()
+    const w = rect?.width ?? this.chartContainerRef?.clientWidth ?? 0
+    const h = rect?.height ?? this.chartContainerRef?.clientHeight ?? 0
+    return w <= 1 || h <= 1
+  }
+
+  attachResizeObserver = () => {
+    try {
+      const node = this.chartContainerRef
+      if (!node) return
+
+      // If already observing the same node, no-op
+      if (this.cleanupObserve && this._observedNode === node) return
+
+      // If observing a different node, cleanup first
+      if (this.cleanupObserve && this._observedNode && this._observedNode !== node) {
+        try {
+          this.cleanupObserve()
+        } catch (e) {}
+        this.cleanupObserve = null
+        this._observedNode = null
+      }
+
+      // No debounce - internal throttle (50-1000ms) handles timing
+      this.cleanupObserve = observeContainer(
+        node,
+        () => {
+          if (!this._isMounted) return
+          if (!this.props.hidden && !this.isContainerCollapsed()) {
+            this.adjustChartPosition()
+          } else {
+            this.shouldRecalculateDimensions = true
+          }
+        },
+        { debounceMs: 0 },
+      )
+
+      this._observedNode = node
+    } catch (e) {
+      // best-effort; ignore
+    }
+  }
+
   componentDidMount = () => {
     this._isMounted = true
     if (!this.props.isResizing && !this.props.hidden) {
@@ -131,6 +178,7 @@ export default class ChataChart extends React.Component {
       this.firstRender = false
       this.forceUpdate()
     }
+    this.attachResizeObserver()
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -267,6 +315,13 @@ export default class ChataChart extends React.Component {
     this._isMounted = false
     clearTimeout(this.adjustVerticalPositionTimeout)
     this.stopThrottledRefresh()
+    if (this.cleanupObserve) {
+      try {
+        this.cleanupObserve()
+      } catch (e) {}
+      this.cleanupObserve = null
+      this._observedNode = null
+    }
   }
 
   startThrottledRefresh = () => {
@@ -307,8 +362,7 @@ export default class ChataChart extends React.Component {
 
     // For stacked charts, use sorted column indices for color scale calculation
     // This ensures colors are assigned sequentially to segments (biggest to smallest)
-    const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN || this.props.type === DisplayTypes.STACKED_BAR
+    const isStackedChart = this.isStackedChartType(this.props.type)
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       numberColumnIndices = this.sortedNumberColumnIndicesForStacked
     }
@@ -366,6 +420,12 @@ export default class ChataChart extends React.Component {
 
   dataIsBinned = () => {
     return this.props.type === DisplayTypes.HISTOGRAM
+  }
+
+  isStackedChartType = (type) => {
+    return (
+      type === DisplayTypes.STACKED_COLUMN || type === DisplayTypes.STACKED_BAR || type === DisplayTypes.STACKED_LINE
+    )
   }
 
   getData = (props) => {
@@ -518,7 +578,7 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        const isStackedChart = this.isStackedChartType(props.type)
         if (isStackedChart) {
           const numberIndices = props.numberColumnIndices || []
           // Calculate total aggregate for each column index across all rows
@@ -593,7 +653,7 @@ export default class ChataChart extends React.Component {
         }
 
         // For stacked charts, calculate sorted column indices based on total aggregates
-        const isStackedChart = props.type === DisplayTypes.STACKED_COLUMN || props.type === DisplayTypes.STACKED_BAR
+        const isStackedChart = this.isStackedChartType(props.type)
         if (isStackedChart) {
           // Calculate total aggregate for each column index across all rows
           const columnTotals = numberIndices.map((colIndex) => {
@@ -788,10 +848,7 @@ export default class ChataChart extends React.Component {
 
     // For stacked charts, use sorted column indices based on total aggregates
     // This ensures legend labels match the sorted order of segments
-    const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN ||
-      this.props.type === DisplayTypes.STACKED_BAR ||
-      this.props.type === DisplayTypes.STACKED_LINE
+    const isStackedChart = this.isStackedChartType(this.props.type)
     let numberColumnIndices = this.props.numberColumnIndices
 
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
@@ -909,10 +966,7 @@ export default class ChataChart extends React.Component {
 
     // For stacked charts, use sorted column indices so chart components render in sorted order
     // This ensures colors match the sorted order (biggest to smallest)
-    const isStackedChart =
-      this.props.type === DisplayTypes.STACKED_COLUMN ||
-      this.props.type === DisplayTypes.STACKED_BAR ||
-      this.props.type === DisplayTypes.STACKED_LINE
+    const isStackedChart = this.isStackedChartType(this.props.type)
 
     if (isStackedChart && this.sortedNumberColumnIndicesForStacked) {
       // Filter sorted indices to only include those that exist in the current columns array
@@ -1258,10 +1312,15 @@ export default class ChataChart extends React.Component {
           <div
             id={`react-autoql-chart-${this.state.chartID}`}
             key={`react-autoql-chart-${this.state.chartID}`}
-            ref={(r) => (this.chartContainerRef = r)}
+            ref={(r) => {
+              this.chartContainerRef = r
+              this.attachResizeObserver()
+            }}
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
-            ${this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''}
+            ${
+              this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''
+            }
             ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
