@@ -1,4 +1,4 @@
-// import { observeAndRender } from 'autoql-fe-utils'
+import { observeAndRender } from 'autoql-fe-utils'
 
 // Helper: safe getBoundingClientRect wrapper
 function safeRect(el) {
@@ -20,14 +20,14 @@ function safeRect(el) {
 export function observeContainer(container, cb, options = {}) {
   if (!container) return () => {}
 
-  // // 1) prefer repo-level helper if present
-  // if (typeof observeAndRender === 'function') {
-  //   try {
-  //     return observeAndRender(container, cb, options)
-  //   } catch (e) {
-  //     // If helper throws, fall through to our fallback behavior
-  //   }
-  // }
+  // 1) prefer repo-level helper if present
+  if (typeof observeAndRender === 'function') {
+    try {
+      return observeAndRender(container, cb, options)
+    } catch (e) {
+      // If helper throws, fall through to our fallback behavior
+    }
+  }
 
   const debounceMs = typeof options.debounceMs === 'number' ? options.debounceMs : 60
 
