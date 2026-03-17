@@ -961,10 +961,15 @@ export class QueryOutput extends React.Component {
     // Note: this can be called during construction before this.state is initialized (e.g. from setTableConfig)
     const dataSource = this.state?.chartControls?.dataSource ?? this.props.initialChartControls?.dataSource
     const forceRaw = dataSource === 'raw'
-    if (forceRaw) {
+    const canPivot = this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+
+    // If user explicitly chose raw, or pivot is not supported for this response, use raw.
+    if (forceRaw || !canPivot) {
       return false
     }
-    return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+
+    // Otherwise, prefer pivoted data when available.
+    return true
   }
 
   numberIndicesArraysOverlap = (tableConfig) => {
