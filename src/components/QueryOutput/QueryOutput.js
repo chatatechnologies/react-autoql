@@ -957,10 +957,16 @@ export class QueryOutput extends React.Component {
     if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
       return false
     }
-    // Allow forcing raw charting even when pivot data is available via chartControls
+
+    const displayType = this.state?.displayType
+    // Heatmaps and bubble charts should always use pivoted data when available
+    const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
+
+    // Allow forcing raw charting even when pivot data is available via chartControls,
+    // except for heatmap and bubble charts which must remain pivoted.
     // Note: this can be called during construction before this.state is initialized (e.g. from setTableConfig)
     const dataSource = this.state?.chartControls?.dataSource ?? this.props.initialChartControls?.dataSource
-    const forceRaw = dataSource === 'raw'
+    const forceRaw = !isHeatmapOrBubble && dataSource === 'raw'
     const canPivot = this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
 
     // If user explicitly chose raw, or pivot is not supported for this response, use raw.
@@ -3808,6 +3814,14 @@ export class QueryOutput extends React.Component {
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+
+    // For heatmaps and bubble charts, always include all numeric pivot columns so we render
+    // a full matrix of cells instead of just the first pivot column.
+    const displayType = this.state.displayType
+    const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
+    if (usePivotData && isHeatmapOrBubble && this.pivotTableConfig?.allNumberColumnIndices?.length) {
+      tableConfig.numberColumnIndices = this.pivotTableConfig.allNumberColumnIndices
+    }
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)

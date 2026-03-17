@@ -1,7 +1,6 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import _isEqual from 'lodash.isequal'
 import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import { AGG_TYPES, AggTypes, COLUMN_TYPES, isColumnStringType } from 'autoql-fe-utils'
@@ -85,7 +84,6 @@ export default class NumberAxisSelector extends React.Component {
   getSelectableListItems = (type) => {
     const items = []
 
-    const otherAxisColumns = this.getOtherAxisColumns()
     const columnsOfType = this.getColumnsOfType(type)
 
     columnsOfType.forEach((col) => {

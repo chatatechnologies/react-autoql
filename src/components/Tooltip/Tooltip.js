@@ -38,4 +38,14 @@ export function Tooltip(props = {}) {
   )
 }
 
+export const triggerGlobalTooltipClose = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('scroll'))
+    }
+  } catch (e) {
+    // Ignore errors from environments without window
+  }
+}
+
 export default Tooltip
