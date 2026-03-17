@@ -1,2 +1,3 @@
-export { default } from './AverageLineToggle'
-export { AverageLineToggle } from './AverageLineToggle'
+// AverageLineToggle is deprecated in favor of ChartHeaderToggle.
+// Re-export kept only for backwards compatibility if needed.
+export { default } from '../ChartHeaderToggle/ChartHeaderToggle'

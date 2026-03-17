@@ -208,11 +208,22 @@ export class QueryOutput extends React.Component {
       legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
       columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides
+      chartControls: props.initialChartControls || {},
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
     }
     this.updateMaxConstraints()
+  }
+
+  handleChartControlsChange = (chartControls) => {
+    // Always update immediately so standalone QueryOutput reacts without needing a parent to persist chartControls.
+    if (this._isMounted) {
+      this.setState({ chartControls: chartControls || {} })
+    }
+
+    // Also forward to consumer if provided (e.g. DashboardTile persists this in the tile config)
+    this.props.onChartControlsChange?.(chartControls)
   }
 
   static propTypes = {
@@ -460,6 +471,16 @@ export class QueryOutput extends React.Component {
       let shouldForceUpdate = false
 
       // Legend filters automatically start fresh for each query since the filter key includes queryID
+
+      // Keep local chartControls in sync if consumer updates initialChartControls prop
+      if (!deepEqual(this.props.initialChartControls, prevProps.initialChartControls)) {
+        const nextControls = this.props.initialChartControls || {}
+        // this.state can be temporarily undefined during certain error/unmount edge cases
+        const currentControls = this.state?.chartControls || {}
+        if (!deepEqual(nextControls, currentControls)) {
+          newState.chartControls = nextControls
+        }
+      }
 
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
@@ -934,6 +955,13 @@ export class QueryOutput extends React.Component {
   usePivotDataForChart = () => {
     // Network graphs always use original data, never pivot data
     if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
+      return false
+    }
+    // Allow forcing raw charting even when pivot data is available via chartControls
+    // Note: this can be called during construction before this.state is initialized (e.g. from setTableConfig)
+    const dataSource = this.state?.chartControls?.dataSource ?? this.props.initialChartControls?.dataSource
+    const forceRaw = dataSource === 'raw'
+    if (forceRaw) {
       return false
     }
     return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
@@ -3726,6 +3754,11 @@ export class QueryOutput extends React.Component {
     }
 
     const usePivotData = this.usePivotDataForChart()
+    const canUsePivotData =
+      this.potentiallySupportsPivot() &&
+      !this.potentiallySupportsDatePivot() &&
+      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH
+    const chartDataSource = this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       // Attempt to regenerate pivot data once (cover cases where config wasn't ready yet)
@@ -3826,6 +3859,8 @@ export class QueryOutput extends React.Component {
           columns={columns}
           columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
+          canUsePivotData={canUsePivotData}
+          chartDataSource={chartDataSource}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
@@ -3863,8 +3898,8 @@ export class QueryOutput extends React.Component {
           hiddenLegendLabels={this.state.hiddenLegendLabels}
           onLegendVisibilityChange={this.handleLegendVisibilityChange}
           enableChartControls={this.props.enableChartControls}
-          initialChartControls={this.props.initialChartControls}
-          onChartControlsChange={this.props.onChartControlsChange}
+          initialChartControls={this.state.chartControls}
+          onChartControlsChange={this.handleChartControlsChange}
           onAxisSortChange={this.onAxisSortChange}
           axisSorts={this.state.axisSorts}
         />
