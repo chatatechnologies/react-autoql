@@ -1034,6 +1034,12 @@ export default class ChataChart extends React.Component {
       }
     }
 
+    // In "raw" data source mode we are charting regular table data, not pivoted legend columns.
+    // In this case the number-axis selector headers should use the generic type labels
+    // (e.g. "Quantity Fields", "Currency Fields") instead of the legend/groupable column name.
+    const isRawDataSource = this.state.chartDataSource === 'raw'
+    const legendColumnForChart = isRawDataSource ? undefined : updatedLegendColumn
+
     // For stacked charts, use sorted column indices so chart components render in sorted order
     // This ensures colors match the sorted order (biggest to smallest)
     const isStackedChart = this.isStackedChartType(this.props.type)
@@ -1088,7 +1094,7 @@ export default class ChataChart extends React.Component {
     return {
       ...this.props,
       columns,
-      legendColumn: updatedLegendColumn,
+      legendColumn: legendColumnForChart,
       numberColumnIndices: numberColumnIndices, // For stacked charts, this is already sorted (biggest to smallest)
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
