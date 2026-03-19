@@ -414,7 +414,7 @@ export default class CustomColumnModal extends React.Component {
 
   // Build SQL string for a function chunk (extracted from nested ternary for readability)
   buildFunctionSql = (columnFn, customColumn) => {
-    const colName = columnFn?.column?.name
+    const colName = this.sanitizeColumnName(columnFn?.column?.name)
 
     // PERCENT_OF_TOTAL
     if (columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL) {
@@ -427,13 +427,13 @@ export default class CustomColumnModal extends React.Component {
             }`
           : ''
 
-      return `(COALESCE(${columnFn?.column?.name} / NULLIF(SUM(${columnFn?.column?.name}) OVER (${windowClause}), 0), 0) * 100)`
+      return `(COALESCE(${colName} / NULLIF(SUM(${colName}) OVER (${windowClause}), 0), 0) * 100)`
     }
 
     // MOVING_AVG
     if (columnFn.fn === CustomColumnValues.MOVING_AVG) {
       const orderClause = this.buildOrderByClause(columnFn, false)
-      return `AVG(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN ${
+      return `AVG(${colName}) OVER(${orderClause} ROWS BETWEEN ${
         columnFn?.movingAvgTimeInterval ?? this.state.selectedFnMovingAverageTimeInterval
       } PRECEDING AND CURRENT ROW)`
     }
@@ -441,19 +441,19 @@ export default class CustomColumnModal extends React.Component {
     // CHANGE
     if (columnFn.fn === CustomColumnValues.CHANGE) {
       const orderClause = this.buildOrderByClause(columnFn, false)
-      return `${columnFn?.column?.name} - LAG(${columnFn?.column?.name}) OVER(${orderClause})`
+      return `${colName} - LAG(${colName}) OVER(${orderClause})`
     }
 
     // CUMULATIVE_SUM
     if (columnFn.fn === CustomColumnValues.CUMULATIVE_SUM) {
       const orderClause = this.buildOrderByClause(columnFn, false)
-      return `SUM(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )`
+      return `SUM(${colName}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW )`
     }
 
     // CUMULATIVE_PERCENT
     if (columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT) {
       const orderClause = this.buildOrderByClause(columnFn, false)
-      return `(COALESCE(SUM(${columnFn?.column?.name}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${columnFn?.column?.name}) OVER(), 0), 0) * 100)`
+      return `(COALESCE(SUM(${colName}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${colName}) OVER(), 0), 0) * 100)`
     }
 
     // SUM-derived percent (window function whose nextSelector is SUM)
@@ -479,16 +479,36 @@ export default class CustomColumnModal extends React.Component {
     return `${columnFn.fn}(${valueArg}) OVER(${overInner})`
   }
 
+  sanitizeColumnName = (columnName) => {
+    // Clean aggregated column names: "SUM(col, 0)" → "SUM(col)"
+    if (!columnName || typeof columnName !== 'string') {
+      return columnName
+    }
+
+    const AGG_FUNCTIONS = ['SUM', 'AVG', 'COUNT', 'COUNT_DISTINCT', 'MIN', 'MAX', 'STDDEV', 'VARIANCE']
+    const regex = new RegExp(`^(${AGG_FUNCTIONS.join('|')})\\s*\\((.+)\\)$`, 'i')
+    const match = columnName.match(regex)
+
+    if (match) {
+      const firstParam = match[2].split(',')[0]?.trim()
+      if (firstParam) {
+        return `${match[1]}(${firstParam})`
+      }
+    }
+
+    return columnName
+  }
+
   buildProtoTableColumn = (customColumn) => {
     if (customColumn?.columnFnArray) {
       let protoTableColumn = ''
       let i = 0
 
       for (const columnFn of customColumn?.columnFnArray) {
-        const colName = columnFn?.column?.name
+        const colName = this.sanitizeColumnName(columnFn?.column?.name)
 
         if (columnFn?.type === CustomColumnTypes.COLUMN) {
-          protoTableColumn += columnFn?.column?.name
+          protoTableColumn += colName
         } else if (columnFn?.type === CustomColumnTypes.OPERATOR) {
           protoTableColumn += this.OPERATORS[columnFn?.value]?.js
         } else if (columnFn?.type === CustomColumnTypes.NUMBER) {
@@ -558,9 +578,12 @@ export default class CustomColumnModal extends React.Component {
     if (!newColumn.columnFnArray?.length) {
       newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
     }
+    // Transform division before adding brackets so transformDivisionExpression finds top-level divisions
+    const transformedColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
+    // Wrap in brackets
     newColumn.columnFnArray.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
     newColumn.columnFnArray.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
-    const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
+    const protoTableColumn = `(${transformedColumn})`
     this.props.onAddColumn({
       ...newColumn,
       table_column: protoTableColumn,

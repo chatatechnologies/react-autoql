@@ -542,7 +542,6 @@ export class QueryOutput extends React.Component {
           },
           () => {
             this.props.onDisplayTypeChange?.(this.state.displayType)
-            
           },
         )
 
@@ -907,7 +906,8 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
+      const referenceId = String(response?.data?.reference_id || '')
+      const referenceIdNumber = Number(referenceId.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -1042,7 +1042,11 @@ export class QueryOutput extends React.Component {
       const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
-      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse) && !hasFilters) {
+      } else if (
+        this.state.displayType !== 'single-value' &&
+        isSingleValueResponse(this.queryResponse) &&
+        !hasFilters
+      ) {
         displayType = 'single-value'
       }
 
@@ -1752,8 +1756,9 @@ export class QueryOutput extends React.Component {
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
 
-    // Check if string column supports drilldown - if so, use groupBys (drilldown endpoint) instead of filter
-    const shouldUseGroupBys = stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
+    // Check if string column supports drilldown - if so, use groupBys instead of filter
+    const shouldUseGroupBys =
+      stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
 
     // Use filter only when column doesn't support drilldown, or when we lack row data (e.g. histogram buckets)
     // When column is groupable and we have row, use the drilldown endpoint (groupBys)
@@ -3770,7 +3775,8 @@ export class QueryOutput extends React.Component {
       this.potentiallySupportsPivot() &&
       !this.potentiallySupportsDatePivot() &&
       this.state?.displayType !== DisplayTypes.NETWORK_GRAPH
-    const chartDataSource = this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
+    const chartDataSource =
+      this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       // Attempt to regenerate pivot data once (cover cases where config wasn't ready yet)

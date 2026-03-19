@@ -1,10 +1,7 @@
 /**
  * Tests for measureObserver.observeContainer behavior when ResizeObserver exists.
  */
-jest.mock('autoql-fe-utils', () => ({
-  // Make observeAndRender unavailable so we test the ResizeObserver fallback path
-  observeAndRender: undefined,
-}))
+jest.mock('autoql-fe-utils', () => ({}))
 
 import { observeContainer } from '../src/components/Charts/measureObserver'
 
