@@ -52,7 +52,7 @@ describe('observeContainer', () => {
     const cb = jest.fn()
     const cleanup = observeContainer(el, cb)
 
-    // Some calls may go through observeAndRender, but verify cleanup works
+    // Verify cleanup works when ResizeObserver is present
     expect(typeof cleanup).toBe('function')
   })
 
@@ -69,7 +69,7 @@ describe('observeContainer', () => {
     const cb = jest.fn()
     const cleanup = observeContainer(el, cb)
 
-    // Should not throw  
+    // Should not throw
     expect(() => cleanup()).not.toThrow()
     expect(() => cleanup()).not.toThrow() // calling twice should be safe
   })

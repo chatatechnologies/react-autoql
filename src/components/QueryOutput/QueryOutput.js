@@ -521,7 +521,6 @@ export class QueryOutput extends React.Component {
           },
           () => {
             this.props.onDisplayTypeChange?.(this.state.displayType)
-            
           },
         )
 
@@ -886,7 +885,8 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
+      const referenceId = String(response?.data?.reference_id || '')
+      const referenceIdNumber = Number(referenceId.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -1003,7 +1003,11 @@ export class QueryOutput extends React.Component {
       const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
-      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse) && !hasFilters) {
+      } else if (
+        this.state.displayType !== 'single-value' &&
+        isSingleValueResponse(this.queryResponse) &&
+        !hasFilters
+      ) {
         displayType = 'single-value'
       }
 
@@ -1714,7 +1718,8 @@ export class QueryOutput extends React.Component {
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
 
     // Check if string column supports drilldown - if so, use groupBys instead of filter
-    const shouldUseGroupBys = stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
+    const shouldUseGroupBys =
+      stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
 
     if (filter && !shouldUseGroupBys) {
       // Only use filter if column doesn't support drilldown
