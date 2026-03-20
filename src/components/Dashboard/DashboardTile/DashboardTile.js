@@ -19,6 +19,7 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
+  runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
   isError500Type,
@@ -633,7 +634,7 @@ export class DashboardTile extends React.Component {
         force: false,
       }
 
-      const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
+      const queryFunction = isCachedRefresh ? runCachedDashboardQueryPost : runQuery
 
       if (isCachedRefresh) {
         requestData.dashboardId = this.props.dashboardId

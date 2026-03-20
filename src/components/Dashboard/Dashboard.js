@@ -235,7 +235,7 @@ class DashboardWithoutTheme extends React.Component {
 
     // Re-execute dashboard when slicers change (force execution to rerun all tiles)
     if (!deepEqual(prevState.dashboardSlicers, this.state.dashboardSlicers)) {
-      this.executeDashboard(true)
+      this.props.enableAutoRefresh ? this.executeCachedDashboard() : this.executeDashboard(true)
       // Notify parent of slicer changes via onChange callback
       const tiles = this.getMostRecentTiles()
       this.debouncedOnChange(tiles, true, [])
