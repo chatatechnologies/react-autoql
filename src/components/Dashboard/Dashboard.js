@@ -205,11 +205,21 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
-    // Update slicers if initialSlicers prop changes
+    // Update slicers if initialSlicers prop changes, but preserve state slicers when entering edit mode
     const currentSlicers = this.getSlicersArrayFromProps(this.props)
     const prevSlicers = this.getSlicersArrayFromProps(prevProps)
+    const isEnteringEditMode = !prevProps.isEditing && this.props.isEditing
 
-    if (!deepEqual(currentSlicers, prevSlicers)) {
+    // Only update from props if:
+    // 1. initialSlicers prop actually changed
+    // 2. We're not entering edit mode (preserve user's slicer selections)
+    // 3. State slicers are empty (don't override user changes)
+    // Never update from props when entering edit mode to preserve any slicers user added
+    if (
+      !deepEqual(currentSlicers, prevSlicers) &&
+      !isEnteringEditMode &&
+      this.state.dashboardSlicers.length === 0
+    ) {
       this.setState({ dashboardSlicers: currentSlicers })
     }
 
@@ -225,7 +235,7 @@ class DashboardWithoutTheme extends React.Component {
 
     // Re-execute dashboard when slicers change (force execution to rerun all tiles)
     if (!deepEqual(prevState.dashboardSlicers, this.state.dashboardSlicers)) {
-      this.executeDashboard(true)
+      this.props.enableAutoRefresh ? this.executeCachedDashboard() : this.executeDashboard(true)
       // Notify parent of slicer changes via onChange callback
       const tiles = this.getMostRecentTiles()
       this.debouncedOnChange(tiles, true, [])
@@ -248,16 +258,36 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   handleSlicerChange = (slicer) => {
-    // Convert single slicer object to array format and store in state
-    const slicers = slicer
-      ? [
-          {
-            type: 'VL',
-            data: slicer,
-          },
-        ]
-      : []
-    this.setState({ dashboardSlicers: slicers })
+    // Add new slicer to array
+    if (slicer) {
+      // Check if slicer already exists (by key or canonical_key)
+      const slicerKey = slicer.key || slicer.canonical_key
+      const exists = this.state.dashboardSlicers.some(
+        (s) => (s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === (slicer.value || '')
+      )
+      
+      if (!exists) {
+        const newSlicer = {
+          type: 'VL',
+          data: slicer,
+        }
+        this.setState({
+          dashboardSlicers: [...this.state.dashboardSlicers, newSlicer],
+        })
+      }
+    }
+  }
+
+  handleRemoveSlicer = (slicerToRemove) => {
+    // Remove slicer from array
+    const slicerKey = slicerToRemove.key || slicerToRemove.canonical_key
+    const slicerValue = slicerToRemove.value || ''
+    
+    this.setState({
+      dashboardSlicers: this.state.dashboardSlicers.filter(
+        (s) => !((s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === slicerValue)
+      ),
+    })
   }
 
   componentWillUnmount = () => {
@@ -924,7 +954,7 @@ class DashboardWithoutTheme extends React.Component {
               minH: 2,
               minW: 3,
             }}
-            dashboardSlicer={this.props.enableSlicers && this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
+            dashboardSlicers={this.props.enableSlicers ? this.state.dashboardSlicers.map((s) => s.data) : []}
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
@@ -1008,8 +1038,9 @@ class DashboardWithoutTheme extends React.Component {
                 this.props.stopEditingCallback()
               }}
               onSlicerChange={this.props.enableSlicers ? this.handleSlicerChange : undefined}
+              onRemoveSlicer={this.props.enableSlicers ? this.handleRemoveSlicer : undefined}
               dashboardId={this.props.dashboardId}
-              value={this.props.enableSlicers && this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
+              slicers={this.props.enableSlicers ? this.state.dashboardSlicers.map((s) => s.data) : []}
               refreshInterval={this.props.refreshInterval}
               enableAutoRefresh={this.props.enableAutoRefresh}
               slicerSuggestion={this.props.slicerSuggestion}
