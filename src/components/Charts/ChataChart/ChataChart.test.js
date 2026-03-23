@@ -72,17 +72,21 @@ describe('renders correctly', () => {
 
       // Toggle average line
       wrapper.instance().toggleAverageLine()
-      expect(onChartControlsChange).toHaveBeenCalledWith({
-        showAverageLine: true,
-        showRegressionLine: false,
-      })
+      expect(onChartControlsChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          showAverageLine: true,
+          showRegressionLine: false,
+        }),
+      )
 
       // Toggle regression line (should turn off average line due to radio button behavior)
       wrapper.instance().toggleRegressionLine()
-      expect(onChartControlsChange).toHaveBeenCalledWith({
-        showAverageLine: false,
-        showRegressionLine: true,
-      })
+      expect(onChartControlsChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          showAverageLine: false,
+          showRegressionLine: true,
+        }),
+      )
     })
 
     test('does not show regression line toggle for horizontal bar charts', () => {

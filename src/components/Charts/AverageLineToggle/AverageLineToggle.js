@@ -1,48 +1,35 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
+import ChartHeaderToggle from '../ChartHeaderToggle/ChartHeaderToggle'
 import './AverageLineToggle.scss'
 
-export class AverageLineToggle extends React.Component {
-  static propTypes = {
-    isEnabled: PropTypes.bool.isRequired,
-    onToggle: PropTypes.func.isRequired,
-    disabled: PropTypes.bool,
-    columns: PropTypes.array,
-    visibleSeriesIndices: PropTypes.array,
-    chartTooltipID: PropTypes.string,
-  }
+export const AverageLineToggle = ({ isEnabled, onToggle, disabled, chartTooltipID }) => {
+  return (
+    <ChartHeaderToggle
+      isEnabled={isEnabled}
+      onToggle={onToggle}
+      disabled={disabled}
+      icon='↗'
+      label='Average'
+      tooltipOn='Hide Average Line'
+      tooltipOff='Show Average Line'
+      chartTooltipID={chartTooltipID}
+    />
+  )
+}
 
-  static defaultProps = {
-    disabled: false,
-  }
+AverageLineToggle.propTypes = {
+  isEnabled: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+  columns: PropTypes.array,
+  visibleSeriesIndices: PropTypes.array,
+  chartTooltipID: PropTypes.string,
+}
 
-  handleClick = () => {
-    if (!this.props.disabled) {
-      this.props.onToggle(!this.props.isEnabled)
-    }
-  }
-
-  render = () => {
-    const { isEnabled, disabled, chartTooltipID } = this.props
-    const isDisabled = disabled
-
-    // Create tooltip content based on state
-    const tooltipContent = isEnabled ? 'Hide Average Line' : 'Show Average Line'
-
-    return (
-      <button
-        className={`average-line-toggle ${isEnabled ? 'enabled' : ''} ${isDisabled ? 'disabled' : ''}`}
-        onClick={this.handleClick}
-        disabled={isDisabled}
-        data-tooltip-content={tooltipContent}
-        data-tooltip-id={chartTooltipID}
-      >
-        <span>↗</span>
-        <span>AVG</span>
-      </button>
-    )
-  }
+AverageLineToggle.defaultProps = {
+  disabled: false,
 }
 
 export default AverageLineToggle

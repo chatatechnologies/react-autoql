@@ -208,11 +208,22 @@ export class QueryOutput extends React.Component {
       legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
       columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides
+      chartControls: props.initialChartControls || {},
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
     }
     this.updateMaxConstraints()
+  }
+
+  handleChartControlsChange = (chartControls) => {
+    // Always update immediately so standalone QueryOutput reacts without needing a parent to persist chartControls.
+    if (this._isMounted) {
+      this.setState({ chartControls: chartControls || {} })
+    }
+
+    // Also forward to consumer if provided (e.g. DashboardTile persists this in the tile config)
+    this.props.onChartControlsChange?.(chartControls)
   }
 
   static propTypes = {
@@ -460,6 +471,16 @@ export class QueryOutput extends React.Component {
       let shouldForceUpdate = false
 
       // Legend filters automatically start fresh for each query since the filter key includes queryID
+
+      // Keep local chartControls in sync if consumer updates initialChartControls prop
+      if (!deepEqual(this.props.initialChartControls, prevProps.initialChartControls)) {
+        const nextControls = this.props.initialChartControls || {}
+        // this.state can be temporarily undefined during certain error/unmount edge cases
+        const currentControls = this.state?.chartControls || {}
+        if (!deepEqual(nextControls, currentControls)) {
+          newState.chartControls = nextControls
+        }
+      }
 
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
@@ -936,7 +957,30 @@ export class QueryOutput extends React.Component {
     if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
       return false
     }
-    return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+
+    // Column line combo charts must use raw data (dual axis requires numberColumnIndices2 from raw columns)
+    if (this.state?.displayType === DisplayTypes.COLUMN_LINE) {
+      return false
+    }
+
+    const displayType = this.state?.displayType
+    // Heatmaps and bubble charts should always use pivoted data when available
+    const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
+
+    // Allow forcing raw charting even when pivot data is available via chartControls,
+    // except for heatmap and bubble charts which must remain pivoted.
+    // Note: this can be called during construction before this.state is initialized (e.g. from setTableConfig)
+    const dataSource = this.state?.chartControls?.dataSource ?? this.props.initialChartControls?.dataSource
+    const forceRaw = !isHeatmapOrBubble && dataSource === 'raw'
+    const canPivot = this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+
+    // If user explicitly chose raw, or pivot is not supported for this response, use raw.
+    if (forceRaw || !canPivot) {
+      return false
+    }
+
+    // Otherwise, prefer pivoted data when available.
+    return true
   }
 
   numberIndicesArraysOverlap = (tableConfig) => {
@@ -1721,8 +1765,9 @@ export class QueryOutput extends React.Component {
     const shouldUseGroupBys =
       stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
 
-    if (filter && !shouldUseGroupBys) {
-      // Only use filter if column doesn't support drilldown
+    // Use filter only when column doesn't support drilldown, or when we lack row data (e.g. histogram buckets)
+    // When column is groupable and we have row, use the drilldown endpoint (groupBys)
+    if (filter && (!shouldUseGroupBys || !row?.length)) {
       return this.processDrilldown({
         supportedByAPI: false,
         activeKey,
@@ -3731,6 +3776,12 @@ export class QueryOutput extends React.Component {
     }
 
     const usePivotData = this.usePivotDataForChart()
+    const canUsePivotData =
+      this.potentiallySupportsPivot() &&
+      !this.potentiallySupportsDatePivot() &&
+      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH
+    const chartDataSource =
+      this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       // Attempt to regenerate pivot data once (cover cases where config wasn't ready yet)
@@ -3775,6 +3826,14 @@ export class QueryOutput extends React.Component {
     }
 
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+
+    // For heatmaps and bubble charts, always include all numeric pivot columns so we render
+    // a full matrix of cells instead of just the first pivot column.
+    const displayType = this.state.displayType
+    const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
+    if (usePivotData && isHeatmapOrBubble && this.pivotTableConfig?.allNumberColumnIndices?.length) {
+      tableConfig.numberColumnIndices = this.pivotTableConfig.allNumberColumnIndices
+    }
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
@@ -3831,6 +3890,8 @@ export class QueryOutput extends React.Component {
           columns={columns}
           columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
+          canUsePivotData={canUsePivotData}
+          chartDataSource={chartDataSource}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
@@ -3868,8 +3929,8 @@ export class QueryOutput extends React.Component {
           hiddenLegendLabels={this.state.hiddenLegendLabels}
           onLegendVisibilityChange={this.handleLegendVisibilityChange}
           enableChartControls={this.props.enableChartControls}
-          initialChartControls={this.props.initialChartControls}
-          onChartControlsChange={this.props.onChartControlsChange}
+          initialChartControls={this.state.chartControls}
+          onChartControlsChange={this.handleChartControlsChange}
           onAxisSortChange={this.onAxisSortChange}
           axisSorts={this.state.axisSorts}
         />
