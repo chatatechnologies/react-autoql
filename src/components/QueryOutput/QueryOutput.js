@@ -958,6 +958,11 @@ export class QueryOutput extends React.Component {
       return false
     }
 
+    // Column line combo charts must use raw data (dual axis requires numberColumnIndices2 from raw columns)
+    if (this.state?.displayType === DisplayTypes.COLUMN_LINE) {
+      return false
+    }
+
     const displayType = this.state?.displayType
     // Heatmaps and bubble charts should always use pivoted data when available
     const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
