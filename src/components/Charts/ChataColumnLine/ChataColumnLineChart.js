@@ -7,7 +7,7 @@ import { Columns } from '../Columns'
 import { StackedColumns } from '../StackedColumns'
 import { Line } from '../Line'
 
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
+import { chartDefaultProps, chartPropTypes, getDenseBandScaleOptions } from '../chartPropHelpers.js'
 
 export default class ChataColumnLineChart extends Component {
   constructor(props) {
@@ -47,6 +47,7 @@ export default class ChataColumnLineChart extends Component {
 
     this.xScale = getBandScale({
       ...props,
+      ...getDenseBandScaleOptions(props.data, props),
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })

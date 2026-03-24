@@ -4,7 +4,7 @@ import { getBandScale, getLinearScales, deepEqual } from 'autoql-fe-utils'
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
 
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
+import { chartDefaultProps, chartPropTypes, getDenseBandScaleOptions } from '../chartPropHelpers.js'
 
 export default class ChataColumnChart extends Component {
   constructor(props) {
@@ -33,6 +33,7 @@ export default class ChataColumnChart extends Component {
 
     this.xScale = getBandScale({
       ...props,
+      ...getDenseBandScaleOptions(props.data, props),
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })
