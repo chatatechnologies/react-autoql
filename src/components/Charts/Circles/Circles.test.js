@@ -1,7 +1,7 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
-import Circles from './Circles'
+import Circles, { parseBubbleCellValue } from './Circles'
 import sampleProps from '../chartTestData'
 import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
 
@@ -19,6 +19,17 @@ const setup = (props = {}, state = null) => {
   }
   return wrapper
 }
+
+describe('parseBubbleCellValue', () => {
+  test('treats null, undefined, and empty string as missing (not zero)', () => {
+    expect(parseBubbleCellValue(null)).toBeNull()
+    expect(parseBubbleCellValue(undefined)).toBeNull()
+    expect(parseBubbleCellValue('')).toBeNull()
+    expect(parseBubbleCellValue(0)).toBe(0)
+    expect(parseBubbleCellValue(0.4)).toBeCloseTo(0.4)
+    expect(parseBubbleCellValue('0.35')).toBeCloseTo(0.35)
+  })
+})
 
 describe('renders correctly', () => {
   test('renders regular pivot chart data correctly', () => {
