@@ -1131,7 +1131,11 @@ export class DashboardTile extends React.Component {
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
   onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
 
-  onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
+  // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
+  // and chart data source update without waiting for the debounce timer.
+  onChartControlsChange = (chartControls) => {
+    this.props.setParamsForTile({ chartControls }, this.props.tile.i, [])
+  }
 
   onTableParamsChange = (params, formattedParams) => {
     this.debouncedSetParamsForTile({

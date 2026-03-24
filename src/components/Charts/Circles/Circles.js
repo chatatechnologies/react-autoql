@@ -3,7 +3,7 @@ import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
 import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 
 export default class Circles extends PureComponent {
   constructor(props) {
@@ -29,13 +29,24 @@ export default class Circles extends PureComponent {
   }
 
   onCircleClick = (row, colIndex, activeKey) => {
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    // Create date drilldown filter if string axis is a DATE column (raw data charts)
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
+
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey,
+      filter,
     })
 
     this.setState({ activeKey })
