@@ -1,7 +1,12 @@
 import React, { PureComponent } from 'react'
 import { getKey, getTooltipContent, isColumnNumberType, scaleZero } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  createDateDrilldownFilter,
+  isDenseChartLayout,
+} from '../chartPropHelpers'
 
 export default class Columns extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -43,6 +48,7 @@ export default class Columns extends PureComponent {
       return null
     }
 
+    const seriesGap = isDenseChartLayout(this.props.data, this.props) ? 0 : 0.5
     let visibleIndex = startIndex
     const allBars = []
     const gradientDefs = []
@@ -80,8 +86,7 @@ export default class Columns extends PureComponent {
             }
 
             const x0 = xScale.getValue(d[stringColumnIndex])
-            // Add 0.5px gap between series
-            const dX = visibleIndex * (this.barWidth + 0.5)
+            const dX = visibleIndex * (this.barWidth + seriesGap)
             const finalBarXPosition = x0 + dX
 
             const tooltip = getTooltipContent({
@@ -96,7 +101,7 @@ export default class Columns extends PureComponent {
 
             const key = getKey(colIndex, index)
             // Round corners - use smaller of width/height for radius, but cap at 4px
-            const cornerRadius = Math.min(Math.min(this.barWidth, height) / 2, 4)
+            const cornerRadius = Math.max(0, Math.min(Math.min(this.barWidth, height) / 2, 4))
 
             return (
               <rect
@@ -146,9 +151,9 @@ export default class Columns extends PureComponent {
     const numBarsSeries2 = yScale2 ? visibleSeries2?.length ?? 0 : 0
     const numBars = numBarsSeries1 + numBarsSeries2
 
-    // Calculate bar width with 0.5px gap between series
+    const seriesGap = isDenseChartLayout(this.props.data, this.props) ? 0 : 0.5
     const totalWidth = xScale.bandwidth ? xScale.bandwidth() : 0
-    const gapWidth = (numBars - 1) * 0.5 // 0.5px gap between each series
+    const gapWidth = (numBars - 1) * seriesGap
     this.barWidth = numBars > 0 ? (totalWidth - gapWidth) / numBars : 0
 
     const result1 = this.getBars(numberColumnIndices, yScale)

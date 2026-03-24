@@ -53,6 +53,8 @@ export default class StackedBars extends PureComponent {
       (colIndex) => columns[colIndex] && !columns[colIndex].isSeriesHidden,
     )
 
+    const stackSegmentGap = 0.5
+
     const gradientDefs = []
     const gradientIds = new Map()
     
@@ -76,7 +78,7 @@ export default class StackedBars extends PureComponent {
       let prevPosValue = 0
       let prevNegValue = 0
       const bandwidth = yScale.bandwidth()
-      const cornerRadius = Math.min(bandwidth / 2, 3) // Slight rounding for modern look
+      const cornerRadius = Math.max(0, Math.min(bandwidth / 2, 3)) // Slight rounding for modern look
       
       const bars = visibleIndices
         .map((colIndex) => {
@@ -93,12 +95,12 @@ export default class StackedBars extends PureComponent {
           let width
           if (value >= 0) {
             const nextPosValue = prevPosValue + value
-            width = Math.abs(xScale.getValue(value) - xScale.getValue(0) - 0.5)
+            width = Math.abs(xScale.getValue(value) - xScale.getValue(0) - stackSegmentGap)
             x = xScale.getValue(prevPosValue)
             prevPosValue = nextPosValue
           } else {
             const nextNegValue = prevNegValue + value
-            width = Math.abs(xScale.getValue(Math.abs(value)) - xScale.getValue(0) - 0.5)
+            width = Math.abs(xScale.getValue(Math.abs(value)) - xScale.getValue(0) - stackSegmentGap)
             x = xScale.getValue(nextNegValue)
             prevNegValue = nextNegValue
           }

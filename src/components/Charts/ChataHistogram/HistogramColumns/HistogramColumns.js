@@ -81,7 +81,7 @@ export default class HistogramColumns extends Component {
 
       const key = getKey(index)
       // Round corners - use smaller of width/height for radius, but cap at 4px
-      const cornerRadius = Math.min(Math.min(width, height) / 2, 4)
+      const cornerRadius = Math.max(0, Math.min(Math.min(width, height) / 2, 4))
 
       return (
         <rect
