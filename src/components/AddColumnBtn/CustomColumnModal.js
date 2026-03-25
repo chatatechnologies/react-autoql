@@ -292,7 +292,7 @@ export default class CustomColumnModal extends React.Component {
 
     const { columnFn, columnType } = this.state
 
-    // Validate formula has variables and correct operator sequences; suppress intermediate warnings while formula is incomplete
+    // Validate formula completeness
     if (!this.isFormulaComplete()) {
       return
     }
@@ -308,7 +308,7 @@ export default class CustomColumnModal extends React.Component {
       return
     }
 
-    // Create mutator and summary; helper returns an error object on failure
+    // Create mutator and summary
     let newMutator = createMutatorFn(columnFn)
     let newFnSummary = getFnSummary(columnFn)
 
@@ -412,7 +412,7 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
-  // Build SQL string for a function chunk (extracted from nested ternary for readability)
+  // Build SQL for function chunks
   buildFunctionSql = (columnFn, customColumn) => {
     const colName = this.sanitizeColumnName(columnFn?.column?.name)
 
@@ -753,13 +753,11 @@ export default class CustomColumnModal extends React.Component {
       return ColumnTypes.QUANTITY
     }
 
-    // If all columns are the same, return that type
     if (selectedColumnTypes.every((colType) => colType === selectedColumnTypes[0])) {
       return selectedColumnTypes[0]
     }
 
     if (selectedColumnTypes.find((colType) => colType === ColumnTypes.STRING)) {
-      // If even one column selected is a string type, the output must be string type
       return ColumnTypes.STRING
     } else if (
       selectedColumnTypes.every(
@@ -770,12 +768,10 @@ export default class CustomColumnModal extends React.Component {
           colType === ColumnTypes.PERCENT,
       )
     ) {
-      // If any of the number columns are a currency, return currency
       if (selectedColumnTypes.find((colType) => colType === ColumnTypes.DOLLAR_AMT)) {
         return ColumnTypes.DOLLAR_AMT
       }
 
-      // If column is a number type but there is no currency, just display as a "quantity" with no units
       return ColumnTypes.QUANTITY
     }
 
@@ -786,7 +782,6 @@ export default class CustomColumnModal extends React.Component {
     const { columnFn } = this.state
     const lastTerm = columnFn[columnFn.length - 1]
 
-    // The window function option is only available to use if it is on its own, since the calculation is done on the server side
     if (FUNCTION_OPERATORS.includes(lastTerm?.value)) {
       return true
     }
@@ -798,23 +793,22 @@ export default class CustomColumnModal extends React.Component {
         }
 
         if (lastTerm?.value === CustomColumnValues.RIGHT_BRACKET || lastTerm?.type !== CustomColumnTypes.OPERATOR) {
-          // Do not allow an opening bracket right after an closing bracket
-          // Do not allow an opening bracket right after a column or number
+          // Cannot start bracket after another bracket or operand
           return true
         }
       }
 
       if (op === CustomColumnValues.RIGHT_BRACKET) {
-        if (lastTerm?.value === CustomColumnValues.LEFT_BRACKET || lastTerm?.type === CustomColumnTypes.OPERATOR) {
-          // Do not allow a closing bracket right after an opening bracket
-          // Do not allow a closing bracket right after an operator
+        if (lastTerm?.value === CustomColumnValues.LEFT_BRACKET) {
+          // Cannot have empty brackets
           return true
         }
 
         const numRightBrackets = columnFn.filter((chunk) => chunk.value === CustomColumnValues.RIGHT_BRACKET)?.length
         const numLeftBrackets = columnFn.filter((chunk) => chunk.value === CustomColumnValues.LEFT_BRACKET)?.length
+
         if (numRightBrackets >= numLeftBrackets) {
-          // Do not allow more closing brackets than opening brackets
+          // No more closing brackets than opening
           return true
         }
       }
@@ -823,11 +817,8 @@ export default class CustomColumnModal extends React.Component {
         return false
       }
 
-      // This option is only available to use if it is on its own, since the calculation is done on the server side
-      // return true
       if (lastTerm?.value === CustomColumnValues.RIGHT_BRACKET || lastTerm?.type !== CustomColumnTypes.OPERATOR) {
-        // Do not allow a function right after an closing bracket
-        // Do not allow a function right after a column or number
+        // Cannot use function after bracket or operand
         return true
       }
     } else if (
