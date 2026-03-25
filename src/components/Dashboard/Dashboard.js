@@ -315,7 +315,8 @@ class DashboardWithoutTheme extends React.Component {
             // Always use state slicers (even if empty) to reflect user changes
             // If state is explicitly set to empty array, send empty array, not initialSlicers
             // If slicers are disabled, always send empty array
-            const slicers = this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
+            const slicers =
+              this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
             this.props.onChange(this.onChangeTiles, slicers)
             this.onChangeTiles = null
             if (this.callbackSubsciptions?.length) {
@@ -386,14 +387,14 @@ class DashboardWithoutTheme extends React.Component {
     try {
       const promises = []
       const tiles = this.getMostRecentTiles()
-      
+
       for (var dashboardTile in this.tileRefs) {
         if (this.tileRefs[dashboardTile]) {
           // Find the corresponding tile to check if it already has data
           const tile = tiles.find((t) => t.key === dashboardTile || t.i === dashboardTile)
-          
+
           // Only execute tiles that don't already have queryResponse, unless forceExecution is true
-          if (forceExecution || !tile?.queryResponse && !tile?.secondQueryResponse) {
+          if (forceExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
             promises.push(this.tileRefs[dashboardTile].processTile())
           }
         }
@@ -670,8 +671,9 @@ class DashboardWithoutTheme extends React.Component {
 
       // Create the dashboard export object with complete tile state
       // Prioritize state slicers (if changed) over initialSlicers prop
-      const slicers = this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers : (this.props.initialSlicers || [])
-      
+      const slicers =
+        this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers : this.props.initialSlicers || []
+
       const dashboardExport = {
         version: '1.0',
         exportDate: new Date().toISOString(),
@@ -732,12 +734,12 @@ class DashboardWithoutTheme extends React.Component {
           }
 
           const dashboardData = JSON.parse(jsonStr)
-          
+
           // Ensure slicers is always an array (even if empty)
           if (dashboardData?.dashboard && !dashboardData.dashboard.slicers) {
             dashboardData.dashboard.slicers = []
           }
-          
+
           resolve(dashboardData)
         } catch (error) {
           reject(new Error('Failed to parse dashboard file: ' + error.message))
@@ -772,6 +774,44 @@ class DashboardWithoutTheme extends React.Component {
       }
 
       this.debouncedOnChange(tiles, true, callbackArray)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  resetTile = (id) => {
+    try {
+      const tiles = _cloneDeep(this.getMostRecentTiles())
+      const tileIndex = tiles.map((item) => item.i).indexOf(id)
+
+      if (tileIndex < 0) {
+        console.warn(`Tile with ID ${id} not found for reset`)
+        return
+      }
+
+      // Clear filters, columns, sorts; preserve query and title
+      tiles[tileIndex] = {
+        ...tiles[tileIndex],
+        tableFilters: [],
+        filters: [],
+        secondTableFilters: [],
+        columnSelects: [],
+        orders: [],
+        secondOrders: [],
+        queryResponse: null,
+        secondQueryResponse: null,
+      }
+
+      // Trigger save after state updates
+      const resetCallback = () => {
+        if (this.props.onSaveCallback) {
+          Promise.resolve(this.props.onSaveCallback()).catch((error) => {
+            console.error('Error saving after tile reset:', error)
+          })
+        }
+      }
+
+      this.debouncedOnChange(tiles, true, [resetCallback])
     } catch (error) {
       console.error(error)
     }
@@ -924,7 +964,11 @@ class DashboardWithoutTheme extends React.Component {
               minH: 2,
               minW: 3,
             }}
-            dashboardSlicer={this.props.enableSlicers && this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
+            dashboardSlicer={
+              this.props.enableSlicers && this.state.dashboardSlicers.length > 0
+                ? this.state.dashboardSlicers[0].data
+                : null
+            }
             displayType={tile.displayType}
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
@@ -932,6 +976,8 @@ class DashboardWithoutTheme extends React.Component {
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}
+            resetTile={this.resetTile}
+            onSaveCallback={this.props.onSaveCallback}
             deleteTile={this.deleteTile}
             dataFormatting={this.props.dataFormatting}
             notExecutedText={this.props.notExecutedText}
@@ -1009,7 +1055,11 @@ class DashboardWithoutTheme extends React.Component {
               }}
               onSlicerChange={this.props.enableSlicers ? this.handleSlicerChange : undefined}
               dashboardId={this.props.dashboardId}
-              value={this.props.enableSlicers && this.state.dashboardSlicers.length > 0 ? this.state.dashboardSlicers[0].data : null}
+              value={
+                this.props.enableSlicers && this.state.dashboardSlicers.length > 0
+                  ? this.state.dashboardSlicers[0].data
+                  : null
+              }
               refreshInterval={this.props.refreshInterval}
               enableAutoRefresh={this.props.enableAutoRefresh}
               slicerSuggestion={this.props.slicerSuggestion}
