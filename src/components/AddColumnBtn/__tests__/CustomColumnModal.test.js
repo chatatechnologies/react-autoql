@@ -628,3 +628,402 @@ describe('CustomColumnModal reproducer - window fn orderby update', () => {
     }, 0)
   })
 })
+
+// BEDMAS (order of operations) and bracket validation test helpers
+const createToken = (type, value, column = null) => {
+  const token = { type, value }
+  if (column) token.column = column
+  return token
+}
+
+const BEDMAS_OPERATORS = {
+  ADD: CustomColumnValues.ADDITION,
+  SUB: CustomColumnValues.SUBTRACTION,
+  MULT: CustomColumnValues.MULTIPLICATION,
+  DIV: CustomColumnValues.DIVISION,
+  LB: CustomColumnValues.LEFT_BRACKET,
+  RB: CustomColumnValues.RIGHT_BRACKET,
+}
+
+const bedmasColA = { field: 'a', name: 'a', index: 0 }
+const bedmasColB = { field: 'b', name: 'b', index: 1 }
+const bedmasColC = { field: 'c', name: 'c', index: 2 }
+const bedmasColD = { field: 'd', name: 'd', index: 3 }
+
+const isValidOperatorSequence = (a, b, i) => {
+  const leftLeft = a?.value === BEDMAS_OPERATORS.LB && b?.value === BEDMAS_OPERATORS.LB
+  const rightRight = a?.value === BEDMAS_OPERATORS.RB && b?.value === BEDMAS_OPERATORS.RB
+  const unaryAllowed =
+    (b?.value === BEDMAS_OPERATORS.ADD || b?.value === BEDMAS_OPERATORS.SUB) &&
+    (a?.value === BEDMAS_OPERATORS.LB || i === 0)
+  const afterRightBracket = a?.value === BEDMAS_OPERATORS.RB
+  const bracketAfterOp = b?.value === BEDMAS_OPERATORS.LB && a?.value !== BEDMAS_OPERATORS.RB
+  return leftLeft || rightRight || unaryAllowed || afterRightBracket || bracketAfterOp
+}
+
+const validateBracketBalance = (columnFn) => {
+  let balance = 0
+  for (const chunk of columnFn) {
+    if (chunk?.type === CustomColumnTypes.OPERATOR) {
+      if (chunk.value === BEDMAS_OPERATORS.LB) balance++
+      if (chunk.value === BEDMAS_OPERATORS.RB) balance--
+      if (balance < 0) return { valid: false, error: 'Mismatched parentheses' }
+    }
+  }
+  return balance !== 0 ? { valid: false, error: 'Mismatched parentheses' } : { valid: true }
+}
+
+const validateFormula = (columnFn) => {
+  for (let i = 0; i < columnFn.length - 1; i++) {
+    const a = columnFn[i]
+    const b = columnFn[i + 1]
+    if (a?.type === CustomColumnTypes.OPERATOR && b?.type === CustomColumnTypes.OPERATOR) {
+      if (!isValidOperatorSequence(a, b, i)) {
+        return { valid: false, error: 'Invalid operator sequence' }
+      }
+    }
+  }
+  return validateBracketBalance(columnFn)
+}
+
+describe('CustomColumnFormula BEDMAS and Bracket Validation', () => {
+  describe('VALID formulas - should satisfy validation', () => {
+    test('Simple arithmetic: a + b', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Multiplication before addition: a * b + c', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Parentheses override precedence: (a + b) * c', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Nested grouping: a + (b * c)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Complex precedence: a - b * (c / 0.1)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.SUB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.NUMBER, '0.1'),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Deeply nested: a * (b / (c - d))', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.SUB),
+        createToken(CustomColumnTypes.COLUMN, 'd', bedmasColD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Consecutive nested parentheses: ((a))', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Operator after closing bracket: (a + b) * c', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Opening bracket after operator: a * (b + c)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Opening bracket after subtraction operator: a - (b * c)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.SUB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Opening bracket after division operator: a / (b + c)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+  })
+
+  describe('INVALID formulas - should fail validation', () => {
+    test('Unclosed opening bracket: (a + b', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe('Mismatched parentheses')
+    })
+
+    test('Extra closing bracket: a + b)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe('Mismatched parentheses')
+    })
+
+    test('Mismatched brackets: (a + b]', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe('Mismatched parentheses')
+    })
+
+    test('Two consecutive operators: a + * b', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe('Invalid operator sequence')
+    })
+
+    test('Mult then div operators: a * / b', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe('Invalid operator sequence')
+    })
+  })
+
+  describe('Edge cases - numeric and column combinations', () => {
+    test('Number * Column / 0.1: a * b / 0.1', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.NUMBER, '0.1'),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Multiple divisions: a / b / c', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Multiple multiplications: a * b * c', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Mixed: (a * b) + (c / d)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.COLUMN, 'd', bedmasColD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Simple BEDMAS: a + b * c - d', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.SUB),
+        createToken(CustomColumnTypes.COLUMN, 'd', bedmasColD),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Multiple grouped expressions: (a + b) * (c - d)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.SUB),
+        createToken(CustomColumnTypes.COLUMN, 'd', bedmasColD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Nested division: a / (b * (c + d))', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.MULT),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'd', bedmasColD),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+
+    test('Multi-operator group divided: (a - b + c) / d', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.LB),
+        createToken(CustomColumnTypes.COLUMN, 'a', bedmasColA),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.SUB),
+        createToken(CustomColumnTypes.COLUMN, 'b', bedmasColB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.ADD),
+        createToken(CustomColumnTypes.COLUMN, 'c', bedmasColC),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.RB),
+        createToken(CustomColumnTypes.OPERATOR, BEDMAS_OPERATORS.DIV),
+        createToken(CustomColumnTypes.COLUMN, 'd', bedmasColD),
+      ]
+      const result = validateFormula(formula)
+      expect(result.valid).toBe(true)
+    })
+  })
+})
