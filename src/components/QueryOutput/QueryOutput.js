@@ -3510,7 +3510,7 @@ export class QueryOutput extends React.Component {
 
       let currentDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
       currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
-        return override.table_column?.trim() !== column.table_column?.trim()
+        return override.english !== column?.custom_column_display_name
       })
       if (column?.custom_column_display_name) {
         currentDisplayOverrides = [
