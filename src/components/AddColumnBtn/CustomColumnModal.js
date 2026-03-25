@@ -712,7 +712,6 @@ export default class CustomColumnModal extends React.Component {
 
   isStructurallyValidColumnFn = () => {
     const columnFn = this.state.columnFn || []
-
     for (let i = 0; i < columnFn.length - 1; i++) {
       const a = columnFn[i]
       const b = columnFn[i + 1]
@@ -720,12 +719,16 @@ export default class CustomColumnModal extends React.Component {
         const leftLeft = a?.value === CustomColumnValues.LEFT_BRACKET && b?.value === CustomColumnValues.LEFT_BRACKET
         const rightRight =
           a?.value === CustomColumnValues.RIGHT_BRACKET && b?.value === CustomColumnValues.RIGHT_BRACKET
-        // Allow consecutive left/right brackets; allow unary +/- only immediately after an opening bracket or at start
         const unaryAllowed =
           (b?.value === CustomColumnValues.ADDITION || b?.value === CustomColumnValues.SUBTRACTION) &&
           (a?.value === CustomColumnValues.LEFT_BRACKET || i === 0)
-
-        if (!leftLeft && !rightRight && !unaryAllowed) return { valid: false, error: 'Invalid operator sequence' }
+        // Allow `)anything`, `(+`, `(-`, `((`, `))`, `operator(`
+        const afterRightBracket = a?.value === CustomColumnValues.RIGHT_BRACKET
+        const bracketAfterOp =
+          b?.value === CustomColumnValues.LEFT_BRACKET && a?.value !== CustomColumnValues.RIGHT_BRACKET
+        if (!leftLeft && !rightRight && !unaryAllowed && !afterRightBracket && !bracketAfterOp) {
+          return { valid: false, error: 'Invalid operator sequence' }
+        }
       }
     }
 
