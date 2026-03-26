@@ -217,8 +217,53 @@ export class QueryOutput extends React.Component {
   }
 
   handleChartControlsChange = (chartControls) => {
-    // Always update immediately so standalone QueryOutput reacts without needing a parent to persist chartControls.
-    if (this._isMounted) {
+    const prevSource = this.state?.chartControls?.dataSource
+    const nextSource = chartControls?.dataSource
+    const shouldRegeneratePivot = !!(prevSource && nextSource && prevSource !== nextSource && nextSource === 'pivoted')
+    const regeneratePivotIfNeeded = () => {
+      if (shouldRegeneratePivot && this.potentiallySupportsPivot()) {
+        try {
+          this.generatePivotData({ isFirstGeneration: true, dataChanged: true })
+        } catch (error) {
+          console.error('Failed to regenerate pivot data after data source switch:', error)
+        }
+      }
+    }
+
+    // When toggling pivoted/raw, reset series visibility and legend hidden state.
+    // Raw/pivoted should start from a clean visibility slate.
+    if (prevSource && nextSource && prevSource !== nextSource) {
+      const unhideAllSeries = (columns = []) => {
+        if (!Array.isArray(columns) || !columns.length) return columns
+        return columns.map((col) => {
+          if (!col?.isSeriesHidden) return col
+          return { ...col, isSeriesHidden: false }
+        })
+      }
+
+      if (this.pivotTableColumns?.length) {
+        this.pivotTableColumns = unhideAllSeries(this.pivotTableColumns)
+      }
+
+      if (this.state?.columns?.length) {
+        const nextColumns = unhideAllSeries(this.state.columns)
+        if (this._isMounted) {
+          this.setState(
+            {
+              chartControls: chartControls || {},
+              columns: nextColumns,
+              hiddenLegendLabels: [],
+            },
+            regeneratePivotIfNeeded,
+          )
+        }
+      } else if (this._isMounted) {
+        this.setState({ chartControls: chartControls || {}, hiddenLegendLabels: [] }, regeneratePivotIfNeeded)
+      } else {
+        regeneratePivotIfNeeded()
+      }
+    } else if (this._isMounted) {
+      // Always update immediately so standalone QueryOutput reacts without needing a parent to persist chartControls.
       this.setState({ chartControls: chartControls || {} })
     }
 
@@ -967,12 +1012,18 @@ export class QueryOutput extends React.Component {
     // Heatmaps and bubble charts should always use pivoted data when available
     const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
 
-    // Allow forcing raw charting even when pivot data is available via chartControls,
-    // except for heatmap and bubble charts which must remain pivoted.
+    // Respect explicit chart data source selection from chart controls.
+    // Heatmap/bubble remain pivoted regardless of selection.
     // Note: this can be called during construction before this.state is initialized (e.g. from setTableConfig)
     const dataSource = this.state?.chartControls?.dataSource ?? this.props.initialChartControls?.dataSource
+    const forcePivot = !isHeatmapOrBubble && dataSource === 'pivoted'
     const forceRaw = !isHeatmapOrBubble && dataSource === 'raw'
-    const canPivot = this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+    const canPivot = this.potentiallySupportsPivot()
+
+    // If user explicitly chose pivoted and the response supports pivoting, use pivot data.
+    if (forcePivot && canPivot) {
+      return true
+    }
 
     // If user explicitly chose raw, or pivot is not supported for this response, use raw.
     if (forceRaw || !canPivot) {
@@ -2153,18 +2204,41 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
+    const isUsingPivotData = this.usePivotDataForChart()
+    if (isUsingPivotData && !this.pivotTableConfig) {
+      this.pivotTableConfig = {}
+    }
+    if (!isUsingPivotData && !this.tableConfig) {
+      this.tableConfig = {}
+    }
+    const targetConfig = isUsingPivotData ? this.pivotTableConfig : this.tableConfig
+
     if (indices) {
-      this.tableConfig.numberColumnIndices = indices
-      this.tableConfig.numberColumnIndex = indices[0]
+      targetConfig.numberColumnIndices = indices
+      targetConfig.numberColumnIndex = indices[0]
     }
 
     if (indices2) {
-      this.tableConfig.numberColumnIndices2 = indices2
-      this.tableConfig.numberColumnIndex2 = indices2[0]
+      targetConfig.numberColumnIndices2 = indices2
+      targetConfig.numberColumnIndex2 = indices2[0]
     }
 
-    const columns = newColumns ?? this.getColumns()
-    this.updateColumns(columns)
+    // Persist table config change directly. Avoid updateColumns/resetTableConfig path here,
+    // which can re-derive number series and override user axis-selector choices (notably custom columns).
+    this.onTableConfigChange()
+
+    if (newColumns && this._isMounted) {
+      this.setState((prevState) => ({
+        columns: newColumns,
+        aggConfig: this.getAggConfig(newColumns),
+        columnChangeCount: prevState.columnChangeCount + 1,
+        chartID: uuid(),
+      }))
+    } else if (this._isMounted) {
+      this.setState({ chartID: uuid() })
+    } else {
+      this.forceUpdate()
+    }
   }
 
   resetPivotTableConfig = () => {
@@ -2183,6 +2257,16 @@ export class QueryOutput extends React.Component {
 
     if (!this.pivotTableConfig) {
       this.pivotTableConfig = {}
+    }
+
+    // Dashboards can pass a persisted pivotTableConfig via initialTableConfigs.
+    // Seed it on first pivot generation so we honor saved pivot axis/series selections.
+    if (isFirstGeneration && !this.pivotConfigInitializedFromProps) {
+      const savedPivotConfig = this.props.initialTableConfigs?.pivotTableConfig
+      if (savedPivotConfig) {
+        this.pivotTableConfig = _cloneDeep(savedPivotConfig)
+      }
+      this.pivotConfigInitializedFromProps = true
     }
 
     // Set string type columns (ordinal axis)
@@ -3847,7 +3931,8 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+    const baseTableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+    const tableConfig = _cloneDeep(baseTableConfig || {})
 
     // For heatmaps and bubble charts, always include all numeric pivot columns so we render
     // a full matrix of cells instead of just the first pivot column.
@@ -3899,7 +3984,7 @@ export class QueryOutput extends React.Component {
           key={this.state.chartID}
           isResizable={this.state.isResizable}
           {...tableConfig}
-          tableConfig={this.tableConfig}
+          tableConfig={tableConfig}
           originalColumns={originalColumns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
@@ -3918,7 +4003,7 @@ export class QueryOutput extends React.Component {
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           currentLegendState={this.state.hiddenLegendLabels}
-          legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
+          legendColumn={columns[tableConfig?.legendColumnIndex]}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
