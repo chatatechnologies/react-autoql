@@ -757,3 +757,120 @@ describe('CustomColumnFormula BEDMAS and mathematical expressions', () => {
     })
   })
 })
+
+describe('CustomColumnModal auto-wrap and formula helpers', () => {
+  const getInst = () => {
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
+    return wrapper.instance()
+  }
+
+  describe('isFormulaAlreadyWrapped', () => {
+    it('returns true when formula starts and ends with brackets', () => {
+      const inst = getInst()
+      const formula = [
+        { type: 'operator', value: CustomColumnValues.LEFT_BRACKET },
+        { type: 'number', value: '5' },
+        { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET },
+      ]
+      expect(inst.isFormulaAlreadyWrapped(formula)).toBe(true)
+    })
+
+    it('returns false when formula has brackets but missing right bracket', () => {
+      const inst = getInst()
+      const formula = [
+        { type: 'operator', value: CustomColumnValues.LEFT_BRACKET },
+        { type: 'number', value: '5' },
+      ]
+      expect(inst.isFormulaAlreadyWrapped(formula)).toBe(false)
+    })
+
+    it('returns false when formula has no brackets', () => {
+      const inst = getInst()
+      const formula = [{ type: 'number', value: '5' }]
+      expect(inst.isFormulaAlreadyWrapped(formula)).toBe(false)
+    })
+
+    it('returns false for empty array', () => {
+      const inst = getInst()
+      expect(inst.isFormulaAlreadyWrapped([])).toBe(false)
+    })
+  })
+
+  describe('cleanColumnFn', () => {
+    it('removes empty/zero number values', () => {
+      const inst = getInst()
+      const formula = [
+        { type: 'number', value: 0 },
+        { type: 'number', value: undefined },
+        { type: 'number', value: '5' },
+        { type: 'number', value: null },
+      ]
+      const result = inst.cleanColumnFn(formula)
+      expect(result).toHaveLength(1)
+      expect(result[0].value).toBe('5')
+    })
+
+    it('preserves all bracket operators', () => {
+      const inst = getInst()
+      const formula = [
+        { type: 'operator', value: CustomColumnValues.LEFT_BRACKET },
+        { type: 'number', value: '5' },
+        { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET },
+      ]
+      const result = inst.cleanColumnFn(formula)
+      expect(result).toEqual(formula)
+    })
+
+    it('preserves arithmetic operators', () => {
+      const inst = getInst()
+      const formula = [
+        { type: 'number', value: '5' },
+        { type: 'operator', value: CustomColumnValues.ADDITION },
+        { type: 'number', value: '10' },
+      ]
+      const result = inst.cleanColumnFn(formula)
+      expect(result).toEqual(formula)
+    })
+  })
+
+  describe('addColumnToFormula', () => {
+    it('adds column and wraps it with brackets if multi-component', () => {
+      const inst = getInst()
+      const multiCompCol = {
+        field: '0',
+        name: 'Sales + 10',
+        display_name: 'Sales Plus Ten',
+        columnFnArray: [
+          { type: CustomColumnTypes.COLUMN, value: '0', column: { name: 'Sales' } },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.NUMBER, value: '10' },
+        ],
+      }
+
+      const columnFn = []
+      inst.addColumnToFormula(multiCompCol, columnFn, null)
+
+      // Should have: [LEFT_BRACKET, column, RIGHT_BRACKET]
+      expect(columnFn).toHaveLength(3)
+      expect(columnFn[0].value).toBe(CustomColumnValues.LEFT_BRACKET)
+      expect(columnFn[1].type).toBe(CustomColumnTypes.COLUMN)
+      expect(columnFn[2].value).toBe(CustomColumnValues.RIGHT_BRACKET)
+    })
+
+    it('does not wrap single-component columns', () => {
+      const inst = getInst()
+      const singleCompCol = {
+        field: '0',
+        name: 'Sales',
+        display_name: 'Sales',
+        columnFnArray: [{ type: CustomColumnTypes.COLUMN, value: '0' }],
+      }
+
+      const columnFn = []
+      inst.addColumnToFormula(singleCompCol, columnFn, null)
+
+      expect(columnFn).toHaveLength(1)
+      expect(columnFn[0].type).toBe(CustomColumnTypes.COLUMN)
+    })
+  })
+})
