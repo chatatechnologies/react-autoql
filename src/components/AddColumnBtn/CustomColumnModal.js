@@ -424,7 +424,7 @@ export default class CustomColumnModal extends React.Component {
     // PERCENT_OF_TOTAL
     if (columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL) {
       const windowClause =
-        columnFn?.groupby ?? this.state.selectedFnGroupby
+        (columnFn?.groupby ?? this.state.selectedFnGroupby)
           ? `PARTITION BY ${
               getVisibleColumns(this.props.columns).find((column) => {
                 return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
@@ -474,8 +474,8 @@ export default class CustomColumnModal extends React.Component {
       WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
         ? columnFn?.column?.name
         : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.NUMBER
-        ? columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber
-        : this.state.selected ?? ''
+          ? (columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber)
+          : (this.state.selected ?? '')
 
     const partitionClause = this.buildPartitionClause(columnFn)
     const orderClause = this.buildOrderByClause(columnFn, true)
@@ -898,16 +898,16 @@ export default class CustomColumnModal extends React.Component {
       fn: this.state.selectedFnType
         ? this.state.selectedFnType
         : this.state.selectedFnOperation
-        ? this.state.selectedFnOperation
-        : null,
+          ? this.state.selectedFnOperation
+          : null,
       column:
         WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
           ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
           : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
-          ? this.props.columns.find((col) => col.field === this.state.selectedFnSum)
-          : this.state.selectedFnColumn
-          ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
-          : null,
+            ? this.props.columns.find((col) => col.field === this.state.selectedFnSum)
+            : this.state.selectedFnColumn
+              ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
+              : null,
       nTileNumber: this.state.selectedFnNTileNumber,
       groupby: this.state.selectedFnGroupby,
       having: this.state.selectedFnHaving,
@@ -1013,8 +1013,8 @@ export default class CustomColumnModal extends React.Component {
           this.state?.isColumnNameValid
             ? ''
             : this.state?.columnName?.length > 0
-            ? 'A column with this name already exists.'
-            : 'Column name cannot be empty'
+              ? 'A column with this name already exists.'
+              : 'Column name cannot be empty'
         }
         onChange={(e) => {
           this.handleColumnNameUpdate(e.target.value)
