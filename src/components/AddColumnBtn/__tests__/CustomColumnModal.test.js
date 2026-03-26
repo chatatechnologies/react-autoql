@@ -628,3 +628,132 @@ describe('CustomColumnModal reproducer - window fn orderby update', () => {
     }, 0)
   })
 })
+
+describe('CustomColumnFormula BEDMAS and mathematical expressions', () => {
+  const colA = { field: 'a', name: 'a', index: 0 }
+  const colB = { field: 'b', name: 'b', index: 1 }
+  const colC = { field: 'c', name: 'c', index: 2 }
+  const colD = { field: 'd', name: 'd', index: 3 }
+
+  const createToken = (type, value, column = null) => {
+    const token = { type, value }
+    if (column) token.column = column
+    return token
+  }
+
+  const testFormula = (columnFn) => {
+    const wrapper = mount(
+      <CustomColumnModal isOpen={true} columns={[colA, colB, colC, colD]} queryResponse={{ data: { data: {} } }} />,
+    )
+    const inst = wrapper.instance()
+    inst.setState({ columnFn })
+    const result = inst.isStructurallyValidColumnFn()
+    wrapper.unmount()
+    return result
+  }
+
+  describe('Standard BEDMAS and precedence tests', () => {
+    it('validates: a + b * c - d (mixed precedence)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.ADDITION),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.MULTIPLICATION),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.SUBTRACTION),
+        createToken(CustomColumnTypes.COLUMN, 'd', colD),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+
+    it('validates: (a + b) * (c - d) (parentheses override)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.ADDITION),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.MULTIPLICATION),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.SUBTRACTION),
+        createToken(CustomColumnTypes.COLUMN, 'd', colD),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+
+    it('validates: a / (b * (c + d)) (nested groups with division)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.DIVISION),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.MULTIPLICATION),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.ADDITION),
+        createToken(CustomColumnTypes.COLUMN, 'd', colD),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+
+    it('validates: (a - b + c) / d (multi-operator group divided)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.SUBTRACTION),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.ADDITION),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.DIVISION),
+        createToken(CustomColumnTypes.COLUMN, 'd', colD),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+
+    it('validates: a - b * (c / 0.1) (complex precedence)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.SUBTRACTION),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.MULTIPLICATION),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.DIVISION),
+        createToken(CustomColumnTypes.NUMBER, '0.1'),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+
+    it('validates: a * (b + c) (operator before bracket)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.MULTIPLICATION),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.ADDITION),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+
+    it('validates: (a - b) * c (bracket before operator)', () => {
+      const formula = [
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.LEFT_BRACKET),
+        createToken(CustomColumnTypes.COLUMN, 'a', colA),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.SUBTRACTION),
+        createToken(CustomColumnTypes.COLUMN, 'b', colB),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.RIGHT_BRACKET),
+        createToken(CustomColumnTypes.OPERATOR, CustomColumnValues.MULTIPLICATION),
+        createToken(CustomColumnTypes.COLUMN, 'c', colC),
+      ]
+      expect(testFormula(formula).valid).toBe(true)
+    })
+  })
+})
