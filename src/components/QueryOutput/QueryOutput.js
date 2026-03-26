@@ -1760,6 +1760,28 @@ export class QueryOutput extends React.Component {
     const column = columns[columnIndex]
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
+    const isDateStringAxis = isColumnDateType(stringColumn)
+    const isListQueryResponse = isListQuery(columns)
+    const shouldForceFilterDrilldown = isListQueryResponse && isDateStringAxis
+
+    // For list-query date drilldowns, always use the query endpoint with a filter.
+    // Do not use the drilldown endpoint/groupBy flow for this case.
+    if (shouldForceFilterDrilldown) {
+      const clickedFilter =
+        filter ||
+        this.constructFilter({
+          column: stringColumn,
+          value: row?.[stringColumnIndex],
+        })
+
+      if (clickedFilter) {
+        return this.processDrilldown({
+          supportedByAPI: false,
+          activeKey,
+          filter: clickedFilter,
+        })
+      }
+    }
 
     // Check if string column supports drilldown - if so, use groupBys instead of filter
     const shouldUseGroupBys =
