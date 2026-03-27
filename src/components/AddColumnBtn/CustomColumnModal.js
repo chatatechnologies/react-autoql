@@ -421,29 +421,15 @@ export default class CustomColumnModal extends React.Component {
 
   stripCoalesceWrapper = (sql) => {
     if (!sql || typeof sql !== 'string') return sql
-
     let trimmed = sql.trim()
-
-    // Remove leading equals sign
-    if (trimmed.startsWith('=')) {
-      trimmed = trimmed.substring(1).trim()
-    }
-
-    // Remove outer parentheses intelligently
+    if (trimmed.startsWith('=')) trimmed = trimmed.substring(1).trim()
     while (trimmed.startsWith('(') && trimmed.endsWith(')')) {
       const inner = trimmed.substring(1, trimmed.length - 1).trim()
-      // Stop if inner starts with ( but doesn't end with ) (likely an operator bracket)
       if (inner.startsWith('(') && !inner.endsWith(')')) break
       trimmed = inner
     }
-
-    // Extract from COALESCE pattern: COALESCE(formula / NULLIF(divisor, 0), 0)
     const match = trimmed.match(/^COALESCE\s*\((.+)\s*\/\s*NULLIF\s*\((.+?)\s*,\s*0\)\s*,\s*0\)(.*)$/i)
-    if (match) {
-      return `${match[1].trim()} / ${match[2].trim()}${match[3] ? ' ' + match[3].trim() : ''}`
-    }
-
-    return trimmed
+    return match ? `${match[1].trim()} / ${match[2].trim()}${match[3] ? ' ' + match[3].trim() : ''}` : trimmed
   }
 
   // Build SQL for function chunks
@@ -624,11 +610,13 @@ export default class CustomColumnModal extends React.Component {
     newColumn.id = this.props.initialColumn?.id
     // Use getColumnSQLWithOptionalBrackets to generate SQL without temporary brackets
     const protoTableColumn = this.getColumnSQLWithOptionalBrackets(newColumn.columnFnArray)
+    const columnDisplayName = this.state?.columnName?.trim()
 
     this.props.onUpdateColumn({
       ...newColumn,
+      name: columnDisplayName,
       table_column: protoTableColumn,
-      custom_column_display_name: this.state?.columnName?.trim(),
+      custom_column_display_name: columnDisplayName,
     })
   }
 
@@ -685,12 +673,14 @@ export default class CustomColumnModal extends React.Component {
     if (!newColumn) return
 
     const protoTableColumn = this.getColumnSQLWithOptionalBrackets(newColumn.columnFnArray)
+    const columnDisplayName = this.state?.columnName?.trim()
 
     this.props.onAddColumn({
       ...newColumn,
+      name: columnDisplayName,
       columnFnArray: newColumn.columnFnArray,
       table_column: protoTableColumn,
-      custom_column_display_name: this.state?.columnName?.trim(),
+      custom_column_display_name: columnDisplayName,
     })
   }
 
