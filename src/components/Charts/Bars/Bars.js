@@ -84,8 +84,13 @@ export default class Bars extends PureComponent {
         
         allBars.push(
           this.props.data.map((d, index) => {
-            const value = d[colIndex]
-            if (!value) {
+            const rawValue = d[colIndex]
+            if (rawValue === null || rawValue === undefined || rawValue === '') {
+              return null
+            }
+
+            const value = Number(rawValue)
+            if (Number.isNaN(value)) {
               return null
             }
 

@@ -33,7 +33,12 @@ class PopoverWithoutRef extends React.Component {
     this.position = params?.position
 
     const content = (
-      <div className={`popover-container-content ${this.props.contentClassName ?? ''}`}>
+      <div
+        className={`popover-container-content ${this.props.contentClassName ?? ''}`}
+        ref={(r) => {
+          this.contentRef = r
+        }}
+      >
         {typeof this.props.content === CustomColumnTypes.FUNCTION ? this.props.content(params) : this.props.content}
       </div>
     )
@@ -87,12 +92,14 @@ class PopoverWithoutRef extends React.Component {
               // This block is for an extra check if the cursor is within the x-y planar bounds of the popover container
               const x = e?.clientX
               const y = e?.clientY
-              if (this.popoverRect?.top !== undefined) {
+              const contentRect = this.contentRef?.getBoundingClientRect?.()
+              const bounds = contentRect?.top !== undefined ? contentRect : this.popoverRect
+              if (bounds?.top !== undefined) {
                 if (
-                  y < this.popoverRect.top ||
-                  y > this.popoverRect.bottom ||
-                  x < this.popoverRect.left ||
-                  x > this.popoverRect.right
+                  y < bounds.top ||
+                  y > bounds.bottom ||
+                  x < bounds.left ||
+                  x > bounds.right
                 ) {
                   if (this.props.stopClickPropagation) {
                     e.stopPropagation()
