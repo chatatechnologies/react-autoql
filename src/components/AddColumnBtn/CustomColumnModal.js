@@ -424,7 +424,7 @@ export default class CustomColumnModal extends React.Component {
     // PERCENT_OF_TOTAL
     if (columnFn.fn === CustomColumnValues.PERCENT_OF_TOTAL) {
       const windowClause =
-        (columnFn?.groupby ?? this.state.selectedFnGroupby)
+        columnFn?.groupby ?? this.state.selectedFnGroupby
           ? `PARTITION BY ${
               getVisibleColumns(this.props.columns).find((column) => {
                 return column.field === (columnFn?.groupby ?? this.state.selectedFnGroupby)
@@ -474,8 +474,8 @@ export default class CustomColumnModal extends React.Component {
       WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
         ? columnFn?.column?.name
         : WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.NUMBER
-          ? (columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber)
-          : (this.state.selected ?? '')
+        ? columnFn?.nTileNumber ?? this.state.selectedFnNTileNumber
+        : this.state.selected ?? ''
 
     const partitionClause = this.buildPartitionClause(columnFn)
     const orderClause = this.buildOrderByClause(columnFn, true)
@@ -559,17 +559,29 @@ export default class CustomColumnModal extends React.Component {
     return newColumn
   }
 
-  getColumnSQLWithOptionalBrackets = (columnFnArray) => {
-    // Add temporary brackets for custom-in-custom formulas (to preserve BEDMAS)
-    let arrayForSQL = columnFnArray
-    if (this.hasCustomColumnsInFormula() && !this.isFormulaAlreadyWrapped(columnFnArray)) {
-      arrayForSQL = [
-        { type: 'operator', value: CustomColumnValues.LEFT_BRACKET },
-        ...columnFnArray,
-        { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET },
-      ]
+  // Determine if a column is "complex" (has operations, window functions, or is a custom column with actual formula)
+  isComplexColumn = (col) => {
+    if (!col) return false
+    // Custom columns with custom_column_display_name are complex
+    if (col?.custom_column_display_name) return true
+    // Check if columnFnArray has more than just a simple column reference
+    if (col?.columnFnArray && col.columnFnArray.length > 0) {
+      // If it's just a single column reference, it's not complex
+      if (col.columnFnArray.length === 1 && col.columnFnArray[0].type === CustomColumnTypes.COLUMN) {
+        return false
+      }
+      // Multiple components or has operators/functions = complex
+      return true
     }
-    return transformDivisionExpression(this.buildProtoTableColumn({ columnFnArray: arrayForSQL }))
+    // Window function results are complex
+    if (col?.fnSummary || col?.mutator) return true
+    return false
+  }
+
+  getColumnSQLWithOptionalBrackets = (columnFnArray) => {
+    // Don't add temporary brackets - save the column as-is
+    // Brackets should only be added when the user explicitly adds them or when adding complex columns
+    return transformDivisionExpression(this.buildProtoTableColumn({ columnFnArray }))
   }
 
   onUpdateColumnConfirm = () => {
@@ -577,7 +589,8 @@ export default class CustomColumnModal extends React.Component {
     if (!newColumn) return
 
     newColumn.id = this.props.initialColumn?.id
-    const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
+    // Use getColumnSQLWithOptionalBrackets to generate SQL without temporary brackets
+    const protoTableColumn = this.getColumnSQLWithOptionalBrackets(newColumn.columnFnArray)
 
     this.props.onUpdateColumn({
       ...newColumn,
@@ -621,16 +634,16 @@ export default class CustomColumnModal extends React.Component {
 
     const chunkIndex = columnFn.length - 1
 
-    // Auto-wrap multi-component custom columns for BEDMAS
-    const colFnArray = col.columnFnArray || this.buildFnArray(col.name, this.props.columns)
-    const colAlreadyWrapped = this.isFormulaAlreadyWrapped(colFnArray)
-    const chunkAlreadyWrapped =
-      columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
-      columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
+    // Only wrap complex columns (those with operations/window functions or custom formulas)
+    if (this.isComplexColumn(col)) {
+      const chunkAlreadyWrapped =
+        columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
+        columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
 
-    if (colFnArray?.length > 1 && !colAlreadyWrapped && !chunkAlreadyWrapped) {
-      columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
-      columnFn.splice(chunkIndex, 0, { type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
+      if (!chunkAlreadyWrapped) {
+        columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
+        columnFn.splice(chunkIndex, 0, { type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
+      }
     }
   }
 
@@ -898,16 +911,16 @@ export default class CustomColumnModal extends React.Component {
       fn: this.state.selectedFnType
         ? this.state.selectedFnType
         : this.state.selectedFnOperation
-          ? this.state.selectedFnOperation
-          : null,
+        ? this.state.selectedFnOperation
+        : null,
       column:
         WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.COLUMN
           ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
           : WINDOW_FUNCTIONS[this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM
-            ? this.props.columns.find((col) => col.field === this.state.selectedFnSum)
-            : this.state.selectedFnColumn
-              ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
-              : null,
+          ? this.props.columns.find((col) => col.field === this.state.selectedFnSum)
+          : this.state.selectedFnColumn
+          ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
+          : null,
       nTileNumber: this.state.selectedFnNTileNumber,
       groupby: this.state.selectedFnGroupby,
       having: this.state.selectedFnHaving,
@@ -1013,8 +1026,8 @@ export default class CustomColumnModal extends React.Component {
           this.state?.isColumnNameValid
             ? ''
             : this.state?.columnName?.length > 0
-              ? 'A column with this name already exists.'
-              : 'Column name cannot be empty'
+            ? 'A column with this name already exists.'
+            : 'Column name cannot be empty'
         }
         onChange={(e) => {
           this.handleColumnNameUpdate(e.target.value)

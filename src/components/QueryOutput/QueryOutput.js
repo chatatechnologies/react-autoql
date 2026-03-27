@@ -1717,12 +1717,36 @@ export class QueryOutput extends React.Component {
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
 
+    const isDateStringAxis = isColumnDateType(stringColumn)
+    const isListQueryResponse = isListQuery(columns)
+    const shouldForceFilterDrilldown = isListQueryResponse && isDateStringAxis
+
+    // For list-query date drilldowns, always use the query endpoint with a filter.
+    // Do not use the drilldown endpoint/groupBy flow for this case.
+    if (shouldForceFilterDrilldown) {
+      const clickedFilter =
+        filter ||
+        this.constructFilter({
+          column: stringColumn,
+          value: row?.[stringColumnIndex],
+        })
+
+      if (clickedFilter) {
+        return this.processDrilldown({
+          supportedByAPI: false,
+          activeKey,
+          filter: clickedFilter,
+        })
+      }
+    }
+
     // Check if string column supports drilldown - if so, use groupBys instead of filter
     const shouldUseGroupBys =
       stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
 
-    if (filter && !shouldUseGroupBys) {
-      // Only use filter if column doesn't support drilldown
+    // Use filter only when column doesn't support drilldown, or when we lack row data (e.g. histogram buckets)
+    // When column is groupable and we have row, use the drilldown endpoint (groupBys)
+    if (filter && (!shouldUseGroupBys || !row?.length)) {
       return this.processDrilldown({
         supportedByAPI: false,
         activeKey,
