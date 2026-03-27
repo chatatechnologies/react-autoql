@@ -375,7 +375,9 @@ export default class CustomColumnModal extends React.Component {
         return []
       }
 
-      const ops = buildPlainColumnArrayFn(columnName)
+      // Strip COALESCE/NULLIF wrapper if present (for loaded/edited custom columns)
+      const cleanedName = this.stripCoalesceWrapper(columnName)
+      const ops = buildPlainColumnArrayFn(cleanedName)
       if (ops?.length === 0) {
         return []
       }
@@ -415,6 +417,33 @@ export default class CustomColumnModal extends React.Component {
       console.error(error)
       return []
     }
+  }
+
+  stripCoalesceWrapper = (sql) => {
+    if (!sql || typeof sql !== 'string') return sql
+
+    let trimmed = sql.trim()
+
+    // Remove leading equals sign
+    if (trimmed.startsWith('=')) {
+      trimmed = trimmed.substring(1).trim()
+    }
+
+    // Remove outer parentheses intelligently
+    while (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+      const inner = trimmed.substring(1, trimmed.length - 1).trim()
+      // Stop if inner starts with ( but doesn't end with ) (likely an operator bracket)
+      if (inner.startsWith('(') && !inner.endsWith(')')) break
+      trimmed = inner
+    }
+
+    // Extract from COALESCE pattern: COALESCE(formula / NULLIF(divisor, 0), 0)
+    const match = trimmed.match(/^COALESCE\s*\((.+)\s*\/\s*NULLIF\s*\((.+?)\s*,\s*0\)\s*,\s*0\)(.*)$/i)
+    if (match) {
+      return `${match[1].trim()} / ${match[2].trim()}${match[3] ? ' ' + match[3].trim() : ''}`
+    }
+
+    return trimmed
   }
 
   // Build SQL for function chunks
@@ -525,6 +554,7 @@ export default class CustomColumnModal extends React.Component {
         }
         const nextValue = customColumn?.columnFnArray?.[i + 1]?.value
         if (
+          nextValue &&
           columnFn?.value !== CustomColumnValues.LEFT_BRACKET &&
           nextValue !== CustomColumnValues.RIGHT_BRACKET &&
           !(columnFn?.value === CustomColumnValues.RIGHT_BRACKET && nextValue === undefined)
@@ -562,6 +592,8 @@ export default class CustomColumnModal extends React.Component {
   // Determine if a column is "complex" (has operations, window functions, or is a custom column with actual formula)
   isComplexColumn = (col) => {
     if (!col) return false
+    // Custom columns (marked with custom: true) are always complex
+    if (col?.custom === true) return true
     // Custom columns with custom_column_display_name are complex
     if (col?.custom_column_display_name) return true
     // Check if columnFnArray has more than just a simple column reference
@@ -579,9 +611,10 @@ export default class CustomColumnModal extends React.Component {
   }
 
   getColumnSQLWithOptionalBrackets = (columnFnArray) => {
-    // Don't add temporary brackets - save the column as-is
-    // Brackets should only be added when the user explicitly adds them or when adding complex columns
-    return transformDivisionExpression(this.buildProtoTableColumn({ columnFnArray }))
+    const baseColumn = this.buildProtoTableColumn({ columnFnArray })
+    const withDivisionSafety = transformDivisionExpression(baseColumn)
+    // Wrap with outer brackets only if division safety wrapper was added
+    return withDivisionSafety.includes('COALESCE') ? `(${withDivisionSafety})` : withDivisionSafety
   }
 
   onUpdateColumnConfirm = () => {
