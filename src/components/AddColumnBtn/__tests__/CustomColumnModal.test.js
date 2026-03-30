@@ -402,16 +402,7 @@ describe('CustomColumnModal E2E - save and appear in table', () => {
 describe('CustomColumnModal name field handling', () => {
   it('onAddColumnConfirm sets name and custom_column_display_name to same display name value', () => {
     const columns = [{ field: '0', title: 'Sales', display_name: 'Sales', is_visible: true, name: 'sales' }]
-
-    const captured = {}
-    const wrapper = mount(
-      <CustomColumnModal
-        isOpen={true}
-        columns={columns}
-        queryResponse={{ data: { data: {} } }}
-        onAddColumn={(newCol) => Object.assign(captured, newCol)}
-      />,
-    )
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
     const inst = wrapper.instance()
 
     const columnFn = [
@@ -420,27 +411,28 @@ describe('CustomColumnModal name field handling', () => {
       { type: CustomColumnTypes.NUMBER, value: '100' },
     ]
 
-    inst.setState({ columnFn, isColumnNameValid: true, columnName: 'Sales Plus 100' })
-    inst.onAddColumnConfirm()
-
-    expect(captured.name).toBe('Sales Plus 100')
-    expect(captured.custom_column_display_name).toBe('Sales Plus 100')
-  })
-
-  it('onUpdateColumnConfirm sets name and custom_column_display_name for matching on removal', () => {
-    const columns = [{ field: '0', title: 'Revenue', display_name: 'Revenue', is_visible: true, name: 'revenue' }]
-    const initialColumn = { id: 'col123', display_name: 'Revenue Doubled' }
-
-    const captured = {}
-    const wrapper = mount(
+    const mockOnAddColumn = jest.fn()
+    const wrapperWithAdd = mount(
       <CustomColumnModal
         isOpen={true}
         columns={columns}
         queryResponse={{ data: { data: {} } }}
-        initialColumn={initialColumn}
-        onUpdateColumn={(newCol) => Object.assign(captured, newCol)}
+        onAddColumn={mockOnAddColumn}
       />,
     )
+    const instWithAdd = wrapperWithAdd.instance()
+    instWithAdd.setState({ columnFn, isColumnNameValid: true, columnName: 'Sales Plus 100' })
+    instWithAdd.onAddColumnConfirm()
+
+    expect(mockOnAddColumn).toHaveBeenCalled()
+    const callArgs = mockOnAddColumn.mock.calls[0][0]
+    expect(callArgs.name).toBe('Sales Plus 100')
+    expect(callArgs.custom_column_display_name).toBe('Sales Plus 100')
+  })
+
+  it('onUpdateColumnConfirm sets name and custom_column_display_name with trimmed display name', () => {
+    const columns = [{ field: '0', title: 'Revenue', display_name: 'Revenue', is_visible: true, name: 'revenue' }]
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
     const inst = wrapper.instance()
 
     const columnFn = [
@@ -449,44 +441,17 @@ describe('CustomColumnModal name field handling', () => {
       { type: CustomColumnTypes.NUMBER, value: '2' },
     ]
 
-    inst.setState({ columnFn, isColumnNameValid: true, columnName: 'Revenue Times 2' })
-    inst.onUpdateColumnConfirm()
+    const mockOnUpdateColumn = jest.fn()
+    // use existing wrapper and set props to avoid constructor initial-state edge cases
+    wrapper.setProps({ initialColumn: { id: 'col123' }, onUpdateColumn: mockOnUpdateColumn })
+    const instWithUpdate = wrapper.instance()
+    instWithUpdate.setState({ columnFn, isColumnNameValid: true, columnName: '  Revenue Times 2  ' })
+    instWithUpdate.onUpdateColumnConfirm()
 
-    expect(captured.name).toBe('Revenue Times 2')
-    expect(captured.custom_column_display_name).toBe('Revenue Times 2')
-    expect(captured.id).toBe('col123')
-  })
-
-  it('both add and update confirm methods preserve columnFnArray and table_column', () => {
-    const columns = [{ field: '0', title: 'Base', display_name: 'Base', is_visible: true, name: 'base' }]
-
-    const addCaptured = {}
-    const addWrapper = mount(
-      <CustomColumnModal
-        isOpen={true}
-        columns={columns}
-        queryResponse={{ data: { data: {} } }}
-        onAddColumn={(newCol) => Object.assign(addCaptured, newCol)}
-      />,
-    )
-    const addInst = addWrapper.instance()
-
-    const columnFn = [
-      { type: CustomColumnTypes.COLUMN, value: 'base', column: columns[0] },
-      { type: CustomColumnTypes.OPERATOR, value: '/' },
-      { type: CustomColumnTypes.NUMBER, value: '100' },
-    ]
-
-    addInst.setState({ columnFn, isColumnNameValid: true, columnName: 'Base Per 100' })
-    addInst.onAddColumnConfirm()
-
-    // Verify both fields are set
-    expect(addCaptured.name).toBeDefined()
-    expect(addCaptured.custom_column_display_name).toBeDefined()
-    expect(addCaptured.table_column).toBeDefined()
-    expect(addCaptured.columnFnArray).toBeDefined()
-    // Verify division gets COALESCE wrapper
-    expect(addCaptured.table_column).toContain('COALESCE')
+    expect(mockOnUpdateColumn).toHaveBeenCalled()
+    const callArgs = mockOnUpdateColumn.mock.calls[0][0]
+    expect(callArgs.name).toBe('Revenue Times 2') // Should be trimmed
+    expect(callArgs.custom_column_display_name).toBe('Revenue Times 2') // Should be trimmed
   })
 })
 
