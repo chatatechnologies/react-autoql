@@ -1075,7 +1075,9 @@ export class QueryOutput extends React.Component {
     const customColumnSelects = []
     for (let i = 0; i < columns?.length; i++) {
       const foundCustomSelect = additionalSelects?.find((select) => {
-        return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
+        return (
+          select?.columns?.[0]?.replace(/ /g, '').toLowerCase() === columns?.[i].name?.replace(/ /g, '').toLowerCase()
+        )
       })
       if (foundCustomSelect) {
         customColumnSelects.push({ id: columns[i].id, ...foundCustomSelect })
@@ -1717,12 +1719,36 @@ export class QueryOutput extends React.Component {
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
 
+    const isDateStringAxis = isColumnDateType(stringColumn)
+    const isListQueryResponse = isListQuery(columns)
+    const shouldForceFilterDrilldown = isListQueryResponse && isDateStringAxis
+
+    // For list-query date drilldowns, always use the query endpoint with a filter.
+    // Do not use the drilldown endpoint/groupBy flow for this case.
+    if (shouldForceFilterDrilldown) {
+      const clickedFilter =
+        filter ||
+        this.constructFilter({
+          column: stringColumn,
+          value: row?.[stringColumnIndex],
+        })
+
+      if (clickedFilter) {
+        return this.processDrilldown({
+          supportedByAPI: false,
+          activeKey,
+          filter: clickedFilter,
+        })
+      }
+    }
+
     // Check if string column supports drilldown - if so, use groupBys instead of filter
     const shouldUseGroupBys =
       stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
 
-    if (filter && !shouldUseGroupBys) {
-      // Only use filter if column doesn't support drilldown
+    // Use filter only when column doesn't support drilldown, or when we lack row data (e.g. histogram buckets)
+    // When column is groupable and we have row, use the drilldown endpoint (groupBys)
+    if (filter && (!shouldUseGroupBys || !row?.length)) {
       return this.processDrilldown({
         supportedByAPI: false,
         activeKey,
@@ -2768,22 +2794,13 @@ export class QueryOutput extends React.Component {
         newCol.dateRange = dateRange
       }
 
-      if (additionalSelects?.length > 0 && isColumnNumberType(newCol)) {
-        const customSelect = additionalSelects.find((select) => {
-          return (
-            (select?.columns?.[0] ?? '').replace(/ /g, '').toLowerCase() ===
-            (newCol?.name ?? '').replace(/ /g, '').toLowerCase()
-          )
+      const displayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse)
+      if (displayOverrides && isColumnNumberType(newCol)) {
+        const customSelect = displayOverrides.find((select) => {
+          return select.english === newCol.display_name
         })
 
-        const isCustom = customSelect || newCol?.is_custom
-
-        const cleanName = getCleanColumnName(newCol?.name)
-        const availableSelect = this.queryResponse?.data?.data?.available_selects?.find((select) => {
-          return select?.table_column?.trim() === cleanName
-        })
-
-        if (isCustom && !availableSelect) {
+        if (customSelect || newCol.is_custom) {
           newCol.custom = true
         }
       }
@@ -3503,14 +3520,35 @@ export class QueryOutput extends React.Component {
       let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
       const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
       if (existingCustomSelectForColumn) {
-        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
-          return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
+        const oldColumnSql = existingCustomSelectForColumn.columns[0]?.replace(/ /g, '').toLowerCase()
+        let foundAndUpdated = false
+        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.map((select) => {
+          if (select.columns[0]?.replace(/ /g, '').toLowerCase() === oldColumnSql) {
+            foundAndUpdated = true
+            return {
+              ...select,
+              columns: [column?.table_column],
+              is_custom: true,
+            }
+          }
+          return select
         })
+        if (!foundAndUpdated) {
+          currentAdditionalSelectColumns = [
+            ...currentAdditionalSelectColumns,
+            formatAdditionalSelectColumn(column, sqlFn),
+          ]
+        }
+      } else {
+        currentAdditionalSelectColumns = [
+          ...currentAdditionalSelectColumns,
+          formatAdditionalSelectColumn(column, sqlFn),
+        ]
       }
 
       let currentDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
       currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
-        return override.table_column?.trim() !== column.table_column?.trim()
+        return override.english !== column?.custom_column_display_name
       })
       if (column?.custom_column_display_name) {
         currentDisplayOverrides = [
@@ -3520,7 +3558,7 @@ export class QueryOutput extends React.Component {
       }
 
       this.queryFn({
-        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
+        newColumns: currentAdditionalSelectColumns,
         displayOverrides: currentDisplayOverrides,
       })
         .then((response) => {

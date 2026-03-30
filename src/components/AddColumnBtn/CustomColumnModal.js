@@ -71,11 +71,16 @@ export default class CustomColumnModal extends React.Component {
     }
 
     let initialColumnFn
-    if (props.initialColumn?.name) {
+    if (props.initialColumn?.columnFnArray) {
+      initialColumnFn = props.initialColumn.columnFnArray
+    } else if (props.initialColumn?.name) {
       initialColumnFn = this.buildFnArray(props.initialColumn?.name, props.columns)
     } else {
-      initialColumnFn = props.initialColumn?.columnFnArray ?? []
+      initialColumnFn = []
     }
+
+    // Clean up any saved artifacts (stray brackets, zero values)
+    initialColumnFn = this.cleanColumnFn(initialColumnFn)
 
     this.newColumnRaw = this.getRawColumnParams(initialColumn, props.initialColumn?.display_name)
 
@@ -292,7 +297,7 @@ export default class CustomColumnModal extends React.Component {
 
     const { columnFn, columnType } = this.state
 
-    // Validate formula has variables and correct operator sequences; suppress intermediate warnings while formula is incomplete
+    // Validate formula completeness
     if (!this.isFormulaComplete()) {
       return
     }
@@ -308,7 +313,7 @@ export default class CustomColumnModal extends React.Component {
       return
     }
 
-    // Create mutator and summary; helper returns an error object on failure
+    // Create mutator and summary
     let newMutator = createMutatorFn(columnFn)
     let newFnSummary = getFnSummary(columnFn)
 
@@ -370,7 +375,9 @@ export default class CustomColumnModal extends React.Component {
         return []
       }
 
-      const ops = buildPlainColumnArrayFn(columnName)
+      // Strip COALESCE/NULLIF wrapper if present (for loaded/edited custom columns)
+      const cleanedName = this.stripCoalesceWrapper(columnName)
+      const ops = buildPlainColumnArrayFn(cleanedName)
       if (ops?.length === 0) {
         return []
       }
@@ -412,7 +419,20 @@ export default class CustomColumnModal extends React.Component {
     }
   }
 
-  // Build SQL string for a function chunk (extracted from nested ternary for readability)
+  stripCoalesceWrapper = (sql) => {
+    if (!sql || typeof sql !== 'string') return sql
+    let trimmed = sql.trim()
+    if (trimmed.startsWith('=')) trimmed = trimmed.substring(1).trim()
+    while (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+      const inner = trimmed.substring(1, trimmed.length - 1).trim()
+      if (inner.startsWith('(') && !inner.endsWith(')')) break
+      trimmed = inner
+    }
+    const match = trimmed.match(/^COALESCE\s*\((.+)\s*\/\s*NULLIF\s*\((.+?)\s*,\s*0\)\s*,\s*0\)(.*)$/i)
+    return match ? `${match[1].trim()} / ${match[2].trim()}${match[3] ? ' ' + match[3].trim() : ''}` : trimmed
+  }
+
+  // Build SQL for function chunks
   buildFunctionSql = (columnFn, customColumn) => {
     const colName = this.sanitizeColumnName(columnFn?.column?.name)
 
@@ -520,6 +540,7 @@ export default class CustomColumnModal extends React.Component {
         }
         const nextValue = customColumn?.columnFnArray?.[i + 1]?.value
         if (
+          nextValue &&
           columnFn?.value !== CustomColumnValues.LEFT_BRACKET &&
           nextValue !== CustomColumnValues.RIGHT_BRACKET &&
           !(columnFn?.value === CustomColumnValues.RIGHT_BRACKET && nextValue === undefined)
@@ -534,8 +555,8 @@ export default class CustomColumnModal extends React.Component {
     return customColumn?.name || ''
   }
 
-  onUpdateColumnConfirm = () => {
-    // Final validation before update
+  validateAndPrepareColumn = () => {
+    // Validate formula structure and content
     const structural = this.isStructurallyValidColumnFn()
     if (!structural.valid) {
       this.setState({ isFnValid: false, fnError: structural.error })
@@ -548,58 +569,119 @@ export default class CustomColumnModal extends React.Component {
     }
 
     const newColumn = _cloneDeep(this.newColumn)
-    // Fallback to state if columnFnArray is missing
     if (!newColumn.columnFnArray?.length) {
       newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
     }
+    return newColumn
+  }
+
+  // Determine if a column is "complex" (has operations, window functions, or is a custom column with actual formula)
+  isComplexColumn = (col) => {
+    if (!col) return false
+    // Custom columns (marked with custom: true) are always complex
+    if (col?.custom === true) return true
+    // Custom columns with custom_column_display_name are complex
+    if (col?.custom_column_display_name) return true
+    // Check if columnFnArray has more than just a simple column reference
+    if (col?.columnFnArray && col.columnFnArray.length > 0) {
+      // If it's just a single column reference, it's not complex
+      if (col.columnFnArray.length === 1 && col.columnFnArray[0].type === CustomColumnTypes.COLUMN) {
+        return false
+      }
+      // Multiple components or has operators/functions = complex
+      return true
+    }
+    // Window function results are complex
+    if (col?.fnSummary || col?.mutator) return true
+    return false
+  }
+
+  getColumnSQLWithOptionalBrackets = (columnFnArray) => {
+    const baseColumn = this.buildProtoTableColumn({ columnFnArray })
+    const withDivisionSafety = transformDivisionExpression(baseColumn)
+    // Wrap with outer brackets only if division safety wrapper was added
+    return withDivisionSafety.includes('COALESCE') ? `(${withDivisionSafety})` : withDivisionSafety
+  }
+
+  onUpdateColumnConfirm = () => {
+    const newColumn = this.validateAndPrepareColumn()
+    if (!newColumn) return
+
     newColumn.id = this.props.initialColumn?.id
-    const protoTableColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
+    // Use getColumnSQLWithOptionalBrackets to generate SQL without temporary brackets
+    const protoTableColumn = this.getColumnSQLWithOptionalBrackets(newColumn.columnFnArray)
+    const columnDisplayName = this.state?.columnName?.trim()
+
     this.props.onUpdateColumn({
       ...newColumn,
+      name: columnDisplayName,
       table_column: protoTableColumn,
-      custom_column_display_name: this.state?.columnName?.trim(),
+      custom_column_display_name: columnDisplayName,
     })
+  }
+
+  cleanColumnFn = (columnFn) => {
+    // Remove only empty/zero number values - preserve all operators including brackets
+    return columnFn.filter(
+      (chunk) => !(chunk.type === CustomColumnTypes.NUMBER && [undefined, null, '', 0, '0'].includes(chunk.value)),
+    )
+  }
+
+  hasCustomColumnsInFormula = () => {
+    return (this.state.columnFn || []).some(
+      (chunk) => chunk?.type === CustomColumnTypes.COLUMN && chunk?.column?.custom_column_display_name,
+    )
+  }
+
+  isFormulaAlreadyWrapped = (columnFnArray) => {
+    return (
+      columnFnArray?.[0]?.value === CustomColumnValues.LEFT_BRACKET &&
+      columnFnArray?.[columnFnArray.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
+    )
+  }
+
+  addColumnToFormula = (col, columnFn, lastTerm) => {
+    const newChunk = {
+      type: 'column',
+      value: col.field,
+      column: col,
+    }
+
+    if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
+      columnFn[columnFn.length - 1] = newChunk
+    } else {
+      columnFn.push(newChunk)
+    }
+
+    const chunkIndex = columnFn.length - 1
+
+    // Only wrap complex columns (those with operations/window functions or custom formulas)
+    if (this.isComplexColumn(col)) {
+      const chunkAlreadyWrapped =
+        columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
+        columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
+
+      if (!chunkAlreadyWrapped) {
+        columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
+        columnFn.splice(chunkIndex, 0, { type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
+      }
+    }
   }
 
   onAddColumnConfirm = () => {
-    // Final validation before add
-    const structural = this.isStructurallyValidColumnFn()
-    if (!structural.valid) {
-      this.setState({ isFnValid: false, fnError: structural.error })
-      return
-    }
+    const newColumn = this.validateAndPrepareColumn()
+    if (!newColumn) return
 
-    if (!this.hasVariablesInColumnFn()) {
-      this.setState({ isFnValid: false, fnError: 'Formula must include at least one variable' })
-      return
-    }
-    const newColumn = _cloneDeep(this.newColumn)
-    // Fallback to state if columnFnArray is missing
-    if (!newColumn.columnFnArray?.length) {
-      newColumn.columnFnArray = _cloneDeep(this.state.columnFn) || []
-    }
-    // Transform division before adding brackets so transformDivisionExpression finds top-level divisions
-    const transformedColumn = transformDivisionExpression(this.buildProtoTableColumn(newColumn))
-    // Wrap in brackets
-    newColumn.columnFnArray.unshift({ type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
-    newColumn.columnFnArray.push({ type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
-    const protoTableColumn = `(${transformedColumn})`
+    const protoTableColumn = this.getColumnSQLWithOptionalBrackets(newColumn.columnFnArray)
+    const columnDisplayName = this.state?.columnName?.trim()
+
     this.props.onAddColumn({
       ...newColumn,
+      name: columnDisplayName,
+      columnFnArray: newColumn.columnFnArray,
       table_column: protoTableColumn,
-      custom_column_display_name: this.state?.columnName?.trim(),
+      custom_column_display_name: columnDisplayName,
     })
-  }
-
-  changeChunkGroupby = (value, type, i) => {
-    if (type === CustomColumnTypes.FUNCTION) {
-      const columnFn = _cloneDeep(this.state.columnFn)
-      if (columnFn[i]) {
-        columnFn[i].groupby = value
-      }
-      this.setState({ columnFn })
-      this.syncNewColumnFnArray(columnFn)
-    }
   }
 
   changeChunkOrderby = (value, type, i) => {
@@ -607,17 +689,6 @@ export default class CustomColumnModal extends React.Component {
       const columnFn = _cloneDeep(this.state.columnFn)
       if (columnFn[i]) {
         columnFn[i].orderby = value
-      }
-      this.setState({ columnFn })
-      this.syncNewColumnFnArray(columnFn)
-    }
-  }
-
-  changeChunkRowsOrRange = (value, type, i) => {
-    if (type === CustomColumnTypes.FUNCTION) {
-      const columnFn = _cloneDeep(this.state.columnFn)
-      if (columnFn[i]) {
-        columnFn[i].rowsOrRange = value
       }
       this.setState({ columnFn })
       this.syncNewColumnFnArray(columnFn)
@@ -753,13 +824,11 @@ export default class CustomColumnModal extends React.Component {
       return ColumnTypes.QUANTITY
     }
 
-    // If all columns are the same, return that type
     if (selectedColumnTypes.every((colType) => colType === selectedColumnTypes[0])) {
       return selectedColumnTypes[0]
     }
 
     if (selectedColumnTypes.find((colType) => colType === ColumnTypes.STRING)) {
-      // If even one column selected is a string type, the output must be string type
       return ColumnTypes.STRING
     } else if (
       selectedColumnTypes.every(
@@ -770,12 +839,10 @@ export default class CustomColumnModal extends React.Component {
           colType === ColumnTypes.PERCENT,
       )
     ) {
-      // If any of the number columns are a currency, return currency
       if (selectedColumnTypes.find((colType) => colType === ColumnTypes.DOLLAR_AMT)) {
         return ColumnTypes.DOLLAR_AMT
       }
 
-      // If column is a number type but there is no currency, just display as a "quantity" with no units
       return ColumnTypes.QUANTITY
     }
 
@@ -786,7 +853,6 @@ export default class CustomColumnModal extends React.Component {
     const { columnFn } = this.state
     const lastTerm = columnFn[columnFn.length - 1]
 
-    // The window function option is only available to use if it is on its own, since the calculation is done on the server side
     if (FUNCTION_OPERATORS.includes(lastTerm?.value)) {
       return true
     }
@@ -798,23 +864,22 @@ export default class CustomColumnModal extends React.Component {
         }
 
         if (lastTerm?.value === CustomColumnValues.RIGHT_BRACKET || lastTerm?.type !== CustomColumnTypes.OPERATOR) {
-          // Do not allow an opening bracket right after an closing bracket
-          // Do not allow an opening bracket right after a column or number
+          // Cannot start bracket after another bracket or operand
           return true
         }
       }
 
       if (op === CustomColumnValues.RIGHT_BRACKET) {
-        if (lastTerm?.value === CustomColumnValues.LEFT_BRACKET || lastTerm?.type === CustomColumnTypes.OPERATOR) {
-          // Do not allow a closing bracket right after an opening bracket
-          // Do not allow a closing bracket right after an operator
+        if (lastTerm?.value === CustomColumnValues.LEFT_BRACKET) {
+          // Cannot have empty brackets
           return true
         }
 
         const numRightBrackets = columnFn.filter((chunk) => chunk.value === CustomColumnValues.RIGHT_BRACKET)?.length
         const numLeftBrackets = columnFn.filter((chunk) => chunk.value === CustomColumnValues.LEFT_BRACKET)?.length
+
         if (numRightBrackets >= numLeftBrackets) {
-          // Do not allow more closing brackets than opening brackets
+          // No more closing brackets than opening
           return true
         }
       }
@@ -823,11 +888,8 @@ export default class CustomColumnModal extends React.Component {
         return false
       }
 
-      // This option is only available to use if it is on its own, since the calculation is done on the server side
-      // return true
       if (lastTerm?.value === CustomColumnValues.RIGHT_BRACKET || lastTerm?.type !== CustomColumnTypes.OPERATOR) {
-        // Do not allow a function right after an closing bracket
-        // Do not allow a function right after a column or number
+        // Cannot use function after bracket or operand
         return true
       }
     } else if (
@@ -1307,19 +1369,7 @@ export default class CustomColumnModal extends React.Component {
                               lastTerm?.value === CustomColumnValues.RIGHT_BRACKET
                             }
                             onClick={() => {
-                              const newChunk = {
-                                type: 'column',
-                                value: col.field,
-                                column: col,
-                              }
-
-                              if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
-                                // Replace current variable
-                                columnFn[columnFn.length - 1] = newChunk
-                              } else {
-                                columnFn.push(newChunk)
-                              }
-
+                              this.addColumnToFormula(col, columnFn, lastTerm)
                               this.setState({ columnFn })
                             }}
                           >
