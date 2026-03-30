@@ -32,15 +32,12 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
-import { shouldShowSummaryButton } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
 import './OptionsToolbar.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
-
-const MOCK_QUOTE = true
-const MOCK_QUOTE_RESPONSE = { wandable: true, cost: 0.15 }
 
 export class OptionsToolbar extends React.Component {
   constructor(props) {
@@ -714,19 +711,6 @@ export class OptionsToolbar extends React.Component {
 
     this.setState({ isFetchingQuote: true, summaryFocusError: null, quoteResult: null })
 
-    if (MOCK_QUOTE) {
-      await new Promise((resolve) => setTimeout(resolve, 400))
-      const { wandable, cost } = MOCK_QUOTE_RESPONSE
-      this.setState({
-        quoteResult: {
-          wandable: !!wandable,
-          cost: wandable ? (cost != null ? Number(cost) : 0) : null,
-        },
-        isFetchingQuote: false,
-      })
-      return
-    }
-
     const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
     if (!auth.apiKey || !auth.domain) {
       this.setState({ isFetchingQuote: false })
@@ -750,7 +734,8 @@ export class OptionsToolbar extends React.Component {
         domain: auth.domain,
       })
 
-      const quoteData = response?.data?.data ?? response?.data
+      const envelope = response?.data
+      const quoteData = envelope?.data ?? envelope
       const wandable = quoteData?.wandable
       const cost = quoteData?.cost
 
@@ -760,6 +745,7 @@ export class OptionsToolbar extends React.Component {
             wandable: !!wandable,
             cost: wandable ? (cost != null ? Number(cost) : 0) : null,
           },
+          summaryFocusError: null,
         })
       } else {
         this.setState({ summaryFocusError: 'Unable to get quote. Please try again.' })
@@ -827,9 +813,11 @@ export class OptionsToolbar extends React.Component {
 
   renderMagicWandBtn = () => {
     const queryResponse = this.props.responseRef?.queryResponse
-    const rows = queryResponse?.data?.data?.rows || []
-    const rowCount = rows.length
-    const hasNoData = rowCount === 0
+    const { isDisabled, tooltip: disabledTooltip } = getSummaryButtonDisabledState({
+      queryResponse,
+      isGenerating: false,
+      isChataThinking: false,
+    })
 
     return (
       <Popover
@@ -846,14 +834,14 @@ export class OptionsToolbar extends React.Component {
       >
         <Button
           onClick={() => {
-            if (hasNoData) return
+            if (isDisabled) return
             this.setState({ isSummaryPopoverOpen: !this.state.isSummaryPopoverOpen })
           }}
           className={this.getMenuItemClass()}
-          tooltip={hasNoData ? 'No data available to analyze' : 'Analyze'}
+          tooltip={disabledTooltip || 'Analyze'}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           size='small'
-          disabled={hasNoData}
+          disabled={isDisabled}
         >
           <Icon type='magic-wand' />
         </Button>
@@ -1018,9 +1006,6 @@ export class OptionsToolbar extends React.Component {
           enableMagicWand: props.enableMagicWand,
           queryResponse: response,
           isMarkdownOnly,
-          isDataResponse,
-          hasData,
-          isDrilldownResponse: () => this.isDrilldownResponse(props),
         }),
       }
 

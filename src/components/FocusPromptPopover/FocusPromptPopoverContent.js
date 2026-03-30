@@ -3,6 +3,18 @@ import PropTypes from 'prop-types'
 import { Button } from '../Button'
 import { Input } from '../Input'
 
+const DEFAULT_NOT_WANDABLE_MESSAGE =
+  "This result can't be analyzed with AI for this dataset. Try a different query or focus topic."
+
+/** Quote API may return many fractional digits (e.g. 0.0583518); always show USD with exactly 2 decimals. */
+function formatQuoteCostUsd(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n)) {
+    return '0.00'
+  }
+  return n.toFixed(2)
+}
+
 export default function FocusPromptPopoverContent({
   focusPrompt,
   onFocusPromptChange,
@@ -16,6 +28,7 @@ export default function FocusPromptPopoverContent({
   onKeyDown,
   inputDisabled,
   contentClassName,
+  notWandableMessage,
 }) {
   return (
     <div className={contentClassName || 'focus-prompt-popover-content'}>
@@ -43,12 +56,12 @@ export default function FocusPromptPopoverContent({
               <span className='focus-prompt-popover-estimated-cost-label'>Estimated cost</span>
             </div>
             <div className='focus-prompt-popover-estimated-cost-price'>
-              ${Number(quoteResult.cost).toFixed(2)}
+              ${formatQuoteCostUsd(quoteResult.cost)}
             </div>
           </div>
         ) : (
-          <div className='focus-prompt-popover-not-wandable'>
-            Analysis is not available for this dataset.
+          <div className='focus-prompt-popover-not-wandable' role='status'>
+            {notWandableMessage}
           </div>
         ))}
       {focusError && <div className='focus-prompt-popover-error'>{focusError}</div>}
@@ -94,6 +107,7 @@ FocusPromptPopoverContent.propTypes = {
   onKeyDown: PropTypes.func,
   inputDisabled: PropTypes.bool,
   contentClassName: PropTypes.string,
+  notWandableMessage: PropTypes.string,
 }
 
 FocusPromptPopoverContent.defaultProps = {
@@ -106,4 +120,5 @@ FocusPromptPopoverContent.defaultProps = {
   onKeyDown: undefined,
   inputDisabled: false,
   contentClassName: '',
+  notWandableMessage: DEFAULT_NOT_WANDABLE_MESSAGE,
 }

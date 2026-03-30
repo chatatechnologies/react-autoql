@@ -35,10 +35,6 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './ChatMessage.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
 
-// TODO: Remove when quote API is available — mocks the quote endpoint response
-const MOCK_QUOTE = true
-const MOCK_QUOTE_RESPONSE = { wandable: true, cost: 0.15 }
-
 export default class ChatMessage extends React.Component {
   // Static Set to track which message IDs have already animated
   // This persists across component mounts/unmounts (e.g., when DM closes/reopens)
@@ -590,19 +586,6 @@ export default class ChatMessage extends React.Component {
 
     this.setState({ isFetchingQuote: true, focusError: null, quoteResult: null })
 
-    if (MOCK_QUOTE) {
-      await new Promise((resolve) => setTimeout(resolve, 400))
-      const { wandable, cost } = MOCK_QUOTE_RESPONSE
-      this.setState({
-        quoteResult: {
-          wandable: !!wandable,
-          cost: wandable ? (cost != null ? Number(cost) : 0) : null,
-        },
-        isFetchingQuote: false,
-      })
-      return
-    }
-
     const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
     if (!auth.apiKey || !auth.domain) {
       this.setState({ isFetchingQuote: false })
@@ -626,7 +609,8 @@ export default class ChatMessage extends React.Component {
         domain: auth.domain,
       })
 
-      const quoteData = response?.data?.data ?? response?.data
+      const envelope = response?.data
+      const quoteData = envelope?.data ?? envelope
       const wandable = quoteData?.wandable
       const cost = quoteData?.cost
 
@@ -636,6 +620,7 @@ export default class ChatMessage extends React.Component {
             wandable: !!wandable,
             cost: wandable ? (cost != null ? Number(cost) : 0) : null,
           },
+          focusError: null,
         })
       } else {
         this.setState({ focusError: 'Unable to get quote. Please try again.' })
@@ -654,9 +639,6 @@ export default class ChatMessage extends React.Component {
 
   handleFocusSummary = async () => {
     const { focusPrompt, summaryResponseData } = this.state
-    if (!focusPrompt.trim()) {
-      return
-    }
 
     // Use stored response data or props response data
     // Get updated columns from QueryOutput if available (includes custom columns)
@@ -695,7 +677,7 @@ export default class ChatMessage extends React.Component {
           additional_context: {
             text: responseData.text,
             interpretation: responseData.interpretation,
-            focus_prompt: focusPrompt.trim(),
+            focus_prompt: focusPrompt.trim() || '',
           },
           rows: responseData.rows,
           columns: responseData.columns,
@@ -714,7 +696,7 @@ export default class ChatMessage extends React.Component {
           content: focusedSummary,
           type: 'markdown',
           isResponse: true,
-          focusPromptUsed: focusPrompt.trim(), // Store the focus prompt that was used
+          focusPromptUsed: focusPrompt.trim() || undefined, // Store the focus prompt that was used
         })
         // Clear the focus prompt
         this.setState({
@@ -870,7 +852,7 @@ export default class ChatMessage extends React.Component {
                   quoteResult={this.state.quoteResult}
                   isFetchingQuote={this.state.isFetchingQuote}
                   focusError={focusError}
-                  isAnalyzeDisabled={isDisabled || !focusPrompt.trim()}
+                  isAnalyzeDisabled={isDisabled}
                   isAnalyzeLoading={isGenerating}
                   inputDisabled={isGenerating}
                   onKeyDown={(e) => {
