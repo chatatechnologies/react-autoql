@@ -12,7 +12,6 @@ import {
   isDrilldown,
   fetchLLMSummary,
   fetchLLMSummaryQuote,
-  MAX_DATA_PAGE_SIZE,
   isChartType,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
@@ -23,7 +22,6 @@ import { OptionsToolbar } from '../OptionsToolbar'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import { Button } from '../Button'
-import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import SummaryFooter from './SummaryFooter'
 import SummaryContent from '../SummaryContent/SummaryContent'
@@ -48,6 +46,8 @@ export default class ChatMessage extends React.Component {
     this.PIE_CHART_HEIGHT = 330
     this.MESSAGE_HEIGHT_MARGINS = 40
     this.MESSAGE_WIDTH_MARGINS = 40
+    this.BUBBLE_TOP_SCROLL_PADDING = 30
+    this.BUBBLE_BOTTOM_SCROLL_PADDING = 10
     this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
     // Store original summary content and response data if this is a summary message
@@ -295,61 +295,66 @@ export default class ChatMessage extends React.Component {
 
   isScrolledIntoView = (elem) => {
     if (this.props.scrollContainerRef) {
-      const scrollTop = this.props.scrollContainerRef.getScrollTop()
-      const scrollBottom = scrollTop + this.props.scrollContainerRef.getClientHeight()
+      const container = this.props.scrollContainerRef.getContainer?.()
+      if (!container || !elem?.getBoundingClientRect) {
+        return false
+      }
 
-      const elemTop = elem.offsetTop
-      const elemBottom = elemTop + elem.offsetHeight
+      const containerRect = container.getBoundingClientRect()
+      const elemRect = elem.getBoundingClientRect()
+      const topInset = containerRect.top + this.BUBBLE_TOP_SCROLL_PADDING
+      const bottomInset = containerRect.bottom - this.BUBBLE_BOTTOM_SCROLL_PADDING
 
-      return elemBottom <= scrollBottom && elemTop >= scrollTop
+      return elemRect.top >= topInset && elemRect.bottom <= bottomInset
     }
 
     return false
   }
 
-  scrollIntoView = ({ delay = 0, block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
+  getMessageVisibilityElement = () => {
+    return this.messageBubbleRef || null
+  }
+
+  scrollIntoView = ({ delay = 0 } = {}) => {
     setTimeout(() => {
-      if (this.messageAndRTContainerRef && !this.isScrolledIntoView(this.messageAndRTContainerRef)) {
-        this.messageAndRTContainerRef.scrollIntoView({ block, inline })
+      const bubble = this.getMessageVisibilityElement()
+      if (bubble && !this.isScrolledIntoView(bubble)) {
+        this.animateScrollBubbleIntoContainer()
       }
     }, delay)
   }
 
-  // Animate scroll so the bottom of the message bubble (excluding RT) is visible
-  animatedScrollToMessageBottom = () => {
+  animateScrollBubbleIntoContainer = () => {
     const container = this.props.scrollContainerRef?.getContainer?.()
-    if (!container) return
+    const bubble = this.getMessageVisibilityElement()
+    if (!container || !bubble) return
 
-    const messageElement = this.messageContainerRef
-    if (!messageElement) return
+    const containerRect = container.getBoundingClientRect()
+    const bubbleRect = bubble.getBoundingClientRect()
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    const eps = 1
+    const padTop = this.BUBBLE_TOP_SCROLL_PADDING
+    const padBottom = this.BUBBLE_BOTTOM_SCROLL_PADDING
+    const targetTop = containerRect.top + padTop
+    const targetBottom = containerRect.bottom - padBottom
 
-    // Walk up the DOM to find the absolute offset within the scroll content
-    const scrollContent = container.querySelector('.chat-content-container')
-    if (!scrollContent) return
+    let deltaScroll = 0
 
-    let messageAbsoluteTop = 0
-    let el = messageElement
-    while (el && el !== scrollContent) {
-      messageAbsoluteTop += el.offsetTop
-      el = el.offsetParent
+    if (bubbleRect.height > containerRect.height + eps) {
+      deltaScroll = bubbleRect.top - targetTop
+    } else if (bubbleRect.top < targetTop - eps) {
+      deltaScroll = bubbleRect.top - targetTop
+    } else if (bubbleRect.bottom > targetBottom + eps) {
+      deltaScroll = bubbleRect.bottom - targetBottom
+    } else {
+      return
     }
 
-    const messageHeight = messageElement.offsetHeight
-    const containerHeight = container.clientHeight
-    const maxScrollTop = container.scrollHeight - container.clientHeight
-
-    // Align the bottom of the message bubble with the bottom of the viewport,
-    // leaving a small gap at the top so the chat toolbars above the bubble stay visible.
-    const TOP_PADDING = 50
-    const targetScrollTop = Math.min(
-      maxScrollTop,
-      Math.max(0, messageAbsoluteTop + messageHeight - containerHeight - TOP_PADDING),
-    )
-
+    const targetScrollTop = Math.max(0, Math.min(maxScrollTop, container.scrollTop + deltaScroll))
     const startScrollTop = container.scrollTop
     const distance = targetScrollTop - startScrollTop
 
-    if (Math.abs(distance) < 5) return
+    if (Math.abs(distance) < 2) return
 
     const duration = 400
     const startTime = performance.now()
@@ -422,34 +427,9 @@ export default class ChatMessage extends React.Component {
     // Only scroll if the message is not already fully visible in the viewport.
     if (isChartType(displayType)) {
       setTimeout(() => {
-        const container = this.props.scrollContainerRef?.getContainer?.()
-        const messageElement = this.messageContainerRef
-        if (!container || !messageElement) return
-
-        // Check if message is already fully visible
-        const scrollTop = container.scrollTop
-        const scrollBottom = scrollTop + container.clientHeight
-        const scrollContent = container.querySelector('.chat-content-container')
-        if (!scrollContent) return
-
-        let messageAbsoluteTop = 0
-        let el = messageElement
-        while (el && el !== scrollContent) {
-          messageAbsoluteTop += el.offsetTop
-          el = el.offsetParent
-        }
-
-        const messageHeight = messageElement.offsetHeight
-        const messageBottom = messageAbsoluteTop + messageHeight
-        const TOP_PADDING = 50
-
-        // Check if message is already fully visible (with padding)
-        const isFullyVisible = messageAbsoluteTop >= scrollTop + TOP_PADDING && messageBottom <= scrollBottom
-
-        // Only scroll if not already fully visible
-        if (!isFullyVisible) {
-          this.animatedScrollToMessageBottom()
-        }
+        const bubble = this.getMessageVisibilityElement()
+        if (!bubble || this.isScrolledIntoView(bubble)) return
+        this.animateScrollBubbleIntoContainer()
       }, 150)
     }
   }
@@ -1102,6 +1082,7 @@ export default class ChatMessage extends React.Component {
         ${isResizable ? 'resizable' : ''} 
         ${this.state.isUserResizing ? 'user-resizing' : ''}
         ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}`}
+              ref={(r) => (this.messageBubbleRef = r)}
             >
               {this.renderContent()}
               {this.renderSummaryFooter()}

@@ -1123,7 +1123,11 @@ export class DashboardTile extends React.Component {
   }
 
   onAggConfigChange = (aggConfig) => this.debouncedSetParamsForTile({ aggConfig })
-  onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
+  // Persist data config immediately so axis selector save actions are not lost
+  // when users quickly save the dashboard before debounce flushes.
+  onDataConfigChange = (dataConfig) => {
+    this.props.setParamsForTile({ dataConfig }, this.props.tile.i, [])
+  }
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
@@ -1163,7 +1167,9 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
-  onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
+  onSecondDataConfigChange = (secondDataConfig) => {
+    this.props.setParamsForTile({ secondDataConfig }, this.props.tile.i, [])
+  }
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })

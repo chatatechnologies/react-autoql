@@ -1928,22 +1928,15 @@ export default class ChataTable extends React.Component {
       }
 
       const name = column.display_name
-      const altName = column.title
       const type = COLUMN_TYPES[column?.type]?.description
       const icon = COLUMN_TYPES[column?.type]?.icon
-
-      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
-      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
 
       const stats = this.summaryStats[column.index]
 
       return (
         <div>
           <div className='selectable-table-tooltip-title'>
-            <span>
-              {name}
-              {altName !== name ? ` (${altName})` : ''}
-            </span>
+            <span>{name}</span>
           </div>
           {!!type && (
             <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
@@ -2049,7 +2042,11 @@ export default class ChataTable extends React.Component {
           style={this.props.style}
           className={`react-autoql-table-container 
             ${isLoading ? 'react-autoql-table-loading' : ''}
-            ${this.props.supportsDrilldowns ? 'react-autoql-table-supports-drilldown' : 'react-autoql-table-disable-drilldown'}
+            ${
+              this.props.supportsDrilldowns
+                ? 'react-autoql-table-supports-drilldown'
+                : 'react-autoql-table-disable-drilldown'
+            }
             ${this.state.isFiltering ? 'react-autoql-table-filtering' : ''}
             ${this.props.isAnimating ? 'react-autoql-table-animating' : ''}
             ${this.useInfiniteScroll ? 'react-autoql-table-infinite' : 'react-autoql-table-limited'}
