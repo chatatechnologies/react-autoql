@@ -1169,7 +1169,9 @@ export class QueryOutput extends React.Component {
     const customColumnSelects = []
     for (let i = 0; i < columns?.length; i++) {
       const foundCustomSelect = additionalSelects?.find((select) => {
-        return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
+        return (
+          select?.columns?.[0]?.replace(/ /g, '').toLowerCase() === columns?.[i].name?.replace(/ /g, '').toLowerCase()
+        )
       })
       if (foundCustomSelect) {
         customColumnSelects.push({ id: columns[i].id, ...foundCustomSelect })
@@ -3644,14 +3646,35 @@ export class QueryOutput extends React.Component {
       let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
       const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
       if (existingCustomSelectForColumn) {
-        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
-          return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
+        const oldColumnSql = existingCustomSelectForColumn.columns[0]?.replace(/ /g, '').toLowerCase()
+        let foundAndUpdated = false
+        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.map((select) => {
+          if (select.columns[0]?.replace(/ /g, '').toLowerCase() === oldColumnSql) {
+            foundAndUpdated = true
+            return {
+              ...select,
+              columns: [column?.table_column],
+              is_custom: true,
+            }
+          }
+          return select
         })
+        if (!foundAndUpdated) {
+          currentAdditionalSelectColumns = [
+            ...currentAdditionalSelectColumns,
+            formatAdditionalSelectColumn(column, sqlFn),
+          ]
+        }
+      } else {
+        currentAdditionalSelectColumns = [
+          ...currentAdditionalSelectColumns,
+          formatAdditionalSelectColumn(column, sqlFn),
+        ]
       }
 
       let currentDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
       currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
-        return override.table_column?.trim() !== column.table_column?.trim()
+        return override.english !== column?.custom_column_display_name
       })
       if (column?.custom_column_display_name) {
         currentDisplayOverrides = [
@@ -3661,7 +3684,7 @@ export class QueryOutput extends React.Component {
       }
 
       this.queryFn({
-        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
+        newColumns: currentAdditionalSelectColumns,
         displayOverrides: currentDisplayOverrides,
       })
         .then((response) => {
