@@ -40,8 +40,8 @@ export default class NumberAxisSelector extends React.Component {
     positions: ['right', 'bottom', 'top', 'left'],
   }
 
-  componentDidUpdate = (prevProps, prevState) => {
-    if (!prevState.isOpen && this.state.isOpen) {
+  componentDidUpdate = (prevProps) => {
+    if (!prevProps.isOpen && this.props.isOpen) {
       this.setState({
         selectedColumns: [],
         checkedColumns: this.getCheckedFromNumberColumnIndices(this.props),
@@ -74,9 +74,11 @@ export default class NumberAxisSelector extends React.Component {
   }
 
   getColumnsOfType = (type) => {
-    const columns = this.state.columns?.filter((col) => {
-      return col.type === type && col.is_visible && col.index !== this.props.stringColumnIndex
-    })
+    const columns = this.state.columns
+      ?.map((col, axisIndex) => ({ col, axisIndex }))
+      .filter(({ col, axisIndex }) => {
+        return col.type === type && col.is_visible && axisIndex !== this.props.stringColumnIndex
+      })
 
     return columns
   }
@@ -86,13 +88,13 @@ export default class NumberAxisSelector extends React.Component {
 
     const columnsOfType = this.getColumnsOfType(type)
 
-    columnsOfType.forEach((col) => {
-      const checked = this.state.checkedColumns.includes(col.index)
+    columnsOfType.forEach(({ col, axisIndex }) => {
+      const checked = this.state.checkedColumns.includes(axisIndex)
       const disabled = false
       const aggTypeObj = AGG_TYPES[col.aggType]
 
       const item = {
-        key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${col.index}`,
+        key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${axisIndex}`,
         content: (
           <div className='agg-selector-column-item' key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
             {!this.props.isAggregation && col.aggType && (
@@ -145,7 +147,7 @@ export default class NumberAxisSelector extends React.Component {
         ),
         disabled,
         checked,
-        columnIndex: col.index,
+        columnIndex: axisIndex,
       }
 
       items.push(item)
@@ -164,11 +166,11 @@ export default class NumberAxisSelector extends React.Component {
 
   getAllChecked = (type) => {
     const columnsOfType = this.getColumnsOfType(type)
-    return columnsOfType.every((col) => this.state.checkedColumns.includes(col.index))
+    return columnsOfType.every(({ axisIndex }) => this.state.checkedColumns.includes(axisIndex))
   }
 
   onColumnSelection = (selected, selectedColumns) => {
-    const selectedColumnIndices = selectedColumns.map((col) => col.index)
+    const selectedColumnIndices = selectedColumns.map((col) => col.columnIndex)
     this.setState({ selectedColumns: selectedColumnIndices })
   }
 

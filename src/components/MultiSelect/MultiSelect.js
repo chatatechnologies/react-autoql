@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Popover } from '../Popover'
 import { v4 as uuid } from 'uuid'
+import { isMobile } from 'react-device-detect'
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
@@ -128,7 +129,19 @@ export default class MultiSelect extends React.Component {
       <div className='react-autoql-select-popup-container' style={{ width: this.props.style.width }}>
         {!this.props.tooltipID && <Tooltip tooltipId={`select-tooltip-${this.ID}`} delayShow={500} />}
         {this.props.listTitle ? (
-          <div className='react-autoql-multi-select-list-title'>{this.props.listTitle}</div>
+          <div className='react-autoql-multi-select-list-title'>
+            <span>{this.props.listTitle}</span>
+            {isMobile && (
+              <button
+                type='button'
+                className='react-autoql-multi-select-list-close'
+                onClick={() => this.setState({ isOpen: false })}
+                aria-label='Close field selector'
+              >
+                <Icon type='close' />
+              </button>
+            )}
+          </div>
         ) : null}
         <Menu options={this.props.options}>
           {this.props.options?.map((option, i) => {
