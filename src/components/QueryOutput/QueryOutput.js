@@ -1835,10 +1835,6 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    const isDateStringAxis = isColumnDateType(stringColumn)
-    const isListQueryResponse = isListQuery(columns)
-    const shouldForceFilterDrilldown = isListQueryResponse && isDateStringAxis
-
     // For list-query date drilldowns, always use the query endpoint with a filter.
     // Do not use the drilldown endpoint/groupBy flow for this case.
     if (shouldForceFilterDrilldown) {
