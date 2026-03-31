@@ -1,20 +1,19 @@
-import { isSingleValueResponse, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
+import { MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
+import { getMagicWandDatasetRowCount, isMagicWandDatasetTooLarge, shouldShowMagicWandForQueryCore } from './magicWandHelpers'
+
+export { shouldShowMagicWandForQueryCore, isMagicWandDatasetTooLarge, getMagicWandDatasetRowCount } from './magicWandHelpers'
 
 /**
  * Determines whether the magic wand (summary) button should be shown.
- * This function centralizes the logic used across ChatMessage and OptionsToolbar.
- * 
+ * Data Messenger and dashboard both use this; toolbar-specific rules only add what chat needs for parity.
+ *
  * @param {Object} params - Parameters object
  * @param {boolean} params.enableMagicWand - Whether magic wand feature is enabled
  * @param {Object} params.queryResponse - The query response object (from responseRef?.queryResponse or props.response)
- * @param {boolean} params.isResponse - Whether this is a response message (for ChatMessage)
- * @param {string} params.type - Message type (for ChatMessage, e.g., 'text', 'markdown')
- * @param {boolean} params.isCSVProgressMessage - Whether this is a CSV progress message (for ChatMessage)
- * @param {boolean} params.isMarkdownOnly - Whether this is a markdown-only message (for OptionsToolbar)
- * @param {boolean} params.isDataResponse - Whether this is a data response (for OptionsToolbar)
- * @param {boolean} params.hasData - Whether there is data (for OptionsToolbar)
- * @param {Function} params.isDrilldownResponse - Function to check if this is a drilldown response (for OptionsToolbar)
- * @returns {boolean} Whether the summary button should be shown
+ * @param {boolean} params.isResponse - Whether this is a response message (ChatMessage / Data Messenger)
+ * @param {string} params.type - Message type (ChatMessage, e.g. 'text', 'markdown')
+ * @param {boolean} params.isCSVProgressMessage - CSV export progress message (ChatMessage)
+ * @param {boolean} params.isMarkdownOnly - Markdown-only bubble with no table (OptionsToolbar)
  */
 export function shouldShowSummaryButton({
   enableMagicWand,
@@ -23,84 +22,39 @@ export function shouldShowSummaryButton({
   type,
   isCSVProgressMessage,
   isMarkdownOnly,
-  isDataResponse,
-  hasData,
-  isDrilldownResponse,
 }) {
-  // Magic wand must be enabled
-  if (!enableMagicWand) {
+  if (!shouldShowMagicWandForQueryCore(enableMagicWand, queryResponse)) {
     return false
   }
 
-  // Must have query response with data
-  if (!queryResponse?.data?.data?.rows || !queryResponse?.data?.data?.columns) {
-    return false
-  }
-
-  // Check row count - allow if there's at least 1 row (including exactly 1 row)
-  const rows = queryResponse?.data?.data?.rows || []
-  const rowCount = rows.length
-  if (rowCount <= 1) {
-    return false
-  }
-
-  // For ChatMessage context
+  // Data Messenger — response bubbles with QueryOutput
   if (isResponse !== undefined) {
-    // Must be a response message
     if (!isResponse) {
       return false
     }
-
-    // Don't show for text messages
     if (type === 'text') {
       return false
     }
-
-    // Don't show for CSV progress messages
     if (isCSVProgressMessage) {
       return false
     }
-
-    // Don't show for single value responses
-    if (isSingleValueResponse(queryResponse)) {
-      return false
-    }
+    return true
   }
 
-  // For OptionsToolbar context
-  if (isMarkdownOnly !== undefined || isDataResponse !== undefined) {
-    // Don't show for markdown-only messages
+  // OptionsToolbar — dashboard tiles, chat toolbars, etc. (match DM: same core + no markdown-only)
+  if (isMarkdownOnly !== undefined) {
     if (isMarkdownOnly) {
       return false
     }
-
-    // Must be a data response
-    if (!isDataResponse) {
-      return false
-    }
-
-    // Must have data
-    if (!hasData) {
-      return false
-    }
-
-    // Don't show for drilldown responses
-    if (isDrilldownResponse && isDrilldownResponse()) {
-      return false
-    }
-
-    // Don't show for single value responses
-    if (isSingleValueResponse(queryResponse)) {
-      return false
-    }
+    return true
   }
 
   return true
 }
 
 /**
- * Determines whether the summary button should be disabled.
- * 
+ * Determines whether the summary button should be disabled (when it is shown).
+ *
  * @param {Object} params - Parameters object
  * @param {Object} params.queryResponse - The query response object
  * @param {boolean} params.isGenerating - Whether a summary is currently being generated
@@ -108,10 +62,9 @@ export function shouldShowSummaryButton({
  * @returns {Object} Object with `isDisabled` boolean and optional `tooltip` string
  */
 export function getSummaryButtonDisabledState({ queryResponse, isGenerating, isChataThinking }) {
-  const rows = queryResponse?.data?.data?.rows || []
-  const rowCount = rows.length
+  const rowCount = getMagicWandDatasetRowCount(queryResponse)
 
-  const isDatasetTooLarge = rowCount > MAX_DATA_PAGE_SIZE
+  const isDatasetTooLarge = isMagicWandDatasetTooLarge(queryResponse)
   const hasNoData = rowCount === 0
 
   const isDisabled = isDatasetTooLarge || hasNoData || isGenerating || Boolean(isChataThinking)
