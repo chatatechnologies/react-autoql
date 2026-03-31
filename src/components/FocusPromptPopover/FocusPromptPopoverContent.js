@@ -29,6 +29,7 @@ export default function FocusPromptPopoverContent({
   inputDisabled,
   contentClassName,
   notWandableMessage,
+  showQuoteButton,
 }) {
   return (
     <div className={contentClassName || 'focus-prompt-popover-content'}>
@@ -64,16 +65,18 @@ export default function FocusPromptPopoverContent({
         ))}
       {focusError && <div className='focus-prompt-popover-error'>{focusError}</div>}
       <div className='focus-prompt-popover-actions'>
-        <Button
-          type='default'
-          size='medium'
-          icon='sparkles'
-          onClick={onGetQuote}
-          loading={isFetchingQuote}
-          border={true}
-        >
-          Get quote
-        </Button>
+        {showQuoteButton && (
+          <Button
+            type='default'
+            size='medium'
+            icon='sparkles'
+            onClick={onGetQuote}
+            loading={isFetchingQuote}
+            border={true}
+          >
+            Get quote
+          </Button>
+        )}
         <Button
           type='primary'
           size='medium'
@@ -106,6 +109,7 @@ FocusPromptPopoverContent.propTypes = {
   inputDisabled: PropTypes.bool,
   contentClassName: PropTypes.string,
   notWandableMessage: PropTypes.string,
+  showQuoteButton: PropTypes.bool,
 }
 
 FocusPromptPopoverContent.defaultProps = {
@@ -119,4 +123,5 @@ FocusPromptPopoverContent.defaultProps = {
   inputDisabled: false,
   contentClassName: '',
   notWandableMessage: DEFAULT_NOT_WANDABLE_MESSAGE,
+  showQuoteButton: true,
 }

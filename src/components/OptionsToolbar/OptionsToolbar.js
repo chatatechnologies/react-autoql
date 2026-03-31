@@ -83,6 +83,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -107,6 +108,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
     enableMagicWand: false,
+    showMagicWandQuoteButton: true,
   }
 
   componentDidMount = () => {
@@ -805,6 +807,7 @@ export class OptionsToolbar extends React.Component {
               this.handleSummaryFocusPromptKeyDown(e)
             }
           }}
+          showQuoteButton={this.props.showMagicWandQuoteButton}
         />
         <Tooltip tooltipId={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`} delayShow={500} />
       </div>
