@@ -74,7 +74,7 @@ export default class SummaryModal extends React.Component {
         focusError: null,
         queryId: this.props.queryResponse?.data?.data?.query_id || null,
       })
-      
+
       // Auto-generate summary when modal opens (with or without focus prompt)
       // Small delay to ensure state is set
       setTimeout(() => {
@@ -198,7 +198,7 @@ export default class SummaryModal extends React.Component {
     if (this.state.summary) {
       // Get the focus prompt that was used (stored before clearing)
       const focusPromptUsed = this.state.focusPromptUsed || ''
-      
+
       return (
         <CustomScrollbars className='summary-modal-scroll-container' suppressScrollX>
           <div className='summary-modal-content'>
@@ -243,7 +243,7 @@ export default class SummaryModal extends React.Component {
       return (
         <div className='summary-modal-empty'>
           <Icon type='magic-wand' size='large' />
-          <h3>Analyze</h3>
+          <h3>Auto Analyze</h3>
           <p className='summary-modal-error'>{this.state.focusError}</p>
         </div>
       )
@@ -252,11 +252,9 @@ export default class SummaryModal extends React.Component {
     return (
       <div className='summary-modal-empty'>
         <Icon type='magic-wand' size='large' />
-        <h3>Analyze</h3>
+        <h3>Auto Analyze</h3>
         <p>Generating an AI-powered summary of your data...</p>
-        {hasNoData && (
-          <p className='summary-modal-error'>No data available to generate a summary.</p>
-        )}
+        {hasNoData && <p className='summary-modal-error'>No data available to generate a summary.</p>}
       </div>
     )
   }

@@ -125,6 +125,7 @@ export default class ChatMessage extends React.Component {
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
     onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
   }
@@ -161,6 +162,7 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
     enableMagicWand: false,
+    showMagicWandQuoteButton: true,
   }
 
   componentDidMount = () => {
@@ -844,6 +846,7 @@ export default class ChatMessage extends React.Component {
                       this.handleFocusPromptKeyDown(e)
                     }
                   }}
+                  showQuoteButton={this.props.showMagicWandQuoteButton}
                 />
               ),
               popoverProps: {
@@ -853,7 +856,7 @@ export default class ChatMessage extends React.Component {
               },
             }}
           >
-            <span className='analyze-button-content'>Analyze</span>
+            <span className='analyze-button-content'>Auto Analyze</span>
             <span
               className='analyze-beta-badge'
               data-tooltip-content='This feature is in beta'
@@ -1011,6 +1014,7 @@ export default class ChatMessage extends React.Component {
             customOptions={isDataPreview ? [] : this.props.customToolbarOptions}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
+            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
           />
         ) : null}
       </div>
