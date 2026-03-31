@@ -22,6 +22,7 @@ export default class SummaryModal extends React.Component {
     super(props)
 
     this.COMPONENT_KEY = uuid()
+    this.markdownContentRef = React.createRef()
 
     this.state = {
       summary: null,
@@ -73,7 +74,7 @@ export default class SummaryModal extends React.Component {
         focusError: null,
         queryId: this.props.queryResponse?.data?.data?.query_id || null,
       })
-      
+
       // Auto-generate summary when modal opens (with or without focus prompt)
       // Small delay to ensure state is set
       setTimeout(() => {
@@ -153,6 +154,32 @@ export default class SummaryModal extends React.Component {
     }
   }
 
+  copyMarkdownAsPlainText = async () => {
+    if (!this.state.summary || !this.markdownContentRef.current) {
+      return
+    }
+
+    try {
+      const text = this.markdownContentRef.current.innerText
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        document.body.appendChild(textarea)
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+      }
+    } catch (error) {
+      console.error('Failed to copy markdown:', error)
+      this.props.onErrorCallback?.(error)
+    }
+  }
+
   renderContent = () => {
     const queryResponse = this.props.queryResponse || this.props.responseRef?.queryResponse
     const rows = queryResponse?.data?.data?.rows || []
@@ -171,17 +198,31 @@ export default class SummaryModal extends React.Component {
     if (this.state.summary) {
       // Get the focus prompt that was used (stored before clearing)
       const focusPromptUsed = this.state.focusPromptUsed || ''
-      
+
       return (
-        <CustomScrollbars className='summary-modal-scroll-container'>
+        <CustomScrollbars className='summary-modal-scroll-container' suppressScrollX>
           <div className='summary-modal-content'>
-            <SummaryContent
-              content={this.state.summary}
-              focusPromptUsed={focusPromptUsed}
-              className='summary-modal-summary-content'
-              titleClassName='summary-modal-title'
-              markdownClassName='summary-modal-markdown'
-            />
+            <div className='summary-modal-actions'>
+              <Button
+                onClick={this.copyMarkdownAsPlainText}
+                className='summary-modal-copy-btn'
+                tooltip='Copy summary'
+                tooltipID={this.props.tooltipID}
+                data-test='summary-modal-copy-markdown-btn'
+                size='small'
+              >
+                <Icon type='copy' />
+              </Button>
+            </div>
+            <div ref={this.markdownContentRef}>
+              <SummaryContent
+                content={this.state.summary}
+                focusPromptUsed={focusPromptUsed}
+                className='summary-modal-summary-content'
+                titleClassName='summary-modal-title'
+                markdownClassName='summary-modal-markdown'
+              />
+            </div>
             <div className='summary-modal-feedback-footer'>
               <SummaryFooter
                 messageId={`summary-modal-${this.COMPONENT_KEY}`}
@@ -202,7 +243,7 @@ export default class SummaryModal extends React.Component {
       return (
         <div className='summary-modal-empty'>
           <Icon type='magic-wand' size='large' />
-          <h3>Analyze</h3>
+          <h3>Auto Analyze</h3>
           <p className='summary-modal-error'>{this.state.focusError}</p>
         </div>
       )
@@ -211,11 +252,9 @@ export default class SummaryModal extends React.Component {
     return (
       <div className='summary-modal-empty'>
         <Icon type='magic-wand' size='large' />
-        <h3>Analyze</h3>
+        <h3>Auto Analyze</h3>
         <p>Generating an AI-powered summary of your data...</p>
-        {hasNoData && (
-          <p className='summary-modal-error'>No data available to generate a summary.</p>
-        )}
+        {hasNoData && <p className='summary-modal-error'>No data available to generate a summary.</p>}
       </div>
     )
   }

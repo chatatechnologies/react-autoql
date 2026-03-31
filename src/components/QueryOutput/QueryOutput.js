@@ -428,7 +428,7 @@ export class QueryOutput extends React.Component {
     enableCustomColumns: true,
     disableAggregationMenu: false,
     allowCustomColumnsOnDrilldown: false,
-    preferRegularTableInitialDisplayType: false,
+    preferRegularTableInitialDisplayType: true,
     drilldownFilters: undefined,
     enableChartControls: true,
     initialChartControls: {

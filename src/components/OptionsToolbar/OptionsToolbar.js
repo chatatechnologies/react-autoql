@@ -17,6 +17,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
   dataFormattingDefault,
+  fetchLLMSummaryQuote,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -30,11 +31,13 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
-import { shouldShowSummaryButton } from '../../utils/summaryButtonUtils'
+import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
 import './OptionsToolbar.scss'
+import '../FocusPromptPopover/FocusPromptPopover.scss'
 
 export class OptionsToolbar extends React.Component {
   constructor(props) {
@@ -53,6 +56,8 @@ export class OptionsToolbar extends React.Component {
       isSummaryPopoverOpen: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
+      quoteResult: null,
+      isFetchingQuote: false,
       previousDisplayType: null, // Track display type before switching to table for filtering
     }
   }
@@ -78,6 +83,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -102,6 +108,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
     enableMagicWand: false,
+    showMagicWandQuoteButton: true,
   }
 
   componentDidMount = () => {
@@ -692,7 +699,68 @@ export class OptionsToolbar extends React.Component {
   handleSummaryFocusPromptChange = (e) => {
     const value = e.target.value
     if (value.length <= 100) {
-      this.setState({ summaryFocusPrompt: value, summaryFocusError: null })
+      this.setState({ summaryFocusPrompt: value, summaryFocusError: null, quoteResult: null })
+    }
+  }
+
+  handleSummaryGetQuote = async () => {
+    const queryResponse = this.props.responseRef?.queryResponse
+    const filteredRows = this.props.responseRef?.tableData || queryResponse?.data?.data?.rows || []
+    const currentColumns = queryResponse?.data?.data?.columns || []
+    const queryData = queryResponse?.data?.data
+
+    if (!filteredRows?.length || !currentColumns?.length || !queryData) return
+
+    this.setState({ isFetchingQuote: true, summaryFocusError: null, quoteResult: null })
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.setState({ isFetchingQuote: false })
+      return
+    }
+
+    try {
+      const response = await fetchLLMSummaryQuote({
+        data: {
+          additional_context: {
+            text: queryData.text,
+            interpretation: queryData.interpretation,
+            focus_prompt: this.state.summaryFocusPrompt?.trim() || '',
+          },
+          rows: filteredRows,
+          columns: currentColumns,
+        },
+        queryID: queryData.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const envelope = response?.data
+      const quoteData = envelope?.data ?? envelope
+      const wandable = quoteData?.wandable
+      const cost = quoteData?.cost
+
+      if (wandable !== undefined) {
+        this.setState({
+          quoteResult: {
+            wandable: !!wandable,
+            cost: wandable ? (cost != null ? Number(cost) : 0) : null,
+          },
+          summaryFocusError: null,
+        })
+      } else {
+        this.setState({ summaryFocusError: 'Unable to get quote. Please try again.' })
+      }
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to get quote. Please try again.'
+      this.setState({ summaryFocusError: errorMessage })
+    } finally {
+      this.setState({ isFetchingQuote: false })
     }
   }
 
@@ -706,8 +774,7 @@ export class OptionsToolbar extends React.Component {
   renderSummaryPopoverContent = () => {
     const queryResponse = this.props.responseRef?.queryResponse
     const rows = queryResponse?.data?.data?.rows || []
-    const rowCount = rows.length
-    const hasNoData = rowCount === 0
+    const hasNoData = rows.length === 0
 
     return (
       <div className='options-toolbar-summary-dropdown-content'>
@@ -718,49 +785,30 @@ export class OptionsToolbar extends React.Component {
         >
           Beta
         </span>
-        <div className='options-toolbar-summary-dropdown-header'>
-          <label className='options-toolbar-summary-dropdown-label'>
-            Focus on a specific topic (optional)
-          </label>
-          <div className='options-toolbar-summary-dropdown-description'>
-            Enter a topic to generate a summary tailored to that focus area
-          </div>
-        </div>
-        <div className='options-toolbar-summary-dropdown-input-group'>
-          <Input
-            value={this.state.summaryFocusPrompt}
-            onChange={this.handleSummaryFocusPromptChange}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                this.openSummaryModal(this.state.summaryFocusPrompt)
-                this.setState({ isSummaryPopoverOpen: false })
-              } else {
-                this.handleSummaryFocusPromptKeyDown(e)
-              }
-            }}
-            placeholder='e.g., sales growth trends'
-            maxLength={100}
-            style={{ flex: 1 }}
-          />
-          <Button
-            type='primary'
-            size='medium'
-            onClick={() => {
+        <FocusPromptPopoverContent
+          contentClassName='focus-prompt-popover-content'
+          focusPrompt={this.state.summaryFocusPrompt}
+          onFocusPromptChange={this.handleSummaryFocusPromptChange}
+          onGetQuote={this.handleSummaryGetQuote}
+          onAnalyze={() => {
+            this.openSummaryModal(this.state.summaryFocusPrompt)
+            this.setState({ isSummaryPopoverOpen: false })
+          }}
+          quoteResult={this.state.quoteResult}
+          isFetchingQuote={this.state.isFetchingQuote}
+          focusError={this.state.summaryFocusError}
+          isAnalyzeDisabled={hasNoData}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
               this.openSummaryModal(this.state.summaryFocusPrompt)
               this.setState({ isSummaryPopoverOpen: false })
-            }}
-            disabled={hasNoData}
-            icon='magic-wand'
-          >
-            Analyze
-          </Button>
-        </div>
-        {this.state.summaryFocusError && (
-          <div className='options-toolbar-summary-focus-error'>
-            {this.state.summaryFocusError}
-          </div>
-        )}
+            } else {
+              this.handleSummaryFocusPromptKeyDown(e)
+            }
+          }}
+          showQuoteButton={this.props.showMagicWandQuoteButton}
+        />
         <Tooltip tooltipId={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`} delayShow={500} />
       </div>
     )
@@ -768,33 +816,35 @@ export class OptionsToolbar extends React.Component {
 
   renderMagicWandBtn = () => {
     const queryResponse = this.props.responseRef?.queryResponse
-    const rows = queryResponse?.data?.data?.rows || []
-    const rowCount = rows.length
-    const hasNoData = rowCount === 0
+    const { isDisabled, tooltip: disabledTooltip } = getSummaryButtonDisabledState({
+      queryResponse,
+      isGenerating: false,
+      isChataThinking: false,
+    })
 
     return (
       <Popover
         key={`magic-wand-button-${this.COMPONENT_KEY}`}
         isOpen={this.state.isSummaryPopoverOpen}
         padding={8}
-        onClickOutside={() => this.setState({ isSummaryPopoverOpen: false })}
+        onClickOutside={() => this.setState({ isSummaryPopoverOpen: false, quoteResult: null })}
         content={this.renderSummaryPopoverContent}
         parentElement={this.props.popoverParentElement}
         boundaryElement={this.props.popoverParentElement}
-        positions={this.props.popoverPositions ?? ['bottom', 'top', 'left', 'right']}
+        positions={this.props.popoverPositions ?? ['top', 'bottom', 'left', 'right']}
         align={this.props.popoverAlign}
         contentClassName='options-toolbar-summary-dropdown-popover'
       >
         <Button
           onClick={() => {
-            if (hasNoData) return
+            if (isDisabled) return
             this.setState({ isSummaryPopoverOpen: !this.state.isSummaryPopoverOpen })
           }}
           className={this.getMenuItemClass()}
-          tooltip={hasNoData ? 'No data available to analyze' : 'Analyze'}
+          tooltip={disabledTooltip || 'Analyze'}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           size='small'
-          disabled={hasNoData}
+          disabled={isDisabled}
         >
           <Icon type='magic-wand' />
         </Button>
@@ -959,9 +1009,6 @@ export class OptionsToolbar extends React.Component {
           enableMagicWand: props.enableMagicWand,
           queryResponse: response,
           isMarkdownOnly,
-          isDataResponse,
-          hasData,
-          isDrilldownResponse: () => this.isDrilldownResponse(props),
         }),
       }
 
