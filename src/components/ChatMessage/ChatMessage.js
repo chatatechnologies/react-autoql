@@ -853,7 +853,7 @@ export default class ChatMessage extends React.Component {
               },
             }}
           >
-            <span className='analyze-button-content'>Analyze</span>
+            <span className='analyze-button-content'>Auto Analyze</span>
             <span
               className='analyze-beta-badge'
               data-tooltip-content='This feature is in beta'

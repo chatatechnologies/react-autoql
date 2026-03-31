@@ -55,9 +55,7 @@ export default function FocusPromptPopoverContent({
             <div className='focus-prompt-popover-estimated-cost-left'>
               <span className='focus-prompt-popover-estimated-cost-label'>Estimated cost</span>
             </div>
-            <div className='focus-prompt-popover-estimated-cost-price'>
-              ${formatQuoteCostUsd(quoteResult.cost)}
-            </div>
+            <div className='focus-prompt-popover-estimated-cost-price'>${formatQuoteCostUsd(quoteResult.cost)}</div>
           </div>
         ) : (
           <div className='focus-prompt-popover-not-wandable' role='status'>
@@ -84,7 +82,7 @@ export default function FocusPromptPopoverContent({
           disabled={isAnalyzeDisabled || (quoteResult && !quoteResult.wandable)}
           loading={isAnalyzeLoading}
         >
-          Analyze
+          Auto Analyze
         </Button>
       </div>
     </div>
