@@ -376,7 +376,41 @@ export default class CustomColumnModal extends React.Component {
       }
 
       // Strip COALESCE/NULLIF wrapper if present (for loaded/edited custom columns)
-      const cleanedName = this.stripCoalesceWrapper(columnName)
+      let cleanedName = this.stripCoalesceWrapper(columnName)
+      
+      // Replace column names with placeholders before tokenization (handles nested parens & multi-word names)
+      const allCols = [
+        ...(cols || []),
+        ...(this.props.queryResponse?.data?.data?.available_selects || [])
+      ]
+      const colsByLength = allCols.sort((a, b) => {
+        const aLen = (a?.table_column || a?.name)?.length || 0
+        const bLen = (b?.table_column || b?.name)?.length || 0
+        return bLen - aLen // Longest first to avoid partial matches
+      })
+
+      const placeholderMap = {}
+      for (let pi = 0; pi < colsByLength.length; pi++) {
+        const col = colsByLength[pi]
+        const candidates = [col?.table_column, col?.name].filter(Boolean)
+        
+        for (const matchStr of candidates) {
+          if (!matchStr?.trim()) continue
+          // Skip full-replacement matches (prevents formula matching its own custom column)
+          if (matchStr.trim() === cleanedName.trim()) {
+            continue
+          }
+          
+          const regex = new RegExp(matchStr.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
+          const replaced = cleanedName.replace(regex, `__COLREF_${pi}__`)
+          if (replaced !== cleanedName) {
+            placeholderMap[`__COLREF_${pi}__`] = col
+            cleanedName = replaced
+            break
+          }
+        }
+      }
+      
       const ops = buildPlainColumnArrayFn(cleanedName)
       if (ops?.length === 0) {
         return []
@@ -384,6 +418,7 @@ export default class CustomColumnModal extends React.Component {
 
       const fnArray = []
       let i = 0
+      let col // Declare for reuse in column matching logic
       for (const op of ops) {
         if (isOperatorJs(op)) {
           let opValue = ''
@@ -396,23 +431,44 @@ export default class CustomColumnModal extends React.Component {
         } else if (!isNaN(op)) {
           fnArray.push({ type: 'number', value: op })
         } else {
-          let column = cols?.find((col) => col?.name?.trim() === op)
-          if (column) {
-            fnArray.push({ type: 'column', value: column?.field, column })
-          } else {
-            const cleanName = getCleanColumnName(op)
-            const availableSelect = this.props.queryResponse?.data?.data?.available_selects?.find((select) => {
-              return select?.table_column?.trim() === cleanName
-            })
-            if (availableSelect) {
-              fnArray.push({ type: 'column', value: availableSelect?.table_column, column: availableSelect })
-            }
+          // Check placeholder (pre-tokenization), then exact name, then normalized, then case-insensitive
+          const placeholderCol = placeholderMap[op]
+          if (placeholderCol) {
+            fnArray.push({ type: 'column', value: placeholderCol?.field, column: placeholderCol })
+          } else if ((col = cols?.find((c) => c?.name?.trim() === op)) || // exact match in cols
+                     (col = this.props.queryResponse?.data?.data?.available_selects?.find((s) => s?.table_column?.trim() === getCleanColumnName(op))) || // normalized match
+                     (col = cols?.find((c) => c?.table_column?.trim().toLowerCase() === op?.toLowerCase()))) { // case-insensitive
+            fnArray.push({ type: 'column', value: col?.field || col?.table_column, column: col })
           }
         }
         i++
       }
 
-      return fnArray
+      // Remove redundant nested bracket pairs (result of COALESCE/NULLIF stripping)
+      let cleaned = [...fnArray]
+      let passnum = 0
+      while (passnum++ < 10) {
+        let foundPair = false
+        for (let i = 0; i < cleaned.length - 1; i++) {
+          if (cleaned[i]?.value !== CustomColumnValues.LEFT_BRACKET || cleaned[i + 1]?.value !== CustomColumnValues.LEFT_BRACKET) continue
+          
+          let openCount = 0, j = i
+          while (j < cleaned.length && cleaned[j]?.value === CustomColumnValues.LEFT_BRACKET) { openCount++; j++ }
+          
+          let closeCount = 0, k = cleaned.length - 1
+          while (k >= 0 && cleaned[k]?.value === CustomColumnValues.RIGHT_BRACKET) { closeCount++; k-- }
+          
+          if (openCount >= 2 && closeCount >= 2 && openCount === closeCount && j < k) {
+            cleaned.splice(i + 1, 1)
+            cleaned.splice(cleaned.length - 2, 1)
+            foundPair = true
+            break
+          }
+        }
+        if (!foundPair) break // Early exit
+      }
+      
+      return cleaned
     } catch (error) {
       console.error(error)
       return []
@@ -421,16 +477,89 @@ export default class CustomColumnModal extends React.Component {
 
   stripCoalesceWrapper = (sql) => {
     if (!sql || typeof sql !== 'string') return sql
-    let trimmed = sql.trim()
-    if (trimmed.startsWith('=')) trimmed = trimmed.substring(1).trim()
-    while (trimmed.startsWith('(') && trimmed.endsWith(')')) {
-      const inner = trimmed.substring(1, trimmed.length - 1).trim()
+    
+    let result = sql.trim()
+    if (result.startsWith('=')) result = result.substring(1).trim()
+    
+    while (result.startsWith('(') && result.endsWith(')')) {
+      const inner = result.substring(1, result.length - 1).trim()
       if (inner.startsWith('(') && !inner.endsWith(')')) break
-      trimmed = inner
+      result = inner
     }
-    const match = trimmed.match(/^COALESCE\s*\((.+)\s*\/\s*NULLIF\s*\((.+?)\s*,\s*0\)\s*,\s*0\)(.*)$/i)
-    return match ? `${match[1].trim()} / ${match[2].trim()}${match[3] ? ' ' + match[3].trim() : ''}` : trimmed
+    
+    // Recursively strip COALESCE and NULLIF wrappers until no more match
+    let prevResult = ''
+    let iterations = 0
+    
+    while (result !== prevResult && iterations < 10) {
+      iterations++
+      prevResult = result
+      
+      // Strip ALL NULLIF(..., 0) patterns
+      const nullifResult = this.replaceNullifPattern(result)
+      if (nullifResult !== result) {
+        result = nullifResult
+        continue
+      }
+      
+      // Strip ALL COALESCE(..., 0) patterns
+      const coalesceResult = this.replaceCoalescePattern(result)
+      if (coalesceResult !== result) {
+        result = coalesceResult
+        continue
+      }
+      
+      // Strip outer parens if still present
+      if (result.startsWith('(') && result.endsWith(')')) {
+        const inner = result.substring(1, result.length - 1).trim()
+        if (!inner.startsWith('(') || inner.endsWith(')')) {
+          result = inner
+          continue
+        }
+      }
+    }
+    
+    return result
   }
+
+  // Generic function to strip SQL wrapper: NULLIF(content, 0) or COALESCE(content, 0) → content
+  stripSqlWrapper = (sql, funcName) => {
+    const lowerSql = sql.toLowerCase()
+    const funcStr = `${funcName.toLowerCase()}(`
+    const funcIdx = lowerSql.indexOf(funcStr)
+    
+    if (funcIdx === -1) return sql
+    
+    // Find matching closing paren by counting depth
+    let balance = 1, closeIdx = -1
+    const startPos = funcIdx + funcStr.length
+    for (let i = startPos; i < sql.length; i++) {
+      if (sql[i] === '(') balance++
+      else if (sql[i] === ')' && --balance === 0) {
+        closeIdx = i
+        break
+      }
+    }
+    
+    if (closeIdx === -1) return sql
+    
+    // Extract content and find last ", 0" at depth 0
+    const fullContent = sql.substring(startPos, closeIdx).trim()
+    let contentEnd = -1, depth = 0
+    for (let i = fullContent.length - 1; i >= 0; i--) {
+      if (fullContent[i] === ')') depth++
+      else if (fullContent[i] === '(') depth--
+      else if (depth === 0 && fullContent.substring(i, i + 3) === ', 0') {
+        contentEnd = i
+        break
+      }
+    }
+    
+    return contentEnd === -1 ? sql : sql.substring(0, funcIdx) + fullContent.substring(0, contentEnd).trim() + sql.substring(closeIdx + 1)
+  }
+
+  replaceNullifPattern = (sql) => this.stripSqlWrapper(sql, 'NULLIF')
+  replaceCoalescePattern = (sql) => this.stripSqlWrapper(sql, 'COALESCE')
 
   // Build SQL for function chunks
   buildFunctionSql = (columnFn, customColumn) => {
@@ -578,10 +707,6 @@ export default class CustomColumnModal extends React.Component {
   // Determine if a column is "complex" (has operations, window functions, or is a custom column with actual formula)
   isComplexColumn = (col) => {
     if (!col) return false
-    // Custom columns (marked with custom: true) are always complex
-    if (col?.custom === true) return true
-    // Custom columns with custom_column_display_name are complex
-    if (col?.custom_column_display_name) return true
     // Check if columnFnArray has more than just a simple column reference
     if (col?.columnFnArray && col.columnFnArray.length > 0) {
       // If it's just a single column reference, it's not complex
@@ -590,6 +715,14 @@ export default class CustomColumnModal extends React.Component {
       }
       // Multiple components or has operators/functions = complex
       return true
+    }
+    // Check table_column for arithmetic operators (catches DB-computed columns and custom formulas)
+    const tableCol = col?.table_column?.trim()
+    if (tableCol && /[+\-*/]/.test(tableCol)) return true
+    // Custom columns are complex UNLESS they have a simple plain table_column (no operators or parens)
+    if (col?.custom === true || col?.custom_column_display_name) {
+      if (tableCol && !/[+\-*/()]/.test(tableCol)) return false // simple reference like 'Sales Amount'
+      return true // complex (no table_column set, or has operators/function calls)
     }
     // Window function results are complex
     if (col?.fnSummary || col?.mutator) return true
@@ -633,12 +766,7 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  isFormulaAlreadyWrapped = (columnFnArray) => {
-    return (
-      columnFnArray?.[0]?.value === CustomColumnValues.LEFT_BRACKET &&
-      columnFnArray?.[columnFnArray.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
-    )
-  }
+  isFormulaAlreadyWrapped = (arr) => arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET && arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
 
   addColumnToFormula = (col, columnFn, lastTerm) => {
     const newChunk = {
@@ -655,13 +783,11 @@ export default class CustomColumnModal extends React.Component {
 
     const chunkIndex = columnFn.length - 1
 
-    // Only wrap complex columns (those with operations/window functions or custom formulas)
     if (this.isComplexColumn(col)) {
-      const chunkAlreadyWrapped =
-        columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
-        columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
-
-      if (!chunkAlreadyWrapped) {
+      // Only add brackets if: (1) not adjacent-wrapped in formula, and (2) column not already wrapped
+      if (!(columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
+            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET) &&
+          !this.isFormulaAlreadyWrapped(col?.columnFnArray)) {
         columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
         columnFn.splice(chunkIndex, 0, { type: 'operator', value: CustomColumnValues.LEFT_BRACKET })
       }

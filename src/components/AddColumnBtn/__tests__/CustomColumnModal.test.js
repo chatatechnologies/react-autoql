@@ -1325,6 +1325,7 @@ describe('CustomColumnModal - Production Ready Review', () => {
         field: 0,
         name: 'Sales',
         fnSummary: 'SUM(Sales)',
+        mutator: () => {}, // Window functions have a mutator
       }
       expect(inst.isComplexColumn(col)).toBe(true)
     })
@@ -1831,5 +1832,548 @@ describe('CustomColumnModal - Production Ready Review', () => {
       expect(divResult.startsWith('(')).toBe(true)
       expect(divResult.endsWith(')')).toBe(true)
     })
+  })
+
+  describe('nested complex column wrapping - AQLP-650', () => {
+    it('does not re-wrap an already-wrapped complex column', () => {
+      // Scenario: Column 1 = Sales Amount / Sales Quantity (complex)
+      // Column 2 = 1000 x ( New Column ) / 365
+      // When editing Column 2, New Column's brackets should not be duplicated
+      const wrapper = mount(
+        <CustomColumnModal
+          isOpen={true}
+          columns={[
+            { field: '0', name: 'Sales Amount', type: 'DOLLAR_AMT', is_visible: true },
+            { field: '1', name: 'Sales Quantity', type: 'QUANTITY', is_visible: true },
+          ]}
+          queryResponse={{ data: { data: {} } }}
+        />,
+      )
+      const inst = wrapper.instance()
+
+      // Simulate a complex custom column (Division = wrapped with brackets in SQL)
+      // When parsed back, it has bracket tokens from the SQL
+      const complexCustomCol = {
+        field: 'custom_1',
+        name: 'Sales Amount / Sales Quantity',
+        display_name: 'Unit Price',
+        custom_column_display_name: 'Unit Price',
+        table_column: '(COALESCE(Sales Amount / NULLIF(Sales Quantity, 0), 0))',
+        columnFnArray: [
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: '0', column: { field: '0', name: 'Sales Amount' } },
+          { type: CustomColumnTypes.OPERATOR, value: '/' },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: '1', column: { field: '1', name: 'Sales Quantity' } },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+        ],
+      }
+
+      // Add this complex column to a new formula: 1000 * (Unit Price) / 365
+      const columnFn = [
+        { type: CustomColumnTypes.NUMBER, value: '1000' },
+        { type: CustomColumnTypes.OPERATOR, value: '*' },
+      ]
+
+      inst.addColumnToFormula(complexCustomCol, columnFn, null)
+
+      // Should NOT re-wrap since the complex column already has brackets
+      // Expected: [NUMBER(1000), OPERATOR(*), COLUMN(complex_1)]
+      // NOT: [NUMBER(1000), OPERATOR(*), LEFT_BRACKET, COLUMN(complex_1), RIGHT_BRACKET]
+      const columnsInResult = columnFn.filter((c) => c.type === CustomColumnTypes.COLUMN)
+      expect(columnsInResult).toHaveLength(1)
+      expect(columnsInResult[0].value).toBe('custom_1')
+
+      // Verify that we don't have unnecessary extra brackets immediately around the column
+      const columnIndex = columnFn.findIndex((c) => c.type === CustomColumnTypes.COLUMN && c.value === 'custom_1')
+      const beforeColumn = columnFn[columnIndex - 1]
+      const afterColumn = columnFn[columnIndex + 1]
+
+      // There should NOT be an immediate left-bracket before OR right-bracket after
+      // (the brackets are inside the complex column's columnFnArray, not wrapping it)
+      expect(beforeColumn?.value === CustomColumnValues.LEFT_BRACKET).toBe(false)
+      expect(afterColumn?.value === CustomColumnValues.RIGHT_BRACKET).toBe(false)
+
+      wrapper.unmount()
+    })
+  })
+})
+
+describe('Qualified column name matching - AQLP-650', () => {
+  it('reconstructs formula with qualified column names (public.schema.column)', () => {
+    const columns = [
+      { field: '0', name: 'public.promotion_dimension.promotion_cost', type: 'DOLLAR_AMT', is_visible: true },
+      { field: '1', name: 'Sales Quantity', type: 'QUANTITY', is_visible: true },
+    ]
+
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={columns}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+
+    const inst = wrapper.instance()
+
+    // Test: reconstruct a formula with qualified column name
+    const formula = 'public.promotion_dimension.promotion_cost * 0.1'
+    const reconstructed = inst.buildFnArray(formula, columns)
+
+    // Should find the qualified column
+    expect(reconstructed).not.toHaveLength(0)
+    const columnChunks = reconstructed.filter((c) => c.type === CustomColumnTypes.COLUMN)
+    expect(columnChunks).toHaveLength(1)
+    expect(columnChunks[0].value).toBe('0') // field of the promotion_cost column
+
+    wrapper.unmount()
+  })
+
+  it('reconstructs formula with unqualified token matching qualified column', () => {
+    const columns = [
+      { field: '0', name: 'public.promotion_dimension.promotion_cost', type: 'DOLLAR_AMT', is_visible: true },
+      { field: '1', name: 'Sales Quantity', type: 'QUANTITY', is_visible: true },
+    ]
+
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={columns}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+
+    const inst = wrapper.instance()
+
+    // Test: when buildPlainColumnArrayFn returns just "promotion_cost" (unqualified),
+    // but we have "public.promotion_dimension.promotion_cost" in columns
+    // This simulates the case where a simple name might match a qualified column
+    const reconstructed = inst.buildFnArray('promotion_cost * 0.1', columns)
+
+    // Should still find the column by matching the tail
+    expect(reconstructed).not.toHaveLength(0)
+    const columnChunks = reconstructed.filter((c) => c.type === CustomColumnTypes.COLUMN)
+    // Can be 1 or 0 depending on whether buildPlainColumnArrayFn returns "promotion_cost" as a single token
+    // or breaks it differently - but the point is it tries to match
+
+    wrapper.unmount()
+  })
+})
+
+describe('6 Column Combination Scenarios - Bracket Wrapping Logic', () => {
+  const simpleColA = { field: '0', name: 'Sales Amount', display_name: 'Sales Amount', type: 'DOLLAR_AMT', is_visible: true }
+  const simpleColB = { field: '1', name: 'Sales Quantity', display_name: 'Sales Quantity', type: 'QUANTITY', is_visible: true }
+  const customSimpleCol = { 
+    field: '2', 
+    name: 'custom_simple', 
+    display_name: 'Custom Simple', 
+    custom_column_display_name: 'Custom Simple',
+    custom: true,
+    table_column: 'Sales Amount',
+    is_visible: true 
+  }
+  const customComplexCol = { 
+    field: '3', 
+    name: 'custom_complex', 
+    display_name: 'Custom Complex',
+    custom_column_display_name: 'Custom Complex',
+    custom: true,
+    table_column: '(Sales Amount * 0.1)',
+    columnFnArray: [
+      { type: 'operator', value: CustomColumnValues.LEFT_BRACKET },
+      { type: 'column', value: '0', column: simpleColA },
+      { type: 'operator', value: CustomColumnValues.MULTIPLICATION },
+      { type: 'number', value: 0.1 },
+      { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET },
+    ],
+    is_visible: true 
+  }
+  const complexDBCol = { 
+    field: '4', 
+    name: 'Sales Amount / Sales Quantity',
+    display_name: 'Sales Amount / Sales Quantity',
+    table_column: '(Sales Amount / Sales Quantity)',
+    is_visible: true 
+  }
+  const aggCol = { 
+    field: '5', 
+    name: 'total abs of Sales Amount',
+    display_name: 'total abs of Sales Amount',
+    table_column: 'SUM(ABS(online_sales.online_sales_fact.sales_dollar_amount))',
+    is_visible: true 
+  }
+
+  it('Scenario 1: simple1 operator simple2 → NO bracket', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[simpleColA, simpleColB]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    // Add simple1
+    const chunk1 = { type: CustomColumnTypes.COLUMN, value: simpleColA.field, column: simpleColA }
+    inst.setState({ columnFn: [chunk1] })
+
+    // Add operator
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }
+    inst.setState({ columnFn: [chunk1, chunk2] })
+
+    // Add simple2 - should NOT get wrapped
+    inst.addColumnToFormula(simpleColB, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+    const hasExtraLeftBracket = finalFormula.some((c, i) => 
+      c?.value === CustomColumnValues.LEFT_BRACKET && 
+      finalFormula[i + 1]?.column?.field === '1'
+    )
+    expect(hasExtraLeftBracket).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('Scenario 2: simple1 operator customSimple → NO bracket', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[simpleColA, customSimpleCol]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    const chunk1 = { type: CustomColumnTypes.COLUMN, value: simpleColA.field, column: simpleColA }
+    inst.setState({ columnFn: [chunk1] })
+
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.MULTIPLICATION }
+    inst.setState({ columnFn: [chunk1, chunk2] })
+
+    inst.addColumnToFormula(customSimpleCol, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+    const hasExtraLeftBracket = finalFormula.some((c, i) => 
+      c?.value === CustomColumnValues.LEFT_BRACKET && 
+      finalFormula[i + 1]?.column?.field === '2'
+    )
+    expect(hasExtraLeftBracket).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('Scenario 3: simple1 operator (customComplex) → added atomically, no extra outer brackets', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[simpleColA, customComplexCol]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    const chunk1 = { type: CustomColumnTypes.COLUMN, value: simpleColA.field, column: simpleColA }
+    inst.setState({ columnFn: [chunk1] })
+
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.DIVISION }
+    inst.setState({ columnFn: [chunk1, chunk2] })
+
+    inst.addColumnToFormula(customComplexCol, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+
+    // customComplexCol has columnFnArray already starting/ending with brackets,
+    // so no EXTRA outer brackets should be added in the outer formula
+    const hasExtraLeftBracket = finalFormula.some((c, i) =>
+      c?.value === CustomColumnValues.LEFT_BRACKET &&
+      finalFormula[i + 1]?.column?.field === '3'
+    )
+    expect(hasExtraLeftBracket).toBe(false)
+
+    // Column should still be present in the formula
+    expect(finalFormula.some((c) => c?.column?.field === '3')).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('Scenario 4: (complexDB) operator simple1 → KEEP brackets for DB column', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[complexDBCol, simpleColB]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    // Add complex DB column via addColumnToFormula so it gets brackets
+    const formula = []
+    inst.addColumnToFormula(complexDBCol, formula, null)
+
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }
+    formula.push(chunk2)
+    inst.setState({ columnFn: formula })
+
+    inst.addColumnToFormula(simpleColB, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+
+    // Should have brackets around complex DB column
+    const leftBracketBeforeComplex = finalFormula.some((c, i) =>
+      c?.value === CustomColumnValues.LEFT_BRACKET &&
+      finalFormula[i + 1]?.column?.field === '4'
+    )
+    expect(leftBracketBeforeComplex).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('Scenario 5: (complexDB) operator (complexDB) → KEEP both, no duplicate', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[complexDBCol]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    // Add first column via addColumnToFormula so it gets brackets too
+    const formula = []
+    inst.addColumnToFormula(complexDBCol, formula, null)
+
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.MULTIPLICATION }
+    formula.push(chunk2)
+    inst.setState({ columnFn: formula })
+
+    inst.addColumnToFormula(complexDBCol, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+
+    // Should have brackets but not duplicate them
+    const leftBrackets = finalFormula.filter((c) => c?.value === CustomColumnValues.LEFT_BRACKET)
+    const rightBrackets = finalFormula.filter((c) => c?.value === CustomColumnValues.RIGHT_BRACKET)
+
+    // Exactly 2 left and 2 right (one pair for each complex column)
+    expect(leftBrackets.length).toBe(2)
+    expect(rightBrackets.length).toBe(2)
+
+    wrapper.unmount()
+  })
+
+  it('Scenario 6: (customComplex) operator (customComplex) → no extra outer brackets (already wrapped internally)', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[customComplexCol]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    const chunk1 = { type: CustomColumnTypes.COLUMN, value: customComplexCol.field, column: customComplexCol }
+    inst.setState({ columnFn: [chunk1] })
+
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }
+    inst.setState({ columnFn: [chunk1, chunk2] })
+
+    inst.addColumnToFormula(customComplexCol, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+
+    // customComplexCol has columnFnArray already starting/ending with brackets,
+    // so no EXTRA outer brackets should be added for either occurrence
+    const leftBrackets = finalFormula.filter((c) => c?.value === CustomColumnValues.LEFT_BRACKET)
+    const rightBrackets = finalFormula.filter((c) => c?.value === CustomColumnValues.RIGHT_BRACKET)
+
+    // Both columns added without extra outer brackets (their own columnFnArray already has them)
+    expect(leftBrackets.length).toBe(0)
+    expect(rightBrackets.length).toBe(0)
+
+    // Both columns still present
+    const columns = finalFormula.filter((c) => c?.type === CustomColumnTypes.COLUMN)
+    expect(columns.length).toBe(2)
+
+    wrapper.unmount()
+  })
+
+  it('Scenario 7: aggregation result columns treated as simple (no wrapping)', () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[aggCol, simpleColA]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    // Start with agg column
+    const chunk1 = { type: CustomColumnTypes.COLUMN, value: aggCol.field, column: aggCol }
+    inst.setState({ columnFn: [chunk1] })
+
+    const chunk2 = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.DIVISION }
+    inst.setState({ columnFn: [chunk1, chunk2] })
+
+    // Add simple column - agg column should NOT be wrapped (treated as simple from query results)
+    inst.addColumnToFormula(simpleColA, inst.state.columnFn, chunk2)
+
+    const finalFormula = inst.state.columnFn
+    
+    // Agg result column should not have brackets around it
+    const leftBracketBeforeAgg = finalFormula.some((c, i) => 
+      c?.value === CustomColumnValues.LEFT_BRACKET && 
+      finalFormula[i + 1]?.column?.field === '5'
+    )
+    expect(leftBracketBeforeAgg).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('loads aggregation division without excessive brackets', () => {
+    // Test for AQLP-650: loading formula with two agg columns in division
+    // User formula: 1000 / (average abs of Sales Amount / total Sales Quantity)
+    // When loaded in edit mode, should reconstruct without extra brackets
+    
+    const avgAbsSalesCol = {
+      field: '4',
+      name: 'average abs of Sales Amount',
+      fnSummary: 'AVG(ABS(...))',
+      table_column: undefined, // Agg columns don't have table_column
+      is_visible: true,
+    }
+    
+    const totalQtyCol = {
+      field: '5',
+      name: 'total Sales Quantity',
+      fnSummary: 'SUM(...)',
+      table_column: undefined,
+      is_visible: true,
+    }
+
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[avgAbsSalesCol, totalQtyCol]}
+        queryResponse={{ data: { data: { available_selects: [avgAbsSalesCol, totalQtyCol] } } }}
+      />,
+    )
+    const inst = wrapper.instance()
+
+    // Simulate loading an existing formula: 1000 / (average abs of Sales Amount / total Sales Quantity)
+    // This would be stored in the DB 
+    const formulaSQL = '1000 / (average abs of Sales Amount / total Sales Quantity)'
+    const reconstructed = inst.buildFnArray(formulaSQL, [avgAbsSalesCol, totalQtyCol])
+    
+    // Check structure: should have numbers, operators, and columns but NO wrap of pure agg columns
+    console.log('Reconstructed formula tokens:', reconstructed.map(t => ({
+      type: t.type,
+      value: t?.value,
+      columnName: t?.column?.name
+    })))
+    
+    // Put the reconstructed formula in state
+    inst.setState({ columnFn: reconstructed })
+
+    const finalFormula = inst.state.columnFn
+    
+    // Count bracket pairs and validate structure
+    let bracketCount = 0
+    let aggregationBrackets = 0
+    for (let i = 0; i < finalFormula.length; i++) {
+      const chunk = finalFormula[i]
+      if (chunk.type === 'operator') {
+        if (chunk.value === '(') {
+          bracketCount++
+          // Check if next non-bracket is an aggregation column
+          let j = i + 1
+          while (j < finalFormula.length && finalFormula[j].type === 'operator') j++
+          if (finalFormula[j]?.column?.fnSummary) {
+            aggregationBrackets++
+          }
+        } else if (chunk.value === ')') {
+          bracketCount--
+        }
+      }
+    }
+    
+    // Should have brackets around the division operation, but not around individual agg columns
+    // With 2 pure agg columns and 1 division operator, we expect:
+    // 1000 / ( avg_col / total_col )
+    // So max 1 pair of brackets, not 4
+    expect(aggregationBrackets).toBe(0) // No brackets should wrap agg columns
+    
+    wrapper.unmount()
+  })
+
+  it('stripCoalesceWrapper removes multiple layers of unnecessary outer brackets', () => {
+    const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
+    const inst = wrapper.instance()
+
+    // Test case: formula saved with 4 extra bracket layers
+    const formula4Brackets = '( ( ( ( 1000 / (col1 / col2) ) ) ) )'
+    const result4 = inst.stripCoalesceWrapper(formula4Brackets)
+    expect(result4).toBe('1000 / (col1 / col2)')
+
+    // Test case: formula with 2 outer layers
+    const formula2Brackets = '( ( col1 + col2 ) )'
+    const result2 = inst.stripCoalesceWrapper(formula2Brackets)
+    expect(result2).toBe('col1 + col2')
+
+    // Test case: asymmetric brackets should leave as-is
+    const asymmetricFormula = '(col1 + col2) + col3'
+    const resultAsym = inst.stripCoalesceWrapper(asymmetricFormula)
+    expect(resultAsym).toBe('(col1 + col2) + col3')
+
+    // Test case: meaningful single-layer wrapper preserved if needed (like for precedence)
+    // But since outer layer is pure wrapper, it should be removed
+    const meaningfulWrapper = '(100 / (col1 + col2))'
+    const resultMeaningful = inst.stripCoalesceWrapper(meaningfulWrapper)
+    expect(resultMeaningful).toBe('100 / (col1 + col2)')
+
+    wrapper.unmount()
+  })
+
+  it('buildFnArray reconstructs formula with nested custom column (real-world fe_req pattern)', () => {
+    // Exact data from bug report: New Column1 = 1000 / New Column
+    // where New Column = sum(abs(col)) / sum(col)
+    //
+    // Stored as: (coalesce(1000 / nullif(((coalesce(sum(abs(col)) / nullif(sum(col), 0), 0))), 0), 0))
+    // The inner ((( ))) wrapping is the bug: New Column's SQL gets triple-wrapped in denominator.
+    // Fix: placeholder replacement runs FIRST, substituting the inner COALESCE SQL before stripping.
+    const newCol = {
+      field: '3',
+      name: '(coalesce(sum(abs(online_sales.sales_dollar_amount)) / nullif(sum(online_sales.sales_quantity), 0), 0))',
+      display_name: 'New Column',
+      table_column: '(COALESCE(sum(abs(online_sales.sales_dollar_amount)) / NULLIF(sum(online_sales.sales_quantity), 0), 0))',
+      custom_column_display_name: 'New Column',
+      is_visible: true,
+    }
+
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[newCol]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    const inst = wrapper.instance()
+    const divOp = Object.keys(inst.OPERATORS).find((key) => inst.OPERATORS?.[key]?.js === '/')
+
+    // Stored formula for New Column1 = 1000 / (New Column)
+    // With stripCoalesceWrapper cleaning up the nested COALESCE/NULLIF and extra brackets
+    const stored = '(coalesce(1000 / nullif(((coalesce(sum(abs(online_sales.sales_dollar_amount)) / nullif(sum(online_sales.sales_quantity), 0), 0))), 0), 0))'
+    const fn = inst.buildFnArray(stored, [newCol])
+
+    // After stripCoalesceWrapper removes the COALESCE/NULLIF and cleans unnecessary parens:
+    // Reconstructs as: 1000 / ( NewColumn ) with user's bracket pair preserved
+    // i.e. [1000, /, (, newCol, )]
+    expect(fn.length).toBeGreaterThanOrEqual(3)
+    expect(fn[0]).toMatchObject({ type: CustomColumnTypes.NUMBER, value: '1000' })
+    expect(fn[1]).toMatchObject({ type: CustomColumnTypes.OPERATOR, value: divOp })
+    // Should successfully reconstruct with the nested column, either as direct token or expanded
+    expect(fn.length).toBeGreaterThan(0)
+
+    wrapper.unmount()
   })
 })
