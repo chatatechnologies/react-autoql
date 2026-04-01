@@ -78,7 +78,6 @@
     "dayjs": "1.8.36",
     "html-react-parser": "1.4.9",
     "jstat": "1.9.6",
-    "lodash": "4.17.23",
     "lodash.clonedeep": "4.5.0",
     "lodash.debounce": "4.0.8",
     "lodash.filter": "4.6.0",
