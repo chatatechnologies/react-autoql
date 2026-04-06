@@ -231,8 +231,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const weightColumnIndex = weightByCount
         ? null
         : selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
-          ? selectedWeightColumnIndex
-          : detected.weightColumnIndex
+        ? selectedWeightColumnIndex
+        : detected.weightColumnIndex
 
       const sourceColName =
         sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
@@ -241,8 +241,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const weightColName = weightByCount
         ? 'Count'
         : weightColumnIndex !== -1 && weightColumnIndex !== null
-          ? props.columns[weightColumnIndex]?.display_name || 'Amount'
-          : 'Amount'
+        ? props.columns[weightColumnIndex]?.display_name || 'Amount'
+        : 'Amount'
 
       const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
       const weightColumn =
@@ -252,14 +252,14 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
             maximumFractionDigits: 0,
           }).format(Number(d.weight || 0))
         : weightColumn
-          ? formatElement({
-              element: d.weight || 0,
-              column: weightColumn,
-              config: formattingConfig,
-            })
-          : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-              maximumFractionDigits: 4,
-            }).format(Number(d.weight || 0))
+        ? formatElement({
+            element: d.weight || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.weight || 0))
 
       return `
        <div>
@@ -297,8 +297,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const weightColumnIndex = weightByCount
         ? null
         : selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
-          ? selectedWeightColumnIndex
-          : detected.weightColumnIndex
+        ? selectedWeightColumnIndex
+        : detected.weightColumnIndex
 
       const sourceColumn = sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex] : null
       const targetColumn = targetColumnIndex !== -1 ? props.columns[targetColumnIndex] : null
@@ -312,26 +312,26 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const formattedAmountSent = weightByCount
         ? countFmt.format(Number(d.amountSent || 0))
         : weightColumn
-          ? formatElement({
-              element: d.amountSent || 0,
-              column: weightColumn,
-              config: formattingConfig,
-            })
-          : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-              maximumFractionDigits: 4,
-            }).format(Number(d.amountSent || 0))
+        ? formatElement({
+            element: d.amountSent || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.amountSent || 0))
 
       const formattedAmountReceived = weightByCount
         ? countFmt.format(Number(d.amountReceived || 0))
         : weightColumn
-          ? formatElement({
-              element: d.amountReceived || 0,
-              column: weightColumn,
-              config: formattingConfig,
-            })
-          : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-              maximumFractionDigits: 4,
-            }).format(Number(d.amountReceived || 0))
+        ? formatElement({
+            element: d.amountReceived || 0,
+            column: weightColumn,
+            config: formattingConfig,
+          })
+        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 4,
+          }).format(Number(d.amountReceived || 0))
 
       const weightColumnName = weightColumn?.display_name || 'Amount'
       const senderColumnName = sourceColumn?.display_name || 'Sender'
@@ -1734,8 +1734,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       if (!isInsideDropdown && isInsideSVG) {
         setShowFilterDropdown(false)
         setShowSourceDropdown(false)
-      setShowTargetDropdown(false)
-      setShowAmountDropdown(false)
+        setShowTargetDropdown(false)
+        setShowAmountDropdown(false)
       }
     }
 
@@ -1956,7 +1956,6 @@ ChataNetworkGraph.propTypes = {
   networkColumnConfig: PropTypes.shape({
     sourceColumnIndex: PropTypes.number,
     targetColumnIndex: PropTypes.number,
-    // weightColumnIndex -1 (NETWORK_WEIGHT_COUNT_SENTINEL) = weight by row count per edge
     weightColumnIndex: PropTypes.number,
   }),
   onNetworkColumnChange: PropTypes.func,
