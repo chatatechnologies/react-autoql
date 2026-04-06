@@ -13,6 +13,9 @@ import RecenterButton from './RecenterButton'
 
 import './ChataNetworkGraph.scss'
 
+/** Persisted in `networkColumnConfig.weightColumnIndex` to weight edges by row count (not a column value). */
+export const NETWORK_WEIGHT_COUNT_SENTINEL = -1
+
 const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   const chartRef = useRef()
   const simulationRef = useRef()
@@ -224,8 +227,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const detected = findNetworkColumns(props.columns)
       const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
       const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
-      const weightColumnIndex =
-        selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
+      const weightByCount = selectedWeightColumnIndex === NETWORK_WEIGHT_COUNT_SENTINEL
+      const weightColumnIndex = weightByCount
+        ? null
+        : selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
           ? selectedWeightColumnIndex
           : detected.weightColumnIndex
 
@@ -233,23 +238,28 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         sourceColumnIndex !== -1 ? props.columns[sourceColumnIndex]?.display_name || 'Source' : 'Source'
       const targetColName =
         targetColumnIndex !== -1 ? props.columns[targetColumnIndex]?.display_name || 'Target' : 'Target'
-      const weightColName =
-        weightColumnIndex !== -1 && weightColumnIndex !== null
+      const weightColName = weightByCount
+        ? 'Count'
+        : weightColumnIndex !== -1 && weightColumnIndex !== null
           ? props.columns[weightColumnIndex]?.display_name || 'Amount'
           : 'Amount'
 
       const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
       const weightColumn =
         weightColumnIndex !== -1 && weightColumnIndex !== null ? props.columns[weightColumnIndex] : null
-      const formattedWeight = weightColumn
-        ? formatElement({
-            element: d.weight || 0,
-            column: weightColumn,
-            config: formattingConfig,
-          })
-        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-            maximumFractionDigits: 4,
+      const formattedWeight = weightByCount
+        ? new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+            maximumFractionDigits: 0,
           }).format(Number(d.weight || 0))
+        : weightColumn
+          ? formatElement({
+              element: d.weight || 0,
+              column: weightColumn,
+              config: formattingConfig,
+            })
+          : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+              maximumFractionDigits: 4,
+            }).format(Number(d.weight || 0))
 
       return `
        <div>
@@ -283,8 +293,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       const detected = findNetworkColumns(props.columns)
       const sourceColumnIndex = selectedSourceColumnIndex ?? detected.sourceColumnIndex
       const targetColumnIndex = selectedTargetColumnIndex ?? detected.targetColumnIndex
-      const weightColumnIndex =
-        selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
+      const weightByCount = selectedWeightColumnIndex === NETWORK_WEIGHT_COUNT_SENTINEL
+      const weightColumnIndex = weightByCount
+        ? null
+        : selectedWeightColumnIndex !== null && selectedWeightColumnIndex !== undefined
           ? selectedWeightColumnIndex
           : detected.weightColumnIndex
 
@@ -294,25 +306,32 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
         weightColumnIndex !== -1 && weightColumnIndex !== null ? props.columns[weightColumnIndex] : null
 
       const formattingConfig = props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting
-      const formattedAmountSent = weightColumn
-        ? formatElement({
-            element: d.amountSent || 0,
-            column: weightColumn,
-            config: formattingConfig,
-          })
-        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-            maximumFractionDigits: 4,
-          }).format(Number(d.amountSent || 0))
+      const countFmt = new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+        maximumFractionDigits: 0,
+      })
+      const formattedAmountSent = weightByCount
+        ? countFmt.format(Number(d.amountSent || 0))
+        : weightColumn
+          ? formatElement({
+              element: d.amountSent || 0,
+              column: weightColumn,
+              config: formattingConfig,
+            })
+          : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+              maximumFractionDigits: 4,
+            }).format(Number(d.amountSent || 0))
 
-      const formattedAmountReceived = weightColumn
-        ? formatElement({
-            element: d.amountReceived || 0,
-            column: weightColumn,
-            config: formattingConfig,
-          })
-        : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
-            maximumFractionDigits: 4,
-          }).format(Number(d.amountReceived || 0))
+      const formattedAmountReceived = weightByCount
+        ? countFmt.format(Number(d.amountReceived || 0))
+        : weightColumn
+          ? formatElement({
+              element: d.amountReceived || 0,
+              column: weightColumn,
+              config: formattingConfig,
+            })
+          : new Intl.NumberFormat(formattingConfig?.languageCode || 'en-US', {
+              maximumFractionDigits: 4,
+            }).format(Number(d.amountReceived || 0))
 
       const weightColumnName = weightColumn?.display_name || 'Amount'
       const senderColumnName = sourceColumn?.display_name || 'Sender'
@@ -332,14 +351,22 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
 
       // Add amount sent if node is a sender
       if (d?.isSender && d?.amountSent > 0) {
-        tooltipContent += `<strong>Total ${weightColumnName} (${senderColumnName}):</strong><br/>
+        tooltipContent += weightByCount
+          ? `<strong>Total records (${senderColumnName}):</strong><br/>
+         ${formattedAmountSent}<br/>
+         <br/>`
+          : `<strong>Total ${weightColumnName} (${senderColumnName}):</strong><br/>
          ${formattedAmountSent}<br/>
          <br/>`
       }
 
       // Add amount received if node is a receiver
       if (d?.isReceiver && d?.amountReceived > 0) {
-        tooltipContent += `<strong>Total ${weightColumnName} (${receiverColumnName}):</strong><br/>
+        tooltipContent += weightByCount
+          ? `<strong>Total records (${receiverColumnName}):</strong><br/>
+         ${formattedAmountReceived}<br/>
+         <br/>`
+          : `<strong>Total ${weightColumnName} (${receiverColumnName}):</strong><br/>
          ${formattedAmountReceived}<br/>
          <br/>`
       }
@@ -383,9 +410,13 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
       targetColumnIndex = targetColumnIndex ?? detected.targetColumnIndex
     }
 
-    // Get weight column index (prefer provided selection, otherwise auto-detect)
+    // Get weight column index (prefer provided selection, otherwise auto-detect).
+    // `weightColIndex === NETWORK_WEIGHT_COUNT_SENTINEL` weights each row as 1 (same as aggregated edge count).
+    const countAsWeight = weightColIndex === NETWORK_WEIGHT_COUNT_SENTINEL
     let weightColumnIndex = weightColIndex
-    if (weightColumnIndex === null || weightColumnIndex === undefined) {
+    if (countAsWeight) {
+      weightColumnIndex = null
+    } else if (weightColumnIndex === null || weightColumnIndex === undefined) {
       const { weightColumnIndex: autoDetectedWeightColumnIndex } = findNetworkColumns(columns)
       weightColumnIndex = autoDetectedWeightColumnIndex
     }
@@ -403,7 +434,10 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     data.forEach((row, index) => {
       const source = formatNodeName(row[sourceColumnIndex])
       const target = formatNodeName(row[targetColumnIndex])
-      const weight = weightColumnIndex !== -1 && weightColumnIndex !== null ? parseFloat(row[weightColumnIndex]) || 1 : 1
+      const weight =
+        countAsWeight || weightColumnIndex === -1 || weightColumnIndex === null
+          ? 1
+          : parseFloat(row[weightColumnIndex]) || 1 // -1 here = auto-detect found no numeric column
 
       // Track roles
       if (!nodeRoles.has(source)) {
@@ -703,14 +737,23 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
     return 'standard'
   }, [])
 
-  const getNodeRadius = useCallback((d) => {
-    const scaleFn = radiusScaleRef.current
-    try {
-      return Math.max(2, scaleFn(d?.amountSent || 0))
-    } catch (e) {
-      return 6
-    }
+  // Size nodes by total weight through the node (out + in). With weight 1 per row this equals
+  // `totalTransfers` and matches "Total Records" in the tooltip; `amountSent` alone shrinks receivers.
+  const getNodeMagnitude = useCallback((d) => {
+    return (d?.amountSent || 0) + (d?.amountReceived || 0)
   }, [])
+
+  const getNodeRadius = useCallback(
+    (d) => {
+      const scaleFn = radiusScaleRef.current
+      try {
+        return Math.max(2, scaleFn(getNodeMagnitude(d)))
+      } catch (e) {
+        return 6
+      }
+    },
+    [getNodeMagnitude],
+  )
 
   const getNodeColor = useCallback((d) => {
     // Add null check
@@ -1445,8 +1488,8 @@ const ChataNetworkGraph = forwardRef((props, forwardedRef) => {
   // Create visualization when nodes/links change
   useEffect(() => {
     if (nodes.length > 0 && links.length > 0) {
-      // Compute dynamic radius scale based on amountSent across nodes
-      const amounts = nodes.map((n) => n.amountSent || 0)
+      // Scale radius by total weight in + out (row count in count-weight mode)
+      const amounts = nodes.map((n) => (n.amountSent || 0) + (n.amountReceived || 0))
       const minAmount = Math.min(...amounts)
       const maxAmount = Math.max(...amounts)
 
@@ -1913,6 +1956,7 @@ ChataNetworkGraph.propTypes = {
   networkColumnConfig: PropTypes.shape({
     sourceColumnIndex: PropTypes.number,
     targetColumnIndex: PropTypes.number,
+    // weightColumnIndex -1 (NETWORK_WEIGHT_COUNT_SENTINEL) = weight by row count per edge
     weightColumnIndex: PropTypes.number,
   }),
   onNetworkColumnChange: PropTypes.func,
