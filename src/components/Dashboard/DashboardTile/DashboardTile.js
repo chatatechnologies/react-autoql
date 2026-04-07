@@ -204,6 +204,7 @@ export class DashboardTile extends React.Component {
     dashboardSlicers: PropTypes.arrayOf(PropTypes.shape({})),
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -237,6 +238,7 @@ export class DashboardTile extends React.Component {
     isCachedRefresh: false,
     dashboardSlicers: [],
     enableMagicWand: false,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {
@@ -1770,6 +1772,7 @@ export class DashboardTile extends React.Component {
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
+            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             {...optionsToolbarProps}
           />
         </div>

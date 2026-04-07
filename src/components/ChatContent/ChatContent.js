@@ -89,7 +89,7 @@ export default class ChatContent extends React.Component {
     hideChatBarAfterInitialResponse: false,
     executeQuery: () => {},
     enableMagicWand: false,
-    showMagicWandQuoteButton: true,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {

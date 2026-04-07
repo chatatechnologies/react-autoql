@@ -162,7 +162,7 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
     enableMagicWand: false,
-    showMagicWandQuoteButton: true,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {

@@ -44,7 +44,7 @@ export default function FocusPromptPopoverContent({
           value={focusPrompt}
           onChange={onFocusPromptChange}
           onKeyDown={onKeyDown}
-          placeholder='e.g., sales growth trends'
+          placeholder='e.g., "Anomaly Detection"'
           maxLength={100}
           disabled={inputDisabled}
           style={{ width: '100%' }}
