@@ -108,7 +108,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
     enableMagicWand: false,
-    showMagicWandQuoteButton: true,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {
