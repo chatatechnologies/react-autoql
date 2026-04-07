@@ -841,7 +841,7 @@ export class OptionsToolbar extends React.Component {
             this.setState({ isSummaryPopoverOpen: !this.state.isSummaryPopoverOpen })
           }}
           className={this.getMenuItemClass()}
-          tooltip={disabledTooltip || 'Analyze'}
+          tooltip={disabledTooltip || 'Auto Analyze'}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
           size='small'
           disabled={isDisabled}
