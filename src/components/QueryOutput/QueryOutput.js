@@ -3989,6 +3989,7 @@ export class QueryOutput extends React.Component {
           columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
           canUsePivotData={canUsePivotData}
+          supportsPivot={this.potentiallySupportsPivot()}
           chartDataSource={chartDataSource}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
