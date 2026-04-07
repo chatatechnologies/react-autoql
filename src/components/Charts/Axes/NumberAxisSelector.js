@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
-import { AGG_TYPES, AggTypes, COLUMN_TYPES, isColumnStringType } from 'autoql-fe-utils'
+import { AGG_TYPES, AggTypes, COLUMN_TYPES, isColumnNumberType, isColumnStringType } from 'autoql-fe-utils'
 
 import { Button } from '../../Button'
 import { Select } from '../../Select'
@@ -77,6 +77,9 @@ export default class NumberAxisSelector extends React.Component {
     const columns = this.state.columns
       ?.map((col, axisIndex) => ({ col, axisIndex }))
       .filter(({ col, axisIndex }) => {
+        if (this.props.supportsPivot && !isColumnNumberType(col)) {
+          return false
+        }
         return col.type === type && col.is_visible && axisIndex !== this.props.stringColumnIndex
       })
 
@@ -260,7 +263,6 @@ export default class NumberAxisSelector extends React.Component {
         <div className='axis-series-selector'>
           <div className='number-selector-field-group-container'>
             {Object.keys(COLUMN_TYPES)
-              // .filter((key) => COLUMN_TYPES[key].isNumber)
               .map((key) => {
                 return this.renderSeriesSelector(COLUMN_TYPES[key])
               })}

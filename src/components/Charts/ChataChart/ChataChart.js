@@ -327,6 +327,22 @@ export default class ChataChart extends React.Component {
         this.setState({ visibleLegendLabels: null })
       }
 
+      // Aggregated charts use this.state.data in getCommonChartProps; when the legend (or string)
+      // axis index changes but dataStructureChanged is false (e.g. same pivot shape), refresh
+      // processed data from props so the chart does not stay on stale state.
+      const legendOrStringAxisChanged =
+        this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
+        this.props.stringColumnIndex !== prevProps.stringColumnIndex
+      if (legendOrStringAxisChanged) {
+        const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
+        if (aggregated) {
+          const newData = this.getData(this.props)
+          if (newData) {
+            this.setState({ ...newData, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+          }
+        }
+      }
+
       // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
       // The Legend component will automatically load the appropriate filter when the legend column changes
     }

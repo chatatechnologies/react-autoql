@@ -2107,15 +2107,11 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    if (this.usePivotDataForChart()) {
-      this.generatePivotTableData()
-      // Force chart to re-render with new pivot data by updating chartID
-      if (this._isMounted) {
-        this.setState({
-          chartID: uuid(),
-          visiblePivotRowChangeCount: (this.state.visiblePivotRowChangeCount || 0) + 1,
-        })
-      }
+    // Pivot table and shared pivot cache must follow tableConfig whenever it changes.
+    // Chart raw/pivoted toggle only affects whether the *chart* reads pivot data — it must not
+    // block regenerating pivot when the user edits the pivot row axis (or other tableConfig).
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData({ isFirstGeneration: false, dataChanged: true })
     }
 
     if (newColumns) {
@@ -2194,8 +2190,8 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    if (this.usePivotDataForChart()) {
-      this.generatePivotTableData()
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData({ isFirstGeneration: false, dataChanged: true })
     }
 
     this.onTableConfigChange()
@@ -3923,6 +3919,11 @@ export class QueryOutput extends React.Component {
 
     const baseTableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfig = _cloneDeep(baseTableConfig || {})
+    // pivotTableConfig does not store legendColumnIndex; it lives on tableConfig only. The chart
+    // and Legend need the real index so legend changes re-render and props stay in sync.
+    if (usePivotData && this.tableConfig) {
+      tableConfig.legendColumnIndex = this.tableConfig.legendColumnIndex
+    }
 
     // For heatmaps and bubble charts, always include all numeric pivot columns so we render
     // a full matrix of cells instead of just the first pivot column.
@@ -3988,12 +3989,17 @@ export class QueryOutput extends React.Component {
           columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
           canUsePivotData={canUsePivotData}
+          supportsPivot={this.potentiallySupportsPivot()}
           chartDataSource={chartDataSource}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           currentLegendState={this.state.hiddenLegendLabels}
-          legendColumn={columns[tableConfig?.legendColumnIndex]}
+          legendColumn={
+            usePivotData
+              ? originalColumns?.[tableConfig?.legendColumnIndex]
+              : columns?.[tableConfig?.legendColumnIndex]
+          }
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}

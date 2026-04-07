@@ -85,6 +85,12 @@
 .focus-prompt-popover-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
+
+  /* With two buttons: keep primary (Auto Analyze) on the right, Get quote on the left.
+     space-between alone pins a single button to the left; flex-end + auto margin fixes that. */
+  & > :first-child:not(:only-child) {
+    margin-right: auto;
+  }
 }
