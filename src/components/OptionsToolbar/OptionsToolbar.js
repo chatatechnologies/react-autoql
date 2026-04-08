@@ -608,7 +608,7 @@ export class OptionsToolbar extends React.Component {
             // Currently on table - toggle filters
             const currentlyFiltering = this.props.responseRef?.isFilteringTable()
             const toggleFiltersOn = !currentlyFiltering
-            
+
             if (toggleFiltersOn) {
               // Turning filters on
               this.setState({ isFiltering: true })
@@ -616,10 +616,10 @@ export class OptionsToolbar extends React.Component {
             } else {
               // Turning filters off - switch back to chart (filters will be applied to chart if they exist)
               const previousDisplayType = this.state.previousDisplayType
-              
+
               this.setState({ isFiltering: false })
               this.props.responseRef?.toggleTableFilter(false)
-              
+
               // If we have a previous display type, switch back to it immediately
               // The chart will automatically show filtered data if filters are active
               if (previousDisplayType) {
@@ -681,7 +681,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   openSummaryModal = (focusPrompt = '') => {
-    this.setState({ 
+    this.setState({
       isSummaryModalVisible: true,
       summaryFocusPrompt: focusPrompt,
       summaryFocusError: null,
@@ -689,7 +689,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   closeSummaryModal = () => {
-    this.setState({ 
+    this.setState({
       isSummaryModalVisible: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
@@ -878,7 +878,7 @@ export class OptionsToolbar extends React.Component {
           }
         }}
         className={this.getMenuItemClass()}
-        tooltip='Copy summary'
+        tooltip='Copy analysis'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         data-test='options-toolbar-copy-markdown-btn'
         size='small'
@@ -889,8 +889,13 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderToolbar = (shouldShowButton) => {
-    const isMarkdownOnly = this.props.isMarkdownMessage && !shouldShowButton.showFilterButton && !shouldShowButton.showHideColumnsButton && !shouldShowButton.showReportProblemButton && !shouldShowButton.showRefreshDataButton
-    
+    const isMarkdownOnly =
+      this.props.isMarkdownMessage &&
+      !shouldShowButton.showFilterButton &&
+      !shouldShowButton.showHideColumnsButton &&
+      !shouldShowButton.showReportProblemButton &&
+      !shouldShowButton.showRefreshDataButton
+
     return (
       <ErrorBoundary>
         <div
@@ -901,7 +906,10 @@ export class OptionsToolbar extends React.Component {
         >
           {!isMarkdownOnly && shouldShowButton.showFilterButton && this.renderFilterBtn()}
           {!isMarkdownOnly && shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
-          {!isMarkdownOnly && this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderMagicWandBtn()}
+          {!isMarkdownOnly &&
+            this.props.enableMagicWand &&
+            shouldShowButton.showMagicWandButton &&
+            this.renderMagicWandBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {!isMarkdownOnly && shouldShowButton.showRefreshDataButton && (
             <Button
@@ -920,7 +928,7 @@ export class OptionsToolbar extends React.Component {
             <Button
               onClick={this.deleteMessage}
               className={this.getMenuItemClass()}
-              tooltip={this.props.isMarkdownMessage ? 'Delete Summary' : 'Delete data response'}
+              tooltip={this.props.isMarkdownMessage ? 'Delete analysis' : 'Delete data response'}
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               data-test='options-toolbar-trash-btn'
               size='small'
@@ -975,10 +983,10 @@ export class OptionsToolbar extends React.Component {
       const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
-      
+
       // For markdown messages, only show copy and delete buttons
       const isMarkdownOnly = props.isMarkdownMessage && props.onCopyMarkdown
-      
+
       shouldShowButton = {
         showFilterButton:
           !isMarkdownOnly &&
@@ -998,12 +1006,11 @@ export class OptionsToolbar extends React.Component {
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton: !isMarkdownOnly && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
-        showReportProblemButton: !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+        showReportProblemButton:
+          !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           !isMarkdownOnly &&
-          (isMobile
-            ? false
-            : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
+          (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
         showRefreshDataButton: false,
         showMagicWandButton: shouldShowSummaryButton({
           enableMagicWand: props.enableMagicWand,
@@ -1013,13 +1020,13 @@ export class OptionsToolbar extends React.Component {
       }
 
       // Don't show more options button if it's a markdown-only message
-      shouldShowButton.showMoreOptionsButton = !isMarkdownOnly && (
-        shouldShowButton.showCopyButton ||
-        shouldShowButton.showSQLButton ||
-        shouldShowButton.showCreateNotificationIcon ||
-        shouldShowButton.showSaveAsCSVButton ||
-        shouldShowButton.showSaveAsPNGButton
-      )
+      shouldShowButton.showMoreOptionsButton =
+        !isMarkdownOnly &&
+        (shouldShowButton.showCopyButton ||
+          shouldShowButton.showSQLButton ||
+          shouldShowButton.showCreateNotificationIcon ||
+          shouldShowButton.showSaveAsCSVButton ||
+          shouldShowButton.showSaveAsPNGButton)
     } catch (error) {
       console.error(error)
     }

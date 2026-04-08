@@ -206,7 +206,7 @@ export default class SummaryModal extends React.Component {
               <Button
                 onClick={this.copyMarkdownAsPlainText}
                 className='summary-modal-copy-btn'
-                tooltip='Copy summary'
+                tooltip='Copy analysis'
                 tooltipID={this.props.tooltipID}
                 data-test='summary-modal-copy-markdown-btn'
                 size='small'
