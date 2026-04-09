@@ -2257,22 +2257,38 @@ export class QueryOutput extends React.Component {
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
     const isUsingPivotData = this.usePivotDataForChart()
-    if (isUsingPivotData && !this.pivotTableConfig) {
-      this.pivotTableConfig = {}
+
+    if (isUsingPivotData) {
+      // In pivot mode the axis selector shows original columns, so `indices` are original-column
+      // indices (tableConfig space). Store them on tableConfig and regenerate pivot — do NOT write
+      // them into pivotTableConfig.numberColumnIndices, which must hold pivot-column indices.
+      // After regeneration, setPivotTableConfig will compute valid pivot column indices.
+      if (!this.tableConfig) this.tableConfig = {}
+      if (indices?.length) {
+        this.tableConfig.numberColumnIndices = indices
+        this.tableConfig.numberColumnIndex = indices[0]
+      }
+      if (indices2?.length) {
+        this.tableConfig.numberColumnIndices2 = indices2
+        this.tableConfig.numberColumnIndex2 = indices2[0]
+      }
+      this.generatePivotData({ isFirstGeneration: false, dataChanged: false })
+      this.onTableConfigChange()
+      return
     }
-    if (!isUsingPivotData && !this.tableConfig) {
+
+    if (!this.tableConfig) {
       this.tableConfig = {}
     }
-    const targetConfig = isUsingPivotData ? this.pivotTableConfig : this.tableConfig
 
     if (indices) {
-      targetConfig.numberColumnIndices = indices
-      targetConfig.numberColumnIndex = indices[0]
+      this.tableConfig.numberColumnIndices = indices
+      this.tableConfig.numberColumnIndex = indices[0]
     }
 
     if (indices2) {
-      targetConfig.numberColumnIndices2 = indices2
-      targetConfig.numberColumnIndex2 = indices2[0]
+      this.tableConfig.numberColumnIndices2 = indices2
+      this.tableConfig.numberColumnIndex2 = indices2[0]
     }
 
     // Persist table config change directly. Avoid updateColumns/resetTableConfig path here,
