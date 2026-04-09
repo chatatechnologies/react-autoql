@@ -3747,7 +3747,7 @@ export class QueryOutput extends React.Component {
       // If editing an existing custom column, remove matching additional_selects entries
       if (column?._snapshotDisplayOverride && !matchedExistingCustomSelect) {
         const snapshot = column._snapshotDisplayOverride
-        const snapshotSql = (snapshot.table_column || '').replace(/ /g, '').toLowerCase()
+        const snapshotSql = (snapshot.table_column || '').replace(/\s+/g, '').toLowerCase()
 
         const sigFor = (fnArr) =>
           fnArr

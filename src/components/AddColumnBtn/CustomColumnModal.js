@@ -493,7 +493,6 @@ export default class CustomColumnModal extends React.Component {
       }
 
       const fnArray = []
-      let i = 0
       let col // Declare for reuse in column matching logic
       for (const op of ops) {
         if (op === '__PRESERVE_LP__') {
@@ -527,7 +526,6 @@ export default class CustomColumnModal extends React.Component {
             fnArray.push({ type: 'column', value: col?.field || col?.table_column, column: col })
           }
         }
-        i++
       }
 
       // Remove redundant nested bracket pairs wrapping the entire formula iteratively
