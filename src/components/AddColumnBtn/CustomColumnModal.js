@@ -83,35 +83,6 @@ export default class CustomColumnModal extends React.Component {
     initialColumnFn = this.cleanColumnFn(initialColumnFn)
 
     // Expand nested COLUMN tokens to show full expressions when editing
-    const expandNestedColumns = (fn) => {
-      const out = []
-      for (const tok of fn) {
-        if (tok?.type === CustomColumnTypes.COLUMN && tok.column) {
-          let inner = tok.column.columnFnArray ? _cloneDeep(tok.column.columnFnArray) : null
-          // If no explicit tokens but column is complex, build from table_column
-          if (!inner && tok.column.table_column && this.isComplexColumn(tok.column)) {
-            inner = this.buildFnArray(tok.column.table_column, props.columns)
-          }
-          if (inner && inner.length) {
-            // Recursively expand inside the inner tokens as well
-            const expandedInner = expandNestedColumns(inner)
-            if (expandedInner.length > 1) {
-              // Preserve grouping for nested custom columns during edit
-              out.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET, preserve: true })
-              out.push(...expandedInner)
-              out.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET, preserve: true })
-            } else {
-              out.push(...expandedInner)
-            }
-          } else {
-            out.push(_cloneDeep(tok))
-          }
-        } else {
-          out.push(_cloneDeep(tok))
-        }
-      }
-      return out
-    }
 
     // Only expand nested COLUMN tokens when needed (legacy saved tokens or complex table_column)
     const needsExpansion = (initialColumnFn || []).some(
@@ -120,7 +91,7 @@ export default class CustomColumnModal extends React.Component {
         (tok?.column?.columnFnArray?.length || (tok?.column?.table_column && this.isComplexColumn(tok.column))),
     )
     if (needsExpansion) {
-      initialColumnFn = expandNestedColumns(initialColumnFn)
+      initialColumnFn = this.expandNestedColumns(initialColumnFn)
     }
     initialColumnFn = this.cleanColumnFn(initialColumnFn)
 
@@ -191,6 +162,36 @@ export default class CustomColumnModal extends React.Component {
       selectedFnRowsOrRangeOptionPostNValue: null,
       selectedFnMovingAverageTimeInterval: null,
     }
+  }
+
+  expandNestedColumns = (fn) => {
+    const out = []
+    for (const tok of fn) {
+      if (tok?.type === CustomColumnTypes.COLUMN && tok.column) {
+        let inner = tok.column.columnFnArray ? _cloneDeep(tok.column.columnFnArray) : null
+        // If no explicit tokens but column is complex, build from table_column
+        if (!inner && tok.column.table_column && this.isComplexColumn(tok.column)) {
+          inner = this.buildFnArray(tok.column.table_column, this.props.columns)
+        }
+        if (inner && inner.length) {
+          // Recursively expand inside the inner tokens as well
+          const expandedInner = this.expandNestedColumns(inner)
+          if (expandedInner.length > 1) {
+            // Preserve grouping for nested custom columns during edit
+            out.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET, preserve: true })
+            out.push(...expandedInner)
+            out.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET, preserve: true })
+          } else {
+            out.push(...expandedInner)
+          }
+        } else {
+          out.push(_cloneDeep(tok))
+        }
+      } else {
+        out.push(_cloneDeep(tok))
+      }
+    }
+    return out
   }
 
   static propTypes = {
@@ -373,7 +374,7 @@ export default class CustomColumnModal extends React.Component {
           this.setState({ columnFn: retriedFn })
         }
       } catch (e) {
-        // swallow and fall through to error handling below
+        console.warn('Failed to retry formula after cleaning:', e)
       }
       // If still failing, try rebuilding tokens from the generated SQL (best-effort canonicalization)
       if (!newMutator || newMutator?.error) {
@@ -387,7 +388,7 @@ export default class CustomColumnModal extends React.Component {
             this.setState({ columnFn: rebuiltFn })
           }
         } catch (e) {
-          // swallow and fall through
+          console.warn('Failed to rebuild formula from SQL:', e)
         }
       }
     }
@@ -729,9 +730,8 @@ export default class CustomColumnModal extends React.Component {
         expr = inner.substring(comma1 + 1, end).trim()
       }
 
-      const shouldPreserve = false // Don't preserve CAST-stripped expressions - they're backend artifacts, not user brackets
-      const replacement = shouldPreserve ? ` __PRESERVE_LP__ ${expr} __PRESERVE_RP__ ` : ` ${expr} `
-      result = result.substring(0, startIdx) + replacement + result.substring(closeIdx + 1)
+      // Don't preserve CAST-stripped expressions - they're backend artifacts, not user brackets
+      result = result.substring(0, startIdx) + ` ${expr} ` + result.substring(closeIdx + 1)
     }
 
     return result
@@ -995,7 +995,10 @@ export default class CustomColumnModal extends React.Component {
     //   - LEFT:  inner's weakest op > the operator to the left's precedence
     //            OR same precedence AND left operator is truly associative (+, *)
     let changed = true
-    while (changed) {
+    let passnum = 0
+    const maxIterations = 50 // Safety guard to prevent infinite loops from bracket-matching logic bugs
+    while (changed && passnum < maxIterations) {
+      passnum++
       changed = false
       for (let i = 0; i < result.length; i++) {
         if (result[i]?.value !== CustomColumnValues.LEFT_BRACKET) continue
@@ -1181,6 +1184,28 @@ export default class CustomColumnModal extends React.Component {
       const columnFn = _cloneDeep(this.state.columnFn)
       if (columnFn[i]) {
         columnFn[i].rowsOrRangeOptionPost = value
+      }
+      this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
+    }
+  }
+
+  changeChunkGroupby = (value, type, i) => {
+    if (type === CustomColumnTypes.FUNCTION) {
+      const columnFn = _cloneDeep(this.state.columnFn)
+      if (columnFn[i]) {
+        columnFn[i].groupby = value
+      }
+      this.setState({ columnFn })
+      this.syncNewColumnFnArray(columnFn)
+    }
+  }
+
+  changeChunkRowsOrRange = (value, type, i) => {
+    if (type === CustomColumnTypes.FUNCTION) {
+      const columnFn = _cloneDeep(this.state.columnFn)
+      if (columnFn[i]) {
+        columnFn[i].rowsOrRange = value
       }
       this.setState({ columnFn })
       this.syncNewColumnFnArray(columnFn)

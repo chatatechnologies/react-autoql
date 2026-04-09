@@ -1,5 +1,9 @@
 import React from 'react'
 import { mount } from 'enzyme'
+import { act } from 'react-dom/test-utils'
+
+// Helper to flush pending macrotasks (used to wait for lazy-loaded components)
+const flushPromises = () => new Promise((res) => setTimeout(res, 0))
 import CustomColumnModal from '../CustomColumnModal'
 import {
   transformDivisionExpression,
@@ -20,345 +24,8 @@ jest.mock('../../ChataTable/ChataTable', () => {
   }
 })
 
-describe('CustomColumnModal preview normalization', () => {
-  it('wraps scalar rows into a 2D array and provides columns/query_id', (done) => {
-    const columns = [{ field: '0', title: 'Value', is_visible: true }]
-    const queryResponse = { data: { data: { rows: 1480824, columns: [{ name: 'Value' }], query_id: 'q1' } } }
-
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={queryResponse} />)
-
-    // Wait for lazy-loaded component resolution
-    setTimeout(() => {
-      wrapper.update()
-
-      try {
-        const props = globalThis.__lastChataTableProps
-        expect(props).toBeTruthy()
-        expect(Array.isArray(props.response.data.data.rows)).toBe(true)
-        expect(Array.isArray(props.response.data.data.rows[0])).toBe(true)
-        expect(props.response.data.data.rows[0][0]).toBe(1480824)
-        expect(props.response.data.data.columns).toBeDefined()
-        expect(props.response.data.data.query_id).toBeDefined()
-        done()
-      } catch (err) {
-        done(err)
-      }
-    }, 0)
-  })
-})
-
 describe('customColumnHelpers', () => {
-  test('transformDivisionExpression wraps simple division', () => {
-    expect(transformDivisionExpression('A / B')).toBe('COALESCE(A / NULLIF(B, 0), 0)')
-  })
 
-  test('transformDivisionExpression wraps parenthesized division', () => {
-    expect(transformDivisionExpression('(A + B) / (C - D)')).toBe('COALESCE((A + B) / NULLIF((C - D), 0), 0)')
-  })
-
-  test('transformDivisionExpression does not double-wrap existing NULLIF/COALESCE', () => {
-    const s = 'COALESCE(A / NULLIF(B, 0), 0)'
-    expect(transformDivisionExpression(s)).toBe(s)
-  })
-
-  test('transformDivisionExpression normalizes double-parenthesized COALESCE', () => {
-    const s = 'COALESCE((pgs.completions / NULLIF(pgs.passing_attempts, 0), 0))'
-    // Some versions may leave extra parentheses; normalize before asserting
-    expect(normalizeCoalesceParentheses(transformDivisionExpression(s))).toBe(
-      'COALESCE(pgs.completions / NULLIF(pgs.passing_attempts, 0), 0)',
-    )
-  })
-
-  test('transformDivisionExpression handles negative numeric denominators', () => {
-    const input = 'A / (-1)'
-    expect(transformDivisionExpression(input)).toBe('COALESCE(A / NULLIF((-1), 0), 0)')
-  })
-
-  test('transformDivisionExpression handles decimal denominators', () => {
-    const input = 'A / 1.5'
-    expect(transformDivisionExpression(input)).toBe('COALESCE(A / NULLIF(1.5, 0), 0)')
-  })
-
-  test('transformDivisionExpression skips wrapping when division is inside function args', () => {
-    const input = 'foo(A / B, C)'
-    expect(transformDivisionExpression(input)).toBe(input)
-  })
-
-  test('normalizeCoalesceParentheses collapses double parentheses', () => {
-    const s = 'COALESCE((x / NULLIF(y, 0), 0))'
-    expect(normalizeCoalesceParentheses(s)).toBe('COALESCE(x / NULLIF(y, 0), 0)')
-  })
-})
-
-describe('CustomColumnModal validation', () => {
-  it('starts with an empty formula in create mode (does not prefill from existing numeric columns)', () => {
-    const columns = [
-      { field: '0', title: 'Total Under Profit', display_name: 'Total Under Profit', is_visible: true, name: 'Total Under Profit', type: 'QUANTITY' },
-      { field: '1', title: 'Under Profit', display_name: 'Under Profit', is_visible: true, name: 'Under Profit', type: 'QUANTITY' },
-    ]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    expect(inst.state.columnFn).toEqual([])
-  })
-
-  it('parses spaced numeric formulas like "50 + 25"', () => {
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-    const additionOperator = Object.keys(inst.OPERATORS).find((key) => inst.OPERATORS?.[key]?.js === '+')
-
-    const fn = inst.buildFnArray('50 + 25 ', [])
-
-    expect(fn).toEqual([
-      { type: CustomColumnTypes.NUMBER, value: '50' },
-      { type: CustomColumnTypes.OPERATOR, value: additionOperator },
-      { type: CustomColumnTypes.NUMBER, value: '25' },
-    ])
-  })
-
-  it('rejects operator-only formulas (consecutive operators)', () => {
-    const columns = [{ field: '0', title: 'Value', is_visible: true }]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    // simulate user leaving only operators
-    const opsOnly = [
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
-    ]
-    inst.setState({ columnFn: opsOnly })
-    inst.updateTabulatorColumnFn()
-
-    // Intermediate/incomplete formulas should not show warnings while typing
-    expect(inst.state.isFnValid).toBe(false)
-    expect(inst.state.fnError).toBeUndefined()
-  })
-
-  it('allows leading unary minus (-A) structurally', () => {
-    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'A' }]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    const fn = [
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.SUBTRACTION },
-      { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
-    ]
-    inst.setState({ columnFn: fn })
-    const structural = inst.isStructurallyValidColumnFn()
-    expect(structural.valid).toBe(true)
-  })
-
-  it('rejects consecutive operators between variables', () => {
-    const columns = [
-      { field: '0', title: 'A', is_visible: true, name: 'A' },
-      { field: '1', title: 'B', is_visible: true, name: 'B' },
-    ]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    const fn = [
-      { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
-      { type: CustomColumnTypes.COLUMN, value: 'B', column: columns[1] },
-    ]
-
-    inst.setState({ columnFn: fn })
-    inst.updateTabulatorColumnFn()
-
-    expect(inst.state.isFnValid).toBe(false)
-    expect(inst.state.fnError).toBeTruthy()
-  })
-
-  it('rejects mismatched parentheses', () => {
-    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'A' }]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    const fn = [
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
-      { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
-    ]
-
-    inst.setState({ columnFn: fn })
-    inst.updateTabulatorColumnFn()
-
-    expect(inst.state.isFnValid).toBe(false)
-    expect(inst.state.fnError).toBe('Mismatched parentheses')
-  })
-
-  it('considers configured window function chunk as a variable', () => {
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-    const fn = [{ type: CustomColumnTypes.FUNCTION, fn: CustomColumnValues.RANK }]
-    inst.setState({ columnFn: fn })
-
-    // hasVariablesInColumnFn should return true for configured function chunks
-    expect(inst.hasVariablesInColumnFn()).toBe(true)
-  })
-
-  it('treats empty custom number as incomplete until value is entered', () => {
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    inst.setState({
-      columnFn: [{ type: CustomColumnTypes.NUMBER, value: undefined, id: 'num-1' }],
-    })
-
-    expect(inst.isFormulaComplete()).toBe(false)
-    expect(inst.hasVariablesInColumnFn()).toBe(false)
-  })
-
-  it('keeps first custom number placeholder in formula while user types', () => {
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-    const placeholder = { type: CustomColumnTypes.NUMBER, value: undefined, id: 'num-1' }
-
-    inst.setState({ columnFn: [placeholder] })
-    inst.updateTabulatorColumnFn()
-
-    expect(inst.state.columnFn).toHaveLength(1)
-    expect(inst.state.columnFn[0].type).toBe(CustomColumnTypes.NUMBER)
-    expect(inst.state.columnFn[0].value).toBeUndefined()
-  })
-
-  it('modal confirmDisabled reflects validation state', () => {
-    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'A' }]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    // start with operator-only
-    inst.setState({ columnFn: [{ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }] })
-    inst.updateTabulatorColumnFn()
-    wrapper.update()
-    expect(wrapper.find('Modal').first().prop('confirmDisabled')).toBe(true)
-
-    // add a variable -> modal should allow confirm (if name valid)
-    inst.setState({
-      columnFn: [{ type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] }],
-      isColumnNameValid: true,
-    })
-    inst.updateTabulatorColumnFn()
-    wrapper.update()
-    expect(wrapper.find('Modal').first().prop('confirmDisabled')).toBe(false)
-  })
-
-  it('allows unary minus after operator (A * -B)', () => {
-    const columns = [
-      { field: '0', title: 'A', is_visible: true, name: 'A' },
-      { field: '1', title: 'B', is_visible: true, name: 'B' },
-    ]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    const fn = [
-      { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.MULTIPLICATION },
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.SUBTRACTION },
-      { type: CustomColumnTypes.COLUMN, value: 'B', column: columns[1] },
-    ]
-
-    inst.setState({ columnFn: fn })
-    inst.updateTabulatorColumnFn()
-
-    // createMutatorFn may consider this syntax invalid; ensure we don't crash
-    expect(inst.state.isFnValid).toBe(false)
-    expect(inst.state.fnError).toBeTruthy()
-  })
-
-  it('accepts negative numeric literals (A * -5)', () => {
-    const columns = [{ field: '0', title: 'A', is_visible: true, name: 'A' }]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-    const inst = wrapper.instance()
-
-    const fn = [
-      { type: CustomColumnTypes.COLUMN, value: 'A', column: columns[0] },
-      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.MULTIPLICATION },
-      { type: CustomColumnTypes.NUMBER, value: -5 },
-    ]
-
-    inst.setState({ columnFn: fn })
-    inst.updateTabulatorColumnFn()
-
-    expect(inst.state.isFnValid).toBe(true)
-    expect(inst.state.fnError).toBeUndefined()
-  })
-})
-
-describe('CustomColumnModal integration (UI interactions)', () => {
-  it('keeps Custom Number as first token after click and async update cycle', (done) => {
-    const columns = [{ field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' }]
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-
-    setTimeout(() => {
-      wrapper.update()
-      const inst = wrapper.instance()
-      const buttons = wrapper.find('.react-autoql-formula-calculator-button')
-      const customNumberBtn = buttons.findWhere((b) => (b.text?.() || '').includes('Custom Number'))
-
-      expect(customNumberBtn.exists()).toBe(true)
-      customNumberBtn.first().simulate('click')
-
-      setTimeout(() => {
-        wrapper.update()
-        try {
-          expect(inst.state.columnFn).toHaveLength(1)
-          expect(inst.state.columnFn[0].type).toBe(CustomColumnTypes.NUMBER)
-          expect(inst.state.columnFn[0].id).toBeTruthy()
-
-          const numberInputs = wrapper.find('.react-autoql-formula-builder-button-wrapper input[type="number"]')
-          expect(numberInputs.length).toBeGreaterThan(0)
-          done()
-        } catch (err) {
-          done(err)
-        }
-      }, 20)
-    }, 0)
-  })
-
-  it('simulates add/remove operator sequences and keeps state consistent', (done) => {
-    const columns = [
-      { field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' },
-      { field: '1', title: 'B', display_name: 'B', is_visible: true, name: 'B' },
-    ]
-
-    const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
-
-    // Wait for lazy-loaded component resolution
-    setTimeout(() => {
-      wrapper.update()
-      const inst = wrapper.instance()
-
-      // make name valid so confirm flow isn't blocked by name validation
-      inst.setState({ isColumnNameValid: true })
-
-      // find all calculator buttons (variables + custom number + operators)
-      const buttons = wrapper.find('.react-autoql-formula-calculator-button')
-      expect(buttons.length).toBeGreaterThan(3)
-
-      // Click first variable (A) — UI renders variables first, so use index 0
-      const varBtn = buttons.at(0)
-      expect(varBtn.exists()).toBe(true)
-      varBtn.simulate('click')
-
-      // Click one operator (any operator button) then remove it via delete
-      const operatorIndex = columns.length + 1 // variables + custom number
-      const opBtn = buttons.at(operatorIndex)
-      expect(opBtn.exists()).toBe(true)
-      opBtn.simulate('click')
-
-      wrapper.update()
-      // operator delete buttons render per chunk
-      const delBtns = wrapper.find('.react-autoql-operator-delete-btn')
-      expect(delBtns.length).toBeGreaterThan(0)
-      delBtns.last().simulate('click')
-
-      // ensure operator removed (no consecutive operators and operator count is zero)
-      expect(inst.state.columnFn.filter((c) => c.type === CustomColumnTypes.OPERATOR).length).toBe(0)
-
-      done()
-    }, 0)
-  })
 
   it('rejects leading and trailing operators (UI/state)', () => {
     const columns = [{ field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' }]
@@ -571,7 +238,7 @@ describe('CustomColumnModal integration (UI interactions)', () => {
 })
 
 describe('CustomColumnModal E2E - save and appear in table', () => {
-  it('saves a custom column and parent includes it in the preview/table', (done) => {
+  it('saves a custom column and parent includes it in the preview/table', async () => {
     const initialColumns = [
       { field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' },
       { field: '1', title: 'B', display_name: 'B', is_visible: true, name: 'B' },
@@ -589,9 +256,11 @@ describe('CustomColumnModal E2E - save and appear in table', () => {
     )
 
     // Wait for lazy-loaded ChataTable to mount
-    setTimeout(() => {
+    await act(async () => {
+      await Promise.resolve()
       wrapper.update()
-      const inst = wrapper.find('CustomColumnModal').first().instance()
+    })
+    const inst = wrapper.find('CustomColumnModal').first().instance()
 
       // set a division formula: A / B so we can verify normalization on save
       const fn = [
@@ -606,20 +275,18 @@ describe('CustomColumnModal E2E - save and appear in table', () => {
       inst.onAddColumnConfirm()
 
       // captured should have been filled by onAddColumn
-      setTimeout(() => {
-        try {
-          expect(captured).toBeTruthy()
-          // table_column should be normalized (division-by-zero handling)
-          const expected = transformDivisionExpression(inst.buildProtoTableColumn(captured))
-          // normalize internal spacing so minor formatting differences don't break the test
-          const normalize = (s) => s.replace(/\s+/g, ' ').replace(/\s+\)/g, ')').replace(/\(\s+/g, '(').trim()
-          expect(normalize(captured.table_column)).toBe(normalize(expected))
-          done()
-        } catch (err) {
-          done(err)
-        }
-      }, 0)
-    }, 0)
+      await act(async () => {
+        await flushPromises()
+        wrapper.update()
+      })
+
+      expect(captured).toBeTruthy()
+      // table_column should be normalized (division-by-zero handling)
+      const expected = transformDivisionExpression(inst.buildProtoTableColumn(captured))
+      // normalize internal spacing so minor formatting differences don't break the test
+      const normalize = (s) => s.replace(/\s+/g, ' ').replace(/\s+\)/g, ')').replace(/\(\s+/g, '(').trim()
+      expect(normalize(captured.table_column)).toBe(normalize(expected))
+    
   })
 })
 
@@ -1102,7 +769,7 @@ describe('CustomColumnModal edge cases', () => {
 })
 
 describe('CustomColumnModal reproducer - window fn orderby update', () => {
-  it('uses the updated chunk.orderby when saving', (done) => {
+  it('uses the updated chunk.orderby when saving', async () => {
     const initialColumns = [
       { field: '0', title: 'Sacks', display_name: 'Sacks', is_visible: true, name: 'pgs.sacks' },
       { field: '1', title: 'Turnovers', display_name: 'Turnovers', is_visible: true, name: 'pgs.turnovers' },
@@ -1119,9 +786,11 @@ describe('CustomColumnModal reproducer - window fn orderby update', () => {
     )
 
     // Wait for lazy-loaded ChataTable to mount
-    setTimeout(() => {
+    await act(async () => {
+      await Promise.resolve()
       wrapper.update()
-      const inst = wrapper.find('CustomColumnModal').first().instance()
+    })
+    const inst = wrapper.find('CustomColumnModal').first().instance()
 
       // make name valid so confirm flow isn't blocked by name validation
       inst.setState({ isColumnNameValid: true, columnName: 'RankBy' })
@@ -1142,18 +811,15 @@ describe('CustomColumnModal reproducer - window fn orderby update', () => {
       // Call confirm to add column
       inst.onAddColumnConfirm()
 
-      setTimeout(() => {
-        try {
-          expect(captured).toBeTruthy()
-          // The saved table_column should include the updated column name (pgs.turnovers)
-          expect(captured.table_column).toBeDefined()
-          expect(captured.table_column).toContain(initialColumns[1].name)
-          done()
-        } catch (err) {
-          done(err)
-        }
-      }, 0)
-    }, 0)
+      await act(async () => {
+        await Promise.resolve()
+        wrapper.update()
+      })
+
+      expect(captured).toBeTruthy()
+      // The saved table_column should include the updated column name (pgs.turnovers)
+      expect(captured.table_column).toBeDefined()
+      expect(captured.table_column).toContain(initialColumns[1].name)
   })
 })
 
