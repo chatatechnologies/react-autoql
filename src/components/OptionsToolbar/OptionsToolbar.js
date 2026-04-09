@@ -697,10 +697,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   handleSummaryFocusPromptChange = (e) => {
-    const value = e.target.value
-    if (value.length <= 100) {
-      this.setState({ summaryFocusPrompt: value, summaryFocusError: null, quoteResult: null })
-    }
+    this.setState({ summaryFocusPrompt: e.target.value, summaryFocusError: null, quoteResult: null })
   }
 
   handleSummaryGetQuote = async () => {
