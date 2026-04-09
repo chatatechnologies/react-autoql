@@ -121,7 +121,7 @@ import './Icon.scss'
 export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string,
-    size: PropTypes.oneOfType([PropTypes.string, PropTypes.number]), // numeric px values or 'small', 'medium', 'large'
+    size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
     showBadge: PropTypes.bool,
     color: PropTypes.string,
     info: PropTypes.bool,
