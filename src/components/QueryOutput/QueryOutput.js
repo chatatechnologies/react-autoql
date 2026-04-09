@@ -894,6 +894,60 @@ export class QueryOutput extends React.Component {
     return response?.data?.data?.fe_req?.display_overrides
   }
 
+  normalizeSqlForOverrideMatch = (sql = '') => {
+    try {
+      let normalized = `${sql}`.toLowerCase().replace(/\s+/g, '')
+
+      // Ignore explicit CAST wrappers when matching SQL expressions.
+      let prev
+      do {
+        prev = normalized
+        normalized = normalized.replace(/cast\(([^()]+?)as[a-z0-9_]+\)/g, '$1')
+      } while (normalized !== prev)
+
+      return normalized
+    } catch (e) {
+      return `${sql}`
+    }
+  }
+
+  applyDisplayOverridesToResponse = (response, displayOverrides = []) => {
+    if (!response?.data?.data || !Array.isArray(displayOverrides) || !displayOverrides.length) {
+      return response
+    }
+
+    const nextResponse = _cloneDeep(response)
+    const feReq = nextResponse?.data?.data?.fe_req || {}
+    feReq.display_overrides = displayOverrides
+    nextResponse.data.data.fe_req = feReq
+
+    if (!Array.isArray(nextResponse?.data?.data?.columns)) {
+      return nextResponse
+    }
+
+    const overridesBySql = {}
+    displayOverrides.forEach((override) => {
+      const key = this.normalizeSqlForOverrideMatch(override?.table_column)
+      if (key) {
+        overridesBySql[key] = override
+      }
+    })
+
+    nextResponse.data.data.columns = nextResponse.data.data.columns.map((col) => {
+      const normalizedName = this.normalizeSqlForOverrideMatch(col?.name)
+      const match = overridesBySql[normalizedName]
+      if (match?.english) {
+        return {
+          ...col,
+          display_name: match.english,
+        }
+      }
+      return col
+    })
+
+    return nextResponse
+  }
+
   getDataLength = () => {
     return this.tableData?.length
   }
@@ -1169,7 +1223,9 @@ export class QueryOutput extends React.Component {
     const customColumnSelects = []
     for (let i = 0; i < columns?.length; i++) {
       const foundCustomSelect = additionalSelects?.find((select) => {
-        return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
+        return (
+          select?.columns?.[0]?.replace(/ /g, '').toLowerCase() === columns?.[i].name?.replace(/ /g, '').toLowerCase()
+        )
       })
       if (foundCustomSelect) {
         customColumnSelects.push({ id: columns[i].id, ...foundCustomSelect })
@@ -1498,7 +1554,8 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: false })
 
-    return response
+    const effectiveDisplayOverrides = args?.displayOverrides ?? queryRequestData?.display_overrides
+    return this.applyDisplayOverridesToResponse(response, effectiveDisplayOverrides)
   }
 
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
@@ -2923,6 +2980,10 @@ export class QueryOutput extends React.Component {
         if (customSelect || newCol.is_custom) {
           newCol.custom = true
         }
+        // Re-attach persisted token list for nested custom column composition
+        if (customSelect?.column_fn?.length) {
+          newCol.columnFnArray = customSelect.column_fn
+        }
       }
 
       return newCol
@@ -3637,27 +3698,131 @@ export class QueryOutput extends React.Component {
       this.setState({ isAddingColumn: true })
       this.tableRef?.setPageLoading(true)
 
+      const formattedSelect = formatAdditionalSelectColumn(column, sqlFn)
+      const effectiveColumnSql = formattedSelect?.columns?.[0] ?? column?.table_column
+
       let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
       const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
+      let matchedExistingCustomSelect = false
       if (existingCustomSelectForColumn) {
-        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
-          return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
+        const oldColumnSql = existingCustomSelectForColumn.columns[0]?.replace(/ /g, '').toLowerCase()
+        let foundAndUpdated = false
+        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.map((select) => {
+          if (select.columns[0]?.replace(/ /g, '').toLowerCase() === oldColumnSql) {
+            foundAndUpdated = true
+            matchedExistingCustomSelect = true
+            const updated = {
+              ...select,
+              columns: [effectiveColumnSql],
+              is_custom: true,
+            }
+            if (column?.columnFnArray?.length) {
+              updated.column_fn = column.columnFnArray
+            }
+            return updated
+          }
+          return select
         })
+        if (!foundAndUpdated) {
+          const newSelect = formattedSelect
+          if (column?.columnFnArray?.length) newSelect.column_fn = column.columnFnArray
+          currentAdditionalSelectColumns = [...currentAdditionalSelectColumns, newSelect]
+        }
+      } else {
+        const newSelect = formattedSelect
+        if (column?.columnFnArray?.length) newSelect.column_fn = column.columnFnArray
+        currentAdditionalSelectColumns = [...currentAdditionalSelectColumns, newSelect]
       }
 
-      let currentDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
-      currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
-        return override.table_column?.trim() !== column.table_column?.trim()
-      })
-      if (column?.custom_column_display_name) {
-        currentDisplayOverrides = [
-          ...currentDisplayOverrides,
-          { english: column?.custom_column_display_name, table_column: column?.table_column },
-        ]
+      let currentDisplayOverrides = [...(this.getDisplayOverridesFromResponse(this.queryResponse) ?? [])]
+
+      if (column?._snapshotDisplayOverride) {
+        currentDisplayOverrides = currentDisplayOverrides.filter(
+          (o) =>
+            !(o.english === column._snapshotDisplayOverride.english &&
+              o.table_column === column._snapshotDisplayOverride.table_column),
+        )
+      }
+
+      // If editing an existing custom column, remove matching additional_selects entries
+      if (column?._snapshotDisplayOverride && !matchedExistingCustomSelect) {
+        const snapshot = column._snapshotDisplayOverride
+        const snapshotSql = (snapshot.table_column || '').replace(/ /g, '').toLowerCase()
+
+        const sigFor = (fnArr) =>
+          fnArr
+            .map((t) => {
+              const colIdent = t?.column?.field || t?.column?.name || ''
+              return `${t?.type || ''}|${t?.value || ''}|${colIdent}`
+            })
+            .join('::')
+
+        const snapshotSig = snapshot.column_fn?.length ? sigFor(snapshot.column_fn) : null
+
+        // Build a map of normalized table_column -> signature for existing display_overrides
+        const overrideSigBySql = {}
+        for (const o of currentDisplayOverrides) {
+          try {
+            const key = (o.table_column || '').replace(/\s+/g, '').toLowerCase()
+            if (o.column_fn?.length) overrideSigBySql[key] = sigFor(o.column_fn)
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        currentAdditionalSelectColumns = (currentAdditionalSelectColumns || []).filter((select) => {
+          const selectSqlNorm = (select?.columns?.[0] || '').replace(/\s+/g, '').toLowerCase()
+          if (snapshotSig) {
+            // If select has its own token list, compare directly
+            if (select?.column_fn?.length) {
+              return sigFor(select.column_fn) !== snapshotSig
+            }
+            // Otherwise, if there's a display_override for this select, compare its signature
+            const overrideSig = overrideSigBySql[selectSqlNorm]
+            if (overrideSig) return overrideSig !== snapshotSig
+          }
+          // Fallback to SQL string compare when token list unavailable
+          return selectSqlNorm !== snapshotSql
+        })
+
+        // If edit column could not be matched by id, make sure the edited select remains present.
+        // This prevents no-op updates from deleting the current custom column when SQL normalization differs.
+        const effectiveSqlNorm = (effectiveColumnSql || '').replace(/\s+/g, '').toLowerCase()
+        const hasEditedSelect = (currentAdditionalSelectColumns || []).some(
+          (select) => (select?.columns?.[0] || '').replace(/\s+/g, '').toLowerCase() === effectiveSqlNorm,
+        )
+        if (!hasEditedSelect) {
+          const restoredSelect = {
+            ...formattedSelect,
+            is_custom: true,
+          }
+          if (column?.columnFnArray?.length) {
+            restoredSelect.column_fn = column.columnFnArray
+          }
+          currentAdditionalSelectColumns = [...(currentAdditionalSelectColumns || []), restoredSelect]
+        }
+      }
+
+      const displayOverrideName = column?.custom_column_display_name ?? (sqlFn ? column?.display_name : undefined)
+      if (displayOverrideName) {
+        const overrideEntry = {
+          english: displayOverrideName,
+          table_column: effectiveColumnSql,
+        }
+        if (column?.columnFnArray?.length) {
+          overrideEntry.column_fn = column.columnFnArray
+        }
+
+        const hasExactOverride = currentDisplayOverrides.some(
+          (o) => o?.english === overrideEntry.english && o?.table_column === overrideEntry.table_column,
+        )
+        if (!hasExactOverride) {
+          currentDisplayOverrides.push(overrideEntry)
+        }
       }
 
       this.queryFn({
-        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
+        newColumns: currentAdditionalSelectColumns,
         displayOverrides: currentDisplayOverrides,
       })
         .then((response) => {

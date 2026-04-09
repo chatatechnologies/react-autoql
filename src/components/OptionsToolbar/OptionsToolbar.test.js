@@ -3,6 +3,7 @@ import { shallow, mount } from 'enzyme'
 import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../QueryOutput/QueryOutput'
 import { OptionsToolbar } from './OptionsToolbar'
+import { Tooltip } from '../Tooltip'
 import responseTestCases from '../../../test/responseTestCases'
 
 const defaultProps = OptionsToolbar.defaultProps
@@ -132,5 +133,91 @@ describe('filter button', () => {
     const filterBtn = findByTestAttr(wrapper, 'react-autoql-filter-button')
     expect(filterBtn.exists()).toBe(false)
     queryOutputComponent.unmount()
+  })
+})
+
+describe('tooltip rendering', () => {
+  test('renders Tooltip component when parent tooltipID is not provided', () => {
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      initialDisplayType: 'table',
+    })
+    const tooltip = wrapper.find(Tooltip)
+    expect(tooltip.exists()).toBe(true)
+    expect(tooltip.prop('delayShow')).toBe(800)
+    queryOutputComponent.unmount()
+  })
+
+  test('does not render local Tooltip when parent tooltipID is provided', () => {
+    const parentTooltipID = 'parent-tooltip-id'
+    const { wrapper, queryOutputComponent } = setup(
+      { tooltipID: parentTooltipID },
+      {
+        initialDisplayType: 'table',
+      },
+    )
+    const tooltip = wrapper.find(Tooltip)
+    expect(tooltip.exists()).toBe(false)
+    queryOutputComponent.unmount()
+  })
+
+  test('uses default TOOLTIP_ID when parent tooltipID is not provided', () => {
+    const { wrapper, queryOutputComponent } = setup(undefined, {
+      initialDisplayType: 'table',
+    })
+    const tooltip = wrapper.find(Tooltip)
+    const tooltipId = tooltip.prop('tooltipId')
+    // Should start with the default prefix and include a UUID
+    expect(tooltipId).toMatch(/react-autoql-options-toolbar-tooltip-/)
+    expect(tooltipId).not.toBe(undefined)
+    queryOutputComponent.unmount()
+  })
+
+  test('passes tooltipID to all buttons', () => {
+    const parentTooltipID = 'parent-tooltip-for-buttons'
+    const { wrapper, queryOutputComponent } = setup(
+      { tooltipID: parentTooltipID },
+      {
+        initialDisplayType: 'table',
+      },
+    )
+    // Get all buttons in the toolbar
+    const buttons = wrapper.find('Button')
+    // Each button should have the parent tooltipID
+    buttons.forEach((button) => {
+      const buttonTooltipID = button.prop('tooltipID')
+      expect(buttonTooltipID).toBe(parentTooltipID)
+    })
+    queryOutputComponent.unmount()
+  })
+
+  test('prevents duplicate tooltips by using shared ID (Nikki Moore issue)', () => {
+    // This test verifies that when multiple OptionsToolbars share a parent tooltipID,
+    // they all use the same ID instead of creating separate ones (which would cause duplicates)
+    const sharedTooltipID = 'shared-drilldown-tooltip'
+
+    const { wrapper: wrapper1, queryOutputComponent: qoc1 } = setup(
+      { tooltipID: sharedTooltipID },
+      { initialDisplayType: 'table' },
+    )
+
+    const { wrapper: wrapper2, queryOutputComponent: qoc2 } = setup(
+      { tooltipID: sharedTooltipID },
+      { initialDisplayType: 'table' },
+    )
+
+    // Toolbar should not mount local Tooltip when shared parent ID is provided
+    expect(wrapper1.find(Tooltip).exists()).toBe(false)
+    expect(wrapper2.find(Tooltip).exists()).toBe(false)
+
+    // Buttons should still use the shared parent tooltip ID
+    wrapper1.find('Button').forEach((button) => {
+      expect(button.prop('tooltipID')).toBe(sharedTooltipID)
+    })
+    wrapper2.find('Button').forEach((button) => {
+      expect(button.prop('tooltipID')).toBe(sharedTooltipID)
+    })
+
+    qoc1.unmount()
+    qoc2.unmount()
   })
 })

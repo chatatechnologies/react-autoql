@@ -261,6 +261,8 @@ export default class DrilldownModal extends React.Component {
                           source={this.props.source}
                           enableCustomColumns={this.props.enableCustomColumns}
                           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+                          tooltipID={this.props.tooltipID}
+                          chartTooltipID={this.props.chartTooltipID}
                           height='100%'
                           width='100%'
                         />
