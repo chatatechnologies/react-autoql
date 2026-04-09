@@ -3718,15 +3718,7 @@ export class QueryOutput extends React.Component {
     return { result, matchedExistingCustomSelect }
   }
 
-  resolveDisplayOverrides = (
-    column,
-    effectiveColumnSql,
-    currentDisplayOverrides,
-    matchedExistingCustomSelect,
-    currentAdditionalSelectColumns,
-    formattedSelect,
-  ) => {
-    // Manage display_overrides deduplication and cleanup
+  resolveDisplayOverrides = (column, effectiveColumnSql, currentDisplayOverrides) => {
     let result = [...(currentDisplayOverrides || [])]
 
     if (column?._snapshotDisplayOverride) {
@@ -3831,32 +3823,9 @@ export class QueryOutput extends React.Component {
   }
 
   onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
-    if (isHiddenColumn) {
-      this.setState({ isAddingColumn: true })
-      this.tableRef?.setPageLoading(true)
+    if (isHiddenColumn) return this._handleHiddenColumn(column)
 
-      const newColumns = this.state.columns.map((col) => {
-        if (col.name === column.name) {
-          return {
-            ...col,
-            is_visible: true,
-          }
-        }
-
-        return col
-      })
-
-      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
-        .then(() => this.updateColumns(newColumns))
-        .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error)
-        })
-        .finally(() => {
-          this.tableRef?.setPageLoading(false)
-          this.setState({ isAddingColumn: false })
-        })
-    } else if (!column) {
+    if (!column) {
       // For single-value responses, open modal directly since ChataTable is not rendered
       if (isSingleValueResponse(this.queryResponse)) {
         this.setState({ showCustomColumnModal: true, activeCustomColumn: undefined })
@@ -3864,66 +3833,91 @@ export class QueryOutput extends React.Component {
         // For table responses, delegate to ChataTable
         this.tableRef?.addCustomColumn()
       }
-    } else {
-      this.setState({ isAddingColumn: true })
-      this.tableRef?.setPageLoading(true)
-
-      const formattedSelect = formatAdditionalSelectColumn(column, sqlFn)
-      const effectiveColumnSql = formattedSelect?.columns?.[0] ?? column?.table_column
-
-      let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
-      const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
-
-      // Resolve additional_selects
-      const { result: resolvedSelects, matchedExistingCustomSelect } = this.resolveAdditionalSelects(
-        column,
-        formattedSelect,
-        effectiveColumnSql,
-        currentAdditionalSelectColumns,
-        existingCustomSelectForColumn,
-      )
-      currentAdditionalSelectColumns = resolvedSelects
-
-      // Clean up additional_selects based on snapshot matching
-      const baseDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
-      currentAdditionalSelectColumns = this.cleanupAdditionalSelectsBySnapshot(
-        column,
-        effectiveColumnSql,
-        baseDisplayOverrides,
-        matchedExistingCustomSelect,
-        currentAdditionalSelectColumns,
-        formattedSelect,
-      )
-
-      // Resolve display_overrides
-      const currentDisplayOverrides = this.resolveDisplayOverrides(
-        column,
-        effectiveColumnSql,
-        baseDisplayOverrides,
-        matchedExistingCustomSelect,
-        currentAdditionalSelectColumns,
-        formattedSelect,
-      )
-
-      this.queryFn({
-        newColumns: currentAdditionalSelectColumns,
-        displayOverrides: currentDisplayOverrides,
-      })
-        .then((response) => {
-          if (response?.data?.data?.rows) {
-            this.updateColumnsAndData(response)
-          } else {
-            throw new Error('New column addition failed')
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-          this.tableRef?.setPageLoading(false)
-        })
-        .finally(() => {
-          this.setState({ isAddingColumn: false })
-        })
+      return
     }
+
+    return this._handleAddColumnForTable(column, sqlFn)
+  }
+
+  _handleHiddenColumn = (column) => {
+    this.setState({ isAddingColumn: true })
+    this.tableRef?.setPageLoading(true)
+
+    const newColumns = this.state.columns.map((col) => {
+      if (col.name === column.name) {
+        return {
+          ...col,
+          is_visible: true,
+        }
+      }
+
+      return col
+    })
+
+    setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+      .then(() => this.updateColumns(newColumns))
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
+      .finally(() => {
+        this.tableRef?.setPageLoading(false)
+        this.setState({ isAddingColumn: false })
+      })
+  }
+
+  _handleAddColumnForTable = (column, sqlFn) => {
+    this.setState({ isAddingColumn: true })
+    this.tableRef?.setPageLoading(true)
+
+    const formattedSelect = formatAdditionalSelectColumn(column, sqlFn)
+    const effectiveColumnSql = formattedSelect?.columns?.[0] ?? column?.table_column
+
+    let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
+    const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
+
+    // Resolve additional_selects
+    const { result: resolvedSelects, matchedExistingCustomSelect } = this.resolveAdditionalSelects(
+      column,
+      formattedSelect,
+      effectiveColumnSql,
+      currentAdditionalSelectColumns,
+      existingCustomSelectForColumn,
+    )
+    currentAdditionalSelectColumns = resolvedSelects
+
+    // Clean up additional_selects based on snapshot matching
+    const baseDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
+    currentAdditionalSelectColumns = this.cleanupAdditionalSelectsBySnapshot(
+      column,
+      effectiveColumnSql,
+      baseDisplayOverrides,
+      matchedExistingCustomSelect,
+      currentAdditionalSelectColumns,
+      formattedSelect,
+    )
+
+    // Resolve display_overrides
+    const currentDisplayOverrides = this.resolveDisplayOverrides(column, effectiveColumnSql, baseDisplayOverrides)
+
+    this.queryFn({
+      newColumns: currentAdditionalSelectColumns,
+      displayOverrides: currentDisplayOverrides,
+    })
+      .then((response) => {
+        if (response?.data?.data?.rows) {
+          this.updateColumnsAndData(response)
+        } else {
+          throw new Error('New column addition failed')
+        }
+      })
+      .catch((error) => {
+        console.error(error)
+        this.tableRef?.setPageLoading(false)
+      })
+      .finally(() => {
+        this.setState({ isAddingColumn: false })
+      })
   }
 
   onCustomColumnChange = (newColumn) => {

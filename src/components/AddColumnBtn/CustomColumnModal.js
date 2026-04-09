@@ -79,20 +79,6 @@ export default class CustomColumnModal extends React.Component {
       initialColumnFn = []
     }
 
-    // Clean up any saved artifacts (stray brackets, zero values)
-    initialColumnFn = this.cleanColumnFn(initialColumnFn)
-
-    // Expand nested COLUMN tokens to show full expressions when editing
-
-    // Only expand nested COLUMN tokens when needed (legacy saved tokens or complex table_column)
-    const needsExpansion = (initialColumnFn || []).some(
-      (tok) =>
-        tok?.type === CustomColumnTypes.COLUMN &&
-        (tok?.column?.columnFnArray?.length || (tok?.column?.table_column && this.isComplexColumn(tok.column))),
-    )
-    if (needsExpansion) {
-      initialColumnFn = this.expandNestedColumns(initialColumnFn)
-    }
     initialColumnFn = this.cleanColumnFn(initialColumnFn)
 
     this.newColumnRaw = this.getRawColumnParams(initialColumn, props.initialColumn?.display_name)
@@ -161,6 +147,34 @@ export default class CustomColumnModal extends React.Component {
       selectedFnRowsOrRangeOptionPost: null,
       selectedFnRowsOrRangeOptionPostNValue: null,
       selectedFnMovingAverageTimeInterval: null,
+    }
+  }
+
+  componentDidMount() {
+    try {
+      const columnFn = this.state.columnFn || []
+      const needsExpansion = (columnFn || []).some(
+        (tok) =>
+          tok?.type === CustomColumnTypes.COLUMN &&
+          (tok?.column?.columnFnArray?.length || (tok?.column?.table_column && this.isComplexColumn(tok.column))),
+      )
+      if (!needsExpansion) return
+
+      const expanded = this.expandNestedColumns(columnFn)
+      const cleaned = this.cleanColumnFn(expanded)
+
+      this.previousMutator = this.safeCreateMutatorFn(cleaned)
+      this.newColumn.columnFnArray = cleaned
+      this.newColumn.mutator = this.previousMutator
+
+      const formatted = this.getColumnParamsForTabulator(this.newColumn, this.props)
+
+      const cols = (this.state.columns || []).map((c) => (c?.id === formatted.id ? formatted : c))
+
+      this.setState({ columnFn: cleaned, columns: cols })
+    } catch (e) {
+      // If expansion fails, keep constructor-initialized state; log for visibility
+      console.warn('Failed to expand nested columns during mount:', e)
     }
   }
 
