@@ -154,8 +154,8 @@ class VizToolbar extends React.Component {
         {!this.props.tooltipID && (
           <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />
         )}
-      </ErrorBoundary>
-    )
+        </ErrorBoundary>
+      )
   }
 
   createVisButton = (displayType, name, icon) => {

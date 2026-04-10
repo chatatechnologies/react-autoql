@@ -1405,6 +1405,18 @@ export default class ChataTable extends React.Component {
 
   onUpdateColumnConfirm = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
+    const displayOverrides = this.props.response?.data?.data?.fe_req?.display_overrides ?? []
+    if (!Array.isArray(displayOverrides)) {
+      console.warn('Expected display_overrides to be an array, received:', typeof displayOverrides)
+      return
+    }
+    const matchingOverride = displayOverrides.find((o) => o.english === column.display_name) ?? null
+    column._snapshotDisplayOverride = matchingOverride
+    // If the override has a persisted column_fn token list, restore it so the modal
+    // never needs to re-parse SQL — preventing bracket accumulation on each edit.
+    if (matchingOverride?.column_fn?.length) {
+      column.columnFnArray = matchingOverride.column_fn
+    }
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
   }
 
