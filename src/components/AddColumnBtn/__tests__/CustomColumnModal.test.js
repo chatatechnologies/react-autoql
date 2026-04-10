@@ -26,6 +26,67 @@ jest.mock('../../ChataTable/ChataTable', () => {
 
 describe('customColumnHelpers', () => {
 
+  it('expands nested custom-column tokens on mount and preserves parentheses/grouping', async () => {
+    const innerCol = {
+      id: 'inner-1',
+      field: 'inner-1',
+      name: 'Inner',
+      display_name: 'Inner',
+      custom: true,
+      columnFnArray: [
+        { type: CustomColumnTypes.NUMBER, value: '5' },
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+        { type: CustomColumnTypes.NUMBER, value: '10' },
+      ],
+    }
+
+    const initialColumn = {
+      id: 'init-1',
+      field: '0',
+      index: 0,
+      name: 'Top',
+      display_name: 'Top',
+      columnFnArray: [{ type: CustomColumnTypes.COLUMN, value: innerCol.field, column: innerCol }],
+    }
+
+    const wrapper = mount(
+      <CustomColumnModal isOpen={true} columns={[innerCol]} queryResponse={{ data: { data: {} } }} initialColumn={initialColumn} />,
+    )
+
+    // Allow componentDidMount to run and state to settle
+    await act(async () => {
+      await Promise.resolve()
+      wrapper.update()
+    })
+
+    const inst = wrapper.find('CustomColumnModal').first().instance()
+    const colFn = inst.state.columnFn || []
+
+    // Expect preserved grouping brackets around expanded inner tokens
+    const left = colFn.find(
+      (t) => t?.type === CustomColumnTypes.OPERATOR && t?.value === CustomColumnValues.LEFT_BRACKET && t?.preserve,
+    )
+    const right = colFn.find(
+      (t) => t?.type === CustomColumnTypes.OPERATOR && t?.value === CustomColumnValues.RIGHT_BRACKET && t?.preserve,
+    )
+
+    expect(left).toBeTruthy()
+    expect(right).toBeTruthy()
+
+    // Ensure inner tokens are present and in the expected order
+    const idxLeft = colFn.findIndex((t) => t === left)
+    const idxRight = colFn.findIndex((t) => t === right)
+    expect(idxLeft).toBeGreaterThan(-1)
+    expect(idxRight).toBeGreaterThan(idxLeft)
+
+    const innerSlice = colFn.slice(idxLeft + 1, idxRight)
+    expect(innerSlice.map((t) => t.type)).toEqual([
+      CustomColumnTypes.NUMBER,
+      CustomColumnTypes.OPERATOR,
+      CustomColumnTypes.NUMBER,
+    ])
+    expect(innerSlice.map((t) => t.value)).toEqual(['5', CustomColumnValues.ADDITION, '10'])
+  })
 
   it('rejects leading and trailing operators (UI/state)', () => {
     const columns = [{ field: '0', title: 'A', display_name: 'A', is_visible: true, name: 'A' }]
