@@ -787,6 +787,56 @@ describe('display_overrides snapshot-based deduplication', () => {
     expect(displayOverrides.filter((o) => o.english === 'Total Under Profit')).toHaveLength(1)
     wrapper.unmount()
   })
+
+  test('clears loading and adding state when queryFn rejects or returns no rows', async () => {
+    const queryResponse = makeQueryResponse()
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+
+    const setPageLoading = jest.fn()
+    instance.tableRef = { setPageLoading }
+
+    const flushUntilSettled = async () => {
+      for (let i = 0; i < 10; i++) {
+        await Promise.resolve()
+        wrapper.update()
+        if (instance.state.isAddingColumn === false) {
+          break
+        }
+      }
+    }
+
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const originalQueryFn = instance.queryFn
+    const queryFnMock = jest.fn().mockRejectedValueOnce(new Error('network')).mockResolvedValue({
+      data: { data: { rows: [] } },
+    })
+    instance.queryFn = queryFnMock
+
+    try {
+      // Case A: query rejects
+      instance.onAddColumnClick({ id: 'fail-1', table_column: 'sales + 1', custom_column_display_name: 'Fail' })
+
+      await flushUntilSettled()
+
+      expect(queryFnMock).toHaveBeenCalled()
+      expect(setPageLoading).toHaveBeenCalledWith(false)
+      expect(instance.state.isAddingColumn).toBe(false)
+
+      // Case B: query resolves with no rows
+      instance.setState({ isAddingColumn: false })
+      instance.onAddColumnClick({ id: 'fail-2', table_column: 'sales + 2', custom_column_display_name: 'NoRows' })
+
+      await flushUntilSettled()
+
+      expect(setPageLoading).toHaveBeenCalledWith(false)
+      expect(instance.state.isAddingColumn).toBe(false)
+    } finally {
+      instance.queryFn = originalQueryFn
+      consoleSpy.mockRestore()
+      wrapper.unmount()
+    }
+  })
 })
 
 describe('queryFn display_override response relabeling', () => {
