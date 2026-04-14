@@ -636,7 +636,8 @@ export class DashboardTile extends React.Component {
         force: false,
       }
 
-      const queryFunction = isCachedRefresh ? runCachedDashboardQueryPost : runQuery
+      // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
+      const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
 
       if (isCachedRefresh) {
         requestData.dashboardId = this.props.dashboardId
