@@ -1,8 +1,74 @@
 import PropTypes from 'prop-types'
-import { isColumnDateType, ColumnTypes, getDayJSObj, getPrecisionForDayJS } from 'autoql-fe-utils'
-import { dataFormattingDefault } from 'autoql-fe-utils'
+import {
+  isColumnDateType,
+  ColumnTypes,
+  getDayJSObj,
+  getPrecisionForDayJS,
+  DisplayTypes,
+  dataFormattingDefault,
+} from 'autoql-fe-utils'
 
 import { dataFormattingType } from '../../props/types'
+
+/** Threshold for dense bar/column layout (zero band padding, zero series gaps). */
+export const DENSE_CATEGORY_THRESHOLD = 100
+
+/** True when the category axis alone is crowded (many rows). */
+export const isDenseCategoryChart = (data) => Array.isArray(data) && data.length > DENSE_CATEGORY_THRESHOLD
+
+/**
+ * Resolves which numeric column indices define legend series for layout (matches ChataBarChart / Columns).
+ */
+const resolveSeriesColumnIndices = ({ visibleSeriesIndices, numberColumnIndices }) =>
+  visibleSeriesIndices?.length ? visibleSeriesIndices : numberColumnIndices
+
+export const isStackedBarOrColumnDisplayType = (type) =>
+  type === DisplayTypes.STACKED_BAR || type === DisplayTypes.STACKED_COLUMN
+
+/**
+ * Count of visible legend series used for grouped charts — includes every series column
+ * even when some rows have no value (no bar), so layout matches the legend.
+ * Stacked bar/column charts use one slot per category (the whole stack), not per segment.
+ */
+export const getVisibleLegendSeriesSlotCount = (props) => {
+  const { columns, numberColumnIndices, numberColumnIndices2, visibleSeriesIndices, visibleSeriesIndices2 } = props
+  if (!columns || !numberColumnIndices?.length) {
+    return 1
+  }
+
+  const countVisible = (indices) =>
+    indices.filter((i) => columns[i] && !columns[i].isSeriesHidden).length
+
+  let total = countVisible(resolveSeriesColumnIndices({ visibleSeriesIndices, numberColumnIndices }))
+
+  if (numberColumnIndices2?.length) {
+    total += countVisible(
+      resolveSeriesColumnIndices({
+        visibleSeriesIndices: visibleSeriesIndices2,
+        numberColumnIndices: numberColumnIndices2,
+      }),
+    )
+  }
+
+  return Math.max(1, total)
+}
+
+/**
+ * Dense when there are many categories, or many grouped cells (categories × visible series).
+ * Stacked bar/column: only category count matters (one stack per category, not segment count).
+ */
+export const isDenseChartLayout = (data, chartProps) => {
+  const n = Array.isArray(data) ? data.length : 0
+  const props = chartProps || {}
+  const seriesSlots = isStackedBarOrColumnDisplayType(props.type)
+    ? 1
+    : getVisibleLegendSeriesSlotCount(props)
+  return n > DENSE_CATEGORY_THRESHOLD || n * seriesSlots > DENSE_CATEGORY_THRESHOLD
+}
+
+/** Options for getBandScale when the layout is dense — removes padding between bands. */
+export const getDenseBandScaleOptions = (data, chartProps) =>
+  isDenseChartLayout(data, chartProps) ? { innerPadding: 0, outerPadding: 0 } : {}
 
 export const chartContainerPropTypes = {
   dataFormatting: dataFormattingType,

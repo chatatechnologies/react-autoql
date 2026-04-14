@@ -766,6 +766,7 @@ export default class Axis extends Component {
         closeSelector={this.closeSelector}
         isSecondAxis={isSecondAxis}
         enableCyclicalDates={this.props.enableCyclicalDates}
+        supportsPivot={this.props.supportsPivot}
       >
         <rect
           ref={(r) => (this.axisSelector = r)}

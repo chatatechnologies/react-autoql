@@ -19,6 +19,7 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
+  runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
   isError500Type,
@@ -204,9 +205,10 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
-    dashboardSlicer: PropTypes.shape({}),
+    dashboardSlicers: PropTypes.arrayOf(PropTypes.shape({})),
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -240,8 +242,9 @@ export class DashboardTile extends React.Component {
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
-    dashboardSlicer: null,
+    dashboardSlicers: [],
     enableMagicWand: false,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {
@@ -607,10 +610,10 @@ export class DashboardTile extends React.Component {
       // Get session filters from tile (existing tile-specific filters)
       let currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || []
 
-      // Merge dashboard slicer if present (applied at query execution time)
-      if (this.props.dashboardSlicer && !isSecondHalf) {
-        // Combine tile filters with dashboard slicer
-        currentSessionFilters = [...currentSessionFilters, this.props.dashboardSlicer]
+      // Merge dashboard slicers if present (applied at query execution time)
+      if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0 && !isSecondHalf) {
+        // Combine tile filters with dashboard slicers
+        currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
       }
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
@@ -639,6 +642,7 @@ export class DashboardTile extends React.Component {
         force: false,
       }
 
+      // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
       const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
 
       if (isCachedRefresh) {
@@ -1128,7 +1132,11 @@ export class DashboardTile extends React.Component {
   }
 
   onAggConfigChange = (aggConfig) => this.debouncedSetParamsForTile({ aggConfig })
-  onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
+  // Persist data config immediately so axis selector save actions are not lost
+  // when users quickly save the dashboard before debounce flushes.
+  onDataConfigChange = (dataConfig) => {
+    this.props.setParamsForTile({ dataConfig }, this.props.tile.i, [])
+  }
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
@@ -1136,7 +1144,11 @@ export class DashboardTile extends React.Component {
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
   onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
 
-  onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
+  // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
+  // and chart data source update without waiting for the debounce timer.
+  onChartControlsChange = (chartControls) => {
+    this.props.setParamsForTile({ chartControls }, this.props.tile.i, [])
+  }
 
   onTableParamsChange = (params, formattedParams) => {
     this.debouncedSetParamsForTile({
@@ -1164,7 +1176,9 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
-  onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
+  onSecondDataConfigChange = (secondDataConfig) => {
+    this.props.setParamsForTile({ secondDataConfig }, this.props.tile.i, [])
+  }
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
@@ -1765,6 +1779,7 @@ export class DashboardTile extends React.Component {
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
+            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             {...optionsToolbarProps}
           />
         </div>

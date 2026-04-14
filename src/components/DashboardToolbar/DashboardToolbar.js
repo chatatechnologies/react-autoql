@@ -35,6 +35,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRenameClick: PropTypes.func,
     onDownloadClick: PropTypes.func,
     onSlicerChange: PropTypes.func,
+    onRemoveSlicer: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
@@ -46,6 +47,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     enableSlicers: PropTypes.bool,
     isDashboardFullyExecuted: PropTypes.bool,
     hasTiles: PropTypes.bool,
+    slicers: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -60,6 +62,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRenameClick: () => {},
     onDownloadClick: () => {},
     onSlicerChange: () => {},
+    onRemoveSlicer: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
@@ -72,6 +75,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     slicerSuggestion: undefined,
     isDashboardFullyExecuted: false,
     hasTiles: false,
+    slicers: [],
   }
 
   state = {
@@ -80,35 +84,22 @@ export class DashboardToolbarWithoutRef extends React.Component {
     isRenameModalOpen: false,
     dashboardFilters: [],
     dashboardName: '',
-    selectedSlicer: null,
-  }
-
-  componentDidMount = () => {
-    // If an initial slicer value is provided (e.g., from imported dashboard), use it
-    if (this.props.value) {
-      this.setState({ selectedSlicer: this.props.value })
-    }
   }
 
   handleSlicerChange = (slicer) => {
-    this.setState({ selectedSlicer: slicer })
-    // Notify parent to apply to tiles
-    this.props.onSlicerChange(slicer)
+    // Notify parent to add slicer to array
+    if (slicer) {
+      this.props.onSlicerChange(slicer)
+    }
   }
 
-  handleRemoveSlicer = () => {
-    this.setState({ selectedSlicer: null })
-    // Notify parent to remove from tiles
-    this.props.onSlicerChange(null)
+  handleRemoveSlicer = (slicerToRemove) => {
+    // Notify parent to remove slicer from array
+    this.props.onRemoveSlicer(slicerToRemove)
   }
 
 
   componentDidUpdate = (prevProps, prevState) => {
-    // If value prop changes, update the slicer
-    if (this.props.value !== prevProps.value && this.props.value) {
-      this.setState({ selectedSlicer: this.props.value })
-    }
-
     if (!prevState.isRenameModalOpen && this.state.isRenameModalOpen) {
       requestAnimationFrame(() => {
         this.inputRef?.focus()
@@ -390,22 +381,26 @@ export class DashboardToolbarWithoutRef extends React.Component {
           ) : null}
           {this.props.hasTiles && this.props.enableSlicers && (
             <div className='react-autoql-dashboard-slicer-container'>
-              {this.state.selectedSlicer ? (
-                <SlicerChip
-                  slicer={this.state.selectedSlicer}
-                  onDelete={this.handleRemoveSlicer}
-                  tooltipID={this.props.tooltipID}
-                />
-              ) : (
-                <DashboardSlicer
-                  authentication={this.props.authentication}
-                  context={this.props.context}
-                  value={this.state.selectedSlicer}
-                  onChange={this.handleSlicerChange}
-                  placeholder='Select a slicer...'
-                  dashboardId={this.props.dashboardId}
-                  slicerSuggestion={this.props.slicerSuggestion}
-                />
+              <DashboardSlicer
+                authentication={this.props.authentication}
+                context={this.props.context}
+                value={null}
+                onChange={this.handleSlicerChange}
+                placeholder='Select a slicer...'
+                dashboardId={this.props.dashboardId}
+                slicerSuggestion={this.props.slicerSuggestion}
+              />
+              {this.props.slicers && this.props.slicers.length > 0 && (
+                <div className='react-autoql-dashboard-slicer-chips-container'>
+                  {this.props.slicers.map((slicer, index) => (
+                    <SlicerChip
+                      key={`${slicer.key || slicer.canonical_key || index}-${slicer.value || ''}`}
+                      slicer={slicer}
+                      onDelete={() => this.handleRemoveSlicer(slicer)}
+                      tooltipID={this.props.tooltipID}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}

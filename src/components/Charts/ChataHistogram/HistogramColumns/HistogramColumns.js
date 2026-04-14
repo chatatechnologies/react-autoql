@@ -13,15 +13,22 @@ export default class HistogramColumns extends Component {
 
   onColumnClick = (x0, x1, rowIndex) => {
     const newActiveKey = getKey(rowIndex)
+    const { columns, numberColumnIndex, stringColumnIndex, legendColumn } = this.props
 
     // TODO: enable this once the BE can support number range filters
     this.props.onChartClick({
       activeKey: newActiveKey,
+      // Keep this payload aligned with other chart components (e.g., `Columns`/`Bars`)
+      // so `QueryOutput.onChartClick` can safely compute drilldown context.
+      columnIndex: numberColumnIndex,
+      columns,
+      stringColumnIndex,
+      legendColumn,
       filter: {
-        name: this.props.columns[this.props.numberColumnIndex]?.name,
+        name: columns?.[numberColumnIndex]?.name,
         value: `${x0},${x1}`,
         operator: 'between',
-        column_type: this.props.columns[this.props.numberColumnIndex]?.type,
+        column_type: columns?.[numberColumnIndex]?.type,
       },
     })
 
@@ -74,7 +81,7 @@ export default class HistogramColumns extends Component {
 
       const key = getKey(index)
       // Round corners - use smaller of width/height for radius, but cap at 4px
-      const cornerRadius = Math.min(Math.min(width, height) / 2, 4)
+      const cornerRadius = Math.max(0, Math.min(Math.min(width, height) / 2, 4))
 
       return (
         <rect

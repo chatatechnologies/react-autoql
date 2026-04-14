@@ -32,6 +32,7 @@ export default class NotificationQueryResponse extends React.Component {
     onErrorCallback: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -41,6 +42,7 @@ export default class NotificationQueryResponse extends React.Component {
     reportProblemCallback: () => {},
     onSuccessCallback: () => {},
     onErrorCallback: () => {},
+    showMagicWandQuoteButton: false,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -119,6 +121,7 @@ export default class NotificationQueryResponse extends React.Component {
             enableFilterBtn={this.props.enableFilterBtn}
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
+            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
           />
         </div>
       </div>

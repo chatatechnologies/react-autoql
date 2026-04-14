@@ -51,9 +51,8 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import ChataNetworkGraph from '../ChataNetworkGraph'
 import { AverageLine } from '../AverageLine'
-import { AverageLineToggle } from '../AverageLineToggle'
 import { RegressionLine } from '../RegressionLine'
-import { RegressionLineToggle } from '../RegressionLineToggle'
+import ChartHeaderToggle from '../ChartHeaderToggle/ChartHeaderToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
 
@@ -88,6 +87,8 @@ export default class ChataChart extends React.Component {
       isLoading: true,
       showAverageLine: props.initialChartControls?.showAverageLine || false,
       showRegressionLine: props.initialChartControls?.showRegressionLine || false,
+      chartDataSource: props.initialChartControls?.dataSource || 'pivoted',
+      columnLineStacked: props.initialChartControls?.columnLineStacked ?? false,
       scaleVersion: 0, // Track scale changes to force line re-render
       visibleLegendLabels: null, // null means all labels are visible (set only from popover filter)
     }
@@ -102,8 +103,12 @@ export default class ChataChart extends React.Component {
     initialChartControls: PropTypes.shape({
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
+      dataSource: PropTypes.oneOf(['pivoted', 'raw']),
+      columnLineStacked: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    canUsePivotData: PropTypes.bool,
+    chartDataSource: PropTypes.oneOf(['pivoted', 'raw']),
     legendFilterConfig: PropTypes.shape({
       filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
     }),
@@ -119,12 +124,14 @@ export default class ChataChart extends React.Component {
     initialChartControls: {
       showAverageLine: false,
       showRegressionLine: false,
-      showAverageLine: false,
-      showRegressionLine: false,
+      dataSource: 'pivoted',
+      columnLineStacked: false,
     },
     onChartControlsChange: () => {},
     onAxisSortChange: () => {},
     axisSorts: {},
+    canUsePivotData: false,
+    chartDataSource: 'pivoted',
   }
 
   isContainerCollapsed = () => {
@@ -202,6 +209,20 @@ export default class ChataChart extends React.Component {
       return
     }
 
+    // Keep local data source in sync with persisted chart controls
+    const prevSource = prevProps.initialChartControls?.dataSource || 'pivoted'
+    const nextSource = this.props.initialChartControls?.dataSource || 'pivoted'
+    if (prevSource !== nextSource && this.state.chartDataSource !== nextSource) {
+      this.setState({ chartDataSource: nextSource })
+    }
+
+    // Keep column line stacked in sync with persisted chart controls
+    const prevStacked = prevProps.initialChartControls?.columnLineStacked ?? false
+    const nextStacked = this.props.initialChartControls?.columnLineStacked ?? false
+    if (prevStacked !== nextStacked && this.state.columnLineStacked !== nextStacked) {
+      this.setState({ columnLineStacked: nextStacked })
+    }
+
     if (this.firstRender === true && !this.props.hidden) {
       this.firstRender = false
     }
@@ -253,7 +274,6 @@ export default class ChataChart extends React.Component {
       )
       const indicesIntersect = !!indicesIntersection?.length
       if (indicesIntersect) {
-        console.debug('Selected columns already exist on the other axis. Exiting')
         const newNumberColumnIndices = this.props.numberColumnIndices.filter(
           (index) => !this.props.numberColumnIndices2.includes(index),
         )
@@ -304,6 +324,22 @@ export default class ChataChart extends React.Component {
       // Reset visibleLegendLabels state to clear color regeneration
       if (this.state.visibleLegendLabels !== null) {
         this.setState({ visibleLegendLabels: null })
+      }
+
+      // Aggregated charts use this.state.data in getCommonChartProps; when the legend (or string)
+      // axis index changes but dataStructureChanged is false (e.g. same pivot shape), refresh
+      // processed data from props so the chart does not stay on stale state.
+      const legendOrStringAxisChanged =
+        this.props.legendColumnIndex !== prevProps.legendColumnIndex ||
+        this.props.stringColumnIndex !== prevProps.stringColumnIndex
+      if (legendOrStringAxisChanged) {
+        const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
+        if (aggregated) {
+          const newData = this.getData(this.props)
+          if (newData) {
+            this.setState({ ...newData, chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+          }
+        }
       }
 
       // Note: We don't clear legendFilterConfig anymore - filters are stored per legend column
@@ -893,6 +929,46 @@ export default class ChataChart extends React.Component {
     this.bucketSize = bucketSize
   }
 
+  getMergedChartControls = (updates = {}) => {
+    const current = this.props.initialChartControls || {}
+    return {
+      ...current,
+      ...updates,
+    }
+  }
+
+  setChartDataSource = (dataSource) => {
+    // Update local state immediately so the UI responds even if parent debounces persistence
+    if (this.state.chartDataSource !== dataSource) {
+      this.setState({ chartDataSource: dataSource })
+    }
+    this.props.onChartControlsChange(this.getMergedChartControls({ dataSource }))
+  }
+
+  setColumnLineStacked = (columnLineStacked) => {
+    if (this.state.columnLineStacked !== columnLineStacked) {
+      this.setState({ columnLineStacked })
+    }
+    this.props.onChartControlsChange(this.getMergedChartControls({ columnLineStacked }))
+  }
+
+  shouldShowColumnLineStackedToggle = () => {
+    return this.props.type === DisplayTypes.COLUMN_LINE
+  }
+
+  shouldShowDataSourceToggle = () => {
+    if (!this.props.canUsePivotData) return false
+    const supported = [
+      DisplayTypes.BAR,
+      DisplayTypes.STACKED_BAR,
+      DisplayTypes.COLUMN,
+      DisplayTypes.STACKED_COLUMN,
+      DisplayTypes.LINE,
+      DisplayTypes.STACKED_LINE,
+    ]
+    return supported.includes(this.props.type)
+  }
+
   renderChartHeader = () => {
     let paddingLeft = this.state.deltaX - 10
     if (isMobile || paddingLeft < 0 || this.outerWidth < 300) {
@@ -910,28 +986,85 @@ export default class ChataChart extends React.Component {
         }`}
       >
         {/* Chart Control Buttons and Data Limit Warning */}
-        {((this.props.enableChartControls && this.shouldShowAverageLine()) || this.shouldShowDataLimitWarning()) &&
+        {((this.props.enableChartControls && (this.shouldShowAverageLine() || this.shouldShowColumnLineStackedToggle())) ||
+          this.shouldShowDataLimitWarning()) &&
           !this.props.hidden && (
             <div className='chart-control-buttons'>
-              {this.props.enableChartControls && this.shouldShowAverageLine() && (
+              {this.props.enableChartControls && (this.shouldShowAverageLine() || this.shouldShowColumnLineStackedToggle()) && (
                 <div className='chart-control-buttons-left'>
-                  <AverageLineToggle
-                    isEnabled={this.state.showAverageLine}
-                    onToggle={this.toggleAverageLine}
-                    columns={this.props.columns}
-                    visibleSeriesIndices={this.props.numberColumnIndices?.filter(
-                      (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
-                    )}
-                    chartTooltipID={this.props.chartTooltipID}
-                  />
+                  {this.shouldShowColumnLineStackedToggle() && (
+                    <div className='chart-data-source-toggle'>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          !this.state.columnLineStacked ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Show columns side by side (grouped)'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setColumnLineStacked(false)}
+                      >
+                        Grouped
+                      </button>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          this.state.columnLineStacked ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Stack columns on top of each other'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setColumnLineStacked(true)}
+                      >
+                        Stacked
+                      </button>
+                    </div>
+                  )}
+                  {this.shouldShowDataSourceToggle() && (
+                    <div className='chart-data-source-toggle'>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          this.state.chartDataSource === 'pivoted' ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Chart pivoted data (grouped/aggregated by pivot rows)'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setChartDataSource('pivoted')}
+                      >
+                        Pivoted
+                      </button>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          this.state.chartDataSource === 'raw' ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Chart raw table data (all numeric columns)'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setChartDataSource('raw')}
+                      >
+                        Raw
+                      </button>
+                    </div>
+                  )}
+                  {this.shouldShowAverageLine() && (
+                    <ChartHeaderToggle
+                      isEnabled={this.state.showAverageLine}
+                      onToggle={this.toggleAverageLine}
+                      disabled={false}
+                      icon='↗'
+                      label='Average'
+                      tooltipOn='Hide Average Line'
+                      tooltipOff='Show Average Line'
+                      chartTooltipID={this.props.chartTooltipID}
+                    />
+                  )}
                   {this.shouldShowRegressionLine() && (
-                    <RegressionLineToggle
+                    <ChartHeaderToggle
                       isEnabled={this.state.showRegressionLine}
                       onToggle={this.toggleRegressionLine}
-                      columns={this.props.columns}
-                      visibleSeriesIndices={this.props.numberColumnIndices?.filter(
-                        (colIndex) => this.props.columns?.[colIndex] && !this.props.columns[colIndex].isSeriesHidden,
-                      )}
+                      disabled={false}
+                      icon='⤴'
+                      label='Trend'
+                      tooltipOn='Hide Trend Line'
+                      tooltipOff='Show Trend Line'
                       chartTooltipID={this.props.chartTooltipID}
                     />
                   )}
@@ -963,6 +1096,14 @@ export default class ChataChart extends React.Component {
         updatedLegendColumn = columns[legendColumnIndex]
       }
     }
+
+    // In "raw" data source mode we are charting regular table data, not pivoted legend columns.
+    // In this case the number-axis selector headers should use the generic type labels
+    // (e.g. "Quantity Fields", "Currency Fields") instead of the legend/groupable column name.
+    // Column line combo charts always use raw data, so use generic labels for axis selectors.
+    const isRawDataSource =
+      this.state.chartDataSource === 'raw' || this.props.type === DisplayTypes.COLUMN_LINE
+    const legendColumnForChart = isRawDataSource ? undefined : updatedLegendColumn
 
     // For stacked charts, use sorted column indices so chart components render in sorted order
     // This ensures colors match the sorted order (biggest to smallest)
@@ -1018,7 +1159,7 @@ export default class ChataChart extends React.Component {
     return {
       ...this.props,
       columns,
-      legendColumn: updatedLegendColumn,
+      legendColumn: legendColumnForChart,
       numberColumnIndices: numberColumnIndices, // For stacked charts, this is already sorted (biggest to smallest)
       ref: (r) => (this.innerChartRef = r),
       innerChartRef: this.innerChartRef?.chartRef,
@@ -1037,6 +1178,9 @@ export default class ChataChart extends React.Component {
       chartPadding: this.PADDING,
       onLegendClick: this.handleLegendClick,
       enableAxisDropdown: enableDynamicCharting && !this.props.isAggregated,
+      // Allow multi-series selection on numeric axis. AxisSelector will still render
+      // a single selector when this.props.isAggregated is true.
+      allowMultipleSeries: true,
       legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices, // Used by chart components for scale calculation (excludes hidden series, maintains original order)
@@ -1147,10 +1291,12 @@ export default class ChataChart extends React.Component {
       showAverageLine: newShowAverageLine,
       showRegressionLine: newShowRegressionLine,
     })
-    this.props.onChartControlsChange({
-      showAverageLine: newShowAverageLine,
-      showRegressionLine: newShowRegressionLine,
-    })
+    this.props.onChartControlsChange(
+      this.getMergedChartControls({
+        showAverageLine: newShowAverageLine,
+        showRegressionLine: newShowRegressionLine,
+      }),
+    )
   }
 
   toggleRegressionLine = () => {
@@ -1162,10 +1308,12 @@ export default class ChataChart extends React.Component {
       showAverageLine: newShowAverageLine,
       showRegressionLine: newShowRegressionLine,
     })
-    this.props.onChartControlsChange({
-      showAverageLine: newShowAverageLine,
-      showRegressionLine: newShowRegressionLine,
-    })
+    this.props.onChartControlsChange(
+      this.getMergedChartControls({
+        showAverageLine: newShowAverageLine,
+        showRegressionLine: newShowRegressionLine,
+      }),
+    )
   }
   incrementScaleVersion = () => {
     this.setState((prevState) => ({ scaleVersion: prevState.scaleVersion + 1 }))
@@ -1269,6 +1417,7 @@ export default class ChataChart extends React.Component {
             {...commonChartProps}
             visibleSeriesIndices2={visibleSeriesIndices2}
             legendLabels={this.getLegendLabels()}
+            columnLineStacked={this.state.columnLineStacked}
           />
         )
       }
