@@ -3945,12 +3945,18 @@ export class QueryOutput extends React.Component {
         dataFormatting={this.props.dataFormatting}
         initialColumn={this.state.activeCustomColumn}
         onUpdateColumn={(column) => {
-          this.onCustomColumnChange(column)
-          this.resetCustomColumnModal()
+          // Defer parent state updates to avoid "Cannot update during an existing state transition"
+          Promise.resolve().then(() => {
+            this.onCustomColumnChange(column)
+            this.resetCustomColumnModal()
+          })
         }}
         onAddColumn={(column) => {
-          this.onCustomColumnChange(column)
-          this.resetCustomColumnModal()
+          // Defer parent state updates to avoid "Cannot update during an existing state transition"
+          Promise.resolve().then(() => {
+            this.onCustomColumnChange(column)
+            this.resetCustomColumnModal()
+          })
         }}
       />
     )

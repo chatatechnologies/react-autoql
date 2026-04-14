@@ -382,6 +382,70 @@ describe('CustomColumnModal name field handling', () => {
     expect(callArgs.custom_column_display_name).toBe('Sales Plus 100')
   })
 
+  it('resolves newly added custom column when modal reopened (matching by column.table_column)', async () => {
+    const initialColumns = [
+      { field: '0', title: 'Total Sales', display_name: 'Total Sales', is_visible: true, name: 'sum_sales', table_column: 'sum(public.all_sales_fact.sales_dollar_amount)' },
+    ]
+
+    // capture the onAddColumn payload
+    let capturedNew = null
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={initialColumns}
+        queryResponse={{ data: { data: {} } }}
+        onAddColumn={(col) => {
+          capturedNew = {
+            ...col,
+            // parent would normally assign a field/index when adding; simulate that here
+            field: String(initialColumns.length),
+            title: col.display_name,
+            table_column: col.table_column,
+          }
+        }}
+      />,
+    )
+
+    // Wait for any mount work
+    await act(async () => {
+      await Promise.resolve()
+      wrapper.update()
+    })
+
+    const inst = wrapper.find('CustomColumnModal').first().instance()
+
+    // Build a simple formula selecting Total Sales and dividing by 100 to create new column
+    const fn = [
+      { type: CustomColumnTypes.COLUMN, value: '0', column: initialColumns[0] },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.DIVISION },
+      { type: CustomColumnTypes.NUMBER, value: 100, id: 'n1' },
+    ]
+
+    inst.setState({ columnFn: fn, isColumnNameValid: true, columnName: 'New Column' })
+    inst.onAddColumnConfirm()
+
+    // Simulate parent adding the new column and reopening modal with updated columns
+    const updatedColumns = [...initialColumns, capturedNew]
+    const wrapper2 = mount(<CustomColumnModal isOpen={true} columns={updatedColumns} queryResponse={{ data: { data: {} } }} />)
+    await act(async () => {
+      await Promise.resolve()
+      wrapper2.update()
+    })
+
+    const inst2 = wrapper2.find('CustomColumnModal').first().instance()
+
+    // Simulate starting a new formula where the user inserts a chunk that references the previously-created column
+    // Intentionally set chunk.value to a mismatched value so renderer must resolve via chunk.column.table_column
+    const mismatchedChunk = { type: CustomColumnTypes.COLUMN, value: '0', column: capturedNew }
+    inst2.setState({ columnFn: [mismatchedChunk] })
+    wrapper2.update()
+
+    // Find the Select rendered for the first chunk and assert its value resolves to the new column's field
+    const select = wrapper2.find('Select').filterWhere((n) => n.prop('placeholder') === 'Select a Column').first()
+    expect(select.exists()).toBe(true)
+    expect(String(select.prop('value'))).toBe(String(capturedNew.field))
+  })
+
   it('onUpdateColumnConfirm sets name and custom_column_display_name with trimmed display name', () => {
     const columns = [{ field: '0', title: 'Revenue', display_name: 'Revenue', is_visible: true, name: 'revenue' }]
     const wrapper = mount(<CustomColumnModal isOpen={true} columns={columns} queryResponse={{ data: { data: {} } }} />)
