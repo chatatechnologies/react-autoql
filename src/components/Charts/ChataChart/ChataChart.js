@@ -274,7 +274,6 @@ export default class ChataChart extends React.Component {
       )
       const indicesIntersect = !!indicesIntersection?.length
       if (indicesIntersect) {
-        console.debug('Selected columns already exist on the other axis. Exiting')
         const newNumberColumnIndices = this.props.numberColumnIndices.filter(
           (index) => !this.props.numberColumnIndices2.includes(index),
         )

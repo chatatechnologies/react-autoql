@@ -4,10 +4,8 @@ import PropTypes from 'prop-types'
 import _cloneDeep from 'lodash.clonedeep'
 
 import {
-  AggTypes,
   ColumnObj,
   deepEqual,
-  ColumnTypes,
   COLUMN_TYPES,
   formatQueryColumns,
   autoQLConfigDefault,
