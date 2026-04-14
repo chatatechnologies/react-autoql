@@ -6,6 +6,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import {
   ColumnObj,
   deepEqual,
+  ColumnTypes,
   COLUMN_TYPES,
   formatQueryColumns,
   autoQLConfigDefault,
