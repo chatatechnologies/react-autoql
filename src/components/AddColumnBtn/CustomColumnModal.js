@@ -1637,7 +1637,7 @@ export default class CustomColumnModal extends React.Component {
   renderAvailableColumnSelector = (chunk, i) => {
     const selectableColumns = getSelectableColumns(this.state.columns || this.props.columns)
 
-    // Resolve a selected value that corresponds to an available option.
+    // Resolve selected value for this token; prefer explicit chunk.column when present.
     let selectedValue = chunk?.value
 
     // Prefer resolving `chunk.column` to an available option when present.
@@ -1670,7 +1670,7 @@ export default class CustomColumnModal extends React.Component {
       }
     }
 
-    // If still not resolved, attempt a fuzzy match by substring (handles minor SQL formatting differences)
+    // If not resolved, attempt a fuzzy substring match (handles minor SQL formatting differences)
     if ((selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) && colFromChunk) {
       const rawTarget2 = colFromChunk.table_column || colFromChunk.name || colFromChunk.display_name || ''
       const normalizedTarget2 = this.stripCoalesceWrapper(String(rawTarget2)).trim()
@@ -1687,8 +1687,7 @@ export default class CustomColumnModal extends React.Component {
       }
     }
 
-    // If selectedValue still looks like an existing field, keep it. Otherwise, try resolving by matching
-    // the token value to known column SQL/name/display_name.
+    // If selectedValue doesn't match a field, try resolving by matching token value to known column SQL/name/display_name.
     const hasFieldMatch = selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
     if (!hasFieldMatch && selectedValue != null) {
       let resolved = selectableColumns.find((c) => {
@@ -1705,7 +1704,7 @@ export default class CustomColumnModal extends React.Component {
       if (resolved) selectedValue = resolved.field
     }
 
-    // no-op: resolved selectedValue will be used for Select value
+    // resolved `selectedValue` will be used as the Select value
 
     return (
       <Select
