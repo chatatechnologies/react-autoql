@@ -1239,7 +1239,9 @@ export default class CustomColumnModal extends React.Component {
 
   changeChunkValue = (value, type, i) => {
     if (type === CustomColumnTypes.COLUMN || type === CustomColumnTypes.FUNCTION) {
-      const column = this.props.columns.find((col) => col.field === value)
+      const allCols = this.state.columns || this.props.columns || []
+      const column = allCols.find((col) => String(col.field) === String(value)) || null
+
       const columnFn = _cloneDeep(this.state.columnFn)
       if (columnFn[i]) {
         columnFn[i].value = value
@@ -1634,14 +1636,85 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderAvailableColumnSelector = (chunk, i) => {
-    const selectableColumns = getSelectableColumns(this.props.columns)
+    const selectableColumns = getSelectableColumns(this.state.columns || this.props.columns)
+
+    // Resolve a selected value that corresponds to an available option.
+    let selectedValue = chunk?.value
+
+    // Prefer resolving `chunk.column` to an available option when present.
+    const colFromChunk = chunk?.column
+    if (colFromChunk) {
+      // If chunk provides an explicit `field`, trust it (handles parent reassignment cases)
+      if (colFromChunk.field != null) {
+        selectedValue = colFromChunk.field
+      } else {
+        const propsCols = this.props.columns || []
+        const normalize = (s) => this.stripCoalesceWrapper(String(s || '')).trim()
+        const target = normalize(colFromChunk.table_column || colFromChunk.name || colFromChunk.display_name || '')
+
+        const matches = (candidate) => {
+          if (!candidate) return false
+          const candTable = normalize(candidate.table_column || candidate.name || candidate.display_name || '')
+          if (target && candTable === target) return true
+          if (String(candidate.name) === String(colFromChunk.name)) return true
+          if (String(candidate.display_name) === String(colFromChunk.display_name)) return true
+          return false
+        }
+
+        const matchInProps = propsCols.find(matches)
+        if (matchInProps) {
+          selectedValue = matchInProps.field
+        } else {
+          const candidate = selectableColumns.find(matches)
+          if (candidate) selectedValue = candidate.field
+        }
+      }
+    }
+
+    // If still not resolved, attempt a fuzzy match by substring (handles minor SQL formatting differences)
+    if ((selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) && colFromChunk) {
+      const rawTarget2 = colFromChunk.table_column || colFromChunk.name || colFromChunk.display_name || ''
+      const normalizedTarget2 = this.stripCoalesceWrapper(String(rawTarget2)).trim()
+      if (normalizedTarget2) {
+        const fuzzy = selectableColumns.find((c) => {
+          try {
+            const cTable = this.stripCoalesceWrapper(String(c.table_column || c.name || c.display_name || '')).trim()
+            return cTable && (cTable.includes(normalizedTarget2) || normalizedTarget2.includes(cTable))
+          } catch (e) {
+            return false
+          }
+        })
+        if (fuzzy) selectedValue = fuzzy.field
+      }
+    }
+
+    // If selectedValue still looks like an existing field, keep it. Otherwise, try resolving by matching
+    // the token value to known column SQL/name/display_name.
+    const hasFieldMatch = selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
+    if (!hasFieldMatch && selectedValue != null) {
+      let resolved = selectableColumns.find((c) => {
+        try {
+          return (
+            (c.table_column && String(c.table_column) === String(selectedValue)) ||
+            (c.name && String(c.name) === String(selectedValue)) ||
+            (c.display_name && String(c.display_name) === String(selectedValue))
+          )
+        } catch (e) {
+          return false
+        }
+      })
+      if (resolved) selectedValue = resolved.field
+    }
+
+    // no-op: resolved selectedValue will be used for Select value
+
     return (
       <Select
         outlined={false}
         showArrow={false}
         key={`custom-column-select-${i}`}
         placeholder='Select a Column'
-        value={chunk.value}
+        value={selectedValue}
         className={`react-autoql-available-column-selector ${chunk.operator ? 'has-operator' : 'first-chunk'}`}
         onChange={(value) => this.changeChunkValue(value, chunk.type, i)}
         options={selectableColumns.map((col) => {
