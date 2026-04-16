@@ -516,6 +516,33 @@ export class QueryOutput extends React.Component {
 
       // Legend filters automatically start fresh for each query since the filter key includes queryID
 
+      // When DM (or any parent) hides this component via shouldRender=false while a query is
+      // in flight, shouldComponentUpdate blocks all re-renders so this.queryResponse (instance var)
+      // never gets synced from props. When shouldRender flips back to true, catch up by re-initializing
+      // from the current props.queryResponse if the instance var is stale.
+      // Require prev === false so first mount (prev undefined) does not run DM-open-only logic.
+      if (this.props.shouldRender && prevProps.shouldRender === false) {
+        const propsHaveData = !!this.props.queryResponse?.data?.data
+        const instanceVarIsStale = !this.queryResponse?.data?.data
+
+        if (propsHaveData && instanceVarIsStale) {
+          // Full re-init: sync instance var and rebuild columns + data as if freshly mounted
+          this.queryResponse = _cloneDeep(this.props.queryResponse)
+          this.columnDateRanges = getColumnDateRanges(this.props.queryResponse)
+          this.queryID = this.queryResponse?.data?.data?.query_id
+          this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
+          this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
+
+          const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
+          const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
+          this.resetTableConfig(newColumns)
+          this.generateAllData()
+          this.setState({ columns: newColumns })
+        } else if (!this.tableData && this.shouldGenerateTableData()) {
+          this.generateAllData()
+        }
+      }
+
       // Keep local chartControls in sync if consumer updates initialChartControls prop
       if (!deepEqual(this.props.initialChartControls, prevProps.initialChartControls)) {
         const nextControls = this.props.initialChartControls || {}
@@ -4245,9 +4272,7 @@ export class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           currentLegendState={this.state.hiddenLegendLabels}
           legendColumn={
-            usePivotData
-              ? originalColumns?.[tableConfig?.legendColumnIndex]
-              : columns?.[tableConfig?.legendColumnIndex]
+            usePivotData ? originalColumns?.[tableConfig?.legendColumnIndex] : columns?.[tableConfig?.legendColumnIndex]
           }
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}

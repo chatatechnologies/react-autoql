@@ -109,6 +109,7 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
+    shouldRender: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
@@ -145,6 +146,7 @@ export default class ChatMessage extends React.Component {
     text: null,
     enableColumnVisibilityManager: false,
     isResizing: false,
+    shouldRender: true,
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
@@ -951,6 +953,7 @@ export default class ChatMessage extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+          shouldRender={!this.props.isResizing && this.props.shouldRender}
         />
       )
     }
