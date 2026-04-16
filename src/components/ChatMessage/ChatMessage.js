@@ -740,7 +740,7 @@ export default class ChatMessage extends React.Component {
       // Copy as plain text using Clipboard API
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       } else {
         // Fallback for older browsers
         const textarea = document.createElement('textarea')
@@ -749,7 +749,7 @@ export default class ChatMessage extends React.Component {
         textarea.select()
         document.execCommand('copy')
         document.body.removeChild(textarea)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)

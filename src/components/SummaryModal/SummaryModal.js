@@ -164,7 +164,7 @@ export default class SummaryModal extends React.Component {
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       } else {
         const textarea = document.createElement('textarea')
         textarea.value = text
@@ -172,7 +172,7 @@ export default class SummaryModal extends React.Component {
         textarea.select()
         document.execCommand('copy')
         document.body.removeChild(textarea)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)
