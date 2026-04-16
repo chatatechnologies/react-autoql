@@ -27,6 +27,7 @@ import { Input } from '../Input'
 import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
 import { ReportProblemModal } from '../ReportProblemModal'
+import { ConfirmModal } from '../ConfirmModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
@@ -54,6 +55,7 @@ export class OptionsToolbar extends React.Component {
       isFiltering: !!props.responseRef?.isFilteringTable(),
       isSummaryModalVisible: false,
       isSummaryPopoverOpen: false,
+      isResetQueryConfirmVisible: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
       quoteResult: null,
@@ -82,6 +84,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadFinish: PropTypes.func,
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
+    onRefreshClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
   }
@@ -107,6 +110,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadFinish: () => {},
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
+    onRefreshClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
   }
@@ -409,9 +413,22 @@ export class OptionsToolbar extends React.Component {
     }
   }
 
-  refreshData = () => {
-    // todo: Refresh data inside QueryOutput
-    return
+  renderResetQueryConfirmModal = () => {
+    return (
+      <ConfirmModal
+        isVisible={this.state.isResetQueryConfirmVisible}
+        onClose={() => this.setState({ isResetQueryConfirmVisible: false })}
+        onConfirm={() => {
+          this.setState({ isResetQueryConfirmVisible: false })
+          this.props.onRefreshClick()
+        }}
+        title='Reset query?'
+        confirmText='Reset'
+        backText='Cancel'
+      >
+        <p>This will re-run the query for this tile. Are you sure?</p>
+      </ConfirmModal>
+    )
   }
 
   getMenuItemClass = (className) => {
@@ -528,6 +545,15 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
+          {shouldShowButton.showRefreshDataButton && (
+            <li
+              className='context-menu-divider-top'
+              onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
+            >
+              <Icon type='refresh' style={{ marginRight: '7px' }} />
+              Reset query
+            </li>
+          )}
         </ul>
       </div>
     )
@@ -911,18 +937,6 @@ export class OptionsToolbar extends React.Component {
             shouldShowButton.showMagicWandButton &&
             this.renderMagicWandBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
-          {!isMarkdownOnly && shouldShowButton.showRefreshDataButton && (
-            <Button
-              onClick={this.refreshData}
-              className={this.getMenuItemClass()}
-              tooltip='Re-run query'
-              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-              data-test='options-toolbar-refresh-btn'
-              size='small'
-            >
-              <Icon type='refresh' />
-            </Button>
-          )}
           {shouldShowButton.showCopyMarkdownButton && this.renderCopyMarkdownBtn()}
           {shouldShowButton.showDeleteButton && (
             <Button
@@ -1011,7 +1025,7 @@ export class OptionsToolbar extends React.Component {
         showCreateNotificationIcon:
           !isMarkdownOnly &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
-        showRefreshDataButton: false,
+        showRefreshDataButton: !isMarkdownOnly && isDataResponse && !!props.onRefreshClick,
         showMagicWandButton: shouldShowSummaryButton({
           enableMagicWand: props.enableMagicWand,
           queryResponse: response,
@@ -1026,7 +1040,8 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showSQLButton ||
           shouldShowButton.showCreateNotificationIcon ||
           shouldShowButton.showSaveAsCSVButton ||
-          shouldShowButton.showSaveAsPNGButton)
+          shouldShowButton.showSaveAsPNGButton ||
+          shouldShowButton.showRefreshDataButton)
     } catch (error) {
       console.error(error)
     }
@@ -1050,6 +1065,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
+        {shouldShowButton.showRefreshDataButton && this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )

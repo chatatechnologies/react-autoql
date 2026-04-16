@@ -49,6 +49,7 @@ const LazyChataTable = React.lazy(() => import('../ChataTable/ChataTable'))
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import normalizePreviewResponse from '../../utils/previewResponseUtils'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import tryCreateMutatorWithCoercion from '../../utils/customColumnMutator'
 
 import './CustomColumnModal.scss'
 
@@ -466,13 +467,11 @@ export default class CustomColumnModal extends React.Component {
 
       let cleanedName = this.stripCoalesceWrapper(columnName)
       cleanedName = this.replaceTypeCastWithPreserveTokens(cleanedName)
-      
+
       // Replace column names with placeholders before tokenization (handles nested parens & multi-word names)
-      const allCols = [
-        ...(cols || []),
-        ...(this.props.queryResponse?.data?.data?.available_selects || [])
-      ]
-      const colsByLength = allCols.map((col, originalIndex) => ({ col, originalIndex }))
+      const allCols = [...(cols || []), ...(this.props.queryResponse?.data?.data?.available_selects || [])]
+      const colsByLength = allCols
+        .map((col, originalIndex) => ({ col, originalIndex }))
         .sort((a, b) => {
           const aLen = (a.col?.table_column || a.col?.name)?.length || 0
           const bLen = (b.col?.table_column || b.col?.name)?.length || 0
@@ -483,14 +482,14 @@ export default class CustomColumnModal extends React.Component {
       for (let i = 0; i < colsByLength.length; i++) {
         const { col, originalIndex } = colsByLength[i]
         const candidates = [col?.table_column, col?.name].filter(Boolean)
-        
+
         for (const matchStr of candidates) {
           if (!matchStr?.trim()) continue
           // Skip full-replacement matches (prevents formula matching its own custom column)
           if (matchStr.trim() === cleanedName.trim()) {
             continue
           }
-          
+
           const regex = new RegExp(matchStr.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
           const replaced = cleanedName.replace(regex, `__COLREF_${originalIndex}__`)
           if (replaced !== cleanedName) {
@@ -500,7 +499,7 @@ export default class CustomColumnModal extends React.Component {
           }
         }
       }
-      
+
       const ops = buildPlainColumnArrayFn(cleanedName)
       if (ops?.length === 0) {
         return []
@@ -531,12 +530,17 @@ export default class CustomColumnModal extends React.Component {
             // Try with underscores if this looks like a placeholder
             placeholderCol = placeholderMap[`__${op}__`]
           }
-          
+
           if (placeholderCol) {
             fnArray.push({ type: 'column', value: placeholderCol?.field, column: placeholderCol })
-          } else if ((col = cols?.find((c) => c?.name?.trim() === op)) || // exact match in cols
-                     (col = this.props.queryResponse?.data?.data?.available_selects?.find((s) => s?.table_column?.trim() === getCleanColumnName(op))) || // normalized match
-                     (col = cols?.find((c) => c?.table_column?.trim().toLowerCase() === op?.toLowerCase()))) { // case-insensitive
+          } else if (
+            (col = cols?.find((c) => c?.name?.trim() === op)) || // exact match in cols
+            (col = this.props.queryResponse?.data?.data?.available_selects?.find(
+              (s) => s?.table_column?.trim() === getCleanColumnName(op),
+            )) || // normalized match
+            (col = cols?.find((c) => c?.table_column?.trim().toLowerCase() === op?.toLowerCase()))
+          ) {
+            // case-insensitive
             fnArray.push({ type: 'column', value: col?.field || col?.table_column, column: col })
           }
         }
@@ -547,23 +551,27 @@ export default class CustomColumnModal extends React.Component {
       let passnum = 0
       while (passnum++ < 10) {
         let foundRemoval = false
-        
+
         // Count consecutive opening brackets at the start (skip preserved ones)
         let openCount = 0
-        while (openCount < cleaned.length && 
-               cleaned[openCount]?.value === CustomColumnValues.LEFT_BRACKET &&
-               !cleaned[openCount]?.preserve) {
+        while (
+          openCount < cleaned.length &&
+          cleaned[openCount]?.value === CustomColumnValues.LEFT_BRACKET &&
+          !cleaned[openCount]?.preserve
+        ) {
           openCount++
         }
-        
+
         // Count consecutive closing brackets at the end (skip preserved ones)
         let closeCount = 0
-        while (closeCount < cleaned.length && 
-               cleaned[cleaned.length - 1 - closeCount]?.value === CustomColumnValues.RIGHT_BRACKET &&
-               !cleaned[cleaned.length - 1 - closeCount]?.preserve) {
+        while (
+          closeCount < cleaned.length &&
+          cleaned[cleaned.length - 1 - closeCount]?.value === CustomColumnValues.RIGHT_BRACKET &&
+          !cleaned[cleaned.length - 1 - closeCount]?.preserve
+        ) {
           closeCount++
         }
-        
+
         // Remove outer wrapping brackets if entire expression is wrapped (at least one pair, and content between)
         if (openCount > 0 && closeCount > 0 && openCount + closeCount < cleaned.length) {
           // Remove minimum count to avoid unmatched brackets
@@ -572,10 +580,10 @@ export default class CustomColumnModal extends React.Component {
           cleaned.splice(cleaned.length - pairsToRemove, pairsToRemove) // Remove closing brackets
           foundRemoval = true
         }
-        
+
         if (!foundRemoval) break // Early exit if no removal occurred
       }
-      
+
       return cleaned
     } catch (error) {
       console.error(error)
@@ -585,38 +593,38 @@ export default class CustomColumnModal extends React.Component {
 
   stripCoalesceWrapper = (sql) => {
     if (!sql || typeof sql !== 'string') return sql
-    
+
     let result = sql.trim()
     if (result.startsWith('=')) result = result.substring(1).trim()
-    
+
     while (result.startsWith('(') && result.endsWith(')')) {
       const inner = result.substring(1, result.length - 1).trim()
       if (inner.startsWith('(') && !inner.endsWith(')')) break
       result = inner
     }
-    
+
     // Recursively strip COALESCE and NULLIF wrappers until no more match
     let prevResult = ''
     let iterations = 0
-    
+
     while (result !== prevResult && iterations < 10) {
       iterations++
       prevResult = result
-      
+
       // Strip ALL NULLIF(..., 0) patterns
       const nullifResult = this.replaceNullifPattern(result)
       if (nullifResult !== result) {
         result = nullifResult
         continue
       }
-      
+
       // Strip ALL COALESCE(..., 0) patterns
       const coalesceResult = this.replaceCoalescePattern(result)
       if (coalesceResult !== result) {
         result = coalesceResult
         continue
       }
-      
+
       // Strip outer parens if still present
       if (result.startsWith('(') && result.endsWith(')')) {
         const inner = result.substring(1, result.length - 1).trim()
@@ -626,7 +634,7 @@ export default class CustomColumnModal extends React.Component {
         }
       }
     }
-    
+
     return result
   }
 
@@ -635,11 +643,12 @@ export default class CustomColumnModal extends React.Component {
     const lowerSql = sql.toLowerCase()
     const funcStr = `${funcName.toLowerCase()}(`
     const funcIdx = lowerSql.indexOf(funcStr)
-    
+
     if (funcIdx === -1) return sql
-    
+
     // Find matching closing paren by counting depth
-    let balance = 1, closeIdx = -1
+    let balance = 1,
+      closeIdx = -1
     const startPos = funcIdx + funcStr.length
     for (let i = startPos; i < sql.length; i++) {
       if (sql[i] === '(') balance++
@@ -648,12 +657,13 @@ export default class CustomColumnModal extends React.Component {
         break
       }
     }
-    
+
     if (closeIdx === -1) return sql
-    
+
     // Extract content and find last ", 0" at depth 0
     const fullContent = sql.substring(startPos, closeIdx).trim()
-    let contentEnd = -1, depth = 0
+    let contentEnd = -1,
+      depth = 0
     for (let i = fullContent.length - 1; i >= 0; i--) {
       if (fullContent[i] === ')') depth++
       else if (fullContent[i] === '(') depth--
@@ -662,8 +672,10 @@ export default class CustomColumnModal extends React.Component {
         break
       }
     }
-    
-    return contentEnd === -1 ? sql : sql.substring(0, funcIdx) + fullContent.substring(0, contentEnd).trim() + sql.substring(closeIdx + 1)
+
+    return contentEnd === -1
+      ? sql
+      : sql.substring(0, funcIdx) + fullContent.substring(0, contentEnd).trim() + sql.substring(closeIdx + 1)
   }
 
   replaceNullifPattern = (sql) => this.stripSqlWrapper(sql, 'NULLIF')
@@ -952,7 +964,9 @@ export default class CustomColumnModal extends React.Component {
     )
     const withDivisionSafety = hasExplicitDivision ? transformDivisionExpression(baseColumn) : baseColumn
     // Wrap with outer brackets only when this formula explicitly used division and safety wrapper was added
-    return hasExplicitDivision && withDivisionSafety.includes('COALESCE') ? `(${withDivisionSafety})` : withDivisionSafety
+    return hasExplicitDivision && withDivisionSafety.includes('COALESCE')
+      ? `(${withDivisionSafety})`
+      : withDivisionSafety
   }
 
   onUpdateColumnConfirm = () => {
@@ -988,7 +1002,7 @@ export default class CustomColumnModal extends React.Component {
     // Only these operators allow same-precedence bracket removal on their right side
     const ASSOC_OPS = new Set(['ADDITION', 'MULTIPLICATION'])
 
-    const getPrec = (token) => (token?.type === CustomColumnTypes.OPERATOR ? (PREC[token.value] ?? 0) : 0)
+    const getPrec = (token) => (token?.type === CustomColumnTypes.OPERATOR ? PREC[token.value] ?? 0 : 0)
 
     // Minimum precedence of all operators at depth-0 within a token slice
     const minDepth0Prec = (tokens) => {
@@ -1025,9 +1039,7 @@ export default class CustomColumnModal extends React.Component {
         }
         const rbIdx = j - 1
         const inner = result.slice(i + 1, rbIdx)
-        const preserve =
-          result[i]?.preserve ||
-          result[rbIdx]?.preserve
+        const preserve = result[i]?.preserve || result[rbIdx]?.preserve
 
         // For edit readability, unwrap non-preserved brackets around a single token.
         // Keep preserved pairs (explicit user/grouping intent).
@@ -1059,7 +1071,7 @@ export default class CustomColumnModal extends React.Component {
     return result
   }
 
-  // Create a mutator with defensive validation to avoid generating invalid JS
+  // Validate tokens and delegate to shared mutator creator
   safeCreateMutatorFn = (columnFn) => {
     try {
       const fn = columnFn || []
@@ -1068,7 +1080,8 @@ export default class CustomColumnModal extends React.Component {
         const right = fn[i + 1]
         const leftIsOperand = left?.type !== CustomColumnTypes.OPERATOR
         const rightIsOperand = right?.type !== CustomColumnTypes.OPERATOR
-        const rightIsLeftBracket = right?.type === CustomColumnTypes.OPERATOR && right?.value === CustomColumnValues.LEFT_BRACKET
+        const rightIsLeftBracket =
+          right?.type === CustomColumnTypes.OPERATOR && right?.value === CustomColumnValues.LEFT_BRACKET
         if (leftIsOperand && (rightIsOperand || rightIsLeftBracket)) {
           return { error: new Error('Invalid operator sequence') }
         }
@@ -1084,7 +1097,8 @@ export default class CustomColumnModal extends React.Component {
       }
       if (balance !== 0) return { error: new Error('Mismatched parentheses') }
 
-      return createMutatorFn(fn)
+      // Delegate to shared mutator creator (retries with coercion)
+      return tryCreateMutatorWithCoercion(fn)
     } catch (e) {
       return { error: e }
     }
@@ -1096,7 +1110,9 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  isFormulaAlreadyWrapped = (arr) => arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET && arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
+  isFormulaAlreadyWrapped = (arr) =>
+    arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET &&
+    arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
 
   addColumnToFormula = (col, columnFn, lastTerm) => {
     // Determine if column has explicit tokens, or build from SQL if complex
@@ -1143,8 +1159,10 @@ export default class CustomColumnModal extends React.Component {
       if (this.isComplexColumn(col)) {
         // Only add brackets if: (1) not adjacent-wrapped in formula, and (2) column not already wrapped
         if (
-          !(columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
-            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET) &&
+          !(
+            columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
+            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
+          ) &&
           !this.isFormulaAlreadyWrapped(col?.columnFnArray)
         ) {
           columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
@@ -1308,15 +1326,22 @@ export default class CustomColumnModal extends React.Component {
         return { valid: false, error: 'Invalid operator sequence' }
       }
       if (a?.type === CustomColumnTypes.OPERATOR && b?.type === CustomColumnTypes.OPERATOR) {
-        const leftLeft = a?.value === CustomColumnValues.LEFT_BRACKET && b?.value === CustomColumnValues.LEFT_BRACKET
-        const rightRight =
-          a?.value === CustomColumnValues.RIGHT_BRACKET && b?.value === CustomColumnValues.RIGHT_BRACKET
-        // Allow consecutive left/right brackets; allow unary +/- only immediately after an opening bracket or at start
+        const aIsLeft = a?.value === CustomColumnValues.LEFT_BRACKET
+        const aIsRight = a?.value === CustomColumnValues.RIGHT_BRACKET
+        const bIsLeft = b?.value === CustomColumnValues.LEFT_BRACKET
+        const bIsRight = b?.value === CustomColumnValues.RIGHT_BRACKET
+
+        // Allow unary +/- after '(' or at start and common bracket/operator adjacency
         const unaryAllowed =
           (b?.value === CustomColumnValues.ADDITION || b?.value === CustomColumnValues.SUBTRACTION) &&
-          (a?.value === CustomColumnValues.LEFT_BRACKET || i === 0)
+          (aIsLeft || i === 0)
+        const leftLeft = aIsLeft && bIsLeft
+        const rightRight = aIsRight && bIsRight
+        const rightThenBinary = aIsRight && !bIsLeft && !bIsRight
+        const binaryThenLeft = !aIsLeft && !aIsRight && bIsLeft
 
-        if (!leftLeft && !rightRight && !unaryAllowed) return { valid: false, error: 'Invalid operator sequence' }
+        if (!(leftLeft || rightRight || rightThenBinary || binaryThenLeft || unaryAllowed))
+          return { valid: false, error: 'Invalid operator sequence' }
       }
     }
 
@@ -1668,7 +1693,10 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // If not resolved, attempt a fuzzy substring match (handles minor SQL formatting differences)
-    if ((selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) && colFromChunk) {
+    if (
+      (selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) &&
+      colFromChunk
+    ) {
       const rawTarget2 = colFromChunk.table_column || colFromChunk.name || colFromChunk.display_name || ''
       const normalizedTarget2 = this.stripCoalesceWrapper(String(rawTarget2)).trim()
       if (normalizedTarget2) {
@@ -1685,7 +1713,8 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // If selectedValue doesn't match a field, try resolving by matching token value to known column SQL/name/display_name.
-    const hasFieldMatch = selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
+    const hasFieldMatch =
+      selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
     if (!hasFieldMatch && selectedValue != null) {
       let resolved = selectableColumns.find((c) => {
         try {
@@ -2066,9 +2095,7 @@ export default class CustomColumnModal extends React.Component {
           )}
         </div>
         {this.state.isFunctionConfigModalVisible && (
-          <div style={{ height: '100%' }}>
-            {this.renderFunctionConfigModalContent()}
-          </div>
+          <div style={{ height: '100%' }}>{this.renderFunctionConfigModalContent()}</div>
         )}
       </div>
     )

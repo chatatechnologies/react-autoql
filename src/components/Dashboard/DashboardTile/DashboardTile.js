@@ -1973,6 +1973,7 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        onRefreshClick: () => this.processTile(),
       },
     })
   }
@@ -2116,6 +2117,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
           this.props.isEditing ? '-editing' : ''
         }`,
+        onRefreshClick: () => this.processTile(),
       },
       isSecondHalf: true,
     })
