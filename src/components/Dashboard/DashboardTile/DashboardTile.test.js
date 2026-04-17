@@ -59,6 +59,22 @@ describe('renders correctly', () => {
     const dashboardTileComponent = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(dashboardTileComponent.exists()).toBe(true)
   })
+
+  test('passes showRefreshInEdit to OptionsToolbar when editing', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const optionsToolbar = wrapper.find('OptionsToolbar').first()
+    expect(optionsToolbar.exists()).toBe(true)
+    expect(optionsToolbar.prop('showRefreshInEdit')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does not pass showRefreshInEdit when not editing', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const optionsToolbar = wrapper.find('OptionsToolbar').first()
+    expect(optionsToolbar.exists()).toBe(true)
+    expect(optionsToolbar.prop('showRefreshInEdit')).not.toBe(true)
+    wrapper.unmount()
+  })
 })
 
 describe('dashboard tile pivot after filtering', () => {

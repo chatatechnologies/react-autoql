@@ -19,7 +19,6 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
-  runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
   isError500Type,
@@ -183,6 +182,8 @@ export class DashboardTile extends React.Component {
     }).isRequired,
     isEditing: PropTypes.bool,
     deleteTile: PropTypes.func,
+    resetTile: PropTypes.func,
+    onSaveCallback: PropTypes.func,
     dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
     disableAggregationMenu: PropTypes.bool,
@@ -223,6 +224,8 @@ export class DashboardTile extends React.Component {
     autoChartAggregations: true,
     cancelQueriesOnUnmount: true,
     deleteTile: () => {},
+    resetTile: () => {},
+    onSaveCallback: () => {},
     onErrorCallback: () => {},
     onRetry: () => {},
     onSuccessCallback: () => {},
@@ -1774,6 +1777,7 @@ export class DashboardTile extends React.Component {
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            isEditing={this.props.isEditing}
             {...optionsToolbarProps}
           />
         </div>
@@ -1967,6 +1971,9 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
+        // allow parent to request showing refresh/reset in edit mode
+        showRefreshInEdit: this.props.isEditing,
       },
     })
   }
@@ -2110,6 +2117,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
           this.props.isEditing ? '-editing' : ''
         }`,
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
       },
       isSecondHalf: true,
     })

@@ -1369,6 +1369,7 @@ export default class App extends Component {
               onSuccessCallback={this.onSuccess}
               autoChartAggregations={this.state.autoChartAggregations}
               onChange={this.handleTileChange}
+              onSaveCallback={this.saveDashboard}
             />
           </>
         ) : (
