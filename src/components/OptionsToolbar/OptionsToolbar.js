@@ -545,7 +545,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
-          {shouldShowButton.showRefreshDataButton && (
+          {shouldShowButton.showRefreshDataButton && this.props.isEditing && (
             <li
               className='context-menu-divider-top'
               onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
@@ -1025,7 +1025,9 @@ export class OptionsToolbar extends React.Component {
         showCreateNotificationIcon:
           !isMarkdownOnly &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
-        showRefreshDataButton: !isMarkdownOnly && isDataResponse && !!props.onRefreshClick,
+        showRefreshDataButton:
+          (!isMarkdownOnly && isDataResponse && !!props.onRefreshClick) ||
+          (!!props.onRefreshClick && !!props.showRefreshInEdit),
         showMagicWandButton: shouldShowSummaryButton({
           enableMagicWand: props.enableMagicWand,
           queryResponse: response,
@@ -1065,7 +1067,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {shouldShowButton.showRefreshDataButton && this.renderResetQueryConfirmModal()}
+        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )

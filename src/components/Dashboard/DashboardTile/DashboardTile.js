@@ -1777,6 +1777,7 @@ export class DashboardTile extends React.Component {
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            isEditing={this.props.isEditing}
             {...optionsToolbarProps}
           />
         </div>
@@ -1971,6 +1972,8 @@ export class DashboardTile extends React.Component {
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         onRefreshClick: () => this.props.resetTile(this.props.tile.i),
+        // allow parent to request showing refresh/reset in edit mode
+        showRefreshInEdit: this.props.isEditing,
       },
     })
   }

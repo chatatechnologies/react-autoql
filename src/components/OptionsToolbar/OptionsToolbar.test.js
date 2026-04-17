@@ -257,6 +257,7 @@ describe('reset query menu item', () => {
     const { wrapper, queryOutputComponent } = setup(
       {
         onRefreshClick,
+        isEditing: true,
       },
       {
         initialDisplayType: 'table',
@@ -291,7 +292,7 @@ describe('reset query menu item', () => {
       />,
     )
 
-    const toolbarProps = { ...OptionsToolbar.defaultProps, onRefreshClick }
+    const toolbarProps = { ...OptionsToolbar.defaultProps, onRefreshClick, isEditing: true }
     const wrapper = mount(<OptionsToolbar {...toolbarProps} responseRef={responseRef} />)
 
     // Open the more-options popover
@@ -316,6 +317,7 @@ describe('reset query menu item', () => {
     const { wrapper, queryOutputComponent } = setup(
       {
         onRefreshClick,
+        isEditing: true,
       },
       {
         initialDisplayType: 'table',
@@ -338,6 +340,7 @@ describe('reset query menu item', () => {
     const { wrapper, queryOutputComponent } = setup(
       {
         onRefreshClick,
+        isEditing: true,
       },
       {
         initialDisplayType: 'table',
@@ -361,6 +364,7 @@ describe('reset query menu item', () => {
     const { wrapper, queryOutputComponent } = setup(
       {
         onRefreshClick,
+        isEditing: true,
       },
       {
         initialDisplayType: 'table',
