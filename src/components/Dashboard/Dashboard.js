@@ -843,7 +843,24 @@ class DashboardWithoutTheme extends React.Component {
         }
       }
 
-      this.debouncedOnChange(tiles, true, [resetCallback])
+      // After saving the reset state, re-run the tile so its table/chart is refreshed
+      const processTileCallback = () => {
+        try {
+          const updatedTile = tiles[tileIndex]
+          // Prefer tile.key for refs, fall back to tile.i
+          const refKey = updatedTile?.key || updatedTile?.i
+          const tileRef = this.tileRefs[refKey]
+          // Only process if there is a query to execute
+          const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
+          if (tileRef && tileRef.processTile && hasQuery) {
+            tileRef.processTile()
+          }
+        } catch (error) {
+          console.error('Error processing tile after reset:', error)
+        }
+      }
+
+      this.debouncedOnChange(tiles, true, [resetCallback, processTileCallback])
     } catch (error) {
       console.error(error)
     }

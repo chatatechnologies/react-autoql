@@ -464,41 +464,6 @@
   }
 }
 
-.dashboard-tile-reset-button {
-  opacity: 0;
-  position: absolute;
-  top: -11px;
-  right: 20px;
-  width: 28px;
-  height: 28px;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--react-autoql-background-color-secondary, #fff);
-  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-  border-radius: 50%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
-
-  .react-autoql-icon {
-    font-size: 14px;
-  }
-
-  &:hover {
-    background: var(--react-autoql-color-primary, #1f77b4);
-    border-color: var(--react-autoql-color-primary, #1f77b4);
-    color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    transform: scale(1.1);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-}
 
 .dashboard-tile-delete-button {
   opacity: 0;
@@ -537,9 +502,11 @@
   }
 }
 
-.react-grid-item:hover .dashboard-tile-reset-button,
 .react-grid-item:hover .dashboard-tile-delete-button {
   opacity: 1;
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
 }
 
 .dashboard-tile-loading-container {
@@ -714,6 +681,7 @@
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-text-color-primary);
 }
+
 .dashboard-tile-input-container .react-autosuggest__suggestion {
   color: var(--react-autoql-text-color-primary);
 }

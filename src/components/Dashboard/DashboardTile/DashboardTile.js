@@ -19,7 +19,6 @@ import {
   getAutoQLConfig,
   CustomColumnTypes,
   runCachedDashboardQuery,
-  runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
   isError500Type,
@@ -34,7 +33,6 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
-import ConfirmModal from '../../ConfirmModal/ConfirmModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
@@ -131,7 +129,6 @@ export class DashboardTile extends React.Component {
       isRTHovered: false,
       isSecondRTHovered: false,
       currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
-      isResetConfirmModalOpen: false,
     }
   }
 
@@ -1973,7 +1970,7 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
-        onRefreshClick: () => this.processTile(),
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
       },
     })
   }
@@ -2117,7 +2114,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
           this.props.isEditing ? '-editing' : ''
         }`,
-        onRefreshClick: () => this.processTile(),
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
       },
       isSecondHalf: true,
     })
@@ -2184,40 +2181,6 @@ export class DashboardTile extends React.Component {
     )
   }
 
-  renderResetBtn = () => {
-    return (
-      <button
-        className='dashboard-tile-reset-button'
-        onClick={() => this.setState({ isResetConfirmModalOpen: true })}
-        type='button'
-        aria-label='Reset tile filters and sorts'
-      >
-        <Icon type='refresh' />
-      </button>
-    )
-  }
-
-  renderResetConfirmModal = () => {
-    return (
-      <ConfirmModal
-        isVisible={this.state.isResetConfirmModalOpen}
-        title='Reset Tile'
-        onClose={() => this.setState({ isResetConfirmModalOpen: false })}
-        onConfirm={() => {
-          this.setState({ isResetConfirmModalOpen: false })
-          this.props.resetTile(this.props.tile.i)
-        }}
-        confirmText='Reset'
-        backText='Cancel'
-      >
-        <div>
-          <p>This will clear all filters, additional columns, and sorts for this tile.</p>
-          <p>The query and title will be preserved.</p>
-        </div>
-      </ConfirmModal>
-    )
-  }
-
   render = () => {
     const style = {}
     if (this.props.isDragging) {
@@ -2247,9 +2210,7 @@ export class DashboardTile extends React.Component {
             </>
           </div>
           {this.props.isEditing && this.renderDragHandles()}
-          {this.props.isEditing && this.renderResetBtn()}
           {this.props.isEditing && this.renderDeleteBtn()}
-          {this.renderResetConfirmModal()}
         </div>
       </ErrorBoundary>
     )
