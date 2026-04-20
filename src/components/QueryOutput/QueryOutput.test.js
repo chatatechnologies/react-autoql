@@ -1,6 +1,7 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
 import _cloneDeep from 'lodash.clonedeep'
+import { DATE_ONLY_CHART_TYPES } from 'autoql-fe-utils'
 import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../..'
 import { QueryOutput as QueryOutputWithoutTheme } from '../../components/QueryOutput/QueryOutput'
@@ -362,6 +363,67 @@ describe('pivot table filtering', () => {
       })
       queryOutput.unmount()
     })
+  })
+})
+
+describe('date-only axis auto-selection behavior', () => {
+  test('does not reset table config for date-only chart types after manual string-axis selection', () => {
+    const wrapper = setup({
+      queryResponse: _cloneDeep(testCases[9]),
+    })
+    const instance = wrapper.instance()
+
+    // Simulate user manually selecting a string axis for this response.
+    instance.hasUserSelectedStringAxis = true
+    instance.tableConfig = {
+      ...instance.tableConfig,
+      stringColumnIndex: instance.tableConfig?.stringColumnIndex ?? 0,
+    }
+
+    const setTableConfigSpy = jest.spyOn(instance, 'setTableConfig')
+    const isTableConfigValidSpy = jest.spyOn(instance, 'isTableConfigValid').mockReturnValue(false)
+    const hasErrorSpy = jest.spyOn(instance, 'hasError').mockReturnValue(false)
+    const currentlySupportsPivotSpy = jest.spyOn(instance, 'currentlySupportsPivot').mockReturnValue(false)
+    const isColumnIndexValidSpy = jest.spyOn(instance, 'isColumnIndexValid').mockReturnValue(true)
+
+    instance.checkAndUpdateTableConfigs(DATE_ONLY_CHART_TYPES[0])
+
+    expect(setTableConfigSpy).not.toHaveBeenCalled()
+
+    setTableConfigSpy.mockRestore()
+    isTableConfigValidSpy.mockRestore()
+    hasErrorSpy.mockRestore()
+    currentlySupportsPivotSpy.mockRestore()
+    isColumnIndexValidSpy.mockRestore()
+  })
+
+  test('still resets table config for non-date chart types when invalid', () => {
+    const wrapper = setup({
+      queryResponse: _cloneDeep(testCases[9]),
+    })
+    const instance = wrapper.instance()
+
+    instance.hasUserSelectedStringAxis = true
+    instance.tableConfig = {
+      ...instance.tableConfig,
+      stringColumnIndex: instance.tableConfig?.stringColumnIndex ?? 0,
+    }
+
+    const setTableConfigSpy = jest.spyOn(instance, 'setTableConfig')
+    const isTableConfigValidSpy = jest.spyOn(instance, 'isTableConfigValid').mockReturnValue(false)
+    const hasErrorSpy = jest.spyOn(instance, 'hasError').mockReturnValue(false)
+    const currentlySupportsPivotSpy = jest.spyOn(instance, 'currentlySupportsPivot').mockReturnValue(false)
+    const isColumnIndexValidSpy = jest.spyOn(instance, 'isColumnIndexValid').mockReturnValue(true)
+
+    instance.checkAndUpdateTableConfigs('column')
+
+    expect(setTableConfigSpy).toHaveBeenCalled()
+
+    setTableConfigSpy.mockRestore()
+    isTableConfigValidSpy.mockRestore()
+    hasErrorSpy.mockRestore()
+    currentlySupportsPivotSpy.mockRestore()
+    isColumnIndexValidSpy.mockRestore()
   })
 })
 

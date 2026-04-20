@@ -109,6 +109,7 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
+    shouldRender: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
@@ -145,6 +146,7 @@ export default class ChatMessage extends React.Component {
     text: null,
     enableColumnVisibilityManager: false,
     isResizing: false,
+    shouldRender: true,
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
@@ -738,7 +740,7 @@ export default class ChatMessage extends React.Component {
       // Copy as plain text using Clipboard API
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       } else {
         // Fallback for older browsers
         const textarea = document.createElement('textarea')
@@ -747,7 +749,7 @@ export default class ChatMessage extends React.Component {
         textarea.select()
         document.execCommand('copy')
         document.body.removeChild(textarea)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)
@@ -951,6 +953,7 @@ export default class ChatMessage extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+          shouldRender={!this.props.isResizing && this.props.shouldRender}
         />
       )
     }

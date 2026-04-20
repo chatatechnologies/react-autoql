@@ -1877,9 +1877,13 @@ export default class ChataTable extends React.Component {
       return null
     }
 
+    // QueryOutput does not pass `data`; rows live on `response`. `undefined < 50` is false, so
+    // without this fallback the label stays at "50" instead of the real loaded row count.
+    const loadedRowCount = this.props.data?.length ?? this.props.response?.data?.data?.rows?.length ?? 0
+
     let currentRowCount = 50
-    if (this.props.data?.length < 50) {
-      currentRowCount = this.props.data?.length
+    if (loadedRowCount < 50) {
+      currentRowCount = loadedRowCount
     }
 
     let totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
