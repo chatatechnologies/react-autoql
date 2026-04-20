@@ -115,6 +115,7 @@ export default class ChataChart extends React.Component {
     onLegendFilterChange: PropTypes.func,
     onAxisSortChange: PropTypes.func,
     axisSorts: PropTypes.object,
+    hasUserSelectedStringAxis: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -132,6 +133,7 @@ export default class ChataChart extends React.Component {
     axisSorts: {},
     canUsePivotData: false,
     chartDataSource: 'pivoted',
+    hasUserSelectedStringAxis: false,
   }
 
   isContainerCollapsed = () => {
@@ -264,7 +266,8 @@ export default class ChataChart extends React.Component {
     if (
       this.props.type !== prevProps.type &&
       DATE_ONLY_CHART_TYPES.includes(this.props.type) &&
-      !isColumnDateType(this.props.columns[this.props.stringColumnIndex])
+      !isColumnDateType(this.props.columns[this.props.stringColumnIndex]) &&
+      !this.props.hasUserSelectedStringAxis
     ) {
       const dateColumnIndex = getDateColumnIndex(this.props.originalColumns)
       this.props.changeStringColumnIndex(dateColumnIndex)
@@ -1193,6 +1196,7 @@ export default class ChataChart extends React.Component {
       chartID: this.state.chartID,
       isLoading: this.state.isLoading,
       changeNumberColumnIndices: this.props.changeNumberColumnIndices,
+      changeStringColumnIndex: this.props.changeStringColumnIndex,
       onAxesRenderComplete: this.adjustChartPosition,
       showAverageLine: this.state.showAverageLine,
       toggleAverageLine: this.toggleAverageLine,

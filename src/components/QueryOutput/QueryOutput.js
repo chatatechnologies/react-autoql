@@ -48,6 +48,7 @@ import {
   DEFAULT_DATA_PAGE_SIZE,
   MAX_DATA_PAGE_SIZE,
   CHART_TYPES,
+  DATE_ONLY_CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
   getFilterPrecision,
@@ -128,6 +129,7 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = true
     this.renderComplete = false
     this.hasCalledInitialTableConfigChange = false
+    this.hasUserSelectedStringAxis = false
 
     const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
     const columns = this.formatColumnsForTable(
@@ -527,9 +529,13 @@ export class QueryOutput extends React.Component {
 
         if (propsHaveData && instanceVarIsStale) {
           // Full re-init: sync instance var and rebuild columns + data as if freshly mounted
+          const prevQueryID = this.queryID
           this.queryResponse = _cloneDeep(this.props.queryResponse)
           this.columnDateRanges = getColumnDateRanges(this.props.queryResponse)
           this.queryID = this.queryResponse?.data?.data?.query_id
+          if (this.queryID && this.queryID !== prevQueryID) {
+            this.hasUserSelectedStringAxis = false
+          }
           this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
           this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
 
@@ -878,10 +884,19 @@ export class QueryOutput extends React.Component {
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
     // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
-    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), displayType)
+    const columns = this.getColumns()
+    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, columns, displayType)
 
     if (!this.hasError(this.queryResponse) && !isTableConfigValid) {
-      this.setTableConfig()
+      const isDateOnlyChart = DATE_ONLY_CHART_TYPES.includes(displayType)
+      const hasUserStringAxisSelection =
+        this.hasUserSelectedStringAxis && this.isColumnIndexValid(this.tableConfig?.stringColumnIndex, columns)
+
+      // When users switch to date-only charts after manually picking an axis, don't force-reset
+      // tableConfig just to coerce the string axis back to a date column.
+      if (!(isDateOnlyChart && hasUserStringAxisSelection)) {
+        this.setTableConfig()
+      }
     }
 
     if (this.currentlySupportsPivot()) {
@@ -1159,6 +1174,11 @@ export class QueryOutput extends React.Component {
     if (response && this._isMounted) {
       this.pivotTableID = uuid()
       this.isOriginalData = false
+      const nextQueryID = response?.data?.data?.query_id
+      if (nextQueryID && nextQueryID !== this.queryID) {
+        this.hasUserSelectedStringAxis = false
+      }
+      this.queryID = nextQueryID || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -2040,6 +2060,12 @@ export class QueryOutput extends React.Component {
   }
 
   onNewData = (response) => {
+    const nextQueryID = response?.data?.data?.query_id
+    if (nextQueryID && nextQueryID !== this.queryID) {
+      this.hasUserSelectedStringAxis = false
+      this.queryID = nextQueryID
+    }
+
     this.isOriginalData = false
     this.queryResponse = _cloneDeep(response)
     this.tableData = response?.data?.data?.rows || []
@@ -2155,6 +2181,8 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    this.hasUserSelectedStringAxis = true
+
     if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
@@ -2246,6 +2274,7 @@ export class QueryOutput extends React.Component {
 
   onChangeLegendColumnIndex = (index) => {
     const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
+    const prevStringColumnIndex = this.tableConfig.stringColumnIndex
 
     // If clicking on the column that's currently on the string axis, swap them
     if (this.tableConfig.stringColumnIndex === index) {
@@ -2256,6 +2285,10 @@ export class QueryOutput extends React.Component {
     } else {
       // Normal case: just set the legend column index
       this.tableConfig.legendColumnIndex = index
+    }
+
+    if (this.tableConfig.stringColumnIndex !== prevStringColumnIndex) {
+      this.hasUserSelectedStringAxis = true
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
@@ -4302,6 +4335,7 @@ export class QueryOutput extends React.Component {
           bucketSize={this.props.bucketSize}
           enableCyclicalDates={effectiveEnableCyclicalDates}
           queryID={this.queryResponse?.data?.data?.query_id}
+          hasUserSelectedStringAxis={this.hasUserSelectedStringAxis}
           isEditing={this.props.isEditing}
           hiddenLegendLabels={this.state.hiddenLegendLabels}
           onLegendVisibilityChange={this.handleLegendVisibilityChange}
