@@ -4,17 +4,41 @@ import { select } from 'd3-selection'
 import { sankey as d3Sankey, sankeyLinkHorizontal } from 'd3-sankey'
 import { scaleOrdinal } from 'd3-scale'
 import { zoom, zoomIdentity } from 'd3-zoom'
-import _isEqual from 'lodash.isequal'
+import { MdOutlineFitScreen } from 'react-icons/md'
 
-import { getAutoQLConfig, getThemeValue, isColumnNumberType, findNetworkColumns } from 'autoql-fe-utils'
+import {
+  getThemeValue,
+  isColumnNumberType,
+  findNetworkColumns,
+  formatElement,
+  getDataFormatting,
+  getAutoQLConfig,
+} from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import { Tooltip } from '../../Tooltip'
 import SankeyColumnSelector from './SankeyColumnSelector'
-import SankeyFilterButton from './SankeyFilterButton'
 
 import './ChataSankeyDiagram.scss'
 
 const MAX_FLOWS = 100 // Maximum number of flows to display
+const MAX_PATH_COLUMNS = 6
+
+const escapeHtml = (value = '') => {
+  return `${value}`
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+const areNumberArraysEqual = (a = [], b = []) => {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false
+  }
+  return true
+}
 
 // Helper function to detect and remove circular links
 const removeCircularLinks = (links, nodes) => {
@@ -120,105 +144,261 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     targetColumnIndex: detectedTargetIndex,
     weightColumnIndex: detectedWeightIndex,
   } = useMemo(() => findNetworkColumns(props.columns || []), [props.columns])
+  const persistedPathColumnIndices = Array.isArray(props.initialChartControls?.sankeyPathColumnIndices)
+    ? props.initialChartControls.sankeyPathColumnIndices
+    : []
+  const persistedValueColumnIndex = props.initialChartControls?.sankeyValueColumnIndex
+
+  const categoricalColumnIndices = useMemo(
+    () =>
+      (props.columns || [])
+        .map((col, index) => ({ col, index }))
+        .filter(({ col }) => !isColumnNumberType(col))
+        .map(({ index }) => index),
+    [props.columns],
+  )
+
+  const getInitialPathColumnIndices = (columns, detectedSource, detectedTarget, persistedPath = []) => {
+    if (!columns?.length) return []
+
+    const validPersisted = Array.from(new Set((persistedPath || []).filter((index) => columns.includes(index))))
+    if (validPersisted.length >= 2) {
+      return validPersisted.slice(0, MAX_PATH_COLUMNS)
+    }
+
+    const hasDetectedSource = detectedSource >= 0 && columns.includes(detectedSource)
+    const hasDetectedTarget = detectedTarget >= 0 && columns.includes(detectedTarget)
+    if (hasDetectedSource && hasDetectedTarget && detectedSource !== detectedTarget) {
+      return [detectedSource, detectedTarget]
+    }
+
+    return columns.slice(0, 2)
+  }
 
   // Column selection state
-  const [sourceColumnIndex, setSourceColumnIndex] = useState(detectedSourceIndex !== -1 ? detectedSourceIndex : 0)
-  const [targetColumnIndex, setTargetColumnIndex] = useState(detectedTargetIndex !== -1 ? detectedTargetIndex : 1)
-  const [valueColumnIndex, setValueColumnIndex] = useState(detectedWeightIndex !== -1 ? detectedWeightIndex : 2)
+  const [pathColumnIndices, setPathColumnIndices] = useState(() =>
+    getInitialPathColumnIndices(
+      categoricalColumnIndices,
+      detectedSourceIndex,
+      detectedTargetIndex,
+      persistedPathColumnIndices,
+    ),
+  )
+  const [valueColumnIndex, setValueColumnIndex] = useState(() => {
+    if (persistedValueColumnIndex >= 0 && isColumnNumberType(props.columns?.[persistedValueColumnIndex])) {
+      return persistedValueColumnIndex
+    }
+    return detectedWeightIndex !== -1 ? detectedWeightIndex : 2
+  })
 
   // Dropdown state
-  const [showSourceDropdown, setShowSourceDropdown] = useState(false)
-  const [showTargetDropdown, setShowTargetDropdown] = useState(false)
+  const [showPathDropdown, setShowPathDropdown] = useState(false)
   const [showValueDropdown, setShowValueDropdown] = useState(false)
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
 
-  // Get all unique source and target values for filtering
-  const allUniqueValues = useMemo(() => {
-    const sources = new Set()
-    const targets = new Set()
+  const persistSankeyControls = (updates) => {
+    if (!props.onChartControlsChange) return
 
-    props.data?.forEach((row) => {
-      const source = String(row[sourceColumnIndex] ?? '')
-      const target = String(row[targetColumnIndex] ?? '')
-      if (source) sources.add(source)
-      if (target) targets.add(target)
-    })
-
-    return {
-      sources: Array.from(sources).sort(),
-      targets: Array.from(targets).sort(),
+    const nextControls = {
+      ...(props.initialChartControls || {}),
+      ...updates,
     }
-  }, [props.data, sourceColumnIndex, targetColumnIndex])
+    if (
+      areNumberArraysEqual(
+        nextControls?.sankeyPathColumnIndices || [],
+        props.initialChartControls?.sankeyPathColumnIndices || [],
+      ) &&
+      nextControls?.sankeyValueColumnIndex === props.initialChartControls?.sankeyValueColumnIndex
+    ) {
+      return
+    }
 
-  // Filter state - start with all values selected
-  const [selectedSources, setSelectedSources] = useState([])
-  const [selectedTargets, setSelectedTargets] = useState([])
+    props.onChartControlsChange(nextControls)
+  }
 
-  // Initialize filters when unique values change
+  const handlePathChange = (nextPathColumnIndices) => {
+    if (areNumberArraysEqual(nextPathColumnIndices || [], pathColumnIndices || [])) {
+      return
+    }
+    setPathColumnIndices(nextPathColumnIndices)
+    persistSankeyControls({ sankeyPathColumnIndices: nextPathColumnIndices })
+  }
+
+  const handleValueColumnChange = (nextValueColumnIndex) => {
+    if (nextValueColumnIndex === valueColumnIndex) {
+      return
+    }
+    setValueColumnIndex(nextValueColumnIndex)
+    persistSankeyControls({ sankeyValueColumnIndex: nextValueColumnIndex })
+  }
+
+  const buttonSize = 35
+  const buttonGap = 5
+  const totalChartWidth = props.width || 600
+  const buttonStartX = totalChartWidth - buttonSize - 10
+  const buttonIconSize = 20
+  const buttonIconOffset = (buttonSize - buttonIconSize) / 2
+  // Keep Sankey drawing area clear of right-side controls.
+  const chartRightBound = buttonStartX - 10
+
   useEffect(() => {
-    setSelectedSources(allUniqueValues.sources)
-    setSelectedTargets(allUniqueValues.targets)
-  }, [allUniqueValues.sources.join(','), allUniqueValues.targets.join(',')])
+    setPathColumnIndices((prev) => {
+      const validPrev = Array.from(new Set((prev || []).filter((index) => categoricalColumnIndices.includes(index))))
+      const nextPath =
+        validPrev.length >= 2
+          ? validPrev.slice(0, MAX_PATH_COLUMNS)
+          : getInitialPathColumnIndices(
+              categoricalColumnIndices,
+              detectedSourceIndex,
+              detectedTargetIndex,
+              persistedPathColumnIndices,
+            )
+      if (areNumberArraysEqual(prev || [], nextPath || [])) {
+        return prev
+      }
+      return nextPath
+    })
+  }, [categoricalColumnIndices, detectedSourceIndex, detectedTargetIndex, persistedPathColumnIndices])
+
+  useEffect(() => {
+    const firstNumberColumnIndex = (props.columns || []).findIndex((col) => isColumnNumberType(col))
+    if (
+      firstNumberColumnIndex >= 0 &&
+      !isColumnNumberType(props.columns?.[valueColumnIndex]) &&
+      firstNumberColumnIndex !== valueColumnIndex
+    ) {
+      // Auto-correct invalid value column locally without persisting (prevents dashboard update loops).
+      setValueColumnIndex(firstNumberColumnIndex)
+    }
+  }, [props.columns, valueColumnIndex])
 
   const processedData = useMemo(() => {
     const { data, columns } = props
 
-    if (!data || !data.length || !columns || !columns.length) {
+    if (!data || !data.length || !columns || !columns.length || pathColumnIndices.length < 2) {
       return { nodes: [], links: [], isDataTruncated: false, totalFlows: 0 }
     }
 
-    // Aggregate flows
+    const formattingConfig = getDataFormatting(
+      props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting,
+    )
+
+    // Aggregate flows across adjacent path steps
     const flowMap = new Map()
-    const nodeSet = new Set()
 
     data.forEach((row) => {
-      const source = String(row[sourceColumnIndex] ?? '')
-      const target = String(row[targetColumnIndex] ?? '')
       const value = parseFloat(row[valueColumnIndex]) || 0
 
-      if (!source || !target || value <= 0) return
+      if (value <= 0) return
 
-      // Apply filters
-      if (!selectedSources.includes(source) || !selectedTargets.includes(target)) return
+      for (let i = 0; i < pathColumnIndices.length - 1; i++) {
+        const source = String(row[pathColumnIndices[i]] ?? '').trim()
+        const target = String(row[pathColumnIndices[i + 1]] ?? '').trim()
+        if (!source || !target) continue
+        const sourceColumn = columns[pathColumnIndices[i]]
+        const targetColumn = columns[pathColumnIndices[i + 1]]
+        const sourceDisplayValue = formatElement({
+          element: row[pathColumnIndices[i]],
+          column: sourceColumn,
+          config: formattingConfig,
+        })
+        const targetDisplayValue = formatElement({
+          element: row[pathColumnIndices[i + 1]],
+          column: targetColumn,
+          config: formattingConfig,
+        })
+        const sourceDisplay = sourceDisplayValue == null ? '' : String(sourceDisplayValue)
+        const targetDisplay = targetDisplayValue == null ? '' : String(targetDisplayValue)
 
-      nodeSet.add(source)
-      nodeSet.add(target)
-
-      const key = `${source}|||${target}`
-      flowMap.set(key, (flowMap.get(key) || 0) + value)
+        const sourceId = `${i}|||${source}`
+        const targetId = `${i + 1}|||${target}`
+        const key = `${sourceId}>>>>${targetId}`
+        const existing = flowMap.get(key)
+        flowMap.set(key, {
+          sourceId,
+          targetId,
+          sourceName: source,
+          targetName: target,
+          sourceDisplay,
+          targetDisplay,
+          sourceStage: i,
+          targetStage: i + 1,
+          value: (existing?.value || 0) + value,
+        })
+      }
     })
 
     // Create links array and sort by value (descending)
-    const allLinks = []
-    flowMap.forEach((value, key) => {
-      const [sourceName, targetName] = key.split('|||')
-      allLinks.push({ sourceName, targetName, value })
-    })
+    const allLinks = Array.from(flowMap.values())
 
     allLinks.sort((a, b) => b.value - a.value)
 
     const totalFlowsCount = allLinks.length
     const isTruncated = totalFlowsCount > MAX_FLOWS
-    const displayLinks = isTruncated ? allLinks.slice(0, MAX_FLOWS) : allLinks
+    let displayLinks = allLinks
+
+    // Keep stage coverage when truncating: reserve slots per stage first, then fill remaining by global value.
+    if (isTruncated) {
+      const numStages = Math.max(1, pathColumnIndices.length - 1)
+      const perStageQuota = Math.max(1, Math.floor(MAX_FLOWS / numStages))
+      const selectedKeys = new Set()
+      const stageBuckets = new Map()
+
+      allLinks.forEach((link) => {
+        const bucket = stageBuckets.get(link.sourceStage) || []
+        bucket.push(link)
+        stageBuckets.set(link.sourceStage, bucket)
+      })
+
+      for (let stage = 0; stage < numStages; stage++) {
+        const bucket = stageBuckets.get(stage) || []
+        bucket.slice(0, perStageQuota).forEach((link) => {
+          selectedKeys.add(`${link.sourceId}>>>>${link.targetId}`)
+        })
+      }
+
+      for (const link of allLinks) {
+        if (selectedKeys.size >= MAX_FLOWS) break
+        selectedKeys.add(`${link.sourceId}>>>>${link.targetId}`)
+      }
+
+      displayLinks = allLinks.filter((link) => selectedKeys.has(`${link.sourceId}>>>>${link.targetId}`))
+    }
 
     // Create nodes array from displayed links only
-    const displayNodeSet = new Set()
+    const displayNodeMap = new Map()
     displayLinks.forEach((link) => {
-      displayNodeSet.add(link.sourceName)
-      displayNodeSet.add(link.targetName)
+      if (!displayNodeMap.has(link.sourceId)) {
+        displayNodeMap.set(link.sourceId, {
+          id: link.sourceId,
+          name: link.sourceName,
+          displayName: link.sourceDisplay ?? link.sourceName,
+          stage: link.sourceStage,
+        })
+      }
+      if (!displayNodeMap.has(link.targetId)) {
+        displayNodeMap.set(link.targetId, {
+          id: link.targetId,
+          name: link.targetName,
+          displayName: link.targetDisplay ?? link.targetName,
+          stage: link.targetStage,
+        })
+      }
     })
-    const nodes = Array.from(displayNodeSet).map((name) => ({ name }))
+    const nodes = Array.from(displayNodeMap.values())
+    const nodeIndexById = new Map(nodes.map((node, index) => [node.id, index]))
 
     // Convert links to indices
     const linksWithIndices = displayLinks.map((link) => {
-      const sourceIndex = nodes.findIndex((n) => n.name === link.sourceName)
-      const targetIndex = nodes.findIndex((n) => n.name === link.targetName)
+      const sourceIndex = nodeIndexById.get(link.sourceId)
+      const targetIndex = nodeIndexById.get(link.targetId)
       return {
         source: sourceIndex,
         target: targetIndex,
         value: link.value,
         sourceName: link.sourceName,
         targetName: link.targetName,
+        sourceDisplay: link.sourceDisplay ?? link.sourceName,
+        targetDisplay: link.targetDisplay ?? link.targetName,
       }
     })
 
@@ -236,11 +416,10 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   }, [
     props.data,
     props.columns,
-    sourceColumnIndex,
-    targetColumnIndex,
+    pathColumnIndices,
     valueColumnIndex,
-    selectedSources,
-    selectedTargets,
+    props.dataFormatting,
+    props.autoQLConfig,
   ])
 
   useEffect(() => {
@@ -283,12 +462,12 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     labelsRef.current.style('display', 'block')
 
     labelsRef.current.each(function (d, i) {
-      const node = nodesDataRef.current.find((n) => n.name === d.name)
+      const node = nodesDataRef.current.find((n) => n.id === d.id)
       if (!node) return
 
       const textElement = select(this)
       const isLeftSide = node.x0 < chartWidth / 2
-      const fullText = d.name
+      const fullText = d.displayName || d.name
 
       // Position in world coordinates
       const xOffset = 6
@@ -344,7 +523,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     // Sort labels by Y position to ensure consistent hiding behavior
     const labelData = []
     labelsRef.current.each(function (d) {
-      const node = nodesDataRef.current.find((n) => n.name === d.name)
+      const node = nodesDataRef.current.find((n) => n.id === d.id)
       if (node) {
         labelData.push({
           element: this,
@@ -401,9 +580,9 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     const svg = select(chartRef.current)
     svg.selectAll('*').remove()
 
-    const { width, height } = props
+    const { height } = props
     const margin = { top: 10, right: 10, bottom: 10, left: 10 }
-    const chartWidth = width - margin.left - margin.right
+    const chartWidth = Math.max(120, chartRightBound - margin.left - margin.right)
     const chartHeight = height - margin.top - margin.bottom
 
     // Create zoom behavior - vertical only, no horizontal movement
@@ -458,9 +637,16 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     const zoomableGroup = container.append('g')
 
     // Create sankey layout
+    const maxStage = (processedData.nodes || []).reduce((max, node) => Math.max(max, node.stage || 0), 0)
     const sankey = d3Sankey()
       .nodeWidth(15)
       .nodePadding(10)
+      .nodeAlign((node) => {
+        // Lock horizontal placement by selected path stage so categories from different
+        // path columns never collapse into the same visual column.
+        const stage = Math.max(0, Math.min(Math.floor(node.stage || 0), maxStage))
+        return stage
+      })
       .extent([
         [1, 1],
         [chartWidth - 1, chartHeight - 5],
@@ -506,14 +692,20 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('stroke', (d) => colorScale(d.source.name))
       .attr('fill', 'none')
       .attr('opacity', 0.5)
+      .attr('data-tooltip-id', props.chartTooltipID)
+      .attr(
+        'data-tooltip-html',
+        (d) =>
+          `<strong>${escapeHtml(d.source.displayName || d.source.name)} → ${escapeHtml(
+            d.target.displayName || d.target.name,
+          )}</strong><br/>Value: ${d.value.toLocaleString()}`,
+      )
       .on('mouseover', function (event, d) {
         select(this).attr('opacity', 0.7)
       })
       .on('mouseout', function (event, d) {
         select(this).attr('opacity', 0.5)
       })
-      .append('title')
-      .text((d) => `${d.source.name} → ${d.target.name}\nValue: ${d.value.toLocaleString()}`)
 
     // Add nodes
     const nodeGroup = zoomableGroup
@@ -533,14 +725,17 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('width', (d) => d.x1 - d.x0)
       .attr('fill', (d) => colorScale(d.name))
       .attr('opacity', 0.8)
+      .attr('data-tooltip-id', props.chartTooltipID)
+      .attr(
+        'data-tooltip-html',
+        (d) => `<strong>${escapeHtml(d.displayName || d.name)}</strong><br/>Total: ${d.value.toLocaleString()}`,
+      )
       .on('mouseover', function (event, d) {
         select(this).attr('opacity', 1)
       })
       .on('mouseout', function (event, d) {
         select(this).attr('opacity', 0.8)
       })
-      .append('title')
-      .text((d) => `${d.name}\nTotal: ${d.value.toLocaleString()}`)
 
     // Add labels with max width and truncation
     const maxLabelWidth = chartWidth / 3
@@ -551,14 +746,14 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('dy', '0.35em')
       .attr('text-anchor', (d) => (d.x0 < chartWidth / 2 ? 'start' : 'end'))
       .attr('class', 'sankey-node-label')
-      .text((d) => d.name)
+      .text((d) => d.displayName || d.name)
       .style('font-size', '12px')
       .style('font-weight', 'bold')
 
     // Truncate labels that are too long and add tooltips
     labels.each(function (d) {
       const textElement = select(this)
-      const fullText = d.name
+      const fullText = d.displayName || d.name
       let currentText = fullText
 
       // Check if text is too wide
@@ -607,7 +802,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         circularLinksCount > 1 ? 's were' : ' was'
       } removed or merged.`
     } else if (isDataTruncated) {
-      message = `Only the top ${MAX_FLOWS} flows (out of ${totalFlows}) are displayed. Consider filtering your data to see more specific flows.`
+      message = `Only the top ${MAX_FLOWS} flows (out of ${totalFlows}) are displayed. Consider narrowing your query to see more specific flows.`
     } else if (hasCircularLinks) {
       message = `${circularLinksCount} circular or bidirectional flow${
         circularLinksCount > 1 ? 's were' : ' was'
@@ -617,30 +812,23 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     return <DataLimitWarning tooltipID={props.tooltipID} isTruncated={isDataTruncated} customMessage={message} />
   }
 
-  const buttonSize = 35
-  const buttonGap = 5
-  const chartWidth = props.width || 600
-  const buttonStartX = chartWidth - buttonSize - 10
-
   return (
     <g>
       {renderWarning()}
       <svg
         ref={chartRef}
         className='react-autoql-sankey-chart'
-        width={chartWidth}
+        width={totalChartWidth}
         height={props.height || 400}
-        viewBox={`0 0 ${chartWidth} ${props.height || 400}`}
+        viewBox={`0 0 ${totalChartWidth} ${props.height || 400}`}
         style={{
           background: 'var(--react-autoql-background-color-secondary, #f9f9f9)',
           cursor: 'grab',
         }}
         onClick={() => {
           // Close all dropdowns when clicking on chart
-          setShowSourceDropdown(false)
-          setShowTargetDropdown(false)
+          setShowPathDropdown(false)
           setShowValueDropdown(false)
-          setShowFilterDropdown(false)
         }}
         onWheel={(e) => {
           // Prevent page scroll when zooming
@@ -670,11 +858,12 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       {/* Column Selectors - rendered outside the D3-controlled SVG */}
       <SankeyColumnSelector
         columns={props.columns}
-        selectedIndex={sourceColumnIndex}
-        onSelect={setSourceColumnIndex}
-        type='source'
-        showDropdown={showSourceDropdown}
-        setShowDropdown={setShowSourceDropdown}
+        type='path'
+        pathColumnIndices={pathColumnIndices}
+        onPathChange={handlePathChange}
+        maxPathColumns={MAX_PATH_COLUMNS}
+        showDropdown={showPathDropdown}
+        setShowDropdown={setShowPathDropdown}
         buttonX={buttonStartX}
         buttonY={10}
         buttonSize={buttonSize}
@@ -682,48 +871,21 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       />
       <SankeyColumnSelector
         columns={props.columns}
-        selectedIndex={targetColumnIndex}
-        onSelect={setTargetColumnIndex}
-        type='target'
-        showDropdown={showTargetDropdown}
-        setShowDropdown={setShowTargetDropdown}
-        buttonX={buttonStartX}
-        buttonY={10 + (buttonSize + buttonGap) * 1}
-        buttonSize={buttonSize}
-        chartTooltipID={props.chartTooltipID}
-      />
-      <SankeyColumnSelector
-        columns={props.columns}
         selectedIndex={valueColumnIndex}
-        onSelect={setValueColumnIndex}
+        onSelect={handleValueColumnChange}
         type='value'
         showDropdown={showValueDropdown}
         setShowDropdown={setShowValueDropdown}
         buttonX={buttonStartX}
-        buttonY={10 + (buttonSize + buttonGap) * 2}
+        buttonY={10 + (buttonSize + buttonGap) * 1}
         buttonSize={buttonSize}
-        chartTooltipID={props.chartTooltipID}
-      />
-
-      {/* Filter Button */}
-      <SankeyFilterButton
-        sourceValues={allUniqueValues.sources}
-        targetValues={allUniqueValues.targets}
-        selectedSources={selectedSources}
-        selectedTargets={selectedTargets}
-        onSourcesChange={setSelectedSources}
-        onTargetsChange={setSelectedTargets}
-        showDropdown={showFilterDropdown}
-        setShowDropdown={setShowFilterDropdown}
-        buttonX={buttonStartX}
-        buttonY={10 + (buttonSize + buttonGap) * 3}
         chartTooltipID={props.chartTooltipID}
       />
 
       {/* Reset Zoom Button */}
       <g
         className='sankey-reset-zoom-button'
-        transform={`translate(${buttonStartX}, ${10 + (buttonSize + buttonGap) * 4})`}
+        transform={`translate(${buttonStartX}, ${10 + (buttonSize + buttonGap) * 2})`}
         style={{ cursor: 'pointer' }}
         onClick={(e) => {
           e.stopPropagation()
@@ -732,24 +894,18 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           }
         }}
         data-tooltip-id={props.chartTooltipID}
-        data-tooltip-content='Reset zoom'
-        data-tooltip-place='left'
+        data-tooltip-html='Fit to screen'
       >
         <rect
           className='sankey-reset-zoom-button-rect'
           width={buttonSize}
           height={buttonSize}
           rx='4'
-          fill='var(--react-autoql-background-color-primary, #fff)'
-          stroke='var(--react-autoql-border-color, #ccc)'
           strokeWidth='1'
+          opacity={0}
         />
-        <g transform={`translate(${buttonSize / 2}, ${buttonSize / 2})`}>
-          {/* Magnifying glass with minus icon */}
-          <circle cx='0' cy='-2' r='7' fill='none' stroke='currentColor' strokeWidth='2' />
-          <line x1='5' y1='3' x2='9' y2='7' stroke='currentColor' strokeWidth='2' />
-          <line x1='-3' y1='-2' x2='3' y2='-2' stroke='currentColor' strokeWidth='2' />
-          <line x1='0' y1='-5' x2='0' y2='1' stroke='currentColor' strokeWidth='2' />
+        <g transform={`translate(${buttonIconOffset}, ${buttonIconOffset})`}>
+          <MdOutlineFitScreen className='sankey-reset-zoom-button-icon' size={buttonIconSize} style={{ opacity: 0 }} />
         </g>
       </g>
 

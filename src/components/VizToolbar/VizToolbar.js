@@ -148,6 +148,7 @@ class VizToolbar extends React.Component {
               {this.createVisButton(DisplayTypes.HISTOGRAM, 'Histogram', <Icon type='histogram-chart' />)}
               {this.createVisButton(DisplayTypes.SCATTERPLOT, 'Scatterplot', <Icon type='scatterplot' />)}
               {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
+              {this.createVisButton(DisplayTypes.SANKEY, 'Sankey Diagram', <Icon type='sankey' />)}
             </div>
           </div>
         </div>

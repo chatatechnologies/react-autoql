@@ -15,6 +15,8 @@ const SankeyFilterButton = ({
   buttonY,
   buttonX,
   chartTooltipID,
+  sourceLabel,
+  targetLabel,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -60,7 +62,7 @@ const SankeyFilterButton = ({
     onTargetsChange([])
   }
 
-  const tooltipHtml = `<strong>Filter Flows</strong><br/>Show/hide specific sources and targets`
+  const tooltipHtml = `<strong>Filter Flows</strong><br/>Show/hide specific ${sourceLabel.toLowerCase()} and ${targetLabel.toLowerCase()}`
 
   const renderFilterSection = (title, values, selectedValues, onToggle, onShowAll, onHideAll) => {
     return (
@@ -120,7 +122,7 @@ const SankeyFilterButton = ({
             </div>
             <div className='sankey-filter-dropdown-container'>
               {renderFilterSection(
-                'Sources',
+                sourceLabel,
                 filteredSourceValues,
                 selectedSources,
                 handleSourceToggle,
@@ -128,7 +130,7 @@ const SankeyFilterButton = ({
                 handleHideAllSources,
               )}
               {renderFilterSection(
-                'Targets',
+                targetLabel,
                 filteredTargetValues,
                 selectedTargets,
                 handleTargetToggle,
@@ -180,12 +182,16 @@ SankeyFilterButton.propTypes = {
   buttonY: PropTypes.number,
   buttonX: PropTypes.number,
   chartTooltipID: PropTypes.string,
+  sourceLabel: PropTypes.string,
+  targetLabel: PropTypes.string,
 }
 
 SankeyFilterButton.defaultProps = {
   buttonY: 10,
   buttonX: 10,
   chartTooltipID: undefined,
+  sourceLabel: 'Sources',
+  targetLabel: 'Targets',
 }
 
 export default SankeyFilterButton

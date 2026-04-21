@@ -1,6 +1,7 @@
 .react-autoql-sankey-chart {
   user-select: none;
   cursor: grab;
+  -webkit-tap-highlight-color: transparent;
 
   &:active {
     cursor: grabbing;
@@ -41,11 +42,19 @@
     cursor: default;
     font-weight: bold;
   }
+
+  // Disable browser focus outlines on SVG/D3 interactive elements.
+  &:focus,
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
 }
 
 // Column selector buttons
 .sankey-source-button-rect,
 .sankey-target-button-rect,
+.sankey-path-button-rect,
 .sankey-value-button-rect,
 .sankey-filter-button-rect,
 .sankey-reset-zoom-button-rect {
@@ -53,32 +62,39 @@
   stroke-width: 1px;
   stroke: var(--react-autoql-border-color);
   fill: var(--react-autoql-background-color-secondary);
+  cursor: pointer;
+  outline: none;
+  opacity: 1 !important;
   transition: all 0.2s ease;
-}
 
-.sankey-source-button-rect:hover,
-.sankey-target-button-rect:hover,
-.sankey-value-button-rect:hover,
-.sankey-filter-button-rect:hover,
-.sankey-reset-zoom-button-rect:hover {
-  fill: var(--react-autoql-background-color-hover);
+  &:hover {
+    stroke: var(--react-autoql-accent-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .sankey-source-button-icon,
 .sankey-target-button-icon,
+.sankey-path-button-icon,
 .sankey-value-button-icon,
-.sankey-filter-button-icon {
-  fill: var(--react-autoql-text-color-default);
+.sankey-filter-button-icon,
+.sankey-reset-zoom-button-icon {
+  fill: var(--react-autoql-text-color-primary) !important;
+  color: var(--react-autoql-text-color-primary) !important;
   pointer-events: none;
+  opacity: 1 !important;
 }
 
 .sankey-reset-zoom-button {
   &:hover .sankey-reset-zoom-button-rect {
-    fill: var(--react-autoql-background-color-hover);
+    stroke: var(--react-autoql-accent-color);
   }
   
   g {
-    color: var(--react-autoql-text-color-default);
+    color: var(--react-autoql-text-color-primary) !important;
     pointer-events: none;
   }
 }
@@ -133,6 +149,123 @@
   padding: 12px;
   text-align: center;
   color: var(--react-autoql-text-color-muted);
+}
+
+.sankey-path-dropdown-popover-content {
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 460px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+}
+
+.sankey-path-dropdown-subtitle {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--react-autoql-text-color-muted);
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-path-selected-list {
+  padding: 8px 12px;
+  min-height: 120px;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-path-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  background: var(--react-autoql-background-color-primary);
+}
+
+.sankey-path-selected-index {
+  font-size: 12px;
+  color: var(--react-autoql-text-color-muted);
+}
+
+.sankey-path-selected-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.sankey-path-drag-handle {
+  color: var(--react-autoql-text-color-muted);
+  cursor: grab;
+  user-select: none;
+  letter-spacing: -1px;
+}
+
+.sankey-path-selected-select {
+  flex: 1;
+  min-width: 0;
+
+  .react-autoql-select-and-label {
+    width: 100%;
+  }
+
+  .react-autoql-select {
+    width: 100%;
+    min-height: 28px;
+  }
+}
+
+.sankey-path-selected-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.sankey-path-control-btn {
+  border: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-default);
+  border-radius: 3px;
+  padding: 0 6px;
+  cursor: pointer;
+  font-size: 12px;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &.danger {
+    color: var(--react-autoql-danger-color, #c0392b);
+  }
+}
+
+.sankey-path-warning {
+  margin: 0 12px 8px;
+  padding: 8px;
+  border-radius: 4px;
+  background: var(--react-autoql-background-color-hover);
+  font-size: 12px;
+  color: var(--react-autoql-text-color-muted);
+}
+
+.sankey-path-add-title {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-top: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-column-dropdown-container {
+  max-height: 220px;
 }
 
 // Filter dropdown styles
