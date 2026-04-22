@@ -48,6 +48,7 @@ import {
   DEFAULT_DATA_PAGE_SIZE,
   MAX_DATA_PAGE_SIZE,
   CHART_TYPES,
+  DATE_ONLY_CHART_TYPES,
   MAX_LEGEND_LABELS,
   getColumnDateRanges,
   getFilterPrecision,
@@ -64,7 +65,6 @@ import {
   setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
-  getCleanColumnName,
   isDrilldown,
   CustomColumnTypes,
   formatFiltersForTabulator,
@@ -107,8 +107,8 @@ export class QueryOutput extends React.Component {
       hiddenLegendLabels: [],
       isEditing: false,
     }
-    
-    // Ref to store latest column overrides for synchronous access (avoids stale state issues)
+
+    // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
 
     let response = props.queryResponse
@@ -129,6 +129,7 @@ export class QueryOutput extends React.Component {
     this.isOriginalData = true
     this.renderComplete = false
     this.hasCalledInitialTableConfigChange = false
+    this.hasUserSelectedStringAxis = false
 
     const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
     const columns = this.formatColumnsForTable(
@@ -207,7 +208,8 @@ export class QueryOutput extends React.Component {
       networkColumnConfig: props.initialNetworkColumnConfig || null,
       legendFilterConfig: props.legendFilterConfig || null,
       axisSorts: props.initialAxisSorts || {}, // Track sort state for each axis by column index
-      columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides without mutating queryResponse
+      columnOverrides: props.initialTableConfigs?.columnOverrides || {}, // Store date precision overrides
+      chartControls: props.initialChartControls || {},
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
@@ -215,11 +217,70 @@ export class QueryOutput extends React.Component {
     this.updateMaxConstraints()
   }
 
+  handleChartControlsChange = (chartControls) => {
+    const prevSource = this.state?.chartControls?.dataSource
+    const nextSource = chartControls?.dataSource
+    const shouldRegeneratePivot = !!(prevSource && nextSource && prevSource !== nextSource && nextSource === 'pivoted')
+    const regeneratePivotIfNeeded = () => {
+      if (shouldRegeneratePivot && this.potentiallySupportsPivot()) {
+        try {
+          this.generatePivotData({ isFirstGeneration: true, dataChanged: true })
+        } catch (error) {
+          console.error('Failed to regenerate pivot data after data source switch:', error)
+        }
+      }
+    }
+
+    // When toggling pivoted/raw, reset series visibility and legend hidden state.
+    // Raw/pivoted should start from a clean visibility slate.
+    if (prevSource && nextSource && prevSource !== nextSource) {
+      const unhideAllSeries = (columns = []) => {
+        if (!Array.isArray(columns) || !columns.length) return columns
+        return columns.map((col) => {
+          if (!col?.isSeriesHidden) return col
+          return { ...col, isSeriesHidden: false }
+        })
+      }
+
+      if (this.pivotTableColumns?.length) {
+        this.pivotTableColumns = unhideAllSeries(this.pivotTableColumns)
+      }
+
+      if (this.state?.columns?.length) {
+        const nextColumns = unhideAllSeries(this.state.columns)
+        if (this._isMounted) {
+          this.setState(
+            {
+              chartControls: chartControls || {},
+              columns: nextColumns,
+              hiddenLegendLabels: [],
+            },
+            regeneratePivotIfNeeded,
+          )
+        }
+      } else if (this._isMounted) {
+        this.setState({ chartControls: chartControls || {}, hiddenLegendLabels: [] }, regeneratePivotIfNeeded)
+      } else {
+        regeneratePivotIfNeeded()
+      }
+    } else if (this._isMounted) {
+      // Always update immediately so standalone QueryOutput reacts without needing a parent to persist chartControls.
+      this.setState({ chartControls: chartControls || {} })
+    }
+
+    // Also forward to consumer if provided (e.g. DashboardTile persists this in the tile config)
+    this.props.onChartControlsChange?.(chartControls)
+  }
+
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
     dataFormatting: dataFormattingType,
-    initialTableConfigs: PropTypes.shape({}),
+    initialTableConfigs: PropTypes.shape({
+      tableConfig: PropTypes.shape({}),
+      pivotTableConfig: PropTypes.shape({}),
+      columnOverrides: PropTypes.object,
+    }),
     initialAggConfig: PropTypes.shape({}),
 
     queryResponse: PropTypes.shape({}),
@@ -369,7 +430,7 @@ export class QueryOutput extends React.Component {
     enableCustomColumns: true,
     disableAggregationMenu: false,
     allowCustomColumnsOnDrilldown: false,
-    preferRegularTableInitialDisplayType: false,
+    preferRegularTableInitialDisplayType: true,
     drilldownFilters: undefined,
     enableChartControls: true,
     initialChartControls: {
@@ -457,6 +518,47 @@ export class QueryOutput extends React.Component {
 
       // Legend filters automatically start fresh for each query since the filter key includes queryID
 
+      // When DM (or any parent) hides this component via shouldRender=false while a query is
+      // in flight, shouldComponentUpdate blocks all re-renders so this.queryResponse (instance var)
+      // never gets synced from props. When shouldRender flips back to true, catch up by re-initializing
+      // from the current props.queryResponse if the instance var is stale.
+      // Require prev === false so first mount (prev undefined) does not run DM-open-only logic.
+      if (this.props.shouldRender && prevProps.shouldRender === false) {
+        const propsHaveData = !!this.props.queryResponse?.data?.data
+        const instanceVarIsStale = !this.queryResponse?.data?.data
+
+        if (propsHaveData && instanceVarIsStale) {
+          // Full re-init: sync instance var and rebuild columns + data as if freshly mounted
+          const prevQueryID = this.queryID
+          this.queryResponse = _cloneDeep(this.props.queryResponse)
+          this.columnDateRanges = getColumnDateRanges(this.props.queryResponse)
+          this.queryID = this.queryResponse?.data?.data?.query_id
+          if (this.queryID && this.queryID !== prevQueryID) {
+            this.hasUserSelectedStringAxis = false
+          }
+          this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
+          this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
+
+          const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
+          const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
+          this.resetTableConfig(newColumns)
+          this.generateAllData()
+          this.setState({ columns: newColumns })
+        } else if (!this.tableData && this.shouldGenerateTableData()) {
+          this.generateAllData()
+        }
+      }
+
+      // Keep local chartControls in sync if consumer updates initialChartControls prop
+      if (!deepEqual(this.props.initialChartControls, prevProps.initialChartControls)) {
+        const nextControls = this.props.initialChartControls || {}
+        // this.state can be temporarily undefined during certain error/unmount edge cases
+        const currentControls = this.state?.chartControls || {}
+        if (!deepEqual(nextControls, currentControls)) {
+          newState.chartControls = nextControls
+        }
+      }
+
       if (this.state.displayType !== prevState.displayType) {
         const isChart = isChartType(this.state.displayType)
         const shouldEnableResize = this.props.enableResizing && isChart
@@ -515,7 +617,9 @@ export class QueryOutput extends React.Component {
             hiddenLegendLabels: newChartLegendState,
             legendStateByChart: updatedLegendStateByChart,
           },
-          () => this.props.onDisplayTypeChange?.(this.state.displayType),
+          () => {
+            this.props.onDisplayTypeChange?.(this.state.displayType)
+          },
         )
 
         // Preserve saved config while resolving number-column conflicts
@@ -727,22 +831,19 @@ export class QueryOutput extends React.Component {
   onTableConfigChange = (initialized = true, columnOverridesOverride) => {
     const tableConfig = _cloneDeep(this.tableConfig)
     const pivotTableConfig = _cloneDeep(this.pivotTableConfig)
-    // Use provided overrides if available, otherwise use state (for async setState cases)
     const columnOverrides = columnOverridesOverride || this.state?.columnOverrides || {}
 
     this.props.onTableConfigChange({
       tableConfig: tableConfig,
       pivotTableConfig: pivotTableConfig,
-      columnOverrides: _cloneDeep(columnOverrides), // Persist column overrides
+      columnOverrides: _cloneDeep(columnOverrides),
     })
   }
 
-  // Apply column overrides (e.g., date precision) to columns for charts only
-  // Uses ref for latest overrides to avoid stale state issues
+  // Apply column overrides (type/precision) to columns for charts; uses ref to avoid stale state
   applyColumnOverrides = (columns, overridesOverride) => {
-    // Use provided override, then ref (latest), then state (fallback)
     const overrides = overridesOverride || this.latestColumnOverrides || this.state?.columnOverrides || {}
-    
+
     if (!columns || !overrides || Object.keys(overrides).length === 0) {
       return columns
     }
@@ -783,10 +884,19 @@ export class QueryOutput extends React.Component {
   checkAndUpdateTableConfigs = (displayType) => {
     // Check if table configs are still valid for new display type
     // Don't reset if there's an error response (timeout, service unavailable, etc.) to preserve saved config
-    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, this.getColumns(), displayType)
+    const columns = this.getColumns()
+    const isTableConfigValid = this.isTableConfigValid(this.tableConfig, columns, displayType)
 
     if (!this.hasError(this.queryResponse) && !isTableConfigValid) {
-      this.setTableConfig()
+      const isDateOnlyChart = DATE_ONLY_CHART_TYPES.includes(displayType)
+      const hasUserStringAxisSelection =
+        this.hasUserSelectedStringAxis && this.isColumnIndexValid(this.tableConfig?.stringColumnIndex, columns)
+
+      // When users switch to date-only charts after manually picking an axis, don't force-reset
+      // tableConfig just to coerce the string axis back to a date column.
+      if (!(isDateOnlyChart && hasUserStringAxisSelection)) {
+        this.setTableConfig()
+      }
     }
 
     if (this.currentlySupportsPivot()) {
@@ -824,6 +934,60 @@ export class QueryOutput extends React.Component {
 
   getDisplayOverridesFromResponse = (response) => {
     return response?.data?.data?.fe_req?.display_overrides
+  }
+
+  normalizeSqlForOverrideMatch = (sql = '') => {
+    try {
+      let normalized = `${sql}`.toLowerCase().replace(/\s+/g, '')
+
+      // Ignore explicit CAST wrappers when matching SQL expressions.
+      let prev
+      do {
+        prev = normalized
+        normalized = normalized.replace(/cast\(([^()]+?)as[a-z0-9_]+\)/g, '$1')
+      } while (normalized !== prev)
+
+      return normalized
+    } catch (e) {
+      return `${sql}`
+    }
+  }
+
+  applyDisplayOverridesToResponse = (response, displayOverrides = []) => {
+    if (!response?.data?.data || !Array.isArray(displayOverrides) || !displayOverrides.length) {
+      return response
+    }
+
+    const nextResponse = _cloneDeep(response)
+    const feReq = nextResponse?.data?.data?.fe_req || {}
+    feReq.display_overrides = displayOverrides
+    nextResponse.data.data.fe_req = feReq
+
+    if (!Array.isArray(nextResponse?.data?.data?.columns)) {
+      return nextResponse
+    }
+
+    const overridesBySql = {}
+    displayOverrides.forEach((override) => {
+      const key = this.normalizeSqlForOverrideMatch(override?.table_column)
+      if (key) {
+        overridesBySql[key] = override
+      }
+    })
+
+    nextResponse.data.data.columns = nextResponse.data.data.columns.map((col) => {
+      const normalizedName = this.normalizeSqlForOverrideMatch(col?.name)
+      const match = overridesBySql[normalizedName]
+      if (match?.english) {
+        return {
+          ...col,
+          display_name: match.english,
+        }
+      }
+      return col
+    })
+
+    return nextResponse
   }
 
   getDataLength = () => {
@@ -882,7 +1046,8 @@ export class QueryOutput extends React.Component {
 
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
+      const referenceId = String(response?.data?.reference_id || '')
+      const referenceIdNumber = Number(referenceId.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -932,7 +1097,36 @@ export class QueryOutput extends React.Component {
     if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
       return false
     }
-    return this.potentiallySupportsPivot() && !this.potentiallySupportsDatePivot()
+
+    // Column line combo charts must use raw data (dual axis requires numberColumnIndices2 from raw columns)
+    if (this.state?.displayType === DisplayTypes.COLUMN_LINE) {
+      return false
+    }
+
+    const displayType = this.state?.displayType
+    // Heatmaps and bubble charts should always use pivoted data when available
+    const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
+
+    // Respect explicit chart data source selection from chart controls.
+    // Heatmap/bubble remain pivoted regardless of selection.
+    // Note: this can be called during construction before this.state is initialized (e.g. from setTableConfig)
+    const dataSource = this.state?.chartControls?.dataSource ?? this.props.initialChartControls?.dataSource
+    const forcePivot = !isHeatmapOrBubble && dataSource === 'pivoted'
+    const forceRaw = !isHeatmapOrBubble && dataSource === 'raw'
+    const canPivot = this.potentiallySupportsPivot()
+
+    // If user explicitly chose pivoted and the response supports pivoting, use pivot data.
+    if (forcePivot && canPivot) {
+      return true
+    }
+
+    // If user explicitly chose raw, or pivot is not supported for this response, use raw.
+    if (forceRaw || !canPivot) {
+      return false
+    }
+
+    // Otherwise, prefer pivoted data when available.
+    return true
   }
 
   numberIndicesArraysOverlap = (tableConfig) => {
@@ -980,6 +1174,11 @@ export class QueryOutput extends React.Component {
     if (response && this._isMounted) {
       this.pivotTableID = uuid()
       this.isOriginalData = false
+      const nextQueryID = response?.data?.data?.query_id
+      if (nextQueryID && nextQueryID !== this.queryID) {
+        this.hasUserSelectedStringAxis = false
+      }
+      this.queryID = nextQueryID || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -994,10 +1193,16 @@ export class QueryOutput extends React.Component {
       const aggConfig = this.getAggConfig(newColumns)
 
       // If data is a single value, change display type to table
+      // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
       let displayType = this.state.displayType
+      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
       if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
-      } else if (this.state.displayType !== 'single-value' && isSingleValueResponse(this.queryResponse)) {
+      } else if (
+        this.state.displayType !== 'single-value' &&
+        isSingleValueResponse(this.queryResponse) &&
+        !hasFilters
+      ) {
         displayType = 'single-value'
       }
 
@@ -1037,9 +1242,11 @@ export class QueryOutput extends React.Component {
       // Determine appropriate display type based on column visibility
       let displayType = this.state.displayType
       const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
+      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
 
-      if (isSingleValueResponse(this.queryResponse)) {
+      if (isSingleValueResponse(this.queryResponse) && !hasFilters) {
         // Single visible column AND single row (or no data) → single-value display
+        // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
         displayType = 'single-value'
       } else if (displayType === DisplayTypes.TABLE && visibleColumns.length === 0) {
         // All columns hidden → show text
@@ -1063,7 +1270,9 @@ export class QueryOutput extends React.Component {
     const customColumnSelects = []
     for (let i = 0; i < columns?.length; i++) {
       const foundCustomSelect = additionalSelects?.find((select) => {
-        return select?.columns?.[0]?.replace(/ /g, '') === columns?.[i].name?.replace(/ /g, '')
+        return (
+          select?.columns?.[0]?.replace(/ /g, '').toLowerCase() === columns?.[i].name?.replace(/ /g, '').toLowerCase()
+        )
       })
       if (foundCustomSelect) {
         customColumnSelects.push({ id: columns[i].id, ...foundCustomSelect })
@@ -1267,7 +1476,7 @@ export class QueryOutput extends React.Component {
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[columnIndex]?.[0] ?? 0,
+              element: this.queryResponse.data.data.rows[0]?.[columnIndex] ?? 0,
               column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
@@ -1392,7 +1601,8 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: false })
 
-    return response
+    const effectiveDisplayOverrides = args?.displayOverrides ?? queryRequestData?.display_overrides
+    return this.applyDisplayOverridesToResponse(response, effectiveDisplayOverrides)
   }
 
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
@@ -1697,14 +1907,6 @@ export class QueryOutput extends React.Component {
       })
     }
 
-    if (filter) {
-      return this.processDrilldown({
-        supportedByAPI: false,
-        activeKey,
-        filter,
-      })
-    }
-
     // todo: do we need to provide all those params or can we grab them from this component?
     const drilldownData = {}
     const groupBys = []
@@ -1712,6 +1914,42 @@ export class QueryOutput extends React.Component {
     const column = columns[columnIndex]
 
     const stringColumn = columns?.[stringColumnIndex]?.origColumn || columns?.[stringColumnIndex]
+    const isDateStringAxis = isColumnDateType(stringColumn)
+    const isListQueryResponse = isListQuery(columns)
+    const shouldForceFilterDrilldown = isListQueryResponse && isDateStringAxis
+
+    // For list-query date drilldowns, always use the query endpoint with a filter.
+    // Do not use the drilldown endpoint/groupBy flow for this case.
+    if (shouldForceFilterDrilldown) {
+      const clickedFilter =
+        filter ||
+        this.constructFilter({
+          column: stringColumn,
+          value: row?.[stringColumnIndex],
+        })
+
+      if (clickedFilter) {
+        return this.processDrilldown({
+          supportedByAPI: false,
+          activeKey,
+          filter: clickedFilter,
+        })
+      }
+    }
+
+    // Check if string column supports drilldown - if so, use groupBys instead of filter
+    const shouldUseGroupBys =
+      stringColumn?.groupable || stringColumn?.drill_down || columns?.[stringColumnIndex]?.datePivot
+
+    // Use filter only when column doesn't support drilldown, or when we lack row data (e.g. histogram buckets)
+    // When column is groupable and we have row, use the drilldown endpoint (groupBys)
+    if (filter && (!shouldUseGroupBys || !row?.length)) {
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter,
+      })
+    }
 
     if (columns?.[stringColumnIndex]?.datePivot) {
       const year = Number(columns?.[columnIndex]?.name)
@@ -1723,7 +1961,8 @@ export class QueryOutput extends React.Component {
         drill_down: stringColumn.drill_down,
         value,
       })
-    } else if (stringColumn?.groupable) {
+    } else if (stringColumn?.groupable || stringColumn?.drill_down) {
+      // Add groupBy for string column if it supports drilldown (groupable or has drill_down)
       groupBys.push({
         name: stringColumn.name,
         drill_down: stringColumn.drill_down,
@@ -1821,6 +2060,12 @@ export class QueryOutput extends React.Component {
   }
 
   onNewData = (response) => {
+    const nextQueryID = response?.data?.data?.query_id
+    if (nextQueryID && nextQueryID !== this.queryID) {
+      this.hasUserSelectedStringAxis = false
+      this.queryID = nextQueryID
+    }
+
     this.isOriginalData = false
     this.queryResponse = _cloneDeep(response)
     this.tableData = response?.data?.data?.rows || []
@@ -1936,6 +2181,8 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    this.hasUserSelectedStringAxis = true
+
     if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
       this.tableConfig.stringColumnIndex = this.tableConfig.legendColumnIndex
@@ -1972,33 +2219,22 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    if (this.usePivotDataForChart()) {
-      this.generatePivotTableData()
-      // Force chart to re-render with new pivot data by updating chartID
-      if (this._isMounted) {
-        this.setState({
-          chartID: uuid(),
-          visiblePivotRowChangeCount: (this.state.visiblePivotRowChangeCount || 0) + 1,
-        })
-      }
+    // Pivot table and shared pivot cache must follow tableConfig whenever it changes.
+    // Chart raw/pivoted toggle only affects whether the *chart* reads pivot data — it must not
+    // block regenerating pivot when the user edits the pivot row axis (or other tableConfig).
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData({ isFirstGeneration: false, dataChanged: true })
     }
 
     if (newColumns) {
-      // Store column overrides (e.g., date precision) without mutating queryResponse
-      // Always store overrides from newColumns since they represent the user's explicit choice
-      // Don't compare with getColumns() which may already have overrides applied
       const overrides = { ...this.state.columnOverrides }
-      
+
       newColumns.forEach((newCol) => {
-        // Store override from newColumns - these represent the user's explicit choice
-        // Compare against existing override in state, not getColumns() which may have stale/already-applied values
         const existingOverride = overrides[newCol.index]
-        
-        // Update override if type or precision is different from existing override
-        const needsUpdate = 
+        const needsUpdate =
           (newCol.type && newCol.type !== existingOverride?.type) ||
           (newCol.precision && newCol.precision !== existingOverride?.precision)
-        
+
         if (needsUpdate) {
           overrides[newCol.index] = {
             type: newCol.type || existingOverride?.type,
@@ -2006,17 +2242,20 @@ export class QueryOutput extends React.Component {
           }
         }
       })
-      
+
       // Update ref immediately for synchronous access (avoids stale state)
       // Deep clone to avoid reference issues
       this.latestColumnOverrides = _cloneDeep(overrides)
-      this.setState({ columnOverrides: overrides })
-      // Persist column overrides immediately with the new overrides (before setState completes)
-      this.onTableConfigChange(true, overrides)
+      // Persist column overrides in setState callback to ensure state is updated
+      this.setState({ columnOverrides: overrides }, () => {
+        this.onTableConfigChange(true, overrides)
+      })
+      // Persist column overrides immediately via setState callback
+      // this.onTableConfigChange(true, overrides)
     } else {
       this.onTableConfigChange()
     }
-    
+
     this.forceUpdate()
   }
 
@@ -2035,6 +2274,7 @@ export class QueryOutput extends React.Component {
 
   onChangeLegendColumnIndex = (index) => {
     const currentLegendColumnIndex = this.tableConfig.legendColumnIndex
+    const prevStringColumnIndex = this.tableConfig.stringColumnIndex
 
     // If clicking on the column that's currently on the string axis, swap them
     if (this.tableConfig.stringColumnIndex === index) {
@@ -2045,6 +2285,10 @@ export class QueryOutput extends React.Component {
     } else {
       // Normal case: just set the legend column index
       this.tableConfig.legendColumnIndex = index
+    }
+
+    if (this.tableConfig.stringColumnIndex !== prevStringColumnIndex) {
+      this.hasUserSelectedStringAxis = true
     }
 
     if (this.tableConfig.numberColumnIndices.includes(index)) {
@@ -2063,8 +2307,8 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    if (this.usePivotDataForChart()) {
-      this.generatePivotTableData()
+    if (this.shouldGeneratePivotData()) {
+      this.generatePivotData({ isFirstGeneration: false, dataChanged: true })
     }
 
     this.onTableConfigChange()
@@ -2072,6 +2316,31 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
+    const isUsingPivotData = this.usePivotDataForChart()
+
+    if (isUsingPivotData) {
+      // In pivot mode the axis selector shows original columns, so `indices` are original-column
+      // indices (tableConfig space). Store them on tableConfig and regenerate pivot — do NOT write
+      // them into pivotTableConfig.numberColumnIndices, which must hold pivot-column indices.
+      // After regeneration, setPivotTableConfig will compute valid pivot column indices.
+      if (!this.tableConfig) this.tableConfig = {}
+      if (indices?.length) {
+        this.tableConfig.numberColumnIndices = indices
+        this.tableConfig.numberColumnIndex = indices[0]
+      }
+      if (indices2?.length) {
+        this.tableConfig.numberColumnIndices2 = indices2
+        this.tableConfig.numberColumnIndex2 = indices2[0]
+      }
+      this.generatePivotData({ isFirstGeneration: false, dataChanged: false })
+      this.onTableConfigChange()
+      return
+    }
+
+    if (!this.tableConfig) {
+      this.tableConfig = {}
+    }
+
     if (indices) {
       this.tableConfig.numberColumnIndices = indices
       this.tableConfig.numberColumnIndex = indices[0]
@@ -2082,8 +2351,22 @@ export class QueryOutput extends React.Component {
       this.tableConfig.numberColumnIndex2 = indices2[0]
     }
 
-    const columns = newColumns ?? this.getColumns()
-    this.updateColumns(columns)
+    // Persist table config change directly. Avoid updateColumns/resetTableConfig path here,
+    // which can re-derive number series and override user axis-selector choices (notably custom columns).
+    this.onTableConfigChange()
+
+    if (newColumns && this._isMounted) {
+      this.setState((prevState) => ({
+        columns: newColumns,
+        aggConfig: this.getAggConfig(newColumns),
+        columnChangeCount: prevState.columnChangeCount + 1,
+        chartID: uuid(),
+      }))
+    } else if (this._isMounted) {
+      this.setState({ chartID: uuid() })
+    } else {
+      this.forceUpdate()
+    }
   }
 
   resetPivotTableConfig = () => {
@@ -2102,6 +2385,16 @@ export class QueryOutput extends React.Component {
 
     if (!this.pivotTableConfig) {
       this.pivotTableConfig = {}
+    }
+
+    // Dashboards can pass a persisted pivotTableConfig via initialTableConfigs.
+    // Seed it on first pivot generation so we honor saved pivot axis/series selections.
+    if (isFirstGeneration && !this.pivotConfigInitializedFromProps) {
+      const savedPivotConfig = this.props.initialTableConfigs?.pivotTableConfig
+      if (savedPivotConfig) {
+        this.pivotTableConfig = _cloneDeep(savedPivotConfig)
+      }
+      this.pivotConfigInitializedFromProps = true
     }
 
     // Set string type columns (ordinal axis)
@@ -2168,8 +2461,6 @@ export class QueryOutput extends React.Component {
     return indices.every((index) => this.isColumnIndexValid(index, columns))
   }
 
-
-
   hasIndex = (indices, index) => {
     return indices?.findIndex((i) => index === i) !== -1
   }
@@ -2194,7 +2485,7 @@ export class QueryOutput extends React.Component {
       this.ALLOW_NUMERIC_STRING_COLUMNS,
       defaultDateColumn,
     )
-    
+
     // IMPORTANT: If stringColumnIndex is already set and valid, preserve it (don't use the one from getStringColumnIndices)
     const existingStringIndex = this.tableConfig?.stringColumnIndex
     const hasValidExistingStringIndex =
@@ -2444,7 +2735,10 @@ export class QueryOutput extends React.Component {
               return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
             case 'regex':
               try {
-                const re = new RegExp(cleanValue)
+                const pattern = String(cleanValue || '')
+                if (pattern.length > 10000) return false
+                const re = new RegExp(pattern)
+                re.test(rowStr.substring(0, Math.min(100, rowStr.length)))
                 return re.test(rowStr)
               } catch (e) {
                 return false
@@ -2619,7 +2913,7 @@ export class QueryOutput extends React.Component {
     })
   }
 
-  formatColumnsForTable = (columns, additionalSelects = [], aggConfig = {}) => {
+  formatColumnsForTable = (columns, _additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
       return null
@@ -2761,6 +3055,10 @@ export class QueryOutput extends React.Component {
 
         if (customSelect || newCol.is_custom) {
           newCol.custom = true
+        }
+        // Re-attach persisted token list for nested custom column composition
+        if (customSelect?.column_fn?.length) {
+          newCol.columnFnArray = customSelect.column_fn
         }
       }
 
@@ -3438,33 +3736,156 @@ export class QueryOutput extends React.Component {
     this.setState({ showCustomColumnModal: false, activeCustomColumn: undefined })
   }
 
-  onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
-    if (isHiddenColumn) {
-      this.setState({ isAddingColumn: true })
-      this.tableRef?.setPageLoading(true)
-
-      const newColumns = this.state.columns.map((col) => {
-        if (col.name === column.name) {
-          return {
-            ...col,
-            is_visible: true,
+  resolveAdditionalSelects = (
+    column,
+    formattedSelect,
+    effectiveColumnSql,
+    currentAdditionalSelectColumns,
+    existingCustomSelectForColumn,
+  ) => {
+    // Manage additional_selects resolution: update existing or add new
+    let matchedExistingCustomSelect = false
+    let result = currentAdditionalSelectColumns
+    if (existingCustomSelectForColumn) {
+      const oldColumnSql = existingCustomSelectForColumn.columns[0]?.replace(/ /g, '').toLowerCase()
+      let foundAndUpdated = false
+      result = (result || [])?.map((select) => {
+        if (select.columns[0]?.replace(/ /g, '').toLowerCase() === oldColumnSql) {
+          foundAndUpdated = true
+          matchedExistingCustomSelect = true
+          const updated = {
+            ...select,
+            columns: [effectiveColumnSql],
+            is_custom: true,
           }
+          if (column?.columnFnArray?.length) {
+            updated.column_fn = column.columnFnArray
+          }
+          return updated
         }
-
-        return col
+        return select
       })
+      if (!foundAndUpdated) {
+        const newSelect = formattedSelect
+        if (column?.columnFnArray?.length) newSelect.column_fn = column.columnFnArray
+        result = [...(result || []), newSelect]
+      }
+    } else {
+      const newSelect = formattedSelect
+      if (column?.columnFnArray?.length) newSelect.column_fn = column.columnFnArray
+      result = [...(result || []), newSelect]
+    }
+    return { result, matchedExistingCustomSelect }
+  }
 
-      setColumnVisibility({ ...this.props.authentication, columns: newColumns })
-        .then(() => this.updateColumns(newColumns))
-        .catch((error) => {
-          console.error(error)
-          this.props.onErrorCallback(error)
+  resolveDisplayOverrides = (column, effectiveColumnSql, currentDisplayOverrides) => {
+    let result = [...(currentDisplayOverrides || [])]
+
+    if (column?._snapshotDisplayOverride) {
+      result = result.filter(
+        (o) =>
+          !(o.english === column._snapshotDisplayOverride.english &&
+            o.table_column === column._snapshotDisplayOverride.table_column),
+      )
+    }
+
+    // Add or update display override entry
+    const displayOverrideName = column?.custom_column_display_name ?? (column?.display_name)
+    if (displayOverrideName) {
+      const overrideEntry = {
+        english: displayOverrideName,
+        table_column: effectiveColumnSql,
+      }
+      if (column?.columnFnArray?.length) {
+        overrideEntry.column_fn = column.columnFnArray
+      }
+
+      const hasExactOverride = result.some(
+        (o) => o?.english === overrideEntry.english && o?.table_column === overrideEntry.table_column,
+      )
+      if (!hasExactOverride) {
+        result.push(overrideEntry)
+      }
+    }
+
+    return result
+  }
+
+  cleanupAdditionalSelectsBySnapshot = (
+    column,
+    effectiveColumnSql,
+    currentDisplayOverrides,
+    matchedExistingCustomSelect,
+    currentAdditionalSelectColumns,
+    formattedSelect,
+  ) => {
+    // If editing an existing custom column, remove matching additional_selects entries based on snapshot
+    if (!column?._snapshotDisplayOverride || matchedExistingCustomSelect) {
+      return currentAdditionalSelectColumns
+    }
+
+    const snapshot = column._snapshotDisplayOverride
+    const snapshotSql = (snapshot.table_column || '').replace(/\s+/g, '').toLowerCase()
+
+    const sigFor = (fnArr) =>
+      fnArr
+        .map((t) => {
+          const colIdent = t?.column?.field || t?.column?.name || ''
+          return `${t?.type || ''}|${t?.value || ''}|${colIdent}`
         })
-        .finally(() => {
-          this.tableRef?.setPageLoading(false)
-          this.setState({ isAddingColumn: false })
-        })
-    } else if (!column) {
+        .join('::')
+
+    const snapshotSig = snapshot.column_fn?.length ? sigFor(snapshot.column_fn) : null
+
+    // Build a map of normalized table_column -> signature for existing display_overrides
+    const overrideSigBySql = {}
+    for (const o of currentDisplayOverrides) {
+      try {
+        const key = (o.table_column || '').replace(/\s+/g, '').toLowerCase()
+        if (o.column_fn?.length) overrideSigBySql[key] = sigFor(o.column_fn)
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    let updatedSelects = (currentAdditionalSelectColumns || []).filter((select) => {
+      const selectSqlNorm = (select?.columns?.[0] || '').replace(/\s+/g, '').toLowerCase()
+      if (snapshotSig) {
+        // If select has its own token list, compare directly
+        if (select?.column_fn?.length) {
+          return sigFor(select.column_fn) !== snapshotSig
+        }
+        // Otherwise, if there's a display_override for this select, compare its signature
+        const overrideSig = overrideSigBySql[selectSqlNorm]
+        if (overrideSig) return overrideSig !== snapshotSig
+      }
+      // Fallback to SQL string compare when token list unavailable
+      return selectSqlNorm !== snapshotSql
+    })
+
+    // If edit column could not be matched by id, make sure the edited select remains present.
+    const effectiveSqlNorm = (effectiveColumnSql || '').replace(/\s+/g, '').toLowerCase()
+    const hasEditedSelect = updatedSelects.some(
+      (select) => (select?.columns?.[0] || '').replace(/\s+/g, '').toLowerCase() === effectiveSqlNorm,
+    )
+    if (!hasEditedSelect) {
+      const restoredSelect = {
+        ...formattedSelect,
+        is_custom: true,
+      }
+      if (column?.columnFnArray?.length) {
+        restoredSelect.column_fn = column.columnFnArray
+      }
+      updatedSelects.push(restoredSelect)
+    }
+
+    return updatedSelects
+  }
+
+  onAddColumnClick = (column, sqlFn, isHiddenColumn) => {
+    if (isHiddenColumn) return this._handleHiddenColumn(column)
+
+    if (!column) {
       // For single-value responses, open modal directly since ChataTable is not rendered
       if (isSingleValueResponse(this.queryResponse)) {
         this.setState({ showCustomColumnModal: true, activeCustomColumn: undefined })
@@ -3472,48 +3893,91 @@ export class QueryOutput extends React.Component {
         // For table responses, delegate to ChataTable
         this.tableRef?.addCustomColumn()
       }
-    } else {
-      this.setState({ isAddingColumn: true })
-      this.tableRef?.setPageLoading(true)
-
-      let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
-      const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
-      if (existingCustomSelectForColumn) {
-        currentAdditionalSelectColumns = currentAdditionalSelectColumns?.filter((select) => {
-          return select.columns[0]?.replace(/ /g, '') !== existingCustomSelectForColumn.columns[0]?.replace(/ /g, '')
-        })
-      }
-
-      let currentDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
-      currentDisplayOverrides = currentDisplayOverrides?.filter((override) => {
-        return override.table_column?.trim() !== column.table_column?.trim()
-      })
-      if (column?.custom_column_display_name) {
-        currentDisplayOverrides = [
-          ...currentDisplayOverrides,
-          { english: column?.custom_column_display_name, table_column: column?.table_column },
-        ]
-      }
-
-      this.queryFn({
-        newColumns: [...currentAdditionalSelectColumns, formatAdditionalSelectColumn(column, sqlFn)],
-        displayOverrides: currentDisplayOverrides,
-      })
-        .then((response) => {
-          if (response?.data?.data?.rows) {
-            this.updateColumnsAndData(response)
-          } else {
-            throw new Error('New column addition failed')
-          }
-        })
-        .catch((error) => {
-          console.error(error)
-          this.tableRef?.setPageLoading(false)
-        })
-        .finally(() => {
-          this.setState({ isAddingColumn: false })
-        })
+      return
     }
+
+    return this._handleAddColumnForTable(column, sqlFn)
+  }
+
+  _handleHiddenColumn = (column) => {
+    this.setState({ isAddingColumn: true })
+    this.tableRef?.setPageLoading(true)
+
+    const newColumns = this.state.columns.map((col) => {
+      if (col.name === column.name) {
+        return {
+          ...col,
+          is_visible: true,
+        }
+      }
+
+      return col
+    })
+
+    setColumnVisibility({ ...this.props.authentication, columns: newColumns })
+      .then(() => this.updateColumns(newColumns))
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+      })
+      .finally(() => {
+        this.tableRef?.setPageLoading(false)
+        this.setState({ isAddingColumn: false })
+      })
+  }
+
+  _handleAddColumnForTable = (column, sqlFn) => {
+    this.setState({ isAddingColumn: true })
+    this.tableRef?.setPageLoading(true)
+
+    const formattedSelect = formatAdditionalSelectColumn(column, sqlFn)
+    const effectiveColumnSql = formattedSelect?.columns?.[0] ?? column?.table_column
+
+    let currentAdditionalSelectColumns = this.getAdditionalSelectsFromResponse(this.queryResponse) ?? []
+    const existingCustomSelectForColumn = this.state.customColumnSelects.find((col) => col.id === column.id)
+
+    // Resolve additional_selects
+    const { result: resolvedSelects, matchedExistingCustomSelect } = this.resolveAdditionalSelects(
+      column,
+      formattedSelect,
+      effectiveColumnSql,
+      currentAdditionalSelectColumns,
+      existingCustomSelectForColumn,
+    )
+    currentAdditionalSelectColumns = resolvedSelects
+
+    // Clean up additional_selects based on snapshot matching
+    const baseDisplayOverrides = this.getDisplayOverridesFromResponse(this.queryResponse) ?? []
+    currentAdditionalSelectColumns = this.cleanupAdditionalSelectsBySnapshot(
+      column,
+      effectiveColumnSql,
+      baseDisplayOverrides,
+      matchedExistingCustomSelect,
+      currentAdditionalSelectColumns,
+      formattedSelect,
+    )
+
+    // Resolve display_overrides
+    const currentDisplayOverrides = this.resolveDisplayOverrides(column, effectiveColumnSql, baseDisplayOverrides)
+
+    this.queryFn({
+      newColumns: currentAdditionalSelectColumns,
+      displayOverrides: currentDisplayOverrides,
+    })
+      .then((response) => {
+        if (response?.data?.data?.rows) {
+          this.updateColumnsAndData(response)
+        } else {
+          throw new Error('New column addition failed')
+        }
+      })
+      .catch((error) => {
+        console.error(error)
+        this.tableRef?.setPageLoading(false)
+      })
+      .finally(() => {
+        this.setState({ isAddingColumn: false })
+      })
   }
 
   onCustomColumnChange = (newColumn) => {
@@ -3541,12 +4005,18 @@ export class QueryOutput extends React.Component {
         dataFormatting={this.props.dataFormatting}
         initialColumn={this.state.activeCustomColumn}
         onUpdateColumn={(column) => {
-          this.onCustomColumnChange(column)
-          this.resetCustomColumnModal()
+          // Defer parent state updates to avoid "Cannot update during an existing state transition"
+          Promise.resolve().then(() => {
+            this.onCustomColumnChange(column)
+            this.resetCustomColumnModal()
+          })
         }}
         onAddColumn={(column) => {
-          this.onCustomColumnChange(column)
-          this.resetCustomColumnModal()
+          // Defer parent state updates to avoid "Cannot update during an existing state transition"
+          Promise.resolve().then(() => {
+            this.onCustomColumnChange(column)
+            this.resetCustomColumnModal()
+          })
         }}
       />
     )
@@ -3707,6 +4177,12 @@ export class QueryOutput extends React.Component {
     }
 
     const usePivotData = this.usePivotDataForChart()
+    const canUsePivotData =
+      this.potentiallySupportsPivot() &&
+      !this.potentiallySupportsDatePivot() &&
+      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH
+    const chartDataSource =
+      this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
     if (usePivotData && (!this.pivotTableData || !this.pivotTableColumns || !this.pivotTableConfig)) {
       // Attempt to regenerate pivot data once (cover cases where config wasn't ready yet)
@@ -3750,7 +4226,21 @@ export class QueryOutput extends React.Component {
       }
     }
 
-    const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+    const baseTableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
+    const tableConfig = _cloneDeep(baseTableConfig || {})
+    // pivotTableConfig does not store legendColumnIndex; it lives on tableConfig only. The chart
+    // and Legend need the real index so legend changes re-render and props stay in sync.
+    if (usePivotData && this.tableConfig) {
+      tableConfig.legendColumnIndex = this.tableConfig.legendColumnIndex
+    }
+
+    // For heatmaps and bubble charts, always include all numeric pivot columns so we render
+    // a full matrix of cells instead of just the first pivot column.
+    const displayType = this.state.displayType
+    const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
+    if (usePivotData && isHeatmapOrBubble && this.pivotTableConfig?.allNumberColumnIndices?.length) {
+      tableConfig.numberColumnIndices = this.pivotTableConfig.allNumberColumnIndices
+    }
 
     let isChartDataAggregated = false
     const numberOfGroupbys = getNumberOfGroupables(this.state.columns)
@@ -3766,7 +4256,7 @@ export class QueryOutput extends React.Component {
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
-    
+
     // Disable cyclical dates if any column has groupable: true
     const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
     const effectiveEnableCyclicalDates = hasGroupableColumns ? false : this.props.enableCyclicalDates
@@ -3794,7 +4284,7 @@ export class QueryOutput extends React.Component {
           key={this.state.chartID}
           isResizable={this.state.isResizable}
           {...tableConfig}
-          tableConfig={this.tableConfig}
+          tableConfig={tableConfig}
           originalColumns={originalColumns}
           data={data}
           hidden={!isChartType(this.state.displayType)}
@@ -3807,11 +4297,16 @@ export class QueryOutput extends React.Component {
           columns={columns}
           columnOverrides={usePivotData ? {} : this.state.columnOverrides}
           isAggregated={usePivotData}
+          canUsePivotData={canUsePivotData}
+          supportsPivot={this.potentiallySupportsPivot()}
+          chartDataSource={chartDataSource}
           dataFormatting={this.props.dataFormatting}
           activeChartElementKey={this.props.activeChartElementKey}
           onLegendClick={this.onLegendClick}
           currentLegendState={this.state.hiddenLegendLabels}
-          legendColumn={this.state.columns[this.tableConfig?.legendColumnIndex]}
+          legendColumn={
+            usePivotData ? originalColumns?.[tableConfig?.legendColumnIndex] : columns?.[tableConfig?.legendColumnIndex]
+          }
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}
@@ -3840,12 +4335,13 @@ export class QueryOutput extends React.Component {
           bucketSize={this.props.bucketSize}
           enableCyclicalDates={effectiveEnableCyclicalDates}
           queryID={this.queryResponse?.data?.data?.query_id}
+          hasUserSelectedStringAxis={this.hasUserSelectedStringAxis}
           isEditing={this.props.isEditing}
           hiddenLegendLabels={this.state.hiddenLegendLabels}
           onLegendVisibilityChange={this.handleLegendVisibilityChange}
           enableChartControls={this.props.enableChartControls}
-          initialChartControls={this.props.initialChartControls}
-          onChartControlsChange={this.props.onChartControlsChange}
+          initialChartControls={this.state.chartControls}
+          onChartControlsChange={this.handleChartControlsChange}
           onAxisSortChange={this.onAxisSortChange}
           axisSorts={this.state.axisSorts}
         />
@@ -4007,7 +4503,9 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
-      } else if (isSingleValueResponse(this.queryResponse)) {
+      } else if (isSingleValueResponse(this.queryResponse) && displayType === 'single-value') {
+        // Only render single-value if displayType is explicitly set to 'single-value'
+        // This prevents showing single-value when filters reduce data to 1 row
         return this.renderSingleValueResponse()
       } else if (!isTableType(displayType) && !isChartType(displayType)) {
         console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)

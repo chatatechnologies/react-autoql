@@ -16,7 +16,6 @@
   // Box shadow matching reference image - subtle depth with soft blur
   box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
   transition: box-shadow 0.3s ease;
-
 }
 
 .react-autoql-dashboard-tile-inner-div {
@@ -36,9 +35,7 @@
   // Box shadow matching reference image - subtle depth with soft blur
   box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
   transition: box-shadow 0.3s ease;
-
 }
-
 
 .react-autoql-dashboard .react-autoql-dashboard-tile:hover {
   // Show interpretation badge on tile hover
@@ -388,21 +385,10 @@
 }
 
 .dashboard-tile-title-container .dashboard-tile-title {
-  // Modern: Larger, more prominent title (18px is standard for card titles)
-  font-weight: 500;
+  font-weight: 600;
   font-size: 15px;
   line-height: 1.4;
   margin: 0;
-  
-  // Optional: Subtle gradient text effect (uncomment if desired)
-  // background: linear-gradient(
-  //   135deg,
-  //   var(--react-autoql-text-color-primary, #1a1a1a) 0%,
-  //   var(--react-autoql-accent-color, #26a7df) 100%
-  // );
-  // -webkit-background-clip: text;
-  // -webkit-text-fill-color: transparent;
-  // background-clip: text;
 }
 
 /* Wrap mode: title uses multiple lines instead of truncation + tooltip */
@@ -478,6 +464,7 @@
   }
 }
 
+
 .dashboard-tile-delete-button {
   opacity: 0;
   position: absolute;
@@ -514,8 +501,12 @@
     transform: scale(0.95);
   }
 }
+
 .react-grid-item:hover .dashboard-tile-delete-button {
   opacity: 1;
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
 }
 
 .dashboard-tile-loading-container {
@@ -690,6 +681,7 @@
   border: 1px solid var(--react-autoql-border-color);
   color: var(--react-autoql-text-color-primary);
 }
+
 .dashboard-tile-input-container .react-autosuggest__suggestion {
   color: var(--react-autoql-text-color-primary);
 }

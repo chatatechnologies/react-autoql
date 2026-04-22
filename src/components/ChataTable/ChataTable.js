@@ -750,7 +750,7 @@ export default class ChataTable extends React.Component {
           const totalPages = Math.ceil(pivotData.length / this.pageSize) || 1
           this.totalPages = totalPages
           this.filteredResponseData = pivotData
-          this.filterCount = pivotData.length
+          this.filterCount = responseWrapper?.data?.data?.count_rows ?? pivotData.length
 
           response = {
             rows: pivotData.slice(0, this.pageSize) ?? [],
@@ -761,7 +761,7 @@ export default class ChataTable extends React.Component {
           const totalPages = this.getTotalPages(responseWrapper)
           this.totalPages = totalPages
           this.filteredResponseData = responseWrapper?.data?.data?.rows ?? []
-          this.filterCount = this.filteredResponseData.length
+          this.filterCount = responseWrapper?.data?.data?.count_rows ?? this.filteredResponseData.length
 
           response = {
             rows: this.filteredResponseData.slice(0, this.pageSize) ?? [],
@@ -1237,8 +1237,11 @@ export default class ChataTable extends React.Component {
       const isFiltered = filteredFields.has(field) || filteredFields.has(def.name) || filteredFields.has(origField)
 
       const element = column.getElement?.()
-      if (element?.classList) {
-        element.classList.toggle('is-filtered', isFiltered)
+      const cls = element?.classList
+      if (cls) {
+        // Use `toggle` when available; fall back to `add`/`remove` for lightweight mocks
+        if (typeof cls.toggle === 'function') cls.toggle('is-filtered', isFiltered)
+        else (isFiltered ? cls.add : cls.remove)?.('is-filtered')
       }
     })
   }
@@ -1254,7 +1257,11 @@ export default class ChataTable extends React.Component {
     const hasFilters = filters && filters.length > 0
 
     if (container) {
-      container.classList.toggle('pivot-table-has-filters', hasFilters)
+      const cls = container.classList
+      if (cls) {
+        if (typeof cls.toggle === 'function') cls.toggle('pivot-table-has-filters', hasFilters)
+        else (hasFilters ? cls.add : cls.remove)?.('pivot-table-has-filters')
+      }
     }
   }
 
@@ -1268,7 +1275,7 @@ export default class ChataTable extends React.Component {
         // Batch header filter updates without triggering repeated Tabulator
         // redraws; this prevents intermediate layout thrashing. Use the
         // TableWrapper API so wrapper state (redrawRestored) stays in sync.
-        this.ref?.blockRedraw()
+        this.ref?.blockRedraw?.()
 
         try {
           filterValues.forEach((filter) => {
@@ -1280,7 +1287,7 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
-          this.ref?.restoreRedraw()
+          this.ref?.restoreRedraw?.()
         }
 
         this._filterCheckTimeout = setTimeout(() => {
@@ -1398,6 +1405,18 @@ export default class ChataTable extends React.Component {
 
   onUpdateColumnConfirm = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
+    const displayOverrides = this.props.response?.data?.data?.fe_req?.display_overrides ?? []
+    if (!Array.isArray(displayOverrides)) {
+      console.warn('Expected display_overrides to be an array, received:', typeof displayOverrides)
+      return
+    }
+    const matchingOverride = displayOverrides.find((o) => o.english === column.display_name) ?? null
+    column._snapshotDisplayOverride = matchingOverride
+    // If the override has a persisted column_fn token list, restore it so the modal
+    // never needs to re-parse SQL — preventing bracket accumulation on each edit.
+    if (matchingOverride?.column_fn?.length) {
+      column.columnFnArray = matchingOverride.column_fn
+    }
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
   }
 
@@ -1858,9 +1877,13 @@ export default class ChataTable extends React.Component {
       return null
     }
 
+    // QueryOutput does not pass `data`; rows live on `response`. `undefined < 50` is false, so
+    // without this fallback the label stays at "50" instead of the real loaded row count.
+    const loadedRowCount = this.props.data?.length ?? this.props.response?.data?.data?.rows?.length ?? 0
+
     let currentRowCount = 50
-    if (this.props.data?.length < 50) {
-      currentRowCount = this.props.data?.length
+    if (loadedRowCount < 50) {
+      currentRowCount = loadedRowCount
     }
 
     let totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
@@ -1921,22 +1944,15 @@ export default class ChataTable extends React.Component {
       }
 
       const name = column.display_name
-      const altName = column.title
       const type = COLUMN_TYPES[column?.type]?.description
       const icon = COLUMN_TYPES[column?.type]?.icon
-
-      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
-      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
 
       const stats = this.summaryStats[column.index]
 
       return (
         <div>
           <div className='selectable-table-tooltip-title'>
-            <span>
-              {name}
-              {altName !== name ? ` (${altName})` : ''}
-            </span>
+            <span>{name}</span>
           </div>
           {!!type && (
             <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
@@ -2041,15 +2057,19 @@ export default class ChataTable extends React.Component {
           data-test='react-autoql-table'
           style={this.props.style}
           className={`react-autoql-table-container 
-            ${isLoading ? 'loading' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig)?.enableDrilldowns ? 'supports-drilldown' : 'disable-drilldown'}
-            ${this.state.isFiltering ? 'filtering' : ''}
-            ${this.props.isAnimating ? 'animating' : ''}
-            ${this.useInfiniteScroll ? 'infinite' : 'limited'}
-            ${this.useInfiniteScroll && this.state.isLastPage ? 'last-page' : ''}
-            ${this.props.pivot ? 'pivot' : ''}
-            ${this.props.hidden ? 'hidden' : ''}
-            ${isEmpty ? 'empty' : ''}`}
+            ${isLoading ? 'react-autoql-table-loading' : ''}
+            ${
+              this.props.supportsDrilldowns
+                ? 'react-autoql-table-supports-drilldown'
+                : 'react-autoql-table-disable-drilldown'
+            }
+            ${this.state.isFiltering ? 'react-autoql-table-filtering' : ''}
+            ${this.props.isAnimating ? 'react-autoql-table-animating' : ''}
+            ${this.useInfiniteScroll ? 'react-autoql-table-infinite' : 'react-autoql-table-limited'}
+            ${this.useInfiniteScroll && this.state.isLastPage ? 'react-autoql-table-last-page' : ''}
+            ${this.props.pivot ? 'react-autoql-table-pivot' : ''}
+            ${this.props.hidden ? 'react-autoql-table-hidden' : ''}
+            ${isEmpty ? 'react-autoql-table-empty' : ''}`}
         >
           {this.renderTableWarnings()}
           {this.renderTableRowWarning()}

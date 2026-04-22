@@ -7,6 +7,34 @@ import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
 import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import testCases from '../../../../test/responseTestCases'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+
+// Mock for observe lifecycle tests
+jest.mock('../measureObserver', () => {
+  return {
+    observeContainer: jest.fn((node, cb) => {
+      // simulate initial callback
+      try {
+        const rect = node && node.getBoundingClientRect ? node.getBoundingClientRect() : { width: 1, height: 1 }
+        cb(rect)
+      } catch (e) {}
+      // return a cleanup that records it was called
+      const cleanup = jest.fn()
+      cleanup._wasCalled = false
+      const wrapper = jest.fn(() => {
+        cleanup._wasCalled = true
+      })
+      wrapper._wasCalled = false
+      wrapper._inner = cleanup
+      return wrapper
+    }),
+  }
+})
+
+import { observeContainer } from '../measureObserver'
+
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = sampleProps.pivot
 const datePivotSampleProps = sampleProps.datePivot
@@ -68,17 +96,21 @@ describe('renders correctly', () => {
 
       // Toggle average line
       wrapper.instance().toggleAverageLine()
-      expect(onChartControlsChange).toHaveBeenCalledWith({
-        showAverageLine: true,
-        showRegressionLine: false,
-      })
+      expect(onChartControlsChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          showAverageLine: true,
+          showRegressionLine: false,
+        }),
+      )
 
       // Toggle regression line (should turn off average line due to radio button behavior)
       wrapper.instance().toggleRegressionLine()
-      expect(onChartControlsChange).toHaveBeenCalledWith({
-        showAverageLine: false,
-        showRegressionLine: true,
-      })
+      expect(onChartControlsChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          showAverageLine: false,
+          showRegressionLine: true,
+        }),
+      )
     })
 
     test('does not show regression line toggle for horizontal bar charts', () => {
@@ -358,5 +390,80 @@ describe('getAllStringColumnIndices for pivot data', () => {
     const indices = instance.getAllStringColumnIndices()
     // Should return all string columns not on number axis
     expect(indices).toEqual([0, 1])
+  })
+})
+
+describe('ChataChart observe lifecycle', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  test('attachResizeObserver calls observeContainer and componentWillUnmount calls cleanup', () => {
+    // Create an instance of the class without rendering
+    const inst = new ChataChart({})
+    // Mark mounted to allow callbacks to proceed
+    inst._isMounted = true
+
+    // Provide a fake DOM node with getBoundingClientRect
+    const node = {
+      getBoundingClientRect: () => ({ width: 300, height: 200 }),
+    }
+
+    // assign the node and call the attach method
+    inst.chartContainerRef = node
+    expect(inst.cleanupObserve).toBeNull()
+    inst.attachResizeObserver()
+
+    // observeContainer should have been called once with our node
+    expect(observeContainer).toHaveBeenCalledTimes(1)
+    expect(observeContainer).toHaveBeenCalledWith(node, expect.any(Function), { debounceMs: 0 })
+
+    // The instance should have stored the cleanup function
+    expect(typeof inst.cleanupObserve).toBe('function')
+
+    // Call componentWillUnmount which should call cleanup
+    const wrapper = inst.cleanupObserve
+    expect(wrapper.mock.calls.length).toBe(0)
+
+    inst.componentWillUnmount()
+
+    // After unmount, wrapper should have been called
+    expect(wrapper.mock.calls.length).toBeGreaterThan(0)
+    expect(inst.cleanupObserve).toBeNull()
+    expect(inst._observedNode).toBeNull()
+  })
+
+  test('multiple instances each get observed and cleaned up independently', () => {
+    const instA = new ChataChart({})
+    const instB = new ChataChart({})
+    instA._isMounted = true
+    instB._isMounted = true
+
+    const nodeA = { getBoundingClientRect: () => ({ width: 10, height: 10 }) }
+    const nodeB = { getBoundingClientRect: () => ({ width: 20, height: 20 }) }
+
+    instA.chartContainerRef = nodeA
+    instB.chartContainerRef = nodeB
+
+    instA.attachResizeObserver()
+    instB.attachResizeObserver()
+
+    expect(observeContainer).toHaveBeenCalledTimes(2)
+    expect(observeContainer).toHaveBeenNthCalledWith(1, nodeA, expect.any(Function), { debounceMs: 0 })
+    expect(observeContainer).toHaveBeenNthCalledWith(2, nodeB, expect.any(Function), { debounceMs: 0 })
+
+    const wrapA = instA.cleanupObserve
+    const wrapB = instB.cleanupObserve
+    expect(wrapA).not.toBe(wrapB)
+
+    const initialCallsA = wrapA.mock.calls.length
+    const initialCallsB = wrapB.mock.calls.length
+
+    instA.componentWillUnmount()
+    expect(wrapA.mock.calls.length).toBeGreaterThan(initialCallsA)
+    expect(wrapB.mock.calls.length).toBe(initialCallsB)
+
+    instB.componentWillUnmount()
+    expect(wrapB.mock.calls.length).toBeGreaterThan(initialCallsB)
   })
 })

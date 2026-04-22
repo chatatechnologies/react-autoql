@@ -112,11 +112,11 @@
     display: none;
   }
 
-  &.loading {
+  &.react-autoql-table-loading {
     pointer-events: none;
   }
 
-  &.hidden {
+  &.react-autoql-table-hidden {
     visibility: hidden !important;
     position: absolute !important;
     pointer-events: none !important;
@@ -126,8 +126,8 @@
   }
 
   // This css is to fix tabulator bug and allow scrolling columns on an empty table
-  &.empty {
-    &:not(.filtering) {
+  &.react-autoql-table-empty {
+    &:not(.react-autoql-table-filtering) {
       .tabulator-headers {
         overflow: hidden;
         height: 37px !important;
@@ -168,20 +168,20 @@
     }
   }
 
-  &.infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
+  &.react-autoql-table-infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
   .tabulator-col.DRILLDOWN .tabulator-header-filter {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
   }
 
-  &.limited .tabulator-col .tabulator-header-filter,
-  &.infinite .tabulator-col:not(.DATE_STRING) .tabulator-header-filter {
+  &.react-autoql-table-limited .tabulator-col .tabulator-header-filter,
+  &.react-autoql-table-infinite .tabulator-col:not(.DATE_STRING) .tabulator-header-filter {
     visibility: visible;
     opacity: 1;
   }
 
-  &.filtering {
+  &.react-autoql-table-filtering {
     min-height: 125px;
     .tabulator-header-contents {
       height: 60px;
@@ -200,7 +200,7 @@
       max-height: calc(100% - 60px) !important;
     }
 
-    &.empty {
+    &.react-autoql-table-empty {
       .react-autoql-table.tabulator .tabulator-header {
         border: none;
         .tabulator-headers {
@@ -210,7 +210,7 @@
     }
   }
 
-  &:not(.filtering) {
+  &:not(.react-autoql-table-filtering) {
     .tabulator-header-contents {
       height: 35px;
     }
@@ -280,34 +280,34 @@
     }
   }
 
-  &.disable-drilldown {
+  &.react-autoql-table-disable-drilldown {
     .tabulator-row .tabulator-cell:not(.pivot-category) {
       cursor: text !important;
     }
 
-    &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
-    &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
+    &.react-autoql-table-pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
+    &:not(.react-autoql-table-pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
       color: var(--react-autoql-text-color-primary) !important;
     }
   }
 
-  &.supports-drilldown {
+  &.react-autoql-table-supports-drilldown {
     .tabulator-row .tabulator-cell:not(.pivot-category) {
       transition: color 0.1s ease;
       cursor: pointer;
     }
 
-    &.pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
-    &:not(.pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
+    &.react-autoql-table-pivot .react-autoql-table.tabulator .tabulator-row .tabulator-cell:not(.pivot-category):hover,
+    &:not(.react-autoql-table-pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
       color: var(--react-autoql-accent-color);
     }
   }
 
-  &:not(.supports-drilldown) .react-autoql-table.tabulator .tabulator-row .tabulator-cell {
+  &:not(.react-autoql-table-supports-drilldown) .react-autoql-table.tabulator .tabulator-row .tabulator-cell {
     cursor: text;
   }
 
-  &.animating {
+  &.react-autoql-table-animating {
     .react-autoql-table.tabulator {
       // This cant be display: none because tabulator needs
       // to reference the dom element for its initial render
@@ -318,8 +318,8 @@
     }
   }
 
-  &.pivot {
-    &:not(.filtering) .react-autoql-tabulator-container .tabulator-tableholder {
+  &.react-autoql-table-pivot {
+    &:not(.react-autoql-table-filtering) .react-autoql-tabulator-container .tabulator-tableholder {
       min-height: calc(100% - 65px) !important;
       height: calc(100% - 65px) !important;
       max-height: calc(100% - 65px) !important;

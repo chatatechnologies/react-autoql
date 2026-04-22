@@ -15,8 +15,10 @@ import {
   DisplayTypes,
 } from 'autoql-fe-utils'
 
+import safeGetBBox from '../../../utils/safeGetBBox'
+
 import StringAxisSelector from '../Axes/StringAxisSelector'
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
+import { chartDefaultProps, chartPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 import 'd3-transition'
 
 // Simple legend state management using localStorage
@@ -263,13 +265,25 @@ export default class ChataPieChart extends React.Component {
         // Put it back if it is expanded
         this.setState({ activeKey: null })
       } else {
+        const row = Object.values(d.data.value)
+        const { columns, stringColumnIndex, dataFormatting } = this.props
+
+        // Create date drilldown filter if string axis is a DATE column (raw data charts)
+        const stringColumn = columns[stringColumnIndex]
+        const filter = createDateDrilldownFilter({
+          stringColumn,
+          dateValue: row[stringColumnIndex],
+          dataFormatting,
+        })
+
         this.props.onChartClick({
-          row: Object.values(d.data.value),
+          row,
           columnIndex: this.props.numberColumnIndex,
-          columns: this.props.columns,
-          stringColumnIndex: this.props.stringColumnIndex,
+          columns,
+          stringColumnIndex,
           legendColumn: this.props.legendColumn,
           activeKey: newActiveKey,
+          filter,
         })
         this.setState({ activeKey: newActiveKey })
       }
@@ -342,14 +356,10 @@ export default class ChataPieChart extends React.Component {
 
   centerVisualization = () => {
     const containerElement = select(`#pie-chart-container-${this.CHART_ID}`).node()
+    const containerBBox = safeGetBBox(containerElement)
 
-    let containerBBox
-    if (containerElement) {
-      containerBBox = containerElement.getBBox()
-    }
-
-    const containerWidth = containerBBox?.width ?? 0
-    const currentXPosition = containerBBox?.x ?? 0
+    const containerWidth = containerBBox.width ?? 0
+    const currentXPosition = containerBBox.x ?? 0
     const finalXPosition = (this.props.width - containerWidth) / 2
     const xDelta = finalXPosition - currentXPosition
 
@@ -487,7 +497,7 @@ export default class ChataPieChart extends React.Component {
       this.applyColumnSelectorStyles(legendElement)
 
       if (this.legendWrapper) {
-        legendBBox = legendElement.getBBox()
+        legendBBox = safeGetBBox(legendElement)
       }
     }
 
@@ -529,7 +539,7 @@ export default class ChataPieChart extends React.Component {
     this.titleBBox = {}
     try {
       const titleElement = this.legend.select('.legendTitle').node()
-      const titleBBox = titleElement?.getBBox()
+      const titleBBox = safeGetBBox(titleElement)
       const titleHeight = titleBBox?.height ?? 0
       const titleWidth = titleBBox?.width ?? 0
 

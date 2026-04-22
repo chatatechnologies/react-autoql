@@ -2,6 +2,9 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import { RegressionLine } from '../RegressionLine'
 import { formatElement } from 'autoql-fe-utils'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../../test/utils/getBBoxShim'
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 // Mock the formatElement function to return consistent values
 jest.mock('autoql-fe-utils', () => ({

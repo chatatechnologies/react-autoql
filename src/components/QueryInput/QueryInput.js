@@ -953,7 +953,7 @@ class QueryInput extends React.Component {
             </span>
             {this.state.topics.map((topic, index) => (
               <button
-                key={topic.context || index}
+                key={`topic-${index}-${topic.context || ''}`}
                 className={`query-suggestion-button ${
                   this.state.selectedTopic?.context === topic.context ? 'selected' : ''
                 }`}

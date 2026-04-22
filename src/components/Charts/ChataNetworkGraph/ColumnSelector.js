@@ -6,6 +6,9 @@ import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { sourceColumnIcon, targetColumnIcon, amountColumnIcon } from '../../../svgIcons'
 
+/** Must match `NETWORK_WEIGHT_COUNT_SENTINEL` in ChataNetworkGraph — weight edges by row count. */
+const NETWORK_WEIGHT_COUNT_SENTINEL = -1
+
 const ColumnSelector = (props) => {
   const {
     columns,
@@ -49,9 +52,10 @@ const ColumnSelector = (props) => {
   const targetDropdownHeight = isMobile
     ? window.innerHeight - 200
     : Math.min(dropdownItemHeight * stringColumns.length + 8, maxDropdownHeight)
+  const amountItemCount = 1 + numericColumns.length
   const amountDropdownHeight = isMobile
     ? window.innerHeight - 200
-    : Math.min(dropdownItemHeight * numericColumns.length + 8, maxDropdownHeight)
+    : Math.min(dropdownItemHeight * amountItemCount + 8, maxDropdownHeight)
 
   // Get selected column names for tooltips
   const selectedSourceColumn =
@@ -61,8 +65,10 @@ const ColumnSelector = (props) => {
     stringColumns.find((col) => col.columnIndex === selectedTargetColumnIndex) ||
     (stringColumns.length > 1 && selectedTargetColumnIndex === null ? stringColumns[1] : null)
   const selectedAmountColumn =
-    numericColumns.find((col) => col.columnIndex === selectedAmountColumnIndex) ||
-    (numericColumns.length > 0 && selectedAmountColumnIndex === null ? numericColumns[0] : null)
+    selectedAmountColumnIndex === NETWORK_WEIGHT_COUNT_SENTINEL
+      ? null
+      : numericColumns.find((col) => col.columnIndex === selectedAmountColumnIndex) ||
+        (numericColumns.length > 0 && selectedAmountColumnIndex === null ? numericColumns[0] : null)
 
   const sourceTooltipHtml = selectedSourceColumn
     ? `Source column<br/><em>(${selectedSourceColumn.display_name || selectedSourceColumn.name})</em>`
@@ -70,9 +76,12 @@ const ColumnSelector = (props) => {
   const targetTooltipHtml = selectedTargetColumn
     ? `Target column<br/><em>(${selectedTargetColumn.display_name || selectedTargetColumn.name})</em>`
     : 'Target column'
-  const amountTooltipHtml = selectedAmountColumn
-    ? `Amount column<br/><em>(${selectedAmountColumn.display_name || selectedAmountColumn.name})</em>`
-    : 'Amount column'
+  const amountTooltipHtml =
+    selectedAmountColumnIndex === NETWORK_WEIGHT_COUNT_SENTINEL
+      ? 'Weight<br/><em>(Count)</em>'
+      : selectedAmountColumn
+        ? `Amount column<br/><em>(${selectedAmountColumn.display_name || selectedAmountColumn.name})</em>`
+        : 'Amount column'
 
   const renderSourceDropdownContent = () => {
     return (
@@ -157,47 +166,58 @@ const ColumnSelector = (props) => {
   }
 
   const renderAmountDropdownContent = () => {
-    const hasNumericColumns = numericColumns.length > 0
-
     return (
       <div className='amount-dropdown-popover-content'>
-        <div className='amount-dropdown-title'>Amount column</div>
-        {hasNumericColumns ? (
-          <CustomScrollbars
-            autoHeight={!isMobile}
-            autoHeightMin={35}
-            maxHeight={isMobile ? undefined : amountDropdownHeight}
-            suppressScrollX
-            style={isMobile ? { flex: 1, display: 'flex', flexDirection: 'column', height: '100%' } : undefined}
+        <div className='amount-dropdown-title'>Weight</div>
+        <CustomScrollbars
+          autoHeight={!isMobile}
+          autoHeightMin={35}
+          maxHeight={isMobile ? undefined : amountDropdownHeight}
+          suppressScrollX
+          style={isMobile ? { flex: 1, display: 'flex', flexDirection: 'column', height: '100%' } : undefined}
+        >
+          <div
+            className='amount-dropdown-container'
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
           >
             <div
-              className='amount-dropdown-container'
+              className={`amount-dropdown-item ${
+                selectedAmountColumnIndex === NETWORK_WEIGHT_COUNT_SENTINEL ? 'amount-dropdown-item-selected' : ''
+              }`}
               onClick={(e) => {
                 e.stopPropagation()
+                setSelectedAmountColumnIndex(NETWORK_WEIGHT_COUNT_SENTINEL)
+                setShowAmountDropdown(false)
               }}
             >
-              {numericColumns.map((col) => {
-                const isSelected = selectedAmountColumnIndex === col.columnIndex
-                return (
-                  <div
-                    key={`amount-${col.columnIndex}`}
-                    className={`amount-dropdown-item ${isSelected ? 'amount-dropdown-item-selected' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedAmountColumnIndex(col.columnIndex)
-                      setShowAmountDropdown(false)
-                    }}
-                  >
-                    <span className='amount-dropdown-item-check'>{isSelected ? '✓' : ' '}</span>
-                    <span>{col.display_name || col.name}</span>
-                  </div>
-                )
-              })}
+              <span className='amount-dropdown-item-check'>
+                {selectedAmountColumnIndex === NETWORK_WEIGHT_COUNT_SENTINEL ? '✓' : ' '}
+              </span>
+              <span>Count</span>
             </div>
-          </CustomScrollbars>
-        ) : (
-          <div className='amount-dropdown-empty'>No numeric columns available</div>
-        )}
+            {numericColumns.map((col) => {
+              const isSelected =
+                selectedAmountColumnIndex === col.columnIndex &&
+                selectedAmountColumnIndex !== NETWORK_WEIGHT_COUNT_SENTINEL
+              return (
+                <div
+                  key={`amount-${col.columnIndex}`}
+                  className={`amount-dropdown-item ${isSelected ? 'amount-dropdown-item-selected' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedAmountColumnIndex(col.columnIndex)
+                    setShowAmountDropdown(false)
+                  }}
+                >
+                  <span className='amount-dropdown-item-check'>{isSelected ? '✓' : ' '}</span>
+                  <span>{col.display_name || col.name}</span>
+                </div>
+              )
+            })}
+          </div>
+        </CustomScrollbars>
       </div>
     )
   }

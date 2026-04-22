@@ -11,6 +11,8 @@ import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import FilterAutocomplete from './DashboardFilterAutocomplete'
 import { Chip } from '../Chip'
+import DashboardSlicer from './DashboardSlicer'
+import SlicerChip from './SlicerChip'
 
 import './DashboardToolbar.scss'
 
@@ -32,10 +34,20 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRedoClick: PropTypes.func,
     onRenameClick: PropTypes.func,
     onDownloadClick: PropTypes.func,
+    onSlicerChange: PropTypes.func,
+    onRemoveSlicer: PropTypes.func,
     tooltipID: PropTypes.string,
     title: PropTypes.string,
     refreshInterval: PropTypes.number,
     enableAutoRefresh: PropTypes.bool,
+    dashboardId: PropTypes.string,
+    authentication: PropTypes.shape({}),
+    context: PropTypes.string,
+    slicerSuggestion: PropTypes.string,
+    enableSlicers: PropTypes.bool,
+    isDashboardFullyExecuted: PropTypes.bool,
+    hasTiles: PropTypes.bool,
+    slicers: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
   static defaultProps = {
@@ -49,10 +61,21 @@ export class DashboardToolbarWithoutRef extends React.Component {
     onRedoClick: () => {},
     onRenameClick: () => {},
     onDownloadClick: () => {},
+    onSlicerChange: () => {},
+    onRemoveSlicer: () => {},
     tooltipID: undefined,
     title: 'Untitled Dashboard',
     refreshInterval: 60,
     enableAutoRefresh: false,
+    dashboardId: undefined,
+    authentication: undefined,
+    context: undefined,
+    enableSlicers: false,
+    value: null,
+    slicerSuggestion: undefined,
+    isDashboardFullyExecuted: false,
+    hasTiles: false,
+    slicers: [],
   }
 
   state = {
@@ -62,6 +85,19 @@ export class DashboardToolbarWithoutRef extends React.Component {
     dashboardFilters: [],
     dashboardName: '',
   }
+
+  handleSlicerChange = (slicer) => {
+    // Notify parent to add slicer to array
+    if (slicer) {
+      this.props.onSlicerChange(slicer)
+    }
+  }
+
+  handleRemoveSlicer = (slicerToRemove) => {
+    // Notify parent to remove slicer from array
+    this.props.onRemoveSlicer(slicerToRemove)
+  }
+
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!prevState.isRenameModalOpen && this.state.isRenameModalOpen) {
@@ -126,6 +162,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
         <MenuItem
           title='Export Snapshot (.aqldash)'
           icon='download'
+          disabled={!this.props.isDashboardFullyExecuted}
           onClick={() => {
             this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
@@ -342,6 +379,31 @@ export class DashboardToolbarWithoutRef extends React.Component {
               </div>
             </div>
           ) : null}
+          {this.props.hasTiles && this.props.enableSlicers && (
+            <div className='react-autoql-dashboard-slicer-container'>
+              <DashboardSlicer
+                authentication={this.props.authentication}
+                context={this.props.context}
+                value={null}
+                onChange={this.handleSlicerChange}
+                placeholder='Select a slicer...'
+                dashboardId={this.props.dashboardId}
+                slicerSuggestion={this.props.slicerSuggestion}
+              />
+              {this.props.slicers && this.props.slicers.length > 0 && (
+                <div className='react-autoql-dashboard-slicer-chips-container'>
+                  {this.props.slicers.map((slicer, index) => (
+                    <SlicerChip
+                      key={`${slicer.key || slicer.canonical_key || index}-${slicer.value || ''}`}
+                      slicer={slicer}
+                      onDelete={() => this.handleRemoveSlicer(slicer)}
+                      tooltipID={this.props.tooltipID}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <ConfirmModal
           isVisible={this.state.isConfirmCloseModalOpen}

@@ -6,6 +6,10 @@ import { mount } from 'enzyme'
 import Axes from './Axes'
 import sampleProps from '../chartTestData'
 import { findByTestAttr } from '../../../../test/testUtils'
+import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+
+beforeAll(() => installGetBBoxMock())
+afterAll(() => uninstallGetBBoxMock())
 
 const pivotSampleProps = {
   ...sampleProps.pivot,

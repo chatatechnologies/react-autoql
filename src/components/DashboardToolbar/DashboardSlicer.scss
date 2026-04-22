@@ -1,0 +1,202 @@
+// Dashboard Slicer - Distinct styling to differentiate from dashboard tiles
+// Tiles are card-like with shadows, slicer is a sleek toolbar element
+// Using flat selectors (no nesting) because popover renders outside DOM hierarchy
+
+.react-autoql-dashboard-slicer-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 40px; // Match input height so Safari positions icon correctly
+  display: flex;
+  align-items: center;
+
+  > *:not(.react-autoql-dashboard-slicer-icon) {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.react-autoql-dashboard-slicer-icon {
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: 18px;
+  width: 18px;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 1;
+  color: var(--react-autoql-accent-color, #26a7df);
+  transition: opacity 0.2s ease;
+}
+
+.react-autoql-dashboard-slicer-wrapper:hover .react-autoql-dashboard-slicer-icon {
+  opacity: 0.8;
+}
+
+// Override the shared autocomplete input styles for slicer-specific styling
+.react-autoql-dashboard-slicer-input {
+  // More compact, toolbar-appropriate sizing
+  padding: 8px 16px !important;
+  padding-left: 40px !important;
+  height: 40px !important;
+  box-sizing: border-box;
+  
+  // Softer, more rounded pill shape (vs tiles' 12px corners)
+  border-radius: 20px !important;
+  
+  font-size: 13px !important;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  outline: none !important;
+  width: 100%;
+  
+  // Subtle border - lighter than tiles, more transparent
+  border: 1.5px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08)) !important;
+  
+  // Slightly different background - more transparent/subtle
+  background: var(--react-autoql-background-color-secondary, rgba(255, 255, 255, 0.6)) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  color: var(--react-autoql-text-color-primary) !important;
+  
+  // Smooth transitions
+  transition: all 0.2s ease;
+}
+
+.react-autoql-dashboard-slicer-input:hover {
+  // Subtle glow on hover (different from tiles' shadow)
+  box-shadow: 0 2px 8px rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.15) !important;
+  border-color: var(--react-autoql-accent-color, #26a7df) !important;
+  background: var(--react-autoql-background-color-secondary, rgba(255, 255, 255, 0.8)) !important;
+}
+
+.react-autoql-dashboard-slicer-input:focus {
+  // More prominent accent border on focus
+  border-color: var(--react-autoql-accent-color, #26a7df) !important;
+  box-shadow: 0 0 0 3px rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.1),
+              0 2px 8px rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.2) !important;
+  background: var(--react-autoql-background-color-secondary, #fff) !important;
+}
+
+.react-autoql-dashboard-slicer-input::placeholder {
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.4)) !important;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+// Remove divider from section titles in slicer dropdown
+.react-autoql-dashboard-slicer-suggestions .react-autoql-section-title-container {
+  width: 100%;
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+// Remove any borders from section titles
+.react-autoql-dashboard-slicer-suggestions .react-autosuggest__section-title {
+  padding-left: 15px;
+  font-size: 12px;
+  color: var(--react-autoql-text-color-placeholder);
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+// Autosuggest popover styles - using flat selectors because popover renders outside DOM hierarchy
+// Scoped to dashboard slicer suggestions container to avoid conflicts
+.react-autoql-dashboard-slicer-suggestions.react-autosuggest__suggestions-container--open {
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-text-color-primary);
+  position: absolute;
+  padding: 10px 0;
+  display: block;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: normal;
+  z-index: 2;
+  box-shadow: var(--react-autoql-box-shadow-1);
+  text-align: left;
+  border-radius: 4px;
+  width: 100%;
+  height: auto;
+  max-height: calc(90vh - 180px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autoql-filter-suggestion-container {
+  overflow: hidden;
+  display: flex;
+  width: 100%;
+  flex: 1;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autoql-filter-suggestion-container > div {
+  width: 100%;
+  overflow: hidden !important;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autoql-filter-suggestion-container .ps__rail-x {
+  display: none !important;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autoql-filter-suggestion-container .ps__rail-y {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autoql-filter-suggestion-container:hover .ps__rail-y,
+.react-autoql-dashboard-slicer-suggestions .react-autoql-filter-suggestion-container .ps__rail-y.ps--clicking {
+  opacity: 1;
+}
+
+.react-autoql-dashboard-slicer-suggestions .filter-lock-suggestion-item {
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 0.05em;
+  line-height: 22.5px;
+  padding: 0px 20px 3px 20px;
+  box-sizing: border-box;
+  line-height: inherit;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  list-style: none;
+  margin: 0;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autosuggest__suggestion {
+  color: var(--react-autoql-text-color-primary);
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autosuggest__suggestions-list {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.react-autoql-dashboard-slicer-suggestions .react-autosuggest__suggestion--highlighted {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-autoql-dashboard-slicer-suggestions .data-explorer-clear-history-btn {
+  text-decoration: underline;
+  font-weight: 400;
+  cursor: pointer;
+  padding-right: 15px;
+}
+
+.react-autoql-dashboard-slicer-suggestions .data-explorer-clear-history-btn:hover {
+  color: var(--react-autoql-accent-color);
+}
+
+.react-autoql-dashboard-slicer-suggestions .filter-locking-no-suggestions-text {
+  padding-left: 8px;
+  font-size: 14px;
+}

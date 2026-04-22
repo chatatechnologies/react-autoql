@@ -119,12 +119,12 @@ export class DashboardTile extends React.Component {
       initialFormattedTableParams: {
         filters: tile?.tableFilters,
         sorters: tile?.orders,
-        sessionFilters: tile?.filters,
+        sessionFilters: tile?.filters || [],
       },
       initialSecondFormattedTableParams: {
         filters: tile?.secondTableFilters,
         sorters: tile?.secondOrders,
-        sessionFilters: tile?.filters,
+        sessionFilters: tile?.filters || [],
       },
       isRTHovered: false,
       isSecondRTHovered: false,
@@ -182,6 +182,8 @@ export class DashboardTile extends React.Component {
     }).isRequired,
     isEditing: PropTypes.bool,
     deleteTile: PropTypes.func,
+    resetTile: PropTypes.func,
+    onSaveCallback: PropTypes.func,
     dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
     disableAggregationMenu: PropTypes.bool,
@@ -200,8 +202,10 @@ export class DashboardTile extends React.Component {
     dashboardId: PropTypes.string,
     tileKey: PropTypes.string,
     isCachedRefresh: PropTypes.bool,
+    dashboardSlicers: PropTypes.arrayOf(PropTypes.shape({})),
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -220,6 +224,8 @@ export class DashboardTile extends React.Component {
     autoChartAggregations: true,
     cancelQueriesOnUnmount: true,
     deleteTile: () => {},
+    resetTile: () => {},
+    onSaveCallback: () => {},
     onErrorCallback: () => {},
     onRetry: () => {},
     onSuccessCallback: () => {},
@@ -233,7 +239,9 @@ export class DashboardTile extends React.Component {
     dashboardId: undefined,
     tileKey: undefined,
     isCachedRefresh: false,
+    dashboardSlicers: [],
     enableMagicWand: false,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {
@@ -365,7 +373,8 @@ export class DashboardTile extends React.Component {
   // Helper function to detect error responses (matches QueryOutput.hasError logic)
   hasError = (response) => {
     try {
-      const referenceIdNumber = Number(response?.data?.reference_id?.split('.')[2])
+      const referenceId = String(response?.data?.reference_id || '')
+      const referenceIdNumber = Number(referenceId.split('.')[2])
       if (referenceIdNumber >= 200 && referenceIdNumber < 300) {
         return false
       }
@@ -595,7 +604,14 @@ export class DashboardTile extends React.Component {
       const currentDisplayOverrides = isSecondHalf
         ? this.props.tile?.secondDisplayOverrides
         : this.props.tile?.displayOverrides
-      const currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters
+      // Get session filters from tile (existing tile-specific filters)
+      let currentSessionFilters = isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || []
+
+      // Merge dashboard slicers if present (applied at query execution time)
+      if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0 && !isSecondHalf) {
+        // Combine tile filters with dashboard slicers
+        currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
+      }
       const currentOrders = isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
       const currentFilter = isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
@@ -623,6 +639,7 @@ export class DashboardTile extends React.Component {
         force: false,
       }
 
+      // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
       const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
 
       if (isCachedRefresh) {
@@ -714,6 +731,14 @@ export class DashboardTile extends React.Component {
       paramsToSet.tableFilters = tableFilters
     }
 
+    // Reset all tile configs when query changes
+    if (queryChanged) {
+      paramsToSet.columnSelects = undefined
+      paramsToSet.filters = undefined
+      paramsToSet.orders = undefined
+      paramsToSet.displayOverrides = undefined
+    }
+
     this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
@@ -760,7 +785,7 @@ export class DashboardTile extends React.Component {
       : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters
 
     // New query is running, reset temporary state fields
-    this.debouncedSetParamsForTile({
+    const paramsToSet = {
       secondQuery: query,
       secondDataConfig,
       secondskipQueryValidation: skipValidation,
@@ -769,7 +794,17 @@ export class DashboardTile extends React.Component {
       secondDefaultSelectedSuggestion: undefined,
       secondQueryValidationSelections: queryValidationSelections,
       secondTableFilters,
-    })
+    }
+
+    // Reset all tile configs when query changes
+    if (queryChanged) {
+      paramsToSet.secondColumnSelects = undefined
+      paramsToSet.secondFilters = undefined
+      paramsToSet.secondOrders = undefined
+      paramsToSet.secondDisplayOverrides = undefined
+    }
+
+    this.debouncedSetParamsForTile(paramsToSet)
 
     return this.processQuery({
       query,
@@ -1094,7 +1129,11 @@ export class DashboardTile extends React.Component {
   }
 
   onAggConfigChange = (aggConfig) => this.debouncedSetParamsForTile({ aggConfig })
-  onDataConfigChange = (dataConfig) => this.debouncedSetParamsForTile({ dataConfig })
+  // Persist data config immediately so axis selector save actions are not lost
+  // when users quickly save the dashboard before debounce flushes.
+  onDataConfigChange = (dataConfig) => {
+    this.props.setParamsForTile({ dataConfig }, this.props.tile.i, [])
+  }
   onDisplayTypeChange = (displayType) => this.debouncedSetParamsForTile({ displayType })
   onBucketSizeChange = (bucketSize) => this.debouncedSetParamsForTile({ bucketSize })
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
@@ -1102,7 +1141,11 @@ export class DashboardTile extends React.Component {
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
   onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
 
-  onChartControlsChange = (chartControls) => this.debouncedSetParamsForTile({ chartControls })
+  // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
+  // and chart data source update without waiting for the debounce timer.
+  onChartControlsChange = (chartControls) => {
+    this.props.setParamsForTile({ chartControls }, this.props.tile.i, [])
+  }
 
   onTableParamsChange = (params, formattedParams) => {
     this.debouncedSetParamsForTile({
@@ -1130,7 +1173,9 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
-  onSecondDataConfigChange = (secondDataConfig) => this.debouncedSetParamsForTile({ secondDataConfig })
+  onSecondDataConfigChange = (secondDataConfig) => {
+    this.props.setParamsForTile({ secondDataConfig }, this.props.tile.i, [])
+  }
   onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
   onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
   onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
@@ -1647,7 +1692,7 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-placeholder-text'>
           {this.props.isEditing ? (
             <span>
-              Hit <Icon className='edit-mode-placeholder-icon' type='play' /> to run this tile
+              Hit <Icon className='edit-mode-placeholder-icon' type='send' /> to run this tile
             </span>
           ) : (
             <span>{this.props.notExecutedText}</span>
@@ -1731,6 +1776,8 @@ export class DashboardTile extends React.Component {
             customOptions={this.props.customToolbarOptions}
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
+            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            isEditing={this.props.isEditing}
             {...optionsToolbarProps}
           />
         </div>
@@ -1905,7 +1952,7 @@ export class DashboardTile extends React.Component {
           return {
             filters: filtersToUse,
             sorters: this.props.tile?.orders,
-            sessionFilters: this.props.tile?.filters,
+            sessionFilters: this.props.tile?.filters || [],
           }
         })(),
         enableChartControls: true,
@@ -1924,6 +1971,9 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
+        // allow parent to request showing refresh/reset in edit mode
+        showRefreshInEdit: this.props.isEditing,
       },
     })
   }
@@ -2067,6 +2117,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
           this.props.isEditing ? '-editing' : ''
         }`,
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
       },
       isSecondHalf: true,
     })

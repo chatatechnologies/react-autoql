@@ -67,11 +67,34 @@
   }
 
   .react-autoql-multi-select-list-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     font-size: 0.9em;
     padding: 5px 10px;
     margin-bottom: 3px;
     color: var(--react-autoql-text-color-secondary);
     border-bottom: 1px solid var(--react-autoql-border-color);
     pointer-events: none;
+
+    .react-autoql-multi-select-list-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--react-autoql-text-color-secondary);
+      pointer-events: auto;
+
+      &:active,
+      &:hover {
+        background: var(--react-autoql-hover-color);
+        color: var(--react-autoql-text-color-primary);
+      }
+    }
   }
 }

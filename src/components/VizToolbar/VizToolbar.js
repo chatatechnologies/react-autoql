@@ -7,7 +7,7 @@ import { TABLE_TYPES, DisplayTypes, isChartType } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Button } from '../Button'
-import { Tooltip } from '../Tooltip'
+import { Tooltip, triggerGlobalTooltipClose } from '../Tooltip'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './VizToolbar.scss'
@@ -82,6 +82,7 @@ class VizToolbar extends React.Component {
     // Close the compact popover after selecting a viz type
     if (this.props.compact) {
       this.setState({ isPopoverOpen: false })
+      triggerGlobalTooltipClose()
     }
   }
 
@@ -153,8 +154,8 @@ class VizToolbar extends React.Component {
         {!this.props.tooltipID && (
           <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />
         )}
-      </ErrorBoundary>
-    )
+        </ErrorBoundary>
+      )
   }
 
   createVisButton = (displayType, name, icon) => {
