@@ -857,7 +857,12 @@ export default class ChataChart extends React.Component {
       outerWidth: this.outerWidth,
     }
 
-    if (this.props.hidden || this.props.isAnimating || this.firstRender) {
+    if (
+      this.props.hidden ||
+      this.props.isAnimating ||
+      this.firstRender ||
+      isContainerCollapsed(this.chartContainerRef)
+    ) {
       return defaultDimensions
     }
 
@@ -1521,6 +1526,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
@@ -1550,6 +1556,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
