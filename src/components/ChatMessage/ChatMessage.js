@@ -547,10 +547,7 @@ export default class ChatMessage extends React.Component {
   }
 
   handleFocusPromptChange = (e) => {
-    const value = e.target.value
-    if (value.length <= 100) {
-      this.setState({ focusPrompt: value, focusError: null, quoteResult: null })
-    }
+    this.setState({ focusPrompt: e.target.value, focusError: null, quoteResult: null })
   }
 
   handleFocusPromptKeyDown = (e) => {
