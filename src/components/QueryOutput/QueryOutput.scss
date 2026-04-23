@@ -336,6 +336,11 @@ body.react-autoql-no-select {
   padding: 0 18px;
   cursor: pointer;
 }
+.context-menu-list li.context-menu-divider-top {
+  border-top: 1px solid var(--react-autoql-border-color);
+  margin-top: 5px;
+  padding-top: 5px;
+}
 .context-menu-list li:hover {
   background: var(--react-autoql-hover-color, rgba(0, 0, 0, 0.05));
 }

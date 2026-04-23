@@ -93,6 +93,7 @@ class NotificationFeed extends React.Component {
     onConfirmCallback: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -115,6 +116,7 @@ class NotificationFeed extends React.Component {
     notificationTitle: '',
     showSelectNotificationsButton: true,
     enableCyclicalDates: false,
+    showMagicWandQuoteButton: false,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -842,6 +844,7 @@ class NotificationFeed extends React.Component {
                           enableFilterBtn={this.props.enableFilterBtn}
                           enableCustomColumns={this.props.enableCustomColumns}
                           enableMagicWand={this.props.enableMagicWand}
+                          showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
                         />
                       </div>
                     )

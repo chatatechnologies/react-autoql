@@ -78,14 +78,19 @@ export default class LegendSelector extends React.Component {
   }
 
   renderSelectorContent = () => {
+    const tableConfig = this.props.tableConfig || {}
+    const selectedLegendIndex = this.props.legendColumn?.index
+    const numberColumnIndices = tableConfig.numberColumnIndices || []
+    const numberColumnIndices2 = tableConfig.numberColumnIndices2 || []
+
     // If using pivot data (isAggregation), use getAllStringColumnIndices to only show groupable string columns
     // Otherwise, use the original logic with getStringColumnIndices
     let columnIndices = this.props.isAggregation
       ? this.getAllStringColumnIndices()
       : getStringColumnIndices(this.props.columns, undefined, true)?.stringColumnIndices?.filter(
           (i) =>
-            !this.props.tableConfig.numberColumnIndices.includes(i) &&
-            !this.props.tableConfig.numberColumnIndices2.includes(i),
+            !numberColumnIndices.includes(i) &&
+            !numberColumnIndices2.includes(i),
         ) ?? []
     
     // Don't exclude the string column - it will be shown in the list
@@ -105,7 +110,7 @@ export default class LegendSelector extends React.Component {
             {columnIndices.map((colIndex, i) => {
               return (
                 <li
-                  className={`legend-select-list-item ${colIndex === this.props.legendColumn.index ? 'active' : ''}`}
+                  className={`legend-select-list-item ${colIndex === selectedLegendIndex ? 'active' : ''}`}
                   key={`legend-column-select-${colIndex}`}
                   onClick={() => {
                     this.props.closeSelector()

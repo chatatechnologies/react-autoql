@@ -143,6 +143,7 @@ export class DataMessenger extends React.Component {
     enableQueryInputTopics: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
 
     // Projects
@@ -211,6 +212,7 @@ export class DataMessenger extends React.Component {
     mobileActivePage: 'data-messenger',
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
+    showMagicWandQuoteButton: false,
     setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},

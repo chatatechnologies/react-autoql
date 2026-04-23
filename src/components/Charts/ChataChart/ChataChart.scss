@@ -55,6 +55,35 @@
   }
 }
 
+.chart-data-source-toggle {
+  display: inline-flex;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-right: 8px;
+  background: transparent;
+}
+
+.chart-data-source-toggle-btn {
+  background: transparent;
+  color: var(--react-autoql-text-color-primary);
+  border: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.chart-data-source-toggle-btn.active {
+  background: var(--react-autoql-hover-color);
+  font-weight: 600;
+}
+
+.chart-data-source-toggle-btn:hover {
+  background: var(--react-autoql-hover-color);
+}
+
 .react-autoql-chart-container {
   position: relative;
   width: 100%;

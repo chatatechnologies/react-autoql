@@ -121,7 +121,7 @@ import './Icon.scss'
 export default class Icon extends React.Component {
   static propTypes = {
     type: PropTypes.string,
-    size: PropTypes.number, // used for the image icons ie. react-autoql-bubbles
+    size: PropTypes.oneOfType([PropTypes.number, PropTypes.string]), // number or size token ('small','medium','large')
     showBadge: PropTypes.bool,
     color: PropTypes.string,
     info: PropTypes.bool,
@@ -606,6 +606,22 @@ export default class Icon extends React.Component {
       }
     }
 
+    // normalize size: allow numeric, px string, or tokens like 'small'|'medium'|'large'
+    const sizeMap = { small: 14, medium: 18, large: 24 }
+    let computedSize = size
+    if (typeof size === 'string') {
+      if (size.endsWith('px')) {
+        const parsed = parseInt(size.replace('px', ''), 10)
+        computedSize = isNaN(parsed) ? undefined : parsed
+      } else if (!isNaN(Number(size))) {
+        computedSize = Number(size)
+      } else if (sizeMap[size]) {
+        computedSize = sizeMap[size]
+      } else {
+        computedSize = undefined
+      }
+    }
+
     return (
       <ErrorBoundary>
         <span
@@ -622,7 +638,7 @@ export default class Icon extends React.Component {
             ${this.props.disabled ? 'react-autoql-icon-disabled' : ''}`}
           style={{
             color: this.props.color,
-            fontSize: `${this.props.size}px`,
+            fontSize: computedSize ? `${computedSize}px` : undefined,
             ...this.props.style, // Overwrite other styles if provided
           }}
           data-tooltip-content={this.props.tooltip}
