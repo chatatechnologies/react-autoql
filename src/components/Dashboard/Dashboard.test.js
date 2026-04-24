@@ -102,3 +102,45 @@ describe('Dashboard.resetTile', () => {
     expect(processTile).toHaveBeenCalled()
   })
 })
+
+describe('Dashboard.executeSingleTile', () => {
+  test('executes only the requested tile', () => {
+    const wrapper = setup({
+      tiles: [
+        { key: 'tile-1', i: 'tile-1', query: 'SELECT 1' },
+        { key: 'tile-2', i: 'tile-2', query: 'SELECT 2' },
+      ],
+    })
+    const instance = wrapper.instance()
+
+    const processTile1 = jest.fn(() => Promise.resolve())
+    const processTile2 = jest.fn(() => Promise.resolve())
+
+    instance.tileRefs = {
+      'tile-1': { processTile: processTile1 },
+      'tile-2': { processTile: processTile2 },
+    }
+
+    instance.executeSingleTile('tile-1')
+
+    expect(processTile1).toHaveBeenCalledTimes(1)
+    expect(processTile2).not.toHaveBeenCalled()
+  })
+
+  test('uses cached refresh when auto refresh is enabled', () => {
+    const wrapper = setup({
+      enableAutoRefresh: true,
+      tiles: [{ key: 'tile-1', i: 'tile-1', query: 'SELECT 1' }],
+    })
+    const instance = wrapper.instance()
+
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = {
+      'tile-1': { processTile },
+    }
+
+    instance.executeSingleTile('tile-1')
+
+    expect(processTile).toHaveBeenCalledWith({ isCachedRefresh: true })
+  })
+})
