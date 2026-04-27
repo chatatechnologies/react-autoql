@@ -5,13 +5,25 @@
 .react-autoql-dashboard-slicer-wrapper {
   position: relative;
   width: 100%;
+  min-height: 40px; // Match input height so Safari positions icon correctly
+  display: flex;
+  align-items: center;
+
+  > *:not(.react-autoql-dashboard-slicer-icon) {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 .react-autoql-dashboard-slicer-icon {
   position: absolute;
   left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: 18px;
+  width: 18px;
   pointer-events: none;
   opacity: 0.6;
   z-index: 1;

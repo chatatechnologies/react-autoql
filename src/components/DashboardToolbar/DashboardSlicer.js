@@ -31,6 +31,7 @@ const DashboardSlicer = ({
   const [inputValue, setInputValue] = useState('')
   const [isLoadingAutocomplete, setIsLoadingAutocomplete] = useState(false)
   const [recentSelections, setRecentSelections] = useState([])
+  const [justSelected, setJustSelected] = useState(false)
 
   const getRecentSelectionsKey = useCallback(() => {
     const id = dashboardId || 'default'
@@ -247,7 +248,12 @@ const DashboardSlicer = ({
       // Add to recent selections
       addToRecentSelections(sessionFilterLock)
 
-      setInputValue(sessionFilterLock.format_txt || '')
+      // Clear input and suggestions after selection to allow adding multiple slicers
+      // This will cause the popover to close
+      setInputValue('')
+      setSuggestions([])
+      setSuggestedSlicerItems([]) // Also clear suggested items to close popover
+      setJustSelected(true) // Flag that we just made a selection to close popover
       userTypedValueRef.current = null // Reset typing state
       onChange(sessionFilterLock)
     }
@@ -268,6 +274,8 @@ const DashboardSlicer = ({
     if (!inputValue) {
       userTypedValueRef.current = null
     }
+    // Reset justSelected flag when input is focused again
+    setJustSelected(false)
   }, [inputValue])
 
   const renderSuggestion = useCallback((suggestion) => {
@@ -382,10 +390,18 @@ const DashboardSlicer = ({
   }, [])
 
   const shouldRenderSuggestions = useCallback((value) => {
+    // Don't render if we just made a selection (close popover immediately)
+    if (justSelected) {
+      return false
+    }
     // Always render suggestions if we have them, even when input is empty
     // This allows us to show slicerSuggestion results on focus
+    const hasAnySuggestions = suggestions.length > 0 || suggestedSlicerItems.length > 0 || recentSelections.length > 0
+    if (!value && !hasAnySuggestions && !isLoadingAutocomplete) {
+      return false
+    }
     return true
-  }, [])
+  }, [justSelected, suggestions, suggestedSlicerItems, recentSelections, isLoadingAutocomplete])
 
   const displayInputValue = value?.format_txt || inputValue
 

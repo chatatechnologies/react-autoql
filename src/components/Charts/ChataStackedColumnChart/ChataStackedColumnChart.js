@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { Axes } from '../Axes'
 import { StackedColumns } from '../StackedColumns'
 
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
+import { chartDefaultProps, chartPropTypes, getDenseBandScaleOptions } from '../chartPropHelpers.js'
 import { getBandScale, getLinearScales } from 'autoql-fe-utils'
 
 export default class ChataStackedColumnChart extends Component {
@@ -21,6 +21,7 @@ export default class ChataStackedColumnChart extends Component {
 
     this.xScale = getBandScale({
       ...props,
+      ...getDenseBandScaleOptions(props.data, props),
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })

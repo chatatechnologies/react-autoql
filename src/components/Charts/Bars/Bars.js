@@ -1,7 +1,12 @@
 import React, { PureComponent } from 'react'
 import { getKey, scaleZero, getTooltipContent } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  createDateDrilldownFilter,
+  isDenseChartLayout,
+} from '../chartPropHelpers'
 
 export default class Bars extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -53,10 +58,14 @@ export default class Bars extends PureComponent {
 
     const allBars = []
     const gradientDefs = []
-    // Calculate bar height with 0.5px gap between series
+    const isDense = isDenseChartLayout(this.props.data, this.props)
+    const seriesGap = isDense ? 0 : 0.5
     const totalHeight = yScale.tickSize
-    const gapHeight = (visibleSeries.length - 1) * 0.5 // 0.5px gap between each series
-    const barHeight = visibleSeries.length > 0 ? (totalHeight - gapHeight) / visibleSeries.length : 0
+    const gapHeight = (visibleSeries.length - 1) * seriesGap
+    const barHeight = Math.max(
+      0,
+      visibleSeries.length > 0 ? (totalHeight - gapHeight) / visibleSeries.length : 0,
+    )
 
     let visibleIndex = 0
     numberColumnIndices.forEach((colIndex, i) => {
@@ -75,8 +84,13 @@ export default class Bars extends PureComponent {
         
         allBars.push(
           this.props.data.map((d, index) => {
-            const value = d[colIndex]
-            if (!value) {
+            const rawValue = d[colIndex]
+            if (rawValue === null || rawValue === undefined || rawValue === '') {
+              return null
+            }
+
+            const value = Number(rawValue)
+            if (Number.isNaN(value)) {
               return null
             }
 
@@ -90,8 +104,7 @@ export default class Bars extends PureComponent {
             }
 
             const y0 = yScale.getValue(d[stringColumnIndex])
-            // Add 0.5px gap between series
-            const dY = visibleIndex * (barHeight + 0.5)
+            const dY = visibleIndex * (barHeight + seriesGap)
             const finalBarYPosition = y0 + dY
 
             const tooltip = getTooltipContent({
@@ -104,8 +117,8 @@ export default class Bars extends PureComponent {
               aggregated: this.props.isAggregated,
             })
 
-            // Round corners - use smaller of width/height for radius, but cap at 4px
-            const cornerRadius = Math.min(Math.min(width, barHeight) / 2, 4)
+            // Round corners - use smaller of width/height for radius, but cap at 4px (never negative)
+            const cornerRadius = Math.max(0, Math.min(Math.min(width, barHeight) / 2, 4))
 
             return (
               <rect

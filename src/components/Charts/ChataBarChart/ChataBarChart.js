@@ -4,7 +4,7 @@ import { getBandScale, getLinearScales, deepEqual } from 'autoql-fe-utils'
 import { Axes } from '../Axes'
 import { Bars } from '../Bars'
 
-import { chartPropTypes, chartDefaultProps } from '../chartPropHelpers.js'
+import { chartPropTypes, chartDefaultProps, getDenseBandScaleOptions } from '../chartPropHelpers.js'
 
 export default class ChataBarChart extends Component {
   constructor(props) {
@@ -44,6 +44,7 @@ export default class ChataBarChart extends Component {
 
     this.yScale = getBandScale({
       ...props,
+      ...getDenseBandScaleOptions(props.data, props),
       columnIndex: props.stringColumnIndex,
       axis: 'y',
     })

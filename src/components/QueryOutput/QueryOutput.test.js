@@ -1,6 +1,7 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
 import _cloneDeep from 'lodash.clonedeep'
+import { DATE_ONLY_CHART_TYPES } from 'autoql-fe-utils'
 import { findByTestAttr } from '../../../test/testUtils'
 import { QueryOutput } from '../..'
 import { QueryOutput as QueryOutputWithoutTheme } from '../../components/QueryOutput/QueryOutput'
@@ -362,5 +363,586 @@ describe('pivot table filtering', () => {
       })
       queryOutput.unmount()
     })
+  })
+})
+
+describe('date-only axis auto-selection behavior', () => {
+  test('does not reset table config for date-only chart types after manual string-axis selection', () => {
+    const wrapper = setup({
+      queryResponse: _cloneDeep(testCases[9]),
+    })
+    const instance = wrapper.instance()
+
+    // Simulate user manually selecting a string axis for this response.
+    instance.hasUserSelectedStringAxis = true
+    instance.tableConfig = {
+      ...instance.tableConfig,
+      stringColumnIndex: instance.tableConfig?.stringColumnIndex ?? 0,
+    }
+
+    const setTableConfigSpy = jest.spyOn(instance, 'setTableConfig')
+    const isTableConfigValidSpy = jest.spyOn(instance, 'isTableConfigValid').mockReturnValue(false)
+    const hasErrorSpy = jest.spyOn(instance, 'hasError').mockReturnValue(false)
+    const currentlySupportsPivotSpy = jest.spyOn(instance, 'currentlySupportsPivot').mockReturnValue(false)
+    const isColumnIndexValidSpy = jest.spyOn(instance, 'isColumnIndexValid').mockReturnValue(true)
+
+    instance.checkAndUpdateTableConfigs(DATE_ONLY_CHART_TYPES[0])
+
+    expect(setTableConfigSpy).not.toHaveBeenCalled()
+
+    setTableConfigSpy.mockRestore()
+    isTableConfigValidSpy.mockRestore()
+    hasErrorSpy.mockRestore()
+    currentlySupportsPivotSpy.mockRestore()
+    isColumnIndexValidSpy.mockRestore()
+  })
+
+  test('still resets table config for non-date chart types when invalid', () => {
+    const wrapper = setup({
+      queryResponse: _cloneDeep(testCases[9]),
+    })
+    const instance = wrapper.instance()
+
+    instance.hasUserSelectedStringAxis = true
+    instance.tableConfig = {
+      ...instance.tableConfig,
+      stringColumnIndex: instance.tableConfig?.stringColumnIndex ?? 0,
+    }
+
+    const setTableConfigSpy = jest.spyOn(instance, 'setTableConfig')
+    const isTableConfigValidSpy = jest.spyOn(instance, 'isTableConfigValid').mockReturnValue(false)
+    const hasErrorSpy = jest.spyOn(instance, 'hasError').mockReturnValue(false)
+    const currentlySupportsPivotSpy = jest.spyOn(instance, 'currentlySupportsPivot').mockReturnValue(false)
+    const isColumnIndexValidSpy = jest.spyOn(instance, 'isColumnIndexValid').mockReturnValue(true)
+
+    instance.checkAndUpdateTableConfigs('column')
+
+    expect(setTableConfigSpy).toHaveBeenCalled()
+
+    setTableConfigSpy.mockRestore()
+    isTableConfigValidSpy.mockRestore()
+    hasErrorSpy.mockRestore()
+    currentlySupportsPivotSpy.mockRestore()
+    isColumnIndexValidSpy.mockRestore()
+  })
+})
+
+describe('custom column detection', () => {
+  test('marks column as custom when display_overrides contains matching display_name', () => {
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={{ data: { data: {} } }} queryFn={() => {}} />)
+    const instance = wrapper.instance()
+
+    const columns = [
+      {
+        name: 'multi_book_odds.money_line + multi_book_odds.spread_points',
+        display_name: 'My Custom Column',
+        type: 'DOLLAR_AMT',
+        is_visible: true,
+      },
+    ]
+
+    // Set up displayOverrides (from display_overrides) — should be marked custom
+    instance.queryResponse = {
+      data: {
+        data: {
+          fe_req: {
+            display_overrides: [
+              {
+                english: 'My Custom Column',
+                table_column: 'multi_book_odds.money_line + multi_book_odds.spread_points',
+              },
+            ],
+          },
+        },
+      },
+    }
+
+    const formatted = instance.formatColumnsForTable(columns, [])
+    expect(formatted[0].custom).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does not mark column as custom when display_overrides does not match display_name', () => {
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={{ data: { data: {} } }} queryFn={() => {}} />)
+    const instance = wrapper.instance()
+
+    const columns = [
+      {
+        name: 'some_table.col',
+        display_name: 'Existing Column from Database',
+        type: 'DOLLAR_AMT',
+        is_visible: true,
+      },
+    ]
+
+    // display_overrides is empty or doesn't match — should NOT be marked custom
+    instance.queryResponse = {
+      data: {
+        data: {
+          fe_req: {
+            display_overrides: [],
+          },
+        },
+      },
+    }
+
+    const formatted = instance.formatColumnsForTable(columns, [])
+    expect(formatted[0].custom).toBeFalsy()
+    wrapper.unmount()
+  })
+
+  test('marks column as custom when is_custom flag is set', () => {
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={{ data: { data: {} } }} queryFn={() => {}} />)
+    const instance = wrapper.instance()
+
+    const columns = [
+      {
+        name: 'formula_column',
+        display_name: 'Formula Column',
+        type: 'DOLLAR_AMT',
+        is_visible: true,
+        is_custom: true,
+      },
+    ]
+
+    instance.queryResponse = {
+      data: {
+        data: {
+          fe_req: {
+            display_overrides: [],
+          },
+        },
+      },
+    }
+
+    const formatted = instance.formatColumnsForTable(columns, [])
+    expect(formatted[0].custom).toBe(true)
+    wrapper.unmount()
+  })
+})
+
+describe('display_overrides snapshot-based deduplication', () => {
+  const sumSqlFn = (sql) => `sum(${sql})`
+
+  const makeQueryResponse = (additionalSelects = [], displayOverrides = []) => ({
+    data: {
+      data: {
+        rows: [[100]],
+        columns: [{ name: 'sales', display_name: 'Sales', type: 'DOLLAR_AMT', is_visible: true }],
+        query_id: 'q1',
+        fe_req: {
+          additional_selects: additionalSelects,
+          display_overrides: displayOverrides,
+        },
+      },
+    },
+  })
+
+  test('adds a new display_override entry when adding a brand-new column', () => {
+    const queryResponse = makeQueryResponse()
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.onAddColumnClick({
+      id: 'new-col',
+      table_column: 'sales + 10',
+      custom_column_display_name: 'Sales Plus 10',
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const { displayOverrides } = spy.mock.calls[0][0]
+    expect(displayOverrides).toHaveLength(1)
+    expect(displayOverrides[0]).toEqual({ english: 'Sales Plus 10', table_column: 'sales + 10' })
+    wrapper.unmount()
+  })
+
+  test('replaces the exact snapshot entry on edit, no duplicates', () => {
+    const existingOverride = { english: 'Old Name', table_column: 'sales + 10' }
+    const queryResponse = makeQueryResponse(
+      [{ columns: ['sales + 10'], is_custom: true, id: 'col-1' }],
+      [existingOverride],
+    )
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.setState({ customColumnSelects: [{ id: 'col-1', columns: ['sales + 10'] }] })
+
+    instance.onAddColumnClick({
+      id: 'col-1',
+      table_column: 'sales + 25',
+      custom_column_display_name: 'New Name',
+      _snapshotDisplayOverride: existingOverride,
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const { displayOverrides } = spy.mock.calls[0][0]
+    expect(displayOverrides).toHaveLength(1)
+    expect(displayOverrides[0]).toEqual({ english: 'New Name', table_column: 'sales + 25' })
+    wrapper.unmount()
+  })
+
+  test('does not remove unrelated display_override entries on edit', () => {
+    const targetOverride = { english: 'Col A', table_column: 'sales + 10' }
+    const otherOverride = { english: 'Col B', table_column: 'sales + 50' }
+    const queryResponse = makeQueryResponse(
+      [{ columns: ['sales + 10'], is_custom: true, id: 'col-a' }],
+      [targetOverride, otherOverride],
+    )
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.setState({ customColumnSelects: [{ id: 'col-a', columns: ['sales + 10'] }] })
+
+    instance.onAddColumnClick({
+      id: 'col-a',
+      table_column: 'sales + 99',
+      custom_column_display_name: 'Col A Updated',
+      _snapshotDisplayOverride: targetOverride,
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const { displayOverrides } = spy.mock.calls[0][0]
+    expect(displayOverrides).toHaveLength(2)
+    expect(displayOverrides).toContainEqual(otherOverride)
+    expect(displayOverrides).toContainEqual({ english: 'Col A Updated', table_column: 'sales + 99' })
+    wrapper.unmount()
+  })
+
+  test('no-op edit on second custom column keeps all additional_selects', () => {
+    const firstSql = 'sales + 10'
+    const secondSql = 'sales + 20'
+    const firstOverride = { english: 'Col A', table_column: firstSql }
+    const secondOverride = {
+      english: 'Col B',
+      table_column: secondSql,
+      column_fn: [
+        { type: 'number', value: 1 },
+        { type: 'operator', value: 'ADDITION' },
+        { type: 'number', value: 2 },
+      ],
+    }
+
+    const queryResponse = makeQueryResponse(
+      [
+        { columns: [firstSql], is_custom: true, id: 'col-a' },
+        { columns: [secondSql], is_custom: true, id: 'col-b', column_fn: secondOverride.column_fn },
+      ],
+      [firstOverride, secondOverride],
+    )
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.setState({
+      customColumnSelects: [
+        { id: 'col-a', columns: [firstSql] },
+        { id: 'col-b', columns: [secondSql] },
+      ],
+    })
+
+    instance.onAddColumnClick({
+      id: 'col-b',
+      table_column: secondSql,
+      custom_column_display_name: 'Col B',
+      columnFnArray: secondOverride.column_fn,
+      _snapshotDisplayOverride: secondOverride,
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const { newColumns } = spy.mock.calls[0][0]
+    expect(newColumns).toHaveLength(2)
+    expect(newColumns.map((s) => s.columns?.[0])).toEqual(expect.arrayContaining([firstSql, secondSql]))
+    wrapper.unmount()
+  })
+
+  test('no-op edit keeps edited additional_select even when id mapping is missing', () => {
+    const firstSql = 'sales + 10'
+    const secondSql = 'cast(sales as float) + 20'
+    const firstOverride = { english: 'Col A', table_column: firstSql }
+    const secondOverride = {
+      english: 'Col B',
+      table_column: secondSql,
+      column_fn: [
+        { type: 'number', value: 1 },
+        { type: 'operator', value: 'ADDITION' },
+        { type: 'number', value: 2 },
+      ],
+    }
+
+    const queryResponse = makeQueryResponse(
+      [
+        { columns: [firstSql], is_custom: true, id: 'col-a' },
+        { columns: [secondSql], is_custom: true, id: 'col-b', column_fn: secondOverride.column_fn },
+      ],
+      [firstOverride, secondOverride],
+    )
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    // Simulate id-mapping miss for edited column in customColumnSelects state.
+    instance.setState({
+      customColumnSelects: [{ id: 'col-a', columns: [firstSql] }],
+    })
+
+    instance.onAddColumnClick({
+      id: 'col-b',
+      table_column: secondSql,
+      custom_column_display_name: 'Col B',
+      columnFnArray: secondOverride.column_fn,
+      _snapshotDisplayOverride: secondOverride,
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const { newColumns } = spy.mock.calls[0][0]
+    expect(newColumns).toHaveLength(2)
+    expect(newColumns.map((s) => s.columns?.[0])).toEqual(expect.arrayContaining([firstSql, secondSql]))
+    const editedSelect = newColumns.find((s) => s.columns?.[0] === secondSql)
+    expect(editedSelect?.column_fn).toEqual(secondOverride.column_fn)
+    wrapper.unmount()
+  })
+
+  test('handles edit with no existing display_override (snapshot is null)', () => {
+    const queryResponse = makeQueryResponse(
+      [{ columns: ['sales + 10'], is_custom: true, id: 'col-1' }],
+      [],
+    )
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.setState({ customColumnSelects: [{ id: 'col-1', columns: ['sales + 10'] }] })
+
+    instance.onAddColumnClick({
+      id: 'col-1',
+      table_column: 'sales + 25',
+      custom_column_display_name: 'New Name',
+      _snapshotDisplayOverride: null,
+    })
+
+    expect(spy).toHaveBeenCalled()
+    const { displayOverrides } = spy.mock.calls[0][0]
+    expect(displayOverrides).toHaveLength(1)
+    expect(displayOverrides[0]).toEqual({ english: 'New Name', table_column: 'sales + 25' })
+    wrapper.unmount()
+  })
+
+  test('uses aggregated additional_select SQL for display_override when sqlFn is provided', () => {
+    const queryResponse = makeQueryResponse()
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.onAddColumnClick(
+      {
+        id: 'agg-col-1',
+        table_column: '(dbo.HistoricalGameOddComb.under_profit / 100) * 100',
+        custom_column_display_name: 'Total Under Profit',
+      },
+      sumSqlFn,
+    )
+
+    expect(spy).toHaveBeenCalled()
+    const { newColumns, displayOverrides } = spy.mock.calls[0][0]
+    const effectiveSql = newColumns[0]?.columns?.[0]
+
+    expect(effectiveSql).toMatch(/^sum\(/i)
+    expect(displayOverrides[0]).toEqual({
+      english: 'Total Under Profit',
+      table_column: effectiveSql,
+    })
+    wrapper.unmount()
+  })
+
+  test('keeps edited aggregated select SQL and display_override table_column in sync', () => {
+    const existingOverride = {
+      english: 'Old Under Profit',
+      table_column: 'sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)',
+    }
+    const queryResponse = makeQueryResponse(
+      [{ columns: ['sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)'], is_custom: true, id: 'col-agg' }],
+      [existingOverride],
+    )
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.setState({
+      customColumnSelects: [{ id: 'col-agg', columns: ['sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)'] }],
+    })
+
+    instance.onAddColumnClick(
+      {
+        id: 'col-agg',
+        table_column: '(cast(dbo.HistoricalGameOddComb.under_profit as float) / 100) * 100',
+        custom_column_display_name: 'Total Under Profit',
+        _snapshotDisplayOverride: existingOverride,
+      },
+      sumSqlFn,
+    )
+
+    expect(spy).toHaveBeenCalled()
+    const { newColumns, displayOverrides } = spy.mock.calls[0][0]
+    const updatedSelect = newColumns.find((s) => s?.is_custom && s?.columns?.[0])
+
+    expect(updatedSelect.columns[0]).toMatch(/^sum\(/i)
+    expect(displayOverrides).toContainEqual({
+      english: 'Total Under Profit',
+      table_column: updatedSelect.columns[0],
+    })
+    wrapper.unmount()
+  })
+
+  test('uses source column display_name for aggregated selectable columns when custom name is absent', () => {
+    const queryResponse = makeQueryResponse()
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.onAddColumnClick(
+      {
+        id: 'agg-select-col',
+        table_column: '(dbo.HistoricalGameOddComb.under_profit / 100) * 100',
+        display_name: 'Total Under Profit',
+      },
+      sumSqlFn,
+    )
+
+    expect(spy).toHaveBeenCalled()
+    const { newColumns, displayOverrides } = spy.mock.calls[0][0]
+    const effectiveSql = newColumns[0]?.columns?.[0]
+
+    expect(effectiveSql).toBe('sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)')
+    expect(displayOverrides).toContainEqual({
+      english: 'Total Under Profit',
+      table_column: effectiveSql,
+    })
+    expect(displayOverrides.some((o) => o.english?.includes('/ 100 * 100'))).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('does not add duplicate display_override for aggregated selectable columns', () => {
+    const existingOverride = {
+      english: 'Total Under Profit',
+      table_column: 'sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)',
+    }
+    const queryResponse = makeQueryResponse([], [existingOverride])
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'queryFn').mockResolvedValue({ data: { data: {} } })
+
+    instance.onAddColumnClick(
+      {
+        id: 'agg-select-col-dup',
+        table_column: '(dbo.HistoricalGameOddComb.under_profit / 100) * 100',
+        display_name: 'Total Under Profit',
+      },
+      sumSqlFn,
+    )
+
+    expect(spy).toHaveBeenCalled()
+    const { displayOverrides } = spy.mock.calls[0][0]
+
+    expect(displayOverrides.filter((o) => o.english === 'Total Under Profit')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  test('clears loading and adding state when queryFn rejects or returns no rows', async () => {
+    const queryResponse = makeQueryResponse()
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} />)
+    const instance = wrapper.instance()
+
+    const setPageLoading = jest.fn()
+    instance.tableRef = { setPageLoading }
+
+    const flushUntilSettled = async () => {
+      for (let i = 0; i < 10; i++) {
+        await Promise.resolve()
+        wrapper.update()
+        if (instance.state.isAddingColumn === false) {
+          break
+        }
+      }
+    }
+
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const originalQueryFn = instance.queryFn
+    const queryFnMock = jest.fn().mockRejectedValueOnce(new Error('network')).mockResolvedValue({
+      data: { data: { rows: [] } },
+    })
+    instance.queryFn = queryFnMock
+
+    try {
+      // Case A: query rejects
+      instance.onAddColumnClick({ id: 'fail-1', table_column: 'sales + 1', custom_column_display_name: 'Fail' })
+
+      await flushUntilSettled()
+
+      expect(queryFnMock).toHaveBeenCalled()
+      expect(setPageLoading).toHaveBeenCalledWith(false)
+      expect(instance.state.isAddingColumn).toBe(false)
+
+      // Case B: query resolves with no rows
+      instance.setState({ isAddingColumn: false })
+      instance.onAddColumnClick({ id: 'fail-2', table_column: 'sales + 2', custom_column_display_name: 'NoRows' })
+
+      await flushUntilSettled()
+
+      expect(setPageLoading).toHaveBeenCalledWith(false)
+      expect(instance.state.isAddingColumn).toBe(false)
+    } finally {
+      instance.queryFn = originalQueryFn
+      consoleSpy.mockRestore()
+      wrapper.unmount()
+    }
+  })
+})
+
+describe('queryFn display_override response relabeling', () => {
+  test('relabels formula display_name using display_overrides', () => {
+    const queryResponse = {
+      data: {
+        data: {
+          rows: [[1]],
+          columns: [
+            {
+              name: 'sum((cast(dbo.HistoricalGameOddComb.under_profit as float) / 100) * 100)',
+              display_name: 'total under profit / 100 * 100',
+              type: 'PERCENT',
+              is_visible: true,
+            },
+          ],
+          fe_req: {
+            text: 'total smaller profit',
+            translation: 'exclude',
+            page_size: 50000,
+            additional_selects: [
+              {
+                insertion: 'OPTIONAL',
+                columns: ['sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)'],
+              },
+            ],
+            display_overrides: [],
+          },
+        },
+      },
+    }
+
+    const wrapper = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} queryFn={() => {}} />)
+    const instance = wrapper.instance()
+
+    const response = instance.applyDisplayOverridesToResponse(queryResponse, [
+      {
+        english: 'Total Under Profit',
+        table_column: 'sum((dbo.HistoricalGameOddComb.under_profit / 100) * 100)',
+      },
+    ])
+
+    expect(response?.data?.data?.columns?.[0]?.display_name).toBe('Total Under Profit')
+    expect(response?.data?.data?.fe_req?.display_overrides).toHaveLength(1)
+    wrapper.unmount()
   })
 })

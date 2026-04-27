@@ -1,0 +1,96 @@
+.focus-prompt-popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 320px;
+  max-width: 400px;
+  padding: 12px;
+}
+
+.focus-prompt-popover-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.focus-prompt-popover-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--react-autoql-text-color-primary);
+  margin: 0;
+}
+
+.focus-prompt-popover-description {
+  font-size: 13px;
+  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+  margin: 0;
+  line-height: 1.4;
+}
+
+.focus-prompt-popover-input-wrapper {
+  width: 100%;
+
+  .react-autoql-input-and-label-container {
+    width: 100%;
+  }
+}
+
+.focus-prompt-popover-estimated-cost {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--react-autoql-accent-color, #26a7df);
+  background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.08);
+
+  .focus-prompt-popover-estimated-cost-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .focus-prompt-popover-estimated-cost-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--react-autoql-accent-color, #26a7df);
+  }
+
+  .focus-prompt-popover-estimated-cost-price {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--react-autoql-accent-color, #26a7df);
+  }
+}
+
+.focus-prompt-popover-not-wandable {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+  font-size: 13px;
+}
+
+.focus-prompt-popover-error {
+  font-size: 13px;
+  color: var(--react-autoql-error-color, #d32f2f);
+  margin-top: 0;
+  padding: 8px 12px;
+  background-color: var(--react-autoql-error-background-color, rgba(211, 47, 47, 0.1));
+  border-radius: 4px;
+  border-left: 3px solid var(--react-autoql-error-color, #d32f2f);
+}
+
+.focus-prompt-popover-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+
+  /* With two buttons: keep primary (Auto Analyze) on the right, Get quote on the left.
+     space-between alone pins a single button to the left; flex-end + auto margin fixes that. */
+  & > :first-child:not(:only-child) {
+    margin-right: auto;
+  }
+}

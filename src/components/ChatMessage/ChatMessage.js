@@ -11,11 +11,10 @@ import {
   getAuthentication,
   isDrilldown,
   fetchLLMSummary,
-  MAX_DATA_PAGE_SIZE,
+  fetchLLMSummaryQuote,
   isChartType,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
-
 
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
@@ -23,16 +22,16 @@ import { OptionsToolbar } from '../OptionsToolbar'
 import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import { Button } from '../Button'
-import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
-import { Input } from '../Input'
 import SummaryFooter from './SummaryFooter'
 import SummaryContent from '../SummaryContent/SummaryContent'
+import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './ChatMessage.scss'
+import '../FocusPromptPopover/FocusPromptPopover.scss'
 
 export default class ChatMessage extends React.Component {
   // Static Set to track which message IDs have already animated
@@ -47,13 +46,15 @@ export default class ChatMessage extends React.Component {
     this.PIE_CHART_HEIGHT = 330
     this.MESSAGE_HEIGHT_MARGINS = 40
     this.MESSAGE_WIDTH_MARGINS = 40
+    this.BUBBLE_TOP_SCROLL_PADDING = 30
+    this.BUBBLE_BOTTOM_SCROLL_PADDING = 10
     this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
     // Store original summary content and response data if this is a summary message
     // Set in constructor so content renders before animation to know message bubble size
     const isSummaryMessage = (this.props.type === 'markdown' || this.props.type === 'md') && this.props.content
     const originalSummary = isSummaryMessage ? this.props.content : null
-    const summaryResponseData = isSummaryMessage ? (this.props.summaryResponseData || null) : null
+    const summaryResponseData = isSummaryMessage ? this.props.summaryResponseData || null : null
 
     // Check if this message has already been animated
     const hasAnimated = ChatMessage.animatedMessageIds.has(this.props.id)
@@ -82,6 +83,8 @@ export default class ChatMessage extends React.Component {
       isFocusingSummary: false,
       summaryResponseData, // Store response data for focusing summaries
       focusError: null, // Error message for focus summary
+      quoteResult: null, // { wandable, cost } when quote is fetched
+      isFetchingQuote: false,
     }
 
     // Minimum height for the message container
@@ -106,6 +109,7 @@ export default class ChatMessage extends React.Component {
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
+    shouldRender: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
@@ -122,6 +126,7 @@ export default class ChatMessage extends React.Component {
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
     onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
   }
@@ -141,6 +146,7 @@ export default class ChatMessage extends React.Component {
     text: null,
     enableColumnVisibilityManager: false,
     isResizing: false,
+    shouldRender: true,
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
@@ -158,11 +164,12 @@ export default class ChatMessage extends React.Component {
     onNoneOfTheseClick: () => {},
     onMessageResize: () => {},
     enableMagicWand: false,
+    showMagicWandQuoteButton: false,
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    
+
     // Wait until message bubble animation finishes to show query output content
     // The scroll will happen after animation completes (500ms) in clearIsAnimatingIn500ms
     this.setIsAnimating()
@@ -208,9 +215,9 @@ export default class ChatMessage extends React.Component {
     // Update original summary and response data if content changes and we don't have one stored
     if ((this.props.type === 'markdown' || this.props.type === 'md') && this.props.content) {
       if (!this.state.originalSummary || prevProps.content !== this.props.content) {
-        this.setState({ 
+        this.setState({
           originalSummary: this.props.content,
-          summaryResponseData: this.props.summaryResponseData || this.state.summaryResponseData
+          summaryResponseData: this.props.summaryResponseData || this.state.summaryResponseData,
         })
       }
     }
@@ -292,58 +299,66 @@ export default class ChatMessage extends React.Component {
 
   isScrolledIntoView = (elem) => {
     if (this.props.scrollContainerRef) {
-      const scrollTop = this.props.scrollContainerRef.getScrollTop()
-      const scrollBottom = scrollTop + this.props.scrollContainerRef.getClientHeight()
+      const container = this.props.scrollContainerRef.getContainer?.()
+      if (!container || !elem?.getBoundingClientRect) {
+        return false
+      }
 
-      const elemTop = elem.offsetTop
-      const elemBottom = elemTop + elem.offsetHeight
+      const containerRect = container.getBoundingClientRect()
+      const elemRect = elem.getBoundingClientRect()
+      const topInset = containerRect.top + this.BUBBLE_TOP_SCROLL_PADDING
+      const bottomInset = containerRect.bottom - this.BUBBLE_BOTTOM_SCROLL_PADDING
 
-      return elemBottom <= scrollBottom && elemTop >= scrollTop
+      return elemRect.top >= topInset && elemRect.bottom <= bottomInset
     }
 
     return false
   }
 
-  scrollIntoView = ({ delay = 0, block = 'end', inline = 'nearest', behavior = 'smooth' } = {}) => {
+  getMessageVisibilityElement = () => {
+    return this.messageBubbleRef || null
+  }
+
+  scrollIntoView = ({ delay = 0 } = {}) => {
     setTimeout(() => {
-      if (this.messageAndRTContainerRef && !this.isScrolledIntoView(this.messageAndRTContainerRef)) {
-        this.messageAndRTContainerRef.scrollIntoView({ block, inline })
+      const bubble = this.getMessageVisibilityElement()
+      if (bubble && !this.isScrolledIntoView(bubble)) {
+        this.animateScrollBubbleIntoContainer()
       }
     }, delay)
   }
 
-  // Animate scroll so the bottom of the message bubble (excluding RT) is visible
-  animatedScrollToMessageBottom = () => {
+  animateScrollBubbleIntoContainer = () => {
     const container = this.props.scrollContainerRef?.getContainer?.()
-    if (!container) return
+    const bubble = this.getMessageVisibilityElement()
+    if (!container || !bubble) return
 
-    const messageElement = this.messageContainerRef
-    if (!messageElement) return
+    const containerRect = container.getBoundingClientRect()
+    const bubbleRect = bubble.getBoundingClientRect()
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    const eps = 1
+    const padTop = this.BUBBLE_TOP_SCROLL_PADDING
+    const padBottom = this.BUBBLE_BOTTOM_SCROLL_PADDING
+    const targetTop = containerRect.top + padTop
+    const targetBottom = containerRect.bottom - padBottom
 
-    // Walk up the DOM to find the absolute offset within the scroll content
-    const scrollContent = container.querySelector('.chat-content-container')
-    if (!scrollContent) return
+    let deltaScroll = 0
 
-    let messageAbsoluteTop = 0
-    let el = messageElement
-    while (el && el !== scrollContent) {
-      messageAbsoluteTop += el.offsetTop
-      el = el.offsetParent
+    if (bubbleRect.height > containerRect.height + eps) {
+      deltaScroll = bubbleRect.top - targetTop
+    } else if (bubbleRect.top < targetTop - eps) {
+      deltaScroll = bubbleRect.top - targetTop
+    } else if (bubbleRect.bottom > targetBottom + eps) {
+      deltaScroll = bubbleRect.bottom - targetBottom
+    } else {
+      return
     }
 
-    const messageHeight = messageElement.offsetHeight
-    const containerHeight = container.clientHeight
-    const maxScrollTop = container.scrollHeight - container.clientHeight
-
-    // Align the bottom of the message bubble with the bottom of the viewport,
-    // leaving a small gap at the top so the chat toolbars above the bubble stay visible.
-    const TOP_PADDING = 50
-    const targetScrollTop = Math.min(maxScrollTop, Math.max(0, messageAbsoluteTop + messageHeight - containerHeight - TOP_PADDING))
-
+    const targetScrollTop = Math.max(0, Math.min(maxScrollTop, container.scrollTop + deltaScroll))
     const startScrollTop = container.scrollTop
     const distance = targetScrollTop - startScrollTop
 
-    if (Math.abs(distance) < 5) return
+    if (Math.abs(distance) < 2) return
 
     const duration = 400
     const startTime = performance.now()
@@ -416,38 +431,12 @@ export default class ChatMessage extends React.Component {
     // Only scroll if the message is not already fully visible in the viewport.
     if (isChartType(displayType)) {
       setTimeout(() => {
-        const container = this.props.scrollContainerRef?.getContainer?.()
-        const messageElement = this.messageContainerRef
-        if (!container || !messageElement) return
-
-        // Check if message is already fully visible
-        const scrollTop = container.scrollTop
-        const scrollBottom = scrollTop + container.clientHeight
-        const scrollContent = container.querySelector('.chat-content-container')
-        if (!scrollContent) return
-
-        let messageAbsoluteTop = 0
-        let el = messageElement
-        while (el && el !== scrollContent) {
-          messageAbsoluteTop += el.offsetTop
-          el = el.offsetParent
-        }
-
-        const messageHeight = messageElement.offsetHeight
-        const messageBottom = messageAbsoluteTop + messageHeight
-        const TOP_PADDING = 50
-
-        // Check if message is already fully visible (with padding)
-        const isFullyVisible = messageAbsoluteTop >= scrollTop + TOP_PADDING && messageBottom <= scrollBottom
-
-        // Only scroll if not already fully visible
-        if (!isFullyVisible) {
-          this.animatedScrollToMessageBottom()
-        }
+        const bubble = this.getMessageVisibilityElement()
+        if (!bubble || this.isScrolledIntoView(bubble)) return
+        this.animateScrollBubbleIntoContainer()
       }, 150)
     }
   }
-
 
   handleGenerateSummary = async () => {
     if (!this.props.response?.data?.data?.rows || !this.props.response?.data?.data?.columns) {
@@ -468,20 +457,21 @@ export default class ChatMessage extends React.Component {
     try {
       // Get filtered data from QueryOutput's tableData (already filtered)
       const filteredRows = this.responseRef?.tableData || this.props.response.data.data.rows
-      
+
       // Get updated columns from QueryOutput if available (includes custom columns)
       // Use queryResponse columns which should have the latest columns from API responses
-      const currentColumns = this.responseRef?.queryResponse?.data?.data?.columns || this.props.response.data.data.columns
+      const currentColumns =
+        this.responseRef?.queryResponse?.data?.data?.columns || this.props.response.data.data.columns
 
       const response = await fetchLLMSummary({
         data: {
-          additional_context:{
+          additional_context: {
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            focus_prompt: this.state.focusPrompt.trim() || ""
+            focus_prompt: this.state.focusPrompt.trim() || '',
           },
           rows: filteredRows,
-          columns: currentColumns
+          columns: currentColumns,
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -494,7 +484,7 @@ export default class ChatMessage extends React.Component {
       if (summary) {
         const focusPromptUsed = this.state.focusPrompt.trim() || undefined
         // Store original summary and response data in state for this component
-        this.setState({ 
+        this.setState({
           originalSummary: summary,
           focusPrompt: '', // Clear the focus prompt input
           summaryResponseData: {
@@ -502,8 +492,8 @@ export default class ChatMessage extends React.Component {
             columns: currentColumns,
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            query_id: this.props.response.data.data.query_id
-          }
+            query_id: this.props.response.data.data.query_id,
+          },
         })
         // Add summary as a new message bubble, including response data for focusing
         this.props.addMessageToDM?.({
@@ -516,8 +506,8 @@ export default class ChatMessage extends React.Component {
             columns: currentColumns,
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
-            query_id: this.props.response.data.data.query_id
-          }
+            query_id: this.props.response.data.data.query_id,
+          },
         })
       } else {
         // No summary returned - check for error message in response
@@ -556,12 +546,8 @@ export default class ChatMessage extends React.Component {
     }
   }
 
-
   handleFocusPromptChange = (e) => {
-    const value = e.target.value
-    if (value.length <= 100) {
-      this.setState({ focusPrompt: value, focusError: null })
-    }
+    this.setState({ focusPrompt: e.target.value, focusError: null, quoteResult: null })
   }
 
   handleFocusPromptKeyDown = (e) => {
@@ -572,22 +558,84 @@ export default class ChatMessage extends React.Component {
     }
   }
 
-  handleFocusSummary = async () => {
-    const { focusPrompt, summaryResponseData } = this.state
-    if (!focusPrompt.trim()) {
+  handleGetQuote = async () => {
+    const filteredRows = this.responseRef?.tableData || this.props.response?.data?.data?.rows
+    const currentColumns =
+      this.responseRef?.queryResponse?.data?.data?.columns || this.props.response?.data?.data?.columns
+
+    if (!filteredRows || !currentColumns) return
+
+    this.setState({ isFetchingQuote: true, focusError: null, quoteResult: null })
+
+    const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+    if (!auth.apiKey || !auth.domain) {
+      this.setState({ isFetchingQuote: false })
       return
     }
 
+    try {
+      const response = await fetchLLMSummaryQuote({
+        data: {
+          additional_context: {
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            focus_prompt: this.state.focusPrompt?.trim() || '',
+          },
+          rows: filteredRows,
+          columns: currentColumns,
+        },
+        queryID: this.props.response.data.data.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const envelope = response?.data
+      const quoteData = envelope?.data ?? envelope
+      const wandable = quoteData?.wandable
+      const cost = quoteData?.cost
+
+      if (wandable !== undefined) {
+        this.setState({
+          quoteResult: {
+            wandable: !!wandable,
+            cost: wandable ? (cost != null ? Number(cost) : 0) : null,
+          },
+          focusError: null,
+        })
+      } else {
+        this.setState({ focusError: 'Unable to get quote. Please try again.' })
+      }
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Unable to get quote. Please try again.'
+      this.setState({ focusError: errorMessage })
+    } finally {
+      this.setState({ isFetchingQuote: false })
+    }
+  }
+
+  handleFocusSummary = async () => {
+    const { focusPrompt, summaryResponseData } = this.state
+
     // Use stored response data or props response data
     // Get updated columns from QueryOutput if available (includes custom columns)
-    const currentColumns = this.responseRef?.queryResponse?.data?.data?.columns || this.props.response?.data?.data?.columns
-    const responseData = summaryResponseData || (this.props.response?.data?.data ? {
-      rows: this.responseRef?.tableData || this.props.response.data.data.rows,
-      columns: currentColumns,
-      text: this.props.response.data.data.text,
-      interpretation: this.props.response.data.data.interpretation,
-      query_id: this.props.response.data.data.query_id
-    } : null)
+    const currentColumns =
+      this.responseRef?.queryResponse?.data?.data?.columns || this.props.response?.data?.data?.columns
+    const responseData =
+      summaryResponseData ||
+      (this.props.response?.data?.data
+        ? {
+            rows: this.responseRef?.tableData || this.props.response.data.data.rows,
+            columns: currentColumns,
+            text: this.props.response.data.data.text,
+            interpretation: this.props.response.data.data.interpretation,
+            query_id: this.props.response.data.data.query_id,
+          }
+        : null)
 
     if (!responseData?.rows || !responseData?.columns) {
       this.props.onErrorCallback?.('Unable to focus summary: missing response data')
@@ -610,10 +658,10 @@ export default class ChatMessage extends React.Component {
           additional_context: {
             text: responseData.text,
             interpretation: responseData.interpretation,
-            focus_prompt: focusPrompt.trim()
+            focus_prompt: focusPrompt.trim() || '',
           },
           rows: responseData.rows,
-          columns: responseData.columns
+          columns: responseData.columns,
         },
         queryID: responseData.query_id,
         apiKey: auth.apiKey,
@@ -629,12 +677,12 @@ export default class ChatMessage extends React.Component {
           content: focusedSummary,
           type: 'markdown',
           isResponse: true,
-          focusPromptUsed: focusPrompt.trim(), // Store the focus prompt that was used
+          focusPromptUsed: focusPrompt.trim() || undefined, // Store the focus prompt that was used
         })
         // Clear the focus prompt
-        this.setState({ 
+        this.setState({
           focusPrompt: '',
-          focusError: null
+          focusError: null,
         })
       } else {
         // No summary returned - check for error message in response
@@ -689,7 +737,7 @@ export default class ChatMessage extends React.Component {
       // Copy as plain text using Clipboard API
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       } else {
         // Fallback for older browsers
         const textarea = document.createElement('textarea')
@@ -698,7 +746,7 @@ export default class ChatMessage extends React.Component {
         textarea.select()
         document.execCommand('copy')
         document.body.removeChild(textarea)
-        this.props.onSuccessAlert?.('Successfully copied summary to clipboard!')
+        this.props.onSuccessAlert?.('Successfully copied Analysis to clipboard!')
       }
     } catch (error) {
       console.error('Failed to copy markdown:', error)
@@ -708,7 +756,7 @@ export default class ChatMessage extends React.Component {
 
   renderSummaryFooter = () => {
     const isSummaryMessage = this.props.type === 'markdown' || this.props.type === 'md'
-    
+
     // Show feedback buttons for summary messages
     if (isSummaryMessage && this.props.content) {
       // Get query ID from summaryResponseData (stored when summary was generated)
@@ -773,63 +821,41 @@ export default class ChatMessage extends React.Component {
             border={true}
             splitButton={{
               popoverContent: ({ closePopover }) => (
-                <div className='chat-message-summary-dropdown-content'>
-                  <div className='chat-message-summary-dropdown-header'>
-                    <label className='chat-message-summary-dropdown-label'>
-                      Focus on a specific topic (optional)
-                    </label>
-                    <div className='chat-message-summary-dropdown-description'>
-                      Enter a topic to generate a summary tailored to that focus area
-                    </div>
-                  </div>
-                  <div className='chat-message-summary-dropdown-input-group'>
-                    <Input
-                      value={focusPrompt}
-                      onChange={this.handleFocusPromptChange}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          this.handleGenerateSummary()
-                          closePopover()
-                        } else {
-                          this.handleFocusPromptKeyDown(e)
-                        }
-                      }}
-                      placeholder='e.g., sales growth trends'
-                      maxLength={100}
-                      disabled={isGenerating}
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      type='primary'
-                      size='medium'
-                      onClick={() => {
-                        this.handleGenerateSummary()
-                        closePopover()
-                      }}
-                      disabled={isDisabled || !focusPrompt.trim()}
-                      loading={isGenerating}
-                      icon='magic-wand'
-                    >
-                      Analyze
-                    </Button>
-                  </div>
-                  {focusError && (
-                    <div className='chat-message-summary-focus-error'>
-                      {focusError}
-                    </div>
-                  )}
-                </div>
+                <FocusPromptPopoverContent
+                  contentClassName='focus-prompt-popover-content'
+                  focusPrompt={focusPrompt}
+                  onFocusPromptChange={this.handleFocusPromptChange}
+                  onGetQuote={this.handleGetQuote}
+                  onAnalyze={() => {
+                    this.handleGenerateSummary()
+                    closePopover()
+                  }}
+                  quoteResult={this.state.quoteResult}
+                  isFetchingQuote={this.state.isFetchingQuote}
+                  focusError={focusError}
+                  isAnalyzeDisabled={isDisabled}
+                  isAnalyzeLoading={isGenerating}
+                  inputDisabled={isGenerating}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      this.handleGenerateSummary()
+                      closePopover()
+                    } else {
+                      this.handleFocusPromptKeyDown(e)
+                    }
+                  }}
+                  showQuoteButton={this.props.showMagicWandQuoteButton}
+                />
               ),
               popoverProps: {
                 align: 'end',
+                positions: ['top', 'bottom'],
                 contentClassName: 'chat-message-summary-dropdown-popover',
               },
             }}
           >
-            <span className='analyze-button-content'>
-              Analyze
-            </span>
+            <span className='analyze-button-content'>Auto Analyze</span>
             <span
               className='analyze-beta-badge'
               data-tooltip-content='This feature is in beta'
@@ -924,6 +950,7 @@ export default class ChatMessage extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+          shouldRender={!this.props.isResizing && this.props.shouldRender}
         />
       )
     }
@@ -987,6 +1014,7 @@ export default class ChatMessage extends React.Component {
             customOptions={isDataPreview ? [] : this.props.customToolbarOptions}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
+            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
           />
         ) : null}
       </div>
@@ -1058,6 +1086,7 @@ export default class ChatMessage extends React.Component {
         ${isResizable ? 'resizable' : ''} 
         ${this.state.isUserResizing ? 'user-resizing' : ''}
         ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}`}
+              ref={(r) => (this.messageBubbleRef = r)}
             >
               {this.renderContent()}
               {this.renderSummaryFooter()}

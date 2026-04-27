@@ -3,24 +3,60 @@ import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
 import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+
+/** Pivot null / empty cells must not become 0 — Number(null) === 0 in JS. */
+export const parseBubbleCellValue = (raw) => {
+  if (raw === null || raw === undefined || raw === '') {
+    return null
+  }
+  const n = Number(raw)
+  return Number.isNaN(n) ? null : n
+}
+
+const collectNumericBubbleValues = (data, numberColumnIndices) => {
+  const values = []
+  if (!data?.length || !numberColumnIndices?.length) {
+    return values
+  }
+  for (const row of data) {
+    for (const colIndex of numberColumnIndices) {
+      const parsed = parseBubbleCellValue(row[colIndex])
+      if (parsed !== null) {
+        values.push(parsed)
+      }
+    }
+  }
+  return values
+}
+
+/** Max bubble diameter (maps to scale range top) — must call d3 .bandwidth() methods. */
+const maxBubbleDiameter = (xScale, yScale) => {
+  const xBw = typeof xScale.bandwidth === 'function' ? xScale.bandwidth() : xScale.bandwidth
+  const yBw = typeof yScale.bandwidth === 'function' ? yScale.bandwidth() : yScale.bandwidth
+  return Math.min(Number(xBw) || 0, Number(yBw) || 0)
+}
+
+export const buildBubbleRadiusScale = (numericValues, xScale, yScale) => {
+  const maxR = maxBubbleDiameter(xScale, yScale)
+  if (!numericValues.length || maxR <= 0) {
+    return scaleLinear().domain([0, 1]).range([0, 0]).clamp(true)
+  }
+
+  const minValue = min(numericValues)
+  const maxValue = max(numericValues)
+  if (minValue == null || maxValue == null || Number.isNaN(minValue) || Number.isNaN(maxValue)) {
+    return scaleLinear().domain([0, 1]).range([0, 0]).clamp(true)
+  }
+
+  if (minValue === maxValue) {
+    return scaleLinear().domain([minValue, maxValue]).range([maxR / 2, maxR / 2]).clamp(true)
+  }
+
+  return scaleLinear().domain([minValue, maxValue]).range([0, maxR]).clamp(true)
+}
 
 export default class Circles extends PureComponent {
-  constructor(props) {
-    super(props)
-
-    const maxValue = max(
-      props.data.map((row) => max(row.filter((value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)))),
-    )
-
-    const minValue = min(
-      props.data.map((row) => min(row.filter((value, i) => props.numberColumnIndices.includes(i) && !isNaN(value)))),
-    )
-
-    this.radiusScale = scaleLinear()
-      .domain([minValue, maxValue])
-      .range([0, Math.min(props.xScale.bandwidth(), props.yScale.bandwidth())])
-  }
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 
@@ -29,13 +65,23 @@ export default class Circles extends PureComponent {
   }
 
   onCircleClick = (row, colIndex, activeKey) => {
+    const { columns, stringColumnIndex, dataFormatting } = this.props
+
+    const stringColumn = columns[stringColumnIndex]
+    const filter = createDateDrilldownFilter({
+      stringColumn,
+      dateValue: row[stringColumnIndex],
+      dataFormatting,
+    })
+
     this.props.onChartClick({
       row,
       columnIndex: colIndex,
-      columns: this.props.columns,
-      stringColumnIndex: this.props.stringColumnIndex,
+      columns,
+      stringColumnIndex,
       legendColumn: this.props.legendColumn,
       activeKey,
+      filter,
     })
 
     this.setState({ activeKey })
@@ -55,6 +101,7 @@ export default class Circles extends PureComponent {
       legendLabels,
       yScale,
       xScale,
+      data,
     } = this.props
 
     const visibleSeries = numberColumnIndices.filter((colIndex) => {
@@ -64,6 +111,9 @@ export default class Circles extends PureComponent {
     if (!visibleSeries.length) {
       return null
     }
+
+    const numericValues = collectNumericBubbleValues(data, numberColumnIndices)
+    const radiusScale = buildBubbleRadiusScale(numericValues, xScale, yScale)
 
     const circles = []
 
@@ -75,12 +125,14 @@ export default class Circles extends PureComponent {
     const color1 = chartColors[1]
     const color2 = 'var(--react-autoql-danger-color)'
 
-    this.props.data.forEach((row, index) => {
+    data.forEach((row, index) => {
       numberColumnIndices.forEach((colIndex, i) => {
         if (!columns[colIndex].isSeriesHidden) {
           const rawValue = row[colIndex]
-          const valueNumber = Number(rawValue)
-          const value = !isNaN(valueNumber) ? valueNumber : 0
+          const value = parseBubbleCellValue(rawValue)
+          if (value === null) {
+            return
+          }
 
           const xLabel = row[stringColumnIndex]
           const yLabel = legendLabels[i].label
@@ -99,7 +151,7 @@ export default class Circles extends PureComponent {
 
           const scaleX = xScale.getValue(xLabel)
           const scaleY = yScale.getValue(yLabel)
-          const radius = this.radiusScale(value) / 2
+          const radius = radiusScale(value) / 2
 
           circles.push(
             <circle
@@ -116,7 +168,7 @@ export default class Circles extends PureComponent {
               style={{
                 stroke: 'transparent',
                 strokeWidth: 10,
-                fill: this.state.activeKey === key ? color1 : radius > 0 ? color0 : color2,
+                fill: this.state.activeKey === key ? color1 : value < 0 ? color2 : color0,
                 fillOpacity: 0.7,
               }}
             />,

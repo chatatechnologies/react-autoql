@@ -17,6 +17,7 @@ export default class DrilldownTable extends React.Component {
     chartTooltipID: PropTypes.string,
     reportProblemCallback: PropTypes.func,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -27,6 +28,7 @@ export default class DrilldownTable extends React.Component {
     chartTooltipID: null,
     reportProblemCallback: () => {},
     enableMagicWand: false,
+    showMagicWandQuoteButton: false,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -95,6 +97,7 @@ export default class DrilldownTable extends React.Component {
                 onPNGDownloadFinish={this.props.onPNGDownloadFinish}
                 popoverAlign='end'
                 enableMagicWand={this.props.enableMagicWand}
+                showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
               />
             </div>
           </div>

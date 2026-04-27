@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 import { getBandScale, getLinearScales, deepEqual } from 'autoql-fe-utils'
 
 import { Axes } from '../Axes'
 import { Columns } from '../Columns'
+import { StackedColumns } from '../StackedColumns'
 import { Line } from '../Line'
 
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
+import { chartDefaultProps, chartPropTypes, getDenseBandScaleOptions } from '../chartPropHelpers.js'
 
 export default class ChataColumnLineChart extends Component {
   constructor(props) {
@@ -16,8 +18,14 @@ export default class ChataColumnLineChart extends Component {
     }
   }
 
-  static propTypes = chartPropTypes
-  static defaultProps = chartDefaultProps
+  static propTypes = {
+    ...chartPropTypes,
+    columnLineStacked: PropTypes.bool,
+  }
+  static defaultProps = {
+    ...chartDefaultProps,
+    columnLineStacked: false,
+  }
 
   shouldComponentUpdate = (nextProps, nextState) => {
     const propsEqual = deepEqual(this.props, nextProps)
@@ -39,6 +47,7 @@ export default class ChataColumnLineChart extends Component {
 
     this.xScale = getBandScale({
       ...props,
+      ...getDenseBandScaleOptions(props.data, props),
       columnIndex: props.stringColumnIndex,
       axis: 'x',
     })
@@ -49,6 +58,7 @@ export default class ChataColumnLineChart extends Component {
       columnIndices2: numberColumnIndices2,
       axis: 'y',
       isScaled: this.state?.isChartScaled,
+      stacked: !!props.columnLineStacked,
     })
 
     this.yScale = yScalesAndTicks.scale
@@ -91,7 +101,12 @@ export default class ChataColumnLineChart extends Component {
           toggleChartScale={this.toggleChartScale}
           yGridLines
         >
-          {!this.props.hidden && <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />}
+          {!this.props.hidden &&
+            (this.props.columnLineStacked ? (
+              <StackedColumns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+            ) : (
+              <Columns {...this.props} xScale={this.xScale} yScale={this.yScale} />
+            ))}
           {!!this.yScale2 && !this.props.hidden && (
             <Line
               {...this.props}

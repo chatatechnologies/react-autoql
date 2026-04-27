@@ -77,6 +77,7 @@ export default class NotificationItem extends React.Component {
     shouldRenderSummarySection: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
+    showMagicWandQuoteButton: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -91,6 +92,7 @@ export default class NotificationItem extends React.Component {
     defaultExpanded: false,
     enableMoreOptionsMenu: true,
     shouldRenderSummarySection: false,
+    showMagicWandQuoteButton: false,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -544,6 +546,7 @@ export default class NotificationItem extends React.Component {
                     enableFilterBtn={this.props.enableFilterBtn}
                     enableCustomColumns={this.props.enableCustomColumns}
                     enableMagicWand={this.props.enableMagicWand}
+                    showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
                   />
                 )}
               </>

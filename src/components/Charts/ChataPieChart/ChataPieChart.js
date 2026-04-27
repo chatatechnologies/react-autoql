@@ -18,7 +18,7 @@ import {
 import safeGetBBox from '../../../utils/safeGetBBox'
 
 import StringAxisSelector from '../Axes/StringAxisSelector'
-import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers'
+import { chartDefaultProps, chartPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 import 'd3-transition'
 
 // Simple legend state management using localStorage
@@ -265,13 +265,25 @@ export default class ChataPieChart extends React.Component {
         // Put it back if it is expanded
         this.setState({ activeKey: null })
       } else {
+        const row = Object.values(d.data.value)
+        const { columns, stringColumnIndex, dataFormatting } = this.props
+
+        // Create date drilldown filter if string axis is a DATE column (raw data charts)
+        const stringColumn = columns[stringColumnIndex]
+        const filter = createDateDrilldownFilter({
+          stringColumn,
+          dateValue: row[stringColumnIndex],
+          dataFormatting,
+        })
+
         this.props.onChartClick({
-          row: Object.values(d.data.value),
+          row,
           columnIndex: this.props.numberColumnIndex,
-          columns: this.props.columns,
-          stringColumnIndex: this.props.stringColumnIndex,
+          columns,
+          stringColumnIndex,
           legendColumn: this.props.legendColumn,
           activeKey: newActiveKey,
+          filter,
         })
         this.setState({ activeKey: newActiveKey })
       }

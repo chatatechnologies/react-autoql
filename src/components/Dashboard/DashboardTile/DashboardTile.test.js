@@ -59,6 +59,22 @@ describe('renders correctly', () => {
     const dashboardTileComponent = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(dashboardTileComponent.exists()).toBe(true)
   })
+
+  test('passes showRefreshInEdit to OptionsToolbar when editing', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const optionsToolbar = wrapper.find('OptionsToolbar').first()
+    expect(optionsToolbar.exists()).toBe(true)
+    expect(optionsToolbar.prop('showRefreshInEdit')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does not pass showRefreshInEdit when not editing', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const optionsToolbar = wrapper.find('OptionsToolbar').first()
+    expect(optionsToolbar.exists()).toBe(true)
+    expect(optionsToolbar.prop('showRefreshInEdit')).not.toBe(true)
+    wrapper.unmount()
+  })
 })
 
 describe('dashboard tile pivot after filtering', () => {
@@ -269,5 +285,120 @@ describe('config restoration after errors', () => {
     expect(finalTile.networkColumnConfig).toEqual(initialConfig.networkColumnConfig)
 
     wrapper.unmount()
+  })
+})
+
+describe('DashboardTile.isServerError', () => {
+  const instance = new DashboardTile({ tile: { i: 1, query: '' }, setParamsForTile: () => {} })
+  const fn = instance.isServerError.bind(instance)
+
+  test('returns true for numeric 5xx status', () => {
+    expect(fn({ status: 502 })).toBe(true)
+  })
+
+  test('returns true when message contains internal server error', () => {
+    expect(fn({ data: { message: 'Internal Server Error: something went wrong' } })).toBe(true)
+  })
+
+  test('returns true when reference_id ends with .500', () => {
+    expect(fn({ data: { reference_id: 'abc.def.500' } })).toBe(true)
+  })
+
+  test('returns false for non-server responses (200)', () => {
+    expect(fn({ status: 200 })).toBe(false)
+  })
+
+  test('returns false for empty/unknown response', () => {
+    expect(fn({})).toBe(false)
+  })
+})
+
+describe('DashboardTile retry behavior', () => {
+  const mockRunCached = jest.fn()
+  const mockRunQuery = jest.fn()
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    mockRunCached.mockReset()
+    mockRunQuery.mockReset()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+    jest.restoreAllMocks()
+  })
+
+  it('retries with force:true and calls onRetry when cached helper returns 500', async () => {
+    const onRetry = jest.fn()
+
+    const props = {
+      tile: { i: 1, query: 'cats' },
+      setParamsForTile: jest.fn(),
+      authentication: {},
+      autoQLConfig: {},
+      dataFormatting: {},
+      onRetry,
+    }
+
+    const wrapper = shallow(<DashboardTile {...props} />)
+    const instance = wrapper.instance()
+
+    const requestData = { query: 'cats' }
+
+    const error = { response: { status: 500, data: { message: 'Internal Server Error', reference_id: 'abc.500' } } }
+
+    mockRunCached
+      .mockImplementationOnce(() => Promise.reject(error))
+      .mockImplementationOnce(() => Promise.resolve({ data: { data: { rows: [] } }, status: 200 }))
+
+    // Use real timers for the retry delay so promises resolve naturally
+    jest.useRealTimers()
+    const p = instance.executeQueryWithForceRetry(requestData, mockRunCached)
+
+    try {
+      await p
+    } catch (e) {
+      // swallow - we want to assert telemetry was emitted even on error
+    }
+
+    // Cached helper should be called twice: initial attempt and retry
+    expect(mockRunCached).toHaveBeenCalledTimes(2)
+    expect(mockRunCached).toHaveBeenNthCalledWith(2, expect.objectContaining({ force: true }))
+
+    // Ensure the telemetry callback was invoked with the forced retry payload
+    expect(onRetry).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'retry', retryData: expect.objectContaining({ force: true }) }),
+    )
+  })
+
+  it('successfully resolves query response after forced retry', async () => {
+    const props = {
+      tile: { i: 1, query: 'dogs' },
+      setParamsForTile: jest.fn(),
+      authentication: {},
+      autoQLConfig: {},
+      dataFormatting: {},
+    }
+
+    const wrapper = shallow(<DashboardTile {...props} />)
+    const instance = wrapper.instance()
+
+    const requestData = { query: 'dogs' }
+    const successResponse = { data: { data: { rows: [{ name: 'Fido', age: 5 }] } }, status: 200 }
+    const error = { response: { status: 500, data: { message: 'Internal Server Error' } } }
+
+    mockRunCached
+      .mockImplementationOnce(() => Promise.reject(error))
+      .mockImplementationOnce(() => Promise.resolve(successResponse))
+
+    // Use real timers for the retry so promises resolve naturally
+    jest.useRealTimers()
+    const result = await instance.executeQueryWithForceRetry(requestData, mockRunCached)
+
+    // Assert force:true was passed on the retry call
+    expect(mockRunCached).toHaveBeenNthCalledWith(2, expect.objectContaining({ force: true }))
+    // Assert the successful response is returned from the forced retry
+    expect(result).toEqual(successResponse)
   })
 })

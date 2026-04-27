@@ -57,6 +57,8 @@ export default class StackedColumns extends PureComponent {
       return null
     }
 
+    const stackSegmentGap = 0.5
+
     const gradientDefs = []
     const gradientIds = new Map()
     
@@ -80,7 +82,7 @@ export default class StackedColumns extends PureComponent {
       let prevPosValue = 0
       let prevNegValue = 0
       const bandwidth = xScale.bandwidth()
-      const cornerRadius = Math.min(bandwidth / 2, 3) // Slight rounding for modern look
+      const cornerRadius = Math.max(0, Math.min(bandwidth / 2, 3)) // Slight rounding for modern look
       
       const bars = visibleIndices
         .map((colIndex) => {
@@ -98,13 +100,13 @@ export default class StackedColumns extends PureComponent {
 
           if (value >= 0) {
             const nextPosValue = prevPosValue + value
-            height = Math.abs(yScale.getValue(value) - yScale.getValue(0)) - 0.5
-            y = yScale.getValue(nextPosValue) + 0.5
+            height = Math.abs(yScale.getValue(value) - yScale.getValue(0)) - stackSegmentGap
+            y = yScale.getValue(nextPosValue) + stackSegmentGap
             prevPosValue = nextPosValue
           } else {
             const nextNegValue = prevNegValue + value
-            height = Math.abs(yScale.getValue(value) - yScale.getValue(0)) - 0.5
-            y = yScale.getValue(prevNegValue) + 0.5
+            height = Math.abs(yScale.getValue(value) - yScale.getValue(0)) - stackSegmentGap
+            y = yScale.getValue(prevNegValue) + stackSegmentGap
             prevNegValue = nextNegValue
           }
 

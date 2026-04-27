@@ -1405,6 +1405,18 @@ export default class ChataTable extends React.Component {
 
   onUpdateColumnConfirm = () => {
     const column = _cloneDeep(this.state.contextMenuColumn)
+    const displayOverrides = this.props.response?.data?.data?.fe_req?.display_overrides ?? []
+    if (!Array.isArray(displayOverrides)) {
+      console.warn('Expected display_overrides to be an array, received:', typeof displayOverrides)
+      return
+    }
+    const matchingOverride = displayOverrides.find((o) => o.english === column.display_name) ?? null
+    column._snapshotDisplayOverride = matchingOverride
+    // If the override has a persisted column_fn token list, restore it so the modal
+    // never needs to re-parse SQL — preventing bracket accumulation on each edit.
+    if (matchingOverride?.column_fn?.length) {
+      column.columnFnArray = matchingOverride.column_fn
+    }
     this.setState({ contextMenuColumn: undefined, isCustomColumnPopoverOpen: true, activeCustomColumn: column })
   }
 
@@ -1865,9 +1877,13 @@ export default class ChataTable extends React.Component {
       return null
     }
 
+    // QueryOutput does not pass `data`; rows live on `response`. `undefined < 50` is false, so
+    // without this fallback the label stays at "50" instead of the real loaded row count.
+    const loadedRowCount = this.props.data?.length ?? this.props.response?.data?.data?.rows?.length ?? 0
+
     let currentRowCount = 50
-    if (this.props.data?.length < 50) {
-      currentRowCount = this.props.data?.length
+    if (loadedRowCount < 50) {
+      currentRowCount = loadedRowCount
     }
 
     let totalRowCount = this.props.pivot ? this.props.data?.length : this.props.response?.data?.data?.count_rows
@@ -1928,22 +1944,15 @@ export default class ChataTable extends React.Component {
       }
 
       const name = column.display_name
-      const altName = column.title
       const type = COLUMN_TYPES[column?.type]?.description
       const icon = COLUMN_TYPES[column?.type]?.icon
-
-      const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
-      const rowLimitFormatted = new Intl.NumberFormat(languageCode, {}).format(MAX_DATA_PAGE_SIZE)
 
       const stats = this.summaryStats[column.index]
 
       return (
         <div>
           <div className='selectable-table-tooltip-title'>
-            <span>
-              {name}
-              {altName !== name ? ` (${altName})` : ''}
-            </span>
+            <span>{name}</span>
           </div>
           {!!type && (
             <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
@@ -2049,7 +2058,11 @@ export default class ChataTable extends React.Component {
           style={this.props.style}
           className={`react-autoql-table-container 
             ${isLoading ? 'react-autoql-table-loading' : ''}
-            ${this.props.supportsDrilldowns ? 'react-autoql-table-supports-drilldown' : 'react-autoql-table-disable-drilldown'}
+            ${
+              this.props.supportsDrilldowns
+                ? 'react-autoql-table-supports-drilldown'
+                : 'react-autoql-table-disable-drilldown'
+            }
             ${this.state.isFiltering ? 'react-autoql-table-filtering' : ''}
             ${this.props.isAnimating ? 'react-autoql-table-animating' : ''}
             ${this.useInfiniteScroll ? 'react-autoql-table-infinite' : 'react-autoql-table-limited'}
