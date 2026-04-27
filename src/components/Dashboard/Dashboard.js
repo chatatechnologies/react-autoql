@@ -463,6 +463,33 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  executeSingleTile = (tileId) => {
+    const directRef = this.tileRefs?.[tileId] || this.tileRefs?.[String(tileId)]
+    if (directRef?.processTile) {
+      return this.props.enableAutoRefresh
+        ? directRef.processTile({ isCachedRefresh: true })
+        : directRef.processTile()
+    }
+
+    const tiles = this.getMostRecentTiles() || []
+    const tile = tiles.find(
+      (t) =>
+        t?.i === tileId ||
+        t?.key === tileId ||
+        String(t?.i) === String(tileId) ||
+        String(t?.key) === String(tileId),
+    )
+
+    const fallbackRef = this.tileRefs?.[tile?.key] || this.tileRefs?.[tile?.i]
+    if (fallbackRef?.processTile) {
+      return this.props.enableAutoRefresh
+        ? fallbackRef.processTile({ isCachedRefresh: true })
+        : fallbackRef.processTile()
+    }
+
+    return Promise.resolve()
+  }
+
   unExecuteDashboard = () => {
     try {
       for (var dashboardTile in this.tileRefs) {
@@ -852,7 +879,7 @@ class DashboardWithoutTheme extends React.Component {
           const tileRef = this.tileRefs[refKey]
           // Only process if there is a query to execute
           const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
-          if (tileRef && tileRef.processTile && hasQuery) {
+          if (tileRef?.processTile && hasQuery) {
             tileRef.processTile()
           }
         } catch (error) {
@@ -1022,6 +1049,7 @@ class DashboardWithoutTheme extends React.Component {
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}
             resetTile={this.resetTile}
+            executeSingleTile={this.executeSingleTile}
             onSaveCallback={this.props.onSaveCallback}
             deleteTile={this.deleteTile}
             dataFormatting={this.props.dataFormatting}
