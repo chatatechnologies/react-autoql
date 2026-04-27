@@ -7,7 +7,7 @@ import { zoom, zoomIdentity } from 'd3-zoom'
 import { MdOutlineFitScreen } from 'react-icons/md'
 
 import {
-  getThemeValue,
+  getChartColorVars,
   isColumnNumberType,
   findNetworkColumns,
   formatElement,
@@ -101,9 +101,7 @@ const removeCircularLinks = (links, nodes) => {
       // Keep the link with larger value, or if equal, keep the one with lower source index
       if (link.value > reverseLink.value || (link.value === reverseLink.value && link.source < reverseLink.source)) {
         cleanLinks.push({
-          source: link.source,
-          target: link.target,
-          value: link.value,
+          ...link,
         })
       } else if (!cleanLinks.some((l) => l.source === reverseLink.source && l.target === reverseLink.target)) {
         // Don't add if reverse was already added
@@ -111,9 +109,7 @@ const removeCircularLinks = (links, nodes) => {
       }
     } else if (!circularNodes.has(link.source) && !circularNodes.has(link.target)) {
       cleanLinks.push({
-        source: link.source,
-        target: link.target,
-        value: link.value,
+        ...link,
       })
     } else {
       removedLinks.push(link)
@@ -237,6 +233,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   const buttonStartX = totalChartWidth - buttonSize - 10
   const buttonIconSize = 20
   const buttonIconOffset = (buttonSize - buttonIconSize) / 2
+  const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
   // Keep Sankey drawing area clear of right-side controls.
   const chartRightBound = buttonStartX - 10
 
@@ -318,6 +315,8 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           targetId,
           sourceName: source,
           targetName: target,
+          sourceRawValue: row[pathColumnIndices[i]],
+          targetRawValue: row[pathColumnIndices[i + 1]],
           sourceDisplay,
           targetDisplay,
           sourceStage: i,
@@ -371,6 +370,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         displayNodeMap.set(link.sourceId, {
           id: link.sourceId,
           name: link.sourceName,
+          rawValue: link.sourceRawValue,
           displayName: link.sourceDisplay ?? link.sourceName,
           stage: link.sourceStage,
         })
@@ -379,6 +379,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         displayNodeMap.set(link.targetId, {
           id: link.targetId,
           name: link.targetName,
+          rawValue: link.targetRawValue,
           displayName: link.targetDisplay ?? link.targetName,
           stage: link.targetStage,
         })
@@ -397,6 +398,10 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         value: link.value,
         sourceName: link.sourceName,
         targetName: link.targetName,
+        sourceRawValue: link.sourceRawValue,
+        targetRawValue: link.targetRawValue,
+        sourceStage: link.sourceStage,
+        targetStage: link.targetStage,
         sourceDisplay: link.sourceDisplay ?? link.sourceName,
         targetDisplay: link.targetDisplay ?? link.targetName,
       }
@@ -435,7 +440,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     }
 
     renderChart()
-  }, [props.width, props.height, processedData, props.themeConfig])
+  }, [props.width, props.height, processedData, props.themeConfig, enableDrilldowns])
 
   // Throttle function
   const throttle = (func, limit) => {
@@ -584,6 +589,22 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     const margin = { top: 10, right: 10, bottom: 10, left: 10 }
     const chartWidth = Math.max(120, chartRightBound - margin.left - margin.right)
     const chartHeight = height - margin.top - margin.bottom
+    const valueColumn = props.columns?.[valueColumnIndex]
+    const valueFormattingConfig = getDataFormatting(
+      props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting,
+    )
+    const formatTooltipNumber = (value) => {
+      if (!valueColumn) {
+        return escapeHtml(`${value?.toLocaleString?.() ?? value}`)
+      }
+      return escapeHtml(
+        `${formatElement({
+          element: value,
+          column: valueColumn,
+          config: valueFormattingConfig,
+        })}`,
+      )
+    }
 
     // Create zoom behavior - vertical only, no horizontal movement
     const zoomBehavior = zoom()
@@ -659,24 +680,11 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     nodesDataRef.current = nodes
     chartWidthRef.current = chartWidth
 
-    // Color scale
-    const primary = getThemeValue('primary', props.themeConfig)
-    const accent = getThemeValue('accent', props.themeConfig)
-
-    const themeColors = [
-      primary || '#5C7AFF',
-      accent || '#00C1D4',
-      '#66c2a5',
-      '#fc8d62',
-      '#8da0cb',
-      '#e78ac3',
-      '#a6d854',
-      '#ffd92f',
-      '#e5c494',
-      '#b3b3b3',
-    ].filter(Boolean)
-
-    const colorScale = scaleOrdinal().range(themeColors)
+    // Color scale: use global chart palette when available.
+    const fallbackColors = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
+    const chartPalette = getChartColorVars()?.chartColors?.filter(Boolean) || []
+    const sankeyColors = (chartPalette.length ? chartPalette : fallbackColors).concat(fallbackColors).filter(Boolean)
+    const colorScale = scaleOrdinal().range(sankeyColors)
 
     // Add links
     zoomableGroup
@@ -692,19 +700,61 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('stroke', (d) => colorScale(d.source.name))
       .attr('fill', 'none')
       .attr('opacity', 0.5)
+      .style('cursor', enableDrilldowns ? 'pointer' : 'default')
       .attr('data-tooltip-id', props.chartTooltipID)
       .attr(
         'data-tooltip-html',
         (d) =>
           `<strong>${escapeHtml(d.source.displayName || d.source.name)} → ${escapeHtml(
             d.target.displayName || d.target.name,
-          )}</strong><br/>Value: ${d.value.toLocaleString()}`,
+          )}</strong><br/>Value: ${formatTooltipNumber(d.value)}`,
       )
       .on('mouseover', function (event, d) {
         select(this).attr('opacity', 0.7)
       })
       .on('mouseout', function (event, d) {
         select(this).attr('opacity', 0.5)
+      })
+      .on('click', (event, d) => {
+        if (!enableDrilldowns || !props.onChartClick) return
+
+        const sourceColumnIndex = pathColumnIndices[d.source?.stage]
+        const targetColumnIndex = pathColumnIndices[d.target?.stage]
+        if (sourceColumnIndex === undefined || targetColumnIndex === undefined) return
+
+        const sourceRawValue = d.sourceRawValue
+        const targetRawValue = d.targetRawValue
+        if (
+          sourceRawValue === null ||
+          sourceRawValue === undefined ||
+          targetRawValue === null ||
+          targetRawValue === undefined
+        ) {
+          return
+        }
+
+        // Close open Sankey selectors before drilldown transition.
+        setShowPathDropdown(false)
+        setShowValueDropdown(false)
+
+        const sourceColumn = props.columns?.[sourceColumnIndex]
+        const targetColumn = props.columns?.[targetColumnIndex]
+        if (!sourceColumn?.name || !targetColumn?.name) return
+        const sourceGroupBy = {
+          name: sourceColumn.name,
+          drill_down: sourceColumn.drill_down,
+          value: `${sourceRawValue}`,
+        }
+        const targetGroupBy = {
+          name: targetColumn.name,
+          drill_down: targetColumn.drill_down,
+          value: `${targetRawValue}`,
+        }
+
+        props.onChartClick({
+          groupBys: [sourceGroupBy, targetGroupBy],
+          activeKey: `link-${d.source?.id}-${d.target?.id}`,
+        })
       })
 
     // Add nodes
@@ -725,16 +775,41 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('width', (d) => d.x1 - d.x0)
       .attr('fill', (d) => colorScale(d.name))
       .attr('opacity', 0.8)
+      .style('cursor', enableDrilldowns ? 'pointer' : 'default')
       .attr('data-tooltip-id', props.chartTooltipID)
       .attr(
         'data-tooltip-html',
-        (d) => `<strong>${escapeHtml(d.displayName || d.name)}</strong><br/>Total: ${d.value.toLocaleString()}`,
+        (d) => `<strong>${escapeHtml(d.displayName || d.name)}</strong><br/>Total: ${formatTooltipNumber(d.value)}`,
       )
       .on('mouseover', function (event, d) {
         select(this).attr('opacity', 1)
       })
       .on('mouseout', function (event, d) {
         select(this).attr('opacity', 0.8)
+      })
+      .on('click', (event, d) => {
+        if (!enableDrilldowns || !props.onChartClick) return
+
+        const stringColumnIndex = pathColumnIndices[d.stage]
+        if (stringColumnIndex === undefined) return
+
+        const rawValue = d.rawValue
+        if (rawValue === null || rawValue === undefined) return
+
+        // Close open Sankey selectors before drilldown transition.
+        setShowPathDropdown(false)
+        setShowValueDropdown(false)
+
+        const rowForFilter = new Array(props.columns.length).fill(null)
+        rowForFilter[stringColumnIndex] = rawValue
+
+        props.onChartClick({
+          row: rowForFilter,
+          columnIndex: stringColumnIndex,
+          columns: props.columns,
+          stringColumnIndex,
+          activeKey: `node-${d.id}`,
+        })
       })
 
     // Add labels with max width and truncation

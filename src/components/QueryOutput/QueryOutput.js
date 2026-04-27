@@ -1859,7 +1859,16 @@ export class QueryOutput extends React.Component {
     stringColumnIndices,
     rows,
     useOrLogic,
+    groupBys: explicitGroupBys,
   }) => {
+    if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
+      return this.processDrilldown({
+        supportedByAPI: true,
+        activeKey,
+        groupBys: explicitGroupBys,
+      })
+    }
+
     // Support for multiple filters (e.g., network graph links with source and target filters)
     if (filters && Array.isArray(filters) && filters.length > 0) {
       return this.processDrilldown({
