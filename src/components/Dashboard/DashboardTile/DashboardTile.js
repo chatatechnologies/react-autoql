@@ -183,7 +183,6 @@ export class DashboardTile extends React.Component {
     isEditing: PropTypes.bool,
     deleteTile: PropTypes.func,
     resetTile: PropTypes.func,
-    executeSingleTile: PropTypes.func,
     onSaveCallback: PropTypes.func,
     dataPageSize: PropTypes.number,
     queryResponse: PropTypes.shape({}),
@@ -226,7 +225,6 @@ export class DashboardTile extends React.Component {
     cancelQueriesOnUnmount: true,
     deleteTile: () => {},
     resetTile: () => {},
-    executeSingleTile: () => {},
     onSaveCallback: () => {},
     onErrorCallback: () => {},
     onRetry: () => {},
@@ -1973,7 +1971,7 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
-        onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
         // allow parent to request showing refresh/reset in edit mode
         showRefreshInEdit: this.props.isEditing,
       },
@@ -2119,7 +2117,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
           this.props.isEditing ? '-editing' : ''
         }`,
-        onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
+        onRefreshClick: () => this.props.resetTile(this.props.tile.i),
       },
       isSecondHalf: true,
     })
