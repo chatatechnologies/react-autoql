@@ -1974,6 +1974,7 @@ export class DashboardTile extends React.Component {
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
+        onResetClick: () => this.props.resetTile && this.props.resetTile(this.props.tile.i),
         // allow parent to request showing refresh/reset in edit mode
         showRefreshInEdit: this.props.isEditing,
       },

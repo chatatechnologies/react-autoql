@@ -85,6 +85,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
+    onResetClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
   }
@@ -111,6 +112,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
     onRefreshClick: undefined,
+    onResetClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
   }
@@ -420,7 +422,11 @@ export class OptionsToolbar extends React.Component {
         onClose={() => this.setState({ isResetQueryConfirmVisible: false })}
         onConfirm={() => {
           this.setState({ isResetQueryConfirmVisible: false })
-          this.props.onRefreshClick()
+          if (this.props.onResetClick) {
+            this.props.onResetClick()
+          } else if (this.props.onRefreshClick) {
+            this.props.onRefreshClick()
+          }
         }}
         title='Reset query?'
         confirmText='Reset'

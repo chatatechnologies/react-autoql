@@ -848,13 +848,17 @@ class DashboardWithoutTheme extends React.Component {
         return
       }
 
-      // Clear filters, columns, sorts; preserve query and title
+      // Clear filters, custom columns, sorts and cached responses; preserve query and title
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         tableFilters: [],
         filters: [],
         secondTableFilters: [],
         columnSelects: [],
+        // Also clear any stored columns/available selects/display overrides so UI reflects reset
+        columns: [],
+        available_selects: [],
+        displayOverrides: [],
         orders: [],
         secondOrders: [],
         queryResponse: null,
@@ -870,24 +874,21 @@ class DashboardWithoutTheme extends React.Component {
         }
       }
 
-      // After saving the reset state, re-run the tile so its table/chart is refreshed
-      const processTileCallback = () => {
-        try {
-          const updatedTile = tiles[tileIndex]
-          // Prefer tile.key for refs, fall back to tile.i
-          const refKey = updatedTile?.key || updatedTile?.i
-          const tileRef = this.tileRefs[refKey]
-          // Only process if there is a query to execute
-          const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
-          if (tileRef?.processTile && hasQuery) {
-            tileRef.processTile()
-          }
-        } catch (error) {
-          console.error('Error processing tile after reset:', error)
-        }
-      }
+      // After scheduling the save of the reset state, run only this tile immediately
+      this.debouncedOnChange(tiles, true, [resetCallback])
 
-      this.debouncedOnChange(tiles, true, [resetCallback, processTileCallback])
+      try {
+        const updatedTile = tiles[tileIndex]
+        const refKey = updatedTile?.key || updatedTile?.i
+        const tileRef = this.tileRefs[refKey]
+        const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
+        if (tileRef?.processTile && hasQuery) {
+          // Run the tile now to avoid any parent onChange side-effects from triggering a full-dashboard refresh
+          tileRef.processTile()
+        }
+      } catch (error) {
+        console.error('Error processing tile after reset:', error)
+      }
     } catch (error) {
       console.error(error)
     }
