@@ -545,6 +545,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
+          {/* Reset query option temporarily disabled until ready for production
           {shouldShowButton.showRefreshDataButton && this.props.isEditing && (
             <li
               className='context-menu-divider-top'
@@ -553,7 +554,7 @@ export class OptionsToolbar extends React.Component {
               <Icon type='refresh' style={{ marginRight: '7px' }} />
               Reset query
             </li>
-          )}
+          )} */}
         </ul>
       </div>
     )
@@ -1064,7 +1065,8 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.renderResetQueryConfirmModal()}
+        {/* Reset modal temporarily disabled until ready for production
+        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.renderResetQueryConfirmModal()} */}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
