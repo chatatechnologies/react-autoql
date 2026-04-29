@@ -283,7 +283,11 @@ export class QueryOutput extends React.Component {
     }),
     initialAggConfig: PropTypes.shape({}),
 
-    queryResponse: PropTypes.shape({}),
+    queryResponse: PropTypes.shape({
+      data: PropTypes.shape({
+        data: PropTypes.object,
+      }),
+    }),
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -537,7 +541,6 @@ export class QueryOutput extends React.Component {
             this.hasUserSelectedStringAxis = false
           }
           this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
-          this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
 
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
