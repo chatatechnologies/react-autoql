@@ -545,7 +545,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
-          {shouldShowButton.showRefreshDataButton && this.props.isEditing && (
+          {/* {shouldShowButton.showRefreshDataButton && this.props.isEditing && (
             <li
               className='context-menu-divider-top'
               onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
@@ -553,7 +553,7 @@ export class OptionsToolbar extends React.Component {
               <Icon type='refresh' style={{ marginRight: '7px' }} />
               Reset query
             </li>
-          )}
+          )} */}
         </ul>
       </div>
     )
