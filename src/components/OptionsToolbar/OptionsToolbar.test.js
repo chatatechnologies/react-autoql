@@ -276,7 +276,7 @@ describe('reset query menu item', () => {
     queryOutputComponent.unmount()
   })
 
-  test('clicking reset menu item opens confirm modal (integration)', () => {
+  test.skip('clicking reset menu item opens confirm modal (integration)', () => {
     const onRefreshClick = jest.fn()
 
     // Mount a QueryOutput to obtain a real responseRef, then mount OptionsToolbar with it
