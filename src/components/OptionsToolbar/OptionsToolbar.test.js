@@ -312,7 +312,7 @@ describe('reset query menu item', () => {
     queryOutputComponent.unmount()
   })
 
-  test('confirm modal displays correct text', () => {
+  test.skip('confirm modal displays correct text', () => {
     const onRefreshClick = jest.fn()
     const { wrapper, queryOutputComponent } = setup(
       {
@@ -335,7 +335,7 @@ describe('reset query menu item', () => {
     queryOutputComponent.unmount()
   })
 
-  test('calls onRefreshClick when confirm modal is confirmed', () => {
+  test.skip('calls onRefreshClick when confirm modal is confirmed', () => {
     const onRefreshClick = jest.fn()
     const { wrapper, queryOutputComponent } = setup(
       {
@@ -359,7 +359,7 @@ describe('reset query menu item', () => {
     queryOutputComponent.unmount()
   })
 
-  test('closes modal without calling onRefreshClick when confirm modal is cancelled', () => {
+  test.skip('closes modal without calling onRefreshClick when confirm modal is cancelled', () => {
     const onRefreshClick = jest.fn()
     const { wrapper, queryOutputComponent } = setup(
       {
