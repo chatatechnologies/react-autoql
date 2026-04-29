@@ -1038,6 +1038,25 @@ export class OptionsToolbar extends React.Component {
         }),
       }
 
+      // Additional gating: only show reset when there's an actual query text,
+      // the current display type is not single-value, and there is something to reset (filters, sorts, custom columns)
+      try {
+        const queryText = props.responseRef?.queryResponse?.data?.data?.text || ''
+        const currentDisplayType = props.responseRef?.state?.displayType
+        // Check for filters, sorts, or custom columns
+        const filters = props.responseRef?.formattedTableParams?.filters || []
+        const sorters = props.responseRef?.formattedTableParams?.sorters || []
+        const customColumns = props.responseRef?.state?.customColumnSelects || []
+        const hasResettable = (Array.isArray(filters) && filters.length > 0)
+          || (Array.isArray(sorters) && sorters.length > 0)
+          || (Array.isArray(customColumns) && customColumns.length > 0)
+        if (!queryText || String(queryText).trim().length === 0 || currentDisplayType === 'single-value' || !hasResettable) {
+          shouldShowButton.showRefreshDataButton = false
+        }
+      } catch (e) {
+        // swallow and leave existing value
+      }
+
       // Don't show more options button if it's a markdown-only message
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&

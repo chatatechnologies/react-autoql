@@ -44,6 +44,8 @@ class DashboardWithoutTheme extends React.Component {
     this.callbackSubsciptions = []
     this.tileLog = [props.tiles]
     this.currentLogIndex = 0
+    this.isResettingTile = false
+    this.resettingTileId = null
 
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
@@ -225,8 +227,16 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ dashboardSlicers: currentSlicers })
     }
 
-    // Re-run dashboard once exiting edit mode (if prop is set to true)
-    if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
+    // Re-run dashboard once exiting edit mode (if prop is set to true).
+    // Skip when a single-tile reset is in flight — the parent's onSaveCallback
+    // commonly toggles isEditing as a side effect, and we don't want that to
+    // trigger a full-dashboard refresh on top of the single-tile reset.
+    if (
+      prevProps.isEditing &&
+      !this.props.isEditing &&
+      this.props.executeOnStopEditing &&
+      !this.isResettingTile
+    ) {
       this.executeDashboard()
     }
 
@@ -249,14 +259,6 @@ class DashboardWithoutTheme extends React.Component {
         this.setState({ isDragging: false })
       })
     }
-  }
-
-  componentDidMount = () => {
-    this._isMounted = true
-    if (this.props.executeOnMount) {
-      this.executeDashboard()
-    }
-    window.addEventListener('resize', this.onWindowResize)
   }
 
   handleSlicerChange = (slicer) => {
@@ -299,6 +301,7 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
+      clearTimeout(this.resetGuardTimer)
     } catch (error) {
       console.error(error)
     }
@@ -424,6 +427,16 @@ class DashboardWithoutTheme extends React.Component {
         if (this.tileRefs[dashboardTile]) {
           // Find the corresponding tile to check if it already has data
           const tile = tiles.find((t) => t.key === dashboardTile || t.i === dashboardTile)
+
+          // If we're in the middle of a single-tile reset, skip the tile being
+          // reset — resetTile already calls processTile on it directly.
+          if (
+            this.isResettingTile &&
+            this.resettingTileId &&
+            (tile?.i === this.resettingTileId || tile?.key === this.resettingTileId)
+          ) {
+            continue
+          }
 
           // Only execute tiles that don't already have queryResponse, unless forceExecution is true
           if (forceExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
@@ -865,30 +878,64 @@ class DashboardWithoutTheme extends React.Component {
         secondQueryResponse: null,
       }
 
-      // Trigger save after state updates
-      const resetCallback = () => {
-        if (this.props.onSaveCallback) {
-          Promise.resolve(this.props.onSaveCallback()).catch((error) => {
-            console.error('Error saving after tile reset:', error)
-          })
-        }
-      }
+      // Mark a reset cycle as in flight so other code paths (executeDashboard,
+      // exit-edit-mode handler, etc.) know to skip this tile / not refresh.
+      this.isResettingTile = true
+      this.resettingTileId = id
 
-      // After scheduling the save of the reset state, run only this tile immediately
-      this.debouncedOnChange(tiles, true, [resetCallback])
-
-      try {
+      // Helper that re-runs ONLY this single tile. We deliberately avoid touching
+      // any other tileRefs so the rest of the dashboard isn't refreshed.
+      const runSingleTile = () => {
         const updatedTile = tiles[tileIndex]
         const refKey = updatedTile?.key || updatedTile?.i
         const tileRef = this.tileRefs[refKey]
         const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
         if (tileRef?.processTile && hasQuery) {
-          // Run the tile now to avoid any parent onChange side-effects from triggering a full-dashboard refresh
-          tileRef.processTile()
+          // Mirror executeSingleTile semantics so auto-refresh dashboards use cached path
+          return this.props.enableAutoRefresh
+            ? tileRef.processTile({ isCachedRefresh: true })
+            : tileRef.processTile()
         }
-      } catch (error) {
-        console.error('Error processing tile after reset:', error)
+        return Promise.resolve()
       }
+
+      const clearResetGuard = () => {
+        // Defer one tick so any componentDidUpdate triggered by the parent's
+        // save-driven setState (e.g. isEditing toggle) sees the guard before we drop it.
+        clearTimeout(this.resetGuardTimer)
+        this.resetGuardTimer = setTimeout(() => {
+          this.isResettingTile = false
+          this.resettingTileId = null
+        }, 0)
+      }
+
+      // Sequence:
+      // 1) Push the cleared tile state up so this.props.tile is fresh for processTile.
+      // 2) Re-run only this tile and wait for it to finish (so its new queryResponse
+      //    is propagated up via endTopQuery -> setParamsForTile -> onChange).
+      // 3) THEN trigger the save callback. The reset guard is held until after
+      //    the save resolves so the parent's isEditing toggle (a common side
+      //    effect of saveDashboard) can't trigger executeOnStopEditing -> full refresh.
+      this.debouncedOnChange(tiles, true)
+        .then(() => runSingleTile())
+        .then(() => {
+          if (this.props.onSaveCallback) {
+            return Promise.resolve(this.props.onSaveCallback()).catch((error) => {
+              console.error('Error saving after tile reset:', error)
+            })
+          }
+        })
+        .then(clearResetGuard)
+        .catch((error) => {
+          console.error('Error during tile reset:', error)
+          // Best-effort: still try to run the single tile if the chain failed early
+          try {
+            runSingleTile()
+          } catch (err) {
+            console.error('Error processing tile after reset (fallback):', err)
+          }
+          clearResetGuard()
+        })
     } catch (error) {
       console.error(error)
     }
