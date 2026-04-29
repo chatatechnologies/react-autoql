@@ -1777,6 +1777,130 @@ describe('CustomColumnModal - Production Ready Review', () => {
       expect(columnFn).toHaveLength(1)
       expect(columnFn[0].value).toBe('1')
     })
+
+    // Re-resolve stale token references against current columns.
+    it('re-resolves stale column references when inserting a custom column whose tokens were captured before re-indexing', () => {
+      // Live columns: OverProfit / UnderProfit have shifted to fields "2" / "3"
+      const overProfit = {
+        id: 'op',
+        field: '2',
+        name: 'over_profit',
+        display_name: 'Over Profit',
+        type: 'PERCENT',
+      }
+      const underProfit = {
+        id: 'up',
+        field: '3',
+        name: 'under_profit',
+        display_name: 'Under Profit',
+        type: 'PERCENT',
+      }
+      // The custom column "New Column" was created when OverProfit was at field "0" and
+      // UnderProfit was at field "1", and stores those stale references in columnFnArray.
+      const newColumnVar = {
+        id: 'new-col',
+        field: '4',
+        name: 'over_profit + under_profit',
+        display_name: 'New Column',
+        custom: true,
+        custom_column_display_name: 'New Column',
+        type: 'PERCENT',
+        columnFnArray: [
+          {
+            type: CustomColumnTypes.COLUMN,
+            value: '0', // STALE: was OverProfit at creation time
+            column: { id: 'op', field: '0', name: 'over_profit', display_name: 'Over Profit' },
+          },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          {
+            type: CustomColumnTypes.COLUMN,
+            value: '1', // STALE: was UnderProfit at creation time
+            column: { id: 'up', field: '1', name: 'under_profit', display_name: 'Under Profit' },
+          },
+        ],
+      }
+
+      const wrapper = mount(
+        <CustomColumnModal
+          isOpen={true}
+          columns={[
+            { id: 's', field: '0', name: 'season_type', display_name: 'Season Type', type: 'STRING' },
+            { id: 'g', field: '1', name: 'games', display_name: 'Number of Games', type: 'QUANTITY' },
+            overProfit,
+            underProfit,
+            newColumnVar,
+          ]}
+          queryResponse={{ data: { data: {} } }}
+        />,
+      )
+      const inst = wrapper.instance()
+
+      const columnFn = []
+      inst.addColumnToFormula(newColumnVar, columnFn, null)
+
+      // After insertion the bracketed tokens must reference the CURRENT field values
+      // (OverProfit -> "2", UnderProfit -> "3"), not the stale snapshot values "0"/"1".
+      const innerColumns = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN)
+      expect(innerColumns).toHaveLength(2)
+      expect(innerColumns[0].value).toBe('2')
+      expect(innerColumns[0].column.id).toBe('op')
+      expect(innerColumns[0].column.field).toBe('2')
+      expect(innerColumns[1].value).toBe('3')
+      expect(innerColumns[1].column.id).toBe('up')
+      expect(innerColumns[1].column.field).toBe('3')
+
+      wrapper.unmount()
+    })
+
+    it('re-resolves references using table_column when stored id is missing', () => {
+      const overProfit = {
+        field: '2',
+        name: 'over_profit',
+        table_column: 'over_profit',
+        display_name: 'Over Profit',
+        type: 'PERCENT',
+      }
+      // Stored chunk has no id and no live `field` — only table_column / name.
+      const colVar = {
+        field: '3',
+        name: 'over_profit + 1',
+        custom: true,
+        type: 'PERCENT',
+        columnFnArray: [
+          {
+            type: CustomColumnTypes.COLUMN,
+            value: '99', // intentionally bogus stale field
+            column: { table_column: 'over_profit', name: 'over_profit' },
+          },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.NUMBER, value: '1' },
+        ],
+      }
+
+      const wrapper = mount(
+        <CustomColumnModal
+          isOpen={true}
+          columns={[
+            { field: '0', name: 'season', display_name: 'Season', type: 'STRING' },
+            { field: '1', name: 'games', display_name: 'Games', type: 'QUANTITY' },
+            overProfit,
+            colVar,
+          ]}
+          queryResponse={{ data: { data: {} } }}
+        />,
+      )
+      const inst = wrapper.instance()
+
+      const columnFn = []
+      inst.addColumnToFormula(colVar, columnFn, null)
+
+      const colTokens = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN)
+      expect(colTokens).toHaveLength(1)
+      expect(colTokens[0].value).toBe('2')
+      expect(colTokens[0].column.field).toBe('2')
+
+      wrapper.unmount()
+    })
   })
 
   describe('no unnecessary code duplication', () => {

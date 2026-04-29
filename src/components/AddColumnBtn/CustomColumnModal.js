@@ -68,7 +68,8 @@ export default class CustomColumnModal extends React.Component {
     const overrideTableColumn = props.initialColumn?._snapshotDisplayOverride?.table_column
     const initialTableColumn = props.initialColumn?.table_column
     if (props.initialColumn?.columnFnArray) {
-      initialColumnFn = props.initialColumn.columnFnArray
+      // Resolve stored token references against current props.columns.
+      initialColumnFn = this.resolveColumnReferences(_cloneDeep(props.initialColumn.columnFnArray), props.columns)
     } else if (overrideTableColumn) {
       initialColumnFn = this.buildFnArray(overrideTableColumn, props.columns)
     } else if (initialTableColumn) {
@@ -188,6 +189,8 @@ export default class CustomColumnModal extends React.Component {
           inner = this.buildFnArray(tok.column.table_column, this.props.columns)
         }
         if (inner && inner.length) {
+          // Re-resolve any stale column references against current columns
+          inner = this.resolveColumnReferences(inner)
           // Recursively expand inside the inner tokens as well
           const expandedInner = this.expandNestedColumns(inner)
           if (expandedInner.length > 1) {
@@ -206,6 +209,62 @@ export default class CustomColumnModal extends React.Component {
       }
     }
     return out
+  }
+
+  // Re-resolve COLUMN tokens in a saved columnFnArray against current columns.
+  resolveColumnReferences = (tokens, providedCols) => {
+    if (!Array.isArray(tokens) || tokens.length === 0) return tokens
+    const currentColumns = providedCols || this.props.columns || []
+    if (!currentColumns.length) return tokens
+
+    const normalize = (s) => {
+      try {
+        return this.stripCoalesceWrapper(String(s ?? '')).trim()
+      } catch (e) {
+        return String(s ?? '').trim()
+      }
+    }
+
+    // One-pass lookup maps to avoid repeated `find` calls
+    const idMap = new Map()
+    const tableMap = new Map()
+    const tableNormMap = new Map()
+    const nameMap = new Map()
+    const displayMap = new Map()
+
+    for (const c of currentColumns) {
+      if (c?.id) idMap.set(c.id, c)
+      if (c?.table_column) tableMap.set(c.table_column, c)
+      const tNorm = c?.table_column ? normalize(c.table_column) : null
+      if (tNorm) tableNormMap.set(tNorm, c)
+      if (c?.name) nameMap.set(c.name, c)
+      const disp = c?.display_name || c?.custom_column_display_name
+      if (disp) displayMap.set(disp, c)
+    }
+
+    const findMatch = (stored) => {
+      if (!stored) return null
+      if (stored.id && idMap.has(stored.id)) return idMap.get(stored.id)
+      if (stored.table_column && tableMap.has(stored.table_column)) return tableMap.get(stored.table_column)
+      if (stored.table_column) {
+        const target = normalize(stored.table_column)
+        if (target && tableNormMap.has(target)) return tableNormMap.get(target)
+      }
+      if (stored.name && nameMap.has(stored.name)) return nameMap.get(stored.name)
+      const storedDisplay = stored.display_name || stored.custom_column_display_name
+      if (storedDisplay && displayMap.has(storedDisplay)) return displayMap.get(storedDisplay)
+      return null
+    }
+
+      return tokens.map((tok) => {
+      if (tok?.type !== CustomColumnTypes.COLUMN) return tok
+      const stored = tok.column
+      if (!stored) return tok
+      const match = findMatch(stored)
+      if (!match) return tok
+      if (match.field === tok.value && match === stored) return tok
+        return { ...tok, value: match.field, column: match }
+    })
   }
 
   static propTypes = {
@@ -240,7 +299,6 @@ export default class CustomColumnModal extends React.Component {
     onUpdateColumn: () => {},
     onClose: () => {},
   }
-
   componentDidUpdate = (prevProps, prevState) => {
     // Update column mutator is function changed
     if (
@@ -1118,9 +1176,24 @@ export default class CustomColumnModal extends React.Component {
     // Determine if column has explicit tokens, or build from SQL if complex
     let colTokens = col?.columnFnArray
     if (colTokens?.length) {
+      // Re-resolve column references against in-modal columns when available
+      colTokens = this.resolveColumnReferences(_cloneDeep(colTokens), this.state?.columns || this.props.columns)
       // Normalize incoming tokens from saved/derived columns so wrapper-only
       // operands like `(Under Profit)` are treated as a single operand.
-      colTokens = this.cleanColumnFn(_cloneDeep(colTokens))
+      colTokens = this.cleanColumnFn(colTokens)
+    }
+    // If the original columnFnArray is a wrapped single-column (e.g. [LEFT_BRACKET, COLUMN, RIGHT_BRACKET])
+    // treat the column as a single token (preserve aggregate-like single-token columns).
+    if (
+      Array.isArray(col.columnFnArray) &&
+      col.columnFnArray.length === 3 &&
+      col.columnFnArray[0]?.type === CustomColumnTypes.OPERATOR &&
+      col.columnFnArray[0]?.value === CustomColumnValues.LEFT_BRACKET &&
+      col.columnFnArray[2]?.type === CustomColumnTypes.OPERATOR &&
+      col.columnFnArray[2]?.value === CustomColumnValues.RIGHT_BRACKET &&
+      col.columnFnArray[1]?.type === CustomColumnTypes.COLUMN
+    ) {
+      colTokens = [{ type: CustomColumnTypes.COLUMN, value: col.field, column: col }]
     }
     if (!colTokens && this.isComplexColumn(col)) {
       // Column is complex but doesn't have explicit tokens — build from table_column SQL
@@ -1142,10 +1215,12 @@ export default class CustomColumnModal extends React.Component {
       for (const t of _cloneDeep(colTokens)) columnFn.push(t)
       columnFn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })
     } else {
-      const newChunk = {
-        type: 'column',
-        value: col.field,
-        column: col,
+      // Prefer a single resolved COLUMN token (preserve in-modal references), otherwise fall back.
+      let newChunk
+      if (colTokens && colTokens.length === 1 && colTokens[0].type === CustomColumnTypes.COLUMN) {
+        newChunk = { type: CustomColumnTypes.COLUMN, value: colTokens[0].value, column: colTokens[0].column }
+      } else {
+        newChunk = { type: CustomColumnTypes.COLUMN, value: col.field, column: col }
       }
 
       if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
