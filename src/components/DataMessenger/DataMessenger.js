@@ -164,6 +164,8 @@ export class DataMessenger extends React.Component {
     onSuccessAlert: PropTypes.func,
     setMobileActivePage: PropTypes.func,
     onProjectSelectChange: PropTypes.func,
+    onCreateQueryEvaluationItem: PropTypes.func,
+    queryItemActionName: PropTypes.string,
   }
 
   static defaultProps = {
@@ -222,6 +224,8 @@ export class DataMessenger extends React.Component {
     onErrorCallback: () => {},
     onSuccessAlert: () => {},
     onProjectSelectChange: () => {},
+    onCreateQueryEvaluationItem: undefined,
+    queryItemActionName: 'Add Query Evaluation Item',
   }
 
   componentDidMount = () => {
@@ -476,6 +480,34 @@ export class DataMessenger extends React.Component {
 
   onTopicClick = (...params) => {
     this.dataMessengerContentRef?.animateInputTextAndSubmit(...params)
+  }
+
+  getCustomToolbarOptions = () => {
+    const customToolbarOptions = [...(this.props.customToolbarOptions || [])]
+    if (!this.props.onCreateQueryEvaluationItem) {
+      return customToolbarOptions
+    }
+
+    return [
+      ...customToolbarOptions,
+      {
+        name: this.props.queryItemActionName || 'Add Query Evaluation Item',
+        icon: 'plus',
+        callback: async (queryToolbarPayload) => {
+          try {
+            await this.props.onCreateQueryEvaluationItem(queryToolbarPayload)
+            this.props.onSuccessAlert?.(`${this.props.queryItemActionName || 'Add Query Evaluation Item'} succeeded.`)
+          } catch (error) {
+            console.error(error)
+            this.props.onErrorCallback?.(
+              error?.response?.data?.data ||
+                error?.message ||
+                'Failed to create Query Evaluation Item.',
+            )
+          }
+        },
+      },
+    ]
   }
 
   handleClearQueriesDropdown = () => {
@@ -849,7 +881,7 @@ export class DataMessenger extends React.Component {
           tooltipID={this.TOOLTIP_ID}
           chartTooltipID={this.CHART_TOOLTIP_ID}
           scope={this.props.scope}
-          customToolbarOptions={this.props.customToolbarOptions}
+          customToolbarOptions={this.getCustomToolbarOptions()}
           enableCustomColumns={this.props.enableCustomColumns}
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
