@@ -1916,9 +1916,24 @@ export class DashboardTile extends React.Component {
               }
             })
           }
+          // If pivotTableConfig has all empty index arrays it was saved before the data was
+          // properly initialized (e.g. readonly tile whose config was never generated).
+          // Strip both pivotTableConfig and tableConfig so QueryOutput regenerates them fresh
+          // from the actual response columns — an empty config causes pivotTableData = [] and
+          // a completely blank tile.
+          const ptc = dataConfig?.pivotTableConfig
+          const pivotConfigIsEmpty =
+            ptc &&
+            !ptc.numberColumnIndices?.length &&
+            !ptc.stringColumnIndices?.length
+
+          const { pivotTableConfig, tableConfig, ...restDataConfig } = dataConfig
+
           return {
-            ...dataConfig,
+            ...restDataConfig,
             columnOverrides,
+            ...(!pivotConfigIsEmpty && pivotTableConfig !== undefined ? { pivotTableConfig } : {}),
+            ...(!pivotConfigIsEmpty && tableConfig !== undefined ? { tableConfig } : {}),
           }
         })(),
         initialAggConfig: this.props.tile.aggConfig,
