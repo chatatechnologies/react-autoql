@@ -1034,6 +1034,11 @@ export class OptionsToolbar extends React.Component {
       }
 
       // Don't show more options button if it's a markdown-only message
+      const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
+      // If the reset option is hidden via `showResetQueryOption`, it shouldn't contribute
+      // to the decision of whether to render the More Options button.
+      const willShowRefreshInMenu = shouldShowButton.showRefreshDataButton && !!props.showResetQueryOption
+
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&
         (shouldShowButton.showCopyButton ||
@@ -1041,7 +1046,8 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showCreateNotificationIcon ||
           shouldShowButton.showSaveAsCSVButton ||
           shouldShowButton.showSaveAsPNGButton ||
-          shouldShowButton.showRefreshDataButton)
+          willShowRefreshInMenu ||
+          hasCustomOptions)
     } catch (error) {
       console.error(error)
     }
