@@ -87,6 +87,7 @@ export class OptionsToolbar extends React.Component {
     onRefreshClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    showResetQueryOption: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -113,6 +114,7 @@ export class OptionsToolbar extends React.Component {
     onRefreshClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    showResetQueryOption: false,
   }
 
   componentDidMount = () => {
@@ -545,8 +547,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
-          {/* Reset query option temporarily disabled until ready for production
-          {shouldShowButton.showRefreshDataButton && this.props.isEditing && (
+          {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && (
             <li
               className='context-menu-divider-top'
               onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
@@ -554,7 +555,7 @@ export class OptionsToolbar extends React.Component {
               <Icon type='refresh' style={{ marginRight: '7px' }} />
               Reset query
             </li>
-          )} */}
+          )}
         </ul>
       </div>
     )
@@ -1035,8 +1036,7 @@ export class OptionsToolbar extends React.Component {
 
       // Don't show more options button if it's a markdown-only message
       const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
-      // If the reset option is hidden via `showResetQueryOption`, it shouldn't contribute
-      // to the decision of whether to render the More Options button.
+      // Only count the refresh/reset item for More Options if explicitly enabled by prop.
       const willShowRefreshInMenu = shouldShowButton.showRefreshDataButton && !!props.showResetQueryOption
 
       shouldShowButton.showMoreOptionsButton =
@@ -1071,8 +1071,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {/* Reset modal temporarily disabled until ready for production
-        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.renderResetQueryConfirmModal()} */}
+        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
