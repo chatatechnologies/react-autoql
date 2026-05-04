@@ -88,6 +88,7 @@ export class OptionsToolbar extends React.Component {
     onResetClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    showResetQueryOption: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -115,6 +116,7 @@ export class OptionsToolbar extends React.Component {
     onResetClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    showResetQueryOption: false,
   }
 
   componentDidMount = () => {
@@ -551,7 +553,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
-          {shouldShowButton.showRefreshDataButton && this.props.isEditing && (
+          {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && (
             <li
               className='context-menu-divider-top'
               onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
@@ -1058,6 +1060,10 @@ export class OptionsToolbar extends React.Component {
       }
 
       // Don't show more options button if it's a markdown-only message
+      const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
+      // Only count the refresh/reset item for More Options if explicitly enabled by prop.
+      const willShowRefreshInMenu = shouldShowButton.showRefreshDataButton && !!props.showResetQueryOption
+
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&
         (shouldShowButton.showCopyButton ||
@@ -1065,7 +1071,8 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showCreateNotificationIcon ||
           shouldShowButton.showSaveAsCSVButton ||
           shouldShowButton.showSaveAsPNGButton ||
-          shouldShowButton.showRefreshDataButton)
+          willShowRefreshInMenu ||
+          hasCustomOptions)
     } catch (error) {
       console.error(error)
     }
@@ -1089,7 +1096,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.renderResetQueryConfirmModal()}
+        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
