@@ -4,11 +4,13 @@
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
+  "types": "src/index.d.ts",
   "sideEffects": [
     "*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "src/index.d.ts"
   ],
   "watch": {
     "devscript": {
