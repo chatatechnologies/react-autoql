@@ -1,5 +1,6 @@
 import babel from '@rollup/plugin-babel'
 import resolve from '@rollup/plugin-node-resolve'
+import replace from '@rollup/plugin-replace'
 import terser from '@rollup/plugin-terser'
 import image from '@rollup/plugin-image'
 import autoprefixer from 'autoprefixer'
@@ -29,6 +30,14 @@ const makeExternalPredicate = (externalArr) => {
 const common = {
   input: 'src/index.js',
   plugins: [
+    replace({
+      preventAssignment: true,
+      values: {
+        'process.env.NODE_ENV': JSON.stringify(development ? 'development' : 'production'),
+        'process.env.REGEXP_GUARD_MAX_LEN': JSON.stringify(''),
+        'process.env': JSON.stringify({}),
+      },
+    }),
     resolve({
       mainFields: ['main', 'module'],
     }),
