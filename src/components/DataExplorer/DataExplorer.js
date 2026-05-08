@@ -87,6 +87,7 @@ export default class DataExplorer extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.setState({ isMounted: true })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -580,7 +581,7 @@ export default class DataExplorer extends React.Component {
     return (
       <div
         ref={(r) => (this.dataExplorerPage = r)}
-        className={`data-explorer-page-container ${this._isMounted ? 'mounted' : ''}`}
+        className={`data-explorer-page-container ${this.state.isMounted ? 'mounted' : ''}`}
         data-test='data-explorer-tab'
         style={{ display }}
       >
