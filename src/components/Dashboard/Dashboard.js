@@ -195,6 +195,8 @@ class DashboardWithoutTheme extends React.Component {
       })
     }
     window.addEventListener('resize', this.onWindowResize)
+    // Listen for external discard requests (host app can dispatch this)
+    window.addEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
   }
 
   getSlicersArrayFromProps = (props) => {
@@ -298,12 +300,46 @@ class DashboardWithoutTheme extends React.Component {
     try {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
+      window.removeEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
       clearTimeout(this.resetGuardTimer)
     } catch (error) {
       console.error(error)
+    }
+  }
+
+  handleDiscardEvent = (e) => {
+    try {
+      this.discardChanges()
+    } catch (error) {
+      console.error('Error handling discard event:', error)
+    }
+  }
+
+  discardChanges = () => {
+    try {
+      const unedited = this.state.uneditedDashboardTiles || this.tileLog?.[0] || this.getMostRecentTiles()
+      if (!unedited) return
+
+      // Reset history to the unedited state
+      this.tileLog = [_cloneDeep(unedited)]
+      this.currentLogIndex = 0
+
+      // Notify parent of the restored state and do not save this action in the log
+      this.debouncedOnChange(_cloneDeep(unedited), false)
+
+      // If host provided a stopEditing callback, call it to exit edit mode
+      if (this.props.stopEditingCallback) {
+        try {
+          this.props.stopEditingCallback()
+        } catch (err) {
+          console.error('Error calling stopEditingCallback after discard:', err)
+        }
+      }
+    } catch (error) {
+      console.error('Error discarding dashboard changes:', error)
     }
   }
 
@@ -878,30 +914,47 @@ class DashboardWithoutTheme extends React.Component {
         secondQueryResponse: null,
       }
 
-      // Mark a reset cycle as in flight so other code paths (executeDashboard,
-      // exit-edit-mode handler, etc.) know to skip this tile / not refresh.
+      // Keep the existing reset-in-flight flag so any incidental componentDidUpdate
+      // paths (e.g. executeDashboard / executeOnStopEditing) skip this tile.
+      // Revert is handled by the existing dashboard-level Cancel, which restores
+      // from uneditedDashboardTiles (captured when edit mode was entered).
       this.isResettingTile = true
       this.resettingTileId = id
 
       // Helper that re-runs ONLY this single tile. We deliberately avoid touching
       // any other tileRefs so the rest of the dashboard isn't refreshed.
+      //
+      // We defer one macrotask so React has a chance to flush the parent's
+      // setState (queued by debouncedOnChange -> props.onChange) before the
+      // query fires. Without this, processTile reads stale props.tile.* and
+      // re-runs the query with the OLD filters/columns/tableFilters — making
+      // it look like the reset never refreshed.
       const runSingleTile = () => {
         const updatedTile = tiles[tileIndex]
         const refKey = updatedTile?.key || updatedTile?.i
-        const tileRef = this.tileRefs[refKey]
         const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
-        if (tileRef?.processTile && hasQuery) {
-          // Mirror executeSingleTile semantics so auto-refresh dashboards use cached path
-          return this.props.enableAutoRefresh
-            ? tileRef.processTile({ isCachedRefresh: true })
-            : tileRef.processTile()
+        if (!hasQuery) {
+          return Promise.resolve()
         }
-        return Promise.resolve()
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            // Re-resolve the ref AFTER React has rendered, in case the tile
+            // was re-keyed/remounted by the parent's onChange.
+            const tileRef = this.tileRefs[refKey]
+            if (!tileRef?.processTile) {
+              return resolve()
+            }
+            const promise = this.props.enableAutoRefresh
+              ? tileRef.processTile({ isCachedRefresh: true, isReset: true })
+              : tileRef.processTile({ isReset: true })
+            Promise.resolve(promise).then(resolve).catch(reject)
+          }, 0)
+        })
       }
 
       const clearResetGuard = () => {
         // Defer one tick so any componentDidUpdate triggered by the parent's
-        // save-driven setState (e.g. isEditing toggle) sees the guard before we drop it.
+        // setState (from onChange) sees the guard before we drop it.
         clearTimeout(this.resetGuardTimer)
         this.resetGuardTimer = setTimeout(() => {
           this.isResettingTile = false
@@ -909,32 +962,31 @@ class DashboardWithoutTheme extends React.Component {
         }, 0)
       }
 
-      // Sequence:
-      // 1) Push the cleared tile state up so this.props.tile is fresh for processTile.
-      // 2) Re-run only this tile and wait for it to finish (so its new queryResponse
-      //    is propagated up via endTopQuery -> setParamsForTile -> onChange).
-      // 3) THEN trigger the save callback. The reset guard is held until after
-      //    the save resolves so the parent's isEditing toggle (a common side
-      //    effect of saveDashboard) can't trigger executeOnStopEditing -> full refresh.
-      this.debouncedOnChange(tiles, true)
+      // Sequence (intentionally NO save and NO whole-dashboard refresh):
+      // 1) Push the cleared tile state up so the parent knows about the pending
+      //    change (so it can be committed by the user's explicit Save action,
+      //    or reverted by Cancel) and so this.props.tile is fresh for processTile.
+      // 2) Re-run ONLY this tile (deferred one macrotask so the cleared state
+      //    has propagated through the parent's render before the query fires).
+      //
+      // We deliberately do NOT call this.props.onSaveCallback here. The previous
+      // implementation auto-saved on reset, which (a) made the change permanent
+      // before the user confirmed and (b) caused the parent's saveDashboard side
+      // effects (toggling isEditing off, refetching, etc.) to trigger
+      // executeOnStopEditing -> a full dashboard refresh. Reset is now treated as
+      // a pending edit, just like every other tile mutation.
+      return this.debouncedOnChange(tiles, true)
         .then(() => runSingleTile())
-        .then(() => {
-          if (this.props.onSaveCallback) {
-            return Promise.resolve(this.props.onSaveCallback()).catch((error) => {
-              console.error('Error saving after tile reset:', error)
-            })
-          }
-        })
         .then(clearResetGuard)
         .catch((error) => {
           console.error('Error during tile reset:', error)
           // Best-effort: still try to run the single tile if the chain failed early
           try {
-            runSingleTile()
+            return Promise.resolve(runSingleTile()).finally(clearResetGuard)
           } catch (err) {
             console.error('Error processing tile after reset (fallback):', err)
+            clearResetGuard()
           }
-          clearResetGuard()
         })
     } catch (error) {
       console.error(error)
