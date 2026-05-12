@@ -204,6 +204,8 @@ export class OptionsToolbar extends React.Component {
     exportCSV({
       queryId,
       ...getAuthentication(this.props.authentication),
+      filters: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.session_filter_locks,
+      tableFilters: this.props.responseRef?.getCombinedFilters?.(),
       csvProgressCallback: (percentCompleted) =>
         this.props.onCSVDownloadProgress({
           id: uniqueId,
@@ -1148,7 +1150,10 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && this.renderResetQueryConfirmModal()}
+        {shouldShowButton.showRefreshDataButton &&
+          this.props.isEditing &&
+          this.props.showResetQueryOption &&
+          this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
