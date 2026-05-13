@@ -18,7 +18,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
   CustomColumnTypes,
-  runCachedDashboardQuery,
+  runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
   isError500Type,
@@ -642,7 +642,7 @@ export class DashboardTile extends React.Component {
       }
 
       // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
-      const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
+      const queryFunction = isCachedRefresh ? runCachedDashboardQueryPost : runQuery
 
       if (isCachedRefresh) {
         requestData.dashboardId = this.props.dashboardId
@@ -1922,10 +1922,7 @@ export class DashboardTile extends React.Component {
           // from the actual response columns — an empty config causes pivotTableData = [] and
           // a completely blank tile.
           const ptc = dataConfig?.pivotTableConfig
-          const pivotConfigIsEmpty =
-            ptc &&
-            !ptc.numberColumnIndices?.length &&
-            !ptc.stringColumnIndices?.length
+          const pivotConfigIsEmpty = ptc && !ptc.numberColumnIndices?.length && !ptc.stringColumnIndices?.length
 
           const { pivotTableConfig, tableConfig, ...restDataConfig } = dataConfig
 
