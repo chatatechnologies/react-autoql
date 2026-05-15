@@ -444,6 +444,45 @@ export const networkIcon = (
   </svg>
 )
 
+export const sankeyIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    {/* Left nodes */}
+    <rect className='chart-icon-svg-0' x='1' y='2' width='1.5' height='4' rx='0.5' />
+    <rect className='chart-icon-svg-0' x='1' y='10' width='1.5' height='4' rx='0.5' />
+    {/* Right nodes */}
+    <rect className='chart-icon-svg-0' x='13.5' y='3' width='1.5' height='3' rx='0.5' />
+    <rect className='chart-icon-svg-0' x='13.5' y='10' width='1.5' height='3' rx='0.5' />
+    {/* Flow paths - curved paths representing flows */}
+    {/* Top left to top right (larger flow) */}
+    <path 
+      className='chart-icon-svg-0' 
+      d='M2.5,3 C6,3 9,3 13.5,4' 
+      strokeWidth='2' 
+      fill='none' 
+      stroke='currentColor' 
+      opacity='0.4'
+    />
+    {/* Top left to bottom right (smaller flow) */}
+    <path 
+      className='chart-icon-svg-0' 
+      d='M2.5,5 C6,6 9,9 13.5,11' 
+      strokeWidth='1.5' 
+      fill='none' 
+      stroke='currentColor' 
+      opacity='0.4'
+    />
+    {/* Bottom left to bottom right (medium flow) */}
+    <path 
+      className='chart-icon-svg-0' 
+      d='M2.5,12 C6,12 9,12 13.5,11.5' 
+      strokeWidth='1.8' 
+      fill='none' 
+      stroke='currentColor' 
+      opacity='0.4'
+    />
+  </svg>
+)
+
 export const sourceColumnIcon = (
   <svg x='0px' y='0px' width='20px' height='20px' viewBox='0 0 20 20'>
     <g className='source-button-icon'>
