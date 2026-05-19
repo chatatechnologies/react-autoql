@@ -77,6 +77,7 @@ import {
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
+import { SimpleTable } from '../SimpleTable'
 import { AddColumnBtn } from '../AddColumnBtn'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import { ChataChart } from '../Charts/ChataChart'
@@ -4083,7 +4084,7 @@ export class QueryOutput extends React.Component {
 
     return (
       <ErrorBoundary>
-        <ChataTable
+        <SimpleTable
           key={this.tableID}
           ref={(ref) => (this.tableRef = ref)}
           autoHeight={this.props.autoHeight}
@@ -4091,6 +4092,7 @@ export class QueryOutput extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
           columns={this.state.columns}
+          rows={this.tableData}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
           columnDateRanges={this.columnDateRanges}
