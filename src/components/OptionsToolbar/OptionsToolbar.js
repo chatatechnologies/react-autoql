@@ -203,6 +203,7 @@ export class OptionsToolbar extends React.Component {
       queryId,
       ...getAuthentication(this.props.authentication),
       filters: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.session_filter_locks,
+      tableFilters: this.props.responseRef?.getCombinedFilters?.(),
       source: this.props.responseRef?.props?.source,
       scope: this.props.responseRef?.props?.scope,
       csvProgressCallback: (percentCompleted) =>
