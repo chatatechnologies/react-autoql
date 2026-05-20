@@ -1,8 +1,22 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { formatElement, dataFormattingDefault, dateSortFn, ColumnTypes } from 'autoql-fe-utils'
+import {
+  formatElement,
+  dataFormattingDefault,
+  dateSortFn,
+  ColumnTypes,
+  setHeaderFilterPlaceholder,
+  createFilterFunction,
+  isColumnNumberType,
+  getFilterPrecision,
+  DAYJS_PRECISION_FORMATS,
+} from 'autoql-fe-utils'
 
+import dayjs from '../../js/dayjsWithPlugins'
 import { dataFormattingType } from '../../props/types'
+import { Popover } from '../Popover'
+import { DateRangePicker } from '../DateRangePicker'
+import { Button } from '../Button'
 
 import './SimpleTable.scss'
 
@@ -41,14 +55,22 @@ export default class SimpleTable extends Component {
       columnWidths: [],
       minHeaderWidths: [],
       isResizing: false,
+      isFiltering: false,
       sortCol: null,
       sortDir: null,
+      filterInputValues: {},
+      filterValues: {},
+      datePickerColumn: null,
+      datePickerColIndex: null,
+      dateRangeSelection: null,
     }
+    this.currentDateRangeSelections = {}
     this.scrollContainerRef = React.createRef()
     this.tableRef = React.createRef()
   }
 
   componentDidMount() {
+    this._isMounted = true
     this.captureColumnWidths()
     this.scrollContainerRef.current?.addEventListener('scroll', this.onScroll, { passive: true })
   }
@@ -60,14 +82,21 @@ export default class SimpleTable extends Component {
         endIdx: Math.min(this.props.rows.length, OVERSCAN * 3),
         sortCol: null,
         sortDir: null,
+        filterInputValues: {},
+        filterValues: {},
       })
     }
     if (prevProps.columns !== this.props.columns) {
-      this.setState({ columnWidths: [], minHeaderWidths: [], sortCol: null, sortDir: null }, this.captureColumnWidths)
+      this.setState(
+        { columnWidths: [], minHeaderWidths: [], sortCol: null, sortDir: null, filterInputValues: {}, filterValues: {} },
+        this.captureColumnWidths,
+      )
     }
+
   }
 
   componentWillUnmount() {
+    this._isMounted = false
     if (this.rafId) cancelAnimationFrame(this.rafId)
     if (this.scrollRafId) cancelAnimationFrame(this.scrollRafId)
     this.scrollContainerRef.current?.removeEventListener('scroll', this.onScroll)
@@ -83,10 +112,11 @@ export default class SimpleTable extends Component {
   updateVisibleRange = () => {
     const el = this.scrollContainerRef.current
     if (!el) return
+    const rowCount = this._visibleRowCount ?? this.props.rows.length
     const scrollTop = el.scrollTop
     const viewHeight = el.clientHeight
     const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN)
-    const endIdx = Math.min(this.props.rows.length, Math.ceil((scrollTop + viewHeight) / ROW_HEIGHT) + OVERSCAN)
+    const endIdx = Math.min(rowCount, Math.ceil((scrollTop + viewHeight) / ROW_HEIGHT) + OVERSCAN)
     if (startIdx !== this.state.startIdx || endIdx !== this.state.endIdx) {
       this.setState({ startIdx, endIdx })
     }
@@ -169,9 +199,6 @@ export default class SimpleTable extends Component {
     this.setState({ columnWidths: newWidths })
   }
 
-  isNumericType = (type) => {
-    return type === 'DOLLAR_AMT' || type === 'QUANTITY' || type === 'RATIO' || type === 'PERCENT'
-  }
 
   handleHeaderClick = (colIndex) => {
     if (this.resizeDragged) return
@@ -191,8 +218,125 @@ export default class SimpleTable extends Component {
     this.setState({ ...newState, startIdx: 0, endIdx: Math.min(rows.length, OVERSCAN * 3) })
   }
 
-  getSortedRows = () => {
-    const { rows, columns } = this.props
+  toggleIsFiltering = (filterOn) => {
+    const isFiltering = typeof filterOn === 'boolean' ? filterOn : !this.state.isFiltering
+    this.setState({ isFiltering })
+    return isFiltering
+  }
+
+  getHeaderFilters = () => {
+    const { filterValues } = this.state
+    return Object.entries(filterValues)
+      .filter(([, value]) => typeof value === 'string' && value.trim() !== '')
+      .map(([field, value]) => ({ field, value }))
+  }
+
+  handleFilterChange = (colIndex, value) => {
+    const filterInputValues = { ...this.state.filterInputValues, [colIndex]: value }
+    this.setState({ filterInputValues })
+  }
+
+  applyFilter = (colIndex, value) => {
+    const filterValues = { ...this.state.filterValues }
+    if (value.trim()) {
+      filterValues[colIndex] = value.trim()
+    } else {
+      delete filterValues[colIndex]
+    }
+    if (this.scrollContainerRef.current) this.scrollContainerRef.current.scrollTop = 0
+    this.setState({ filterValues, startIdx: 0, endIdx: Math.min(this.props.rows.length, OVERSCAN * 3) })
+  }
+
+  handleFilterKeyDown = (colIndex, e) => {
+    if (e.key === 'Enter') {
+      this.applyFilter(colIndex, this.state.filterInputValues[colIndex] ?? '')
+    }
+  }
+
+  clearFilter = (colIndex) => {
+    const filterInputValues = { ...this.state.filterInputValues }
+    const filterValues = { ...this.state.filterValues }
+    delete filterInputValues[colIndex]
+    delete filterValues[colIndex]
+    delete this.currentDateRangeSelections[colIndex]
+    if (this.scrollContainerRef.current) this.scrollContainerRef.current.scrollTop = 0
+    this.setState({ filterInputValues, filterValues, startIdx: 0, endIdx: Math.min(this.props.rows.length, OVERSCAN * 3) })
+  }
+
+  handleDateInputClick = (col, colIndex, e) => {
+    e.stopPropagation()
+    this.setState({ datePickerColumn: col, datePickerColIndex: colIndex, dateRangeSelection: null })
+  }
+
+  onDateRangeSelection = (dateRangeSelection) => {
+    this.setState({ dateRangeSelection })
+  }
+
+  onDateRangeSelectionApplied = () => {
+    const { datePickerColumn, datePickerColIndex, dateRangeSelection } = this.state
+    this.setState({ datePickerColumn: null, datePickerColIndex: null, dateRangeSelection: null })
+
+    if (!dateRangeSelection || !datePickerColumn) return
+
+    let { startDate, endDate } = dateRangeSelection
+    if (startDate && !endDate) endDate = startDate
+    else if (!startDate && endDate) startDate = endDate
+    if (!startDate) return
+
+    const filterPrecision = getFilterPrecision(datePickerColumn)
+    const fmt = DAYJS_PRECISION_FORMATS[filterPrecision]
+
+    const fmtDate = (d) => dayjs(dayjs(d).format(fmt)).utc().format(fmt)
+    const formattedStart = fmtDate(startDate)
+    const formattedEnd = fmtDate(endDate)
+    const filterText = formattedStart === formattedEnd ? formattedStart : `${formattedStart} to ${formattedEnd}`
+
+    this.currentDateRangeSelections[datePickerColIndex] = dateRangeSelection
+    const filterInputValues = { ...this.state.filterInputValues, [datePickerColIndex]: filterText }
+    const filterValues = { ...this.state.filterValues, [datePickerColIndex]: filterText }
+    if (this.scrollContainerRef.current) this.scrollContainerRef.current.scrollTop = 0
+    this.setState({ filterInputValues, filterValues, startIdx: 0, endIdx: Math.min(this.props.rows.length, OVERSCAN * 3) })
+  }
+
+  getFilteredRows = (rows) => {
+    const { columns, dataFormatting } = this.props
+    const { filterValues } = this.state
+    const active = Object.entries(filterValues)
+    if (!active.length) return rows
+
+    if (
+      this._filteredRows &&
+      this._filteredRowsInput === rows &&
+      this._filteredRowsFilterValues === filterValues
+    ) {
+      return this._filteredRows
+    }
+
+    const filterFns = active.map(([colIndexStr, filterVal]) => {
+      const colIndex = parseInt(colIndexStr)
+      const col = columns[colIndex]
+      return { colIndex, filterVal, fn: createFilterFunction({ column: col, dataFormatting }) }
+    })
+
+    const result = rows.filter((row) =>
+      filterFns.every(({ colIndex, filterVal, fn }) => fn(filterVal, row[colIndex])),
+    )
+
+    this._filteredRowsInput = rows
+    this._filteredRowsFilterValues = filterValues
+    this._filteredRows = result
+    return result
+  }
+
+  getVisibleRows = () => {
+    const filtered = this.getFilteredRows(this.props.rows)
+    const result = this.getSortedRows(filtered)
+    this._visibleRowCount = result.length
+    return result
+  }
+
+  getSortedRows = (rows = this.props.rows) => {
+    const { columns } = this.props
     const { sortCol, sortDir } = this.state
     if (sortCol === null || !sortDir) return rows
 
@@ -202,13 +346,11 @@ export default class SimpleTable extends Component {
     }
 
     const col = columns[sortCol]
-    const colType = col?.type
-    const isDate = colType === ColumnTypes.DATE || colType === ColumnTypes.DATE_STRING
-    const isNumeric = this.isNumericType(colType)
-    const isString = colType === ColumnTypes.STRING
+    const isDate = col?.type === ColumnTypes.DATE || col?.type === ColumnTypes.DATE_STRING
+    const isNumeric = isColumnNumberType(col)
+    const isString = col?.type === ColumnTypes.STRING
     const multiplier = sortDir === 'asc' ? 1 : -1
 
-    // Decorate: compute sort keys once per row (O(N)) so the comparator is cheap
     const decorated = rows.map((row) => {
       const val = row[sortCol]
       let key
@@ -315,16 +457,17 @@ export default class SimpleTable extends Component {
 
   renderHeader = () => {
     const { columns } = this.props
-    const { columnWidths, sortCol, sortDir } = this.state
+    const { columnWidths, sortCol, sortDir, filterValues, isFiltering } = this.state
     return (
       <thead className='simple-table-header'>
         <tr>
           {columns.map((col, i) => {
             const dir = sortCol === i ? sortDir : null
+            const isFiltered = !!filterValues[i]
             return (
               <th
                 key={i}
-                className='simple-table-header-cell'
+                className={`simple-table-header-cell${isFiltered ? ' simple-table-header-cell--filtered' : ''}`}
                 style={columnWidths.length ? { width: `var(--col-${i}-width)` } : undefined}
                 onClick={() => this.handleHeaderClick(i)}
               >
@@ -343,15 +486,91 @@ export default class SimpleTable extends Component {
             )
           })}
         </tr>
+        {isFiltering && this.renderFilterRow()}
       </thead>
     )
   }
 
-  renderRows = () => {
-    const { columns, rows } = this.props
+  renderDateRangePickerPopover = () => {
+    const { datePickerColumn, datePickerColIndex } = this.state
+    if (!datePickerColumn) return null
+
+    return (
+      <Popover
+        isOpen
+        align='start'
+        positions={['bottom', 'right', 'left', 'top']}
+        onClickOutside={(e) => {
+          e.stopPropagation()
+          if (this._isMounted) this.setState({ datePickerColumn: null, datePickerColIndex: null, dateRangeSelection: null })
+        }}
+        content={
+          <div className='react-autoql-popover-date-picker'>
+            <h3>{datePickerColumn.display_name}</h3>
+            <DateRangePicker
+              initialRange={this.currentDateRangeSelections[datePickerColIndex]}
+              onSelection={this.onDateRangeSelection}
+              validRange={datePickerColumn.dateRange}
+              type={datePickerColumn.precision}
+            />
+            <Button type='primary' onClick={this.onDateRangeSelectionApplied}>
+              Apply
+            </Button>
+          </div>
+        }
+      >
+        <span style={{ position: 'absolute' }} />
+      </Popover>
+    )
+  }
+
+  renderFilterRow = () => {
+    const { columns } = this.props
+    const { columnWidths, filterInputValues, filterValues, datePickerColIndex } = this.state
+    return (
+      <tr className='simple-table-filter-row'>
+        {columns.map((col, i) => {
+          const isDateCol = col.type === ColumnTypes.DATE
+          const hasInput = !!(filterInputValues[i] || filterValues[i])
+          const isDatePickerOpen = isDateCol && datePickerColIndex === i
+          return (
+            <td
+              key={i}
+              className='simple-table-filter-cell'
+              style={columnWidths.length ? { width: `var(--col-${i}-width)` } : undefined}
+            >
+              <div className='simple-table-filter-input-wrapper' style={{ position: 'relative' }}>
+                {isDatePickerOpen && this.renderDateRangePickerPopover()}
+                <input
+                  className='simple-table-filter-input'
+                  placeholder={setHeaderFilterPlaceholder(col)}
+                  value={filterInputValues[i] || ''}
+                  readOnly={isDateCol}
+                  onChange={isDateCol ? undefined : (e) => this.handleFilterChange(i, e.target.value)}
+                  onKeyDown={isDateCol ? undefined : (e) => this.handleFilterKeyDown(i, e)}
+                  onClick={isDateCol ? (e) => this.handleDateInputClick(col, i, e) : (e) => e.stopPropagation()}
+                />
+                {hasInput && (
+                  <button
+                    className='simple-table-filter-clear-btn'
+                    onClick={(e) => { e.stopPropagation(); this.clearFilter(i) }}
+                    tabIndex={-1}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </td>
+          )
+        })}
+      </tr>
+    )
+  }
+
+  renderRows = (visibleRows) => {
+    const { columns } = this.props
     const { startIdx, endIdx } = this.state
-    const sortedRows = this.getSortedRows()
-    const totalHeight = rows.length * ROW_HEIGHT
+    const totalHeight = visibleRows.length * ROW_HEIGHT
     const topPad = startIdx * ROW_HEIGHT
     const bottomPad = totalHeight - endIdx * ROW_HEIGHT
 
@@ -362,7 +581,7 @@ export default class SimpleTable extends Component {
             <td colSpan={columns.length} style={{ padding: 0, border: 0 }} />
           </tr>
         )}
-        {sortedRows.slice(startIdx, endIdx).map((row, i) => {
+        {visibleRows.slice(startIdx, endIdx).map((row, i) => {
           const rowIndex = startIdx + i
           return (
             <tr key={rowIndex} className={`simple-table-row${rowIndex % 2 === 1 ? ' simple-table-row-even' : ''}`}>
@@ -392,6 +611,11 @@ export default class SimpleTable extends Component {
       tableVarStyle['--table-width'] = `${columnWidths.reduce((s, w) => s + (w || 0), 0)}px`
     }
 
+    const visibleRows = this.getVisibleRows()
+    const emptyMessage = rows.length === 0
+      ? 'No data available'
+      : visibleRows.length === 0 ? 'No results match the current filters' : null
+
     return (
       <div
         className={`simple-table-outer-container${isResizing ? ' simple-table-resizing' : ''}`}
@@ -404,10 +628,14 @@ export default class SimpleTable extends Component {
             style={hasWidths ? { tableLayout: 'fixed', width: 'var(--table-width)', ...tableVarStyle } : undefined}
           >
             {this.renderHeader()}
-            {rows.length > 0 ? this.renderRows() : null}
+            {visibleRows.length > 0 ? this.renderRows(visibleRows) : null}
           </table>
-          {rows.length === 0 && <div className='simple-table-empty'>No data available</div>}
         </div>
+        {emptyMessage && (
+          <div className='simple-table-empty'>
+            {emptyMessage}
+          </div>
+        )}
       </div>
     )
   }

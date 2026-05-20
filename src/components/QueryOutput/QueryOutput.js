@@ -2024,7 +2024,14 @@ export class QueryOutput extends React.Component {
   }
 
   getTabulatorHeaderFilters = () => {
-    return this.tableRef?._isMounted && this.tableRef.getTabulatorHeaderFilters()
+    if (!this.tableRef?._isMounted) return undefined
+    if (typeof this.tableRef.getTabulatorHeaderFilters === 'function') {
+      return this.tableRef.getTabulatorHeaderFilters()
+    }
+    if (typeof this.tableRef.getHeaderFilters === 'function') {
+      return this.tableRef.getHeaderFilters()
+    }
+    return undefined
   }
 
   // Resolves a Tabulator header filter field to its corresponding column index in the columns array.
@@ -2697,132 +2704,7 @@ export class QueryOutput extends React.Component {
   }
 
   setFilterFunction = (col) => {
-    // Provide a robust header filter for numeric columns to support operator prefixes
-    // (no-operator => LIKE, '='/ '==' => exact, '!=' => not equal, '!' => NOT LIKE, and <,<=,>,>= comparisons)
-    if (isColumnNumberType(col)) {
-      // Cache parsed "in" Sets per headerValue to avoid rebuilding the same Set for every row
-      const inSetCache = new Map()
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (headerValue === undefined || headerValue === null) return true
-
-          const parsed = extractOperatorFromValue(headerValue)
-          const op = parsed?.operator
-          const cleanValue = parsed?.cleanValue ?? headerValue
-
-          // Empty filter -> no-op
-          if (String(cleanValue).trim() === '') return true
-
-          const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
-          const compareNum = Number(cleanValue)
-          const rowNum = Number(rowValue)
-
-          // No operator: treat as LIKE (substring, case-insensitive)
-          if (!op) {
-            return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
-          }
-
-          switch (op) {
-            case '=':
-            case '==':
-              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum === compareNum
-              return rowStr.toLowerCase() === String(cleanValue).toLowerCase()
-            case '!=':
-              if (!Number.isNaN(compareNum) && !Number.isNaN(rowNum)) return rowNum !== compareNum
-              return rowStr.toLowerCase() !== String(cleanValue).toLowerCase()
-            case '!':
-              return !rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
-            case '<':
-              return Number(rowValue) < Number(cleanValue)
-            case '<=':
-              return Number(rowValue) <= Number(cleanValue)
-            case '>':
-              return Number(rowValue) > Number(cleanValue)
-            case '>=':
-              return Number(rowValue) >= Number(cleanValue)
-            case 'like':
-            case 'contains':
-              return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
-            case 'regex':
-              try {
-                const pattern = String(cleanValue || '')
-                if (pattern.length > 10000) return false
-                const re = new RegExp(pattern)
-                re.test(rowStr.substring(0, Math.min(100, rowStr.length)))
-                return re.test(rowStr)
-              } catch (e) {
-                return false
-              }
-            case 'in':
-              try {
-                const cacheKey = String(cleanValue)
-                let arr = inSetCache.get(cacheKey)
-                if (!arr) {
-                  arr = new Set(
-                    String(cleanValue)
-                      .split(',')
-                      .map((s) => s.trim().toLowerCase()),
-                  )
-                  inSetCache.set(cacheKey, arr)
-                }
-                return arr.has(rowStr.toLowerCase()) || arr.has(String(rowValue).toLowerCase())
-              } catch (e) {
-                return false
-              }
-            default: {
-              // Fall back to autoql-fe-utils filter function if available
-              const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
-              if (filterFn && typeof filterFn === 'function') {
-                return filterFn(headerValue, rowValue, rowData, filterParams)
-              }
-              return false
-            }
-          }
-        } catch (error) {
-          console.error(error)
-          if (this.props.onErrorCallback) this.props.onErrorCallback(error)
-          return false
-        }
-      }
-    }
-
-    // Non-numeric columns: provide a header filter wrapper that defaults to
-    // a case-insensitive "LIKE" (substring) comparison when the user does
-    // not supply an operator. If an operator is supplied, delegate to the
-    // packaged filter function when available.
-    const filterFn = createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
-    if (filterFn && typeof filterFn === 'function') {
-      return (headerValue, rowValue, rowData, filterParams) => {
-        try {
-          if (headerValue === undefined || headerValue === null) return true
-
-          const parsed = extractOperatorFromValue(headerValue)
-          const op = parsed?.operator
-          const cleanValue = parsed?.cleanValue ?? headerValue
-
-          // Empty filter -> no-op
-          if (String(cleanValue).trim() === '') return true
-
-          const rowStr = rowValue === null || rowValue === undefined ? '' : String(rowValue)
-
-          // No operator: treat as LIKE (substring, case-insensitive)
-          if (!op) {
-            return rowStr.toLowerCase().includes(String(cleanValue).toLowerCase())
-          }
-
-          // Operator present: delegate to packaged filter function
-          return filterFn(headerValue, rowValue, rowData, filterParams)
-        } catch (error) {
-          console.error(error)
-          if (this.props.onErrorCallback) {
-            this.props.onErrorCallback(error)
-          }
-          return false
-        }
-      }
-    }
-
-    return filterFn
+    return createFilterFunction({ column: col, dataFormatting: this.props.dataFormatting })
   }
 
   setSorterFunction = (col) => {
