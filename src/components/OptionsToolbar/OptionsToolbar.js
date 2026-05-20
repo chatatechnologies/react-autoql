@@ -202,8 +202,10 @@ export class OptionsToolbar extends React.Component {
     exportCSV({
       queryId,
       ...getAuthentication(this.props.authentication),
-      filters: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.session_filter_locks,
+      filters: this.props.responseRef?.getFilters?.(),
       tableFilters: this.props.responseRef?.getCombinedFilters?.(),
+      source: this.props.responseRef?.props?.source,
+      scope: this.props.responseRef?.props?.scope,
       csvProgressCallback: (percentCompleted) =>
         this.props.onCSVDownloadProgress({
           id: uniqueId,
