@@ -548,6 +548,16 @@ export class QueryOutput extends React.Component {
         } else if (!this.tableData && this.shouldGenerateTableData()) {
           this.generateAllData()
         }
+
+        // Tabulator and charts initialize inside display:none when shouldRender=false,
+        // producing wrong dimensions. Force remount so they measure the visible container.
+        if (isChartType(this.state.displayType)) {
+          newState.chartID = uuid()
+        } else {
+          this.tableID = uuid()
+          this.pivotTableID = uuid()
+          newState._tableRemountKey = uuid()
+        }
       }
 
       // Keep local chartControls in sync if consumer updates initialChartControls prop
