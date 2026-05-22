@@ -13,6 +13,7 @@ import {
   fetchLLMSummary,
   fetchLLMSummaryQuote,
   isChartType,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
@@ -463,6 +464,10 @@ export default class ChatMessage extends React.Component {
       const currentColumns =
         this.responseRef?.queryResponse?.data?.data?.columns || this.props.response.data.data.columns
 
+      const originalRows = this.props.response.data.data.rows
+      const rowLimit = this.props.response.data.data.row_limit ?? MAX_DATA_PAGE_SIZE
+      const override_row_limit = originalRows != null && originalRows.length >= rowLimit
+
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -470,8 +475,9 @@ export default class ChatMessage extends React.Component {
             interpretation: this.props.response.data.data.interpretation,
             focus_prompt: this.state.focusPrompt.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: override_row_limit ? [] : filteredRows,
+          columns: override_row_limit ? [] : currentColumns,
+          override_row_limit,
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -493,6 +499,8 @@ export default class ChatMessage extends React.Component {
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
             query_id: this.props.response.data.data.query_id,
+            row_limit: rowLimit,
+            original_row_count: originalRows?.length,
           },
         })
         // Add summary as a new message bubble, including response data for focusing
@@ -507,6 +515,8 @@ export default class ChatMessage extends React.Component {
             text: this.props.response.data.data.text,
             interpretation: this.props.response.data.data.interpretation,
             query_id: this.props.response.data.data.query_id,
+            row_limit: rowLimit,
+            original_row_count: originalRows?.length,
           },
         })
       } else {
@@ -653,6 +663,10 @@ export default class ChatMessage extends React.Component {
     this.props.setGeneratingSummary?.(true)
 
     try {
+      const override_row_limit =
+        responseData.original_row_count != null &&
+        responseData.original_row_count >= (responseData.row_limit ?? MAX_DATA_PAGE_SIZE)
+
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -660,8 +674,9 @@ export default class ChatMessage extends React.Component {
             interpretation: responseData.interpretation,
             focus_prompt: focusPrompt.trim() || '',
           },
-          rows: responseData.rows,
-          columns: responseData.columns,
+          rows: override_row_limit ? [] : responseData.rows,
+          columns: override_row_limit ? [] : responseData.columns,
+          override_row_limit,
         },
         queryID: responseData.query_id,
         apiKey: auth.apiKey,

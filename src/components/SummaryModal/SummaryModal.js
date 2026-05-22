@@ -1,13 +1,12 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import { getAuthentication, fetchLLMSummary, authenticationDefault, autoQLConfigDefault } from 'autoql-fe-utils'
+import { getAuthentication, fetchLLMSummary, authenticationDefault, autoQLConfigDefault, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { LoadingDots } from '../LoadingDots'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
-import { Input } from '../Input'
 import SummaryFooter from '../ChatMessage/SummaryFooter'
 import SummaryContent from '../SummaryContent/SummaryContent'
 import { CustomScrollbars } from '../CustomScrollbars'
@@ -108,6 +107,10 @@ export default class SummaryModal extends React.Component {
       // Get filtered data from QueryOutput's tableData (already filtered)
       const filteredRows = this.props.responseRef?.tableData || queryResponse.data.data.rows
 
+      const originalRows = queryResponse.data.data.rows
+      const rowLimit = queryResponse.data.data.row_limit ?? MAX_DATA_PAGE_SIZE
+      const override_row_limit = originalRows != null && originalRows.length >= rowLimit
+
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -115,8 +118,9 @@ export default class SummaryModal extends React.Component {
             interpretation: queryResponse.data.data.interpretation,
             focus_prompt: promptToUse.trim() || '',
           },
-          rows: filteredRows,
-          columns: queryResponse.data.data.columns,
+          rows: override_row_limit ? [] : filteredRows,
+          columns: override_row_limit ? [] : queryResponse.data.data.columns,
+          override_row_limit,
         },
         queryID: queryResponse.data.data.query_id,
         apiKey: auth.apiKey,
