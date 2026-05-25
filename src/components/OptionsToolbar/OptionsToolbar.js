@@ -88,6 +88,8 @@ export class OptionsToolbar extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
+    source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
+    scope: PropTypes.string,
   }
 
   static defaultProps = {
@@ -115,6 +117,8 @@ export class OptionsToolbar extends React.Component {
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     showResetQueryOption: false,
+    source: undefined,
+    scope: undefined,
   }
 
   componentDidMount = () => {
@@ -194,7 +198,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   fetchCSVAndExport = () => {
-    const queryId = this.props.responseRef?.queryResponse?.data?.data?.query_id
+    const queryId = this.props.responseRef?.drilldownQueryID
     const query = this.props.responseRef?.queryResponse?.data?.data?.text
     const uniqueId = uuid()
 
@@ -204,6 +208,8 @@ export class OptionsToolbar extends React.Component {
       ...getAuthentication(this.props.authentication),
       filters: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.session_filter_locks,
       tableFilters: this.props.responseRef?.getCombinedFilters?.(),
+      source: this.props.source,
+      scope: this.props.scope,
       csvProgressCallback: (percentCompleted) =>
         this.props.onCSVDownloadProgress({
           id: uniqueId,

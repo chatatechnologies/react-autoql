@@ -1780,6 +1780,8 @@ export class DashboardTile extends React.Component {
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             isEditing={this.props.isEditing}
+            source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+            scope={this.props.scope}
             {...optionsToolbarProps}
           />
         </div>
