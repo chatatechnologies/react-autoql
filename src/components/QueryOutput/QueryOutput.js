@@ -547,6 +547,16 @@ export class QueryOutput extends React.Component {
         } else if (!this.tableData && this.shouldGenerateTableData()) {
           this.generateAllData()
         }
+
+        // Tabulator and charts initialize inside display:none when shouldRender=false,
+        // producing wrong dimensions. Force remount so they measure the visible container.
+        if (isChartType(this.state.displayType)) {
+          newState.chartID = uuid()
+        } else {
+          this.tableID = uuid()
+          this.pivotTableID = uuid()
+          newState._tableRemountKey = uuid()
+        }
       }
 
       // Keep local chartControls in sync if consumer updates initialChartControls prop
@@ -1859,7 +1869,16 @@ export class QueryOutput extends React.Component {
     stringColumnIndices,
     rows,
     useOrLogic,
+    groupBys: explicitGroupBys,
   }) => {
+    if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
+      return this.processDrilldown({
+        supportedByAPI: true,
+        activeKey,
+        groupBys: explicitGroupBys,
+      })
+    }
+
     // Support for multiple filters (e.g., network graph links with source and target filters)
     if (filters && Array.isArray(filters) && filters.length > 0) {
       return this.processDrilldown({

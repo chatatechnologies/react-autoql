@@ -29,7 +29,7 @@
       .chat-message-bubble {
         background-color: var(--react-autoql-accent-color);
         color: var(--react-autoql-text-color-accent);
-        
+
         // Glassmorphism overlay for request bubbles
         &::before {
           background-color: var(--react-autoql-accent-color);
@@ -56,7 +56,7 @@
       .chat-message-bubble {
         background-color: var(--react-autoql-background-color-secondary);
         color: var(--react-autoql-text-color-primary);
-        
+
         // Glassmorphism overlay for response bubbles
         &::before {
           background-color: var(--react-autoql-background-color-secondary);
@@ -175,7 +175,6 @@
       }
     }
 
-
     .chat-message-bubble {
       display: flex;
       flex-direction: column;
@@ -193,9 +192,7 @@
       backdrop-filter: blur(10px) saturate(180%);
       -webkit-backdrop-filter: blur(10px) saturate(180%);
       border: 1px solid var(--react-autoql-border-color);
-      box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.08),
-        0 1px 3px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
       isolation: isolate;
 
       // Semi-transparent overlay for glass effect
@@ -217,7 +214,7 @@
       }
 
       &:not(.resizable) {
-        max-height: 400px;
+        max-height: calc(100vh - 300px);
       }
       &.resizable {
         max-height: none;
@@ -230,9 +227,7 @@
 
       &.active {
         border: 1px solid var(--react-autoql-border-color);
-        box-shadow: 
-          0 4px 12px rgba(0, 0, 0, 0.12),
-          0 2px 6px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
       }
 
       // Remove max-height for markdown messages
@@ -251,8 +246,6 @@
       background: transparent;
     }
   }
-
-  
 
   .chat-message-markdown {
     line-height: 1.5;
