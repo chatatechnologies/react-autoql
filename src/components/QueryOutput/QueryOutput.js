@@ -1189,6 +1189,7 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
+      this.drilldownQueryID = response?.data?.data?.drilldown_query_id || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
