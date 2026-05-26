@@ -309,6 +309,7 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.setParamsForTileTimeout)
       clearTimeout(this.queryInputTimer)
       clearTimeout(this.secondQueryInputTimer)
+      clearTimeout(this.titleInputTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
         this.cancelAllQueries()

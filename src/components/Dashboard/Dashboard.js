@@ -249,6 +249,16 @@ class DashboardWithoutTheme extends React.Component {
         this.setState({ isDragging: false })
       })
     }
+
+    // Prune stale tileRefs when tile keys change to prevent unbounded growth
+    if (this.props.tiles !== prevProps.tiles) {
+      const currentKeys = new Set((this.props.tiles || []).map((t) => t.key))
+      Object.keys(this.tileRefs).forEach((key) => {
+        if (!currentKeys.has(key)) {
+          delete this.tileRefs[key]
+        }
+      })
+    }
   }
 
   componentDidMount = () => {
@@ -299,6 +309,8 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
+      clearTimeout(this.onChangeTimer)
+      clearTimeout(this.callbackSubsciptionTimer)
     } catch (error) {
       console.error(error)
     }
