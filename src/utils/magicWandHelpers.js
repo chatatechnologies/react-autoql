@@ -22,6 +22,10 @@ export function shouldShowMagicWandForQueryCore(enableMagicWand, queryResponse) 
     return false
   }
 
+  if (queryResponse?.data?.data?.isDataPreview) {
+    return false
+  }
+
   if (!queryResponse?.data?.data?.rows || !queryResponse?.data?.data?.columns) {
     return false
   }
