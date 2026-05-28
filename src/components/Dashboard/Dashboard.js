@@ -249,6 +249,16 @@ class DashboardWithoutTheme extends React.Component {
         this.setState({ isDragging: false })
       })
     }
+
+    // Prune stale tileRefs when tile keys change to prevent unbounded growth
+    if (this.props.tiles !== prevProps.tiles) {
+      const currentKeys = new Set((this.props.tiles || []).map((t) => t.key))
+      Object.keys(this.tileRefs).forEach((key) => {
+        if (!currentKeys.has(key)) {
+          delete this.tileRefs[key]
+        }
+      })
+    }
   }
 
   componentDidMount = () => {
@@ -299,6 +309,8 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
+      clearTimeout(this.onChangeTimer)
+      clearTimeout(this.callbackSubsciptionTimer)
     } catch (error) {
       console.error(error)
     }
@@ -461,6 +473,33 @@ class DashboardWithoutTheme extends React.Component {
       console.error(error)
       return undefined
     }
+  }
+
+  executeSingleTile = (tileId) => {
+    const directRef = this.tileRefs?.[tileId] || this.tileRefs?.[String(tileId)]
+    if (directRef?.processTile) {
+      return this.props.enableAutoRefresh
+        ? directRef.processTile({ isCachedRefresh: true })
+        : directRef.processTile()
+    }
+
+    const tiles = this.getMostRecentTiles() || []
+    const tile = tiles.find(
+      (t) =>
+        t?.i === tileId ||
+        t?.key === tileId ||
+        String(t?.i) === String(tileId) ||
+        String(t?.key) === String(tileId),
+    )
+
+    const fallbackRef = this.tileRefs?.[tile?.key] || this.tileRefs?.[tile?.i]
+    if (fallbackRef?.processTile) {
+      return this.props.enableAutoRefresh
+        ? fallbackRef.processTile({ isCachedRefresh: true })
+        : fallbackRef.processTile()
+    }
+
+    return Promise.resolve()
   }
 
   unExecuteDashboard = () => {
@@ -852,7 +891,7 @@ class DashboardWithoutTheme extends React.Component {
           const tileRef = this.tileRefs[refKey]
           // Only process if there is a query to execute
           const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
-          if (tileRef && tileRef.processTile && hasQuery) {
+          if (tileRef?.processTile && hasQuery) {
             tileRef.processTile()
           }
         } catch (error) {
@@ -1022,6 +1061,7 @@ class DashboardWithoutTheme extends React.Component {
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}
             resetTile={this.resetTile}
+            executeSingleTile={this.executeSingleTile}
             onSaveCallback={this.props.onSaveCallback}
             deleteTile={this.deleteTile}
             dataFormatting={this.props.dataFormatting}

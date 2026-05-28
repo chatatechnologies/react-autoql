@@ -1015,6 +1015,8 @@ export default class ChatMessage extends React.Component {
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            source={this.props.source}
+            scope={this.props.scope}
           />
         ) : null}
       </div>
