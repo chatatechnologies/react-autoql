@@ -2933,11 +2933,24 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  detectQuantityType = (rows, colIndex) => {
+    if (!rows?.length) return 'float'
+    for (const row of rows) {
+      const val = row?.[colIndex]
+      if (val === null || val === undefined) continue
+      const num = typeof val === 'number' ? val : parseFloat(val)
+      if (!isNaN(num) && num % 1 !== 0) return 'float'
+    }
+    return 'integer'
+  }
+
   formatColumnsForTable = (columns, _additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
       return null
     }
+
+    const rows = this.queryResponse?.data?.data?.rows
 
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
@@ -3080,6 +3093,10 @@ export class QueryOutput extends React.Component {
         if (customSelect?.column_fn?.length) {
           newCol.columnFnArray = customSelect.column_fn
         }
+      }
+
+      if (newCol.type === ColumnTypes.QUANTITY) {
+        newCol.quantity_type = col.quantity_type ?? this.detectQuantityType(rows, i)
       }
 
       return newCol
