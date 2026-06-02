@@ -1,0 +1,44 @@
+.follow-on-query-popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 320px;
+  max-width: 400px;
+  padding: 12px;
+}
+
+.follow-on-query-popover-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.follow-on-query-popover-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--react-autoql-text-color-primary);
+  margin: 0;
+}
+
+.follow-on-query-popover-input-wrapper {
+  width: 100%;
+
+  .react-autoql-input-and-label-container {
+    width: 100%;
+  }
+}
+
+.follow-on-query-popover-error {
+  font-size: 13px;
+  color: var(--react-autoql-error-color, #d32f2f);
+  padding: 8px 12px;
+  background-color: var(--react-autoql-error-background-color, rgba(211, 47, 47, 0.1));
+  border-radius: 4px;
+  border-left: 3px solid var(--react-autoql-error-color, #d32f2f);
+}
+
+.follow-on-query-popover-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}

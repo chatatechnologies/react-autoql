@@ -145,6 +145,7 @@ export class DataMessenger extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -215,6 +216,7 @@ export class DataMessenger extends React.Component {
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
     setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},

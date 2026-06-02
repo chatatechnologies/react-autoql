@@ -18,6 +18,7 @@ import {
   getAutoQLConfig,
   dataFormattingDefault,
   fetchLLMSummaryQuote,
+  fetchFollowOnQuery,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -33,6 +34,7 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
+import FollowOnQueryPopoverContent from '../FollowOnQueryPopover/FollowOnQueryPopoverContent'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
@@ -60,6 +62,10 @@ export class OptionsToolbar extends React.Component {
       summaryFocusError: null,
       quoteResult: null,
       isFetchingQuote: false,
+      isFollowOnPopoverOpen: false,
+      isFollowOnQueryLoading: false,
+      followOnQueryText: '',
+      followOnError: null,
       previousDisplayType: null, // Track display type before switching to table for filtering
     }
   }
@@ -88,6 +94,8 @@ export class OptionsToolbar extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
+    onFollowOnQueryResult: PropTypes.func,
   }
 
   static defaultProps = {
@@ -115,6 +123,8 @@ export class OptionsToolbar extends React.Component {
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     showResetQueryOption: false,
+    enableFollowOnQuery: false,
+    onFollowOnQueryResult: () => {},
   }
 
   componentDidMount = () => {
@@ -842,6 +852,93 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
+  handleFollowOnQueryTextChange = (e) => {
+    this.setState({ followOnQueryText: e.target.value, followOnError: null })
+  }
+
+  handleFollowOnQueryKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      this.handleFollowOnQuerySubmit()
+    }
+  }
+
+  handleFollowOnQuerySubmit = async () => {
+    this.setState({ isFollowOnQueryLoading: true, followOnError: null })
+    try {
+      const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+      const queryResponse = this.props.responseRef?.queryResponse
+      const filteredRows = this.props.responseRef?.tableData || queryResponse?.data?.data?.rows
+
+      const response = await fetchFollowOnQuery({
+        data: {
+          question: this.state.followOnQueryText.trim(),
+          additional_context: {
+            text: queryResponse?.data?.data?.text,
+            interpretation: queryResponse?.data?.data?.interpretation,
+            focus_prompt: '',
+          },
+          columns: queryResponse?.data?.data?.columns,
+          rows: filteredRows,
+        },
+        queryID: queryResponse?.data?.data?.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const { columns, rows } = response?.data ?? {}
+      this.setState({ isFollowOnPopoverOpen: false, followOnQueryText: '' })
+      this.props.onFollowOnQueryResult({ columns, rows })
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Something went wrong. Please try again.'
+      this.setState({ followOnError: errorMessage })
+    } finally {
+      if (this._isMounted) {
+        this.setState({ isFollowOnQueryLoading: false })
+      }
+    }
+  }
+
+  renderFollowOnQueryBtn = () => {
+    return (
+      <Popover
+        key={`follow-on-query-button-${this.COMPONENT_KEY}`}
+        isOpen={this.state.isFollowOnPopoverOpen}
+        padding={8}
+        onClickOutside={() => this.setState({ isFollowOnPopoverOpen: false, followOnError: null, followOnQueryText: '' })}
+        content={() => (
+          <FollowOnQueryPopoverContent
+            queryText={this.state.followOnQueryText}
+            onQueryTextChange={this.handleFollowOnQueryTextChange}
+            onSubmit={this.handleFollowOnQuerySubmit}
+            onKeyDown={this.handleFollowOnQueryKeyDown}
+            isLoading={this.state.isFollowOnQueryLoading}
+            error={this.state.followOnError}
+          />
+        )}
+        parentElement={this.props.popoverParentElement}
+        boundaryElement={this.props.popoverParentElement}
+        positions={this.props.popoverPositions ?? ['top', 'bottom', 'left', 'right']}
+        align={this.props.popoverAlign}
+        contentClassName='options-toolbar-summary-dropdown-popover'
+      >
+        <Button
+          onClick={() => this.setState({ isFollowOnPopoverOpen: !this.state.isFollowOnPopoverOpen, followOnError: null })}
+          className={this.getMenuItemClass()}
+          tooltip='Ask a follow-up question'
+          tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+          size='small'
+        >
+          <Icon type='reply' />
+        </Button>
+      </Popover>
+    )
+  }
+
   renderMagicWandBtn = () => {
     const queryResponse = this.props.responseRef?.queryResponse
     const { isDisabled, tooltip: disabledTooltip } = getSummaryButtonDisabledState({
@@ -928,7 +1025,7 @@ export class OptionsToolbar extends React.Component {
       <ErrorBoundary>
         <div
           className={`${isMobile ? 'react-autoql-toolbar-mobile' : 'react-autoql-toolbar'} options-toolbar
-			${this.state.activeMenu || this.state.isSummaryPopoverOpen ? 'active' : ''}
+			${this.state.activeMenu || this.state.isSummaryPopoverOpen || this.state.isFollowOnPopoverOpen ? 'active' : ''}
 			${this.props.className || ''}`}
           data-test='autoql-options-toolbar'
         >
@@ -938,6 +1035,7 @@ export class OptionsToolbar extends React.Component {
             this.props.enableMagicWand &&
             shouldShowButton.showMagicWandButton &&
             this.renderMagicWandBtn()}
+          {!isMarkdownOnly && shouldShowButton.showFollowOnQueryButton && this.renderFollowOnQueryBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {shouldShowButton.showCopyMarkdownButton && this.renderCopyMarkdownBtn()}
           {shouldShowButton.showDeleteButton && (
@@ -1035,6 +1133,7 @@ export class OptionsToolbar extends React.Component {
           queryResponse: response,
           isMarkdownOnly,
         }),
+        showFollowOnQueryButton: !isMarkdownOnly && !!props.enableFollowOnQuery && hasData && !allColumnsHidden,
       }
 
       // Don't show more options button if it's a markdown-only message
