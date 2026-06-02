@@ -1288,10 +1288,12 @@ export default class ChatMessage extends React.Component {
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.isIntroMessage ? undefined : this.props.createDataAlertCallback}
-            customOptions={isDataPreview || this.props.isIntroMessage ? [] : this.props.customToolbarOptions}
+            customOptions={isDataPreview || this.props.isIntroMessage || (this.props.content && !this.props.response) ? [] : this.props.customToolbarOptions}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            source={this.props.source}
+            scope={this.props.scope}
             enableFollowOnQuery={this.props.enableFollowOnQuery}
             onFollowOnQueryResult={this.onFollowOnQueryResult}
           />

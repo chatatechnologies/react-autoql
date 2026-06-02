@@ -912,6 +912,7 @@ export default class ChatContent extends React.Component {
             tooltipID={this.props.tooltipID}
             executeQuery={this.props.executeQuery}
             enableQueryInputTopics={this.props.enableQueryInputTopics}
+            disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
           />
         </div>
       </ErrorBoundary>

@@ -33,6 +33,7 @@ import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
+import DataPreview from '../DataExplorer/DataPreview'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
@@ -98,6 +99,7 @@ class QueryInput extends React.Component {
     enableQueryInputTopics: PropTypes.bool,
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
+    disableColumnSelection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -125,6 +127,7 @@ class QueryInput extends React.Component {
     onResponseCallback: () => {},
     addResponseMessage: () => {},
     executeQuery: () => {},
+    disableColumnSelection: false,
   }
 
   componentDidMount = () => {
@@ -916,33 +919,54 @@ class QueryInput extends React.Component {
           this.props.quickTopicsPlacement
         }`}
       >
-        {/* Expanded Sample Queries Section */}
+        {/* Expanded Section */}
         {this.state.isExpanded && this.state.selectedTopic && (
           <div className='query-suggestions-expanded'>
             <div className='query-suggestions-expanded-header'>
-              {this.renderSampleQueriesHeader()}
+              {this.props.disableColumnSelection ? (
+                <div className='react-autoql-data-explorer-title-text'>
+                  <span className='react-autoql-data-explorer-title-text-sample-queries'>
+                    {this.state.selectedTopic.displayName}
+                  </span>
+                </div>
+              ) : (
+                this.renderSampleQueriesHeader()
+              )}
               <div className='query-suggestions-expanded-header-actions'>
                 <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
                   <Icon type='close' />
                 </button>
               </div>
             </div>
-            <div className='query-suggestions-sample-list'>
-              <SampleQueryList
-                authentication={this.props.authentication}
-                columns={this.getColumnsForSuggestions()}
-                context={this.state.selectedTopic.context}
-                valueLabel={this.state.selectedTopic.valueLabel}
-                searchText=''
-                executeQuery={this.props.executeQuery}
-                skipQueryValidation={false}
-                userSelection={null}
-                tooltipID={this.props.tooltipID}
-                scope={this.props.scope}
-                shouldRender={this.props.shouldRender}
-                onSuggestionListResponse={() => {}}
-              />
-            </div>
+            {this.props.disableColumnSelection ? (
+              <div className='query-suggestions-data-preview'>
+                <DataPreview
+                  authentication={this.props.authentication}
+                  dataFormatting={this.props.dataFormatting}
+                  subject={this.state.selectedTopic}
+                  disableColumnSelection={true}
+                  shouldRender={this.props.shouldRender}
+                  tooltipID={this.props.tooltipID}
+                />
+              </div>
+            ) : (
+              <div className='query-suggestions-sample-list'>
+                <SampleQueryList
+                  authentication={this.props.authentication}
+                  columns={this.getColumnsForSuggestions()}
+                  context={this.state.selectedTopic.context}
+                  valueLabel={this.state.selectedTopic.valueLabel}
+                  searchText=''
+                  executeQuery={this.props.executeQuery}
+                  skipQueryValidation={false}
+                  userSelection={null}
+                  tooltipID={this.props.tooltipID}
+                  scope={this.props.scope}
+                  shouldRender={this.props.shouldRender}
+                  onSuggestionListResponse={() => {}}
+                />
+              </div>
+            )}
           </div>
         )}
 

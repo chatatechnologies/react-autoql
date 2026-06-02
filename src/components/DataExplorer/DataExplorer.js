@@ -566,7 +566,7 @@ export default class DataExplorer extends React.Component {
           ) : null}
           {this.renderDataPreview()}
           {this.renderTopicsListForVL()}
-          {this.props.enableQuerySuggestions && this.renderQuerySuggestions()}
+          {this.props.enableQuerySuggestions && !this.props.disableColumnSelection && this.renderQuerySuggestions()}
         </div>
       </div>
     )

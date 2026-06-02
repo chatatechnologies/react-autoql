@@ -309,6 +309,7 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.setParamsForTileTimeout)
       clearTimeout(this.queryInputTimer)
       clearTimeout(this.secondQueryInputTimer)
+      clearTimeout(this.titleInputTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
         this.cancelAllQueries()
@@ -1780,6 +1781,8 @@ export class DashboardTile extends React.Component {
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             isEditing={this.props.isEditing}
+            source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+            scope={this.props.scope}
             {...optionsToolbarProps}
           />
         </div>
