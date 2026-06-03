@@ -387,19 +387,13 @@ export class DashboardTile extends React.Component {
     return true
   }
 
-  // Return true for server/internal errors that should be retried
+  // Return true for errors that warrant a force-retry
   isServerError = (resp) => {
     try {
-      const ref = resp?.data?.reference_id || resp?.data?.referenceId || resp?.reference_id
-      const msg = String(resp?.data?.message || resp?.message || '')
-      const status = Number(resp?.status ?? resp?.data?.status)
-
-      if (typeof isError500Type === 'function' && isError500Type(resp)) return true
-      if (Number.isFinite(status) && status >= 500 && status < 600) return true
-      if (msg.toLowerCase().includes('internal server error')) return true
-      if (typeof ref === 'string' && ref.endsWith('.500')) return true
+      const ref = String(resp?.data?.reference_id || resp?.data?.referenceId || resp?.reference_id || '')
+      if (ref.endsWith('.502')) return true
     } catch (e) {
-      // treat unknown shapes as non-server-error
+      // treat unknown shapes as non-retryable
     }
     return false
   }
@@ -675,7 +669,6 @@ export class DashboardTile extends React.Component {
         if (this.isServerError(resp) && !requestData.force) {
           const retryData = { ...requestData, force: true }
 
-          // Emit telemetry (prefer `onRetry`, fallback to `onErrorCallback`).
           try {
             const payload = { type: 'retry', retryData }
             if (typeof this.props?.onRetry === 'function') this.props.onRetry(payload)
@@ -684,7 +677,6 @@ export class DashboardTile extends React.Component {
             // ignore
           }
 
-          // Immediate retry using the original query function
           return tryRequest(retryData)
         }
       } catch (e) {
