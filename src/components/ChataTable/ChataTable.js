@@ -1475,19 +1475,18 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    const newColumns = this.props.columns.map((col) =>
-      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
-    )
-
-    this.props.updateColumns(
-      newColumns,
-      this.props.response?.data?.data?.fe_req,
-      this.props.response?.data?.data?.available_selects,
-    )
-
-    setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-      console.error(error)
-    })
+    // TODO: re-enable when column visibility is re-added for dashboards (without API call)
+    // const newColumns = this.props.columns.map((col) =>
+    //   col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    // )
+    // this.props.updateColumns(
+    //   newColumns,
+    //   this.props.response?.data?.data?.fe_req,
+    //   this.props.response?.data?.data?.available_selects,
+    // )
+    // setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+    //   console.error(error)
+    // })
   }
 
   updateColumn = (field, newParams) => {
@@ -1617,10 +1616,11 @@ export default class ChataTable extends React.Component {
               Edit Column
             </li>
           )}
-          <li onClick={this.onRemoveColumnClick}>
+          {/* TODO: re-enable when column visibility is re-added for dashboards */}
+          {/* <li onClick={this.onRemoveColumnClick}>
             <Icon type='close' />
             Remove Column
-          </li>
+          </li> */}
         </ul>
       </div>
     )
