@@ -319,6 +319,11 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.callbackSubsciptionTimer)
       clearTimeout(this.resetSettleTimer)
       clearTimeout(this.windowResizeTimer)
+      this.callbackSubsciptions = []
+      this.tileLog = []
+      this.pendingResetTiles = null
+      this.pendingResetUndoTiles = null
+      this.pendingResetHistory = null
     } catch (error) {
       console.error(error)
     }
@@ -330,7 +335,7 @@ class DashboardWithoutTheme extends React.Component {
     try {
       const unedited = this.state.uneditedDashboardTiles || this.tileLog?.[0] || this.getMostRecentTiles()
       if (!unedited) return
-      this.tileLog = [_cloneDeep(unedited)]
+      this.tileLog = [this.cloneTilesForLog(unedited)]
       this.currentLogIndex = 0
       this.debouncedOnChange(_cloneDeep(unedited), false)
       this.props.stopEditingCallback?.()
@@ -629,6 +634,14 @@ class DashboardWithoutTheme extends React.Component {
     return
   }
 
+  // Clone tile config for undo history; keep queryResponse by reference (never mutated in-place) to avoid copying large payloads.
+  cloneTilesForLog = (tiles) =>
+    tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => ({
+      ..._cloneDeep(rest),
+      queryResponse,
+      secondQueryResponse,
+    }))
+
   addTileStateToLog = (tiles) => {
     if (!this.props.isEditing || !tiles) {
       return
@@ -636,7 +649,7 @@ class DashboardWithoutTheme extends React.Component {
 
     if (this.isResettingTile) {
       // During reset, absorb post-execution saves into tileLog[0] to keep pre-reset history intact.
-      this.tileLog[0] = _cloneDeep(tiles)
+      this.tileLog[0] = this.cloneTilesForLog(tiles)
       clearTimeout(this.resetSettleTimer)
       this.resetSettleTimer = setTimeout(() => {
         clearTimeout(this.resetGuardTimer)
@@ -661,7 +674,7 @@ class DashboardWithoutTheme extends React.Component {
         // Even if nothing structural changed, update tileLog[0] with the latest
         // response data so that undo restores tiles with their query results intact.
         if (isJustAddedTile) {
-          this.tileLog[this.currentLogIndex] = _cloneDeep(tiles)
+          this.tileLog[this.currentLogIndex] = this.cloneTilesForLog(tiles)
         }
         return
       }
@@ -672,7 +685,7 @@ class DashboardWithoutTheme extends React.Component {
       if (this.currentLogIndex > 0) {
         this.tileLog = this.tileLog.slice(this.currentLogIndex)
       }
-      this.tileLog[0] = _cloneDeep(tiles)
+      this.tileLog[0] = this.cloneTilesForLog(tiles)
       this.currentLogIndex = 0
       return
     }
@@ -682,7 +695,7 @@ class DashboardWithoutTheme extends React.Component {
       this.tileLog = this.tileLog.slice(this.currentLogIndex)
     }
 
-    this.tileLog.unshift(_cloneDeep(tiles))
+    this.tileLog.unshift(this.cloneTilesForLog(tiles))
     this.currentLogIndex = 0
 
     // Cap history to prevent memory leaks from large queryResponse objects.

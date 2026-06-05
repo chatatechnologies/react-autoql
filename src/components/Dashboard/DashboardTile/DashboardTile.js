@@ -22,7 +22,6 @@ import {
   runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
-  isError500Type,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
@@ -303,8 +302,10 @@ export class DashboardTile extends React.Component {
     }
     const prevQR = prevProps.tile?.queryResponse
     const nextQR = this.props.tile?.queryResponse
-    if (nextQR && prevQR && nextQR !== prevQR && !this.state.isTopExecuting) {
-      // Force QueryOutput to remount when QR is replaced externally — it doesn't reinitialize from a prop update.
+    const prevQRId = prevQR?.data?.data?.query_id
+    const nextQRId = nextQR?.data?.data?.query_id
+    if (nextQR && prevQR && prevQRId !== nextQRId && !this.state.isTopExecuting) {
+      // query_id guards against false positives from _cloneDeep creating new references on every tile update.
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
   }
@@ -355,6 +356,7 @@ export class DashboardTile extends React.Component {
 
     clearTimeout(this.setParamsForTileTimeout)
     this.setParamsForTileTimeout = setTimeout(() => {
+      if (!this._isMounted) return
       this.props.setParamsForTile(this.paramsToSet, this.props.tile.i, _cloneDeep(this.callbackArray))
       this.paramsToSet = {}
       this.callbackArray = []
@@ -620,9 +622,8 @@ export class DashboardTile extends React.Component {
               currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
           }
         }
+        paramsToSet.secondNetworkColumnConfig = this.getNetworkColumnConfig(response)
       }
-
-      paramsToSet.secondNetworkColumnConfig = this.getNetworkColumnConfig(response)
 
       this.debouncedSetParamsForTile(paramsToSet, this.setBottomExecuted)
       return response

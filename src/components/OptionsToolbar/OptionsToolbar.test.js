@@ -623,6 +623,33 @@ describe('showRefreshDataButton gating conditions', () => {
     const shouldShowButton = instance.getShouldShowButtonObj(instance.props)
     expect(shouldShowButton.showRefreshDataButton).toBe(true)
   })
+
+  test('showMoreOptionsButton is true in edit mode with showResetQueryOption even when showRefreshDataButton is false', () => {
+    // Simulates a single-value tile: showRefreshDataButton will be forced false by the displayType check,
+    // but the More Options button should still appear because showRefreshInEdit + showResetQueryOption = true.
+    const responseRef = {
+      state: { displayType: 'single-value', customColumnSelects: [] },
+      formattedTableParams: { filters: [], sorters: [] },
+      queryResponse: { data: { data: { display_type: 'data', text: 'total revenue', rows: [[42]] } } },
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        showRefreshInEdit={true}
+        showResetQueryOption={true}
+        onRefreshClick={jest.fn()}
+        responseRef={responseRef}
+      />,
+    )
+    const shouldShowButton = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+    expect(shouldShowButton.showMoreOptionsButton).toBe(true)
+  })
 })
 
 describe('exportCSV with filters', () => {

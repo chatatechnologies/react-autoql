@@ -124,22 +124,31 @@ describe('Dashboard resetTile new fields', () => {
 })
 
 describe('Dashboard discardChanges', () => {
-  it('mounts and renders successfully', () => {
-    const wrapper = mount(<Dashboard tiles={[makeTile()]} onChange={jest.fn()} isEditing={true} />)
+  it('calls onChange with unedited tiles', () => {
+    jest.useFakeTimers()
+    const tile = makeTile()
+    const onChange = jest.fn()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
 
-    expect(wrapper).toBeDefined()
+    instance.discardChanges()
+    jest.advanceTimersByTime(200)
 
+    expect(onChange).toHaveBeenCalled()
+    jest.useRealTimers()
     wrapper.unmount()
   })
 
-  it('handles stopEditingCallback prop', () => {
+  it('calls stopEditingCallback', () => {
     const stopEditingCallback = jest.fn()
     const wrapper = mount(
       <Dashboard tiles={[makeTile()]} onChange={jest.fn()} isEditing stopEditingCallback={stopEditingCallback} />,
     )
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
 
-    expect(wrapper).toBeDefined()
+    instance.discardChanges()
 
+    expect(stopEditingCallback).toHaveBeenCalled()
     wrapper.unmount()
   })
 })
@@ -174,5 +183,21 @@ describe('Dashboard resetTileStateLog', () => {
     expect(wrapper).toBeDefined()
 
     wrapper.unmount()
+  })
+})
+
+describe('Dashboard componentWillUnmount memory cleanup', () => {
+  it('clears tileLog and pendingResetTiles on unmount', () => {
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    // Seed some state
+    instance.pendingResetTiles = [tile]
+
+    wrapper.unmount()
+
+    expect(instance.tileLog).toEqual([])
+    expect(instance.pendingResetTiles).toBeNull()
   })
 })

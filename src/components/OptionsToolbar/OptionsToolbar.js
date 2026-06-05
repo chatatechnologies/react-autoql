@@ -659,9 +659,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const tabulatorHeaderFilters = this.props.responseRef?.getTabulatorHeaderFilters()
-    const isFiltered =
-      !!this.props.responseRef?.formattedTableParams?.filters?.length && !!tabulatorHeaderFilters?.length
+    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -1092,10 +1090,8 @@ export class OptionsToolbar extends React.Component {
 
       // Don't show more options button if it's a markdown-only message
       const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
-      // Reset query always shows in edit mode; refresh data button follows its own gating.
       const willShowRefreshInMenu =
-        (shouldShowButton.showRefreshDataButton || (!!props.showRefreshInEdit && !!props.showResetQueryOption)) &&
-        !!props.showResetQueryOption
+        !!props.showResetQueryOption && (shouldShowButton.showRefreshDataButton || !!props.showRefreshInEdit)
 
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&
