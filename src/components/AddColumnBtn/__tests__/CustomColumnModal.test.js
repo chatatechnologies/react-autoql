@@ -3000,6 +3000,57 @@ describe('CustomColumnModal - Empty Number Placeholder Lifecycle', () => {
     expect(inst.hasVariablesInColumnFn()).toBe(true)
     expect(inst.isFormulaComplete()).toBe(true)
   })
+})
+
+describe('CustomColumnModal - buildFunctionSql MEDIAN median_type', () => {
+  const col = { field: '0', name: 'revenue', title: 'Revenue', is_visible: true }
+
+  const makeInst = (medianType) => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[col]}
+        queryResponse={{ data: { data: { median_type: medianType } } }}
+      />,
+    )
+    return wrapper.instance()
+  }
+
+  const medianChunk = (column) => ({
+    type: CustomColumnTypes.FUNCTION,
+    fn: CustomColumnValues.MEDIAN,
+    column,
+  })
+
+  it('generates MEDIAN(col) when median_type is AGG', () => {
+    const inst = makeInst('AGG')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql.trim()).toBe('MEDIAN(revenue)')
+  })
+
+  it('generates MEDIAN(col) OVER() when median_type is window', () => {
+    const inst = makeInst('window')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql.replace(/\s+/g, ' ').trim()).toBe('MEDIAN(revenue) OVER()')
+  })
+
+  it('generates MEDIAN(col) OVER() when median_type is absent', () => {
+    const inst = makeInst(undefined)
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql.replace(/\s+/g, ' ').trim()).toBe('MEDIAN(revenue) OVER()')
+  })
+
+  it('AGG median does not include OVER keyword', () => {
+    const inst = makeInst('AGG')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql).not.toContain('OVER')
+  })
+
+  it('window median includes OVER keyword', () => {
+    const inst = makeInst('window')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql).toContain('OVER')
+  })
 
   it('recovers gracefully when expansion fails during mount, keeping modal usable', async () => {
     // Create a column with nested custom columns

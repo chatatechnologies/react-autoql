@@ -818,6 +818,53 @@ export default class CustomColumnModal extends React.Component {
       return `(COALESCE(SUM(${colName}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${colName}) OVER(), 0), 0) * 100)`
     }
 
+    // MEDIAN - database-specific handling
+    if (columnFn.fn === CustomColumnValues.MEDIAN) {
+      const medianType = this.props.queryResponse?.data?.data?.median_type
+      const hasOverClause = !!columnFn?.orderby || !!columnFn?.groupby || !!columnFn?.rowsOrRange
+
+      // Aggregate-only form (AGG type with no OVER clause)
+      if (medianType === 'AGG' && !hasOverClause) {
+        return `MEDIAN(${colName})`
+      }
+
+      // Aggregate POSTGRES-only form (when no OVER clause)
+      if (medianType === 'POSTGRES' && !hasOverClause) {
+        return `PERCENTILE_CONT(${colName})`
+      }
+
+      // Window functions with OVER clause
+      const partitionClause = this.buildPartitionClause(columnFn)
+      const orderbyCol = getVisibleColumns(this.props.columns).find(
+        (column) => column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy),
+      )?.name
+      const orderbyDir = this.getOrderByDirection(columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection)
+      const orderClause = this.buildOrderByClause(columnFn, true)
+      const overInner = `${partitionClause}${partitionClause && orderClause ? ' ' : ''}${orderClause}`
+
+      // Group 1: PERCENTILE_CONT with WITHIN GROUP syntax
+      if (
+        medianType === 'AMAZON REDSHIFT' ||
+        medianType === 'LIBERATOR' ||
+        medianType === 'MYSQL' ||
+        medianType === 'ATHENA' ||
+        medianType === 'AURORA' ||
+        medianType === 'MICROSOFT'
+      ) {
+        const withinGroup = orderbyCol ? `WITHIN GROUP (ORDER BY ${orderbyCol} ${orderbyDir})` : ''
+        return `PERCENTILE_CONT(0.5) ${withinGroup} OVER(${partitionClause || ''})`
+      }
+
+      // Group 2: BigQuery - PERCENTILE_CONT with positional arguments
+      if (medianType === 'BIGQUERY') {
+        return `PERCENTILE_CONT(${colName}, 0.5) OVER(${overInner})`
+      }
+
+      // Group 3: MEDIAN window function
+      // Includes: SNOWFLAKE, VERTICA, DATABRICKS, ORACLE, POSTGRES (with OVER), window (generic), AGG (with OVER), undefined
+      return `MEDIAN(${colName}) OVER(${overInner})`
+    }
+
     // SUM-derived percent (window function whose nextSelector is SUM)
     if (WINDOW_FUNCTIONS[columnFn?.fn ?? this.state.selectedFnType]?.nextSelector === CustomColumnTypes.SUM) {
       return `(COALESCE(${colName?.substring(
@@ -1536,6 +1583,11 @@ export default class CustomColumnModal extends React.Component {
       !!this.state.selectedFnOrderBy &&
       !!this.state.selectedFnMovingAverageTimeInterval &&
       this.state.selectedFnMovingAverageTimeInterval > 0
+    const medianType = this.props.queryResponse?.data?.data?.median_type
+    const medianComplete =
+      this.state.selectedFnOperation === CustomColumnValues.MEDIAN &&
+      !!this.state.selectedFnColumn &&
+      (medianType !== 'window' || !!this.state.selectedFnOrderBy)
     const cumulateiveSumComplete =
       this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM &&
       !!this.state.selectedFnColumn &&
@@ -1555,6 +1607,7 @@ export default class CustomColumnModal extends React.Component {
       totalPercentComplete ||
       rankComplete ||
       movingAvgComplete ||
+      medianComplete ||
       cumulateiveSumComplete ||
       cumulateivePercentComplete ||
       changeComplete
@@ -2477,6 +2530,109 @@ export default class CustomColumnModal extends React.Component {
                   isDisabled={!this.state.selectedFnOrderBy}
                   outlined={true}
                 />
+              </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.MEDIAN && (
+            <>
+              <div>Median</div>
+              <div>
+                <Select
+                  label='Median Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Partition By Column'
+                  isRequired={false}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnGroupby ?? null}
+                  onChange={(selectedFnGroupby) => {
+                    this.setState({ selectedFnGroupby })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={allColumnsOptions}
+                />
+              </div>
+              <div>
+                <Select
+                  label='Order By Column'
+                  isRequired={false}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnOrderBy ?? null}
+                  onChange={(selectedFnOrderBy) =>
+                    this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
+                  }
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={allColumnsOptions}
+                />
+                {this.state.selectedFnOrderBy && (
+                  <Select
+                    label='Order By Direction'
+                    isRequired={false}
+                    className='custom-column-window-fn-selector'
+                    value={this.state.selectedFnOrderByDirection ?? null}
+                    onChange={(selectedFnOrderByDirection) =>
+                      this.setState(
+                        { selectedFnOrderByDirection },
+                        () => this.syncNewColumnFnArray(this.state.columnFn),
+                      )
+                    }
+                    positions={['bottom', 'top', 'right', 'left']}
+                    options={ORDERBY_DIRECTIONS}
+                    outlined={true}
+                  />
+                )}
+              </div>
+              <div>
+                <Select
+                  label='Rows or Range'
+                  isRequired={false}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnRowsOrRange ?? null}
+                  onChange={(value) => this.changeChunkRowsOrRange(value, CustomColumnTypes.FUNCTION, 0)}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={ROWS_RANGE}
+                />
+                {this.state.selectedFnRowsOrRange && (
+                  <>
+                    <Select
+                      label='Start With'
+                      isRequired={false}
+                      className='custom-column-window-fn-selector'
+                      value={this.state.selectedFnRowsOrRangeOptionPre ?? null}
+                      onChange={(value) => this.changeChunkRowsOrRangeStart(value, CustomColumnTypes.FUNCTION, 0)}
+                      positions={['bottom', 'top', 'right', 'left']}
+                      options={ROWS_RANGE_OPTIONS.filter((option) => option.canStartWith === true)}
+                    />
+                    <Select
+                      label='End With'
+                      isRequired={false}
+                      className='custom-column-window-fn-selector'
+                      value={this.state.selectedFnRowsOrRangeOptionPost ?? null}
+                      onChange={(value) => this.changeChunkRowsOrRangeEnd(value, CustomColumnTypes.FUNCTION, 0)}
+                      positions={['bottom', 'top', 'right', 'left']}
+                      options={ROWS_RANGE_OPTIONS.filter(
+                        (option) => option.canEndWith === true && option.value !== this.state.selectedFnRowsOrRangeOptionPre,
+                      )}
+                    />
+                  </>
+                )}
               </div>
             </>
           )}
