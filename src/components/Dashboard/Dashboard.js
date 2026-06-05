@@ -324,34 +324,16 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  handleDiscardEvent = (e) => {
-    try {
-      this.discardChanges()
-    } catch (error) {
-      console.error('Error handling discard event:', error)
-    }
-  }
+  handleDiscardEvent = () => this.discardChanges()
 
   discardChanges = () => {
     try {
       const unedited = this.state.uneditedDashboardTiles || this.tileLog?.[0] || this.getMostRecentTiles()
       if (!unedited) return
-
-      // Reset history to the unedited state
       this.tileLog = [_cloneDeep(unedited)]
       this.currentLogIndex = 0
-
-      // Notify parent of the restored state and do not save this action in the log
       this.debouncedOnChange(_cloneDeep(unedited), false)
-
-      // If host provided a stopEditing callback, call it to exit edit mode
-      if (this.props.stopEditingCallback) {
-        try {
-          this.props.stopEditingCallback()
-        } catch (err) {
-          console.error('Error calling stopEditingCallback after discard:', err)
-        }
-      }
+      this.props.stopEditingCallback?.()
     } catch (error) {
       console.error('Error discarding dashboard changes:', error)
     }
@@ -475,8 +457,7 @@ class DashboardWithoutTheme extends React.Component {
           // Find the corresponding tile to check if it already has data
           const tile = tiles.find((t) => t.key === dashboardTile || t.i === dashboardTile)
 
-          // If we're in the middle of a single-tile reset, skip the tile being
-          // reset — resetTile already calls processTile on it directly.
+          // Skip tile being reset — resetTile calls processTile directly.
           if (
             this.isResettingTile &&
             this.resettingTileId &&
@@ -686,10 +667,7 @@ class DashboardWithoutTheme extends React.Component {
       }
     }
 
-    // Collapse "add tile" + subsequent edits on that tile into one undo step.
-    // If tileLog[0] has more tiles than tileLog[1] (a tile was just added) and the
-    // new state has the same tile count (user is editing that new tile, not adding another),
-    // replace tileLog[0] instead of pushing a new entry.
+    // Collapse "add tile + initial edit" into a single undo step.
     if (isJustAddedTile) {
       if (this.currentLogIndex > 0) {
         this.tileLog = this.tileLog.slice(this.currentLogIndex)
@@ -707,7 +685,7 @@ class DashboardWithoutTheme extends React.Component {
     this.tileLog.unshift(_cloneDeep(tiles))
     this.currentLogIndex = 0
 
-    // Cap history — queryResponse objects are large; unbounded growth caused multi-GB memory leaks.
+    // Cap history to prevent memory leaks from large queryResponse objects.
     if (this.tileLog.length > 20) {
       this.tileLog.length = 20
     }
@@ -738,14 +716,7 @@ class DashboardWithoutTheme extends React.Component {
     try {
       const oldTiles = this.getMostRecentTiles()
 
-      // Guard against a transient layout/tiles count mismatch. During undo/redo the
-      // controlled `tiles` prop lags one render: changeCurrentTileState() emits the
-      // restored (e.g. smaller) tile set and immediately nulls onChangeTiles, so until
-      // the host re-renders, getMostRecentTiles() still returns the old, larger set.
-      // react-grid-layout meanwhile fires onLayoutChange for the NEW tile count. Merging
-      // a shorter layout onto the longer stale array leaves the just-removed tile in
-      // place and re-emits it via onChange — silently reverting the undo. The authoritative
-      // onChange has already been sent, so skip this stale echo.
+      // Skip stale layout echo when tile count doesn't match (undo/redo lag in react-grid-layout).
       if (!Array.isArray(oldTiles) || !Array.isArray(layout) || layout.length !== oldTiles.length) {
         return
       }
@@ -837,14 +808,12 @@ class DashboardWithoutTheme extends React.Component {
       const target = this.pendingResetUndoTiles
       this.pendingResetUndoTiles = null
 
-      // Use the current key so DashboardTile stays mounted (key changed after reset).
+      // Preserve current key to keep DashboardTile mounted (key changed after reset).
       const currentTiles = this.getMostRecentTiles()
       const restoredTiles = target.map((preTile) => {
         const cur = currentTiles?.find((t) => t.i === preTile.i)
         return cur ? { ...preTile, key: cur.key } : preTile
       })
-
-      // Rebuild from pre-reset history, discarding auto-saves made after the reset.
       const preResetHistory = this.pendingResetHistory || []
       this.pendingResetHistory = null
       this.tileLog = [_cloneDeep(restoredTiles), ...preResetHistory.slice(1)]
@@ -1040,21 +1009,18 @@ class DashboardWithoutTheme extends React.Component {
         secondQueryResponse: null,
       }
 
-      // Bypass addTileStateToLog — its equality check skips re-saving a previously-reset tile.
+      // Save pre-reset state for undo; bypass addTileStateToLog (equality check would skip it).
       if (this.props.isEditing) {
         const preResetTiles = _cloneDeep(this.getMostRecentTiles())
-        // Direct undo target — restored by undo() without tileLog navigation.
         this.pendingResetUndoTiles = preResetTiles
         const history = this.tileLog.slice(this.currentLogIndex)
         history[0] = preResetTiles
-        // Saved so undo() can rebuild a clean tileLog, discarding post-reset auto-saves.
         this.pendingResetHistory = history
-        // tileLog[0] = cleared tile for IN-PLACE absorption; tileLog[1+] = pre-reset history.
         this.tileLog = [_cloneDeep(tiles), ...history]
         this.currentLogIndex = 0
       }
 
-      // Keep flag set so executeDashboard / executeOnStopEditing skip this tile while reset is in flight.
+      // Guard flags prevent executeDashboard from double-executing this tile.
       this.isResettingTile = true
       this.resettingTileId = id
       this.pendingResetTiles = _cloneDeep(tiles)
@@ -1072,7 +1038,7 @@ class DashboardWithoutTheme extends React.Component {
             if (!tileRef?.processTile) {
               return resolve()
             }
-            // Never use the cached endpoint for reset — GET ignores request params, returning stale filtered data.
+            // Force non-cached fetch — cached endpoint ignores request params.
             const promise = tileRef.processTile({ isReset: true })
             Promise.resolve(promise).then(resolve).catch(reject)
           }, 0)

@@ -481,6 +481,29 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  getNetworkColumnConfig = (response) => {
+    try {
+      let cols = response?.data?.data?.columns || []
+      if (!cols.length && Array.isArray(response?.data?.data?.rows) && response.data.data.rows.length > 0) {
+        const firstRow = response.data.data.rows[0]
+        cols = Array.isArray(firstRow)
+          ? firstRow.map((_, i) => ({ name: `col${i}` }))
+          : Object.keys(firstRow || {}).map((k) => ({ name: k }))
+      }
+      const detected = typeof findNetworkColumns === 'function' ? findNetworkColumns(cols) : null
+      if (detected && detected.sourceColumnIndex !== -1 && detected.targetColumnIndex !== -1) {
+        return {
+          sourceColumnIndex: detected.sourceColumnIndex,
+          targetColumnIndex: detected.targetColumnIndex,
+          weightColumnIndex: detected.weightColumnIndex,
+        }
+      }
+      return null
+    } catch (e) {
+      return null
+    }
+  }
+
   endTopQuery = ({ response, isReset = false }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
@@ -537,34 +560,7 @@ export class DashboardTile extends React.Component {
             }
           }
         }
-        // Detect network columns from the response and persist or clear networkColumnConfig
-        try {
-          let responseColumns = response?.data?.data?.columns || []
-          // Fallback: some responses omit `columns` but include `rows` (array of objects or arrays).
-          // Derive a minimal columns array from the first row to improve network detection.
-          if ((!responseColumns || responseColumns.length === 0) && Array.isArray(response?.data?.data?.rows) && response.data.data.rows.length > 0) {
-            const firstRow = response.data.data.rows[0]
-            if (Array.isArray(firstRow)) {
-              responseColumns = firstRow.map((_, idx) => ({ name: `col${idx}` }))
-            } else if (firstRow && typeof firstRow === 'object') {
-              responseColumns = Object.keys(firstRow).map((k) => ({ name: k }))
-            }
-          }
-
-          const detected = typeof findNetworkColumns === 'function' ? findNetworkColumns(responseColumns) : null
-          if (detected && detected.sourceColumnIndex !== -1 && detected.targetColumnIndex !== -1) {
-            paramsToSet.networkColumnConfig = {
-              sourceColumnIndex: detected.sourceColumnIndex,
-              targetColumnIndex: detected.targetColumnIndex,
-              weightColumnIndex: detected.weightColumnIndex,
-            }
-          } else {
-            // Explicitly clear any persisted network config when no network-like columns detected
-            paramsToSet.networkColumnConfig = null
-          }
-        } catch (e) {
-          // Fail silently - don't block normal flow
-        }
+        paramsToSet.networkColumnConfig = this.getNetworkColumnConfig(response)
       }
 
       // Update component key after getting new response
@@ -632,32 +628,7 @@ export class DashboardTile extends React.Component {
         }
       }
 
-      // Detect network columns from the second response and persist or clear secondNetworkColumnConfig
-      try {
-        let responseColumns = response?.data?.data?.columns || []
-        // Fallback: derive columns from rows when `columns` is missing to improve detection
-        if ((!responseColumns || responseColumns.length === 0) && Array.isArray(response?.data?.data?.rows) && response.data.data.rows.length > 0) {
-          const firstRow = response.data.data.rows[0]
-          if (Array.isArray(firstRow)) {
-            responseColumns = firstRow.map((_, idx) => ({ name: `col${idx}` }))
-          } else if (firstRow && typeof firstRow === 'object') {
-            responseColumns = Object.keys(firstRow).map((k) => ({ name: k }))
-          }
-        }
-
-        const detected = typeof findNetworkColumns === 'function' ? findNetworkColumns(responseColumns) : null
-        if (detected && detected.sourceColumnIndex !== -1 && detected.targetColumnIndex !== -1) {
-          paramsToSet.secondNetworkColumnConfig = {
-            sourceColumnIndex: detected.sourceColumnIndex,
-            targetColumnIndex: detected.targetColumnIndex,
-            weightColumnIndex: detected.weightColumnIndex,
-          }
-        } else {
-          paramsToSet.secondNetworkColumnConfig = null
-        }
-      } catch (e) {
-        // ignore detection errors
-      }
+      paramsToSet.secondNetworkColumnConfig = this.getNetworkColumnConfig(response)
 
       this.debouncedSetParamsForTile(paramsToSet, this.setBottomExecuted)
       return response
@@ -676,8 +647,7 @@ export class DashboardTile extends React.Component {
       }
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
-      // When isReset=true, use empty arrays directly — props may still carry stale values
-      // if the parent's onChange hasn't propagated the cleared tile state yet
+      // isReset: use empty arrays since props may carry stale values before parent re-renders.
       const additionalColumnSelects = isReset ? [] : (isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects)
       const currentDisplayOverrides = isReset ? [] : (isSecondHalf
         ? this.props.tile?.secondDisplayOverrides
@@ -685,10 +655,8 @@ export class DashboardTile extends React.Component {
       // Get session filters from tile (existing tile-specific filters)
       let currentSessionFilters = isReset ? [] : (isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || [])
 
-      // Merge dashboard slicers if present (applied at query execution time)
-      // Dashboard-level slicers are NOT tile-specific, so apply them even during reset
+      // Merge dashboard-level slicers (applied even during reset, not tile-specific).
       if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0 && !isSecondHalf) {
-        // Combine tile filters with dashboard slicers
         currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
       }
       const currentOrders = isReset ? [] : (isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders)
@@ -790,8 +758,7 @@ export class DashboardTile extends React.Component {
       ? propsDataConfig
       : this.savedTileConfig.dataConfig
 
-    // When isReset=true, use empty arrays directly so we never read stale props or savedTileConfig
-    // (the parent's onChange may not have propagated cleared values into this.props.tile.* yet)
+    // isReset: use empty arrays since props may carry stale values before parent re-renders.
     const columns = isReset ? [] : (queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns)
     const tableFilters = isReset ? [] : (queryChanged ? undefined : this.props.tile.tableFilters || this.savedTileConfig.tableFilters)
 

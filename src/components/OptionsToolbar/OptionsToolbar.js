@@ -422,12 +422,9 @@ export class OptionsToolbar extends React.Component {
                     : undefined,
               }
 
-              // Try to capture QueryInput state.
-              // Prefer the direct ref on responseRef.props.queryInputRef, but fall back
-              // to the global registry (window.__qa_query_input_registry) by query_id.
+              // Capture QueryInput state snapshot (prefers direct ref, falls back to global registry).
               try {
                 let queryInputState = undefined
-                // direct prop ref (preferred)
                 if (
                   this.props.responseRef &&
                   this.props.responseRef.props &&
@@ -437,7 +434,6 @@ export class OptionsToolbar extends React.Component {
                   queryInputState = this.props.responseRef.props.queryInputRef.getState()
                 }
 
-                // fallback: lookup by query id in global registry
                 if (!queryInputState) {
                   const qid = this.props.responseRef?.queryResponse?.data?.data?.query_id
                   if (qid && window && window.__qa_query_input_registry) {
@@ -445,7 +441,6 @@ export class OptionsToolbar extends React.Component {
                       const registryRef = window.__qa_query_input_registry[qid]
                       if (registryRef && registryRef.current && typeof registryRef.current.getState === 'function') {
                         queryInputState = registryRef.current.getState()
-                        // mark that it came from registry in case consumers care
                         payload.queryInputStateFromRegistry = true
                       }
                     } catch (err) {
@@ -1084,12 +1079,10 @@ export class OptionsToolbar extends React.Component {
         }),
       }
 
-      // Additional gating: only show reset when there's an actual query text,
-      // the current display type is not single-value, and there is something to reset (filters, sorts, custom columns)
+      // Hide reset button when there's nothing to reset or the display type is single-value.
       try {
         const queryText = props.responseRef?.queryResponse?.data?.data?.text || ''
         const currentDisplayType = props.responseRef?.state?.displayType
-        // Check for filters, sorts, or custom columns
         const filters = props.responseRef?.formattedTableParams?.filters || []
         const sorters = props.responseRef?.formattedTableParams?.sorters || []
         const customColumns = props.responseRef?.state?.customColumnSelects || []

@@ -74,10 +74,7 @@ class QueryInput extends React.Component {
     }
   }
 
-  /**
-   * Return a serializable snapshot of the QueryInput's important state.
-   * Used by host apps to capture a restore point before a reset.
-   */
+  // Returns a serializable state snapshot (restore point before a reset).
   getState = () => {
     try {
       return {
@@ -94,10 +91,7 @@ class QueryInput extends React.Component {
     }
   }
 
-  /**
-   * Restore a previously-captured state snapshot.
-   * opts: { autoSubmit: boolean }
-   */
+  // Restores a state snapshot previously captured by getState().
   restoreState = (stateSnapshot = {}, opts = { autoSubmit: false }) => {
     try {
       const nextState = {}

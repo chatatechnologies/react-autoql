@@ -269,15 +269,20 @@ describe('Dashboard.updateTileLayout undo echo', () => {
     const instance = wrapper.instance()
 
     // Move tile 'b' — layout length matches current tiles, so it should emit.
+    // updateTileLayout uses a debounced onChange; advance timers to flush it.
+    jest.useFakeTimers()
     instance.updateTileLayout([
       { i: 'a', x: 0, y: 0, w: 6, h: 5 },
       { i: 'b', x: 6, y: 3, w: 6, h: 5 },
     ])
 
+    jest.advanceTimersByTime(100)
+
     expect(onChange).toHaveBeenCalled()
     const lastTiles = onChange.mock.calls.pop()[0]
     expect(lastTiles).toHaveLength(2)
     expect(lastTiles[1].y).toBe(3)
+    jest.useRealTimers()
   })
 })
 
