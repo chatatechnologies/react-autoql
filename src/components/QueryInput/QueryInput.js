@@ -33,7 +33,6 @@ import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
-import DataPreview from '../DataExplorer/DataPreview'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
@@ -74,6 +73,59 @@ class QueryInput extends React.Component {
     }
   }
 
+  /**
+   * Return a serializable snapshot of the QueryInput's important state.
+   * Used by host apps to capture a restore point before a reset.
+   */
+  getState = () => {
+    try {
+      return {
+        inputValue: this.state.inputValue,
+        lastQuery: this.state.lastQuery,
+        queryHistoryIndex: this.state.queryHistoryIndex,
+        selectedTopic: this.state.selectedTopic ? { ...this.state.selectedTopic } : null,
+        selectedColumns: Array.isArray(this.state.selectedColumns) ? [...this.state.selectedColumns] : [],
+        isExpanded: this.state.isExpanded,
+      }
+    } catch (e) {
+      console.error('Error getting QueryInput state', e)
+      return null
+    }
+  }
+
+  /**
+   * Restore a previously-captured state snapshot.
+   * opts: { autoSubmit: boolean }
+   */
+  restoreState = (stateSnapshot = {}, opts = { autoSubmit: false }) => {
+    try {
+      const nextState = {}
+      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'inputValue')) {
+        nextState.inputValue = stateSnapshot.inputValue
+      }
+      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'selectedTopic')) {
+        nextState.selectedTopic = stateSnapshot.selectedTopic
+      }
+      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'selectedColumns')) {
+        nextState.selectedColumns = Array.isArray(stateSnapshot.selectedColumns)
+          ? [...stateSnapshot.selectedColumns]
+          : []
+      }
+      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'isExpanded')) {
+        nextState.isExpanded = !!stateSnapshot.isExpanded
+      }
+
+      this.setState(nextState, () => {
+        if (opts && opts.autoSubmit && this.state.inputValue) {
+          // Use submitQuery so the component's internal flow is preserved
+          this.submitQuery({ queryText: this.state.inputValue })
+        }
+      })
+    } catch (e) {
+      console.error('Error restoring QueryInput state', e)
+    }
+  }
+
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -99,7 +151,6 @@ class QueryInput extends React.Component {
     enableQueryInputTopics: PropTypes.bool,
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
-    disableColumnSelection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -127,7 +178,6 @@ class QueryInput extends React.Component {
     onResponseCallback: () => {},
     addResponseMessage: () => {},
     executeQuery: () => {},
-    disableColumnSelection: false,
   }
 
   componentDidMount = () => {
@@ -919,54 +969,33 @@ class QueryInput extends React.Component {
           this.props.quickTopicsPlacement
         }`}
       >
-        {/* Expanded Section */}
+        {/* Expanded Sample Queries Section */}
         {this.state.isExpanded && this.state.selectedTopic && (
           <div className='query-suggestions-expanded'>
             <div className='query-suggestions-expanded-header'>
-              {this.props.disableColumnSelection ? (
-                <div className='react-autoql-data-explorer-title-text'>
-                  <span className='react-autoql-data-explorer-title-text-sample-queries'>
-                    {this.state.selectedTopic.displayName}
-                  </span>
-                </div>
-              ) : (
-                this.renderSampleQueriesHeader()
-              )}
+              {this.renderSampleQueriesHeader()}
               <div className='query-suggestions-expanded-header-actions'>
                 <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
                   <Icon type='close' />
                 </button>
               </div>
             </div>
-            {this.props.disableColumnSelection ? (
-              <div className='query-suggestions-data-preview'>
-                <DataPreview
-                  authentication={this.props.authentication}
-                  dataFormatting={this.props.dataFormatting}
-                  subject={this.state.selectedTopic}
-                  disableColumnSelection={true}
-                  shouldRender={this.props.shouldRender}
-                  tooltipID={this.props.tooltipID}
-                />
-              </div>
-            ) : (
-              <div className='query-suggestions-sample-list'>
-                <SampleQueryList
-                  authentication={this.props.authentication}
-                  columns={this.getColumnsForSuggestions()}
-                  context={this.state.selectedTopic.context}
-                  valueLabel={this.state.selectedTopic.valueLabel}
-                  searchText=''
-                  executeQuery={this.props.executeQuery}
-                  skipQueryValidation={false}
-                  userSelection={null}
-                  tooltipID={this.props.tooltipID}
-                  scope={this.props.scope}
-                  shouldRender={this.props.shouldRender}
-                  onSuggestionListResponse={() => {}}
-                />
-              </div>
-            )}
+            <div className='query-suggestions-sample-list'>
+              <SampleQueryList
+                authentication={this.props.authentication}
+                columns={this.getColumnsForSuggestions()}
+                context={this.state.selectedTopic.context}
+                valueLabel={this.state.selectedTopic.valueLabel}
+                searchText=''
+                executeQuery={this.props.executeQuery}
+                skipQueryValidation={false}
+                userSelection={null}
+                tooltipID={this.props.tooltipID}
+                scope={this.props.scope}
+                shouldRender={this.props.shouldRender}
+                onSuggestionListResponse={() => {}}
+              />
+            </div>
           </div>
         )}
 

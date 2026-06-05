@@ -48,8 +48,8 @@ export class OptionsToolbar extends React.Component {
     this.TOOLTIP_ID = `react-autoql-options-toolbar-tooltip-${this.COMPONENT_KEY}`
 
     this.state = {
-      // isHideColumnsModalVisible: false, // TODO: re-enable when column visibility is re-added for dashboards
-      // isSettingColumnVisibility: false,
+      isHideColumnsModalVisible: false,
+      isSettingColumnVisibility: false,
       reportProblemMessage: undefined,
       isCSVDownloading: false,
       isFiltering: !!props.responseRef?.isFilteringTable(),
@@ -85,11 +85,10 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
+    onResetClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
-    source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
-    scope: PropTypes.string,
   }
 
   static defaultProps = {
@@ -114,11 +113,10 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
     onRefreshClick: undefined,
+    onResetClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
-    showResetQueryOption: false,
-    source: undefined,
-    scope: undefined,
+    showResetQueryOption: true,
   }
 
   componentDidMount = () => {
@@ -198,7 +196,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   fetchCSVAndExport = () => {
-    const queryId = this.props.responseRef?.drilldownQueryID
+    const queryId = this.props.responseRef?.queryResponse?.data?.data?.query_id
     const query = this.props.responseRef?.queryResponse?.data?.data?.text
     const uniqueId = uuid()
 
@@ -206,10 +204,6 @@ export class OptionsToolbar extends React.Component {
     exportCSV({
       queryId,
       ...getAuthentication(this.props.authentication),
-      filters: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.session_filter_locks,
-      tableFilters: this.props.responseRef?.getCombinedFilters?.(),
-      source: this.props.responseRef?.props?.source,
-      scope: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.scope ?? this.props.scope,
       csvProgressCallback: (percentCompleted) =>
         this.props.onCSVDownloadProgress({
           id: uniqueId,
@@ -290,56 +284,76 @@ export class OptionsToolbar extends React.Component {
     this.setState({ sqlCopySuccess: true })
   }
 
-  // TODO: re-enable when column visibility is re-added for dashboards
-  // showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
-  // closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
+  showHideColumnsModal = () => this.setState({ isHideColumnsModalVisible: true })
+  closeColumnVisibilityModal = () => this.setState({ isHideColumnsModalVisible: false })
   closeDataAlertModal = () => this.setState({ activeMenu: undefined })
 
-  // TODO: re-enable when column visibility is re-added for dashboards (without API call)
-  // onColumnVisibilitySave = (columns) => {
-  //   const { authentication } = this.props
-  //   const formattedColumns = columns.map((col) => {
-  //     const formattedCol = { ...col, is_visible: col.checked }
-  //     delete formattedCol.content
-  //     delete formattedCol.checked
-  //     return formattedCol
-  //   })
-  //   this.setState({ isSettingColumnVisibility: true })
-  //   setColumnVisibility({ ...authentication, columns: formattedColumns })
-  //     .then(() => {
-  //       if (this._isMounted) {
-  //         this.setState({ isHideColumnsModalVisible: false, isSettingColumnVisibility: false })
-  //       }
-  //       if (this.props.responseRef) {
-  //         this.props.responseRef?.updateColumns(formattedColumns)
-  //       }
-  //       this.props.onColumnVisibilitySave(formattedColumns)
-  //     })
-  //     .catch((error) => {
-  //       console.error(error)
-  //       this.props.onErrorCallback(error)
-  //       if (this._isMounted) {
-  //         this.setState({ isSettingColumnVisibility: false })
-  //       }
-  //     })
-  // }
+  onColumnVisibilitySave = (columns) => {
+    const { authentication } = this.props
+    const formattedColumns = columns.map((col) => {
+      const formattedCol = {
+        ...col,
+        is_visible: col.checked,
+      }
 
-  // renderHideColumnsModal = () => {
-  //   const cols = this.props.responseRef?._isMounted && this.props.responseRef?.getColumns()
-  //   if (!cols || !cols.length) return null
-  //   const columns = cols.map((col) => ({ ...col, content: col.display_name, checked: col.is_visible }))
-  //   return (
-  //     <ErrorBoundary>
-  //       <ColumnVisibilityModal
-  //         columns={columns}
-  //         isVisible={this.state.isHideColumnsModalVisible}
-  //         onClose={this.closeColumnVisibilityModal}
-  //         isSettingColumns={this.state.isSettingColumnVisibility}
-  //         onConfirm={this.onColumnVisibilitySave}
-  //       />
-  //     </ErrorBoundary>
-  //   )
-  // }
+      delete formattedCol.content
+      delete formattedCol.checked
+
+      return formattedCol
+    })
+
+    this.setState({ isSettingColumnVisibility: true })
+    setColumnVisibility({ ...authentication, columns: formattedColumns })
+      .then(() => {
+        if (this._isMounted) {
+          this.setState({
+            isHideColumnsModalVisible: false,
+            isSettingColumnVisibility: false,
+          })
+        }
+
+        if (this.props.responseRef) {
+          this.props.responseRef?.updateColumns(formattedColumns)
+        }
+
+        this.props.onColumnVisibilitySave(formattedColumns)
+      })
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+
+        if (this._isMounted) {
+          this.setState({ isSettingColumnVisibility: false })
+        }
+      })
+  }
+
+  renderHideColumnsModal = () => {
+    const cols = this.props.responseRef?._isMounted && this.props.responseRef?.getColumns()
+    if (!cols || !cols.length) {
+      return null
+    }
+
+    const columns = cols.map((col) => {
+      return {
+        ...col,
+        content: col.display_name,
+        checked: col.is_visible,
+      }
+    })
+
+    return (
+      <ErrorBoundary>
+        <ColumnVisibilityModal
+          columns={columns}
+          isVisible={this.state.isHideColumnsModalVisible}
+          onClose={this.closeColumnVisibilityModal}
+          isSettingColumns={this.state.isSettingColumnVisibility}
+          onConfirm={this.onColumnVisibilitySave}
+        />
+      </ErrorBoundary>
+    )
+  }
 
   onDataAlertSave = () => {
     this.setState({ activeMenu: undefined })
@@ -410,13 +424,69 @@ export class OptionsToolbar extends React.Component {
         onClose={() => this.setState({ isResetQueryConfirmVisible: false })}
         onConfirm={() => {
           this.setState({ isResetQueryConfirmVisible: false })
-          this.props.onRefreshClick()
+          try {
+            if (window && window.dispatchEvent) {
+              const payload = {
+                timestamp: Date.now(),
+                queryResponse:
+                  this.props.responseRef && this.props.responseRef.queryResponse
+                    ? this.props.responseRef.queryResponse
+                    : undefined,
+              }
+
+              // Try to capture QueryInput state.
+              // Prefer the direct ref on responseRef.props.queryInputRef, but fall back
+              // to the global registry (window.__qa_query_input_registry) by query_id.
+              try {
+                let queryInputState = undefined
+                // direct prop ref (preferred)
+                if (
+                  this.props.responseRef &&
+                  this.props.responseRef.props &&
+                  this.props.responseRef.props.queryInputRef &&
+                  typeof this.props.responseRef.props.queryInputRef.getState === 'function'
+                ) {
+                  queryInputState = this.props.responseRef.props.queryInputRef.getState()
+                }
+
+                // fallback: lookup by query id in global registry
+                if (!queryInputState) {
+                  const qid = this.props.responseRef?.queryResponse?.data?.data?.query_id
+                  if (qid && window && window.__qa_query_input_registry) {
+                    try {
+                      const registryRef = window.__qa_query_input_registry[qid]
+                      if (registryRef && registryRef.current && typeof registryRef.current.getState === 'function') {
+                        queryInputState = registryRef.current.getState()
+                        // mark that it came from registry in case consumers care
+                        payload.queryInputStateFromRegistry = true
+                      }
+                    } catch (err) {
+                      // ignore registry lookup failures
+                    }
+                  }
+                }
+
+                if (queryInputState) payload.queryInputState = queryInputState
+              } catch (err) {
+                console.error('Error capturing QueryInput state for reset payload', err)
+              }
+              window.dispatchEvent(new CustomEvent('react-autoql:resetQuery', { detail: payload }))
+            }
+          } catch (e) {
+            console.error('Error dispatching resetQuery event', e)
+          }
+
+          if (this.props.onResetClick) {
+            this.props.onResetClick()
+          } else if (this.props.onRefreshClick) {
+            this.props.onRefreshClick()
+          }
         }}
         title='Reset query?'
         confirmText='Reset'
         backText='Cancel'
       >
-        <p>This will re-run the query for this tile. Are you sure?</p>
+        <p>This will reset the query to its default state and rerun it. Are you sure you want to continue? </p>
       </ConfirmModal>
     )
   }
@@ -667,21 +737,20 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
-  // TODO: re-enable when column visibility is re-added for dashboards
-  // renderColumnVizBtn = (shouldShowButton) => {
-  //   return (
-  //     <Button
-  //       onClick={this.showHideColumnsModal}
-  //       className={this.getMenuItemClass()}
-  //       tooltip='Show/hide columns'
-  //       tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-  //       data-test='options-toolbar-col-vis'
-  //       size='small'
-  //     >
-  //       <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
-  //     </Button>
-  //   )
-  // }
+  renderColumnVizBtn = (shouldShowButton) => {
+    return (
+      <Button
+        onClick={this.showHideColumnsModal}
+        className={this.getMenuItemClass()}
+        tooltip='Show/hide columns'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        data-test='options-toolbar-col-vis'
+        size='small'
+      >
+        <Icon type='eye' showBadge={shouldShowButton.showHiddenColsBadge} />
+      </Button>
+    )
+  }
 
   renderReportProblemBtn = () => {
     return (
@@ -919,8 +988,7 @@ export class OptionsToolbar extends React.Component {
           data-test='autoql-options-toolbar'
         >
           {!isMarkdownOnly && shouldShowButton.showFilterButton && this.renderFilterBtn()}
-          {/* TODO: re-enable when column visibility is re-added for dashboards */}
-          {/* {!isMarkdownOnly && shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)} */}
+          {!isMarkdownOnly && shouldShowButton.showHideColumnsButton && this.renderColumnVizBtn(shouldShowButton)}
           {!isMarkdownOnly &&
             this.props.enableMagicWand &&
             shouldShowButton.showMagicWandButton &&
@@ -1000,14 +1068,12 @@ export class OptionsToolbar extends React.Component {
         showCopyButton: !isMarkdownOnly && this.props.enableCopyBtn && isTable && !allColumnsHidden,
         showCopyMarkdownButton: isMarkdownOnly,
         showSaveAsPNGButton: !isMarkdownOnly && isChart,
-        // TODO: re-enable when column visibility is re-added for dashboards
-        showHideColumnsButton: false,
-        // showHideColumnsButton:
-        //   !isMarkdownOnly &&
-        //   autoQLConfig.enableColumnVisibilityManager &&
-        //   hasData &&
-        //   (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
-        showHiddenColsBadge: false, // !isMarkdownOnly && someColumnsHidden,
+        showHideColumnsButton:
+          !isMarkdownOnly &&
+          autoQLConfig.enableColumnVisibilityManager &&
+          hasData &&
+          (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
+        showHiddenColsBadge: !isMarkdownOnly && someColumnsHidden,
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton: !isMarkdownOnly && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
@@ -1024,6 +1090,25 @@ export class OptionsToolbar extends React.Component {
           queryResponse: response,
           isMarkdownOnly,
         }),
+      }
+
+      // Additional gating: only show reset when there's an actual query text,
+      // the current display type is not single-value, and there is something to reset (filters, sorts, custom columns)
+      try {
+        const queryText = props.responseRef?.queryResponse?.data?.data?.text || ''
+        const currentDisplayType = props.responseRef?.state?.displayType
+        // Check for filters, sorts, or custom columns
+        const filters = props.responseRef?.formattedTableParams?.filters || []
+        const sorters = props.responseRef?.formattedTableParams?.sorters || []
+        const customColumns = props.responseRef?.state?.customColumnSelects || []
+        const hasResettable = (Array.isArray(filters) && filters.length > 0)
+          || (Array.isArray(sorters) && sorters.length > 0)
+          || (Array.isArray(customColumns) && customColumns.length > 0)
+        if (!queryText || String(queryText).trim().length === 0 || currentDisplayType === 'single-value' || !hasResettable) {
+          shouldShowButton.showRefreshDataButton = false
+        }
+      } catch (e) {
+        // swallow and leave existing value
       }
 
       // Don't show more options button if it's a markdown-only message
@@ -1058,15 +1143,12 @@ export class OptionsToolbar extends React.Component {
     return (
       <ErrorBoundary>
         {this.renderToolbar(shouldShowButton)}
-        {/* {shouldShowButton.showHideColumnsButton && this.renderHideColumnsModal()} */}
+        {shouldShowButton.showHideColumnsButton && this.renderHideColumnsModal()}
         {shouldShowButton.showReportProblemButton && this.renderReportProblemModal()}
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {shouldShowButton.showRefreshDataButton &&
-          this.props.isEditing &&
-          this.props.showResetQueryOption &&
-          this.renderResetQueryConfirmModal()}
+        {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )

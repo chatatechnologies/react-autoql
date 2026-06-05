@@ -283,7 +283,11 @@ export class QueryOutput extends React.Component {
     }),
     initialAggConfig: PropTypes.shape({}),
 
-    queryResponse: PropTypes.shape({}),
+    queryResponse: PropTypes.shape({
+      data: PropTypes.shape({
+        data: PropTypes.object,
+      }),
+    }),
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -537,7 +541,6 @@ export class QueryOutput extends React.Component {
             this.hasUserSelectedStringAxis = false
           }
           this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
-          this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
 
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -546,16 +549,6 @@ export class QueryOutput extends React.Component {
           this.setState({ columns: newColumns })
         } else if (!this.tableData && this.shouldGenerateTableData()) {
           this.generateAllData()
-        }
-
-        // Tabulator and charts initialize inside display:none when shouldRender=false,
-        // producing wrong dimensions. Force remount so they measure the visible container.
-        if (isChartType(this.state.displayType)) {
-          newState.chartID = uuid()
-        } else {
-          this.tableID = uuid()
-          this.pivotTableID = uuid()
-          newState._tableRemountKey = uuid()
         }
       }
 
@@ -1189,7 +1182,6 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.drilldownQueryID = response?.data?.data?.drilldown_query_id || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -1870,16 +1862,7 @@ export class QueryOutput extends React.Component {
     stringColumnIndices,
     rows,
     useOrLogic,
-    groupBys: explicitGroupBys,
   }) => {
-    if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
-      return this.processDrilldown({
-        supportedByAPI: true,
-        activeKey,
-        groupBys: explicitGroupBys,
-      })
-    }
-
     // Support for multiple filters (e.g., network graph links with source and target filters)
     if (filters && Array.isArray(filters) && filters.length > 0) {
       return this.processDrilldown({
@@ -2933,24 +2916,11 @@ export class QueryOutput extends React.Component {
     })
   }
 
-  detectQuantityType = (rows, colIndex) => {
-    if (!rows?.length) return 'float'
-    for (const row of rows) {
-      const val = row?.[colIndex]
-      if (val === null || val === undefined) continue
-      const num = typeof val === 'number' ? val : parseFloat(val)
-      if (!isNaN(num) && num % 1 !== 0) return 'float'
-    }
-    return 'integer'
-  }
-
   formatColumnsForTable = (columns, _additionalSelects = [], aggConfig = {}) => {
     // todo: do this inside of chatatable
     if (!columns) {
       return null
     }
-
-    const rows = this.queryResponse?.data?.data?.rows
 
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
@@ -3093,10 +3063,6 @@ export class QueryOutput extends React.Component {
         if (customSelect?.column_fn?.length) {
           newCol.columnFnArray = customSelect.column_fn
         }
-      }
-
-      if (newCol.type === ColumnTypes.QUANTITY) {
-        newCol.quantity_type = col.quantity_type ?? this.detectQuantityType(rows, i)
       }
 
       return newCol

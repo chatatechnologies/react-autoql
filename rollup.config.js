@@ -52,8 +52,8 @@ const common = {
     }),
     scss({
       fileName: 'autoql.esm.css',
-      outputStyle: 'compressed',
       processor: () => postcss([autoprefixer()]),
+      outputStyle: 'compressed', // minimize
     }),
     image(),
     svg(),

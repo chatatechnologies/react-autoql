@@ -63,7 +63,7 @@ export default class DataPreview extends React.Component {
     }
   }
 
-  componentDidUpdate = (prevProps) => {
+  componentDidUpdate = (prevProps, prevState) => {
     if (this.props.subject && !_isEqual(this.props.subject, prevProps.subject)) {
       this.getDataPreview()
     }

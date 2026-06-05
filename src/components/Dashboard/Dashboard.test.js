@@ -64,7 +64,7 @@ describe('Dashboard.setParamsForTile', () => {
 })
 
 describe('Dashboard.resetTile', () => {
-  test('clears filters and calls processTile when tile has a query', () => {
+  test('clears filters and calls processTile when tile has a query', async () => {
     const wrapper = setup()
     const instance = wrapper.instance()
 
@@ -90,8 +90,8 @@ describe('Dashboard.resetTile', () => {
     const processTile = jest.fn()
     instance.tileRefs = { 'tile-1': { processTile } }
 
-    // Call resetTile
-    instance.resetTile('tile-1')
+    // Call resetTile and await the async chain
+    await instance.resetTile('tile-1')
 
     // Expect debouncedOnChange called with updated tiles that have cleared filters/orders
     expect(debouncedSpy).toHaveBeenCalled()

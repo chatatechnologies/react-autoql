@@ -50,7 +50,6 @@ import { ChataScatterplotChart } from '../ChataScatterplotChart'
 import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import ChataNetworkGraph from '../ChataNetworkGraph'
-import { ChataSankeyDiagram } from '../ChataSankeyDiagram'
 import { AverageLine } from '../AverageLine'
 import { RegressionLine } from '../RegressionLine'
 import ChartHeaderToggle from '../ChartHeaderToggle/ChartHeaderToggle'
@@ -612,12 +611,7 @@ export default class ChataChart extends React.Component {
           }
         }
 
-        if (
-          data?.length > MAX_CHART_ELEMENTS &&
-          !this.dataIsBinned() &&
-          props.type !== DisplayTypes.NETWORK_GRAPH &&
-          props.type !== DisplayTypes.SANKEY
-        ) {
+        if (data?.length > MAX_CHART_ELEMENTS && !this.dataIsBinned() && props.type !== DisplayTypes.NETWORK_GRAPH) {
           data = data.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
         }
@@ -691,8 +685,7 @@ export default class ChataChart extends React.Component {
         if (
           aggregated?.length > MAX_CHART_ELEMENTS &&
           !this.dataIsBinned() &&
-          props.type !== DisplayTypes.NETWORK_GRAPH &&
-          props.type !== DisplayTypes.SANKEY
+          props.type !== DisplayTypes.NETWORK_GRAPH
         ) {
           aggregated = aggregated.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
@@ -756,7 +749,7 @@ export default class ChataChart extends React.Component {
   }
 
   adjustChartPosition = () => {
-    if (this.props.type === DisplayTypes.NETWORK_GRAPH || this.props.type === DisplayTypes.SANKEY) {
+    if (this.props.type === DisplayTypes.NETWORK_GRAPH) {
       return
     }
 
@@ -996,88 +989,90 @@ export default class ChataChart extends React.Component {
         }`}
       >
         {/* Chart Control Buttons and Data Limit Warning */}
-        {((this.props.enableChartControls &&
-          (this.shouldShowAverageLine() || this.shouldShowColumnLineStackedToggle())) ||
+        {((this.props.enableChartControls && (this.shouldShowAverageLine() || this.shouldShowColumnLineStackedToggle())) ||
           this.shouldShowDataLimitWarning()) &&
           !this.props.hidden && (
             <div className='chart-control-buttons'>
-              {this.props.enableChartControls &&
-                (this.shouldShowAverageLine() || this.shouldShowColumnLineStackedToggle()) && (
-                  <div className='chart-control-buttons-left'>
-                    {this.shouldShowColumnLineStackedToggle() && (
-                      <div className='chart-data-source-toggle'>
-                        <button
-                          type='button'
-                          className={`chart-data-source-toggle-btn ${!this.state.columnLineStacked ? 'active' : ''}`}
-                          data-tooltip-content='Show columns side by side (grouped)'
-                          data-tooltip-id={this.props.chartTooltipID}
-                          onClick={() => this.setColumnLineStacked(false)}
-                        >
-                          Grouped
-                        </button>
-                        <button
-                          type='button'
-                          className={`chart-data-source-toggle-btn ${this.state.columnLineStacked ? 'active' : ''}`}
-                          data-tooltip-content='Stack columns on top of each other'
-                          data-tooltip-id={this.props.chartTooltipID}
-                          onClick={() => this.setColumnLineStacked(true)}
-                        >
-                          Stacked
-                        </button>
-                      </div>
-                    )}
-                    {this.shouldShowDataSourceToggle() && (
-                      <div className='chart-data-source-toggle'>
-                        <button
-                          type='button'
-                          className={`chart-data-source-toggle-btn ${
-                            this.state.chartDataSource === 'pivoted' ? 'active' : ''
-                          }`}
-                          data-tooltip-content='Chart pivoted data (grouped/aggregated by pivot rows)'
-                          data-tooltip-id={this.props.chartTooltipID}
-                          onClick={() => this.setChartDataSource('pivoted')}
-                        >
-                          Pivoted
-                        </button>
-                        <button
-                          type='button'
-                          className={`chart-data-source-toggle-btn ${
-                            this.state.chartDataSource === 'raw' ? 'active' : ''
-                          }`}
-                          data-tooltip-content='Chart raw table data (all numeric columns)'
-                          data-tooltip-id={this.props.chartTooltipID}
-                          onClick={() => this.setChartDataSource('raw')}
-                        >
-                          Raw
-                        </button>
-                      </div>
-                    )}
-                    {this.shouldShowAverageLine() && (
-                      <ChartHeaderToggle
-                        isEnabled={this.state.showAverageLine}
-                        onToggle={this.toggleAverageLine}
-                        disabled={false}
-                        icon='↗'
-                        label='Average'
-                        tooltipOn='Hide Average Line'
-                        tooltipOff='Show Average Line'
-                        chartTooltipID={this.props.chartTooltipID}
-                      />
-                    )}
-                    {this.shouldShowRegressionLine() && (
-                      <ChartHeaderToggle
-                        isEnabled={this.state.showRegressionLine}
-                        onToggle={this.toggleRegressionLine}
-                        disabled={false}
-                        icon='⤴'
-                        label='Trend'
-                        tooltipOn='Hide Trend Line'
-                        tooltipOff='Show Trend Line'
-                        chartTooltipID={this.props.chartTooltipID}
-                      />
-                    )}
-                  </div>
-                )}
+              {this.props.enableChartControls && (this.shouldShowAverageLine() || this.shouldShowColumnLineStackedToggle()) && (
+                <div className='chart-control-buttons-left'>
+                  {this.shouldShowColumnLineStackedToggle() && (
+                    <div className='chart-data-source-toggle'>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          !this.state.columnLineStacked ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Show columns side by side (grouped)'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setColumnLineStacked(false)}
+                      >
+                        Grouped
+                      </button>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          this.state.columnLineStacked ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Stack columns on top of each other'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setColumnLineStacked(true)}
+                      >
+                        Stacked
+                      </button>
+                    </div>
+                  )}
+                  {this.shouldShowDataSourceToggle() && (
+                    <div className='chart-data-source-toggle'>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          this.state.chartDataSource === 'pivoted' ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Chart pivoted data (grouped/aggregated by pivot rows)'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setChartDataSource('pivoted')}
+                      >
+                        Pivoted
+                      </button>
+                      <button
+                        type='button'
+                        className={`chart-data-source-toggle-btn ${
+                          this.state.chartDataSource === 'raw' ? 'active' : ''
+                        }`}
+                        data-tooltip-content='Chart raw table data (all numeric columns)'
+                        data-tooltip-id={this.props.chartTooltipID}
+                        onClick={() => this.setChartDataSource('raw')}
+                      >
+                        Raw
+                      </button>
+                    </div>
+                  )}
+                  {this.shouldShowAverageLine() && (
+                    <ChartHeaderToggle
+                      isEnabled={this.state.showAverageLine}
+                      onToggle={this.toggleAverageLine}
+                      disabled={false}
+                      icon='↗'
+                      label='Average'
+                      tooltipOn='Hide Average Line'
+                      tooltipOff='Show Average Line'
+                      chartTooltipID={this.props.chartTooltipID}
+                    />
+                  )}
+                  {this.shouldShowRegressionLine() && (
+                    <ChartHeaderToggle
+                      isEnabled={this.state.showRegressionLine}
+                      onToggle={this.toggleRegressionLine}
+                      disabled={false}
+                      icon='⤴'
+                      label='Trend'
+                      tooltipOn='Hide Trend Line'
+                      tooltipOff='Show Trend Line'
+                      chartTooltipID={this.props.chartTooltipID}
+                    />
+                  )}
+                </div>
+              )}
               {this.shouldShowDataLimitWarning() && (
                 <div className='chart-control-buttons-right'>{this.renderDataLimitWarning()}</div>
               )}
@@ -1109,7 +1104,8 @@ export default class ChataChart extends React.Component {
     // In this case the number-axis selector headers should use the generic type labels
     // (e.g. "Quantity Fields", "Currency Fields") instead of the legend/groupable column name.
     // Column line combo charts always use raw data, so use generic labels for axis selectors.
-    const isRawDataSource = this.state.chartDataSource === 'raw' || this.props.type === DisplayTypes.COLUMN_LINE
+    const isRawDataSource =
+      this.state.chartDataSource === 'raw' || this.props.type === DisplayTypes.COLUMN_LINE
     const legendColumnForChart = isRawDataSource ? undefined : updatedLegendColumn
 
     // For stacked charts, use sorted column indices so chart components render in sorted order
@@ -1243,8 +1239,7 @@ export default class ChataChart extends React.Component {
     const isTruncated =
       this.state.isDataTruncated &&
       this.props.type !== DisplayTypes.PIE &&
-      this.props.type !== DisplayTypes.NETWORK_GRAPH &&
-      this.props.type !== DisplayTypes.SANKEY
+      this.props.type !== DisplayTypes.NETWORK_GRAPH
 
     const isDataLimited = this.props.isDataLimited
 
@@ -1446,9 +1441,6 @@ export default class ChataChart extends React.Component {
       case DisplayTypes.NETWORK_GRAPH: {
         return <ChataNetworkGraph {...commonChartProps} />
       }
-      case DisplayTypes.SANKEY: {
-        return <ChataSankeyDiagram {...commonChartProps} />
-      }
       default: {
         return 'Unknown Display Type'
       }
@@ -1480,11 +1472,7 @@ export default class ChataChart extends React.Component {
             data-test='react-autoql-chart'
             className={`react-autoql-chart-container
             ${
-              this.state.isLoading &&
-              this.props.type !== DisplayTypes.NETWORK_GRAPH &&
-              this.props.type !== DisplayTypes.SANKEY
-                ? 'react-autoql-chart-loading'
-                : ''
+              this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''
             }
             ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
             ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
