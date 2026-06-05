@@ -1,4 +1,4 @@
-import normalizePreviewResponse from './previewResponseUtils'
+import normalizePreviewResponse from '../previewResponseUtils'
 
 describe('normalizePreviewResponse', () => {
   it('wraps scalar rows into a 2D array and injects columns/query_id', () => {

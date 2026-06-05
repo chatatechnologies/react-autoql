@@ -68,8 +68,7 @@ export default class CustomColumnModal extends React.Component {
     const overrideTableColumn = props.initialColumn?._snapshotDisplayOverride?.table_column
     const initialTableColumn = props.initialColumn?.table_column
     if (props.initialColumn?.columnFnArray) {
-      // Resolve stored token references against current props.columns.
-      initialColumnFn = this.resolveColumnReferences(_cloneDeep(props.initialColumn.columnFnArray), props.columns)
+      initialColumnFn = props.initialColumn.columnFnArray
     } else if (overrideTableColumn) {
       initialColumnFn = this.buildFnArray(overrideTableColumn, props.columns)
     } else if (initialTableColumn) {
@@ -189,8 +188,6 @@ export default class CustomColumnModal extends React.Component {
           inner = this.buildFnArray(tok.column.table_column, this.props.columns)
         }
         if (inner && inner.length) {
-          // Re-resolve any stale column references against current columns
-          inner = this.resolveColumnReferences(inner)
           // Recursively expand inside the inner tokens as well
           const expandedInner = this.expandNestedColumns(inner)
           if (expandedInner.length > 1) {
@@ -209,62 +206,6 @@ export default class CustomColumnModal extends React.Component {
       }
     }
     return out
-  }
-
-  // Re-resolve COLUMN tokens in a saved columnFnArray against current columns.
-  resolveColumnReferences = (tokens, providedCols) => {
-    if (!Array.isArray(tokens) || tokens.length === 0) return tokens
-    const currentColumns = providedCols || this.props.columns || []
-    if (!currentColumns.length) return tokens
-
-    const normalize = (s) => {
-      try {
-        return this.stripCoalesceWrapper(String(s ?? '')).trim()
-      } catch (e) {
-        return String(s ?? '').trim()
-      }
-    }
-
-    // One-pass lookup maps to avoid repeated `find` calls
-    const idMap = new Map()
-    const tableMap = new Map()
-    const tableNormMap = new Map()
-    const nameMap = new Map()
-    const displayMap = new Map()
-
-    for (const c of currentColumns) {
-      if (c?.id) idMap.set(c.id, c)
-      if (c?.table_column) tableMap.set(c.table_column, c)
-      const tNorm = c?.table_column ? normalize(c.table_column) : null
-      if (tNorm) tableNormMap.set(tNorm, c)
-      if (c?.name) nameMap.set(c.name, c)
-      const disp = c?.display_name || c?.custom_column_display_name
-      if (disp) displayMap.set(disp, c)
-    }
-
-    const findMatch = (stored) => {
-      if (!stored) return null
-      if (stored.id && idMap.has(stored.id)) return idMap.get(stored.id)
-      if (stored.table_column && tableMap.has(stored.table_column)) return tableMap.get(stored.table_column)
-      if (stored.table_column) {
-        const target = normalize(stored.table_column)
-        if (target && tableNormMap.has(target)) return tableNormMap.get(target)
-      }
-      if (stored.name && nameMap.has(stored.name)) return nameMap.get(stored.name)
-      const storedDisplay = stored.display_name || stored.custom_column_display_name
-      if (storedDisplay && displayMap.has(storedDisplay)) return displayMap.get(storedDisplay)
-      return null
-    }
-
-      return tokens.map((tok) => {
-      if (tok?.type !== CustomColumnTypes.COLUMN) return tok
-      const stored = tok.column
-      if (!stored) return tok
-      const match = findMatch(stored)
-      if (!match) return tok
-      if (match.field === tok.value && match === stored) return tok
-        return { ...tok, value: match.field, column: match }
-    })
   }
 
   static propTypes = {
@@ -299,6 +240,7 @@ export default class CustomColumnModal extends React.Component {
     onUpdateColumn: () => {},
     onClose: () => {},
   }
+
   componentDidUpdate = (prevProps, prevState) => {
     // Update column mutator is function changed
     if (
@@ -428,8 +370,7 @@ export default class CustomColumnModal extends React.Component {
       return
     }
 
-    // Create mutator and summary. If parsing fails, attempt one safe retry:
-    // re-run `cleanColumnFn` (which inserts implicit multiplication) and retry createMutatorFn.
+    // Create mutator and summary; if parsing fails, retry after cleanColumnFn inserts implicit multiplication.
 
     let newMutator = this.safeCreateMutatorFn(columnFn)
     let newFnSummary = getFnSummary(columnFn)
@@ -527,9 +468,11 @@ export default class CustomColumnModal extends React.Component {
       cleanedName = this.replaceTypeCastWithPreserveTokens(cleanedName)
 
       // Replace column names with placeholders before tokenization (handles nested parens & multi-word names)
-      const allCols = [...(cols || []), ...(this.props.queryResponse?.data?.data?.available_selects || [])]
-      const colsByLength = allCols
-        .map((col, originalIndex) => ({ col, originalIndex }))
+      const allCols = [
+        ...(cols || []),
+        ...(this.props.queryResponse?.data?.data?.available_selects || [])
+      ]
+      const colsByLength = allCols.map((col, originalIndex) => ({ col, originalIndex }))
         .sort((a, b) => {
           const aLen = (a.col?.table_column || a.col?.name)?.length || 0
           const bLen = (b.col?.table_column || b.col?.name)?.length || 0
@@ -591,14 +534,9 @@ export default class CustomColumnModal extends React.Component {
 
           if (placeholderCol) {
             fnArray.push({ type: 'column', value: placeholderCol?.field, column: placeholderCol })
-          } else if (
-            (col = cols?.find((c) => c?.name?.trim() === op)) || // exact match in cols
-            (col = this.props.queryResponse?.data?.data?.available_selects?.find(
-              (s) => s?.table_column?.trim() === getCleanColumnName(op),
-            )) || // normalized match
-            (col = cols?.find((c) => c?.table_column?.trim().toLowerCase() === op?.toLowerCase()))
-          ) {
-            // case-insensitive
+          } else if ((col = cols?.find((c) => c?.name?.trim() === op)) || // exact match in cols
+                     (col = this.props.queryResponse?.data?.data?.available_selects?.find((s) => s?.table_column?.trim() === getCleanColumnName(op))) || // normalized match
+                     (col = cols?.find((c) => c?.table_column?.trim().toLowerCase() === op?.toLowerCase()))) { // case-insensitive
             fnArray.push({ type: 'column', value: col?.field || col?.table_column, column: col })
           }
         }
@@ -612,21 +550,17 @@ export default class CustomColumnModal extends React.Component {
 
         // Count consecutive opening brackets at the start (skip preserved ones)
         let openCount = 0
-        while (
-          openCount < cleaned.length &&
-          cleaned[openCount]?.value === CustomColumnValues.LEFT_BRACKET &&
-          !cleaned[openCount]?.preserve
-        ) {
+        while (openCount < cleaned.length &&
+               cleaned[openCount]?.value === CustomColumnValues.LEFT_BRACKET &&
+               !cleaned[openCount]?.preserve) {
           openCount++
         }
 
         // Count consecutive closing brackets at the end (skip preserved ones)
         let closeCount = 0
-        while (
-          closeCount < cleaned.length &&
-          cleaned[cleaned.length - 1 - closeCount]?.value === CustomColumnValues.RIGHT_BRACKET &&
-          !cleaned[cleaned.length - 1 - closeCount]?.preserve
-        ) {
+        while (closeCount < cleaned.length &&
+               cleaned[cleaned.length - 1 - closeCount]?.value === CustomColumnValues.RIGHT_BRACKET &&
+               !cleaned[cleaned.length - 1 - closeCount]?.preserve) {
           closeCount++
         }
 
@@ -705,8 +639,7 @@ export default class CustomColumnModal extends React.Component {
     if (funcIdx === -1) return sql
 
     // Find matching closing paren by counting depth
-    let balance = 1,
-      closeIdx = -1
+    let balance = 1, closeIdx = -1
     const startPos = funcIdx + funcStr.length
     for (let i = startPos; i < sql.length; i++) {
       if (sql[i] === '(') balance++
@@ -720,8 +653,7 @@ export default class CustomColumnModal extends React.Component {
 
     // Extract content and find last ", 0" at depth 0
     const fullContent = sql.substring(startPos, closeIdx).trim()
-    let contentEnd = -1,
-      depth = 0
+    let contentEnd = -1, depth = 0
     for (let i = fullContent.length - 1; i >= 0; i--) {
       if (fullContent[i] === ')') depth++
       else if (fullContent[i] === '(') depth--
@@ -731,9 +663,7 @@ export default class CustomColumnModal extends React.Component {
       }
     }
 
-    return contentEnd === -1
-      ? sql
-      : sql.substring(0, funcIdx) + fullContent.substring(0, contentEnd).trim() + sql.substring(closeIdx + 1)
+    return contentEnd === -1 ? sql : sql.substring(0, funcIdx) + fullContent.substring(0, contentEnd).trim() + sql.substring(closeIdx + 1)
   }
 
   replaceNullifPattern = (sql) => this.stripSqlWrapper(sql, 'NULLIF')
@@ -1022,9 +952,7 @@ export default class CustomColumnModal extends React.Component {
     )
     const withDivisionSafety = hasExplicitDivision ? transformDivisionExpression(baseColumn) : baseColumn
     // Wrap with outer brackets only when this formula explicitly used division and safety wrapper was added
-    return hasExplicitDivision && withDivisionSafety.includes('COALESCE')
-      ? `(${withDivisionSafety})`
-      : withDivisionSafety
+    return hasExplicitDivision && withDivisionSafety.includes('COALESCE') ? `(${withDivisionSafety})` : withDivisionSafety
   }
 
   onUpdateColumnConfirm = () => {
@@ -1060,7 +988,7 @@ export default class CustomColumnModal extends React.Component {
     // Only these operators allow same-precedence bracket removal on their right side
     const ASSOC_OPS = new Set(['ADDITION', 'MULTIPLICATION'])
 
-    const getPrec = (token) => (token?.type === CustomColumnTypes.OPERATOR ? PREC[token.value] ?? 0 : 0)
+    const getPrec = (token) => (token?.type === CustomColumnTypes.OPERATOR ? (PREC[token.value] ?? 0) : 0)
 
     // Minimum precedence of all operators at depth-0 within a token slice
     const minDepth0Prec = (tokens) => {
@@ -1074,11 +1002,7 @@ export default class CustomColumnModal extends React.Component {
       return min
     }
 
-    // Iteratively remove bracket pairs that are semantically redundant given operator precedence.
-    // A pair ( inner ) is redundant when:
-    //   - RIGHT: inner's weakest op >= the operator to the right's precedence
-    //   - LEFT:  inner's weakest op > the operator to the left's precedence
-    //            OR same precedence AND left operator is truly associative (+, *)
+    // Remove bracket pairs redundant given precedence: inner's weakest op >= right-neighbor precedence and > left-neighbor (or same if left is associative +/*).
     let changed = true
     let passnum = 0
     const maxIterations = 50 // Safety guard to prevent infinite loops from bracket-matching logic bugs
@@ -1097,7 +1021,9 @@ export default class CustomColumnModal extends React.Component {
         }
         const rbIdx = j - 1
         const inner = result.slice(i + 1, rbIdx)
-        const preserve = result[i]?.preserve || result[rbIdx]?.preserve
+        const preserve =
+          result[i]?.preserve ||
+          result[rbIdx]?.preserve
 
         // For edit readability, unwrap non-preserved brackets around a single token.
         // Keep preserved pairs (explicit user/grouping intent).
@@ -1119,6 +1045,26 @@ export default class CustomColumnModal extends React.Component {
         const leftOk = innerMinP > lPrec || (innerMinP === lPrec && leftOp && ASSOC_OPS.has(leftOp.value))
 
         if (rightOk && leftOk && !preserve) {
+          // Avoid removing parentheses if doing so would create adjacent operands
+          const leftNeighbor = result[i - 1]
+          const rightNeighbor = result[rbIdx + 1]
+          const firstInner = inner[0]
+          const lastInner = inner[inner.length - 1]
+          // If inner contains a function token, preserve parentheses
+          const innerHasFunction = inner.some((t) => t?.type === CustomColumnTypes.FUNCTION)
+          if (innerHasFunction) {
+            continue
+          }
+          const leftWouldBeOperands = leftNeighbor && firstInner && leftNeighbor.type !== CustomColumnTypes.OPERATOR && firstInner.type !== CustomColumnTypes.OPERATOR
+          const rightWouldBeOperands = lastInner && rightNeighbor && lastInner.type !== CustomColumnTypes.OPERATOR && rightNeighbor.type !== CustomColumnTypes.OPERATOR
+          const leftWouldBeOperandThenLeftBracket = leftNeighbor && leftNeighbor.type !== CustomColumnTypes.OPERATOR && firstInner && firstInner.type === CustomColumnTypes.OPERATOR && firstInner.value === CustomColumnValues.LEFT_BRACKET
+          const rightWouldBeRightBracketThenOperand = lastInner && lastInner.type === CustomColumnTypes.OPERATOR && lastInner.value === CustomColumnValues.RIGHT_BRACKET && rightNeighbor && rightNeighbor.type !== CustomColumnTypes.OPERATOR
+
+          if (leftWouldBeOperands || rightWouldBeOperands || leftWouldBeOperandThenLeftBracket || rightWouldBeRightBracketThenOperand) {
+            // Keep parentheses to preserve semantic separation
+            continue
+          }
+
           result = [...result.slice(0, i), ...inner, ...result.slice(rbIdx + 1)]
           changed = true
           break
@@ -1129,7 +1075,7 @@ export default class CustomColumnModal extends React.Component {
     return result
   }
 
-  // Validate tokens and delegate to shared mutator creator
+  // Create a mutator with defensive validation to avoid generating invalid JS
   safeCreateMutatorFn = (columnFn) => {
     try {
       const fn = columnFn || []
@@ -1138,8 +1084,7 @@ export default class CustomColumnModal extends React.Component {
         const right = fn[i + 1]
         const leftIsOperand = left?.type !== CustomColumnTypes.OPERATOR
         const rightIsOperand = right?.type !== CustomColumnTypes.OPERATOR
-        const rightIsLeftBracket =
-          right?.type === CustomColumnTypes.OPERATOR && right?.value === CustomColumnValues.LEFT_BRACKET
+        const rightIsLeftBracket = right?.type === CustomColumnTypes.OPERATOR && right?.value === CustomColumnValues.LEFT_BRACKET
         if (leftIsOperand && (rightIsOperand || rightIsLeftBracket)) {
           return { error: new Error('Invalid operator sequence') }
         }
@@ -1155,7 +1100,6 @@ export default class CustomColumnModal extends React.Component {
       }
       if (balance !== 0) return { error: new Error('Mismatched parentheses') }
 
-      // Delegate to shared mutator creator (retries with coercion)
       return tryCreateMutatorWithCoercion(fn)
     } catch (e) {
       return { error: e }
@@ -1168,44 +1112,46 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  isFormulaAlreadyWrapped = (arr) =>
-    arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET &&
-    arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
+  isFormulaAlreadyWrapped = (arr) => arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET && arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
 
   addColumnToFormula = (col, columnFn, lastTerm) => {
     // Determine if column has explicit tokens, or build from SQL if complex
     let colTokens = col?.columnFnArray
     if (colTokens?.length) {
-      // Re-resolve column references against in-modal columns when available
-      colTokens = this.resolveColumnReferences(_cloneDeep(colTokens), this.state?.columns || this.props.columns)
-      // Normalize incoming tokens from saved/derived columns so wrapper-only
-      // operands like `(Under Profit)` are treated as a single operand.
-      colTokens = this.cleanColumnFn(colTokens)
-    }
-    // If the original columnFnArray is a wrapped single-column (e.g. [LEFT_BRACKET, COLUMN, RIGHT_BRACKET])
-    // treat the column as a single token (preserve aggregate-like single-token columns).
-    if (
-      Array.isArray(col.columnFnArray) &&
-      col.columnFnArray.length === 3 &&
-      col.columnFnArray[0]?.type === CustomColumnTypes.OPERATOR &&
-      col.columnFnArray[0]?.value === CustomColumnValues.LEFT_BRACKET &&
-      col.columnFnArray[2]?.type === CustomColumnTypes.OPERATOR &&
-      col.columnFnArray[2]?.value === CustomColumnValues.RIGHT_BRACKET &&
-      col.columnFnArray[1]?.type === CustomColumnTypes.COLUMN
-    ) {
-      colTokens = [{ type: CustomColumnTypes.COLUMN, value: col.field, column: col }]
+      // Normalize so wrapper-only operands like `(Under Profit)` are treated as a single operand.
+      colTokens = this.cleanColumnFn(_cloneDeep(colTokens))
+
+      // Re-resolve COLUMN tokens against current columns to avoid stale snapshots
+      const allCols = this.state.columns || this.props.columns || []
+      for (const t of colTokens) {
+        if (t?.type === CustomColumnTypes.COLUMN && t?.column) {
+          let resolved = null
+          // Prefer ID match
+          if (t.column.id) resolved = allCols.find((c) => String(c.id) === String(t.column.id))
+          // Then try table_column or name
+          if (!resolved && (t.column.table_column || t.column.name)) {
+            resolved = allCols.find(
+              (c) => String(c.table_column) === String(t.column.table_column) || String(c.name) === String(t.column.name),
+            )
+          }
+          // Finally try matching by field
+          if (!resolved && t.column.field) resolved = allCols.find((c) => String(c.field) === String(t.column.field))
+
+          if (resolved) {
+            t.column = resolved
+            t.value = resolved.field
+          }
+        }
+      }
     }
     if (!colTokens && this.isComplexColumn(col)) {
       // Column is complex but doesn't have explicit tokens — build from table_column SQL
       colTokens = this.buildFnArray(col.table_column, this.state.columns)
     }
 
-    // If the source column has an explicit or derived multi-token list, insert its
-    // tokens directly into the current formula wrapped with brackets. This preserves
-    // the original grouping (e.g. `(Goals + Assists)`) when composing expressions.
+    // Multi-token column: insert wrapped into the formula, preserving original grouping (e.g. `(Goals + Assists)`).
     if (colTokens && colTokens.length > 1) {
-      // If the last term is not an operator, replace the previous token with the
-      // entire token list; otherwise append.
+      // Replace the last token if it's not an operator; otherwise append.
       if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
         // remove the previous token
         columnFn.splice(columnFn.length - 1, 1)
@@ -1214,13 +1160,32 @@ export default class CustomColumnModal extends React.Component {
       columnFn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET })
       for (const t of _cloneDeep(colTokens)) columnFn.push(t)
       columnFn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })
-    } else {
-      // Prefer a single resolved COLUMN token (preserve in-modal references), otherwise fall back.
-      let newChunk
-      if (colTokens && colTokens.length === 1 && colTokens[0].type === CustomColumnTypes.COLUMN) {
-        newChunk = { type: CustomColumnTypes.COLUMN, value: colTokens[0].value, column: colTokens[0].column }
+    } else if (colTokens && colTokens.length === 1 && colTokens[0].type === CustomColumnTypes.COLUMN) {
+      // Single resolved COLUMN token — prefer inserting the source column itself
+      // when the source's token list was a wrapped single-token (aggregate-like).
+      if (col?.columnFnArray && this.isFormulaAlreadyWrapped(col.columnFnArray)) {
+        const newChunk = { type: CustomColumnTypes.COLUMN, value: col.field, column: col }
+        if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
+          columnFn[columnFn.length - 1] = newChunk
+        } else {
+          columnFn.push(newChunk)
+        }
       } else {
-        newChunk = { type: CustomColumnTypes.COLUMN, value: col.field, column: col }
+        // Insert the resolved inner token directly
+        const resolvedToken = _cloneDeep(colTokens[0])
+        const newChunk = resolvedToken
+
+        if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
+          columnFn[columnFn.length - 1] = newChunk
+        } else {
+          columnFn.push(newChunk)
+        }
+      }
+    } else {
+      const newChunk = {
+        type: CustomColumnTypes.COLUMN,
+        value: col.field,
+        column: col,
       }
 
       if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
@@ -1234,10 +1199,8 @@ export default class CustomColumnModal extends React.Component {
       if (this.isComplexColumn(col)) {
         // Only add brackets if: (1) not adjacent-wrapped in formula, and (2) column not already wrapped
         if (
-          !(
-            columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
-            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
-          ) &&
+          !(columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
+            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET) &&
           !this.isFormulaAlreadyWrapped(col?.columnFnArray)
         ) {
           columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
@@ -1388,7 +1351,6 @@ export default class CustomColumnModal extends React.Component {
 
   isStructurallyValidColumnFn = () => {
     const columnFn = this.state.columnFn || []
-
     for (let i = 0; i < columnFn.length - 1; i++) {
       const a = columnFn[i]
       const b = columnFn[i + 1]
@@ -1401,22 +1363,19 @@ export default class CustomColumnModal extends React.Component {
         return { valid: false, error: 'Invalid operator sequence' }
       }
       if (a?.type === CustomColumnTypes.OPERATOR && b?.type === CustomColumnTypes.OPERATOR) {
-        const aIsLeft = a?.value === CustomColumnValues.LEFT_BRACKET
-        const aIsRight = a?.value === CustomColumnValues.RIGHT_BRACKET
-        const bIsLeft = b?.value === CustomColumnValues.LEFT_BRACKET
-        const bIsRight = b?.value === CustomColumnValues.RIGHT_BRACKET
-
-        // Allow unary +/- after '(' or at start and common bracket/operator adjacency
+        const leftLeft = a?.value === CustomColumnValues.LEFT_BRACKET && b?.value === CustomColumnValues.LEFT_BRACKET
+        const rightRight =
+          a?.value === CustomColumnValues.RIGHT_BRACKET && b?.value === CustomColumnValues.RIGHT_BRACKET
         const unaryAllowed =
           (b?.value === CustomColumnValues.ADDITION || b?.value === CustomColumnValues.SUBTRACTION) &&
-          (aIsLeft || i === 0)
-        const leftLeft = aIsLeft && bIsLeft
-        const rightRight = aIsRight && bIsRight
-        const rightThenBinary = aIsRight && !bIsLeft && !bIsRight
-        const binaryThenLeft = !aIsLeft && !aIsRight && bIsLeft
-
-        if (!(leftLeft || rightRight || rightThenBinary || binaryThenLeft || unaryAllowed))
+          (a?.value === CustomColumnValues.LEFT_BRACKET || i === 0)
+        // Allow `)anything`, `(+`, `(-`, `((`, `))`, `operator(`
+        const afterRightBracket = a?.value === CustomColumnValues.RIGHT_BRACKET
+        const bracketAfterOp =
+          b?.value === CustomColumnValues.LEFT_BRACKET && a?.value !== CustomColumnValues.RIGHT_BRACKET
+        if (!leftLeft && !rightRight && !unaryAllowed && !afterRightBracket && !bracketAfterOp) {
           return { valid: false, error: 'Invalid operator sequence' }
+        }
       }
     }
 
@@ -1546,8 +1505,8 @@ export default class CustomColumnModal extends React.Component {
   onAddFunction = () => {
     const columnFn = _cloneDeep(this.state.columnFn)
 
-    columnFn.push({
-      type: 'function',
+    const fnToken = {
+      type: CustomColumnTypes.FUNCTION,
       fn: this.state.selectedFnType
         ? this.state.selectedFnType
         : this.state.selectedFnOperation
@@ -1561,20 +1520,34 @@ export default class CustomColumnModal extends React.Component {
           : this.state.selectedFnColumn
           ? this.props.columns.find((col) => col.field === this.state.selectedFnColumn)
           : null,
-      nTileNumber: this.state.selectedFnNTileNumber,
-      groupby: this.state.selectedFnGroupby,
-      having: this.state.selectedFnHaving,
-      operator: this.state.selectedFnOperator,
-      operatorValue: this.state.selectedFnOperatorValue,
-      orderby: this.state.selectedFnOrderBy,
-      orderbyDirection: this.state.selectedFnOrderByDirection,
-      rowsOrRange: this.state.selectedFnRowsOrRange,
-      rowsOrRangeOptionPre: this.state.selectedFnRowsOrRangeOptionPre,
-      rowsOrRangeOptionPreNValue: this.state.selectedFnRowsOrRangeOptionPreNValue,
-      rowsOrRangeOptionPost: this.state.selectedFnRowsOrRangeOptionPost,
-      rowsOrRangeOptionPostNValue: this.state.selectedFnRowsOrRangeOptionPostNValue,
-      movingAvgTimeInterval: this.state.selectedFnMovingAverageTimeInterval,
-    })
+    }
+
+    // copy legacy fields for backward compatibility, coerce numeric params to strings
+    fnToken.nTileNumber = this.state.selectedFnNTileNumber != null ? String(this.state.selectedFnNTileNumber) : null
+    fnToken.groupby = this.state.selectedFnGroupby
+    fnToken.having = this.state.selectedFnHaving
+    fnToken.operator = this.state.selectedFnOperator
+    fnToken.operatorValue = this.state.selectedFnOperatorValue != null ? String(this.state.selectedFnOperatorValue) : null
+    fnToken.orderby = this.state.selectedFnOrderBy
+    fnToken.orderbyDirection = this.state.selectedFnOrderByDirection
+    fnToken.rowsOrRange = this.state.selectedFnRowsOrRange
+    fnToken.rowsOrRangeOptionPre = this.state.selectedFnRowsOrRangeOptionPre
+    fnToken.rowsOrRangeOptionPreNValue = this.state.selectedFnRowsOrRangeOptionPreNValue != null ? String(this.state.selectedFnRowsOrRangeOptionPreNValue) : null
+    fnToken.rowsOrRangeOptionPost = this.state.selectedFnRowsOrRangeOptionPost
+    fnToken.rowsOrRangeOptionPostNValue = this.state.selectedFnRowsOrRangeOptionPostNValue != null ? String(this.state.selectedFnRowsOrRangeOptionPostNValue) : null
+    fnToken.movingAvgTimeInterval = this.state.selectedFnMovingAverageTimeInterval != null ? String(this.state.selectedFnMovingAverageTimeInterval) : null
+
+    fnToken.params = {
+      nTileNumber: fnToken.nTileNumber,
+      operatorValue: fnToken.operatorValue,
+      rowsOrRangeOptionPreNValue: fnToken.rowsOrRangeOptionPreNValue,
+      rowsOrRangeOptionPostNValue: fnToken.rowsOrRangeOptionPostNValue,
+      movingAvgTimeInterval: fnToken.movingAvgTimeInterval,
+    }
+
+    if (this.state.selectedFnRawSql) fnToken.preserveRaw = this.state.selectedFnRawSql
+
+    columnFn.push(fnToken)
 
     this.setState({
       isFunctionConfigModalVisible: false,
@@ -1677,35 +1650,14 @@ export default class CustomColumnModal extends React.Component {
   }
 
   renderColumnTypeSelector = () => {
-    const currentColumnType = COLUMN_TYPES[this.getColumnType()]?.description
-    const formattedCurrentColumnType = currentColumnType ? ` (${currentColumnType})` : ''
+    // Simplified column type selector for now; preserves parseability.
     return (
-      <div className='custom-column-builder-type-selector'>
-        <Input
-          ref={(r) => (this.inputRef = r)}
-          focusOnMount
-          label='Formatting'
-          value={
-            capitalizeFirstChar(this.state.columnType) + formattedCurrentColumnType ??
-            this.getColumnType() + formattedCurrentColumnType
-          }
-          disabled={true}
-        />
-      </div>
-    )
-  }
-
-  renderOperatorDeleteBtn = (chunkIndex) => {
-    return (
-      <Button
-        className='react-autoql-operator-delete-btn'
-        onClick={() => {
-          const columnFn = this.state.columnFn.filter((chunk, i) => i !== chunkIndex)
-          this.setState({ columnFn })
-        }}
-      >
-        <Icon type='close' />
-      </Button>
+      <Input
+        ref={(r) => (this.inputRef = r)}
+        focusOnMount
+        label='Formatting'
+        value={this.getColumnType()}
+      />
     )
   }
 
@@ -1768,10 +1720,7 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // If not resolved, attempt a fuzzy substring match (handles minor SQL formatting differences)
-    if (
-      (selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) &&
-      colFromChunk
-    ) {
+    if ((selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) && colFromChunk) {
       const rawTarget2 = colFromChunk.table_column || colFromChunk.name || colFromChunk.display_name || ''
       const normalizedTarget2 = this.stripCoalesceWrapper(String(rawTarget2)).trim()
       if (normalizedTarget2) {
@@ -1788,8 +1737,7 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // If selectedValue doesn't match a field, try resolving by matching token value to known column SQL/name/display_name.
-    const hasFieldMatch =
-      selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
+    const hasFieldMatch = selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
     if (!hasFieldMatch && selectedValue != null) {
       let resolved = selectableColumns.find((c) => {
         try {
@@ -1975,6 +1923,22 @@ export default class CustomColumnModal extends React.Component {
             }
           })}
       />
+    )
+  }
+
+  renderOperatorDeleteBtn = (i) => {
+    return (
+      <button
+        type='button'
+        className='react-autoql-operator-delete-btn'
+        onClick={() => {
+          const columnFn = _cloneDeep(this.state.columnFn)
+          columnFn.splice(i, 1)
+          this.setState({ columnFn })
+        }}
+      >
+        ×
+      </button>
     )
   }
 
@@ -2170,7 +2134,9 @@ export default class CustomColumnModal extends React.Component {
           )}
         </div>
         {this.state.isFunctionConfigModalVisible && (
-          <div style={{ height: '100%' }}>{this.renderFunctionConfigModalContent()}</div>
+          <div style={{ height: '100%' }}>
+            {this.renderFunctionConfigModalContent()}
+          </div>
         )}
       </div>
     )

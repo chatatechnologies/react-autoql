@@ -110,6 +110,8 @@ export class QueryOutput extends React.Component {
 
     // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
+    // WeakMap to track contextmenu handlers per cell element — prevents duplicate listeners on re-render
+    this.cellContextMenuHandlers = new WeakMap()
 
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
@@ -549,6 +551,16 @@ export class QueryOutput extends React.Component {
           this.setState({ columns: newColumns })
         } else if (!this.tableData && this.shouldGenerateTableData()) {
           this.generateAllData()
+        }
+
+        // Tabulator and charts initialize inside display:none when shouldRender=false,
+        // producing wrong dimensions. Force remount so they measure the visible container.
+        if (isChartType(this.state.displayType)) {
+          newState.chartID = uuid()
+        } else {
+          this.tableID = uuid()
+          this.pivotTableID = uuid()
+          newState._tableRemountKey = uuid()
         }
       }
 
@@ -1182,6 +1194,7 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
+      this.drilldownQueryID = response?.data?.data?.drilldown_query_id || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -1862,7 +1875,16 @@ export class QueryOutput extends React.Component {
     stringColumnIndices,
     rows,
     useOrLogic,
+    groupBys: explicitGroupBys,
   }) => {
+    if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
+      return this.processDrilldown({
+        supportedByAPI: true,
+        activeKey,
+        groupBys: explicitGroupBys,
+      })
+    }
+
     // Support for multiple filters (e.g., network graph links with source and target filters)
     if (filters && Array.isArray(filters) && filters.length > 0) {
       return this.processDrilldown({
@@ -2902,7 +2924,12 @@ export class QueryOutput extends React.Component {
     cellElement.setAttribute('data-tooltip-id', tooltipId)
     cellElement.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
 
-    cellElement.addEventListener('contextmenu', (e) => {
+    const prev = this.cellContextMenuHandlers.get(cellElement)
+    if (prev) {
+      cellElement.removeEventListener('contextmenu', prev)
+    }
+
+    const handler = (e) => {
       e.preventDefault()
       e.stopPropagation()
       const textToCopy = formatElement({
@@ -2911,9 +2938,22 @@ export class QueryOutput extends React.Component {
         config: dataFormatting,
         forExport: true,
       })
-
       this.copyToClipboard(textToCopy, cellElement)
-    })
+    }
+
+    this.cellContextMenuHandlers.set(cellElement, handler)
+    cellElement.addEventListener('contextmenu', handler)
+  }
+
+  detectQuantityType = (rows, colIndex) => {
+    if (!rows?.length) return 'float'
+    for (const row of rows) {
+      const val = row?.[colIndex]
+      if (val === null || val === undefined) continue
+      const num = typeof val === 'number' ? val : parseFloat(val)
+      if (!isNaN(num) && num % 1 !== 0) return 'float'
+    }
+    return 'integer'
   }
 
   formatColumnsForTable = (columns, _additionalSelects = [], aggConfig = {}) => {
@@ -2921,6 +2961,8 @@ export class QueryOutput extends React.Component {
     if (!columns) {
       return null
     }
+
+    const rows = this.queryResponse?.data?.data?.rows
 
     const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
@@ -3063,6 +3105,10 @@ export class QueryOutput extends React.Component {
         if (customSelect?.column_fn?.length) {
           newCol.columnFnArray = customSelect.column_fn
         }
+      }
+
+      if (newCol.type === ColumnTypes.QUANTITY) {
+        newCol.quantity_type = col.quantity_type ?? this.detectQuantityType(rows, i)
       }
 
       return newCol

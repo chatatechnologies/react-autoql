@@ -11,6 +11,7 @@ import {
   fetchAutocomplete,
   deepEqual,
   isChartType,
+  findNetworkColumns,
   REQUEST_CANCELLED_ERROR,
   authenticationDefault,
   autoQLConfigDefault,
@@ -18,7 +19,7 @@ import {
   getAuthentication,
   getAutoQLConfig,
   CustomColumnTypes,
-  runCachedDashboardQuery,
+  runCachedDashboardQueryPost,
   constructRTArray,
   titlelizeString,
   isError500Type,
@@ -129,6 +130,7 @@ export class DashboardTile extends React.Component {
       isRTHovered: false,
       isSecondRTHovered: false,
       currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
+      queryResponseVersion: 0,
     }
   }
 
@@ -207,6 +209,7 @@ export class DashboardTile extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    showResetQueryOption: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -298,6 +301,12 @@ export class DashboardTile extends React.Component {
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
+    const prevQR = prevProps.tile?.queryResponse
+    const nextQR = this.props.tile?.queryResponse
+    if (nextQR && prevQR && nextQR !== prevQR && !this.state.isTopExecuting) {
+      // Force QueryOutput to remount when QR is replaced externally — it doesn't reinitialize from a prop update.
+      this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
+    }
   }
 
   componentWillUnmount = () => {
@@ -309,6 +318,7 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.setParamsForTileTimeout)
       clearTimeout(this.queryInputTimer)
       clearTimeout(this.secondQueryInputTimer)
+      clearTimeout(this.titleInputTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
         this.cancelAllQueries()
@@ -471,7 +481,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  endTopQuery = ({ response }) => {
+  endTopQuery = ({ response, isReset = false }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
 
@@ -493,30 +503,67 @@ export class DashboardTile extends React.Component {
           const hasValidCurrentDataConfig = this.hasValidDataConfig(currentTile.dataConfig)
           const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
 
-          this.savedTileConfig = {
-            ...this.savedTileConfig,
-            displayType: currentTile.displayType || this.savedTileConfig.displayType,
-            secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
-            dataConfig: hasValidCurrentDataConfig ? currentTile.dataConfig : this.savedTileConfig.dataConfig,
-            secondDataConfig: hasValidSecondDataConfig
-              ? currentTile.secondDataConfig
-              : this.savedTileConfig.secondDataConfig,
-            aggConfig: currentTile.aggConfig || this.savedTileConfig.aggConfig,
-            secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
-            columns: currentTile.columns || this.savedTileConfig.columns,
-            secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
-            tableFilters:
-              currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
-            secondTableFilters:
-              currentTile.secondTableFilters != null
-                ? currentTile.secondTableFilters
-                : this.savedTileConfig.secondTableFilters,
-            axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
-            secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
-            networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
-            secondNetworkColumnConfig:
-              currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
+          if (isReset) {
+            // props.tile is stale during reset — only update safe display-type fields.
+            this.savedTileConfig = {
+              ...this.savedTileConfig,
+              displayType: currentTile.displayType || this.savedTileConfig.displayType,
+              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+            }
+          } else {
+            this.savedTileConfig = {
+              ...this.savedTileConfig,
+              displayType: currentTile.displayType || this.savedTileConfig.displayType,
+              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+              dataConfig: hasValidCurrentDataConfig ? currentTile.dataConfig : this.savedTileConfig.dataConfig,
+              secondDataConfig: hasValidSecondDataConfig
+                ? currentTile.secondDataConfig
+                : this.savedTileConfig.secondDataConfig,
+              aggConfig: currentTile.aggConfig || this.savedTileConfig.aggConfig,
+              secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
+              columns: currentTile.columns || this.savedTileConfig.columns,
+              secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
+              tableFilters:
+                currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
+              secondTableFilters:
+                currentTile.secondTableFilters != null
+                  ? currentTile.secondTableFilters
+                  : this.savedTileConfig.secondTableFilters,
+              axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
+              secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
+              networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
+              secondNetworkColumnConfig:
+                currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
+            }
           }
+        }
+        // Detect network columns from the response and persist or clear networkColumnConfig
+        try {
+          let responseColumns = response?.data?.data?.columns || []
+          // Fallback: some responses omit `columns` but include `rows` (array of objects or arrays).
+          // Derive a minimal columns array from the first row to improve network detection.
+          if ((!responseColumns || responseColumns.length === 0) && Array.isArray(response?.data?.data?.rows) && response.data.data.rows.length > 0) {
+            const firstRow = response.data.data.rows[0]
+            if (Array.isArray(firstRow)) {
+              responseColumns = firstRow.map((_, idx) => ({ name: `col${idx}` }))
+            } else if (firstRow && typeof firstRow === 'object') {
+              responseColumns = Object.keys(firstRow).map((k) => ({ name: k }))
+            }
+          }
+
+          const detected = typeof findNetworkColumns === 'function' ? findNetworkColumns(responseColumns) : null
+          if (detected && detected.sourceColumnIndex !== -1 && detected.targetColumnIndex !== -1) {
+            paramsToSet.networkColumnConfig = {
+              sourceColumnIndex: detected.sourceColumnIndex,
+              targetColumnIndex: detected.targetColumnIndex,
+              weightColumnIndex: detected.weightColumnIndex,
+            }
+          } else {
+            // Explicitly clear any persisted network config when no network-like columns detected
+            paramsToSet.networkColumnConfig = null
+          }
+        } catch (e) {
+          // Fail silently - don't block normal flow
         }
       }
 
@@ -585,6 +632,33 @@ export class DashboardTile extends React.Component {
         }
       }
 
+      // Detect network columns from the second response and persist or clear secondNetworkColumnConfig
+      try {
+        let responseColumns = response?.data?.data?.columns || []
+        // Fallback: derive columns from rows when `columns` is missing to improve detection
+        if ((!responseColumns || responseColumns.length === 0) && Array.isArray(response?.data?.data?.rows) && response.data.data.rows.length > 0) {
+          const firstRow = response.data.data.rows[0]
+          if (Array.isArray(firstRow)) {
+            responseColumns = firstRow.map((_, idx) => ({ name: `col${idx}` }))
+          } else if (firstRow && typeof firstRow === 'object') {
+            responseColumns = Object.keys(firstRow).map((k) => ({ name: k }))
+          }
+        }
+
+        const detected = typeof findNetworkColumns === 'function' ? findNetworkColumns(responseColumns) : null
+        if (detected && detected.sourceColumnIndex !== -1 && detected.targetColumnIndex !== -1) {
+          paramsToSet.secondNetworkColumnConfig = {
+            sourceColumnIndex: detected.sourceColumnIndex,
+            targetColumnIndex: detected.targetColumnIndex,
+            weightColumnIndex: detected.weightColumnIndex,
+          }
+        } else {
+          paramsToSet.secondNetworkColumnConfig = null
+        }
+      } catch (e) {
+        // ignore detection errors
+      }
+
       this.debouncedSetParamsForTile(paramsToSet, this.setBottomExecuted)
       return response
     } else {
@@ -645,7 +719,7 @@ export class DashboardTile extends React.Component {
       }
 
       // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
-      const queryFunction = isCachedRefresh ? runCachedDashboardQuery : runQuery
+      const queryFunction = isCachedRefresh ? runCachedDashboardQueryPost : runQuery
 
       if (isCachedRefresh) {
         requestData.dashboardId = this.props.dashboardId
@@ -745,13 +819,12 @@ export class DashboardTile extends React.Component {
       paramsToSet.orders = undefined
       paramsToSet.displayOverrides = undefined
     } else if (isReset) {
-      // Explicitly clear all filter/sort/column state in the tile so it stays cleared
-      // even if getMostRecentTiles() returns stale data when setParamsForTile fires
-      paramsToSet.tableFilters = undefined
-      paramsToSet.orders = undefined
-      paramsToSet.columnSelects = undefined
-      paramsToSet.displayOverrides = undefined
-      paramsToSet.filters = undefined
+      // Use [] not undefined — QueryOutput treats undefined as "keep current state".
+      paramsToSet.tableFilters = []
+      paramsToSet.orders = []
+      paramsToSet.columnSelects = []
+      paramsToSet.displayOverrides = []
+      paramsToSet.filters = []
     }
 
     this.debouncedSetParamsForTile(paramsToSet)
@@ -767,14 +840,14 @@ export class DashboardTile extends React.Component {
       isReset,
     })
       .then((response) => {
-        return this.endTopQuery({ response })
+        return this.endTopQuery({ response, isReset })
       })
       .catch((response) => {
         if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
         }
 
-        return this.endTopQuery({ response })
+        return this.endTopQuery({ response, isReset })
       })
   }
 
@@ -1359,141 +1432,6 @@ export class DashboardTile extends React.Component {
     )
   }
 
-  renderHeader = () => {
-    if (this.props.isEditing) {
-      return (
-        <div className='dashboard-tile-edit-wrapper'>
-          <div
-            className={`dashboard-tile-input-container
-            ${this.state.isQueryInputFocused ? 'query-focused' : ''}
-            ${this.state.isTitleInputFocused ? 'title-focused' : ''}`}
-          >
-            <div className='dashboard-tile-left-input-container'>
-              <div className='query-input-icon-wrapper'>
-                <Icon
-                  className='query-input-icon'
-                  type='react-autoql-bubbles-outlined'
-                  tooltip='Query'
-                  tooltipID={this.props.tooltipID}
-                />
-                {this.props.tile?.queryResponse &&
-                  (this.props.tile.queryResponse?.data?.data?.parsed_interpretation ||
-                    this.props.tile.queryResponse?.data?.data?.interpretation) && (
-                    <Popover
-                      isOpen={this.state.isRTHovered}
-                      positions={['top', 'bottom']}
-                      align='start'
-                      padding={8}
-                      onClickOutside={() => this.setState({ isRTHovered: false })}
-                      content={this.renderRTPopoverContent()}
-                    >
-                      <div
-                        className='query-input-interpretation-badge'
-                        onMouseEnter={() => this.setState({ isRTHovered: true })}
-                        onMouseLeave={() => this.setState({ isRTHovered: false })}
-                      >
-                        <Icon type='thinking-bubble' />
-                      </div>
-                    </Popover>
-                  )}
-              </div>
-              {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
-                <Autosuggest
-                  onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
-                  onSuggestionsClearRequested={this.onSuggestionsClearRequested}
-                  getSuggestionValue={this.userSelectedSuggestionHandler}
-                  suggestions={this.state.suggestions}
-                  ref={(ref) => {
-                    this.autoSuggest = ref
-                  }}
-                  renderSuggestion={(suggestion) => {
-                    return <>{suggestion.name}</>
-                  }}
-                  inputProps={{
-                    className: 'dashboard-tile-autocomplete-input',
-                    placeholder: 'Type a query in your own words',
-                    value: this.state.query,
-                    onFocus: (e) => {
-                      e.stopPropagation()
-                      this.setState({ isQueryInputFocused: true })
-                    },
-                    onChange: this.onQueryInputChange,
-                    onKeyDown: this.onQueryTextKeyDown,
-                    onBlur: () => this.setState({ isQueryInputFocused: false }),
-                  }}
-                />
-              ) : (
-                <input
-                  className='dashboard-tile-input query'
-                  placeholder='Type a query in your own words'
-                  value={this.state.query}
-                  data-tooltip-content='Query'
-                  data-tooltip-id={this.props.tooltipID}
-                  data-place='bottom'
-                  spellCheck={false}
-                  onChange={this.onQueryInputChange}
-                  onKeyDown={this.onQueryTextKeyDown}
-                  onFocus={() => this.setState({ isQueryInputFocused: true })}
-                  onBlur={() => this.setState({ isQueryInputFocused: false })}
-                />
-              )}
-              {this.props.tile?.queryResponse && (
-                <div
-                  className='dashboard-tile-rt-container'
-                  onMouseEnter={() => this.setState({ isRTHovered: true })}
-                  onMouseLeave={() => this.setState({ isRTHovered: false })}
-                >
-                  <ReverseTranslation
-                    authentication={this.props.authentication}
-                    queryResponse={this.props.tile.queryResponse}
-                    tooltipID={this.props.tooltipID}
-                    enableEditReverseTranslation={this.props.autoQLConfig?.enableEditReverseTranslation}
-                    compact={true}
-                    isHovered={this.state.isRTHovered}
-                  />
-                </div>
-              )}
-              <button
-                className='dashboard-tile-send-button'
-                onClick={() => this.processTile()}
-                disabled={!this.isQueryValid(this.state.query)}
-                type='button'
-              >
-                <Icon type='send' />
-              </button>
-            </div>
-
-            <div className='dashboard-tile-right-input-container'>
-              <Icon className='title-input-icon' type='title' tooltip='Title' tooltipID={this.props.tooltipID} />
-              <input
-                className='dashboard-tile-input title'
-                placeholder='Add descriptive title (optional)'
-                value={this.state.title}
-                onChange={(e) => this.debounceTitleInputChange(e.target.value)}
-                onFocus={() => this.setState({ isTitleInputFocused: true })}
-                onBlur={() => this.setState({ isTitleInputFocused: false })}
-              />
-            </div>
-          </div>
-        </div>
-      )
-    }
-
-    const fullTitle = this.props.tile.title || this.props.tile.query || 'Untitled'
-    return (
-      <div className='dashboard-tile-title-container dashboard-tile-title-wrap'>
-        <span
-          ref={(r) => (this.dashboardTileTitleRef = r)}
-          className='dashboard-tile-title'
-          id={`dashboard-tile-title-${this.COMPONENT_KEY}`}
-        >
-          {fullTitle}
-        </span>
-        <div className='dashboard-tile-title-divider'></div>
-      </div>
-    )
-  }
-
   renderRTPopoverContent = (queryResponse) => {
     const response = queryResponse || this.props.tile?.queryResponse
     if (!response) return null
@@ -1804,6 +1742,8 @@ export class DashboardTile extends React.Component {
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             isEditing={this.props.isEditing}
+            source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+            scope={this.props.scope}
             {...optionsToolbarProps}
           />
         </div>
@@ -1899,7 +1839,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}${this.props.isEditing ? '-editing' : ''}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
         initialTableConfigs: (() => {
@@ -1946,10 +1886,7 @@ export class DashboardTile extends React.Component {
           // from the actual response columns — an empty config causes pivotTableData = [] and
           // a completely blank tile.
           const ptc = dataConfig?.pivotTableConfig
-          const pivotConfigIsEmpty =
-            ptc &&
-            !ptc.numberColumnIndices?.length &&
-            !ptc.stringColumnIndices?.length
+          const pivotConfigIsEmpty = ptc && !ptc.numberColumnIndices?.length && !ptc.stringColumnIndices?.length
 
           const { pivotTableConfig, tableConfig, ...restDataConfig } = dataConfig
 
@@ -2027,8 +1964,8 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         onResetClick: () => this.props.resetTile?.(this.props.tile.i),
-        // allow parent to request showing refresh/reset in edit mode
         showRefreshInEdit: this.props.isEditing,
+        showResetQueryOption: this.props.showResetQueryOption,
       },
     })
   }

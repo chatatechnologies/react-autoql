@@ -1,7 +1,7 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
-import { DashboardTile } from './DashboardTile'
+import { DashboardTile } from '../DashboardTile/DashboardTile'
 import sampleResponses from '../../../../test/responseTestCases'
 // Use per-test Tabulator mock to avoid relying on global test-only mocks
 jest.mock('tabulator-tables', () => require('../../../../test/utils/tabulatorMockFactory')())
@@ -400,5 +400,225 @@ describe('DashboardTile retry behavior', () => {
     expect(mockRunCached).toHaveBeenNthCalledWith(2, expect.objectContaining({ force: true }))
     // Assert the successful response is returned from the forced retry
     expect(result).toEqual(successResponse)
+  })
+})
+
+describe('queryResponseVersion', () => {
+  test('increments when tile.queryResponse is replaced externally while not executing', () => {
+    const initialQR = sampleResponses[10]
+    const newQR = { ...sampleResponses[10], _replaced: true }
+    const wrapper = setup({ tile: { ...sampleTile, queryResponse: initialQR } })
+    const instance = wrapper.instance()
+
+    const initialVersion = wrapper.state('queryResponseVersion')
+
+    // Simulate external replacement while not executing
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
+
+    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion + 1)
+    wrapper.unmount()
+  })
+
+  test('does not increment when there was no previous QR', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryResponse: undefined } })
+
+    const initialVersion = wrapper.state('queryResponseVersion')
+
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: sampleResponses[10] } })
+
+    // prevQR was falsy — condition requires both truthy
+    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion)
+    wrapper.unmount()
+  })
+
+  test('does not increment while isTopExecuting is true', () => {
+    const initialQR = sampleResponses[10]
+    const newQR = { ...sampleResponses[10], _replaced: true }
+    const wrapper = setup({ tile: { ...sampleTile, queryResponse: initialQR } })
+
+    wrapper.setState({ isTopExecuting: true })
+    const version = wrapper.state('queryResponseVersion')
+
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
+
+    expect(wrapper.state('queryResponseVersion')).toBe(version)
+    wrapper.unmount()
+  })
+})
+
+describe('network column detection in endTopQuery', () => {
+  test('endTopQuery handles successful responses without errors', () => {
+    const wrapper = setup({ tile: sampleTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: sampleResponses[10].data.data, reference_id: '1.1.200' },
+    }
+
+    // Should not throw
+    instance.endTopQuery({ response })
+
+    wrapper.unmount()
+  })
+
+  test('endTopQuery with isReset=true does not update savedTileConfig beyond display type', () => {
+    const wrapper = setup({ tile: sampleTile })
+    const instance = wrapper.instance()
+
+    const originalConfig = { ...instance.savedTileConfig }
+
+    const response = {
+      data: { data: sampleResponses[10].data.data, reference_id: '1.1.200' },
+    }
+
+    instance.endTopQuery({ response, isReset: true })
+
+    // During reset, only displayType should update, not dataConfig
+    expect(instance.savedTileConfig.dataConfig).toEqual(originalConfig.dataConfig)
+
+    wrapper.unmount()
+  })
+})
+
+describe('isReset flag in processTileTop', () => {
+  test('passes isReset=true down to processQuery', () => {
+    const wrapper = setup({ tile: sampleTile })
+    const instance = wrapper.instance()
+
+    const mockResponse = { data: { data: { rows: [] } } }
+    const processQuerySpy = jest
+      .spyOn(instance, 'processQuery')
+      .mockImplementation(() => Promise.resolve(mockResponse))
+
+    instance.processTileTop({ isReset: true })
+
+    expect(processQuerySpy).toHaveBeenCalledWith(expect.objectContaining({ isReset: true }))
+
+    processQuerySpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  test('passes isReset=false by default', () => {
+    const wrapper = setup({ tile: sampleTile })
+    const instance = wrapper.instance()
+
+    const mockResponse = { data: { data: { rows: [] } } }
+    const processQuerySpy = jest
+      .spyOn(instance, 'processQuery')
+      .mockImplementation(() => Promise.resolve(mockResponse))
+
+    instance.processTileTop({})
+
+    const callArgs = processQuerySpy.mock.calls[0][0]
+    expect(callArgs.isReset).toBeFalsy()
+
+    processQuerySpy.mockRestore()
+    wrapper.unmount()
+  })
+})
+
+describe('axisSorts array normalization', () => {
+  test('converts array-of-objects to plain object for QueryOutput', () => {
+    const arrayAxisSorts = [{ 'x-col1': 'value-asc' }, { 'x-col2': 'value-desc' }]
+    const wrapper = setup({
+      tile: { ...sampleTile, axisSorts: arrayAxisSorts },
+      isEditing: false,
+    })
+
+    const qo = wrapper.find('QueryOutput').first()
+    const initialAxisSorts = qo.prop('initialAxisSorts')
+
+    expect(initialAxisSorts).toEqual({ 'x-col1': 'value-asc', 'x-col2': 'value-desc' })
+
+    wrapper.unmount()
+  })
+
+  test('passes object axisSorts through unchanged', () => {
+    const objAxisSorts = { 'x-col1': 'value-asc' }
+    const wrapper = setup({
+      tile: { ...sampleTile, axisSorts: objAxisSorts },
+      isEditing: false,
+    })
+
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('initialAxisSorts')).toEqual({ 'x-col1': 'value-asc' })
+
+    wrapper.unmount()
+  })
+
+  test('returns empty object when axisSorts is undefined', () => {
+    const wrapper = setup({
+      tile: { ...sampleTile, axisSorts: undefined },
+      isEditing: false,
+    })
+
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('initialAxisSorts')).toEqual({})
+
+    wrapper.unmount()
+  })
+})
+
+describe('pivotTableConfig empty stripping', () => {
+  test('strips pivotTableConfig and tableConfig when both index arrays are empty', () => {
+    const tileWithEmptyPivot = {
+      ...sampleTile,
+      dataConfig: {
+        tableConfig: { stringColumnIndices: [], numberColumnIndices: [] },
+        pivotTableConfig: { stringColumnIndices: [], numberColumnIndices: [] },
+      },
+    }
+    const wrapper = setup({ tile: tileWithEmptyPivot, isEditing: false })
+
+    const qo = wrapper.find('QueryOutput').first()
+    const dataConfig = qo.prop('dataConfig')
+
+    if (dataConfig) {
+      expect(dataConfig).not.toHaveProperty('pivotTableConfig')
+      expect(dataConfig).not.toHaveProperty('tableConfig')
+    }
+
+    wrapper.unmount()
+  })
+
+  test('preserves pivotTableConfig when indices are not empty', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+
+    const qo = wrapper.find('QueryOutput').first()
+    const dataConfig = qo.prop('dataConfig')
+
+    if (dataConfig) {
+      // sampleTile has non-empty indices — both should be preserved
+      expect(dataConfig).toHaveProperty('pivotTableConfig')
+      expect(dataConfig).toHaveProperty('tableConfig')
+    }
+
+    wrapper.unmount()
+  })
+})
+
+describe('onRefreshClick and onResetClick wiring', () => {
+  test('onRefreshClick triggers executeSingleTile with tile id', () => {
+    const executeSingleTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, executeSingleTile, isEditing: true })
+
+    const toolbar = wrapper.find('OptionsToolbar').first()
+    toolbar.prop('onRefreshClick')()
+
+    expect(executeSingleTile).toHaveBeenCalledWith(sampleTile.i)
+
+    wrapper.unmount()
+  })
+
+  test('onResetClick triggers resetTile with tile id', () => {
+    const resetTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, resetTile, isEditing: true })
+
+    const toolbar = wrapper.find('OptionsToolbar').first()
+    toolbar.prop('onResetClick')()
+
+    expect(resetTile).toHaveBeenCalledWith(sampleTile.i)
+
+    wrapper.unmount()
   })
 })

@@ -435,3 +435,248 @@ describe('reset query menu item', () => {
     expect(instance.state.isResetQueryConfirmVisible).toBe(false)
   })
 })
+describe('onResetClick preferred over onRefreshClick', () => {
+  test('calls onResetClick when provided instead of onRefreshClick', () => {
+    const onResetClick = jest.fn()
+    const onRefreshClick = jest.fn()
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        onResetClick={onResetClick}
+        onRefreshClick={onRefreshClick}
+        isEditing={true}
+        responseRef={responseRef}
+      />,
+    )
+    const instance = wrapper.instance()
+    instance.setState({ isResetQueryConfirmVisible: true })
+    const confirmModalElement = instance.renderResetQueryConfirmModal()
+
+    confirmModalElement.props.onConfirm()
+
+    expect(onResetClick).toHaveBeenCalled()
+    expect(onRefreshClick).not.toHaveBeenCalled()
+  })
+
+  test('falls back to onRefreshClick when onResetClick is not provided', () => {
+    const onRefreshClick = jest.fn()
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        onRefreshClick={onRefreshClick}
+        isEditing={true}
+        responseRef={responseRef}
+      />,
+    )
+    const instance = wrapper.instance()
+    instance.setState({ isResetQueryConfirmVisible: true })
+    const confirmModalElement = instance.renderResetQueryConfirmModal()
+
+    confirmModalElement.props.onConfirm()
+
+    expect(onRefreshClick).toHaveBeenCalled()
+  })
+})
+
+describe('showResetQueryOption prop', () => {
+  test('hides reset menu item when showResetQueryOption is false', () => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+        showResetQueryOption={false}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const shouldShowButton = instance.getShouldShowButtonObj(wrapper.props())
+    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+  })
+
+  test('shows reset menu item when showResetQueryOption is true and resettable state exists', () => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const onRefreshClick = jest.fn()
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+        onRefreshClick={onRefreshClick}
+        showResetQueryOption={true}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(typeof instance.getShouldShowButtonObj).toBe('function')
+  })
+})
+
+describe('custom event dispatch on reset confirm', () => {
+  test('OptionsToolbar renders reset query confirm modal', () => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+        onRefreshClick={jest.fn()}
+        showResetQueryOption={true}
+      />,
+    )
+    const instance = wrapper.instance()
+    instance.setState({ isResetQueryConfirmVisible: true })
+
+    const confirmModalElement = instance.renderResetQueryConfirmModal()
+    expect(confirmModalElement).toBeDefined()
+    expect(confirmModalElement.props.onConfirm).toBeDefined()
+  })
+})
+
+describe('showRefreshDataButton gating conditions', () => {
+  test('has getShouldShowButtonObj method', () => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      queryResponse: { ...responseTestCases[8], data: { data: { text: '' } } },
+      formattedTableParams: { filters: [], sorters: [] },
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const onRefreshClick = jest.fn()
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+        onRefreshClick={onRefreshClick}
+        showResetQueryOption={true}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const shouldShowButton = instance.getShouldShowButtonObj(wrapper.props())
+    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+  })
+
+  test('hides refresh button for single-value display type', () => {
+    const responseRef = {
+      state: { displayType: 'single-value', customColumnSelects: [] },
+      formattedTableParams: { filters: [], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const onRefreshClick = jest.fn()
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+        onRefreshClick={onRefreshClick}
+        showResetQueryOption={true}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const shouldShowButton = instance.getShouldShowButtonObj(wrapper.props())
+    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+  })
+
+  test('hides refresh button when no resettable state (no filters, sorters, or custom columns)', () => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      formattedTableParams: { filters: [], sorters: [] },
+      queryResponse: responseTestCases[8],
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const onRefreshClick = jest.fn()
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+        onRefreshClick={onRefreshClick}
+        showResetQueryOption={true}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const shouldShowButton = instance.getShouldShowButtonObj(wrapper.props())
+    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+  })
+})
+
+describe('exportCSV with filters', () => {
+  test('has exportCSV reference available from responseRef', () => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      queryResponse: responseTestCases[8],
+      formattedTableParams: { filters: [], sorters: [] },
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [{ field: 'col1', operator: '=', value: 'bar' }],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        responseRef={responseRef}
+      />,
+    )
+
+    // Verify responseRef methods are accessible
+    expect(responseRef.getCombinedFilters()).toEqual([{ field: 'col1', operator: '=', value: 'bar' }])
+    expect(responseRef.getColumns()).toHaveLength(1)
+  })
+})

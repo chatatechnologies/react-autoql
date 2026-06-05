@@ -64,6 +64,9 @@ export default class ChataTable extends React.Component {
     // WeakMap to keep pivot header capture handlers without polluting DOM
     this.pivotHeaderHandlers = new WeakMap()
     this.pivotHeaderElements = new Set()
+    // WeakMaps to track header/input listeners so they can be replaced instead of stacked
+    this.headerContextMenuHandlers = new WeakMap()
+    this.inputDateClickHandlers = new WeakMap()
 
     // Pre-rendered hamburger icon markup for header injection
     this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
@@ -1154,7 +1157,13 @@ export default class ChataTable extends React.Component {
         }
 
         if (!this.props.pivot) {
-          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+          const prevContextMenu = this.headerContextMenuHandlers.get(headerElement)
+          if (prevContextMenu) {
+            headerElement.removeEventListener('contextmenu', prevContextMenu)
+          }
+          const contextMenuHandler = (e) => this.headerContextMenuClick(e, col)
+          this.headerContextMenuHandlers.set(headerElement, contextMenuHandler)
+          headerElement.addEventListener('contextmenu', contextMenuHandler)
         }
 
         // Attach capture handler to the first pivot header only
@@ -1190,8 +1199,13 @@ export default class ChataTable extends React.Component {
 
         if (col.type === ColumnTypes.DATE && !col.pivot) {
           // Open Calendar Picker when user clicks on this field
-          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
-          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
+          const prevDateClick = this.inputDateClickHandlers.get(inputElement)
+          if (prevDateClick) {
+            inputElement.removeEventListener('click', prevDateClick)
+          }
+          const dateClickHandler = (e) => this.inputDateClickListener(e, col)
+          this.inputDateClickHandlers.set(inputElement, dateClickHandler)
+          inputElement.addEventListener('click', dateClickHandler)
 
           // Do not allow user to type in this field
           const keyboardEvents = ['keypress', 'keydown', 'keyup']
@@ -1475,19 +1489,18 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    const newColumns = this.props.columns.map((col) =>
-      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
-    )
-
-    this.props.updateColumns(
-      newColumns,
-      this.props.response?.data?.data?.fe_req,
-      this.props.response?.data?.data?.available_selects,
-    )
-
-    setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-      console.error(error)
-    })
+    // TODO: re-enable when column visibility is re-added for dashboards (without API call)
+    // const newColumns = this.props.columns.map((col) =>
+    //   col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    // )
+    // this.props.updateColumns(
+    //   newColumns,
+    //   this.props.response?.data?.data?.fe_req,
+    //   this.props.response?.data?.data?.available_selects,
+    // )
+    // setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+    //   console.error(error)
+    // })
   }
 
   updateColumn = (field, newParams) => {
@@ -1617,10 +1630,11 @@ export default class ChataTable extends React.Component {
               Edit Column
             </li>
           )}
-          <li onClick={this.onRemoveColumnClick}>
+          {/* TODO: re-enable when column visibility is re-added for dashboards */}
+          {/* <li onClick={this.onRemoveColumnClick}>
             <Icon type='close' />
             Remove Column
-          </li>
+          </li> */}
         </ul>
       </div>
     )
