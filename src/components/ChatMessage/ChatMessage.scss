@@ -214,7 +214,7 @@
       }
 
       &:not(.resizable) {
-        max-height: min(calc(100vh - 300px), 600px);
+        max-height: min(calc(100vh - 340px), 600px);
       }
       &.resizable {
         max-height: none;
