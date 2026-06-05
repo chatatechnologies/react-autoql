@@ -226,25 +226,21 @@
   display: flex;
   flex-direction: column;
 
-  // Above placement (default)
+  // Above placement (default) — renders before input in DOM, so sits above it in flow
   &.placement-above {
-    position: absolute;
-    bottom: 100%;
-    top: unset;
+    position: relative;
     border-top: 1px solid var(--react-autoql-border-color);
     border-radius: 8px 8px 0 0;
-    box-shadow: 0 -7px 6px -4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -4px 6px -4px rgba(0, 0, 0, 0.05);
   }
 
-  // Below placement
+  // Below placement — renders after input in DOM, so sits below it in flow
   &.placement-below {
     position: relative;
-    top: unset;
-    bottom: unset;
     border-top: 1px solid var(--react-autoql-border-color);
     border-radius: 0 0 8px 8px;
     box-shadow: 0 7px 6px -4px rgba(0, 0, 0, 0.05);
-    flex-direction: column-reverse; // Reverse order so buttons are on top, expanded content below
+    flex-direction: column-reverse;
   }
 
   &.expanded {

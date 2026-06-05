@@ -1294,8 +1294,6 @@ export default class ChatMessage extends React.Component {
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             source={this.props.source}
             scope={this.props.scope}
-            enableFollowOnQuery={this.props.enableFollowOnQuery}
-            onFollowOnQueryResult={this.onFollowOnQueryResult}
           />
         ) : null}
       </div>
