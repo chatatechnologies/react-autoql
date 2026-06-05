@@ -588,7 +588,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
-          {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && (
+          {this.props.isEditing && this.props.showResetQueryOption && (
             <li
               className='context-menu-divider-top'
               onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
@@ -1079,17 +1079,11 @@ export class OptionsToolbar extends React.Component {
         }),
       }
 
-      // Hide reset button when there's nothing to reset or the display type is single-value.
+      // Hide reset button when there's no query text or display type is single-value.
       try {
         const queryText = props.responseRef?.queryResponse?.data?.data?.text || ''
         const currentDisplayType = props.responseRef?.state?.displayType
-        const filters = props.responseRef?.formattedTableParams?.filters || []
-        const sorters = props.responseRef?.formattedTableParams?.sorters || []
-        const customColumns = props.responseRef?.state?.customColumnSelects || []
-        const hasResettable = (Array.isArray(filters) && filters.length > 0)
-          || (Array.isArray(sorters) && sorters.length > 0)
-          || (Array.isArray(customColumns) && customColumns.length > 0)
-        if (!queryText || String(queryText).trim().length === 0 || currentDisplayType === 'single-value' || !hasResettable) {
+        if (!queryText || String(queryText).trim().length === 0 || currentDisplayType === 'single-value') {
           shouldShowButton.showRefreshDataButton = false
         }
       } catch (e) {
@@ -1098,8 +1092,10 @@ export class OptionsToolbar extends React.Component {
 
       // Don't show more options button if it's a markdown-only message
       const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
-      // Only count the refresh/reset item for More Options if explicitly enabled by prop.
-      const willShowRefreshInMenu = shouldShowButton.showRefreshDataButton && !!props.showResetQueryOption
+      // Reset query always shows in edit mode; refresh data button follows its own gating.
+      const willShowRefreshInMenu =
+        (shouldShowButton.showRefreshDataButton || (!!props.showRefreshInEdit && !!props.showResetQueryOption)) &&
+        !!props.showResetQueryOption
 
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&

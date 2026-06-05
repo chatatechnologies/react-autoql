@@ -497,53 +497,22 @@ describe('onResetClick preferred over onRefreshClick', () => {
 })
 
 describe('showResetQueryOption prop', () => {
-  test('hides reset menu item when showResetQueryOption is false', () => {
-    const responseRef = {
-      state: { displayType: 'table', customColumnSelects: [] },
-      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
-      queryResponse: responseTestCases[8],
-      getColumns: () => [{ name: 'col1', is_visible: true }],
-      isFilteringTable: () => false,
-      getTabulatorHeaderFilters: () => [],
-      getCombinedFilters: () => [],
-    }
+  test('reset menu item is not rendered when showResetQueryOption is false', () => {
     const wrapper = shallow(
-      <OptionsToolbar
-        {...OptionsToolbar.defaultProps}
-        isEditing={true}
-        responseRef={responseRef}
-        showResetQueryOption={false}
-      />,
+      <OptionsToolbar {...OptionsToolbar.defaultProps} isEditing={true} showResetQueryOption={false} />,
     )
-    const instance = wrapper.instance()
-
-    const shouldShowButton = instance.getShouldShowButtonObj(wrapper.props())
-    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+    const menu = wrapper.instance().renderMoreOptionsMenu({}, {})
+    const html = shallow(menu).html()
+    expect(html).not.toContain('Reset query')
   })
 
-  test('shows reset menu item when showResetQueryOption is true and resettable state exists', () => {
-    const responseRef = {
-      state: { displayType: 'table', customColumnSelects: [] },
-      formattedTableParams: { filters: [{ field: 'col1', operator: '=', value: 'foo' }], sorters: [] },
-      queryResponse: responseTestCases[8],
-      getColumns: () => [{ name: 'col1', is_visible: true }],
-      isFilteringTable: () => false,
-      getTabulatorHeaderFilters: () => [],
-      getCombinedFilters: () => [],
-    }
-    const onRefreshClick = jest.fn()
+  test('reset menu item is rendered when isEditing and showResetQueryOption are both true', () => {
     const wrapper = shallow(
-      <OptionsToolbar
-        {...OptionsToolbar.defaultProps}
-        isEditing={true}
-        responseRef={responseRef}
-        onRefreshClick={onRefreshClick}
-        showResetQueryOption={true}
-      />,
+      <OptionsToolbar {...OptionsToolbar.defaultProps} isEditing={true} showResetQueryOption={true} />,
     )
-    const instance = wrapper.instance()
-
-    expect(typeof instance.getShouldShowButtonObj).toBe('function')
+    const menu = wrapper.instance().renderMoreOptionsMenu({}, {})
+    const html = shallow(menu).html()
+    expect(html).toContain('Reset query')
   })
 })
 
@@ -629,11 +598,11 @@ describe('showRefreshDataButton gating conditions', () => {
     expect(shouldShowButton.showRefreshDataButton).toBe(false)
   })
 
-  test('hides refresh button when no resettable state (no filters, sorters, or custom columns)', () => {
+  test('shows refresh button even when no resettable state (no filters, sorters, or custom columns)', () => {
     const responseRef = {
       state: { displayType: 'table', customColumnSelects: [] },
       formattedTableParams: { filters: [], sorters: [] },
-      queryResponse: responseTestCases[8],
+      queryResponse: { data: { data: { display_type: 'data', text: 'total sales', rows: [[1], [2]] } } },
       getColumns: () => [{ name: 'col1', is_visible: true }],
       isFilteringTable: () => false,
       getTabulatorHeaderFilters: () => [],
@@ -651,8 +620,8 @@ describe('showRefreshDataButton gating conditions', () => {
     )
     const instance = wrapper.instance()
 
-    const shouldShowButton = instance.getShouldShowButtonObj(wrapper.props())
-    expect(shouldShowButton.showRefreshDataButton).toBe(false)
+    const shouldShowButton = instance.getShouldShowButtonObj(instance.props)
+    expect(shouldShowButton.showRefreshDataButton).toBe(true)
   })
 })
 

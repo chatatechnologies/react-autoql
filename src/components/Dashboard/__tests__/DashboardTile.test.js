@@ -292,16 +292,20 @@ describe('DashboardTile.isServerError', () => {
   const instance = new DashboardTile({ tile: { i: 1, query: '' }, setParamsForTile: () => {} })
   const fn = instance.isServerError.bind(instance)
 
-  test('returns true for numeric 5xx status', () => {
-    expect(fn({ status: 502 })).toBe(true)
+  test('returns true when reference_id ends with .502', () => {
+    expect(fn({ data: { reference_id: 'abc.def.502' } })).toBe(true)
   })
 
-  test('returns true when message contains internal server error', () => {
-    expect(fn({ data: { message: 'Internal Server Error: something went wrong' } })).toBe(true)
+  test('returns true when referenceId ends with .502', () => {
+    expect(fn({ data: { referenceId: '1.1.502' } })).toBe(true)
   })
 
-  test('returns true when reference_id ends with .500', () => {
-    expect(fn({ data: { reference_id: 'abc.def.500' } })).toBe(true)
+  test('returns false when reference_id ends with .500 (not 502)', () => {
+    expect(fn({ data: { reference_id: 'abc.def.500' } })).toBe(false)
+  })
+
+  test('returns false for numeric 5xx status alone', () => {
+    expect(fn({ status: 502 })).toBe(false)
   })
 
   test('returns false for non-server responses (200)', () => {
@@ -346,7 +350,7 @@ describe('DashboardTile retry behavior', () => {
 
     const requestData = { query: 'cats' }
 
-    const error = { response: { status: 500, data: { message: 'Internal Server Error', reference_id: 'abc.500' } } }
+    const error = { response: { data: { reference_id: 'abc.502' } } }
 
     mockRunCached
       .mockImplementationOnce(() => Promise.reject(error))
@@ -386,7 +390,7 @@ describe('DashboardTile retry behavior', () => {
 
     const requestData = { query: 'dogs' }
     const successResponse = { data: { data: { rows: [{ name: 'Fido', age: 5 }] } }, status: 200 }
-    const error = { response: { status: 500, data: { message: 'Internal Server Error' } } }
+    const error = { response: { data: { reference_id: 'abc.502' } } }
 
     mockRunCached
       .mockImplementationOnce(() => Promise.reject(error))

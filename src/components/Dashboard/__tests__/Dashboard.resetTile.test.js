@@ -100,6 +100,27 @@ describe('Dashboard resetTile new fields', () => {
 
     wrapper.unmount()
   })
+
+  it('clears dataConfig and secondDataConfig on reset', () => {
+    const tile = makeTile({
+      dataConfig: { tableConfig: { columnMap: {} }, pivotTableConfig: null },
+      secondDataConfig: { tableConfig: null, pivotTableConfig: { cols: [] } },
+    })
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.resetTile('tile-1')
+
+    // pendingResetTiles is set synchronously before the async execution chain
+    const resetTile = instance.pendingResetTiles?.find((t) => t.i === 'tile-1')
+    expect(resetTile).toBeDefined()
+    expect(resetTile.dataConfig).toBeUndefined()
+    expect(resetTile.secondDataConfig).toBeUndefined()
+    expect(resetTile.tableFilters).toEqual([])
+    expect(resetTile.orders).toEqual([])
+
+    wrapper.unmount()
+  })
 })
 
 describe('Dashboard discardChanges', () => {

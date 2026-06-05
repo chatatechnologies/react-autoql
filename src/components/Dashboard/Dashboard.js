@@ -993,7 +993,7 @@ class DashboardWithoutTheme extends React.Component {
         return
       }
 
-      // Clear filters, custom columns, sorts and cached responses; preserve query and title
+      // Clear filters, custom columns, sorts, chart configs, and cached responses; preserve query and title
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         tableFilters: [],
@@ -1005,6 +1005,8 @@ class DashboardWithoutTheme extends React.Component {
         displayOverrides: [],
         orders: [],
         secondOrders: [],
+        dataConfig: undefined,
+        secondDataConfig: undefined,
         queryResponse: null,
         secondQueryResponse: null,
       }
