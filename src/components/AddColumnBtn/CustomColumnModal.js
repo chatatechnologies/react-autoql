@@ -2558,84 +2558,88 @@ export default class CustomColumnModal extends React.Component {
                   })}
                 />
               </div>
-              <div>
-                <Select
-                  label='Partition By Column'
-                  isRequired={false}
-                  className='custom-column-window-fn-selector'
-                  value={this.state.selectedFnGroupby ?? null}
-                  onChange={(selectedFnGroupby) => {
-                    this.setState({ selectedFnGroupby })
-                  }}
-                  positions={['bottom', 'top', 'right', 'left']}
-                  options={allColumnsOptions}
-                />
-              </div>
-              <div>
-                <Select
-                  label='Order By Column'
-                  isRequired={false}
-                  className='custom-column-window-fn-selector'
-                  value={this.state.selectedFnOrderBy ?? null}
-                  onChange={(selectedFnOrderBy) =>
-                    this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
-                  }
-                  positions={['bottom', 'top', 'right', 'left']}
-                  options={allColumnsOptions}
-                />
-                {this.state.selectedFnOrderBy && (
-                  <Select
-                    label='Order By Direction'
-                    isRequired={false}
-                    className='custom-column-window-fn-selector'
-                    value={this.state.selectedFnOrderByDirection ?? null}
-                    onChange={(selectedFnOrderByDirection) =>
-                      this.setState(
-                        { selectedFnOrderByDirection },
-                        () => this.syncNewColumnFnArray(this.state.columnFn),
-                      )
-                    }
-                    positions={['bottom', 'top', 'right', 'left']}
-                    options={ORDERBY_DIRECTIONS}
-                    outlined={true}
-                  />
-                )}
-              </div>
-              <div>
-                <Select
-                  label='Rows or Range'
-                  isRequired={false}
-                  className='custom-column-window-fn-selector'
-                  value={this.state.selectedFnRowsOrRange ?? null}
-                  onChange={(value) => this.changeChunkRowsOrRange(value, CustomColumnTypes.FUNCTION, 0)}
-                  positions={['bottom', 'top', 'right', 'left']}
-                  options={ROWS_RANGE}
-                />
-                {this.state.selectedFnRowsOrRange && (
-                  <>
+              {this.props.queryResponse?.data?.data?.median_type !== 'AGG' && (
+                <>
+                  <div>
                     <Select
-                      label='Start With'
+                      label='Partition By Column'
                       isRequired={false}
                       className='custom-column-window-fn-selector'
-                      value={this.state.selectedFnRowsOrRangeOptionPre ?? null}
-                      onChange={(value) => this.changeChunkRowsOrRangeStart(value, CustomColumnTypes.FUNCTION, 0)}
+                      value={this.state.selectedFnGroupby ?? null}
+                      onChange={(selectedFnGroupby) => {
+                        this.setState({ selectedFnGroupby })
+                      }}
                       positions={['bottom', 'top', 'right', 'left']}
-                      options={ROWS_RANGE_OPTIONS.filter((option) => option.canStartWith === true)}
+                      options={allColumnsOptions}
                     />
+                  </div>
+                  <div>
                     <Select
-                      label='End With'
+                      label='Order By Column'
                       isRequired={false}
                       className='custom-column-window-fn-selector'
-                      value={this.state.selectedFnRowsOrRangeOptionPost ?? null}
-                      onChange={(value) => this.changeChunkRowsOrRangeEnd(value, CustomColumnTypes.FUNCTION, 0)}
+                      value={this.state.selectedFnOrderBy ?? null}
+                      onChange={(selectedFnOrderBy) =>
+                        this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
+                      }
                       positions={['bottom', 'top', 'right', 'left']}
-                      options={ROWS_RANGE_OPTIONS.filter(
-                        (option) => option.canEndWith === true && option.value !== this.state.selectedFnRowsOrRangeOptionPre,
-                      )}
+                      options={allColumnsOptions}
                     />
-                  </>
-                )}
-              </div>
+                    {this.state.selectedFnOrderBy && (
+                      <Select
+                        label='Order By Direction'
+                        isRequired={false}
+                        className='custom-column-window-fn-selector'
+                        value={this.state.selectedFnOrderByDirection ?? null}
+                        onChange={(selectedFnOrderByDirection) =>
+                          this.setState(
+                            { selectedFnOrderByDirection },
+                            () => this.syncNewColumnFnArray(this.state.columnFn),
+                          )
+                        }
+                        positions={['bottom', 'top', 'right', 'left']}
+                        options={ORDERBY_DIRECTIONS}
+                        outlined={true}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <Select
+                      label='Rows or Range'
+                      isRequired={false}
+                      className='custom-column-window-fn-selector'
+                      value={this.state.selectedFnRowsOrRange ?? null}
+                      onChange={(value) => this.changeChunkRowsOrRange(value, CustomColumnTypes.FUNCTION, 0)}
+                      positions={['bottom', 'top', 'right', 'left']}
+                      options={ROWS_RANGE}
+                    />
+                    {this.state.selectedFnRowsOrRange && (
+                      <>
+                        <Select
+                          label='Start With'
+                          isRequired={false}
+                          className='custom-column-window-fn-selector'
+                          value={this.state.selectedFnRowsOrRangeOptionPre ?? null}
+                          onChange={(value) => this.changeChunkRowsOrRangeStart(value, CustomColumnTypes.FUNCTION, 0)}
+                          positions={['bottom', 'top', 'right', 'left']}
+                          options={ROWS_RANGE_OPTIONS.filter((option) => option.canStartWith === true)}
+                        />
+                        <Select
+                          label='End With'
+                          isRequired={false}
+                          className='custom-column-window-fn-selector'
+                          value={this.state.selectedFnRowsOrRangeOptionPost ?? null}
+                          onChange={(value) => this.changeChunkRowsOrRangeEnd(value, CustomColumnTypes.FUNCTION, 0)}
+                          positions={['bottom', 'top', 'right', 'left']}
+                          options={ROWS_RANGE_OPTIONS.filter(
+                            (option) => option.canEndWith === true && option.value !== this.state.selectedFnRowsOrRangeOptionPre,
+                          )}
+                        />
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )}
           {this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG && (
