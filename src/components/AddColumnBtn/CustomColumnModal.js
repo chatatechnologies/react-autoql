@@ -821,7 +821,9 @@ export default class CustomColumnModal extends React.Component {
     // MEDIAN - database-specific handling
     if (columnFn.fn === CustomColumnValues.MEDIAN) {
       const medianType = this.props.queryResponse?.data?.data?.median_type
-      const hasOverClause = !!columnFn?.orderby || !!columnFn?.groupby || !!columnFn?.rowsOrRange
+      const userHasOverClause = !!columnFn?.orderby || !!columnFn?.groupby || !!columnFn?.rowsOrRange
+      // AGG databases don't support OVER clause, so ignore user settings
+      const hasOverClause = medianType !== 'AGG' && userHasOverClause
 
       // Aggregate-only form (AGG type with no OVER clause)
       if (medianType === 'AGG' && !hasOverClause) {
