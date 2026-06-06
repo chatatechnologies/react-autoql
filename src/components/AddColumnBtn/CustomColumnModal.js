@@ -862,8 +862,17 @@ export default class CustomColumnModal extends React.Component {
         return `PERCENTILE_CONT(${colName}, 0.5) OVER(${overInner})`
       }
 
-      // Group 3: MEDIAN window function
-      // Includes: SNOWFLAKE, VERTICA, DATABRICKS, ORACLE, POSTGRES (with OVER), window (generic), AGG (with OVER), undefined
+      // Group 3: Vertica - MEDIAN OVER() without ORDER BY (only PARTITION BY and ROWS/RANGE)
+      if (medianType === 'VERTICA') {
+        const rowsRangeClause = columnFn?.rowsOrRange || this.state.selectedFnRowsOrRange
+          ? this.buildOrderByClause(columnFn, false) // Only ROWS/RANGE, no ORDER BY
+          : ''
+        const verticaOverInner = `${partitionClause}${partitionClause && rowsRangeClause ? ' ' : ''}${rowsRangeClause}`
+        return `MEDIAN(${colName}) OVER(${verticaOverInner})`
+      }
+
+      // Group 4: MEDIAN window function (Snowflake, Databricks, Oracle, POSTGRES with OVER, window type, undefined)
+      // Includes: SNOWFLAKE, DATABRICKS, ORACLE, POSTGRES (with OVER), window (generic), undefined
       return `MEDIAN(${colName}) OVER(${overInner})`
     }
 
@@ -2573,36 +2582,38 @@ export default class CustomColumnModal extends React.Component {
                       options={allColumnsOptions}
                     />
                   </div>
-                  <div>
-                    <Select
-                      label='Order By Column'
-                      isRequired={false}
-                      className='custom-column-window-fn-selector'
-                      value={this.state.selectedFnOrderBy ?? null}
-                      onChange={(selectedFnOrderBy) =>
-                        this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
-                      }
-                      positions={['bottom', 'top', 'right', 'left']}
-                      options={allColumnsOptions}
-                    />
-                    {this.state.selectedFnOrderBy && (
+                  {this.props.queryResponse?.data?.data?.median_type !== 'VERTICA' && (
+                    <div>
                       <Select
-                        label='Order By Direction'
+                        label='Order By Column'
                         isRequired={false}
                         className='custom-column-window-fn-selector'
-                        value={this.state.selectedFnOrderByDirection ?? null}
-                        onChange={(selectedFnOrderByDirection) =>
-                          this.setState(
-                            { selectedFnOrderByDirection },
-                            () => this.syncNewColumnFnArray(this.state.columnFn),
-                          )
+                        value={this.state.selectedFnOrderBy ?? null}
+                        onChange={(selectedFnOrderBy) =>
+                          this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
                         }
                         positions={['bottom', 'top', 'right', 'left']}
-                        options={ORDERBY_DIRECTIONS}
-                        outlined={true}
+                        options={allColumnsOptions}
                       />
-                    )}
-                  </div>
+                      {this.state.selectedFnOrderBy && (
+                        <Select
+                          label='Order By Direction'
+                          isRequired={false}
+                          className='custom-column-window-fn-selector'
+                          value={this.state.selectedFnOrderByDirection ?? null}
+                          onChange={(selectedFnOrderByDirection) =>
+                            this.setState(
+                              { selectedFnOrderByDirection },
+                              () => this.syncNewColumnFnArray(this.state.columnFn),
+                            )
+                          }
+                          positions={['bottom', 'top', 'right', 'left']}
+                          options={ORDERBY_DIRECTIONS}
+                          outlined={true}
+                        />
+                      )}
+                    </div>
+                  )}
                   <div>
                     <Select
                       label='Rows or Range'
