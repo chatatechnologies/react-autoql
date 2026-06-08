@@ -1,0 +1,125 @@
+.follow-on-modal-body-override {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.follow-on-modal-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+
+  .follow-on-modal-messages {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .follow-on-modal-messages-inner {
+    padding: 16px 28px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .follow-on-modal-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 10px;
+    color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.45));
+    font-size: 14px;
+    padding: 40px 0;
+
+    .react-autoql-icon {
+      font-size: 28px;
+      opacity: 0.4;
+    }
+  }
+
+  .follow-on-modal-result {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .follow-on-modal-result-question {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+
+      .react-autoql-icon {
+        color: var(--react-autoql-accent-color, #26a7df);
+        flex-shrink: 0;
+      }
+    }
+
+    .follow-on-modal-result-table {
+      border-radius: 8px;
+      border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+      overflow: hidden;
+    }
+  }
+
+  .follow-on-modal-input-area {
+    flex-shrink: 0;
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .follow-on-modal-error {
+      font-size: 12px;
+      color: var(--react-autoql-error-color, #d32f2f);
+      padding: 0 4px;
+    }
+
+    .follow-on-modal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .react-autoql-input-and-label-container {
+        flex: 1;
+        min-width: 0;
+
+        .react-autoql-input {
+          border-radius: 24px !important;
+
+          &:disabled {
+            background: transparent !important;
+            opacity: 0.5;
+          }
+        }
+      }
+
+      .react-autoql-btn {
+        border-radius: 50% !important;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        padding: 0 !important;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .spinner-loader {
+          width: 14px;
+          height: 14px;
+          margin: 0 !important;
+
+          &:after {
+            width: 14px;
+            height: 14px;
+            margin: 0;
+          }
+        }
+      }
+    }
+  }
+}

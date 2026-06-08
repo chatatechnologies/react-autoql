@@ -33,6 +33,7 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
+import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
@@ -129,6 +130,7 @@ export class DashboardTile extends React.Component {
       isRTHovered: false,
       isSecondRTHovered: false,
       currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
+      isFollowOnModalOpen: false,
     }
   }
 
@@ -207,6 +209,7 @@ export class DashboardTile extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -244,6 +247,7 @@ export class DashboardTile extends React.Component {
     dashboardSlicers: [],
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
   }
 
   componentDidMount = () => {
@@ -1741,6 +1745,10 @@ export class DashboardTile extends React.Component {
 
   onPNGDownloadFinish = () => this.props.onPNGDownloadFinish({ tileId: this.props.tile.i })
 
+  onOpenFollowOnModal = () => {
+    this.setState({ isFollowOnModalOpen: true })
+  }
+
   onDrilldownStart = (activeKey) =>
     this.props.onDrilldownStart({
       tileId: this.props.tile.i,
@@ -1780,6 +1788,8 @@ export class DashboardTile extends React.Component {
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            enableFollowOnQuery={this.props.enableFollowOnQuery}
+            onOpenFollowOnModal={this.onOpenFollowOnModal}
             isEditing={this.props.isEditing}
             source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
             scope={this.props.scope}
@@ -2231,6 +2241,17 @@ export class DashboardTile extends React.Component {
           </div>
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
+          {this.props.enableFollowOnQuery && (
+            <FollowOnModal
+              isVisible={this.state.isFollowOnModalOpen}
+              onClose={() => this.setState({ isFollowOnModalOpen: false })}
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              dataFormatting={this.props.dataFormatting}
+              responseRef={this.state.responseRef}
+              queryResponse={this.props.tile?.queryResponse}
+            />
+          )}
         </div>
       </ErrorBoundary>
     )

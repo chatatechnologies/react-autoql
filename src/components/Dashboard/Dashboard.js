@@ -112,6 +112,7 @@ class DashboardWithoutTheme extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -149,6 +150,7 @@ class DashboardWithoutTheme extends React.Component {
     enableSlicers: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -1091,6 +1093,7 @@ class DashboardWithoutTheme extends React.Component {
             enableCyclicalDates={this.props.enableCyclicalDates}
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            enableFollowOnQuery={this.props.enableFollowOnQuery}
           />
         ))}
       </ReactGridLayout>

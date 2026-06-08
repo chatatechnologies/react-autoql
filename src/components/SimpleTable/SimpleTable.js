@@ -39,12 +39,14 @@ export default class SimpleTable extends Component {
     ),
     rows: PropTypes.array,
     dataFormatting: dataFormattingType,
+    maxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   }
 
   static defaultProps = {
     columns: [],
     rows: [],
     dataFormatting: dataFormattingDefault,
+    maxHeight: undefined,
   }
 
   constructor(props) {
@@ -620,6 +622,7 @@ export default class SimpleTable extends Component {
       <div
         className={`simple-table-outer-container${isResizing ? ' simple-table-resizing' : ''}`}
         ref={this.scrollContainerRef}
+        style={this.props.maxHeight != null ? { maxHeight: this.props.maxHeight, height: 'auto' } : undefined}
       >
         <div className='simple-table-scroll-inner'>
           <table
