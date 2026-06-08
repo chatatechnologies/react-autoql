@@ -174,7 +174,7 @@
   }
 
   .react-autoql-formula-builder-validation-message {
-    font-size: 12px;
+    font-size: 0.75rem;
 
     .react-autoql-formula-builder-validation-message-success {
       color: var(--react-autoql-success-color);
@@ -223,7 +223,7 @@
 
         .react-autoql-column-operator-selector {
           .react-autoql-select {
-            font-size: 18px;
+            font-size: 1.125rem;
             line-height: 34px;
           }
         }
@@ -307,7 +307,7 @@
 
           .react-autoql-select-arrow {
             opacity: 0.5;
-            font-size: 9px;
+            font-size: 0.5625rem;
 
             .react-autoql-icon {
               padding-bottom: 0;
@@ -323,7 +323,7 @@
           }
 
           .react-autoql-select {
-            font-size: 18px;
+            font-size: 1.125rem;
             line-height: 34px;
             color: var(--react-autoql-accent-color);
 
@@ -338,7 +338,7 @@
 
   .react-autoql-select-popover-container {
     .react-autoql-icon-divide {
-      font-size: 16px;
+      font-size: 1rem;
     }
   }
 

@@ -29,7 +29,7 @@
     }
 
     .legend-select-all-label {
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 600;
       color: var(--react-autoql-text-color-primary);
     }
@@ -52,7 +52,7 @@
     flex: 1;
     padding: 5px 8px;
     padding-right: 28px; // Make room for clear button
-    font-size: 11px;
+    font-size: 0.6875rem;
     border: 1px solid var(--react-autoql-border-color);
     border-radius: 3px;
     background: var(--react-autoql-background-color-secondary);
@@ -78,7 +78,7 @@
     background: transparent;
     color: var(--react-autoql-text-color-disabled);
     cursor: pointer;
-    font-size: 18px;
+    font-size: 1.125rem;
     line-height: 1;
     display: flex;
     align-items: center;
@@ -100,7 +100,7 @@
     width: 30px;
     height: 28px;
     padding: 0;
-    font-size: 16px;
+    font-size: 1rem;
     border: 1px solid var(--react-autoql-border-color);
     border-radius: 3px;
     background: var(--react-autoql-background-color-secondary);
@@ -140,7 +140,7 @@
 
 .legend-popover-button {
   padding: 6px 12px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 3px;
   background: var(--react-autoql-background-color-secondary);
@@ -178,7 +178,7 @@
   .legend-no-results {
     padding: 20px;
     text-align: center;
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: var(--react-autoql-text-color-disabled);
   }
 
@@ -199,7 +199,7 @@
 
     .legend-item-label {
       flex: 1;
-      font-size: 11px;
+      font-size: 0.6875rem;
       line-height: 1.4;
       word-break: break-word;
     }

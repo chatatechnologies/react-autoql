@@ -68,6 +68,7 @@ class QueryInput extends React.Component {
       isInputFocused: false,
       selectedTopic: null,
       isExpanded: false,
+      topicsCollapsed: false,
       selectedColumns: [],
       dataPreview: undefined,
       isDataPreviewLoading: false,
@@ -878,7 +879,7 @@ class QueryInput extends React.Component {
     }
   }
 
-  moveCaretAtEnd = (e) => {
+  moveCaretAtEnd = () => {
     clearTimeout(this.caretMoveTimeout)
     this.caretMoveTimeout = setTimeout(() => {
       try {
@@ -913,9 +914,12 @@ class QueryInput extends React.Component {
     const showTopics =
       this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
 
+    const toggleTopicsCollapsed = () =>
+      this.setState((s) => ({ topicsCollapsed: !s.topicsCollapsed, isExpanded: s.topicsCollapsed ? s.isExpanded : false }))
+
     const renderQuerySuggestions = () => (
       <div
-        className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} placement-${
+        className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} ${this.state.topicsCollapsed ? 'topics-collapsed' : ''} placement-${
           this.props.quickTopicsPlacement
         }`}
       >
@@ -972,9 +976,12 @@ class QueryInput extends React.Component {
 
         <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
           <div className='query-suggestions-buttons'>
-            <span className='query-suggestions-buttons-label'>
-              <Icon type='lightning' /> Quick Topics:{' '}
-            </span>
+            <button className='query-suggestions-collapse-btn' onClick={toggleTopicsCollapsed} type='button'>
+              <Icon type='caret-down' />
+              <span className='query-suggestions-buttons-label'>
+                <Icon type='lightning' /> Quick Topics:{' '}
+              </span>
+            </button>
             {this.state.topics.map((topic, index) => (
               <button
                 key={`topic-${index}-${topic.context || ''}`}
@@ -1008,7 +1015,7 @@ class QueryInput extends React.Component {
             data-test='chat-bar'
           >
             <div className='react-autoql-input-row'>
-              <div className='react-autoql-chatbar-input-container'>
+              <div className={`react-autoql-chatbar-input-container${showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''}`}>
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
                     onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -1026,6 +1033,16 @@ class QueryInput extends React.Component {
                   />
                 ) : (
                   <input {...inputProps} />
+                )}
+                {/* Lightning bolt icon inside input when topics are collapsed */}
+                {showTopics && (
+                  <button
+                    className={`topics-collapsed-icon${this.state.topicsCollapsed ? ' visible' : ''}`}
+                    onClick={toggleTopicsCollapsed}
+                    type='button'
+                  >
+                    <Icon type='lightning' />
+                  </button>
                 )}
                 {/* Microphone button inside input */}
                 {!isMobile && this.props.enableVoiceRecord && (

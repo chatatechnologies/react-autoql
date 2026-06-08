@@ -125,7 +125,7 @@
     display: inline-block;
     margin-right: 7px;
     .react-autoql-icon {
-      font-size: 14px;
+      font-size: 0.875rem;
     }
   }
 }
@@ -190,7 +190,7 @@
 
         .react-autoql-icon-caret-left,
         .react-autoql-icon-caret-right {
-          font-size: 10px;
+          font-size: 0.625rem;
           padding-left: 5px;
         }
       }
@@ -256,7 +256,7 @@
     align-items: center;
 
     .single-value-response {
-      font-size: 36px;
+      font-size: 2.25rem;
       font-weight: 600;
     }
   }
@@ -264,7 +264,7 @@
   .react-autoql-table,
   .table-row-count {
     color: var(--react-autoql-text-color-primary);
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .react-autoql-table-container.pivot
@@ -386,7 +386,7 @@
 
 .dashboard-tile-title-container .dashboard-tile-title {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.4;
   margin: 0;
 }
@@ -433,7 +433,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1;
   transition: all 0.2s ease;
 
@@ -486,7 +486,7 @@
   color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
 
   .react-autoql-icon {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   &:hover {
@@ -528,7 +528,7 @@
   display: flex;
   width: 100%;
   height: 100%;
-  font-size: 15px;
+  font-size: 0.9375rem;
 
   .dashboard-tile-input,
   .dashboard-tile-autocomplete-input {
@@ -630,7 +630,7 @@
   .react-autoql-icon {
     display: flex;
     height: 100%;
-    font-size: 17px;
+    font-size: 1.0625rem;
     margin-left: 10px;
   }
 
@@ -696,7 +696,7 @@
   display: block;
   height: unset;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: normal;
   z-index: 2;
   overflow: hidden;
@@ -724,7 +724,7 @@
 }
 .dashboard-tile-input-container .react-autosuggest__section-title {
   padding: 10px 0 0 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-placeholder);
 }
 
@@ -732,7 +732,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-style: italic;
   color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
   padding: 0 20px;
