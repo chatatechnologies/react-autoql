@@ -460,7 +460,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
 
     const chartWidth = chartWidthRef.current
     const maxLabelWidth = chartWidth / 3 // Max width in world coordinates
-    const fontSize = 12
+    const fontSize = '0.75rem'
     const inverseScale = 1 / scale
 
     // First pass: Update all labels and make them all visible initially
@@ -489,7 +489,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       textElement.attr('transform', `translate(0, ${y}) scale(1, ${inverseScale}) translate(0, ${-y})`)
 
       // Update font size to base size
-      textElement.style('font-size', `${fontSize}px`)
+      textElement.style('font-size', fontSize)
 
       // Recalculate truncation
       textElement.text(fullText)
@@ -822,7 +822,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('text-anchor', (d) => (d.x0 < chartWidth / 2 ? 'start' : 'end'))
       .attr('class', 'sankey-node-label')
       .text((d) => d.displayName || d.name)
-      .style('font-size', '12px')
+      .style('font-size', '0.75rem')
       .style('font-weight', 'bold')
 
     // Truncate labels that are too long and add tooltips

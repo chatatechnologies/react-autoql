@@ -277,7 +277,7 @@ const SankeyColumnSelector = ({
               y={buttonSize / 2}
               textAnchor='middle'
               dominantBaseline='middle'
-              fontSize='16'
+              fontSize='1rem'
               fontWeight='bold'
               style={{ pointerEvents: 'none' }}
             >

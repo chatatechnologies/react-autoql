@@ -42,8 +42,9 @@ export default class Axis extends Component {
 
     this.swatchElements = []
     this.fontSize = isMobile ? 10 : 12
+    this.fontSizeRem = isMobile ? '0.625rem' : '0.75rem'
     this.labelInlineStyles = {
-      fontSize: `${this.fontSize}px`,
+      fontSize: this.fontSizeRem,
       fontFamily: 'inherit',
       fill: 'currentColor',
       cursor: 'default',
@@ -628,7 +629,7 @@ export default class Axis extends Component {
           <text
             className='axis-sort-icon'
             data-test='axis-sort-icon'
-            fontSize='14px'
+            fontSize='0.875rem'
             fill='currentColor'
             stroke='currentColor'
             strokeWidth='0.5px'
@@ -854,7 +855,7 @@ export default class Axis extends Component {
             className='react-autoql-axis-selector-arrow'
             data-test='dropdown-arrow'
             opacity='0' // use css to style so it isnt exported in the png
-            fontSize='8px'
+            fontSize='0.5rem'
           >
             {' '}
             &#9660;

@@ -42,14 +42,14 @@ export class RegressionLine extends React.Component {
     }
 
     this.labelInlineStyles = {
-      fontSize: '11px',
+      fontSize: '0.6875rem',
       fontWeight: 'bold',
       fill: 'currentColor',
       fontFamily: 'var(--react-autoql-font-family)',
     }
 
     this.individualLabelInlineStyles = {
-      fontSize: '10px',
+      fontSize: '0.625rem',
       fontWeight: 'bold',
       fill: 'currentColor',
       fontFamily: 'var(--react-autoql-font-family)',
