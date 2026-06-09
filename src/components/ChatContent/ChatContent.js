@@ -23,6 +23,7 @@ import { ChatMessage } from '../ChatMessage'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Tooltip } from '../Tooltip'
 
 // Styles
 import './ChatContent.scss'
@@ -33,6 +34,7 @@ export default class ChatContent extends React.Component {
   constructor(props) {
     super(props)
 
+    this.TOOLTIP_ID = `react-autoql-chat-content-tooltip-${uuid()}`
     this.messageRefs = {}
     this.csvProgressLog = {}
     this.keepLoading = false
@@ -849,7 +851,7 @@ export default class ChatContent extends React.Component {
                     shouldRender={this.props.shouldRender}
                     source={this.props.source}
                     scope={this.props.scope}
-                    tooltipID={this.props.tooltipID}
+                    tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                     chartTooltipID={this.props.chartTooltipID}
                     subjects={this.state.subjects}
                     onMessageResize={this.onMessageResize}
@@ -912,13 +914,14 @@ export default class ChatContent extends React.Component {
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
             shouldRender={this.props.shouldRender}
-            tooltipID={this.props.tooltipID}
+            tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
             executeQuery={this.props.executeQuery}
             enableQueryInputTopics={this.props.enableQueryInputTopics}
             disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
           />
           </div>
         </div>
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} positionStrategy='fixed' />}
       </ErrorBoundary>
     )
   }

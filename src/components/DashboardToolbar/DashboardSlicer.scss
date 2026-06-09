@@ -46,7 +46,7 @@
   // Softer, more rounded pill shape (vs tiles' 12px corners)
   border-radius: 20px !important;
   
-  font-size: 13px !important;
+  font-size: 0.8125rem !important;
   font-family: inherit;
   letter-spacing: 0.02em;
   outline: none !important;
@@ -101,7 +101,7 @@
 // Remove any borders from section titles
 .react-autoql-dashboard-slicer-suggestions .react-autosuggest__section-title {
   padding-left: 15px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-placeholder);
   border-bottom: none !important;
   padding-bottom: 0 !important;
@@ -117,7 +117,7 @@
   padding: 10px 0;
   display: block;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: normal;
   z-index: 2;
   box-shadow: var(--react-autoql-box-shadow-1);
@@ -198,5 +198,5 @@
 
 .react-autoql-dashboard-slicer-suggestions .filter-locking-no-suggestions-text {
   padding-left: 8px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }

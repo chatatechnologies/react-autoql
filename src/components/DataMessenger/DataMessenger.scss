@@ -76,6 +76,7 @@
     overflow: hidden;
     border-radius: 12px;
     position: relative;
+    z-index: 1;
     isolation: isolate;
 
     // Semi-transparent overlay for glass effect
@@ -362,9 +363,8 @@
       0 8px 32px rgba(0, 0, 0, 0.12),
       0 2px 8px rgba(0, 0, 0, 0.08);
     position: relative;
-    isolation: isolate;
 
-    // Semi-transparent overlay
+    // Semi-transparent overlay sits behind content but above the backdrop-filter layer
     &::before {
       content: '';
       position: absolute;
@@ -373,7 +373,7 @@
       opacity: 0.85;
       border-radius: 12px;
       pointer-events: none;
-      z-index: -1;
+      z-index: 0;
     }
 
     // Fallback for browsers without backdrop-filter support

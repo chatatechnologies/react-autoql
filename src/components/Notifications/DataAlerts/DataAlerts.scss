@@ -38,7 +38,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 13px;
+      font-size: 0.8125rem;
       cursor: default;
     }
 
@@ -138,7 +138,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: 0.8125rem;
         padding: 2px 5px;
         border-radius: 6px;
         white-space: nowrap;
@@ -220,7 +220,7 @@
         margin-left: 7px;
         margin-right: 0;
         box-sizing: content-box;
-        font-size: 11px;
+        font-size: 0.6875rem;
         border-radius: 20px;
         color: var(--react-autoql-info-color);
         border: 1px solid var(--react-autoql-info-color);
@@ -237,7 +237,7 @@
 
       .react-autoql-notification-action-btn {
         display: flex;
-        font-size: 18px;
+        font-size: 1.125rem;
         transition-property: color, border-color, background-color, opacity;
         transition-duration: 0.3s;
         transition-timing-function: ease;
@@ -278,14 +278,14 @@
     color: var(--react-autoql-text-color-primary);
 
     .react-autoql-data-alert-section-title {
-      font-size: 19px;
+      font-size: 1.1875rem;
       font-weight: 500;
     }
 
     .react-autoql-data-alert-section-subtitle {
       padding-top: 3px;
       padding-bottom: 5px;
-      font-size: 14px;
+      font-size: 0.875rem;
     }
   }
 
@@ -295,7 +295,7 @@
     text-overflow: ellipsis;
 
     .data-alert-section-content {
-      font-size: 14px;
+      font-size: 0.875rem;
       overflow: hidden;
       cursor: default;
     }

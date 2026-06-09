@@ -2,7 +2,7 @@
   table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 0.8125rem;
   border: 1px solid var(--react-autoql-border-color);
   background-color: var(--react-autoql-background-color-disabled);
 
@@ -96,7 +96,7 @@
 
         .react-autoql-icon {
           color: white;
-          font-size: 14px;
+          font-size: 0.875rem;
         }
       }
       .remove-second-join-icon {
@@ -116,6 +116,6 @@
   .join-columns-notice {
     margin-bottom: 12px;
     color: var(--react-autoql-text-color);
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 }

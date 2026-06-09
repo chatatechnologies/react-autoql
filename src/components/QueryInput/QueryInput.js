@@ -29,6 +29,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
@@ -47,6 +48,7 @@ class QueryInput extends React.Component {
     super(props)
 
     this.UNIQUE_ID = uuid()
+    this.TOOLTIP_ID = `react-autoql-query-input-tooltip-${this.UNIQUE_ID}`
     this.MAX_QUERY_HISTORY = 5
     this.autoCompleteTimer = undefined
     this.autoCompleteArray = []
@@ -1040,6 +1042,9 @@ class QueryInput extends React.Component {
                     className={`topics-collapsed-icon${this.state.topicsCollapsed ? ' visible' : ''}`}
                     onClick={toggleTopicsCollapsed}
                     type='button'
+                    data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                    data-tooltip-content='Show Quick Topics'
+                    data-tooltip-place='right'
                   >
                     <Icon type='lightning' />
                   </button>
@@ -1082,6 +1087,7 @@ class QueryInput extends React.Component {
           {/* Query Suggestions - Render BELOW input when placement is 'below' */}
           {showTopics && isTopicsBelow && renderQuerySuggestions()}
         </div>
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} positionStrategy='fixed' />}
       </ErrorBoundary>
     )
   }

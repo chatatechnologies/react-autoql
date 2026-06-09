@@ -1003,15 +1003,6 @@ export class OptionsToolbar extends React.Component {
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
-      console.log('[OptionsToolbar] follow-on debug:', {
-        enableFollowOnQuery: props.enableFollowOnQuery,
-        hasResponseRef: !!props.responseRef,
-        hasQueryResponse: !!response,
-        numRows,
-        hasData,
-        isMarkdownOnly,
-        allColumnsHidden,
-      })
       const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)

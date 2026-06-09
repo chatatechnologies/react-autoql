@@ -4,6 +4,8 @@
   max-width: 95vw;
   min-height: 0px;
   max-height: 95vh;
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
 
   .popover-container-content {
     background: var(--react-autoql-background-color-secondary);

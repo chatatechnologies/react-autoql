@@ -29,11 +29,11 @@
     flex: 1;
     gap: 10px;
     color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.45));
-    font-size: 14px;
+    font-size: 0.875rem;
     padding: 40px 0;
 
     .react-autoql-icon {
-      font-size: 28px;
+      font-size: 1.75rem;
       opacity: 0.4;
     }
   }
@@ -47,7 +47,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
 
@@ -73,7 +73,7 @@
     gap: 6px;
 
     .follow-on-modal-error {
-      font-size: 12px;
+      font-size: 0.75rem;
       color: var(--react-autoql-error-color, #d32f2f);
       padding: 0 4px;
     }

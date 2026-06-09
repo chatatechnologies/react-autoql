@@ -38,9 +38,8 @@
   margin: 0px 10px 0 10px;
   height: 42px;
   width: calc(100% - 20px);
-  transition: border-radius 0.3s ease, margin-left 0.3s ease,
-    border-left-color 0.2s ease, width 0.3s ease, box-shadow 0.3s ease,
-    border-color 0.2s ease, padding-left 0.3s ease;
+  transition: border-radius 0.3s ease, margin-left 0.3s ease, border-left-color 0.2s ease, width 0.3s ease,
+    box-shadow 0.3s ease, border-color 0.2s ease, padding-left 0.3s ease;
   white-space: nowrap;
   box-sizing: border-box;
   border-radius: 24px;
@@ -60,9 +59,7 @@
   color: #5d5d5d;
   position: relative;
   isolation: isolate;
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 
   // Semi-transparent overlay for glass effect
   &::before {
@@ -91,9 +88,7 @@
   background: rgba(0, 0, 0, 0.03);
 }
 .react-autoql-chatbar-input:not(:disabled):hover {
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    0 2px 6px rgba(0, 0, 0, 0.08),
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08),
     0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   border-color: var(--react-autoql-accent-color, rgba(38, 167, 233, 0.3));
 }
@@ -428,7 +423,7 @@
 }
 
 .query-suggestion-button {
-  padding: 6px 12px;
+  padding: 0.25rem 0.75rem;
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 16px;
   background-color: var(--react-autoql-background-color-secondary);

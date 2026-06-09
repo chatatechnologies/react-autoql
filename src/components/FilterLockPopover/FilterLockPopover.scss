@@ -24,7 +24,7 @@
     position: absolute;
     max-width: calc(100% - 36px);
     padding: 10px;
-    font-size: 14px;
+    font-size: 0.875rem;
 
     .Toastify__toast {
       min-height: 48px;
@@ -41,7 +41,7 @@
 
   .include-exclude-toggle-group {
     height: 23px;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 400;
 
     .react-autoql-radio-btn.active {
@@ -137,14 +137,14 @@
         border-radius: 20px;
         margin: 0px;
         padding: 0px;
-        font-size: 20px;
+        font-size: 1.25rem;
         color: var(--react-autoql-text-color-primary);
       }
 
       .filter-locking-saving-indicator {
         display: inline-block;
         font-weight: 400;
-        font-size: 14px;
+        font-size: 0.875rem;
         padding-right: 20px;
         color: var(--react-autoql-accent-color);
         transition: opacity 0.2s ease;
@@ -274,7 +274,7 @@
   height: 32px;
   box-sizing: border-box;
   border-radius: 24px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-family: inherit;
   letter-spacing: 0.04em;
   outline: none !important;
@@ -315,7 +315,7 @@
       padding: 10px 0;
       display: block;
       font-family: inherit;
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: normal;
       z-index: 2;
       box-shadow: var(--react-autoql-box-shadow-1);
@@ -353,7 +353,7 @@
       }
       .react-autosuggest__section-title {
         padding-left: 15px;
-        font-size: 12px;
+        font-size: 0.75rem;
         color: var(--react-autoql-text-color-placeholder);
 
         .react-autoql-section-title-container {
@@ -376,7 +376,7 @@
       }
       .filter-locking-no-suggestions-text {
         padding-left: 8px;
-        font-size: 14px;
+        font-size: 0.875rem;
       }
     }
   }
