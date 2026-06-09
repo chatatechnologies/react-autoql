@@ -5,7 +5,7 @@ import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import { CustomColumnTypes } from 'autoql-fe-utils'
 
 describe('CustomColumnModal column resolution', () => {
-  it('resolves references to columns added in-modal', () => {
+  it('inserts a custom column added in-modal as a single atomic reference', () => {
     const wrapper = mount(<CustomColumnModal isOpen={true} columns={[]} queryResponse={{ data: { data: {} } }} />)
     const inst = wrapper.instance()
 
@@ -27,7 +27,7 @@ describe('CustomColumnModal column resolution', () => {
         {
           type: CustomColumnTypes.COLUMN,
           value: '99', // stale field value
-          column: { name: 'col_a', table_column: 'col_a' }, // identifies colA
+          column: { name: 'col_a', table_column: 'col_a' },
         },
       ],
     }
@@ -35,11 +35,11 @@ describe('CustomColumnModal column resolution', () => {
     const columnFn = []
     inst.addColumnToFormula(colB, columnFn, null)
 
+    // colB is a custom column — inserted as a single COLUMN reference, not de-wrapped
     const colTokens = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN)
     expect(colTokens).toHaveLength(1)
-    expect(colTokens[0].value).toBe('2')
-    expect(colTokens[0].column.id).toBe('a')
-    expect(colTokens[0].column.field).toBe('2')
+    expect(colTokens[0].value).toBe('3')
+    expect(colTokens[0].column).toBe(colB)
 
     wrapper.unmount()
   })

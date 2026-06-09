@@ -858,7 +858,13 @@ export default class CustomColumnModal extends React.Component {
         const colName = this.sanitizeColumnName(columnFn?.column?.name)
 
         if (columnFn?.type === CustomColumnTypes.COLUMN) {
-          protoTableColumn += colName
+          // Custom/complex columns store their SQL in table_column — use it to avoid referencing a display name
+          const col = columnFn?.column
+          if (this.isComplexColumn(col) && col?.table_column) {
+            protoTableColumn += col.table_column
+          } else {
+            protoTableColumn += colName
+          }
         } else if (columnFn?.type === CustomColumnTypes.OPERATOR) {
           let operatorJs = this.OPERATORS[columnFn?.value]?.js
           // Support raw js operators (e.g. '/') and operator "value" tokens (e.g. DIVIDE)
@@ -1115,72 +1121,24 @@ export default class CustomColumnModal extends React.Component {
   isFormulaAlreadyWrapped = (arr) => arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET && arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
 
   addColumnToFormula = (col, columnFn, lastTerm) => {
-    // Determine if column has explicit tokens, or build from SQL if complex
-    let colTokens = col?.columnFnArray
-    if (colTokens?.length) {
-      // Normalize so wrapper-only operands like `(Under Profit)` are treated as a single operand.
-      colTokens = this.cleanColumnFn(_cloneDeep(colTokens))
-
-      // Re-resolve COLUMN tokens against current columns to avoid stale snapshots
-      const allCols = this.state.columns || this.props.columns || []
-      for (const t of colTokens) {
-        if (t?.type === CustomColumnTypes.COLUMN && t?.column) {
-          let resolved = null
-          // Prefer ID match
-          if (t.column.id) resolved = allCols.find((c) => String(c.id) === String(t.column.id))
-          // Then try table_column or name
-          if (!resolved && (t.column.table_column || t.column.name)) {
-            resolved = allCols.find(
-              (c) => String(c.table_column) === String(t.column.table_column) || String(c.name) === String(t.column.name),
-            )
-          }
-          // Finally try matching by field
-          if (!resolved && t.column.field) resolved = allCols.find((c) => String(c.field) === String(t.column.field))
-
-          if (resolved) {
-            t.column = resolved
-            t.value = resolved.field
-          }
-        }
-      }
-    }
-    if (!colTokens && this.isComplexColumn(col)) {
+    // User-created custom columns (have columnFnArray) are always inserted as a single atomic
+    // COLUMN reference — never expand their internal tokens into the parent formula.
+    // Only DB-computed columns without explicit token arrays get expanded from their SQL.
+    let colTokens = null
+    if (!col?.columnFnArray && this.isComplexColumn(col)) {
       // Column is complex but doesn't have explicit tokens — build from table_column SQL
       colTokens = this.buildFnArray(col.table_column, this.state.columns)
     }
 
-    // Multi-token column: insert wrapped into the formula, preserving original grouping (e.g. `(Goals + Assists)`).
+    // Multi-token DB-computed column: insert wrapped into the formula.
     if (colTokens && colTokens.length > 1) {
       // Replace the last token if it's not an operator; otherwise append.
       if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
-        // remove the previous token
         columnFn.splice(columnFn.length - 1, 1)
       }
-      // Insert left bracket, the cloned tokens, then right bracket
       columnFn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET })
       for (const t of _cloneDeep(colTokens)) columnFn.push(t)
       columnFn.push({ type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET })
-    } else if (colTokens && colTokens.length === 1 && colTokens[0].type === CustomColumnTypes.COLUMN) {
-      // Single resolved COLUMN token — prefer inserting the source column itself
-      // when the source's token list was a wrapped single-token (aggregate-like).
-      if (col?.columnFnArray && this.isFormulaAlreadyWrapped(col.columnFnArray)) {
-        const newChunk = { type: CustomColumnTypes.COLUMN, value: col.field, column: col }
-        if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
-          columnFn[columnFn.length - 1] = newChunk
-        } else {
-          columnFn.push(newChunk)
-        }
-      } else {
-        // Insert the resolved inner token directly
-        const resolvedToken = _cloneDeep(colTokens[0])
-        const newChunk = resolvedToken
-
-        if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
-          columnFn[columnFn.length - 1] = newChunk
-        } else {
-          columnFn.push(newChunk)
-        }
-      }
     } else {
       const newChunk = {
         type: CustomColumnTypes.COLUMN,
