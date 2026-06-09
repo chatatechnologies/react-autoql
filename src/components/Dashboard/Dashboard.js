@@ -172,33 +172,9 @@ class DashboardWithoutTheme extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.executeOnMount) {
-      // Execute only tiles that don't have queryResponse
-      // Use requestAnimationFrame to ensure tile refs are set
-      requestAnimationFrame(() => {
-        if (!this._isMounted) return
-
-        const tiles = this.props.tiles || []
-        const tilesToExecute = tiles.filter((tile) => !tile.queryResponse && !tile.secondQueryResponse)
-
-        if (tilesToExecute.length > 0) {
-          const promises = []
-          tilesToExecute.forEach((tile) => {
-            const tileRef = this.tileRefs[tile.key] || this.tileRefs[tile.i]
-            if (tileRef && tileRef.processTile) {
-              promises.push(tileRef.processTile())
-            }
-          })
-
-          if (promises.length > 0) {
-            Promise.all(promises).catch((error) => {
-              console.error('Error executing tiles:', error)
-            })
-          }
-        }
-      })
+      this.executeDashboard()
     }
     window.addEventListener('resize', this.onWindowResize)
-    // Listen for external discard requests (host app can dispatch this)
     window.addEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
   }
 
@@ -232,13 +208,7 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ dashboardSlicers: currentSlicers })
     }
 
-    // Re-run dashboard on edit mode exit, but skip during single-tile reset — onSaveCallback commonly toggles isEditing as a side effect.
-    if (
-      prevProps.isEditing &&
-      !this.props.isEditing &&
-      this.props.executeOnStopEditing &&
-      !this.isResettingTile
-    ) {
+    if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
       this.executeDashboard()
     }
 
