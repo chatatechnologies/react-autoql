@@ -1926,19 +1926,17 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  renderOperatorDeleteBtn = (i) => {
+  renderOperatorDeleteBtn = (chunkIndex) => {
     return (
-      <button
-        type='button'
+      <Button
         className='react-autoql-operator-delete-btn'
         onClick={() => {
-          const columnFn = _cloneDeep(this.state.columnFn)
-          columnFn.splice(i, 1)
+          const columnFn = this.state.columnFn.filter((chunk, i) => i !== chunkIndex)
           this.setState({ columnFn })
         }}
       >
-        ×
-      </button>
+        <Icon type='close' />
+      </Button>
     )
   }
 
