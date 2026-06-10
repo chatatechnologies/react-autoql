@@ -304,8 +304,7 @@ export class DashboardTile extends React.Component {
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
     const nextQRId = nextQR?.data?.data?.query_id
-    if (nextQR && prevQR && prevQRId !== nextQRId && !this.state.isTopExecuting) {
-      // query_id guards against false positives from _cloneDeep creating new references on every tile update.
+    if (nextQR && !this.state.isTopExecuting && (!prevQR || prevQRId !== nextQRId)) {
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
   }
@@ -781,8 +780,7 @@ export class DashboardTile extends React.Component {
       paramsToSet.orders = undefined
       paramsToSet.displayOverrides = undefined
     } else if (isReset) {
-      // Use [] not undefined — QueryOutput treats undefined as "keep current state".
-      paramsToSet.tableFilters = []
+      // tableFilters already set to [] above; set the remaining reset fields here.
       paramsToSet.orders = []
       paramsToSet.columnSelects = []
       paramsToSet.displayOverrides = []
@@ -856,7 +854,7 @@ export class DashboardTile extends React.Component {
       paramsToSet.secondOrders = undefined
       paramsToSet.secondDisplayOverrides = undefined
     } else if (isReset) {
-      paramsToSet.secondTableFilters = []
+      // secondTableFilters already set to [] above; set the remaining reset fields here.
       paramsToSet.secondOrders = []
       paramsToSet.secondColumnSelects = []
       paramsToSet.secondDisplayOverrides = []
@@ -1929,7 +1927,7 @@ export class DashboardTile extends React.Component {
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         onResetClick: () => this.props.resetTile?.(this.props.tile.i),
         showRefreshInEdit: this.props.isEditing,
-        showResetQueryOption: this.props.showResetQueryOption,
+        showResetQueryOption: this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
       },
     })
   }

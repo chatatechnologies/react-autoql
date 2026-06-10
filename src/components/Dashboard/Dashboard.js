@@ -323,9 +323,14 @@ class DashboardWithoutTheme extends React.Component {
     if (this.onChangeTiles) {
       return this.onChangeTiles
     }
-    // During reset, fall back to cleared tiles so setParamsForTile doesn't read stale Redux tiles.
-    if (this.isResettingTile && this.pendingResetTiles) {
-      return this.pendingResetTiles
+    // During reset, overlay just the cleared tile onto props.tiles so concurrent saves from
+    // other tiles don't inadvertently read the reset tile's stale queryResponse as their base.
+    if (this.isResettingTile && this.pendingResetTiles && this.resettingTileId) {
+      const base = this.props.tiles
+      if (!base) return this.pendingResetTiles
+      const resetEntry = this.pendingResetTiles.find((t) => t.i === this.resettingTileId)
+      if (!resetEntry) return base
+      return base.map((tile) => (tile.i === this.resettingTileId ? resetEntry : tile))
     }
     return this.props.tiles
   }
@@ -612,6 +617,9 @@ class DashboardWithoutTheme extends React.Component {
       secondQueryResponse,
     }))
 
+  stripRuntimeFields = (tiles) =>
+    tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => rest)
+
   addTileStateToLog = (tiles) => {
     if (!this.props.isEditing || !tiles) {
       return
@@ -636,10 +644,8 @@ class DashboardWithoutTheme extends React.Component {
       current && prevEntry && current.length > prevEntry.length && tiles.length === current.length
 
     if (current) {
-      const stripRuntime = (arr) =>
-        arr?.map(({ queryResponse, secondQueryResponse, ...rest }) => rest)
-      const stripped = stripRuntime(tiles)
-      const strippedCurrent = stripRuntime(current)
+      const stripped = this.stripRuntimeFields(tiles)
+      const strippedCurrent = this.stripRuntimeFields(current)
       if (_isEqual(stripped, strippedCurrent)) {
         // Even if nothing structural changed, update tileLog[0] with the latest
         // response data so that undo restores tiles with their query results intact.
@@ -756,22 +762,25 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  // Bypass the debounce and push tiles to the portal immediately (used for undo/redo).
+  flushOnChange = (tiles) => {
+    if (this.onChangeTimer) {
+      clearTimeout(this.onChangeTimer)
+      this.onChangeTimer = null
+    }
+    const slicers =
+      this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
+    this.onChangeTiles = _cloneDeep(tiles)
+    this.props.onChange(this.onChangeTiles, slicers)
+    this.onChangeTiles = null
+  }
+
   changeCurrentTileState = (logIndex) => {
     try {
       const newTileState = _cloneDeep(this.tileLog[logIndex])
-
       if (newTileState) {
         this.currentLogIndex = logIndex
-        // Bypass debounce — each undo/redo step must reach the portal immediately.
-        this.onChangeTiles = _cloneDeep(newTileState)
-        if (this.onChangeTimer) {
-          clearTimeout(this.onChangeTimer)
-          this.onChangeTimer = null
-        }
-        const slicers =
-          this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
-        this.props.onChange(this.onChangeTiles, slicers)
-        this.onChangeTiles = null
+        this.flushOnChange(newTileState)
       }
     } catch (error) {
       console.error(error)
@@ -801,17 +810,7 @@ class DashboardWithoutTheme extends React.Component {
       this.pendingResetHistory = null
       this.tileLog = [_cloneDeep(restoredTiles), ...preResetHistory.slice(1)]
       this.currentLogIndex = 0
-
-      // Bypass debounce so the restored state reaches the portal immediately.
-      this.onChangeTiles = _cloneDeep(restoredTiles)
-      if (this.onChangeTimer) {
-        clearTimeout(this.onChangeTimer)
-        this.onChangeTimer = null
-      }
-      const slicers =
-        this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
-      this.props.onChange(restoredTiles, slicers)
-      this.onChangeTiles = null
+      this.flushOnChange(restoredTiles)
       return
     }
 
@@ -976,7 +975,8 @@ class DashboardWithoutTheme extends React.Component {
         return
       }
 
-      // Clear filters, custom columns, sorts, chart configs, and cached responses; preserve query and title
+      // Clear filters, columns, sorts, aggregations, chart overlays, and cached responses; preserve query, title, and display type.
+      // For a full visual reset also clear: displayType, secondDisplayType, bucketSize, secondBucketSize
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         tableFilters: [],
@@ -988,8 +988,15 @@ class DashboardWithoutTheme extends React.Component {
         displayOverrides: [],
         orders: [],
         secondOrders: [],
+        aggConfig: undefined,
+        secondAggConfig: undefined,
+        axisSorts: undefined,
+        secondAxisSorts: undefined,
+        chartControls: undefined,
+        secondChartControls: undefined,
         dataConfig: undefined,
         secondDataConfig: undefined,
+        legendFilterConfig: undefined,
         queryResponse: null,
         secondQueryResponse: null,
       }
@@ -1047,7 +1054,8 @@ class DashboardWithoutTheme extends React.Component {
       return runSingleTile()
         .then(() => {
           try {
-            return this.debouncedOnChange(this.getMostRecentTiles(), false)
+            const callbacks = this.props.onSaveCallback ? [this.props.onSaveCallback] : []
+            return this.debouncedOnChange(this.getMostRecentTiles(), false, callbacks)
           } catch (err) {
             console.error(err)
             return Promise.resolve()

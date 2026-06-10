@@ -426,15 +426,15 @@ describe('queryResponseVersion', () => {
     wrapper.unmount()
   })
 
-  test('does not increment when there was no previous QR', () => {
+  test('increments when QR arrives after null (reset cycle)', () => {
     const wrapper = setup({ tile: { ...sampleTile, queryResponse: undefined } })
 
     const initialVersion = wrapper.state('queryResponseVersion')
 
+    // Simulates the end of a reset: null → new response
     wrapper.setProps({ tile: { ...sampleTile, queryResponse: sampleResponses[10] } })
 
-    // prevQR was falsy — condition requires both truthy
-    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion)
+    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion + 1)
     wrapper.unmount()
   })
 
