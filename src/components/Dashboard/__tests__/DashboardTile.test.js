@@ -427,14 +427,26 @@ describe('queryResponseVersion', () => {
   })
 
   test('increments when QR arrives after null (reset cycle)', () => {
+    // Reset explicitly sets queryResponse: null in props; this transition must increment.
+    const wrapper = setup({ tile: { ...sampleTile, queryResponse: null } })
+
+    const initialVersion = wrapper.state('queryResponseVersion')
+
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: sampleResponses[10] } })
+
+    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion + 1)
+    wrapper.unmount()
+  })
+
+  test('does not increment when QR arrives from undefined (prop hydration)', () => {
+    // Parent hydrates tile with a cached queryResponse on re-render — should NOT force a remount.
     const wrapper = setup({ tile: { ...sampleTile, queryResponse: undefined } })
 
     const initialVersion = wrapper.state('queryResponseVersion')
 
-    // Simulates the end of a reset: null → new response
     wrapper.setProps({ tile: { ...sampleTile, queryResponse: sampleResponses[10] } })
 
-    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion + 1)
+    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion)
     wrapper.unmount()
   })
 
@@ -471,20 +483,30 @@ describe('network column detection in endTopQuery', () => {
     wrapper.unmount()
   })
 
-  test('endTopQuery with isReset=true does not update savedTileConfig beyond display type', () => {
-    const wrapper = setup({ tile: sampleTile })
+  test('endTopQuery with isReset=true clears reset-zeroed fields in savedTileConfig', () => {
+    const wrapper = setup({
+      tile: {
+        ...sampleTile,
+        columns: [{ field: '0' }],
+        aggConfig: { rev: 'SUM' },
+        tableFilters: [{ col: 'x' }],
+        dataConfig: { tableConfig: { columnMap: {} } },
+        axisSorts: [{ col: 'y', dir: 'asc' }],
+        networkColumnConfig: { source: 0 },
+      },
+    })
     const instance = wrapper.instance()
 
-    const originalConfig = { ...instance.savedTileConfig }
-
-    const response = {
-      data: { data: sampleResponses[10].data.data, reference_id: '1.1.200' },
-    }
-
+    const response = { data: { data: sampleResponses[10].data.data, reference_id: '1.1.200' } }
     instance.endTopQuery({ response, isReset: true })
 
-    // During reset, only displayType should update, not dataConfig
-    expect(instance.savedTileConfig.dataConfig).toEqual(originalConfig.dataConfig)
+    // Reset-cleared fields must be zeroed so a subsequent error-restore uses clean state.
+    expect(instance.savedTileConfig.columns).toEqual([])
+    expect(instance.savedTileConfig.tableFilters).toEqual([])
+    expect(instance.savedTileConfig.aggConfig).toBeUndefined()
+    expect(instance.savedTileConfig.dataConfig).toBeUndefined()
+    expect(instance.savedTileConfig.axisSorts).toBeUndefined()
+    expect(instance.savedTileConfig.networkColumnConfig).toBeUndefined()
 
     wrapper.unmount()
   })
@@ -731,6 +753,143 @@ describe('onRefreshClick and onResetClick wiring', () => {
     toolbar.prop('onResetClick')()
 
     expect(resetTile).toHaveBeenCalledWith(sampleTile.i)
+
+    wrapper.unmount()
+  })
+})
+
+describe('endBottomQuery isReset guard', () => {
+  let mockSetParamsForTile
+  let savedParams
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params) => {
+      savedParams.push(params)
+    })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  const successResponse = {
+    data: { data: { columns: [], rows: [] }, reference_id: '1.1.200' },
+  }
+
+  test('isReset=true clears reset-zeroed second* fields in savedTileConfig', () => {
+    const wrapper = setup({
+      tile: {
+        ...sampleTile,
+        secondAggConfig: { col: 'SUM' },
+        secondColumns: [{ field: '0' }],
+        secondTableFilters: [{ col: 'x' }],
+        secondDataConfig: { tableConfig: { columnMap: {} } },
+        secondAxisSorts: [{ col: 'y', dir: 'asc' }],
+        secondNetworkColumnConfig: { source: 0 },
+      },
+      setParamsForTile: mockSetParamsForTile,
+    })
+    const instance = wrapper.instance()
+
+    instance.endBottomQuery({ response: successResponse, isReset: true })
+
+    // Reset-cleared fields must be zeroed so a subsequent error-restore uses clean state.
+    expect(instance.savedTileConfig.secondAggConfig).toBeUndefined()
+    expect(instance.savedTileConfig.secondColumns).toEqual([])
+    expect(instance.savedTileConfig.secondTableFilters).toEqual([])
+    expect(instance.savedTileConfig.secondDataConfig).toBeUndefined()
+    expect(instance.savedTileConfig.secondAxisSorts).toBeUndefined()
+    expect(instance.savedTileConfig.secondNetworkColumnConfig).toBeUndefined()
+
+    wrapper.unmount()
+  })
+
+  test('isReset=false (default) updates all savedTileConfig second-half fields', () => {
+    const newAggConfig = { revenue: 'SUM' }
+    const newColumns = [{ field: '1' }]
+
+    const wrapper = setup({
+      tile: {
+        ...sampleTile,
+        secondAggConfig: newAggConfig,
+        secondColumns: newColumns,
+        secondTableFilters: [],
+      },
+      setParamsForTile: mockSetParamsForTile,
+    })
+    const instance = wrapper.instance()
+
+    instance.endBottomQuery({ response: successResponse, isReset: false })
+
+    expect(instance.savedTileConfig.secondAggConfig).toEqual(newAggConfig)
+    expect(instance.savedTileConfig.secondColumns).toEqual(newColumns)
+
+    wrapper.unmount()
+  })
+
+  test('isReset=true still sets secondNetworkColumnConfig from response', () => {
+    const wrapper = setup({ tile: sampleTile, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    instance.endBottomQuery({ response: successResponse, isReset: true })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.secondQueryResponse === successResponse)
+    expect(call).toBeDefined()
+    expect(Object.prototype.hasOwnProperty.call(call, 'secondNetworkColumnConfig')).toBe(true)
+
+    wrapper.unmount()
+  })
+})
+
+describe('isReset flag in processTileBottom', () => {
+  test('passes isReset=true down to processQuery', () => {
+    const wrapper = setup({ tile: { ...sampleTile, splitView: true, secondQuery: 'SELECT 2' } })
+    const instance = wrapper.instance()
+
+    const processQuerySpy = jest
+      .spyOn(instance, 'processQuery')
+      .mockImplementation(() => Promise.resolve({ data: { data: { rows: [] } } }))
+
+    instance.processTileBottom({ query: 'SELECT 2', isReset: true })
+
+    expect(processQuerySpy).toHaveBeenCalledWith(expect.objectContaining({ isReset: true }))
+
+    processQuerySpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  test('passes isReset=false by default', () => {
+    const wrapper = setup({ tile: { ...sampleTile, splitView: true, secondQuery: 'SELECT 2' } })
+    const instance = wrapper.instance()
+
+    const processQuerySpy = jest
+      .spyOn(instance, 'processQuery')
+      .mockImplementation(() => Promise.resolve({ data: { data: { rows: [] } } }))
+
+    instance.processTileBottom({ query: 'SELECT 2' })
+
+    expect(processQuerySpy).toHaveBeenCalledWith(expect.objectContaining({ isReset: false }))
+
+    processQuerySpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  test('passes isReset to endBottomQuery via then chain', async () => {
+    const wrapper = setup({ tile: { ...sampleTile, splitView: true, secondQuery: 'SELECT 2' } })
+    const instance = wrapper.instance()
+
+    const endBottomQuerySpy = jest.spyOn(instance, 'endBottomQuery').mockReturnValue(undefined)
+    jest
+      .spyOn(instance, 'processQuery')
+      .mockImplementation(() => Promise.resolve({ data: { reference_id: '1.1.200', data: {} } }))
+
+    await instance.processTileBottom({ query: 'SELECT 2', isReset: true })
+
+    expect(endBottomQuerySpy).toHaveBeenCalledWith(expect.objectContaining({ isReset: true }))
 
     wrapper.unmount()
   })

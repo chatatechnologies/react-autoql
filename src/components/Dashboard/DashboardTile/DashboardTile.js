@@ -304,7 +304,7 @@ export class DashboardTile extends React.Component {
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
     const nextQRId = nextQR?.data?.data?.query_id
-    if (nextQR && !this.state.isTopExecuting && (!prevQR || prevQRId !== nextQRId)) {
+    if (nextQR && !this.state.isTopExecuting && (prevQR === null || (prevQR && prevQRId !== nextQRId))) {
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
   }
@@ -522,11 +522,18 @@ export class DashboardTile extends React.Component {
           const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
 
           if (isReset) {
-            // props.tile is stale during reset — only update safe display-type fields.
+            // props.tile is stale during reset — only update display-type fields and explicitly
+            // clear the config fields that resetTile zeroed out, so error-restore uses clean state.
             this.savedTileConfig = {
               ...this.savedTileConfig,
               displayType: currentTile.displayType || this.savedTileConfig.displayType,
               secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+              columns: [],
+              tableFilters: [],
+              aggConfig: undefined,
+              dataConfig: undefined,
+              axisSorts: undefined,
+              networkColumnConfig: undefined,
             }
           } else {
             this.savedTileConfig = {
@@ -576,7 +583,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  endBottomQuery = ({ response }) => {
+  endBottomQuery = ({ response, isReset = false }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
 
@@ -600,25 +607,39 @@ export class DashboardTile extends React.Component {
         })
         Object.assign(paramsToSet, secondQueryConfig)
       } else {
-        // If successful, update saved config with current tile config for second query
         const currentTile = this.props.tile
         if (currentTile) {
-          const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
-          this.savedTileConfig = {
-            ...this.savedTileConfig,
-            secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
-            secondDataConfig: hasValidSecondDataConfig
-              ? currentTile.secondDataConfig
-              : this.savedTileConfig.secondDataConfig,
-            secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
-            secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
-            secondTableFilters:
-              currentTile.secondTableFilters != null
-                ? currentTile.secondTableFilters
-                : this.savedTileConfig.secondTableFilters,
-            secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
-            secondNetworkColumnConfig:
-              currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
+          if (isReset) {
+            // props.tile is stale during reset — only update display-type fields and explicitly
+            // clear the config fields that resetTile zeroed out, so error-restore uses clean state.
+            this.savedTileConfig = {
+              ...this.savedTileConfig,
+              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+              secondColumns: [],
+              secondTableFilters: [],
+              secondAggConfig: undefined,
+              secondDataConfig: undefined,
+              secondAxisSorts: undefined,
+              secondNetworkColumnConfig: undefined,
+            }
+          } else {
+            const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
+            this.savedTileConfig = {
+              ...this.savedTileConfig,
+              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
+              secondDataConfig: hasValidSecondDataConfig
+                ? currentTile.secondDataConfig
+                : this.savedTileConfig.secondDataConfig,
+              secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
+              secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
+              secondTableFilters:
+                currentTile.secondTableFilters != null
+                  ? currentTile.secondTableFilters
+                  : this.savedTileConfig.secondTableFilters,
+              secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
+              secondNetworkColumnConfig:
+                currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
+            }
           }
         }
         paramsToSet.secondNetworkColumnConfig = this.getNetworkColumnConfig(response)
@@ -873,13 +894,13 @@ export class DashboardTile extends React.Component {
       isCachedRefresh,
       isReset,
     })
-      .then((response) => this.endBottomQuery({ response }))
+      .then((response) => this.endBottomQuery({ response, isReset }))
       .catch((response) => {
         if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
         }
 
-        return this.endBottomQuery({ response })
+        return this.endBottomQuery({ response, isReset })
       })
   }
 

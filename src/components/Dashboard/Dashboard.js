@@ -287,7 +287,6 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.resetGuardTimer)
       clearTimeout(this.onChangeTimer)
       clearTimeout(this.callbackSubsciptionTimer)
-      clearTimeout(this.resetSettleTimer)
       clearTimeout(this.windowResizeTimer)
       this.callbackSubsciptions = []
       this.tileLog = []
@@ -626,15 +625,19 @@ class DashboardWithoutTheme extends React.Component {
     }
 
     if (this.isResettingTile) {
-      // During reset, absorb post-execution saves into tileLog[0] to keep pre-reset history intact.
       this.tileLog[0] = this.cloneTilesForLog(tiles)
-      clearTimeout(this.resetSettleTimer)
-      this.resetSettleTimer = setTimeout(() => {
-        clearTimeout(this.resetGuardTimer)
+      clearTimeout(this.resetGuardTimer)
+      // For split-view tiles both endTopQuery and endBottomQuery flush separately.
+      // Keep the guard active until the reset tile has a full response so the second
+      // flush is absorbed here rather than logged as a spurious undo step.
+      const resetTile = tiles?.find((t) => t.i === this.resettingTileId)
+      const isFullyDone =
+        resetTile?.queryResponse != null && (!resetTile.secondQuery || resetTile.secondQueryResponse != null)
+      if (isFullyDone) {
         this.isResettingTile = false
         this.resettingTileId = null
         this.pendingResetTiles = null
-      }, 200)
+      }
       return
     }
 
@@ -773,6 +776,12 @@ class DashboardWithoutTheme extends React.Component {
     this.onChangeTiles = _cloneDeep(tiles)
     this.props.onChange(this.onChangeTiles, slicers)
     this.onChangeTiles = null
+    // Drain any pending debouncedOnChange promises so they don't hang.
+    if (this.callbackSubsciptions?.length) {
+      const pending = this.callbackSubsciptions
+      this.callbackSubsciptions = []
+      pending.forEach((cb) => cb())
+    }
   }
 
   changeCurrentTileState = (logIndex) => {
@@ -967,6 +976,10 @@ class DashboardWithoutTheme extends React.Component {
 
   resetTile = (id) => {
     try {
+      if (this.isResettingTile && this.resettingTileId === id) {
+        return
+      }
+
       const tiles = _cloneDeep(this.getMostRecentTiles())
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
 
