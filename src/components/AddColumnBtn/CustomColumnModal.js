@@ -558,7 +558,7 @@ export default class CustomColumnModal extends React.Component {
             continue
           }
 
-          const escaped = matchStr.trim().replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
+          const escaped = matchStr.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const boundaryRegex = new RegExp(`(^|[^0-9A-Za-z_])(${escaped})(?=$|[^0-9A-Za-z_])`, 'gi')
           const replaced = cleanedName.replace(boundaryRegex, `$1__COLREF_${originalIndex}__`)
           if (replaced !== cleanedName) {
