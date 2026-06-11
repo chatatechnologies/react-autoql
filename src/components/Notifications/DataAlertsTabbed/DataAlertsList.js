@@ -5,7 +5,6 @@ import { isMobile } from 'react-device-detect'
 
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 import { authenticationType } from '../../../props/types'
-import { CustomScrollbars } from '../../CustomScrollbars'
 import DataAlertRow from './DataAlertRow'
 
 import './DataAlertRow.scss'
@@ -117,30 +116,28 @@ export default class DataAlertsList extends React.Component {
           {showActionsColumn && <div className='data-alert-header-cell'>Actions</div>}
         </div>
 
-        <CustomScrollbars>
-          <div className='data-alerts-table-body'>
-            {loading
-              ? this.renderSkeletonRows()
-              : alerts.map((dataAlert) => (
-                  <DataAlertRow
-                    key={`${type}-${dataAlert.id}`}
-                    dataAlert={dataAlert}
-                    authentication={authentication}
-                    tooltipID={tooltipID}
-                    onErrorCallback={onErrorCallback}
-                    onSuccessAlert={onSuccessAlert}
-                    onDataAlertStatusChange={onDataAlertStatusChange}
-                    openEditModal={openEditModal}
-                    openCustomFilteredAlertModal={openCustomFilteredAlertModal}
-                    onDeleteClick={() => onDataAlertDeleteClick(dataAlert?.id)}
-                    onInitialize={onInitialize}
-                    shouldRenderCreateCustomFilteredAlert={shouldRenderCreateCustomFilteredAlert}
-                    showActionsColumn={showActionsColumn}
-                    className={noActionsClass}
-                  />
-                ))}
-          </div>
-        </CustomScrollbars>
+        <div className='data-alerts-table-body'>
+          {loading
+            ? this.renderSkeletonRows()
+            : alerts.map((dataAlert) => (
+                <DataAlertRow
+                  key={`${type}-${dataAlert.id}`}
+                  dataAlert={dataAlert}
+                  authentication={authentication}
+                  tooltipID={tooltipID}
+                  onErrorCallback={onErrorCallback}
+                  onSuccessAlert={onSuccessAlert}
+                  onDataAlertStatusChange={onDataAlertStatusChange}
+                  openEditModal={openEditModal}
+                  openCustomFilteredAlertModal={openCustomFilteredAlertModal}
+                  onDeleteClick={() => onDataAlertDeleteClick(dataAlert?.id)}
+                  onInitialize={onInitialize}
+                  shouldRenderCreateCustomFilteredAlert={shouldRenderCreateCustomFilteredAlert}
+                  showActionsColumn={showActionsColumn}
+                  className={noActionsClass}
+                />
+              ))}
+        </div>
       </div>
     )
   }
