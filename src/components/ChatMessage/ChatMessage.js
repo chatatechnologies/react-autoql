@@ -15,7 +15,7 @@ import {
   fetchFollowOnQuery,
   isChartType,
 } from 'autoql-fe-utils'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -906,13 +906,11 @@ export default class ChatMessage extends React.Component {
   }
 
   shouldShowFollowOnButton = () => {
-    if (!this.props.enableFollowOnQuery) return false
     if (this.props.type === 'markdown' || this.props.type === 'md') return false
     if (this.props.isCSVProgressMessage) return false
     if (this.props.content) return false
     const queryResponse = this.responseRef?.queryResponse || this.props.response
-    const rows = queryResponse?.data?.data?.rows
-    return rows?.length > 0
+    return shouldShowQueryActionButton(this.props.enableFollowOnQuery, queryResponse)
   }
 
   renderFollowOnIconButton = () => {

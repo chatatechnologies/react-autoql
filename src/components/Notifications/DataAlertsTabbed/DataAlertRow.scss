@@ -95,7 +95,7 @@ $col-actions: 90px;
   @include data-alert-grid;
   border-bottom: 1px solid var(--react-autoql-border-color);
   background-color: var(--react-autoql-background-color-primary);
-  border-radius: 4px 4px 0 0;
+  border-radius: 24px 24px 0 0;
 
   &.no-actions-column {
     @include data-alert-grid-no-actions;
@@ -151,7 +151,7 @@ $col-actions: 90px;
 
   &:last-child {
     border-bottom: none;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 24px 24px;
   }
 
   &.data-alert-disabled {
@@ -207,7 +207,7 @@ $col-actions: 90px;
 .data-alert-card {
   background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
-  border-radius: 8px;
+  border-radius: 24px;
   padding: 0.875rem 1rem;
   margin-bottom: 0.625rem;
   transition: background-color 0.15s ease;
@@ -398,7 +398,7 @@ $col-actions: 90px;
 
   &:last-child {
     border-bottom: none;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 24px 24px;
   }
 }
 

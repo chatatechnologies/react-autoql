@@ -33,7 +33,7 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -1002,7 +1002,6 @@ export class OptionsToolbar extends React.Component {
       const allColumnsHidden = areAllColumnsHidden(columns)
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
-      const hasData = numRows > 0
       const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
@@ -1044,7 +1043,8 @@ export class OptionsToolbar extends React.Component {
           queryResponse: response,
           isMarkdownOnly,
         }),
-        showFollowOnQueryButton: !isMarkdownOnly && !!props.enableFollowOnQuery && hasData,
+        showFollowOnQueryButton:
+          !isMarkdownOnly && shouldShowQueryActionButton(props.enableFollowOnQuery, response),
       }
 
       // Don't show more options button if it's a markdown-only message
