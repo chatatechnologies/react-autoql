@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.29.5",
+  "version": "8.29.6",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -33,7 +33,7 @@
     "test:coverage": "npm test -- --coverage",
     "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
     "test:staged": "cross-env NODE_OPTIONS= jest --findRelatedTests",
-    "build": "rollup -c",
+    "build": "cross-env NODE_OPTIONS=--experimental-global-webcrypto rollup -c",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint --fix 'src/**/*.js'",
     "format": "prettier --write 'src/**/*.{js,css,md,json}' --config ./.prettierrc",
@@ -176,7 +176,8 @@
   },
   "overrides": {
     "simple-update-notifier": "2.0.0",
-    "cheerio": "1.0.0-rc.12"
+    "cheerio": "1.0.0-rc.12",
+    "serialize-javascript": "^6.0.1"
   },
   "engines": {
     "node": ">=14.17.3",

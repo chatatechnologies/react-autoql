@@ -42,8 +42,14 @@ class DashboardWithoutTheme extends React.Component {
     this.debounceTime = 50
     this.onChangeTiles = null
     this.callbackSubsciptions = []
-    this.tileLog = [props.tiles]
+    this.userCallbackSubscriptions = []
+    this.tileLog = [this.cloneTilesForLog(props.tiles)]
     this.currentLogIndex = 0
+    this.isResettingTile = false
+    this.resettingTileId = null
+    this.pendingResetTiles = null
+    this.isDiscardingResetChanges = false
+    this.discardResetTileId = null
 
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
@@ -112,6 +118,7 @@ class DashboardWithoutTheme extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableResetQuery: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -149,6 +156,7 @@ class DashboardWithoutTheme extends React.Component {
     enableSlicers: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableResetQuery: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -167,32 +175,10 @@ class DashboardWithoutTheme extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
     if (this.props.executeOnMount) {
-      // Execute only tiles that don't have queryResponse
-      // Use requestAnimationFrame to ensure tile refs are set
-      requestAnimationFrame(() => {
-        if (!this._isMounted) return
-
-        const tiles = this.props.tiles || []
-        const tilesToExecute = tiles.filter((tile) => !tile.queryResponse && !tile.secondQueryResponse)
-
-        if (tilesToExecute.length > 0) {
-          const promises = []
-          tilesToExecute.forEach((tile) => {
-            const tileRef = this.tileRefs[tile.key] || this.tileRefs[tile.i]
-            if (tileRef && tileRef.processTile) {
-              promises.push(tileRef.processTile())
-            }
-          })
-
-          if (promises.length > 0) {
-            Promise.all(promises).catch((error) => {
-              console.error('Error executing tiles:', error)
-            })
-          }
-        }
-      })
+      this.executeDashboard()
     }
     window.addEventListener('resize', this.onWindowResize)
+    window.addEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
   }
 
   getSlicersArrayFromProps = (props) => {
@@ -225,7 +211,6 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ dashboardSlicers: currentSlicers })
     }
 
-    // Re-run dashboard once exiting edit mode (if prop is set to true)
     if (prevProps.isEditing && !this.props.isEditing && this.props.executeOnStopEditing) {
       this.executeDashboard()
     }
@@ -245,9 +230,12 @@ class DashboardWithoutTheme extends React.Component {
 
     if (this.props.isEditing !== prevProps.isEditing) {
       this.resetTileStateLog()
-      this.setState({ isDragging: true }, () => {
-        this.setState({ isDragging: false })
-      })
+      // Brief isDragging toggle triggers resize in children; timeout avoids synchronous double-setState race
+      this.setIsDragging(true)
+      clearTimeout(this.stopDraggingTimeout)
+      this.stopDraggingTimeout = setTimeout(() => {
+        this.setIsDragging(false)
+      }, 50)
     }
 
     // Prune stale tileRefs when tile keys change to prevent unbounded growth
@@ -261,14 +249,6 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  componentDidMount = () => {
-    this._isMounted = true
-    if (this.props.executeOnMount) {
-      this.executeDashboard()
-    }
-    window.addEventListener('resize', this.onWindowResize)
-  }
-
   handleSlicerChange = (slicer) => {
     // Add new slicer to array
     if (slicer) {
@@ -277,7 +257,7 @@ class DashboardWithoutTheme extends React.Component {
       const exists = this.state.dashboardSlicers.some(
         (s) => (s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === (slicer.value || '')
       )
-      
+
       if (!exists) {
         const newSlicer = {
           type: 'VL',
@@ -294,7 +274,7 @@ class DashboardWithoutTheme extends React.Component {
     // Remove slicer from array
     const slicerKey = slicerToRemove.key || slicerToRemove.canonical_key
     const slicerValue = slicerToRemove.value || ''
-    
+
     this.setState({
       dashboardSlicers: this.state.dashboardSlicers.filter(
         (s) => !((s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === slicerValue)
@@ -306,29 +286,60 @@ class DashboardWithoutTheme extends React.Component {
     try {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
+      window.removeEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
+      clearTimeout(this.resetGuardTimer)
       clearTimeout(this.onChangeTimer)
       clearTimeout(this.callbackSubsciptionTimer)
+      clearTimeout(this.windowResizeTimer)
+      clearTimeout(this.discardResetChangesTimer)
+      this.callbackSubsciptions = []
+      this.userCallbackSubscriptions = []
+      this.tileLog = []
+      this.pendingResetTiles = null
+      this.pendingResetUndoTiles = null
+      this.pendingResetHistory = null
+      this.isDiscardingResetChanges = false
+      this.discardResetTileId = null
     } catch (error) {
       console.error(error)
     }
   }
 
-  resetTileStateLog = () => {
-    if (this.tileLog?.[0]) {
-      this.tileLog = [this.tileLog[0]]
-    } else {
-      this.tileLog = [this.getMostRecentTiles()]
-    }
+  handleDiscardEvent = () => this.discardChanges()
 
+  discardChanges = () => {
+    try {
+      const unedited = this.state.uneditedDashboardTiles || this.tileLog?.[0] || this.getMostRecentTiles()
+      if (!unedited) return
+      this.tileLog = [this.cloneTilesForLog(unedited)]
+      this.currentLogIndex = 0
+      this.debouncedOnChange(_cloneDeep(unedited), false)
+      this.props.stopEditingCallback?.()
+    } catch (error) {
+      console.error('Error discarding dashboard changes:', error)
+    }
+  }
+
+  resetTileStateLog = () => {
+    this.tileLog = [_cloneDeep(this.getMostRecentTiles())]
     this.currentLogIndex = 0
   }
 
   getMostRecentTiles = () => {
     if (this.onChangeTiles) {
       return this.onChangeTiles
+    }
+    // During reset, overlay just the cleared tile onto props.tiles so concurrent saves from
+    // other tiles don't inadvertently read the reset tile's stale queryResponse as their base.
+    if (this.isResettingTile && this.pendingResetTiles && this.resettingTileId) {
+      const base = this.props.tiles
+      if (!base) return this.pendingResetTiles
+      const resetEntry = this.pendingResetTiles.find((t) => t.i === this.resettingTileId)
+      if (!resetEntry) return base
+      return base.map((tile) => (tile.i === this.resettingTileId ? resetEntry : tile))
     }
     return this.props.tiles
   }
@@ -343,7 +354,8 @@ class DashboardWithoutTheme extends React.Component {
       try {
         this.subscribeToCallback([resolve])
         if (callbackArray?.length) {
-          this.subscribeToCallback(callbackArray)
+          // Separate from callbackSubsciptions so flushOnChange (undo/redo) can resolve promises without firing user callbacks with stale state.
+          this.userCallbackSubscriptions = [...this.userCallbackSubscriptions, ...callbackArray]
         }
 
         if (saveInLog) {
@@ -356,17 +368,16 @@ class DashboardWithoutTheme extends React.Component {
 
         this.onChangeTimer = setTimeout(() => {
           if (this.onChangeTiles) {
-            // Always use state slicers (even if empty) to reflect user changes
-            // If state is explicitly set to empty array, send empty array, not initialSlicers
-            // If slicers are disabled, always send empty array
             const slicers =
               this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
+
             this.props.onChange(this.onChangeTiles, slicers)
             this.onChangeTiles = null
-            if (this.callbackSubsciptions?.length) {
-              const callbackArray = _cloneDeep(this.callbackSubsciptions)
-              this.callbackSubsciptions = []
-              callbackArray.forEach((callback, i) => {
+            const allCallbacks = [...this.callbackSubsciptions, ...this.userCallbackSubscriptions]
+            this.callbackSubsciptions = []
+            this.userCallbackSubscriptions = []
+            if (allCallbacks.length) {
+              allCallbacks.forEach((callback, i) => {
                 this.callbackSubsciptionTimer = setTimeout(() => {
                   callback()
                 }, (i + 1) * 50)
@@ -380,6 +391,7 @@ class DashboardWithoutTheme extends React.Component {
       } catch (error) {
         console.error(error)
         this.callbackSubsciptions = []
+        this.userCallbackSubscriptions = []
         return reject()
       }
     })
@@ -436,6 +448,15 @@ class DashboardWithoutTheme extends React.Component {
         if (this.tileRefs[dashboardTile]) {
           // Find the corresponding tile to check if it already has data
           const tile = tiles.find((t) => t.key === dashboardTile || t.i === dashboardTile)
+
+          // Skip tile being reset — resetTile calls processTile directly.
+          if (
+            this.isResettingTile &&
+            this.resettingTileId &&
+            (tile?.i === this.resettingTileId || tile?.key === this.resettingTileId)
+          ) {
+            continue
+          }
 
           // Only execute tiles that don't already have queryResponse, unless forceExecution is true
           if (forceExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
@@ -600,16 +621,114 @@ class DashboardWithoutTheme extends React.Component {
     return
   }
 
+  // Shallow-clone tiles for undo history; deep-clone only fe_req to preserve custom column defs without copying full response payloads.
+  cloneTilesForLog = (tiles) =>
+    tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => {
+      const safeQueryResponse = queryResponse
+        ? (() => {
+            try {
+              const qr = { ...queryResponse }
+              if (qr.data && qr.data.data) {
+                qr.data = { ...qr.data }
+                qr.data.data = { ...qr.data.data }
+                // Deep-clone fe_req if present (custom columns live here)
+                if (qr.data.data.fe_req) {
+                  qr.data.data.fe_req = _cloneDeep(qr.data.data.fe_req)
+                }
+              }
+              return qr
+            } catch (e) {
+              return queryResponse
+            }
+          })()
+        : queryResponse
+
+      const safeSecondQueryResponse = secondQueryResponse
+        ? (() => {
+            try {
+              const sqr = { ...secondQueryResponse }
+              if (sqr.data && sqr.data.data) {
+                sqr.data = { ...sqr.data }
+                sqr.data.data = { ...sqr.data.data }
+                if (sqr.data.data.fe_req) {
+                  sqr.data.data.fe_req = _cloneDeep(sqr.data.data.fe_req)
+                }
+              }
+              return sqr
+            } catch (e) {
+              return secondQueryResponse
+            }
+          })()
+        : secondQueryResponse
+
+      return {
+        ..._cloneDeep(rest),
+        queryResponse: safeQueryResponse,
+        secondQueryResponse: safeSecondQueryResponse,
+      }
+    })
+
+  stripRuntimeFields = (tiles) =>
+    tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => rest)
+
   addTileStateToLog = (tiles) => {
     if (!this.props.isEditing || !tiles) {
       return
     }
 
-    if (!this.getChangeDetection(tiles, this.tileLog[this.currentLogIndex], true)) {
+    if (this.isResettingTile) {
+      this.tileLog[0] = this.cloneTilesForLog(tiles)
+      clearTimeout(this.resetGuardTimer)
+      const resetTile = tiles?.find((t) => t.i === this.resettingTileId)
+      const isFullyDone =
+        resetTile?.queryResponse != null && (!resetTile.secondQuery || resetTile.secondQueryResponse != null)
+      if (isFullyDone) {
+        this.isResettingTile = false
+        this.resettingTileId = null
+        this.pendingResetTiles = null
+      }
       return
     }
 
-    this.tileLog.unshift(_cloneDeep(tiles))
+    const current = this.tileLog[this.currentLogIndex]
+    const prevEntry = this.tileLog[this.currentLogIndex + 1]
+    const isJustAddedTile =
+      current && prevEntry && current.length > prevEntry.length && tiles.length === current.length
+
+    if (current) {
+      const stripped = this.stripRuntimeFields(tiles)
+      const strippedCurrent = this.stripRuntimeFields(current)
+      if (_isEqual(stripped, strippedCurrent)) {
+        // Update snapshot with latest response data so undo restores tiles with query results.
+        if (isJustAddedTile) {
+          this.tileLog[this.currentLogIndex] = this.cloneTilesForLog(tiles)
+        }
+        return
+      }
+    }
+
+    // Collapse "add tile + initial edit" into a single undo step.
+    if (isJustAddedTile) {
+      if (this.currentLogIndex > 0) {
+        this.tileLog = this.tileLog.slice(this.currentLogIndex)
+      }
+      this.tileLog[0] = this.cloneTilesForLog(tiles)
+      this.currentLogIndex = 0
+      return
+    }
+
+    // If user made a new edit after undoing, discard the "future" branch.
+    if (this.currentLogIndex > 0) {
+      this.tileLog = this.tileLog.slice(this.currentLogIndex)
+    }
+
+    this.tileLog.unshift(this.cloneTilesForLog(tiles))
+    this.currentLogIndex = 0
+
+    // Cap history to prevent memory leaks from large queryResponse objects.
+    if (this.tileLog.length > 20) {
+      this.tileLog.length = 20
+    }
   }
 
   onMoveEnd = (layout, oldItem, newItem, placeholder, e, element) => {
@@ -636,18 +755,23 @@ class DashboardWithoutTheme extends React.Component {
   updateTileLayout = (layout) => {
     try {
       const oldTiles = this.getMostRecentTiles()
-      const tiles = oldTiles.map((tile, index) => {
-        return {
-          ...tile,
-          ...layout[index],
-        }
+
+      // Skip stale layout echo when tile count doesn't match (undo/redo lag in react-grid-layout).
+      if (!Array.isArray(oldTiles) || !Array.isArray(layout) || layout.length !== oldTiles.length) {
+        return
+      }
+
+      const tiles = oldTiles.map((tile, index) => ({ ...tile, ...layout[index] }))
+
+      const LAYOUT_KEYS = ['x', 'y', 'w', 'h']
+      const layoutChanged = tiles.some((tile, idx) => {
+        const old = oldTiles[idx]
+        return !old || LAYOUT_KEYS.some((k) => tile[k] !== old[k])
       })
 
-      // This function is called when anything updates, including automatic
-      // re-adjustment of all tiles after moving a single tile. So we do not
-      // want to trigger the undo state on this action. Only on main actions
-      // directly caused from user interaction
-      this.debouncedOnChange(tiles, false)
+      if (layoutChanged) {
+        this.debouncedOnChange(tiles, false)
+      }
     } catch (error) {
       console.error(error)
     }
@@ -689,13 +813,32 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  // Bypass the debounce and push tiles to the portal immediately (used for undo/redo).
+  flushOnChange = (tiles) => {
+    if (this.onChangeTimer) {
+      clearTimeout(this.onChangeTimer)
+      this.onChangeTimer = null
+    }
+    const slicers =
+      this.props.enableSlicers && Array.isArray(this.state.dashboardSlicers) ? this.state.dashboardSlicers : []
+    this.onChangeTiles = _cloneDeep(tiles)
+    this.props.onChange(this.onChangeTiles, slicers)
+    this.onChangeTiles = null
+    // Resolve pending promises without firing userCallbackSubscriptions — calling onSaveCallback here would save stale state and exit edit mode.
+    if (this.callbackSubsciptions?.length) {
+      const pending = this.callbackSubsciptions
+      this.callbackSubsciptions = []
+      pending.forEach((cb) => cb())
+    }
+    this.userCallbackSubscriptions = []
+  }
+
   changeCurrentTileState = (logIndex) => {
     try {
       const newTileState = _cloneDeep(this.tileLog[logIndex])
-
       if (newTileState) {
         this.currentLogIndex = logIndex
-        this.debouncedOnChange(newTileState, false)
+        this.flushOnChange(newTileState)
       }
     } catch (error) {
       console.error(error)
@@ -707,6 +850,43 @@ class DashboardWithoutTheme extends React.Component {
       console.warn(
         'Unable perform "undo" action outside of edit mode. Set the isEditing prop to true to enable edit mode.',
       )
+      return
+    }
+
+    // Restore pre-reset state directly — tileLog is polluted by post-reset auto-saves.
+    if (this.pendingResetUndoTiles) {
+      const target = this.pendingResetUndoTiles
+      this.pendingResetUndoTiles = null
+
+      // Preserve current key to keep DashboardTile mounted (key changed after reset).
+      const currentTiles = this.getMostRecentTiles()
+      const restoredTiles = target.map((preTile) => {
+        const cur = currentTiles?.find((t) => t.i === preTile.i)
+        return cur ? { ...preTile, key: cur.key } : preTile
+      })
+      const preResetHistory = this.pendingResetHistory || []
+      this.pendingResetHistory = null
+      this.tileLog = [_cloneDeep(restoredTiles), ...preResetHistory.slice(1)]
+      this.currentLogIndex = 0
+
+      // Discard stale setParamsForTile callbacks from in-flight reset queries for 500ms to prevent overriding the undo.
+      if (this.resettingTileId) {
+        this.discardResetTileId = this.resettingTileId
+        this.isDiscardingResetChanges = true
+        clearTimeout(this.discardResetChangesTimer)
+        this.discardResetChangesTimer = setTimeout(() => {
+          this.isDiscardingResetChanges = false
+          this.discardResetTileId = null
+        }, 500)
+      }
+
+      // Clear reset guard so getMostRecentTiles returns the restored tiles.
+      this.isResettingTile = false
+      this.resettingTileId = null
+      this.pendingResetTiles = null
+      clearTimeout(this.resetGuardTimer)
+
+      this.flushOnChange(restoredTiles)
       return
     }
 
@@ -722,6 +902,17 @@ class DashboardWithoutTheme extends React.Component {
     }
 
     this.changeCurrentTileState(this.currentLogIndex - 1)
+  }
+
+  canUndo = () => {
+    if (!this.props.isEditing) return false
+    if (this.pendingResetUndoTiles) return true
+    return this.currentLogIndex < this.tileLog.length - 1
+  }
+
+  canRedo = () => {
+    if (!this.props.isEditing) return false
+    return this.currentLogIndex > 0
   }
 
   deleteTile = (id) => {
@@ -824,6 +1015,11 @@ class DashboardWithoutTheme extends React.Component {
 
   setParamsForTile = (params, id, callbackArray) => {
     try {
+      // Guard against stale debouncedSetParamsForTile callbacks from a reset that was subsequently undone.
+      if (this.isDiscardingResetChanges && id === this.discardResetTileId) {
+        return
+      }
+
       const originalTiles = this.getMostRecentTiles()
       const tiles = _cloneDeep(originalTiles)
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
@@ -852,6 +1048,10 @@ class DashboardWithoutTheme extends React.Component {
 
   resetTile = (id) => {
     try {
+      if (this.isResettingTile && this.resettingTileId === id) {
+        return
+      }
+
       const tiles = _cloneDeep(this.getMostRecentTiles())
       const tileIndex = tiles.map((item) => item.i).indexOf(id)
 
@@ -860,46 +1060,124 @@ class DashboardWithoutTheme extends React.Component {
         return
       }
 
-      // Clear filters, columns, sorts; preserve query and title
+      // Clear filters, columns, sorts, aggregations, chart overlays, and cached responses; preserve query, title, and display type.
       tiles[tileIndex] = {
         ...tiles[tileIndex],
         tableFilters: [],
         filters: [],
         secondTableFilters: [],
         columnSelects: [],
+        columns: [],
+        available_selects: [],
+        displayOverrides: [],
         orders: [],
         secondOrders: [],
+        aggConfig: undefined,
+        secondAggConfig: undefined,
+        axisSorts: undefined,
+        secondAxisSorts: undefined,
+        chartControls: undefined,
+        secondChartControls: undefined,
+        dataConfig: undefined,
+        secondDataConfig: undefined,
+        legendFilterConfig: undefined,
         queryResponse: null,
         secondQueryResponse: null,
       }
 
-      // Trigger save after state updates
-      const resetCallback = () => {
-        if (this.props.onSaveCallback) {
-          Promise.resolve(this.props.onSaveCallback()).catch((error) => {
-            console.error('Error saving after tile reset:', error)
-          })
-        }
+      // Save pre-reset state for undo; bypass addTileStateToLog (equality check would skip it).
+      if (this.props.isEditing) {
+        const preResetTiles = _cloneDeep(this.getMostRecentTiles())
+        // Use cloneTilesForLog to ensure nested fe_req (custom columns) are deep-cloned
+        const preResetSnapshot = this.cloneTilesForLog(preResetTiles)
+        this.pendingResetUndoTiles = preResetSnapshot
+        const history = this.tileLog.slice(this.currentLogIndex)
+        history[0] = preResetSnapshot
+        this.pendingResetHistory = history
+        this.tileLog = [this.cloneTilesForLog(tiles), ...history]
+        this.currentLogIndex = 0
       }
 
-      // After saving the reset state, re-run the tile so its table/chart is refreshed
-      const processTileCallback = () => {
-        try {
-          const updatedTile = tiles[tileIndex]
-          // Prefer tile.key for refs, fall back to tile.i
-          const refKey = updatedTile?.key || updatedTile?.i
-          const tileRef = this.tileRefs[refKey]
-          // Only process if there is a query to execute
-          const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
-          if (tileRef?.processTile && hasQuery) {
-            tileRef.processTile()
+      // Guard flags prevent executeDashboard from double-executing this tile.
+      this.isResettingTile = true
+      this.resettingTileId = id
+      this.pendingResetTiles = _cloneDeep(tiles)
+
+      const runSingleTile = () => {
+        const updatedTile = tiles[tileIndex]
+        const refKey = updatedTile?.key || updatedTile?.i
+        const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
+        if (!hasQuery) {
+          return Promise.resolve()
+        }
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            const tileRef = this.tileRefs[refKey]
+            if (!tileRef?.processTile) {
+              return resolve()
+            }
+            // Force non-cached fetch — cached endpoint ignores request params.
+            const promise = tileRef.processTile({ isReset: true })
+            Promise.resolve(promise).then(resolve).catch(reject)
+          }, 0)
+        })
+      }
+
+      const clearResetGuard = () => {
+        clearTimeout(this.resetGuardTimer)
+        this.resetGuardTimer = setTimeout(() => {
+          if (this.isResettingTile) {
+            if (this.props.isEditing) {
+              this.tileLog[0] = _cloneDeep(this.getMostRecentTiles())
+            }
+            this.isResettingTile = false
+            this.resettingTileId = null
+            this.pendingResetTiles = null
           }
-        } catch (error) {
-          console.error('Error processing tile after reset:', error)
-        }
+        }, 1000)
       }
 
-      this.debouncedOnChange(tiles, true, [resetCallback, processTileCallback])
+      return runSingleTile()
+        .then((processedTile) => {
+          try {
+            // Merge returned query responses into pendingResetTiles so the
+            // subsequent debouncedOnChange publishes the tile with the fresh data
+            if (processedTile && this.pendingResetTiles) {
+              try {
+                const pending = _cloneDeep(this.pendingResetTiles)
+                const idx = pending.findIndex((t) => t.i === processedTile.i || t.key === processedTile.key)
+                if (idx !== -1) {
+                  pending[idx] = {
+                    ...pending[idx],
+                    ...(processedTile.queryResponse !== undefined ? { queryResponse: processedTile.queryResponse } : {}),
+                    ...(processedTile.secondQueryResponse !== undefined
+                      ? { secondQueryResponse: processedTile.secondQueryResponse }
+                      : {}),
+                  }
+                  this.pendingResetTiles = pending
+                }
+              } catch (e) {
+                console.error('Failed to merge processed tile into pendingResetTiles:', e)
+              }
+            }
+
+            const callbacks = this.props.onSaveCallback ? [this.props.onSaveCallback] : []
+            return this.debouncedOnChange(this.getMostRecentTiles(), false, callbacks)
+          } catch (err) {
+            console.error(err)
+            return Promise.resolve()
+          }
+        })
+        .then(clearResetGuard)
+        .catch((error) => {
+          console.error('Error during tile reset:', error)
+          try {
+            return Promise.resolve(runSingleTile()).finally(clearResetGuard)
+          } catch (err) {
+            console.error('Error processing tile after reset (fallback):', err)
+            clearResetGuard()
+          }
+        })
     } catch (error) {
       console.error(error)
     }
@@ -1091,6 +1369,7 @@ class DashboardWithoutTheme extends React.Component {
             enableCyclicalDates={this.props.enableCyclicalDates}
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            showResetQueryOption={this.props.enableResetQuery}
           />
         ))}
       </ReactGridLayout>
@@ -1128,10 +1407,7 @@ class DashboardWithoutTheme extends React.Component {
                 !isAnyTileExecuting
               }
               onSaveClick={() => {
-                Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined).then((result) => {
-                  // Keep if we need to add back in the near future
-                  // this.executeDashboard()
-                })
+                Promise.resolve(this.props.onSaveCallback ? this.props.onSaveCallback() : undefined)
               }}
               onDeleteClick={this.props.onDeleteCallback}
               onRenameClick={this.props.onRenameCallback}
