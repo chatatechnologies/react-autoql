@@ -1,5 +1,5 @@
 .react-autoql-dashboard-toolbar-container {
-  padding: 15px 10px 10px 24px;
+  padding: 0.9375rem 0.625rem 0.625rem 1.5rem;
   top: 0;
   left: auto;
   right: 0;
@@ -31,7 +31,7 @@
       .react-autoql-dashboard-rename-btn {
         margin: 0 !important;
         padding: 0 !important;
-        margin-left: 3px !important;
+        margin-left: 0.1875rem !important;
         font-size: 0.9375rem;
         opacity: 0;
       }
@@ -62,7 +62,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    margin-top: 5px;
+    margin-top: 0.3125rem;
   }
 
   .react-autoql-dashboard-edit-toolbar-container-left,
@@ -73,14 +73,14 @@
 
   .react-autoql-dashboard-slicer-container {
     width: 100%;
-    margin-top: 10px;
-    padding-right: 10px;
+    margin-top: 0.625rem;
+    padding-right: 0.625rem;
   }
 
   .react-autoql-dashboard-slicer-chips-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
   }
 }
