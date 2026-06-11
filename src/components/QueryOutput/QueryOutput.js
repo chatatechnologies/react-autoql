@@ -110,6 +110,12 @@ export class QueryOutput extends React.Component {
 
     // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
+    // WeakMap to track contextmenu handlers per cell element — prevents duplicate listeners on re-render
+    this.cellContextMenuHandlers = new WeakMap()
+    // Circuit breaker: counts consecutive config-correction attempts since last new query response.
+    // Resets to 0 whenever a fresh query result arrives. Capped at 3 to break loops caused by
+    // corrupted saved dataConfig that setTableConfig cannot repair.
+    this._consecutiveConfigResets = 0
 
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
@@ -283,7 +289,11 @@ export class QueryOutput extends React.Component {
     }),
     initialAggConfig: PropTypes.shape({}),
 
-    queryResponse: PropTypes.shape({}),
+    queryResponse: PropTypes.shape({
+      data: PropTypes.shape({
+        data: PropTypes.object,
+      }),
+    }),
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -537,7 +547,6 @@ export class QueryOutput extends React.Component {
             this.hasUserSelectedStringAxis = false
           }
           this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
-          this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
 
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -635,8 +644,11 @@ export class QueryOutput extends React.Component {
         // Preserve saved config while resolving number-column conflicts
         if (
           !this.hasError(this.queryResponse) &&
+          this.state.columns?.length &&
+          this._consecutiveConfigResets < 3 &&
           !this.isTableConfigValid(this.tableConfig, this.state.columns, this.state.displayType)
         ) {
+          this._consecutiveConfigResets++
           this.setTableConfig()
         }
       }
@@ -898,6 +910,19 @@ export class QueryOutput extends React.Component {
     const isTableConfigValid = this.isTableConfigValid(this.tableConfig, columns, displayType)
 
     if (!this.hasError(this.queryResponse) && !isTableConfigValid) {
+      // Skip correction when there are no columns — setTableConfig cannot produce a valid result
+      // without column data and would trigger onTableConfigChange with a broken config.
+      if (!columns?.length) {
+        return
+      }
+
+      // Circuit breaker: a corrupted tile config can cause repeated correction attempts if the
+      // rebuilt config is still rejected. Cap at 3 attempts per query response to break the loop.
+      if (this._consecutiveConfigResets >= 3) {
+        console.warn('[react-autoql] Tile config correction loop detected — skipping reset to prevent infinite loop. Check the saved dataConfig for this tile.')
+        return
+      }
+
       const isDateOnlyChart = DATE_ONLY_CHART_TYPES.includes(displayType)
       const hasUserStringAxisSelection =
         this.hasUserSelectedStringAxis && this.isColumnIndexValid(this.tableConfig?.stringColumnIndex, columns)
@@ -905,6 +930,7 @@ export class QueryOutput extends React.Component {
       // When users switch to date-only charts after manually picking an axis, don't force-reset
       // tableConfig just to coerce the string axis back to a date column.
       if (!(isDateOnlyChart && hasUserStringAxisSelection)) {
+        this._consecutiveConfigResets++
         this.setTableConfig()
       }
     }
@@ -1153,7 +1179,7 @@ export class QueryOutput extends React.Component {
       response: this.queryResponse,
       columnIndexConfig: tableConfig ?? this.tableConfig,
       columns: columns ?? this.getColumns(),
-      displayType: displayType ?? this.state.displayType,
+      displayType: displayType ?? this.state?.displayType,
     })
   }
 
@@ -1182,6 +1208,7 @@ export class QueryOutput extends React.Component {
 
   updateColumnsAndData = (response) => {
     if (response && this._isMounted) {
+      this._consecutiveConfigResets = 0
       this.pivotTableID = uuid()
       this.isOriginalData = false
       const nextQueryID = response?.data?.data?.query_id
@@ -2669,7 +2696,15 @@ export class QueryOutput extends React.Component {
     }
 
     if (!_isEqual(prevTableConfig, this.tableConfig)) {
-      this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
+      // Don't propagate a config that is still invalid — saving a broken config to the parent
+      // would re-trigger correction on the next render, creating a feedback loop.
+      // When there is no response data yet (tile not executed) we skip this check since
+      // isTableConfigValid always returns false without rows and we don't want to block resets.
+      const hasResponseData = !!this.queryResponse?.data?.data?.rows?.length
+      const newConfigIsValid = !hasResponseData || this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state?.displayType)
+      if (newConfigIsValid) {
+        this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
+      }
     }
   }
 
@@ -2919,7 +2954,12 @@ export class QueryOutput extends React.Component {
     cellElement.setAttribute('data-tooltip-id', tooltipId)
     cellElement.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
 
-    cellElement.addEventListener('contextmenu', (e) => {
+    const prev = this.cellContextMenuHandlers.get(cellElement)
+    if (prev) {
+      cellElement.removeEventListener('contextmenu', prev)
+    }
+
+    const handler = (e) => {
       e.preventDefault()
       e.stopPropagation()
       const textToCopy = formatElement({
@@ -2928,9 +2968,11 @@ export class QueryOutput extends React.Component {
         config: dataFormatting,
         forExport: true,
       })
-
       this.copyToClipboard(textToCopy, cellElement)
-    })
+    }
+
+    this.cellContextMenuHandlers.set(cellElement, handler)
+    cellElement.addEventListener('contextmenu', handler)
   }
 
   detectQuantityType = (rows, colIndex) => {

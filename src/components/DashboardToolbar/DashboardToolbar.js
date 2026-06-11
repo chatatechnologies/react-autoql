@@ -321,25 +321,33 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   </Button>
                 </div>
               )}
-              {!this.props.isEditing && (
-                <Popover
-                  align='end'
-                  positions={['bottom', 'left', 'top', 'right']}
-                  padding={0}
-                  content={this.optionsMenu()}
-                  isOpen={this.state.isOptionsMenuOpen}
-                  onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
-                >
-                  <Button
-                    iconOnly
-                    icon='more-vertical'
-                    border={false}
-                    tooltip='Options'
-                    tooltipID={this.props.tooltipID}
-                    onClick={() => this.setState({ isOptionsMenuOpen: true })}
-                  />
-                </Popover>
-              )}
+              {!this.props.isEditing && (() => {
+                const hasAvailableOptions = !!(
+                  this.props.isEditable || this.props.isDashboardFullyExecuted
+                )
+
+                if (!hasAvailableOptions) return null
+
+                return (
+                  <Popover
+                    align='end'
+                    positions={['bottom', 'left', 'top', 'right']}
+                    padding={0}
+                    content={this.optionsMenu()}
+                    isOpen={this.state.isOptionsMenuOpen}
+                    onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
+                  >
+                    <Button
+                      iconOnly
+                      icon='more-vertical'
+                      border={false}
+                      tooltip='Options'
+                      tooltipID={this.props.tooltipID}
+                      onClick={() => this.setState({ isOptionsMenuOpen: true })}
+                    />
+                  </Popover>
+                )
+              })()}
             </div>
           </div>
           {this.dashboardSlicingFeatureToggle && this.renderFilterList()}

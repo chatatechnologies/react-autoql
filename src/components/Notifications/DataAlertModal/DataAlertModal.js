@@ -96,6 +96,10 @@ class DataAlertModal extends React.Component {
     enableAlphaAlertSettings: false,
   }
 
+  componentDidMount = () => {
+    this.fetchCategoriesIfNeeded()
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (!this.props.isVisible && prevProps.isVisible) {
       setTimeout(this.initializeFields, 500)
@@ -112,16 +116,18 @@ class DataAlertModal extends React.Component {
       }
 
       if (!this.state.isFrequencySectionReady && prevState.isFrequencySectionReady) {
-        // If condition step changed and it affected the frequency step
-        // Then set frequency section back to incomplete
         const frequencyStepNumber = this.getStepNumber(this.FREQUENCY_STEP)
         const newCompletedSections = [...this.state.completedSections]
         newCompletedSections[frequencyStepNumber] = false
         this.setState({ completedSections: newCompletedSections })
       }
     }
+  }
 
-    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
+  fetchCategoriesIfNeeded = () => {
+    const { autoQLConfig, currentDataAlert } = this.props
+    const projectId = autoQLConfig?.projectId || currentDataAlert?.projects?.[0]?.id || currentDataAlert?.project?.id
+    if (projectId && !this.state.fetchedCategories) {
       this.getLabels()
     }
   }
@@ -221,7 +227,6 @@ class DataAlertModal extends React.Component {
       state.expressionJSON = currentDataAlert?.expression
       state.billingUnitsInput = currentDataAlert?.billing_units
       state.descriptionInput = currentDataAlert?.description
-      state.descriptionInput = currentDataAlert?.label
       state.categoryId = currentDataAlert?.label?.id
     }
 
@@ -229,7 +234,7 @@ class DataAlertModal extends React.Component {
   }
 
   initializeFields = (props) => {
-    this.setState(this.getInitialState(props))
+    this.setState(this.getInitialState(props), this.fetchCategoriesIfNeeded)
   }
 
   getDataAlertData = () => {
