@@ -68,7 +68,9 @@ export default class ChataTable extends React.Component {
     // Pre-rendered hamburger icon markup for header injection
     this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
     this.useRemote =
-      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+      props.isEditing
+        ? LOCAL_OR_REMOTE.REMOTE
+        : this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
         : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
         ? LOCAL_OR_REMOTE.REMOTE
@@ -187,6 +189,7 @@ export default class ChataTable extends React.Component {
     updateColumnsAndData: PropTypes.func,
     onUpdateFilterResponse: PropTypes.func,
     isDrilldown: PropTypes.bool,
+    isEditing: PropTypes.bool,
     scope: PropTypes.string,
     // Pivot axis selector props
     pivotAxisOptions: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.number, label: PropTypes.string })),
@@ -211,6 +214,7 @@ export default class ChataTable extends React.Component {
     tooltipID: undefined,
     pivot: false,
     pivotTableDataLimited: false,
+    isEditing: false,
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -693,7 +697,10 @@ export default class ChataTable extends React.Component {
       const hasRecentlySetHeaderFilters =
         this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < DEBOUNCE_MS
 
-      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
+      // Before tabulatorMounted, header filters haven't been seeded from initialTableParams yet —
+      // a remote request here would run with empty filters and wipe the saved filter state upstream
+      // via onTableParamsChange. The initial page is already in `initialData`, so return it instead.
+      if (!this.hasSetInitialData || !this._isMounted || !this.state.tabulatorMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
 
@@ -839,6 +846,10 @@ export default class ChataTable extends React.Component {
   queryFn = (params) => {
     // Always use server-side queryFn when dealing with column changes (newColumns)
     // because column removal is a schema change, not just data filtering
+    if (this.props.isEditing && !this.props.pivot) {
+      return this.props.queryFn(params)
+    }
+
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else if (this.props.pivot) {

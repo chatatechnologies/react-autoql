@@ -181,6 +181,7 @@ export class DashboardTile extends React.Component {
       splitView: PropTypes.bool,
     }).isRequired,
     isEditing: PropTypes.bool,
+    isDirty: PropTypes.bool,
     deleteTile: PropTypes.func,
     resetTile: PropTypes.func,
     executeSingleTile: PropTypes.func,
@@ -1963,15 +1964,11 @@ export class DashboardTile extends React.Component {
         onAxisSortChange: this.onAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
-        initialFormattedTableParams: (() => {
-          const feReqFilters = this.props.tile?.queryResponse?.data?.data?.fe_req?.filters
-          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.tableFilters
-          return {
-            filters: filtersToUse,
-            sorters: this.props.tile?.orders,
-            sessionFilters: this.props.tile?.filters || [],
-          }
-        })(),
+        initialFormattedTableParams: {
+          filters: this.props.tile?.tableFilters,
+          sorters: this.props.tile?.orders,
+          sessionFilters: this.props.tile?.filters || [],
+        },
         enableChartControls: true,
         initialChartControls: this.props.tile?.chartControls || {
           showAverageLine: false,
@@ -2105,17 +2102,11 @@ export class DashboardTile extends React.Component {
         onAxisSortChange: this.onSecondAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
-        initialFormattedTableParams: (() => {
-          const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
-          const feReqFilters = queryResponse?.data?.data?.fe_req?.filters
-          const filtersToUse = feReqFilters?.length > 0 ? feReqFilters : this.props.tile?.secondTableFilters
-
-          return {
-            filters: filtersToUse,
-            sorters: this.props.tile?.secondOrders,
-            sessionFilters: this.props.tile?.secondFilters,
-          }
-        })(),
+        initialFormattedTableParams: {
+          filters: this.props.tile?.secondTableFilters,
+          sorters: this.props.tile?.secondOrders,
+          sessionFilters: this.props.tile?.secondFilters,
+        },
         enableChartControls: true,
         initialChartControls: this.props.tile?.secondChartControls || {
           showAverageLine: false,
@@ -2211,7 +2202,7 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={this.props.className}
+          className={`${this.props.className}${this.props.isDirty ? ' dirty' : ''}`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2229,6 +2220,14 @@ export class DashboardTile extends React.Component {
               {this.renderContent()}
             </>
           </div>
+          {this.props.isDirty && (
+            <div
+              className='react-autoql-dashboard-tile-dirty-badge'
+              title='This tile has unsaved changes — save the dashboard to persist'
+            >
+              !
+            </div>
+          )}
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
         </div>

@@ -112,6 +112,8 @@ class DashboardWithoutTheme extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableResetQuery: PropTypes.bool,
+    dirtyTileKeys: PropTypes.instanceOf(Set),
   }
 
   static defaultProps = {
@@ -149,6 +151,8 @@ class DashboardWithoutTheme extends React.Component {
     enableSlicers: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableResetQuery: false,
+    dirtyTileKeys: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -1057,6 +1061,7 @@ class DashboardWithoutTheme extends React.Component {
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
             isEditing={this.props.isEditing}
+            isDirty={this.props.dirtyTileKeys?.has(tile.key)}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}

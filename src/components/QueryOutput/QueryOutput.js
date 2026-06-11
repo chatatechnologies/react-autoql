@@ -4151,6 +4151,7 @@ export class QueryOutput extends React.Component {
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
           isLoadingLocal={this.props.isLoadingLocal}
+          isEditing={this.props.isEditing}
         />
       </ErrorBoundary>
     )

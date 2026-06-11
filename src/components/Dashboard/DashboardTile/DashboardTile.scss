@@ -292,6 +292,8 @@
   }
 
   .dashboard-tile-response-wrapper.editing {
+    padding-top: 16px;
+
     .dashboard-tile-toolbars-container {
       padding: 13px;
     }
@@ -828,4 +830,28 @@
 .dashboard-tile-response-container .layout-pane,
 .dashboard-tile-response-container .dashboard-tile-split-pane-container {
   background: inherit;
+}
+
+// Dirty tile indicator
+.react-autoql-dashboard-tile.dirty .react-autoql-dashboard-tile-inner-div {
+  border-color: #FFA700 !important;
+  border-width: 2px !important;
+}
+
+.react-autoql-dashboard-tile-dirty-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #FFA700;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 18px;
+  text-align: center;
+  z-index: 200;
+  cursor: default;
+  user-select: none;
 }
