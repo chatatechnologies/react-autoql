@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import axios from 'axios'
 import _cloneDeep from 'lodash.clonedeep'
+import _isEqual from 'lodash.isequal'
 import Autosuggest from 'react-autosuggest'
 import SplitterLayout from 'react-splitter-layout'
 
@@ -255,10 +256,6 @@ export class DashboardTile extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    if (nextProps.isDragging && this.props.isDragging) {
-      return false
-    }
-
     const thisPropsFiltered = this.getFilteredProps(this.props)
     const nextPropsFiltered = this.getFilteredProps(nextProps)
 
@@ -306,6 +303,52 @@ export class DashboardTile extends React.Component {
     const nextQRId = nextQR?.data?.data?.query_id
     if (nextQR && !this.state.isTopExecuting && (prevQR === null || (prevQR && prevQRId !== nextQRId))) {
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
+    }
+
+    // If structural request params changed (filters/orders/pageSize) update saved requestData
+    try {
+      const prevTile = prevProps.tile || {}
+      const nextTile = this.props.tile || {}
+
+      const topChanged =
+        !_isEqual(prevTile.tableFilters, nextTile.tableFilters) ||
+        !_isEqual(prevTile.filters, nextTile.filters) ||
+        !_isEqual(prevTile.orders, nextTile.orders) ||
+        prevTile.pageSize !== nextTile.pageSize ||
+        prevTile.query !== nextTile.query
+
+      if (topChanged && this.topRequestData) {
+        this.topRequestData = {
+          ...this.topRequestData,
+          tableFilters: nextTile.tableFilters || [],
+          filters: nextTile.filters || [],
+          orders: nextTile.orders || [],
+          pageSize: nextTile.pageSize,
+          query: nextTile.query || this.topRequestData.query,
+        }
+      }
+
+      const prevBottom = prevTile.secondQuery || null
+      const nextBottom = nextTile.secondQuery || null
+      const bottomChanged =
+        !_isEqual(prevTile.secondTableFilters, nextTile.secondTableFilters) ||
+        !_isEqual(prevTile.secondFilters, nextTile.secondFilters) ||
+        !_isEqual(prevTile.secondOrders, nextTile.secondOrders) ||
+        prevTile.secondPageSize !== nextTile.secondPageSize ||
+        prevBottom !== nextBottom
+
+      if (bottomChanged && this.bottomRequestData) {
+        this.bottomRequestData = {
+          ...this.bottomRequestData,
+          tableFilters: nextTile.secondTableFilters || [],
+          filters: nextTile.secondFilters || [],
+          orders: nextTile.secondOrders || [],
+          pageSize: nextTile.secondPageSize,
+          query: nextTile.secondQuery || this.bottomRequestData.query,
+        }
+      }
+    } catch (e) {
+      // non-fatal
     }
   }
 
@@ -522,8 +565,7 @@ export class DashboardTile extends React.Component {
           const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
 
           if (isReset) {
-            // props.tile is stale during reset — only update display-type fields and explicitly
-            // clear the config fields that resetTile zeroed out, so error-restore uses clean state.
+            // props.tile is stale during reset — only update display-type fields; clear the rest to match the zeroed tile.
             this.savedTileConfig = {
               ...this.savedTileConfig,
               displayType: currentTile.displayType || this.savedTileConfig.displayType,
@@ -610,8 +652,7 @@ export class DashboardTile extends React.Component {
         const currentTile = this.props.tile
         if (currentTile) {
           if (isReset) {
-            // props.tile is stale during reset — only update display-type fields and explicitly
-            // clear the config fields that resetTile zeroed out, so error-restore uses clean state.
+            // props.tile is stale during reset — only update display-type fields; clear the rest to match the zeroed tile.
             this.savedTileConfig = {
               ...this.savedTileConfig,
               secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
@@ -662,12 +703,11 @@ export class DashboardTile extends React.Component {
       }
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
-      // isReset: use empty arrays since props may carry stale values before parent re-renders.
+      // isReset: use empty arrays — props may carry stale values before parent re-renders.
       const additionalColumnSelects = isReset ? [] : (isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects)
       const currentDisplayOverrides = isReset ? [] : (isSecondHalf
         ? this.props.tile?.secondDisplayOverrides
         : this.props.tile?.displayOverrides)
-      // Get session filters from tile (existing tile-specific filters)
       let currentSessionFilters = isReset ? [] : (isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || [])
 
       // Merge dashboard-level slicers (applied even during reset, not tile-specific).
@@ -1947,7 +1987,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         onResetClick: () => this.props.resetTile?.(this.props.tile.i),
-        showRefreshInEdit: this.props.isEditing,
+        showRefreshInEdit: this.props.isEditing && this.props.tile?.displayType !== 'single-value',
         showResetQueryOption: this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
       },
     })

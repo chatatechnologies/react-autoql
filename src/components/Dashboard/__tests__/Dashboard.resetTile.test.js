@@ -695,3 +695,373 @@ describe('resetTile guard: ignores double-click on same tile', () => {
     wrapper.unmount()
   })
 })
+
+describe('cloneTilesForLog deep-clone fe_req', () => {
+  it('does not reflect later mutations to the original fe_req object', () => {
+    const feReq = { custom_cols: [{ name: 'col1' }] }
+    const tile = makeTile({ queryResponse: { data: { data: { fe_req: feReq } } } })
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    // Add to log (simulates initial snapshot)
+    instance.addTileStateToLog([tile])
+
+    // Mutate original fe_req after snapshot
+    feReq.custom_cols[0].name = 'hacked'
+
+    const snapped = instance.tileLog[0][0].queryResponse.data.data.fe_req
+    expect(snapped.custom_cols[0].name).toBe('col1')
+
+    wrapper.unmount()
+  })
+})
+
+describe('flushOnChange does not fire userCallbackSubscriptions', () => {
+  it('does NOT call user callbacks (e.g. onSaveCallback) when flushing during undo', async () => {
+    jest.useFakeTimers()
+    const onChange = jest.fn()
+    const onSaveCallback = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    // Simulate the reset's post-execution debouncedOnChange (with onSaveCallback in callbackArray).
+    // The timer is pending when the user presses Undo.
+    instance.debouncedOnChange([tile], false, [onSaveCallback])
+
+    // User presses Undo — flushOnChange should NOT fire onSaveCallback
+    const preTile = { ...tile, query: 'pre-reset' }
+    instance.flushOnChange([preTile])
+
+    // Advance timers to confirm the debounced timer was cancelled (no extra onChange calls)
+    jest.advanceTimersByTime(200)
+
+    expect(onSaveCallback).not.toHaveBeenCalled()
+    expect(instance.userCallbackSubscriptions).toHaveLength(0)
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+
+  it('still resolves the debouncedOnChange promise (does not hang) when flushing', async () => {
+    const onChange = jest.fn()
+    const onSaveCallback = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    const pendingPromise = instance.debouncedOnChange([tile], false, [onSaveCallback])
+
+    let resolved = false
+    pendingPromise.then(() => { resolved = true })
+
+    instance.flushOnChange([tile])
+    await pendingPromise
+
+    expect(resolved).toBe(true)
+    expect(onSaveCallback).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('fires user callbacks normally when the debounce timer fires without flush', async () => {
+    jest.useFakeTimers()
+    const onChange = jest.fn()
+    const onSaveCallback = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.debouncedOnChange([tile], false, [onSaveCallback])
+
+    // Let the debounce timer fire naturally (no flush)
+    jest.runAllTimers()
+
+    expect(onChange).toHaveBeenCalled()
+    // onSaveCallback fires via staggered timers — advance to drain them
+    jest.runAllTimers()
+
+    expect(onSaveCallback).toHaveBeenCalled()
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+})
+
+describe('undo() discards stale setParamsForTile callbacks from reset tile', () => {
+  it('returns early from setParamsForTile for the reset tile immediately after undo', () => {
+    jest.useFakeTimers()
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    // Simulate state at the point undo fires: reset was in progress
+    instance.isResettingTile = true
+    instance.resettingTileId = 'tile-1'
+    instance.pendingResetTiles = [{ ...tile, queryResponse: null }]
+    instance.pendingResetUndoTiles = [tile]
+    instance.pendingResetHistory = [[tile]]
+    instance.getMostRecentTiles = jest.fn(() => [tile])
+
+    instance.undo()
+
+    // isDiscardingResetChanges must be set with the reset tile's ID
+    expect(instance.isDiscardingResetChanges).toBe(true)
+    expect(instance.discardResetTileId).toBe('tile-1')
+
+    const callsAfterUndo = onChange.mock.calls.length
+
+    // Simulate DashboardTile's debouncedSetParamsForTile firing after undo
+    // (e.g., endBottomQuery delivering secondQueryResponse 30ms later)
+    instance.setParamsForTile({ secondQueryResponse: { data: {} } }, 'tile-1')
+
+    // No new onChange call — the stale callback was discarded
+    expect(onChange.mock.calls.length).toBe(callsAfterUndo)
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+
+  it('does NOT discard setParamsForTile calls for other tiles', () => {
+    jest.useFakeTimers()
+    const onChange = jest.fn()
+    const tile1 = makeTile({ key: 'tile-1', i: 'tile-1' })
+    const tile2 = { key: 'tile-2', i: 'tile-2', query: 'SELECT 2' }
+    const wrapper = mount(<Dashboard tiles={[tile1, tile2]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.isResettingTile = true
+    instance.resettingTileId = 'tile-1'
+    instance.pendingResetTiles = [{ ...tile1, queryResponse: null }, tile2]
+    instance.pendingResetUndoTiles = [tile1, tile2]
+    instance.pendingResetHistory = [[tile1, tile2]]
+    instance.getMostRecentTiles = jest.fn(() => [tile1, tile2])
+
+    instance.undo()
+
+    const callsAfterUndo = onChange.mock.calls.length
+
+    // tile-2 is a different tile — its setParamsForTile should NOT be discarded
+    instance.setParamsForTile({ queryResponse: { data: {} } }, 'tile-2')
+    jest.advanceTimersByTime(200)
+
+    expect(onChange.mock.calls.length).toBeGreaterThan(callsAfterUndo)
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+
+  it('clears isDiscardingResetChanges and isResettingTile after undo', () => {
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.isResettingTile = true
+    instance.resettingTileId = 'tile-1'
+    instance.pendingResetTiles = [{ ...tile, queryResponse: null }]
+    instance.pendingResetUndoTiles = [tile]
+    instance.pendingResetHistory = [[tile]]
+    instance.getMostRecentTiles = jest.fn(() => [tile])
+
+    instance.undo()
+
+    expect(instance.isResettingTile).toBe(false)
+    expect(instance.resettingTileId).toBeNull()
+    expect(instance.pendingResetTiles).toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('stops discarding setParamsForTile after the 500ms window expires', () => {
+    jest.useFakeTimers()
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.isResettingTile = true
+    instance.resettingTileId = 'tile-1'
+    instance.pendingResetTiles = [{ ...tile, queryResponse: null }]
+    instance.pendingResetUndoTiles = [tile]
+    instance.pendingResetHistory = [[tile]]
+    instance.getMostRecentTiles = jest.fn(() => [tile])
+
+    instance.undo()
+    expect(instance.isDiscardingResetChanges).toBe(true)
+
+    // After 500ms the window expires
+    jest.advanceTimersByTime(600)
+    expect(instance.isDiscardingResetChanges).toBe(false)
+    expect(instance.discardResetTileId).toBeNull()
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+})
+
+describe('undo() via tileLog navigation (no pendingResetUndoTiles)', () => {
+  it('calls onChange with the previous tile state when tileLog has history', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const oldTile = { ...tile, query: 'SELECT old' }
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.tileLog = [[tile], [oldTile]]
+    instance.currentLogIndex = 0
+
+    instance.undo()
+
+    expect(onChange).toHaveBeenCalled()
+    const [calledTiles] = onChange.mock.calls[0]
+    expect(calledTiles[0].query).toBe('SELECT old')
+    expect(instance.currentLogIndex).toBe(1)
+
+    wrapper.unmount()
+  })
+
+  it('does nothing when already at the oldest log entry', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.tileLog = [[tile]] // only one entry — nothing to go back to
+    instance.currentLogIndex = 0
+
+    instance.undo()
+
+    // onChange was not called (changeCurrentTileState receives undefined at index 1)
+    expect(onChange).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('does nothing when isEditing is false', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={false} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.tileLog = [[tile], [{ ...tile, query: 'old' }]]
+    instance.currentLogIndex = 0
+
+    instance.undo()
+
+    expect(onChange).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+})
+
+describe('redo() via tileLog navigation', () => {
+  it('calls onChange with the next (more recent) tile state', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const newTile = { ...tile, query: 'SELECT new' }
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.tileLog = [[newTile], [tile]]
+    instance.currentLogIndex = 1 // currently at older entry
+
+    instance.redo()
+
+    expect(onChange).toHaveBeenCalled()
+    const [calledTiles] = onChange.mock.calls[0]
+    expect(calledTiles[0].query).toBe('SELECT new')
+    expect(instance.currentLogIndex).toBe(0)
+
+    wrapper.unmount()
+  })
+
+  it('does nothing when already at the most recent entry', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.tileLog = [[tile]]
+    instance.currentLogIndex = 0 // already at head
+
+    instance.redo()
+
+    expect(onChange).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('does nothing when isEditing is false', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={false} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.tileLog = [[tile], [{ ...tile, query: 'old' }]]
+    instance.currentLogIndex = 1
+
+    instance.redo()
+
+    expect(onChange).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+})
+
+describe('undo() after reset — tileLog rebuilt from pendingResetHistory', () => {
+  it('replaces tileLog with preResetHistory after consuming pendingResetUndoTiles', () => {
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const preTile = { ...tile, query: 'SELECT pre-reset', key: 'old-key' }
+    const historyEntry = [preTile]
+
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.pendingResetUndoTiles = [preTile]
+    instance.pendingResetHistory = [historyEntry, [{ ...tile, query: 'SELECT even-older' }]]
+    instance.getMostRecentTiles = jest.fn(() => [tile])
+
+    instance.undo()
+
+    // tileLog[0] should be the restored tiles; remainder from history.slice(1)
+    expect(instance.tileLog[0][0].query).toBe('SELECT pre-reset')
+    expect(instance.tileLog).toHaveLength(2)
+    expect(instance.currentLogIndex).toBe(0)
+    expect(instance.pendingResetHistory).toBeNull()
+    expect(instance.pendingResetUndoTiles).toBeNull()
+
+    wrapper.unmount()
+  })
+})
+
+describe('Dashboard undo after reset for split-view tiles', () => {
+  it('restores both queryResponse and secondQueryResponse from pendingResetUndoTiles', () => {
+    const onChange = jest.fn()
+    const preTile = makeTile({
+      queryResponse: { data: { rows: [[1]] } },
+      secondQueryResponse: { data: { rows: [[2]] } },
+      secondQuery: 'SELECT 2',
+      splitView: true,
+      key: 'old-key',
+    })
+
+    const wrapper = mount(<Dashboard tiles={[makeTile({ key: 'new-key' })]} onChange={onChange} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    instance.pendingResetUndoTiles = [preTile]
+    instance.pendingResetHistory = [[preTile]]
+    instance.getMostRecentTiles = jest.fn(() => [makeTile({ key: 'new-key' })])
+
+    instance.undo()
+
+    expect(onChange).toHaveBeenCalled()
+    const [restoredTiles] = onChange.mock.calls[0]
+    expect(restoredTiles[0].queryResponse).toBeDefined()
+    expect(restoredTiles[0].secondQueryResponse).toBeDefined()
+    expect(instance.pendingResetUndoTiles).toBeNull()
+
+    wrapper.unmount()
+  })
+})

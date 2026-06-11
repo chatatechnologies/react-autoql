@@ -214,7 +214,7 @@ describe('CustomColumnModal parenthesis matrix', () => {
 })
 
 describe('CustomColumnModal function parameter normalization', () => {
-  it('onAddFunction stores numeric params as strings and populates params mirror', async () => {
+  it('onAddFunction stores numeric params as strings', async () => {
     const columns = [
       { field: '0', name: 'Sales', title: 'Sales', is_visible: true },
       { field: '1', name: 'Date', title: 'Date', is_visible: true },
@@ -243,12 +243,6 @@ describe('CustomColumnModal function parameter normalization', () => {
     expect(typeof inserted.rowsOrRangeOptionPreNValue).toBe('string')
     expect(typeof inserted.rowsOrRangeOptionPostNValue).toBe('string')
     expect(typeof inserted.movingAvgTimeInterval).toBe('string')
-    expect(inserted.params).toBeTruthy()
-    expect(inserted.params.nTileNumber).toBe(inserted.nTileNumber)
-    expect(inserted.params.operatorValue).toBe(inserted.operatorValue)
-    expect(inserted.params.rowsOrRangeOptionPreNValue).toBe(inserted.rowsOrRangeOptionPreNValue)
-    expect(inserted.params.rowsOrRangeOptionPostNValue).toBe(inserted.rowsOrRangeOptionPostNValue)
-    expect(inserted.params.movingAvgTimeInterval).toBe(inserted.movingAvgTimeInterval)
 
     wrapper.unmount()
   })
