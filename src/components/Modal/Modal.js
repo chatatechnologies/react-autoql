@@ -8,7 +8,6 @@ import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { ConfirmModal } from '../ConfirmModal'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
-import { withTheme } from '../../theme'
 
 import './Modal.scss'
 
@@ -178,4 +177,4 @@ class Modal extends React.Component {
   }
 }
 
-export default withTheme(Modal)
+export default Modal

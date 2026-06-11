@@ -1,5 +1,10 @@
 @import '../../../styles/breakpoints';
 
+.react-autoql-notification-list-container {
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
+}
+
 .notification-list-loading-container {
   display: flex;
   flex-direction: column;
@@ -8,6 +13,63 @@
   padding-top: 100px;
   color: inherit;
   height: 100%;
+}
+
+@keyframes notification-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+@mixin notification-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--react-autoql-border-color) 25%,
+    var(--react-autoql-mask-color)   50%,
+    var(--react-autoql-border-color) 75%
+  );
+  background-size: 600px 100%;
+  animation: notification-shimmer 1.4s infinite linear;
+  border-radius: 4px;
+}
+
+.notification-feed-skeleton-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-feed-skeleton-item {
+  display: flex;
+  align-items: stretch;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+  gap: 0.875rem;
+}
+
+.notification-feed-skeleton-strip {
+  @include notification-shimmer;
+  width: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 2.5rem;
+}
+
+.notification-feed-skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.notification-feed-skeleton-block {
+  @include notification-shimmer;
+  height: 0.6875rem;
+  border-radius: 4px;
+
+  &.title       { width: 60%; }
+  &.description { width: 85%; }
+  &.timestamp   { width: 30%; }
 }
 
 .empty-notifications-message {
