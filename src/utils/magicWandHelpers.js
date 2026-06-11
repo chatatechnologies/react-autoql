@@ -1,4 +1,4 @@
-import { isSingleValueResponse } from 'autoql-fe-utils'
+import { MAX_DATA_PAGE_SIZE, isSingleValueResponse } from 'autoql-fe-utils'
 
 /**
  * Row count from the query payload (same source as ChataTable / getSummaryButtonDisabledState).
