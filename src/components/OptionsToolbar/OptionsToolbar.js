@@ -412,52 +412,6 @@ export class OptionsToolbar extends React.Component {
         onClose={() => this.setState({ isResetQueryConfirmVisible: false })}
         onConfirm={() => {
           this.setState({ isResetQueryConfirmVisible: false })
-          try {
-            if (window && window.dispatchEvent) {
-              const payload = {
-                timestamp: Date.now(),
-                queryResponse:
-                  this.props.responseRef && this.props.responseRef.queryResponse
-                    ? this.props.responseRef.queryResponse
-                    : undefined,
-              }
-
-              // Capture QueryInput state snapshot (prefers direct ref, falls back to global registry).
-              try {
-                let queryInputState = undefined
-                if (
-                  this.props.responseRef &&
-                  this.props.responseRef.props &&
-                  this.props.responseRef.props.queryInputRef &&
-                  typeof this.props.responseRef.props.queryInputRef.getState === 'function'
-                ) {
-                  queryInputState = this.props.responseRef.props.queryInputRef.getState()
-                }
-
-                if (!queryInputState) {
-                  const qid = this.props.responseRef?.queryResponse?.data?.data?.query_id
-                  if (qid && window && window.__qa_query_input_registry) {
-                    try {
-                      const registryRef = window.__qa_query_input_registry[qid]
-                      if (registryRef && registryRef.current && typeof registryRef.current.getState === 'function') {
-                        queryInputState = registryRef.current.getState()
-                        payload.queryInputStateFromRegistry = true
-                      }
-                    } catch (err) {
-                      // ignore registry lookup failures
-                    }
-                  }
-                }
-
-                if (queryInputState) payload.queryInputState = queryInputState
-              } catch (err) {
-                console.error('Error capturing QueryInput state for reset payload', err)
-              }
-              window.dispatchEvent(new CustomEvent('react-autoql:resetQuery', { detail: payload }))
-            }
-          } catch (e) {
-            console.error('Error dispatching resetQuery event', e)
-          }
 
           if (this.props.onResetClick) {
             this.props.onResetClick()

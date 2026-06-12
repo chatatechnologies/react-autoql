@@ -452,6 +452,18 @@ export class DashboardTile extends React.Component {
     return false
   }
 
+  normalizeAxisSorts = (v) => {
+    if (!v) return {}
+    if (!Array.isArray(v)) return v
+    const obj = {}
+    v.forEach((item) => {
+      if (item && typeof item === 'object' && !Array.isArray(item)) {
+        Object.assign(obj, item)
+      }
+    })
+    return obj
+  }
+
   // Helper to check if dataConfig has valid values
   hasValidDataConfig = (dataConfig) => {
     return dataConfig && (dataConfig.tableConfig != null || dataConfig.pivotTableConfig != null)
@@ -1944,20 +1956,7 @@ export class DashboardTile extends React.Component {
         onNetworkColumnChange: this.onNetworkColumnChange,
         legendFilterConfig: this.props.tile.legendFilterConfig,
         onLegendFilterChange: this.onLegendFilterChange,
-        initialAxisSorts: (() => {
-          const v = this.props.tile?.axisSorts
-          if (!v) return {}
-          if (Array.isArray(v)) {
-            const obj = {}
-            v.forEach((item) => {
-              if (item && typeof item === 'object' && !Array.isArray(item)) {
-                Object.assign(obj, item)
-              }
-            })
-            return obj
-          }
-          return v
-        })(),
+        initialAxisSorts: this.normalizeAxisSorts(this.props.tile?.axisSorts),
         onAxisSortChange: this.onAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
@@ -2096,20 +2095,7 @@ export class DashboardTile extends React.Component {
         onColumnChange: this.onSecondColumnChange,
         bucketSize: this.props.tile.secondBucketSize,
         initialNetworkColumnConfig: this.props.tile.secondNetworkColumnConfig,
-        initialAxisSorts: (() => {
-          const v = this.props.tile?.secondAxisSorts
-          if (!v) return {}
-          if (Array.isArray(v)) {
-            const obj = {}
-            v.forEach((item) => {
-              if (item && typeof item === 'object' && !Array.isArray(item)) {
-                Object.assign(obj, item)
-              }
-            })
-            return obj
-          }
-          return v
-        })(),
+        initialAxisSorts: this.normalizeAxisSorts(this.props.tile?.secondAxisSorts),
         onAxisSortChange: this.onSecondAxisSortChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,

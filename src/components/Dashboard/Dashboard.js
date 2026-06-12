@@ -1176,12 +1176,7 @@ class DashboardWithoutTheme extends React.Component {
         .then(clearResetGuard)
         .catch((error) => {
           console.error('Error during tile reset:', error)
-          try {
-            return Promise.resolve(runSingleTile()).finally(clearResetGuard)
-          } catch (err) {
-            console.error('Error processing tile after reset (fallback):', err)
-            clearResetGuard()
-          }
+          clearResetGuard()
         })
     } catch (error) {
       console.error(error)
