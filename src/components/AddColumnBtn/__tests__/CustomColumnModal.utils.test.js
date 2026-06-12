@@ -1,6 +1,6 @@
 import { transformDivisionExpression, normalizeCoalesceParentheses } from 'autoql-fe-utils'
 
-describe('customColumnHelpers (shared)', () => {
+describe('customColumn SQL helpers', () => {
   test('transformDivisionExpression wraps simple division', () => {
     expect(transformDivisionExpression('A / B')).toBe('COALESCE(A / NULLIF(B, 0), 0)')
   })
@@ -16,20 +16,17 @@ describe('customColumnHelpers (shared)', () => {
 
   test('transformDivisionExpression normalizes double-parenthesized COALESCE', () => {
     const s = 'COALESCE((pgs.completions / NULLIF(pgs.passing_attempts, 0), 0))'
-    // Some versions may leave extra parentheses; normalize before asserting
     expect(normalizeCoalesceParentheses(transformDivisionExpression(s))).toBe(
       'COALESCE(pgs.completions / NULLIF(pgs.passing_attempts, 0), 0)',
     )
   })
 
   test('transformDivisionExpression handles negative numeric denominators', () => {
-    const input = 'A / (-1)'
-    expect(transformDivisionExpression(input)).toBe('COALESCE(A / NULLIF((-1), 0), 0)')
+    expect(transformDivisionExpression('A / (-1)')).toBe('COALESCE(A / NULLIF((-1), 0), 0)')
   })
 
   test('transformDivisionExpression handles decimal denominators', () => {
-    const input = 'A / 1.5'
-    expect(transformDivisionExpression(input)).toBe('COALESCE(A / NULLIF(1.5, 0), 0)')
+    expect(transformDivisionExpression('A / 1.5')).toBe('COALESCE(A / NULLIF(1.5, 0), 0)')
   })
 
   test('transformDivisionExpression skips wrapping when division is inside function args', () => {
@@ -38,7 +35,6 @@ describe('customColumnHelpers (shared)', () => {
   })
 
   test('normalizeCoalesceParentheses collapses double parentheses', () => {
-    const s = 'COALESCE((x / NULLIF(y, 0), 0))'
-    expect(normalizeCoalesceParentheses(s)).toBe('COALESCE(x / NULLIF(y, 0), 0)')
+    expect(normalizeCoalesceParentheses('COALESCE((x / NULLIF(y, 0), 0))')).toBe('COALESCE(x / NULLIF(y, 0), 0)')
   })
 })
