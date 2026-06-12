@@ -458,6 +458,10 @@ describe('ChataTable', () => {
 
       // Mock hasSetInitialData to be true so ajaxRequestFunc processes the request
       instance.hasSetInitialData = true
+      // tabulatorMounted must be true or the guard at line 715 returns initialData early
+      wrapper.setState({ tabulatorMounted: true })
+      // _setFiltersTime=0 prevents the hasRecentlySetHeaderFilters debounce guard from firing
+      instance._setFiltersTime = 0
 
       // Call ajaxRequestFunc
       const params = { page: 1, filter: [{ field: '1', type: '=', value: 'online' }] }
@@ -552,6 +556,10 @@ describe('ChataTable', () => {
       instance.pageSize = 10
       instance.useInfiniteScroll = true
       instance.hasSetInitialData = true
+      // tabulatorMounted must be true or the guard at line 715 returns initialData early
+      wrapper.setState({ tabulatorMounted: true })
+      // _setFiltersTime=0 prevents the hasRecentlySetHeaderFilters debounce guard from firing
+      instance._setFiltersTime = 0
 
       // Mock queryFn to return filtered data (simulating a filter applied)
       const filteredResponse = {

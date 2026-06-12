@@ -158,10 +158,7 @@ class DashboardWithoutTheme extends React.Component {
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     enableResetQuery: false,
-<<<<<<< HEAD
     dirtyTileKeys: undefined,
-=======
->>>>>>> 9673f0bc28adf297ef246f48b436ac2d99b7a0ec
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
