@@ -555,7 +555,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  endTopQuery = ({ response, isReset = false }) => {
+  endTopQuery = ({ response, isReset = false, queryChanged = true }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
 
@@ -570,6 +570,16 @@ export class DashboardTile extends React.Component {
         // Merge restoration directly into the same debounced call to avoid timing issues
         Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
       } else {
+        // Update queryId when the query text changed or there is no existing ID.
+        // Filter-triggered re-runs are handled separately via onNewQueryId.
+        if (queryChanged || !this.props.tile?.queryId) {
+          const queryId = response?.data?.data?.query_id
+          paramsToSet.queryId = queryId
+          // When both halves share the same execution (same query or no split), mirror the id
+          if (this.areTopAndBottomSameQuery()) {
+            paramsToSet.secondQueryId = queryId
+          }
+        }
         // If successful, update saved config with current tile config (preserve user's saved settings)
         const currentTile = this.props.tile
         if (currentTile) {
@@ -638,7 +648,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  endBottomQuery = ({ response, isReset = false }) => {
+  endBottomQuery = ({ response, isReset = false, queryChanged = true }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
 
@@ -646,6 +656,10 @@ export class DashboardTile extends React.Component {
       const paramsToSet = {
         secondQueryResponse: response,
         secondDefaultSelectedSuggestion: undefined,
+      }
+
+      if (!isError && (queryChanged || !this.props.tile?.secondQueryId)) {
+        paramsToSet.secondQueryId = response?.data?.data?.query_id
       }
 
       if (isError) {
@@ -875,7 +889,7 @@ export class DashboardTile extends React.Component {
       isReset,
     })
       .then((response) => {
-        return this.endTopQuery({ response, isReset })
+        return this.endTopQuery({ response, isReset, queryChanged })
       })
       .catch((response) => {
         if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
@@ -947,7 +961,7 @@ export class DashboardTile extends React.Component {
       isCachedRefresh,
       isReset,
     })
-      .then((response) => this.endBottomQuery({ response, isReset }))
+      .then((response) => this.endBottomQuery({ response, isReset, queryChanged }))
       .catch((response) => {
         if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
@@ -1005,7 +1019,11 @@ export class DashboardTile extends React.Component {
 
     const promises = []
 
-    if (this.getIsSplitView() && q2 && q1 !== q2) {
+    const topFilters = this.props.tile?.tableFilters || []
+    const bottomFilters = this.props.tile?.secondTableFilters || []
+    const filtersAreDifferent = !_isEqual(topFilters, bottomFilters)
+
+    if (this.getIsSplitView() && q2 && (q1 !== q2 || filtersAreDifferent)) {
       promises[1] = this.processTileBottom({
         query: q2,
         skipQueryValidation: secondskipQueryValidation,
@@ -1301,6 +1319,8 @@ export class DashboardTile extends React.Component {
       columns,
       columnSelects,
       queryResponse,
+      // Filtering always produces a new SQL result — always capture the new queryId
+      queryId: queryResponse?.data?.data?.query_id,
       dataConfig,
       displayOverrides,
       filters,
@@ -1875,7 +1895,7 @@ export class DashboardTile extends React.Component {
         ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
-        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}${this.props.isEditing ? '-editing' : ''}`,
+        key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
         initialTableConfigs: (() => {
@@ -1971,6 +1991,16 @@ export class DashboardTile extends React.Component {
           showRegressionLine: false,
         },
         onChartControlsChange: this.onChartControlsChange,
+        isDashboardEditing: this.props.isEditing,
+        // In view mode, skip pre-populating header filter inputs (Feature 2: filters are baked
+        // into the SQL via queryId). In edit mode, show saved filter values so the builder can
+        // see and modify them.
+        skipInitialFilters: !this.props.isEditing,
+        onNewQueryId: (queryId) => {
+          if (queryId) {
+            this.debouncedSetParamsForTile({ queryId })
+          }
+        },
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -1993,7 +2023,10 @@ export class DashboardTile extends React.Component {
     const topQuery = this.props?.tile?.query
     const bottomQuery = this.props?.tile?.secondQuery
     const isQuerySame = !bottomQuery || topQuery === bottomQuery
-    return isQuerySame
+    if (!isQuerySame) return false
+    const topFilters = this.props.tile?.tableFilters || []
+    const bottomFilters = this.props.tile?.secondTableFilters || []
+    return _isEqual(topFilters, bottomFilters)
   }
 
   renderBottomResponse = () => {
@@ -2021,7 +2054,7 @@ export class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
         ref: (ref) =>
           ref && ref !== this.state.secondResponseRef && this._isMounted && this.setState({ secondResponseRef: ref }),
         optionsToolbarRef: this.secondOptionsToolbarRef,
@@ -2104,12 +2137,19 @@ export class DashboardTile extends React.Component {
           sorters: this.props.tile?.secondOrders,
           sessionFilters: this.props.tile?.secondFilters,
         },
+        isDashboardEditing: this.props.isEditing,
+        skipInitialFilters: !this.props.isEditing,
         enableChartControls: true,
         initialChartControls: this.props.tile?.secondChartControls || {
           showAverageLine: false,
           showRegressionLine: false,
         },
         onChartControlsChange: this.onSecondChartControlsChange,
+        onNewQueryId: (queryId) => {
+          if (queryId) {
+            this.debouncedSetParamsForTile({ secondQueryId: queryId })
+          }
+        },
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

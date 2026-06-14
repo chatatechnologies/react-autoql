@@ -559,3 +559,70 @@ describe('Dashboard.canUndo() and canRedo()', () => {
     expect(instance.canUndo()).toBe(false)
   })
 })
+
+describe('Dashboard.addTile — DM response handling', () => {
+  const dmContent = {
+    query: 'SELECT * FROM sales',
+    title: 'Sales',
+    tableFilters: [{ field: 'region', type: '=', value: 'US' }],
+    queryResponse: { data: { data: { rows: [[1]], count_rows: 1, query_id: 'dm-qid-1' } } },
+    secondQueryResponse: { data: { data: { rows: [[2]] } } },
+    queryId: 'dm-qid-1',
+  }
+
+  test('strips queryResponse and secondQueryResponse when isEditing=true', () => {
+    const mockOnChange = jest.fn(() => Promise.resolve())
+    const wrapper = setup({ isEditing: true, onChange: mockOnChange })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile(dmContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('SELECT * FROM sales')
+    expect(addedTile.queryResponse).toBeUndefined()
+    expect(addedTile.secondQueryResponse).toBeUndefined()
+  })
+
+  test('preserves non-response fields (query, title, tableFilters, queryId) when isEditing=true', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile(dmContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('SELECT * FROM sales')
+    expect(addedTile.title).toBe('Sales')
+    expect(addedTile.tableFilters).toEqual(dmContent.tableFilters)
+    expect(addedTile.queryId).toBe('dm-qid-1')
+  })
+
+  test('preserves queryResponse when isEditing=false', () => {
+    const wrapper = setup({ isEditing: false })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile(dmContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(dmContent.queryResponse)
+    expect(addedTile.secondQueryResponse).toEqual(dmContent.secondQueryResponse)
+  })
+
+  test('creates blank tile when no content provided', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile()
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('')
+    expect(addedTile.queryResponse).toBeUndefined()
+  })
+})

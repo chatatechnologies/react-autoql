@@ -468,6 +468,74 @@ describe('queryResponseVersion', () => {
   })
 })
 
+describe('endTopQuery: queryId capture in edit mode', () => {
+  let mockSetParamsForTile
+  let savedParams
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  test('does NOT overwrite existing queryId on plain re-execute in edit mode when query text unchanged', () => {
+    const tileWithExistingId = { ...sampleTile, queryId: 'q_old-id' }
+    const wrapper = setup({ tile: tileWithExistingId, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_new-from-edit' }, reference_id: '1.1.200' },
+    }
+
+    // queryChanged=false + existing queryId → no update (filter re-runs captured via onNewQueryId instead)
+    instance.endTopQuery({ response, queryChanged: false })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.queryId === 'q_new-from-edit')
+    expect(call).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  test('does not capture queryId when isEditing=false and query text unchanged and queryId already set', () => {
+    const tileWithExistingId = { ...sampleTile, queryId: 'q_existing' }
+    const wrapper = setup({ tile: tileWithExistingId, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_should-not-set' }, reference_id: '1.1.200' },
+    }
+
+    instance.endTopQuery({ response, queryChanged: false })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.queryId === 'q_should-not-set')
+    expect(call).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  test('always captures queryId when there is no existing queryId', () => {
+    const tileWithNoId = { ...sampleTile, queryId: undefined }
+    const wrapper = setup({ tile: tileWithNoId, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_first-capture' }, reference_id: '1.1.200' },
+    }
+
+    instance.endTopQuery({ response, queryChanged: false })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.queryId === 'q_first-capture')
+    expect(call).toBeDefined()
+    wrapper.unmount()
+  })
+})
+
 describe('network column detection in endTopQuery', () => {
   test('endTopQuery handles successful responses without errors', () => {
     const wrapper = setup({ tile: sampleTile })
@@ -922,5 +990,150 @@ describe('getNetworkColumnConfig', () => {
     }
     const result = instance.getNetworkColumnConfig(response)
     expect(result === null || (typeof result === 'object' && 'sourceColumnIndex' in result)).toBe(true)
+  })
+})
+
+describe('dashboard tile: prop passing to QueryOutput for filtering mode', () => {
+  test('passes skipInitialFilters=true to QueryOutput in view mode so header inputs start empty', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('skipInitialFilters')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('passes skipInitialFilters=false to QueryOutput in edit mode so builder sees saved filter values', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('skipInitialFilters')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('passes isDashboardEditing=true to QueryOutput when isEditing=true', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('isDashboardEditing')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('passes isDashboardEditing=false to QueryOutput when isEditing=false', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('isDashboardEditing')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('QueryOutput receives isDashboardEditing not raw isEditing (DashboardTile maps the prop)', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const qo = wrapper.find('QueryOutput').first()
+    // DashboardTile maps isEditing → isDashboardEditing for the API-bypass path in ChataTable
+    expect(qo.prop('isDashboardEditing')).toBe(true)
+    // isEditing on QueryOutput is for chart legend state and is not set by DashboardTile
+    expect(qo.prop('isEditing')).toBeFalsy()
+    wrapper.unmount()
+  })
+
+  test('passes onNewQueryId callback to QueryOutput for capturing filter-triggered queryIds in edit mode', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const qo = wrapper.find('QueryOutput').first()
+    expect(typeof qo.prop('onNewQueryId')).toBe('function')
+    wrapper.unmount()
+  })
+
+  test('onNewQueryId callback calls debouncedSetParamsForTile with queryId', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+    const qo = wrapper.find('QueryOutput').first()
+
+    const onNewQueryId = qo.prop('onNewQueryId')
+    onNewQueryId('q_new-from-filter')
+    jest.advanceTimersByTime(100)
+
+    const call = mockSetParamsForTile.mock.calls.find(([params]) => params?.queryId === 'q_new-from-filter')
+    expect(call).toBeDefined()
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+})
+
+describe('dashboard tile: initialFormattedTableParams filter handling', () => {
+  test('does NOT use fe_req.filters in initialFormattedTableParams (those are baked into cached SQL)', () => {
+    const feReqFilters = [{ name: 'status', operator: '=', value: 'active' }]
+    const tileWithFeReqOnly = {
+      ...sampleTile,
+      tableFilters: undefined,
+      queryResponse: {
+        ...sampleTile.queryResponse,
+        data: {
+          ...sampleTile.queryResponse.data,
+          data: {
+            ...sampleTile.queryResponse.data.data,
+            fe_req: { filters: feReqFilters },
+          },
+        },
+      },
+    }
+
+    const wrapper = setup({ tile: tileWithFeReqOnly })
+    const qo = wrapper.find('QueryOutput').first()
+    const params = qo.prop('initialFormattedTableParams')
+
+    // fe_req.filters must not appear — they are already in the cached SQL
+    expect(params.filters).not.toEqual(feReqFilters)
+    wrapper.unmount()
+  })
+
+  test('uses tile.tableFilters in initialFormattedTableParams (needed for subset-filter API continuity)', () => {
+    const tableFilters = [{ name: 'region', operator: '=', value: 'West' }]
+    const tileWithTableFilters = { ...sampleTile, tableFilters }
+
+    const wrapper = setup({ tile: tileWithTableFilters })
+    const qo = wrapper.find('QueryOutput').first()
+    const params = qo.prop('initialFormattedTableParams')
+
+    expect(params.filters).toEqual(tableFilters)
+    wrapper.unmount()
+  })
+
+  test('initialFormattedTableParams passes sorters', () => {
+    const tileWithOrders = { ...sampleTile, orders: [{ field: 'date', dir: 'desc' }] }
+
+    const wrapper = setup({ tile: tileWithOrders })
+    const qo = wrapper.find('QueryOutput').first()
+    const params = qo.prop('initialFormattedTableParams')
+
+    expect(params.sorters).toEqual([{ field: 'date', dir: 'desc' }])
+    wrapper.unmount()
+  })
+
+  test('initialFormattedTableParams passes sessionFilters', () => {
+    const tileWithSessionFilters = {
+      ...sampleTile,
+      filters: [{ value: 'West', operator: '=', name: 'region' }],
+    }
+
+    const wrapper = setup({ tile: tileWithSessionFilters })
+    const qo = wrapper.find('QueryOutput').first()
+    const params = qo.prop('initialFormattedTableParams')
+
+    expect(params.sessionFilters).toEqual([{ value: 'West', operator: '=', name: 'region' }])
+    wrapper.unmount()
+  })
+
+  test('visual pre-population is suppressed by skipInitialFilters even when tableFilters is set', () => {
+    const tileWithFilters = {
+      ...sampleTile,
+      tableFilters: [{ name: 'region', operator: '=', value: 'West' }],
+    }
+
+    const wrapper = setup({ tile: tileWithFilters })
+    const qo = wrapper.find('QueryOutput').first()
+
+    // Filters are in the params for API calls, but visual display is suppressed
+    expect(qo.prop('skipInitialFilters')).toBe(true)
+    expect(qo.prop('initialFormattedTableParams').filters).toBeDefined()
+    wrapper.unmount()
   })
 })

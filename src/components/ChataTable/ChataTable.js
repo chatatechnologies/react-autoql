@@ -75,8 +75,6 @@ export default class ChataTable extends React.Component {
         ? LOCAL_OR_REMOTE.REMOTE
         : this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
-        ? LOCAL_OR_REMOTE.REMOTE
         : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
     this.totalPages = this.getTotalPages(props.response)
@@ -193,6 +191,8 @@ export default class ChataTable extends React.Component {
     onUpdateFilterResponse: PropTypes.func,
     isDrilldown: PropTypes.bool,
     isEditing: PropTypes.bool,
+    isDashboardEditing: PropTypes.bool,
+    skipInitialFilters: PropTypes.bool,
     scope: PropTypes.string,
     // Pivot axis selector props
     pivotAxisOptions: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.number, label: PropTypes.string })),
@@ -218,6 +218,8 @@ export default class ChataTable extends React.Component {
     pivot: false,
     pivotTableDataLimited: false,
     isEditing: false,
+    isDashboardEditing: false,
+    skipInitialFilters: false,
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -354,13 +356,20 @@ export default class ChataTable extends React.Component {
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       this.tableParams.filter = this.props?.initialTableParams?.filter
-      this.setFilters(this.props?.initialTableParams?.filter)
+      if (!this.props.skipInitialFilters) {
+        this.setFilters(this.props?.initialTableParams?.filter)
+      }
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
       }
-      // Refresh filter badges after initial filters are set
       this.setFilterBadgeClasses()
+    }
+
+    // When entering edit mode (skipInitialFilters true → false without a remount),
+    // populate filter inputs with saved values so the builder can see what's applied.
+    if (!this.props.skipInitialFilters && prevProps.skipInitialFilters && this.state.tabulatorMounted) {
+      this.setFilters(this.props?.initialTableParams?.filter)
     }
     this.summaryStats = this.calculateSummaryStats(this.props)
   }
@@ -857,8 +866,10 @@ export default class ChataTable extends React.Component {
 
   queryFn = (params) => {
     // Always use server-side queryFn when dealing with column changes (newColumns)
-    // because column removal is a schema change, not just data filtering
-    if (this.props.isEditing && !this.props.pivot) {
+    // because column removal is a schema change, not just data filtering.
+    // Also force server-side when the dashboard is in edit mode so that every filter
+    // is applied in SQL (and its query_id captured) rather than client-side.
+    if ((this.props.isEditing || this.props.isDashboardEditing) && !this.props.pivot) {
       return this.props.queryFn(params)
     }
 
