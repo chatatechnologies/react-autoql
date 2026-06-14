@@ -626,3 +626,76 @@ describe('Dashboard.addTile — DM response handling', () => {
     expect(addedTile.queryResponse).toBeUndefined()
   })
 })
+
+describe('Dashboard.getDirtyTileKeys', () => {
+  const savedTile = {
+    key: 'tile-abc',
+    i: 'tile-abc',
+    query: 'sales by region',
+    tableFilters: [],
+    orders: [],
+    displayType: 'table',
+    queryId: 'qid-1',
+    queryResponse: { data: { data: { rows: [[1]], count_rows: 1 } } },
+  }
+
+  const setupDirtyTest = (currentTileOverrides, { isEditing = true } = {}) => {
+    const currentTile = { ...savedTile, ...currentTileOverrides }
+    const wrapper = setup({ isEditing }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [currentTile])
+    return instance.getDirtyTileKeys()
+  }
+
+  test('returns empty Set when not in edit mode', () => {
+    expect(setupDirtyTest({}, { isEditing: false }).size).toBe(0)
+  })
+
+  test('returns empty Set when uneditedDashboardTiles is null', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: null })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [savedTile])
+    expect(instance.getDirtyTileKeys().size).toBe(0)
+  })
+
+  test('returns empty Set when nothing has changed', () => {
+    expect(setupDirtyTest({}).size).toBe(0)
+  })
+
+  test('detects query text change', () => {
+    expect(setupDirtyTest({ query: 'sales by product' }).has('tile-abc')).toBe(true)
+  })
+
+  test('detects tableFilters change', () => {
+    expect(setupDirtyTest({ tableFilters: [{ field: 'region', type: '=', value: 'US' }] }).has('tile-abc')).toBe(true)
+  })
+
+  test('detects orders/sort change', () => {
+    expect(setupDirtyTest({ orders: [{ field: 'sales', dir: 'desc' }] }).has('tile-abc')).toBe(true)
+  })
+
+  test('detects displayType change', () => {
+    expect(setupDirtyTest({ displayType: 'bar' }).has('tile-abc')).toBe(true)
+  })
+
+  test('does NOT mark dirty when only queryId changes', () => {
+    expect(setupDirtyTest({ queryId: 'qid-new' }).has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty when only queryResponse changes', () => {
+    expect(setupDirtyTest({ queryResponse: { data: { data: { rows: [[999]] } } } }).has('tile-abc')).toBe(false)
+  })
+
+  test('only marks the changed tile as dirty in a multi-tile dashboard', () => {
+    const savedTile2 = { ...savedTile, key: 'tile-xyz', i: 'tile-xyz', query: 'revenue by month' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile, savedTile2] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [
+      { ...savedTile, query: 'sales by product' },
+      { ...savedTile2 },
+    ])
+    const result = instance.getDirtyTileKeys()
+    expect(result.has('tile-abc')).toBe(true)
+    expect(result.has('tile-xyz')).toBe(false)
+  })
+})
