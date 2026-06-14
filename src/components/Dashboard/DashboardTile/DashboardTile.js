@@ -570,8 +570,7 @@ export class DashboardTile extends React.Component {
         // Merge restoration directly into the same debounced call to avoid timing issues
         Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
       } else {
-        // Update queryId when the query text changed or there is no existing ID.
-        // Filter-triggered re-runs are handled separately via onNewQueryId.
+        // Only update queryId when query changed or none exists; filter re-runs use onNewQueryId.
         if (queryChanged || !this.props.tile?.queryId) {
           const queryId = response?.data?.data?.query_id
           paramsToSet.queryId = queryId
@@ -1992,9 +1991,6 @@ export class DashboardTile extends React.Component {
         },
         onChartControlsChange: this.onChartControlsChange,
         isDashboardEditing: this.props.isEditing,
-        // In view mode, skip pre-populating header filter inputs (Feature 2: filters are baked
-        // into the SQL via queryId). In edit mode, show saved filter values so the builder can
-        // see and modify them.
         skipInitialFilters: !this.props.isEditing,
         onNewQueryId: (queryId) => {
           if (queryId) {

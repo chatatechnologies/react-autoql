@@ -366,8 +366,7 @@ export default class ChataTable extends React.Component {
       this.setFilterBadgeClasses()
     }
 
-    // When entering edit mode (skipInitialFilters true → false without a remount),
-    // populate filter inputs with saved values so the builder can see what's applied.
+    // Populate filter inputs when entering edit mode (skipInitialFilters true → false).
     if (!this.props.skipInitialFilters && prevProps.skipInitialFilters && this.state.tabulatorMounted) {
       this.setFilters(this.props?.initialTableParams?.filter)
     }
@@ -718,9 +717,7 @@ export default class ChataTable extends React.Component {
       const hasRecentlySetHeaderFilters =
         this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < DEBOUNCE_MS
 
-      // Before tabulatorMounted, header filters haven't been seeded from initialTableParams yet —
-      // a remote request here would run with empty filters and wipe the saved filter state upstream
-      // via onTableParamsChange. The initial page is already in `initialData`, so return it instead.
+      // Return initial data until tabulator mounts — header filters haven't been seeded yet.
       if (!this.hasSetInitialData || !this._isMounted || !this.state.tabulatorMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
@@ -865,14 +862,12 @@ export default class ChataTable extends React.Component {
   }
 
   queryFn = (params) => {
-    // Always use server-side queryFn when dealing with column changes (newColumns)
-    // because column removal is a schema change, not just data filtering.
-    // Also force server-side when the dashboard is in edit mode so that every filter
-    // is applied in SQL (and its query_id captured) rather than client-side.
+    // Force server-side in edit mode so every filter is applied in SQL and query_id is captured.
     if ((this.props.isEditing || this.props.isDashboardEditing) && !this.props.pivot) {
       return this.props.queryFn(params)
     }
 
+    // Column changes and infinite scroll also require server-side.
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else if (this.props.pivot) {

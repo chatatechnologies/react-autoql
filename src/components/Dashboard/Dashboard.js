@@ -812,9 +812,7 @@ class DashboardWithoutTheme extends React.Component {
       }
 
       if (content?.queryResponse) {
-        // In edit mode, strip queryResponse so the tile re-executes via API immediately.
-        // This ensures filters are baked into the cached SQL (queryId) rather than applied
-        // client-side from the DM response, even when the row count is below the local limit.
+        // Strip queryResponse in edit mode so the tile re-executes via API and captures queryId.
         if (this.props.isEditing) {
           const { queryResponse, secondQueryResponse, ...contentWithoutResponse } = content
           tile = { ...tile, ...contentWithoutResponse }

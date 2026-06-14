@@ -1012,231 +1012,128 @@ describe('ChataTable', () => {
 })
 
 describe('Dashboard edit-mode filtering', () => {
+  const smallResponse = { data: { data: { rows: [], count_rows: 10, query_id: 'q1' } } }
+  const filters = [{ field: '1', type: '=', value: 'online' }]
+
+  function makeMockRef(setHeaderFilterValueSpy) {
+    const tabulator = {
+      getColumns: jest.fn(() => [
+        {
+          getField: () => '1',
+          getDefinition: () => ({ headerFilter: true }),
+          getElement: () => ({ classList: { add: jest.fn(), remove: jest.fn() } }),
+        },
+      ]),
+      setHeaderFilterValue: setHeaderFilterValueSpy,
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+    return { tabulator, blockRedraw: tabulator.blockRedraw, restoreRedraw: tabulator.restoreRedraw }
+  }
+
   describe('useRemote initialization', () => {
-    test('is REMOTE (not local) when isEditing=true regardless of row count', () => {
-      const smallResponse = {
-        data: { data: { rows: [], count_rows: 10, query_id: 'q1' } },
-      }
-      const wrapper = setup({ isEditing: true, response: smallResponse })
-      expect(wrapper.instance().isLocal).toBe(false)
+    test('is REMOTE when isEditing=true regardless of row count', () => {
+      expect(setup({ isEditing: true, response: smallResponse }).instance().isLocal).toBe(false)
     })
 
     test('is LOCAL for small row count when isEditing=false', () => {
-      const smallResponse = {
-        data: { data: { rows: [], count_rows: 10, query_id: 'q1' } },
+      expect(setup({ isEditing: false, response: smallResponse }).instance().isLocal).toBe(true)
+    })
+
+    test('skipInitialFilters=true does not affect useRemote decision', () => {
+      expect(setup({ skipInitialFilters: true, response: smallResponse }).instance().isLocal).toBe(true)
+    })
+
+    test('fe_req.filters in response does NOT force REMOTE in view mode', () => {
+      const response = {
+        data: { data: { rows: [], count_rows: 10, query_id: 'q1', fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] } } },
       }
-      const wrapper = setup({ isEditing: false, response: smallResponse })
+      expect(setup({ response }).instance().isLocal).toBe(true)
+    })
+
+    test('initialTableParams.filter does NOT force REMOTE in view mode', () => {
+      const wrapper = setup({ response: smallResponse, initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] } })
       expect(wrapper.instance().isLocal).toBe(true)
     })
   })
 
   describe('skipInitialFilters', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-
-    function makeMockRef(setHeaderFilterValueSpy) {
-      const tabulator = {
-        getColumns: jest.fn(() => [
-          {
-            getField: () => '1',
-            getDefinition: () => ({ headerFilter: true }),
-            getElement: () => ({ classList: { add: jest.fn(), remove: jest.fn() } }),
-          },
-        ]),
-        setHeaderFilterValue: setHeaderFilterValueSpy,
-        blockRedraw: jest.fn(),
-        restoreRedraw: jest.fn(),
-      }
-      return { tabulator, blockRedraw: tabulator.blockRedraw, restoreRedraw: tabulator.restoreRedraw }
-    }
-
     test('does not call setFilters on tabulator mount when skipInitialFilters=true', () => {
-      const wrapper = setup({
-        skipInitialFilters: true,
-        initialTableParams: { filter: filters },
-      })
+      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
-      const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
       jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
       jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
       jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
-
       wrapper.setState({ tabulatorMounted: true })
-
-      expect(setFiltersSpy).not.toHaveBeenCalled()
+      expect(spy).not.toHaveBeenCalled()
     })
 
-    test('still sets tableParams.filter when skipInitialFilters=true (API calls still carry filters)', () => {
-      const wrapper = setup({
-        skipInitialFilters: true,
-        initialTableParams: { filter: filters },
-      })
+    test('header inputs are not set when skipInitialFilters=true', () => {
+      const setHeaderFilterValueSpy = jest.fn()
+      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
+      instance.ref = makeMockRef(setHeaderFilterValueSpy)
       jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
       jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
       jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
       jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
-
       wrapper.setState({ tabulatorMounted: true })
-
-      expect(instance.tableParams.filter).toEqual(filters)
-    })
-
-    test('calls setFilters on tabulator mount when skipInitialFilters=false (default)', () => {
-      const wrapper = setup({ initialTableParams: { filter: filters } })
-      const instance = wrapper.instance()
-      const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
-      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
-      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
-      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
-
-      wrapper.setState({ tabulatorMounted: true })
-
-      expect(setFiltersSpy).toHaveBeenCalled()
-    })
-
-    test('setFilters sets header input values on non-dashboard table', () => {
-      const setHeaderFilterValueSpy = jest.fn()
-      const wrapper = setup({ initialTableParams: { filter: filters } })
-      const instance = wrapper.instance()
-      instance.ref = makeMockRef(setHeaderFilterValueSpy)
-
-      instance.setFilters(filters)
-
-      expect(setHeaderFilterValueSpy).toHaveBeenCalledWith('1', 'online')
-    })
-  })
-
-  describe('skipInitialFilters: suppress mount-time header filter pre-population', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-
-    function makeMockRef(setHeaderFilterValueSpy) {
-      const tabulator = {
-        getColumns: jest.fn(() => [
-          {
-            getField: () => '1',
-            getDefinition: () => ({ headerFilter: true }),
-            getElement: () => ({ classList: { add: jest.fn(), remove: jest.fn() } }),
-          },
-        ]),
-        setHeaderFilterValue: setHeaderFilterValueSpy,
-        blockRedraw: jest.fn(),
-        restoreRedraw: jest.fn(),
-      }
-      return { tabulator, blockRedraw: tabulator.blockRedraw, restoreRedraw: tabulator.restoreRedraw }
-    }
-
-    test('setFilters is NOT called on tabulator mount when skipInitialFilters=true', () => {
-      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
-      const instance = wrapper.instance()
-      const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
-      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
-      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
-      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
-
-      wrapper.setState({ tabulatorMounted: true })
-
-      expect(setFiltersSpy).not.toHaveBeenCalled()
-    })
-
-    test('header inputs are never set when skipInitialFilters=true even with initialTableParams.filter', () => {
-      const setHeaderFilterValueSpy = jest.fn()
-      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
-      const instance = wrapper.instance()
-      instance.ref = makeMockRef(setHeaderFilterValueSpy)
-      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
-      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
-      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
-
-      wrapper.setState({ tabulatorMounted: true })
-
       expect(setHeaderFilterValueSpy).not.toHaveBeenCalled()
     })
 
-    test('tableParams.filter is still populated when skipInitialFilters=true (API calls still carry filters)', () => {
+    test('tableParams.filter is still set when skipInitialFilters=true so API calls carry filters', () => {
       const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
-      const instance = wrapper.instance()
-
-      expect(instance.tableParams.filter).toEqual(filters)
+      expect(wrapper.instance().tableParams.filter).toEqual(filters)
     })
 
-    test('setFilterBadgeClasses is still called on mount when skipInitialFilters=true', () => {
+    test('setFilterBadgeClasses still runs on mount when skipInitialFilters=true', () => {
       const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
       jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
       jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
       jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
       const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
-
       wrapper.setState({ tabulatorMounted: true })
-
       expect(badgeSpy).toHaveBeenCalled()
     })
 
-    test('skipInitialFilters=true does not change useRemote decision (still based on row count + existing filters)', () => {
-      const smallResponse = { data: { data: { rows: [], count_rows: 10, query_id: 'q1' } } }
-      const wrapper = setup({ skipInitialFilters: true, response: smallResponse })
-
-      expect(wrapper.instance().isLocal).toBe(true)
+    test('calls setFilters on tabulator mount when skipInitialFilters=false', () => {
+      const wrapper = setup({ initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true })
+      expect(spy).toHaveBeenCalled()
     })
 
-    test('fe_req.filters in view mode does NOT force REMOTE — base filter is already in loaded data, header-filter changes must subset client-side', () => {
-      const filteredResponse = {
-        data: {
-          data: {
-            rows: [],
-            count_rows: 10,
-            query_id: 'q1',
-            fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] },
-          },
-        },
-      }
-      const wrapper = setup({ skipInitialFilters: true, response: filteredResponse })
-
-      // The base filter is baked into the cached SQL via queryId; the response data is
-      // already filtered. Typing a new value in view mode must subset the loaded rows
-      // locally — not go back to the API and bypass the base filter.
-      expect(wrapper.instance().isLocal).toBe(true)
+    test('setFilters populates header input values', () => {
+      const setHeaderFilterValueSpy = jest.fn()
+      const wrapper = setup({ initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeMockRef(setHeaderFilterValueSpy)
+      instance.setFilters(filters)
+      expect(setHeaderFilterValueSpy).toHaveBeenCalledWith('1', 'online')
     })
 
-    test('initialTableParams.filter in view mode does NOT force REMOTE', () => {
-      const smallResponse = { data: { data: { rows: [], count_rows: 10, query_id: 'q1' } } }
-      const wrapper = setup({
-        skipInitialFilters: true,
-        response: smallResponse,
-        initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] },
-      })
-
-      expect(wrapper.instance().isLocal).toBe(true)
-    })
-
-    test('calls setFilters when skipInitialFilters transitions true→false with tabulator already mounted (entering edit mode)', () => {
-      const filters = [{ field: '1', type: '=', value: 'online' }]
+    test('calls setFilters when skipInitialFilters transitions true→false (entering edit mode)', () => {
       const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
-
-      // Simulate tabulator already mounted
       wrapper.setState({ tabulatorMounted: true })
-
-      const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
-
-      // Simulate entering edit mode: skipInitialFilters goes from true → false
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
       wrapper.setProps({ skipInitialFilters: false })
-
-      expect(setFiltersSpy).toHaveBeenCalledWith(filters)
+      expect(spy).toHaveBeenCalledWith(filters)
     })
 
-    test('does not call setFilters when skipInitialFilters remains false', () => {
-      const filters = [{ field: '1', type: '=', value: 'online' }]
+    test('does not call setFilters when skipInitialFilters stays false', () => {
       const wrapper = setup({ skipInitialFilters: false, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
-
       wrapper.setState({ tabulatorMounted: true })
-
-      const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
-
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
       wrapper.setProps({ skipInitialFilters: false })
-
-      expect(setFiltersSpy).not.toHaveBeenCalled()
+      expect(spy).not.toHaveBeenCalled()
     })
   })
 
@@ -1244,46 +1141,22 @@ describe('Dashboard edit-mode filtering', () => {
     test('calls props.queryFn directly when isDashboardEditing=true', () => {
       const mockPropsQueryFn = jest.fn().mockResolvedValue({})
       const wrapper = setup({ isDashboardEditing: true, queryFn: mockPropsQueryFn })
-      const instance = wrapper.instance()
-
-      instance.queryFn({ tableFilters: [{ field: '1', type: '=', value: 'x' }] })
-
-      expect(mockPropsQueryFn).toHaveBeenCalledWith({
-        tableFilters: [{ field: '1', type: '=', value: 'x' }],
-      })
+      wrapper.instance().queryFn({ tableFilters: [{ field: '1', type: '=', value: 'x' }] })
+      expect(mockPropsQueryFn).toHaveBeenCalledWith({ tableFilters: [{ field: '1', type: '=', value: 'x' }] })
     })
 
     test('calls props.queryFn directly when isEditing=true', () => {
       const mockPropsQueryFn = jest.fn().mockResolvedValue({})
       const wrapper = setup({ isEditing: true, queryFn: mockPropsQueryFn })
-      const instance = wrapper.instance()
-
-      instance.queryFn({ tableFilters: [] })
-
+      wrapper.instance().queryFn({ tableFilters: [] })
       expect(mockPropsQueryFn).toHaveBeenCalled()
     })
 
-    test('does not bypass local path when neither isEditing nor isDashboardEditing', () => {
-      const mockPropsQueryFn = jest.fn().mockResolvedValue({})
-      const smallResponse = {
-        data: { data: { rows: [], count_rows: 10, query_id: 'q1' } },
-      }
-      // useInfiniteScroll=false and local data → should NOT hit the early return
-      const wrapper = setup({
-        isEditing: false,
-        isDashboardEditing: false,
-        queryFn: mockPropsQueryFn,
-        response: smallResponse,
-        useInfiniteScroll: false,
-      })
-      const instance = wrapper.instance()
-
-      // Call with no newColumns and no infinite scroll — falls through to local/pivot path
-      instance.queryFn({ tableFilters: [] })
-
-      // props.queryFn is still called (fallthrough), but the early-return bypass was NOT taken
-      // We verify the early-return didn't fire by checking isDashboardEditing is false
-      expect(instance.props.isDashboardEditing).toBe(false)
+    test('uses client-side path when neither isEditing nor isDashboardEditing', () => {
+      const mockPropsQueryFn = jest.fn()
+      const wrapper = setup({ isEditing: false, isDashboardEditing: false, queryFn: mockPropsQueryFn, response: smallResponse, useInfiniteScroll: false })
+      wrapper.instance().queryFn({ tableFilters: [] })
+      expect(mockPropsQueryFn).not.toHaveBeenCalled()
     })
   })
 })
