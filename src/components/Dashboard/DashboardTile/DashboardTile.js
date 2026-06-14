@@ -222,6 +222,7 @@ export class DashboardTile extends React.Component {
     query: '',
     title: '',
     isEditing: false,
+    isDirty: false,
     dataPageSize: undefined,
     queryValidationSelections: undefined,
     defaultSelectedSuggestion: undefined,
@@ -1318,7 +1319,6 @@ export class DashboardTile extends React.Component {
       columns,
       columnSelects,
       queryResponse,
-      // Filtering always produces a new SQL result — always capture the new queryId
       queryId: queryResponse?.data?.data?.query_id,
       dataConfig,
       displayOverrides,
@@ -1350,6 +1350,7 @@ export class DashboardTile extends React.Component {
       secondDisplayOverrides,
       secondColumnSelects,
       secondQueryResponse,
+      secondQueryId: secondQueryResponse?.data?.data?.query_id,
       secondDataConfig,
       secondFilters,
     }
@@ -1984,6 +1985,7 @@ export class DashboardTile extends React.Component {
           sorters: this.props.tile?.orders,
           sessionFilters: this.props.tile?.filters || [],
         },
+        baseSessionFilters: !this.props.isEditing ? (this.props.tile?.tableFilters || []) : [],
         enableChartControls: true,
         initialChartControls: this.props.tile?.chartControls || {
           showAverageLine: false,
@@ -2026,7 +2028,9 @@ export class DashboardTile extends React.Component {
   }
 
   renderBottomResponse = () => {
-    const isQuerySameAsTop = this.areTopAndBottomSameQuery()
+    // Text-only: filter differences are handled by processTile running processTileBottom separately.
+    const bottomQuery = this.props.tile?.secondQuery
+    const isQuerySameAsTop = !bottomQuery || this.props.tile?.query === bottomQuery
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
     let queryRequestData = this.bottomRequestData
@@ -2131,8 +2135,9 @@ export class DashboardTile extends React.Component {
         initialFormattedTableParams: {
           filters: this.props.tile?.secondTableFilters,
           sorters: this.props.tile?.secondOrders,
-          sessionFilters: this.props.tile?.secondFilters,
+          sessionFilters: this.props.tile?.secondFilters || [],
         },
+        baseSessionFilters: !this.props.isEditing ? (this.props.tile?.secondTableFilters || []) : [],
         isDashboardEditing: this.props.isEditing,
         skipInitialFilters: !this.props.isEditing,
         enableChartControls: true,

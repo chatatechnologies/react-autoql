@@ -1137,3 +1137,50 @@ describe('dashboard tile: initialFormattedTableParams filter handling', () => {
     wrapper.unmount()
   })
 })
+
+describe('onSecondColumnChange: secondQueryId capture', () => {
+  let mockSetParamsForTile
+  let savedParams
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  test('captures secondQueryId from secondQueryResponse when column changes', () => {
+    const splitTile = { ...sampleTile, secondQuery: 'show second data', secondQueryResponse: sampleTile.queryResponse }
+    const wrapper = setup({ tile: splitTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const secondQueryResponse = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_second-column-change' }, reference_id: '1.1.200' },
+    }
+
+    instance.onSecondColumnChange({}, [], [], secondQueryResponse, {}, [], [], [])
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.secondQueryId === 'q_second-column-change')
+    expect(call).toBeDefined()
+    wrapper.unmount()
+  })
+
+  test('secondQueryId is undefined when secondQueryResponse has no query_id', () => {
+    const splitTile = { ...sampleTile, secondQuery: 'show second data', secondQueryResponse: sampleTile.queryResponse }
+    const wrapper = setup({ tile: splitTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    instance.onSecondColumnChange({}, [], [], null, {}, [], [], [])
+    jest.advanceTimersByTime(100)
+
+    expect(savedParams.length).toBeGreaterThan(0)
+    const call = savedParams[savedParams.length - 1]
+    expect(call.secondQueryId).toBeUndefined()
+    wrapper.unmount()
+  })
+})

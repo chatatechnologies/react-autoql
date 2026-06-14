@@ -1036,6 +1036,10 @@ describe('Dashboard edit-mode filtering', () => {
       expect(setup({ isEditing: true, response: smallResponse }).instance().isLocal).toBe(false)
     })
 
+    test('is REMOTE when isDashboardEditing=true regardless of row count', () => {
+      expect(setup({ isDashboardEditing: true, response: smallResponse }).instance().isLocal).toBe(false)
+    })
+
     test('is LOCAL for small row count when isEditing=false', () => {
       expect(setup({ isEditing: false, response: smallResponse }).instance().isLocal).toBe(true)
     })

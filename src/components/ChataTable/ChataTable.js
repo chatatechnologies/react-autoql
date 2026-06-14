@@ -71,7 +71,7 @@ export default class ChataTable extends React.Component {
     // Pre-rendered hamburger icon markup for header injection
     this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
     this.useRemote =
-      props.isEditing
+      props.isEditing || props.isDashboardEditing
         ? LOCAL_OR_REMOTE.REMOTE
         : this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
@@ -193,6 +193,7 @@ export default class ChataTable extends React.Component {
     isEditing: PropTypes.bool,
     isDashboardEditing: PropTypes.bool,
     skipInitialFilters: PropTypes.bool,
+    baseSessionFilters: PropTypes.arrayOf(PropTypes.shape({})),
     scope: PropTypes.string,
     // Pivot axis selector props
     pivotAxisOptions: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.number, label: PropTypes.string })),
@@ -220,6 +221,7 @@ export default class ChataTable extends React.Component {
     isEditing: false,
     isDashboardEditing: false,
     skipInitialFilters: false,
+    baseSessionFilters: [],
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -545,6 +547,7 @@ export default class ChataTable extends React.Component {
         ...getAutoQLConfig(this.props.autoQLConfig),
         query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
+        filters: this.props.baseSessionFilters,
         orders: tableParamsFormatted?.sorters,
         tableFilters: sanitizedFilters,
         source: 'data_messenger',

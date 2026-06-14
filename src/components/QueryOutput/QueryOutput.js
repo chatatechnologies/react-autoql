@@ -357,6 +357,7 @@ export class QueryOutput extends React.Component {
     isDashboardEditing: PropTypes.bool,
     onNewQueryId: PropTypes.func,
     skipInitialFilters: PropTypes.bool,
+    baseSessionFilters: PropTypes.arrayOf(PropTypes.shape({})),
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
@@ -418,6 +419,7 @@ export class QueryOutput extends React.Component {
     isEditing: false,
     isDashboardEditing: false,
     skipInitialFilters: false,
+    baseSessionFilters: [],
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     initialNetworkColumnConfig: undefined,
@@ -1586,9 +1588,11 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: true })
 
-    const sessionFilters =
+    const baseFilters =
       queryRequestData?.session_filter_locks ||
-      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
+      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : []) ||
+      []
+    const sessionFilters = [...baseFilters, ...(this.props.baseSessionFilters || [])]
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -4208,6 +4212,7 @@ export class QueryOutput extends React.Component {
           isEditing={this.props.isEditing}
           isDashboardEditing={this.props.isDashboardEditing}
           skipInitialFilters={this.props.skipInitialFilters}
+          baseSessionFilters={this.props.baseSessionFilters}
         />
       </ErrorBoundary>
     )
