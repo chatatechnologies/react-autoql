@@ -119,7 +119,6 @@ class DashboardWithoutTheme extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
-    dirtyTileKeys: PropTypes.instanceOf(Set),
   }
 
   static defaultProps = {
@@ -158,7 +157,6 @@ class DashboardWithoutTheme extends React.Component {
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     enableResetQuery: false,
-    dirtyTileKeys: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -344,6 +342,25 @@ class DashboardWithoutTheme extends React.Component {
       return base.map((tile) => (tile.i === this.resettingTileId ? resetEntry : tile))
     }
     return this.props.tiles
+  }
+
+  getDirtyTileKeys = () => {
+    if (!this.props.isEditing || !this.state.uneditedDashboardTiles) return new Set()
+    const savedByKey = new Map(this.state.uneditedDashboardTiles.map((t) => [t.key, t]))
+    const current = this.getMostRecentTiles()
+    const stripVolatile = (t) => {
+      if (!t) return t
+      const { queryResponse, secondQueryResponse, queryId, secondQueryId, ...rest } = t
+      return rest
+    }
+    return new Set(
+      (current || [])
+        .filter((tile) => {
+          const saved = savedByKey.get(tile.key)
+          return saved && !deepEqual(stripVolatile(tile), stripVolatile(saved))
+        })
+        .map((tile) => tile.key),
+    )
   }
 
   subscribeToCallback = (callbackArray) => {
@@ -1284,6 +1301,8 @@ class DashboardWithoutTheme extends React.Component {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
     }
 
+    const dirtyTileKeys = this.getDirtyTileKeys()
+
     return (
       <ReactGridLayout
         ref={(r) => (this.rglRef = r)}
@@ -1337,7 +1356,7 @@ class DashboardWithoutTheme extends React.Component {
             secondDisplayType={tile.secondDisplayType}
             secondDisplayPercentage={tile.secondDisplayPercentage}
             isEditing={this.props.isEditing}
-            isDirty={this.props.dirtyTileKeys?.has(tile.key)}
+            isDirty={dirtyTileKeys.has(tile.key)}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}

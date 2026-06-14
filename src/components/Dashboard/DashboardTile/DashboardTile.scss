@@ -834,8 +834,7 @@
 
 // Dirty tile indicator
 .react-autoql-dashboard-tile.dirty .react-autoql-dashboard-tile-inner-div {
-  border-color: #FFA700 !important;
-  border-width: 2px !important;
+  border-top: 3px solid #FFA700 !important;
 }
 
 .react-autoql-dashboard-tile-dirty-badge {
