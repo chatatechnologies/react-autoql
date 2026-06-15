@@ -348,16 +348,21 @@ class DashboardWithoutTheme extends React.Component {
     if (!this.props.isEditing || !this.state.uneditedDashboardTiles) return new Set()
     const savedByKey = new Map(this.state.uneditedDashboardTiles.map((t) => [t.key, t]))
     const current = this.getMostRecentTiles()
-    const stripVolatile = (t) => {
-      if (!t) return t
-      const { queryResponse, secondQueryResponse, queryId, secondQueryId, ...rest } = t
-      return rest
-    }
+    // Only fields that affect what data is fetched from the backend.
+    // Display-only fields (displayType, dataConfig, aggConfig, axisSorts, etc.) are excluded.
+    const QUERY_AFFECTING_KEYS = [
+      'query', 'secondQuery',
+      'tableFilters', 'secondTableFilters',
+      'orders', 'secondOrders',
+      'columnSelects', 'secondColumnSelects',
+      'filters', 'secondFilters',
+    ]
     return new Set(
       (current || [])
         .filter((tile) => {
           const saved = savedByKey.get(tile.key)
-          return saved && !deepEqual(stripVolatile(tile), stripVolatile(saved))
+          if (!saved) return false
+          return QUERY_AFFECTING_KEYS.some((k) => !deepEqual(tile[k], saved[k]))
         })
         .map((tile) => tile.key),
     )

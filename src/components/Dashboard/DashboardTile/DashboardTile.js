@@ -2261,7 +2261,8 @@ export class DashboardTile extends React.Component {
           {this.props.isDirty && (
             <div
               className='react-autoql-dashboard-tile-dirty-badge'
-              title='This tile has unsaved changes — save the dashboard to persist'
+              data-tooltip-content='This tile has unsaved changes — save the dashboard to persist'
+              data-tooltip-id={this.props.tooltipID}
             >
               !
             </div>

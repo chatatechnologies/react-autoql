@@ -674,8 +674,24 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(setupDirtyTest({ orders: [{ field: 'sales', dir: 'desc' }] }).has('tile-abc')).toBe(true)
   })
 
-  test('detects displayType change', () => {
-    expect(setupDirtyTest({ displayType: 'bar' }).has('tile-abc')).toBe(true)
+  test('does NOT mark dirty when displayType changes (chart switch needs no re-fetch)', () => {
+    expect(setupDirtyTest({ displayType: 'bar' }).has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty when dataConfig changes', () => {
+    expect(setupDirtyTest({ dataConfig: { tableConfig: { numberColumnIndex: 1 } } }).has('tile-abc')).toBe(false)
+  })
+
+  test('detects tableFilters change on second query', () => {
+    expect(setupDirtyTest({ secondTableFilters: [{ field: 'region', type: '=', value: 'US' }] }).has('tile-abc')).toBe(true)
+  })
+
+  test('detects columnSelects change', () => {
+    expect(setupDirtyTest({ columnSelects: [{ id: 'col1' }] }).has('tile-abc')).toBe(true)
+  })
+
+  test('detects filters (NLQ-level) change', () => {
+    expect(setupDirtyTest({ filters: [{ value: 'West' }] }).has('tile-abc')).toBe(true)
   })
 
   test('does NOT mark dirty when only queryId changes', () => {
