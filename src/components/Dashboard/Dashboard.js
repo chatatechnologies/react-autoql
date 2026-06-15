@@ -348,21 +348,15 @@ class DashboardWithoutTheme extends React.Component {
     if (!this.props.isEditing || !this.state.uneditedDashboardTiles) return new Set()
     const savedByKey = new Map(this.state.uneditedDashboardTiles.map((t) => [t.key, t]))
     const current = this.getMostRecentTiles()
-    // Only fields that affect what data is fetched from the backend.
-    // Display-only fields (displayType, dataConfig, aggConfig, axisSorts, etc.) are excluded.
-    const QUERY_AFFECTING_KEYS = [
-      'query', 'secondQuery',
-      'tableFilters', 'secondTableFilters',
-      'orders', 'secondOrders',
-      'columnSelects', 'secondColumnSelects',
-      'filters', 'secondFilters',
-    ]
     return new Set(
       (current || [])
         .filter((tile) => {
           const saved = savedByKey.get(tile.key)
           if (!saved) return false
-          return QUERY_AFFECTING_KEYS.some((k) => !deepEqual(tile[k], saved[k]))
+          // Dirty = query text changed but queryId unchanged (not yet re-executed).
+          const topDirty = tile.query !== saved.query && tile.queryId === saved.queryId
+          const bottomDirty = tile.secondQuery !== saved.secondQuery && tile.secondQueryId === saved.secondQueryId
+          return topDirty || bottomDirty
         })
         .map((tile) => tile.key),
     )
@@ -937,6 +931,10 @@ class DashboardWithoutTheme extends React.Component {
     return this.currentLogIndex < this.tileLog.length - 1
   }
 
+  hasDirtyTiles = () => {
+    return this.getDirtyTileKeys().size > 0
+  }
+
   canRedo = () => {
     if (!this.props.isEditing) return false
     return this.currentLogIndex > 0
@@ -1286,7 +1284,7 @@ class DashboardWithoutTheme extends React.Component {
     )
   }
 
-  renderTiles = () => {
+  renderTiles = (dirtyTileKeys) => {
     const tiles = this.getMostRecentTiles()
     const tileLayout = tiles.map((tile) => {
       return {
@@ -1303,8 +1301,6 @@ class DashboardWithoutTheme extends React.Component {
     if (!dataPageSize) {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
     }
-
-    const dirtyTileKeys = this.getDirtyTileKeys()
 
     return (
       <ReactGridLayout
@@ -1403,6 +1399,7 @@ class DashboardWithoutTheme extends React.Component {
 
   render = () => {
     const tiles = this.getMostRecentTiles()
+    const dirtyTileKeys = this.getDirtyTileKeys()
 
     // Check if any tile is currently executing
     const isAnyTileExecuting = Object.keys(this.tileRefs).some((key) => {
@@ -1448,6 +1445,7 @@ class DashboardWithoutTheme extends React.Component {
               enableAutoRefresh={this.props.enableAutoRefresh}
               slicerSuggestion={this.props.slicerSuggestion}
               hasTiles={tiles.length > 0}
+              hasDirtyTiles={dirtyTileKeys.size > 0}
               enableSlicers={this.props.enableSlicers}
             />
           )}
@@ -1456,7 +1454,7 @@ class DashboardWithoutTheme extends React.Component {
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
             data-test='react-autoql-dashboard'
           >
-            {tiles.length ? this.renderTiles() : this.renderEmptyDashboardMessage()}
+            {tiles.length ? this.renderTiles(dirtyTileKeys) : this.renderEmptyDashboardMessage()}
           </div>
           <DrilldownModal
             authentication={this.props.authentication}

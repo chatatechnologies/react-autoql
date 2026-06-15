@@ -571,7 +571,7 @@ export class DashboardTile extends React.Component {
         // Merge restoration directly into the same debounced call to avoid timing issues
         Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
       } else {
-        // Update queryId when query changed, none exists, or this is a real runQuery call (isCachedRefresh=false means edit-mode re-run with potentially new queryId).
+        // Capture new queryId unless this is a cached view-mode refresh that already has one.
         if (queryChanged || !this.props.tile?.queryId || !isCachedRefresh) {
           const queryId = response?.data?.data?.query_id
           paramsToSet.queryId = queryId
@@ -1055,8 +1055,7 @@ export class DashboardTile extends React.Component {
       return
     }
 
-    const newState = { query, queryValidationSelections: undefined }
-    this.clearTopQueryResponse(newState)
+    this.setState({ query, queryValidationSelections: undefined })
 
     clearTimeout(this.queryInputTimer)
     this.queryInputTimer = setTimeout(() => {
@@ -1075,8 +1074,7 @@ export class DashboardTile extends React.Component {
       return
     }
 
-    const newState = { secondQuery }
-    this.clearBottomQueryResponse(newState)
+    this.setState({ secondQuery })
 
     clearTimeout(this.secondQueryInputTimer)
     this.secondQueryInputTimer = setTimeout(() => {
@@ -2261,7 +2259,7 @@ export class DashboardTile extends React.Component {
           {this.props.isDirty && (
             <div
               className='react-autoql-dashboard-tile-dirty-badge'
-              data-tooltip-content='This tile has unsaved changes — save the dashboard to persist'
+              data-tooltip-content='Re-execute this query before saving the dashboard'
               data-tooltip-id={this.props.tooltipID}
             >
               !

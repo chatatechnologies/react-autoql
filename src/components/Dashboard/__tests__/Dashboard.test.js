@@ -402,6 +402,34 @@ describe('Dashboard.executeSingleTile', () => {
   })
 })
 
+describe('Dashboard.executeDashboard', () => {
+  const tileWithoutResponse = { key: 'tile-1', i: 'tile-1', query: 'SELECT 1' }
+
+  test('passes isCachedRefresh=true in view mode (isEditing=false)', () => {
+    const wrapper = setup({ isEditing: false, tiles: [tileWithoutResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithoutResponse])
+
+    instance.executeDashboard()
+
+    expect(processTile).toHaveBeenCalledWith({ isCachedRefresh: true })
+  })
+
+  test('passes isCachedRefresh=false in edit mode (isEditing=true)', () => {
+    const wrapper = setup({ isEditing: true, tiles: [tileWithoutResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithoutResponse])
+
+    instance.executeDashboard()
+
+    expect(processTile).toHaveBeenCalledWith({ isCachedRefresh: false })
+  })
+})
+
 describe('Dashboard.canUndo() and canRedo()', () => {
   const tile = (key, query = '', overrides = {}) => ({
     key,
@@ -666,14 +694,6 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(setupDirtyTest({ query: 'sales by product' }).has('tile-abc')).toBe(true)
   })
 
-  test('detects tableFilters change', () => {
-    expect(setupDirtyTest({ tableFilters: [{ field: 'region', type: '=', value: 'US' }] }).has('tile-abc')).toBe(true)
-  })
-
-  test('detects orders/sort change', () => {
-    expect(setupDirtyTest({ orders: [{ field: 'sales', dir: 'desc' }] }).has('tile-abc')).toBe(true)
-  })
-
   test('does NOT mark dirty when displayType changes (chart switch needs no re-fetch)', () => {
     expect(setupDirtyTest({ displayType: 'bar' }).has('tile-abc')).toBe(false)
   })
@@ -682,16 +702,16 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(setupDirtyTest({ dataConfig: { tableConfig: { numberColumnIndex: 1 } } }).has('tile-abc')).toBe(false)
   })
 
-  test('detects tableFilters change on second query', () => {
-    expect(setupDirtyTest({ secondTableFilters: [{ field: 'region', type: '=', value: 'US' }] }).has('tile-abc')).toBe(true)
+  test('does NOT mark dirty when query text changed AND new queryId (already re-executed)', () => {
+    expect(setupDirtyTest({ query: 'sales by product', queryId: 'qid-new' }).has('tile-abc')).toBe(false)
   })
 
-  test('detects columnSelects change', () => {
-    expect(setupDirtyTest({ columnSelects: [{ id: 'col1' }] }).has('tile-abc')).toBe(true)
+  test('detects secondQuery change when secondQueryId is unchanged (not yet re-executed)', () => {
+    expect(setupDirtyTest({ secondQuery: 'revenue by month' }).has('tile-abc')).toBe(true)
   })
 
-  test('detects filters (NLQ-level) change', () => {
-    expect(setupDirtyTest({ filters: [{ value: 'West' }] }).has('tile-abc')).toBe(true)
+  test('does NOT mark dirty when secondQuery changed AND new secondQueryId (already re-executed)', () => {
+    expect(setupDirtyTest({ secondQuery: 'revenue by month', secondQueryId: 'qid-second-new' }).has('tile-abc')).toBe(false)
   })
 
   test('does NOT mark dirty when only queryId changes', () => {

@@ -770,6 +770,56 @@ describe('endBottomQuery error path preserves secondNetworkColumnConfig', () => 
   })
 })
 
+describe('endBottomQuery: secondQueryId capture with isCachedRefresh', () => {
+  let mockSetParamsForTile
+  let savedParams
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  test('DOES capture new secondQueryId when isCachedRefresh=false (edit-mode re-run)', () => {
+    const tileWithExistingId = { ...sampleTile, secondQueryId: 'q_old-second-id' }
+    const wrapper = setup({ tile: tileWithExistingId, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_new-second-id' }, reference_id: '1.1.200' },
+    }
+
+    instance.endBottomQuery({ response, queryChanged: false, isCachedRefresh: false })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.secondQueryId === 'q_new-second-id')
+    expect(call).toBeDefined()
+    wrapper.unmount()
+  })
+
+  test('does NOT overwrite existing secondQueryId when isCachedRefresh=true (view-mode cached call)', () => {
+    const tileWithExistingId = { ...sampleTile, secondQueryId: 'q_existing-second' }
+    const wrapper = setup({ tile: tileWithExistingId, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_should-not-set-second' }, reference_id: '1.1.200' },
+    }
+
+    instance.endBottomQuery({ response, queryChanged: false, isCachedRefresh: true })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.secondQueryId === 'q_should-not-set-second')
+    expect(call).toBeUndefined()
+    wrapper.unmount()
+  })
+})
+
 describe('debouncedSetParamsForTile does not fire after unmount', () => {
   test('setParamsForTile is not called when component unmounts before debounce fires', () => {
     const mockSetParamsForTile = jest.fn()
