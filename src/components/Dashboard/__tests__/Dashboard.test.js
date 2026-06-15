@@ -735,3 +735,48 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(result.has('tile-xyz')).toBe(false)
   })
 })
+
+describe('Dashboard.componentDidUpdate — uneditedDashboardTiles queryId sync', () => {
+  const savedTile = {
+    key: 'tile-abc',
+    i: 'tile-abc',
+    query: 'sales by region',
+    queryId: 'qid-original',
+    secondQuery: undefined,
+    secondQueryId: undefined,
+  }
+
+  const triggerCDU = (instance, wrapper) => {
+    const prevProps = { ...instance.props, isEditing: true }
+    const prevState = { ...instance.state }
+    instance.componentDidUpdate(prevProps, prevState)
+    wrapper.update()
+  }
+
+  test('syncs queryId into uneditedDashboardTiles after tile re-runs without text change', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run' }])
+    triggerCDU(instance, wrapper)
+    expect(wrapper.state('uneditedDashboardTiles')[0].queryId).toBe('qid-after-run')
+  })
+
+  test('does NOT sync when query text also changed (preserves dirty baseline)', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, query: 'new text', queryId: 'qid-after-run' }])
+    triggerCDU(instance, wrapper)
+    expect(wrapper.state('uneditedDashboardTiles')[0].queryId).toBe('qid-original')
+  })
+
+  test('after sync, a subsequent text change is correctly detected as dirty', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    // Step 1: tile re-runs, queryId updates, text unchanged → sync baseline
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run' }])
+    triggerCDU(instance, wrapper)
+    // Step 2: user edits text — tile now has new text but same queryId as synced baseline
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run', query: 'sales by product' }])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
+  })
+})
