@@ -337,10 +337,19 @@
 
   cursor: default;
 
+  .loading-container-centered {
+    flex: 1;
+    min-height: 0;
+  }
+
   .react-autoql-response-content-container {
     position: relative;
     padding: 0.5rem 0.9375rem 1.25rem 0.9375rem;
     align-items: center;
+  }
+
+  .react-autoql-response-content-container.table {
+    max-height: none !important;
   }
 }
 
