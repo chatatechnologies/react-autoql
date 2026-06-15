@@ -220,6 +220,23 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
+    // Sync queryId into the saved baseline after execution without a text change,
+    // so re-running a tile doesn't prevent subsequent text edits from being detected as dirty.
+    if (this.props.isEditing && this.state.uneditedDashboardTiles) {
+      const current = this.getMostRecentTiles()
+      let needsSync = false
+      const synced = this.state.uneditedDashboardTiles.map((saved) => {
+        const cur = (current || []).find((t) => t.key === saved.key)
+        if (!cur) return saved
+        const update = {}
+        if (cur.query === saved.query && cur.queryId !== saved.queryId) update.queryId = cur.queryId
+        if (cur.secondQuery === saved.secondQuery && cur.secondQueryId !== saved.secondQueryId) update.secondQueryId = cur.secondQueryId
+        if (Object.keys(update).length) { needsSync = true; return { ...saved, ...update } }
+        return saved
+      })
+      if (needsSync) this.setState({ uneditedDashboardTiles: synced })
+    }
+
     // Re-execute dashboard when slicers change (force execution to rerun all tiles)
     if (!deepEqual(prevState.dashboardSlicers, this.state.dashboardSlicers)) {
       this.props.enableAutoRefresh ? this.executeCachedDashboard() : this.executeDashboard(true)
