@@ -556,7 +556,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  endTopQuery = ({ response, isReset = false, queryChanged = true }) => {
+  endTopQuery = ({ response, isReset = false, queryChanged = true, isCachedRefresh = false }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
 
@@ -571,8 +571,8 @@ export class DashboardTile extends React.Component {
         // Merge restoration directly into the same debounced call to avoid timing issues
         Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
       } else {
-        // Only update queryId when query changed or none exists; filter re-runs use onNewQueryId.
-        if (queryChanged || !this.props.tile?.queryId) {
+        // Update queryId when query changed, none exists, or this is a real runQuery call (isCachedRefresh=false means edit-mode re-run with potentially new queryId).
+        if (queryChanged || !this.props.tile?.queryId || !isCachedRefresh) {
           const queryId = response?.data?.data?.query_id
           paramsToSet.queryId = queryId
           // When both halves share the same execution (same query or no split), mirror the id
@@ -648,7 +648,7 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  endBottomQuery = ({ response, isReset = false, queryChanged = true }) => {
+  endBottomQuery = ({ response, isReset = false, queryChanged = true, isCachedRefresh = false }) => {
     if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
       const isError = this.hasError(response)
 
@@ -658,7 +658,7 @@ export class DashboardTile extends React.Component {
         secondDefaultSelectedSuggestion: undefined,
       }
 
-      if (!isError && (queryChanged || !this.props.tile?.secondQueryId)) {
+      if (!isError && (queryChanged || !this.props.tile?.secondQueryId || !isCachedRefresh)) {
         paramsToSet.secondQueryId = response?.data?.data?.query_id
       }
 
@@ -889,14 +889,14 @@ export class DashboardTile extends React.Component {
       isReset,
     })
       .then((response) => {
-        return this.endTopQuery({ response, isReset, queryChanged })
+        return this.endTopQuery({ response, isReset, queryChanged, isCachedRefresh })
       })
       .catch((response) => {
         if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
         }
 
-        return this.endTopQuery({ response, isReset })
+        return this.endTopQuery({ response, isReset, isCachedRefresh })
       })
   }
 
@@ -961,13 +961,13 @@ export class DashboardTile extends React.Component {
       isCachedRefresh,
       isReset,
     })
-      .then((response) => this.endBottomQuery({ response, isReset, queryChanged }))
+      .then((response) => this.endBottomQuery({ response, isReset, queryChanged, isCachedRefresh }))
       .catch((response) => {
         if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
           return undefined
         }
 
-        return this.endBottomQuery({ response, isReset })
+        return this.endBottomQuery({ response, isReset, isCachedRefresh })
       })
   }
 

@@ -483,7 +483,7 @@ describe('endTopQuery: queryId capture in edit mode', () => {
     jest.useRealTimers()
   })
 
-  test('does NOT overwrite existing queryId on plain re-execute in edit mode when query text unchanged', () => {
+  test('DOES capture new queryId on re-run when isCachedRefresh=false (edit-mode re-run with same query text)', () => {
     const tileWithExistingId = { ...sampleTile, queryId: 'q_old-id' }
     const wrapper = setup({ tile: tileWithExistingId, isEditing: true, setParamsForTile: mockSetParamsForTile })
     const instance = wrapper.instance()
@@ -492,16 +492,16 @@ describe('endTopQuery: queryId capture in edit mode', () => {
       data: { data: { ...sampleResponses[10].data.data, query_id: 'q_new-from-edit' }, reference_id: '1.1.200' },
     }
 
-    // queryChanged=false + existing queryId → no update (filter re-runs captured via onNewQueryId instead)
-    instance.endTopQuery({ response, queryChanged: false })
+    // isCachedRefresh=false (real runQuery call) → always captures new queryId for PUT
+    instance.endTopQuery({ response, queryChanged: false, isCachedRefresh: false })
     jest.advanceTimersByTime(100)
 
     const call = savedParams.find((p) => p.queryId === 'q_new-from-edit')
-    expect(call).toBeUndefined()
+    expect(call).toBeDefined()
     wrapper.unmount()
   })
 
-  test('does not capture queryId when isEditing=false and query text unchanged and queryId already set', () => {
+  test('does NOT overwrite existing queryId when isCachedRefresh=true (view-mode cached call, same queryId expected)', () => {
     const tileWithExistingId = { ...sampleTile, queryId: 'q_existing' }
     const wrapper = setup({ tile: tileWithExistingId, isEditing: false, setParamsForTile: mockSetParamsForTile })
     const instance = wrapper.instance()
@@ -510,7 +510,8 @@ describe('endTopQuery: queryId capture in edit mode', () => {
       data: { data: { ...sampleResponses[10].data.data, query_id: 'q_should-not-set' }, reference_id: '1.1.200' },
     }
 
-    instance.endTopQuery({ response, queryChanged: false })
+    // isCachedRefresh=true (cached endpoint, view mode) + queryChanged=false → skip update
+    instance.endTopQuery({ response, queryChanged: false, isCachedRefresh: true })
     jest.advanceTimersByTime(100)
 
     const call = savedParams.find((p) => p.queryId === 'q_should-not-set')

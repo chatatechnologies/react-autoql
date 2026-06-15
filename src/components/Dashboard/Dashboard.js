@@ -484,7 +484,7 @@ class DashboardWithoutTheme extends React.Component {
 
           // Only execute tiles that don't already have queryResponse, unless forceExecution is true
           if (forceExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
-            promises.push(this.tileRefs[dashboardTile].processTile())
+            promises.push(this.tileRefs[dashboardTile].processTile({ isCachedRefresh: !this.props.isEditing }))
           }
         }
       }
