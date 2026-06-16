@@ -136,7 +136,7 @@ export default class ChataTable extends React.Component {
     this.summaryStats = {}
 
     this.state = {
-      isFiltering: false,
+      isFiltering: props.initialIsFiltering || false,
       isSorting: false,
       loading: false,
       pageLoading: false,
@@ -194,6 +194,7 @@ export default class ChataTable extends React.Component {
     isEditing: PropTypes.bool,
     isDashboardEditing: PropTypes.bool,
     skipInitialFilters: PropTypes.bool,
+    initialIsFiltering: PropTypes.bool,
     baseSessionFilters: PropTypes.arrayOf(PropTypes.shape({})),
     scope: PropTypes.string,
     // Pivot axis selector props
@@ -362,6 +363,8 @@ export default class ChataTable extends React.Component {
       if (!this.props.skipInitialFilters) {
         this.tableParams.filter = this.props?.initialTableParams?.filter
         this.setFilters(this.props?.initialTableParams?.filter)
+      } else if (this.state.isFiltering) {
+        this.setFilters(this.tableParams.filter)
       }
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
@@ -1424,7 +1427,11 @@ export default class ChataTable extends React.Component {
     }
 
     if (this._isMounted) {
-      this.setState({ isFiltering })
+      this.setState({ isFiltering }, () => {
+        if (isFiltering) {
+          this.setFilters(this.tableParams.filter)
+        }
+      })
     }
 
     return isFiltering

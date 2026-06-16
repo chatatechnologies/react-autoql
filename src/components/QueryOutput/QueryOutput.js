@@ -569,6 +569,7 @@ export class QueryOutput extends React.Component {
         if (isChartType(this.state.displayType)) {
           newState.chartID = uuid()
         } else {
+          this.wasFiltering = !!this.tableRef?.state.isFiltering
           this.tableID = uuid()
           this.pivotTableID = uuid()
           newState._tableRemountKey = uuid()
@@ -683,6 +684,7 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
+        this.wasFiltering = !!this.tableRef?.state.isFiltering
         this.tableID = uuid()
         const dataConfig = {
           tableConfig: this.tableConfig,
@@ -1592,7 +1594,9 @@ export class QueryOutput extends React.Component {
       queryRequestData?.session_filter_locks ||
       (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : []) ||
       []
-    const sessionFilters = [...baseFilters, ...(this.props.baseSessionFilters || [])]
+    // baseSessionFilters (tile.tableFilters) are already in formattedTableParams via initialFormattedTableParams,
+    // so they flow through allFilters → tableFilters. Including them here too causes 400 (same column in both).
+    const sessionFilters = [...baseFilters]
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -4214,6 +4218,7 @@ export class QueryOutput extends React.Component {
           isDashboardEditing={this.props.isDashboardEditing}
           skipInitialFilters={this.props.skipInitialFilters}
           baseSessionFilters={this.props.baseSessionFilters}
+          initialIsFiltering={!!this.wasFiltering}
         />
       </ErrorBoundary>
     )
@@ -4254,6 +4259,7 @@ export class QueryOutput extends React.Component {
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
+          initialIsFiltering={!!this.wasFiltering}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot
