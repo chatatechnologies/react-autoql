@@ -189,6 +189,7 @@ export default class ChataTable extends React.Component {
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
     updateColumnsAndData: PropTypes.func,
     onUpdateFilterResponse: PropTypes.func,
+    showQueryInterpretation: PropTypes.bool,
     isDrilldown: PropTypes.bool,
     isEditing: PropTypes.bool,
     isDashboardEditing: PropTypes.bool,
@@ -234,6 +235,7 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
+    showQueryInterpretation: false,
     isDrilldown: false,
     scope: undefined,
     // Pivot axis selector defaults
@@ -547,7 +549,6 @@ export default class ChataTable extends React.Component {
         ...getAutoQLConfig(this.props.autoQLConfig),
         query: this.props.queryText,
         translation: TranslationTypes.REVERSE_ONLY,
-        filters: this.props.baseSessionFilters,
         orders: tableParamsFormatted?.sorters,
         tableFilters: sanitizedFilters,
         source: 'data_messenger',
@@ -614,7 +615,7 @@ export default class ChataTable extends React.Component {
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0 && this.props.showQueryInterpretation) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -720,7 +721,6 @@ export default class ChataTable extends React.Component {
       const hasRecentlySetHeaderFilters =
         this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < DEBOUNCE_MS
 
-      // Return initial data until tabulator mounts — header filters haven't been seeded yet.
       if (!this.hasSetInitialData || !this._isMounted || !this.state.tabulatorMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }

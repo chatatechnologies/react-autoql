@@ -1291,6 +1291,8 @@ export class DashboardTile extends React.Component {
   onLegendFilterChange = (legendFilterConfig) => this.debouncedSetParamsForTile({ legendFilterConfig })
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
   onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
+  onNewQueryId = (queryId) => queryId && this.debouncedSetParamsForTile({ queryId })
+  onSecondNewQueryId = (queryId) => queryId && this.debouncedSetParamsForTile({ secondQueryId: queryId })
 
   // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
   // and chart data source update without waiting for the debounce timer.
@@ -1299,6 +1301,7 @@ export class DashboardTile extends React.Component {
   }
 
   onTableParamsChange = (params, formattedParams) => {
+    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
       orders: formattedParams.sorters,
@@ -1306,6 +1309,7 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondTableParamsChange = (params, formattedParams) => {
+    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       secondTableFilters: formattedParams.filters,
       secondOrders: formattedParams.sorters,
@@ -1992,11 +1996,7 @@ export class DashboardTile extends React.Component {
         onChartControlsChange: this.onChartControlsChange,
         isDashboardEditing: this.props.isEditing,
         skipInitialFilters: !this.props.isEditing,
-        onNewQueryId: (queryId) => {
-          if (queryId) {
-            this.debouncedSetParamsForTile({ queryId })
-          }
-        },
+        onNewQueryId: this.onNewQueryId,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -2144,11 +2144,7 @@ export class DashboardTile extends React.Component {
           showRegressionLine: false,
         },
         onChartControlsChange: this.onSecondChartControlsChange,
-        onNewQueryId: (queryId) => {
-          if (queryId) {
-            this.debouncedSetParamsForTile({ secondQueryId: queryId })
-          }
-        },
+        onNewQueryId: this.onSecondNewQueryId,
       },
       vizToolbarProps: {
         ref: (r) => (this.secondVizToolbarRef = r),

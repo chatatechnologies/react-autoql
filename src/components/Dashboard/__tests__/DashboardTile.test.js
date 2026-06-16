@@ -1235,3 +1235,48 @@ describe('onSecondColumnChange: secondQueryId capture', () => {
     wrapper.unmount()
   })
 })
+
+describe('onTableParamsChange — view mode filter interactions are ephemeral', () => {
+  const formattedParams = { filters: [{ field: 'region', value: 'West' }], sorters: [] }
+
+  test('does NOT persist filter changes to tile state in view mode (isEditing=false)', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)   // flush any init debounced calls
+    mockSetParamsForTile.mockClear()
+    wrapper.instance().onTableParamsChange({}, formattedParams)
+    jest.advanceTimersByTime(200)
+    expect(mockSetParamsForTile).not.toHaveBeenCalled()
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
+  test('persists filter changes to tile state in edit mode (isEditing=true)', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+    wrapper.instance().onTableParamsChange({}, formattedParams)
+    jest.advanceTimersByTime(200)
+    const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.tableFilters)
+    expect(call).toBeDefined()
+    expect(call[0].tableFilters).toEqual(formattedParams.filters)
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
+  test('onSecondTableParamsChange does NOT persist in view mode', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+    wrapper.instance().onSecondTableParamsChange({}, formattedParams)
+    jest.advanceTimersByTime(200)
+    expect(mockSetParamsForTile).not.toHaveBeenCalled()
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+})

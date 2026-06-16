@@ -4208,6 +4208,7 @@ export class QueryOutput extends React.Component {
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
+          showQueryInterpretation={this.props.showQueryInterpretation}
           isLoadingLocal={this.props.isLoadingLocal}
           isEditing={this.props.isEditing}
           isDashboardEditing={this.props.isDashboardEditing}

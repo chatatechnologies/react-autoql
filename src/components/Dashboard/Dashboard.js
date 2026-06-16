@@ -220,8 +220,7 @@ class DashboardWithoutTheme extends React.Component {
       this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
     }
 
-    // Sync queryId into the saved baseline after execution without a text change,
-    // so re-running a tile doesn't prevent subsequent text edits from being detected as dirty.
+    // Keep uneditedDashboardTiles.queryId current after execution so dirty detection stays accurate.
     if (this.props.isEditing && this.state.uneditedDashboardTiles) {
       const current = this.getMostRecentTiles()
       let needsSync = false
