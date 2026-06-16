@@ -1052,10 +1052,10 @@ describe('dashboard tile: prop passing to QueryOutput for filtering mode', () =>
     wrapper.unmount()
   })
 
-  test('passes skipInitialFilters=false to QueryOutput in edit mode so builder sees saved filter values', () => {
+  test('passes skipInitialFilters=true to QueryOutput in edit mode — header inputs always start empty', () => {
     const wrapper = setup({ tile: sampleTile, isEditing: true })
     const qo = wrapper.find('QueryOutput').first()
-    expect(qo.prop('skipInitialFilters')).toBe(false)
+    expect(qo.prop('skipInitialFilters')).toBe(true)
     wrapper.unmount()
   })
 

@@ -359,8 +359,8 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
-      this.tableParams.filter = this.props?.initialTableParams?.filter
       if (!this.props.skipInitialFilters) {
+        this.tableParams.filter = this.props?.initialTableParams?.filter
         this.setFilters(this.props?.initialTableParams?.filter)
       }
       this.setHeaderInputEventListeners()
@@ -370,10 +370,6 @@ export default class ChataTable extends React.Component {
       this.setFilterBadgeClasses()
     }
 
-    // Populate filter inputs when entering edit mode (skipInitialFilters true → false).
-    if (!this.props.skipInitialFilters && prevProps.skipInitialFilters && this.state.tabulatorMounted) {
-      this.setFilters(this.props?.initialTableParams?.filter)
-    }
     this.summaryStats = this.calculateSummaryStats(this.props)
   }
 

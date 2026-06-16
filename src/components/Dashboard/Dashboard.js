@@ -222,10 +222,10 @@ class DashboardWithoutTheme extends React.Component {
 
     // Keep uneditedDashboardTiles.queryId current after execution so dirty detection stays accurate.
     if (this.props.isEditing && this.state.uneditedDashboardTiles) {
-      const current = this.getMostRecentTiles()
+      const currentByKey = new Map((this.getMostRecentTiles() || []).map((t) => [t.key, t]))
       let needsSync = false
       const synced = this.state.uneditedDashboardTiles.map((saved) => {
-        const cur = (current || []).find((t) => t.key === saved.key)
+        const cur = currentByKey.get(saved.key)
         if (!cur) return saved
         const update = {}
         if (cur.query === saved.query && cur.queryId !== saved.queryId) update.queryId = cur.queryId
@@ -492,8 +492,9 @@ class DashboardWithoutTheme extends React.Component {
             continue
           }
 
-          // Only execute tiles that don't already have queryResponse, unless forceExecution is true
-          if (forceExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
+          // In edit mode, also re-execute filtered tiles so SQL reflects the saved filters and queryId is captured.
+          const needsFilterExecution = this.props.isEditing && (tile?.tableFilters?.length > 0 || tile?.secondTableFilters?.length > 0)
+          if (forceExecution || needsFilterExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
             promises.push(this.tileRefs[dashboardTile].processTile({ isCachedRefresh: !this.props.isEditing }))
           }
         }

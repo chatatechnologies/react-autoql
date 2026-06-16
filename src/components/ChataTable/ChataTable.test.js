@@ -1122,15 +1122,6 @@ describe('Dashboard edit-mode filtering', () => {
       expect(setHeaderFilterValueSpy).toHaveBeenCalledWith('1', 'online')
     })
 
-    test('calls setFilters when skipInitialFilters transitions true→false (entering edit mode)', () => {
-      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
-      const instance = wrapper.instance()
-      wrapper.setState({ tabulatorMounted: true })
-      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
-      wrapper.setProps({ skipInitialFilters: false })
-      expect(spy).toHaveBeenCalledWith(filters)
-    })
-
     test('does not call setFilters when skipInitialFilters stays false', () => {
       const wrapper = setup({ skipInitialFilters: false, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
