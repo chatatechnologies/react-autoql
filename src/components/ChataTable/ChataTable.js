@@ -64,6 +64,9 @@ export default class ChataTable extends React.Component {
     // WeakMap to keep pivot header capture handlers without polluting DOM
     this.pivotHeaderHandlers = new WeakMap()
     this.pivotHeaderElements = new Set()
+    // WeakMaps to track header/input listeners so they can be replaced instead of stacked
+    this.headerContextMenuHandlers = new WeakMap()
+    this.inputDateClickHandlers = new WeakMap()
 
     // Pre-rendered hamburger icon markup for header injection
     this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
@@ -584,6 +587,15 @@ export default class ChataTable extends React.Component {
     if (this.isFiltering && this.state.tabulatorMounted) {
       this.isFiltering = false
       this.debounceSetState({ loading: false })
+    }
+
+    // Update tableParams.filter immediately from current header filters so badge shows correctly
+    // This must be done BEFORE setFilterBadgeClasses() to ensure badge reflects current filter state
+    if (this._isMounted && this.state.tabulatorMounted) {
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      if (headerFilters) {
+        this.tableParams.filter = _cloneDeep(headerFilters)
+      }
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
@@ -1154,7 +1166,13 @@ export default class ChataTable extends React.Component {
         }
 
         if (!this.props.pivot) {
-          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+          const prevContextMenu = this.headerContextMenuHandlers.get(headerElement)
+          if (prevContextMenu) {
+            headerElement.removeEventListener('contextmenu', prevContextMenu)
+          }
+          const contextMenuHandler = (e) => this.headerContextMenuClick(e, col)
+          this.headerContextMenuHandlers.set(headerElement, contextMenuHandler)
+          headerElement.addEventListener('contextmenu', contextMenuHandler)
         }
 
         // Attach capture handler to the first pivot header only
@@ -1190,8 +1208,13 @@ export default class ChataTable extends React.Component {
 
         if (col.type === ColumnTypes.DATE && !col.pivot) {
           // Open Calendar Picker when user clicks on this field
-          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
-          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
+          const prevDateClick = this.inputDateClickHandlers.get(inputElement)
+          if (prevDateClick) {
+            inputElement.removeEventListener('click', prevDateClick)
+          }
+          const dateClickHandler = (e) => this.inputDateClickListener(e, col)
+          this.inputDateClickHandlers.set(inputElement, dateClickHandler)
+          inputElement.addEventListener('click', dateClickHandler)
 
           // Do not allow user to type in this field
           const keyboardEvents = ['keypress', 'keydown', 'keyup']

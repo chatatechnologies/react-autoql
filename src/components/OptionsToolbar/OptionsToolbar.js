@@ -85,6 +85,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: PropTypes.func,
     onExpandClick: PropTypes.func,
     onRefreshClick: PropTypes.func,
+    onResetClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
@@ -116,6 +117,7 @@ export class OptionsToolbar extends React.Component {
     onCSVDownloadProgress: () => {},
     onExpandClick: () => {},
     onRefreshClick: undefined,
+    onResetClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     showResetQueryOption: false,
@@ -414,13 +416,64 @@ export class OptionsToolbar extends React.Component {
         onClose={() => this.setState({ isResetQueryConfirmVisible: false })}
         onConfirm={() => {
           this.setState({ isResetQueryConfirmVisible: false })
-          this.props.onRefreshClick()
+          try {
+            if (window && window.dispatchEvent) {
+              const payload = {
+                timestamp: Date.now(),
+                queryResponse:
+                  this.props.responseRef && this.props.responseRef.queryResponse
+                    ? this.props.responseRef.queryResponse
+                    : undefined,
+              }
+
+              // Capture QueryInput state snapshot (prefers direct ref, falls back to global registry).
+              try {
+                let queryInputState = undefined
+                if (
+                  this.props.responseRef &&
+                  this.props.responseRef.props &&
+                  this.props.responseRef.props.queryInputRef &&
+                  typeof this.props.responseRef.props.queryInputRef.getState === 'function'
+                ) {
+                  queryInputState = this.props.responseRef.props.queryInputRef.getState()
+                }
+
+                if (!queryInputState) {
+                  const qid = this.props.responseRef?.queryResponse?.data?.data?.query_id
+                  if (qid && window && window.__qa_query_input_registry) {
+                    try {
+                      const registryRef = window.__qa_query_input_registry[qid]
+                      if (registryRef && registryRef.current && typeof registryRef.current.getState === 'function') {
+                        queryInputState = registryRef.current.getState()
+                        payload.queryInputStateFromRegistry = true
+                      }
+                    } catch (err) {
+                      // ignore registry lookup failures
+                    }
+                  }
+                }
+
+                if (queryInputState) payload.queryInputState = queryInputState
+              } catch (err) {
+                console.error('Error capturing QueryInput state for reset payload', err)
+              }
+              window.dispatchEvent(new CustomEvent('react-autoql:resetQuery', { detail: payload }))
+            }
+          } catch (e) {
+            console.error('Error dispatching resetQuery event', e)
+          }
+
+          if (this.props.onResetClick) {
+            this.props.onResetClick()
+          } else if (this.props.onRefreshClick) {
+            this.props.onRefreshClick()
+          }
         }}
         title='Reset query?'
         confirmText='Reset'
         backText='Cancel'
       >
-        <p>This will re-run the query for this tile. Are you sure?</p>
+        <p>This will reset the query to its default state and rerun it. Are you sure you want to continue? </p>
       </ConfirmModal>
     )
   }
@@ -539,7 +592,7 @@ export class OptionsToolbar extends React.Component {
                 </li>
               )
             })}
-          {shouldShowButton.showRefreshDataButton && this.props.isEditing && this.props.showResetQueryOption && (
+          {this.props.isEditing && this.props.showResetQueryOption && (
             <li
               className='context-menu-divider-top'
               onClick={() => this.setState({ activeMenu: undefined, isResetQueryConfirmVisible: true })}
@@ -610,9 +663,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const tabulatorHeaderFilters = this.props.responseRef?.getTabulatorHeaderFilters()
-    const isFiltered =
-      !!this.props.responseRef?.formattedTableParams?.filters?.length && !!tabulatorHeaderFilters?.length
+    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -1047,10 +1098,21 @@ export class OptionsToolbar extends React.Component {
           !isMarkdownOnly && shouldShowQueryActionButton(props.enableFollowOnQuery, response),
       }
 
+      // Hide reset button when there's no query text or display type is single-value.
+      try {
+        const queryText = props.responseRef?.queryResponse?.data?.data?.text || ''
+        const currentDisplayType = props.responseRef?.state?.displayType
+        if (!queryText || String(queryText).trim().length === 0 || currentDisplayType === 'single-value') {
+          shouldShowButton.showRefreshDataButton = false
+        }
+      } catch (e) {
+        // swallow and leave existing value
+      }
+
       // Don't show more options button if it's a markdown-only message
       const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
-      // Only count the refresh/reset item for More Options if explicitly enabled by prop.
-      const willShowRefreshInMenu = shouldShowButton.showRefreshDataButton && !!props.showResetQueryOption
+      const willShowRefreshInMenu =
+        !!props.showResetQueryOption && (shouldShowButton.showRefreshDataButton || !!props.showRefreshInEdit)
 
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&
