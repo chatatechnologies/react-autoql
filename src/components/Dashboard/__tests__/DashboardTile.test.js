@@ -1236,10 +1236,10 @@ describe('onSecondColumnChange: secondQueryId capture', () => {
   })
 })
 
-describe('onTableParamsChange — view mode filter interactions are ephemeral', () => {
+describe('onTableParamsChange — filter interactions', () => {
   const formattedParams = { filters: [{ field: 'region', value: 'West' }], sorters: [] }
 
-  test('does NOT persist filter changes to tile state in view mode (isEditing=false)', () => {
+  test('applies filter changes in view mode (isEditing=false)', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
     const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
@@ -1247,12 +1247,14 @@ describe('onTableParamsChange — view mode filter interactions are ephemeral', 
     mockSetParamsForTile.mockClear()
     wrapper.instance().onTableParamsChange({}, formattedParams)
     jest.advanceTimersByTime(200)
-    expect(mockSetParamsForTile).not.toHaveBeenCalled()
+    const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.tableFilters)
+    expect(call).toBeDefined()
+    expect(call[0].tableFilters).toEqual(formattedParams.filters)
     wrapper.unmount()
     jest.useRealTimers()
   })
 
-  test('persists filter changes to tile state in edit mode (isEditing=true)', () => {
+  test('applies filter changes in edit mode (isEditing=true)', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
     const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
@@ -1267,7 +1269,7 @@ describe('onTableParamsChange — view mode filter interactions are ephemeral', 
     jest.useRealTimers()
   })
 
-  test('onSecondTableParamsChange does NOT persist in view mode', () => {
+  test('onSecondTableParamsChange applies filter changes in view mode', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
     const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
@@ -1275,7 +1277,9 @@ describe('onTableParamsChange — view mode filter interactions are ephemeral', 
     mockSetParamsForTile.mockClear()
     wrapper.instance().onSecondTableParamsChange({}, formattedParams)
     jest.advanceTimersByTime(200)
-    expect(mockSetParamsForTile).not.toHaveBeenCalled()
+    const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.secondTableFilters)
+    expect(call).toBeDefined()
+    expect(call[0].secondTableFilters).toEqual(formattedParams.filters)
     wrapper.unmount()
     jest.useRealTimers()
   })

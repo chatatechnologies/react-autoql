@@ -1301,7 +1301,6 @@ export class DashboardTile extends React.Component {
   }
 
   onTableParamsChange = (params, formattedParams) => {
-    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
       orders: formattedParams.sorters,
@@ -1309,7 +1308,6 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondTableParamsChange = (params, formattedParams) => {
-    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       secondTableFilters: formattedParams.filters,
       secondOrders: formattedParams.sorters,
