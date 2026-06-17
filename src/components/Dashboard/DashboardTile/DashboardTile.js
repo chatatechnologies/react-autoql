@@ -1989,7 +1989,6 @@ export class DashboardTile extends React.Component {
           sorters: this.props.tile?.orders,
           sessionFilters: this.props.tile?.filters || [],
         },
-        baseSessionFilters: this.props.tile?.tableFilters || [],
         enableChartControls: true,
         initialChartControls: this.props.tile?.chartControls || {
           showAverageLine: false,
@@ -2137,7 +2136,6 @@ export class DashboardTile extends React.Component {
           sorters: this.props.tile?.secondOrders,
           sessionFilters: this.props.tile?.secondFilters || [],
         },
-        baseSessionFilters: this.props.tile?.secondTableFilters || [],
         isDashboardEditing: this.props.isEditing,
         skipInitialFilters: true,
         enableChartControls: true,

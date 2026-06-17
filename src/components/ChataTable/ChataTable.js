@@ -197,7 +197,6 @@ export default class ChataTable extends React.Component {
     isDashboardEditing: PropTypes.bool,
     skipInitialFilters: PropTypes.bool,
     initialIsFiltering: PropTypes.bool,
-    baseSessionFilters: PropTypes.arrayOf(PropTypes.shape({})),
     scope: PropTypes.string,
     // Pivot axis selector props
     pivotAxisOptions: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.number, label: PropTypes.string })),
@@ -225,7 +224,6 @@ export default class ChataTable extends React.Component {
     isEditing: false,
     isDashboardEditing: false,
     skipInitialFilters: false,
-    baseSessionFilters: [],
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -355,7 +353,7 @@ export default class ChataTable extends React.Component {
       this.setFilters()
       this.setSorters()
       this.clearLoadingIndicators()
-      if (!this.props.isDashboardEditing && this.state.isFiltering) {
+      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
         setTimeout(() => {
           if (this._isMounted) this.disableBaseFilterInputs()
         }, 0)
@@ -378,7 +376,7 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
       this.setFilterBadgeClasses()
-      if (!this.props.isDashboardEditing && this.state.isFiltering) {
+      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
         setTimeout(() => {
           if (this._isMounted) this.disableBaseFilterInputs()
         }, 0)
@@ -386,22 +384,18 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.props.isDashboardEditing && !prevProps.isDashboardEditing) {
-      const baseFilters = this.baseFilters || []
-      this.tableParams.filter = _cloneDeep(baseFilters)
+      this.tableParams.filter = _cloneDeep(this.baseFilters)
       if (this.state.tabulatorMounted && this.state.isFiltering) {
         this.ref?.tabulator?.clearHeaderFilter()
-        if (baseFilters.length) {
-          this.setFilters(baseFilters)
-        }
+        if (this.baseFilters.length) this.setFilters(this.baseFilters)
       }
     }
 
     if (!this.props.isDashboardEditing && prevProps.isDashboardEditing) {
-      const baseFilters = this.baseFilters || []
-      this.tableParams.filter = _cloneDeep(baseFilters)
+      this.tableParams.filter = _cloneDeep(this.baseFilters)
       if (this.state.tabulatorMounted && this.state.isFiltering) {
         this.ref?.tabulator?.clearHeaderFilter()
-        if (baseFilters.length) this.setFilters(baseFilters)
+        if (this.baseFilters.length) this.setFilters(this.baseFilters)
         setTimeout(() => {
           if (this._isMounted) this.disableBaseFilterInputs()
         }, 0)
@@ -1197,9 +1191,8 @@ export default class ChataTable extends React.Component {
   }
 
   disableBaseFilterInputs = () => {
-    if (this.props.isDashboardEditing) return
-    const baseFilters = this.baseFilters || []
-    baseFilters.forEach((filter) => {
+    if (this.props.isDashboardEditing || !this.baseFilters.length) return
+    this.baseFilters.forEach((filter) => {
       if (!filter.value) return
       const inputEl = document.querySelector(
         `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
@@ -1485,7 +1478,7 @@ export default class ChataTable extends React.Component {
       this.setState({ isFiltering }, () => {
         if (isFiltering) {
           this.setFilters(this.tableParams.filter)
-          if (!this.props.isDashboardEditing) {
+          if (!this.props.isDashboardEditing && this.baseFilters.length) {
             setTimeout(() => {
               if (this._isMounted) this.disableBaseFilterInputs()
             }, 0)

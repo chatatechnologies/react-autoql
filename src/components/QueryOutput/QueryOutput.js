@@ -357,7 +357,6 @@ export class QueryOutput extends React.Component {
     isDashboardEditing: PropTypes.bool,
     onNewQueryId: PropTypes.func,
     skipInitialFilters: PropTypes.bool,
-    baseSessionFilters: PropTypes.arrayOf(PropTypes.shape({})),
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
@@ -419,7 +418,6 @@ export class QueryOutput extends React.Component {
     isEditing: false,
     isDashboardEditing: false,
     skipInitialFilters: false,
-    baseSessionFilters: [],
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     initialNetworkColumnConfig: undefined,
@@ -1594,8 +1592,6 @@ export class QueryOutput extends React.Component {
       queryRequestData?.session_filter_locks ||
       (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : []) ||
       []
-    // baseSessionFilters (tile.tableFilters) are already in formattedTableParams via initialFormattedTableParams,
-    // so they flow through allFilters → tableFilters. Including them here too causes 400 (same column in both).
     const sessionFilters = [...baseFilters]
     let response
 
@@ -4217,7 +4213,6 @@ export class QueryOutput extends React.Component {
           isEditing={this.props.isEditing}
           isDashboardEditing={this.props.isDashboardEditing}
           skipInitialFilters={this.props.skipInitialFilters}
-          baseSessionFilters={this.props.baseSessionFilters}
           initialIsFiltering={!!this.wasFiltering}
         />
       </ErrorBoundary>
