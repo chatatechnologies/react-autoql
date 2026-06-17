@@ -467,3 +467,56 @@ describe('ChataChart observe lifecycle', () => {
     expect(wrapB.mock.calls.length).toBeGreaterThan(initialCallsB)
   })
 })
+
+describe('ResizeObserver error suppression', () => {
+  let addSpy
+  let removeSpy
+
+  beforeEach(() => {
+    addSpy = jest.spyOn(window, 'addEventListener')
+    removeSpy = jest.spyOn(window, 'removeEventListener')
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('registers error listener on mount', () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar' })
+    const inst = wrapper.instance()
+    inst.componentDidMount()
+    expect(addSpy).toHaveBeenCalledWith('error', inst.suppressResizeObserverError)
+  })
+
+  test('removes the same error listener on unmount', () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar' })
+    const inst = wrapper.instance()
+    inst.componentDidMount()
+    inst.componentWillUnmount()
+    expect(removeSpy).toHaveBeenCalledWith('error', inst.suppressResizeObserverError)
+  })
+
+  test('suppressResizeObserverError stops propagation for ResizeObserver loop message', () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar' })
+    const inst = wrapper.instance()
+    const fakeEvent = { message: 'ResizeObserver loop completed with undelivered notifications.', stopImmediatePropagation: jest.fn() }
+    inst.suppressResizeObserverError(fakeEvent)
+    expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
+  })
+
+  test('suppressResizeObserverError stops propagation for ResizeObserver loop limit message', () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar' })
+    const inst = wrapper.instance()
+    const fakeEvent = { message: 'ResizeObserver loop limit exceeded', stopImmediatePropagation: jest.fn() }
+    inst.suppressResizeObserverError(fakeEvent)
+    expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
+  })
+
+  test('suppressResizeObserverError does not stop propagation for unrelated errors', () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar' })
+    const inst = wrapper.instance()
+    const fakeEvent = { message: 'SomeOtherError', stopImmediatePropagation: jest.fn() }
+    inst.suppressResizeObserverError(fakeEvent)
+    expect(fakeEvent.stopImmediatePropagation).not.toHaveBeenCalled()
+  })
+})

@@ -1700,10 +1700,12 @@ export class QueryOutput extends React.Component {
               pageSize,
               tableFilters: allFilters, // Include existing filters
             })
+            // Convert groupBys to filter objects so DrilldownTable can show the filter badge
+            const groupByFilters = (groupBys || []).map((gb) => ({ name: gb.name, value: gb.value, operator: gb.operator || '=' }))
             this.props.onDrilldownEnd({
               response,
               originalQueryID: this.queryID,
-              drilldownFilters: allFilters,
+              drilldownFilters: [...allFilters, ...groupByFilters],
             })
           } catch (error) {
             this.props.onDrilldownEnd({ response: error, drilldownFilters: [] })
@@ -1740,11 +1742,15 @@ export class QueryOutput extends React.Component {
             // Normal AND logic - combine filters and send to backend
             const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
             const allFilters = this.getCombinedFilters(filtersToCombine)
+            // Save formattedTableParams before queryFn mutates it — drilldown filters must not persist on the original tile
+            const savedFormattedTableParams = { ...this.formattedTableParams }
             try {
               response = await this.queryFn({ tableFilters: allFilters, pageSize })
             } catch (error) {
               response = error
             }
+            // Restore so the filter badge on the original tile is not affected by the drilldown
+            this.formattedTableParams = savedFormattedTableParams
             this.props.onDrilldownEnd({
               response,
               originalQueryID: this.queryID,

@@ -659,7 +659,10 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length
+    const isFiltered = !!(
+      this.props.responseRef?.formattedTableParams?.filters?.length ||
+      this.props.responseRef?.props?.drilldownFilters?.length
+    )
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -1034,7 +1037,10 @@ export class OptionsToolbar extends React.Component {
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
       const hasData = numRows > 0
-      const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
+      const isFiltered = !!(
+        props.responseRef?.formattedTableParams?.filters?.length ||
+        props.responseRef?.props?.drilldownFilters?.length
+      )
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
