@@ -605,6 +605,7 @@ export class DashboardTile extends React.Component {
           }
         }
         paramsToSet.networkColumnConfig = this.getNetworkColumnConfig(response)
+        paramsToSet.queryId = response?.data?.data?.query_id
       }
 
       // Update component key after getting new response
@@ -684,6 +685,7 @@ export class DashboardTile extends React.Component {
           }
         }
         paramsToSet.secondNetworkColumnConfig = this.getNetworkColumnConfig(response)
+        paramsToSet.secondQueryId = response?.data?.data?.query_id
       }
 
       this.debouncedSetParamsForTile(paramsToSet, this.setBottomExecuted)
