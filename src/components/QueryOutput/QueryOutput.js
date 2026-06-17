@@ -2143,7 +2143,7 @@ export class QueryOutput extends React.Component {
 
     this.props.onNewData()
 
-    if (this.props.scope === 'dashboards') {
+    if (this.props.scope === 'dashboards' && this.props.isDashboardEditing) {
       const dataConfig = {
         tableConfig: this.tableConfig,
         pivotTableConfig: this.pivotTableConfig,

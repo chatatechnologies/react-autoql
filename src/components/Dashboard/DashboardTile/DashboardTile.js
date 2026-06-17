@@ -1317,6 +1317,7 @@ export class DashboardTile extends React.Component {
   }
 
   onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, filters) => {
+    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       columns,
       columnSelects,
@@ -1348,6 +1349,7 @@ export class DashboardTile extends React.Component {
     secondOrders,
     secondFilters,
   ) => {
+    if (!this.props.isEditing) return
     const paramsToSet = {
       secondDisplayOverrides,
       secondColumnSelects,
