@@ -368,7 +368,7 @@ class DashboardWithoutTheme extends React.Component {
       (current || [])
         .filter((tile) => {
           const saved = savedByKey.get(tile.key)
-          if (!saved) return false
+          if (!saved) return !!tile.query && !tile.queryId
           // Dirty = query text changed but queryId unchanged (not yet re-executed).
           const topDirty = tile.query !== saved.query && tile.queryId === saved.queryId
           const bottomDirty = tile.secondQuery !== saved.secondQuery && tile.secondQueryId === saved.secondQueryId

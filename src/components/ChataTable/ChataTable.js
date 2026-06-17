@@ -383,22 +383,16 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (this.props.isDashboardEditing && !prevProps.isDashboardEditing) {
+    if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
       this.tableParams.filter = _cloneDeep(this.baseFilters)
       if (this.state.tabulatorMounted && this.state.isFiltering) {
         this.ref?.tabulator?.clearHeaderFilter()
         if (this.baseFilters.length) this.setFilters(this.baseFilters)
-      }
-    }
-
-    if (!this.props.isDashboardEditing && prevProps.isDashboardEditing) {
-      this.tableParams.filter = _cloneDeep(this.baseFilters)
-      if (this.state.tabulatorMounted && this.state.isFiltering) {
-        this.ref?.tabulator?.clearHeaderFilter()
-        if (this.baseFilters.length) this.setFilters(this.baseFilters)
-        setTimeout(() => {
-          if (this._isMounted) this.disableBaseFilterInputs()
-        }, 0)
+        if (!this.props.isDashboardEditing) {
+          setTimeout(() => {
+            if (this._isMounted) this.disableBaseFilterInputs()
+          }, 0)
+        }
       }
     }
 
@@ -1269,7 +1263,8 @@ export default class ChataTable extends React.Component {
         inputElement.addEventListener('keydown', this.inputKeydownListener)
 
         const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${col.field}"]`)
-        if (!clearBtn) {
+        if (!clearBtn || inputElement.nextElementSibling !== clearBtn) {
+          clearBtn?.remove()
           this.renderHeaderInputClearBtn(inputElement, col)
         }
 
@@ -1478,6 +1473,9 @@ export default class ChataTable extends React.Component {
       this.setState({ isFiltering }, () => {
         if (isFiltering) {
           this.setFilters(this.tableParams.filter)
+          setTimeout(() => {
+            if (this._isMounted) this.setHeaderInputEventListeners()
+          }, 0)
           if (!this.props.isDashboardEditing && this.baseFilters.length) {
             setTimeout(() => {
               if (this._isMounted) this.disableBaseFilterInputs()

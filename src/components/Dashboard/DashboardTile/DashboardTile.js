@@ -574,10 +574,12 @@ export class DashboardTile extends React.Component {
         // Capture new queryId unless this is a cached view-mode refresh that already has one.
         if (queryChanged || !this.props.tile?.queryId || !isCachedRefresh) {
           const queryId = response?.data?.data?.query_id
-          paramsToSet.queryId = queryId
-          // When both halves share the same execution (same query or no split), mirror the id
-          if (this.areTopAndBottomSameQuery()) {
-            paramsToSet.secondQueryId = queryId
+          if (queryId) {
+            paramsToSet.queryId = queryId
+            // When both halves share the same execution (same query or no split), mirror the id
+            if (this.areTopAndBottomSameQuery()) {
+              paramsToSet.secondQueryId = queryId
+            }
           }
         }
         // If successful, update saved config with current tile config (preserve user's saved settings)
@@ -659,7 +661,10 @@ export class DashboardTile extends React.Component {
       }
 
       if (!isError && (queryChanged || !this.props.tile?.secondQueryId || !isCachedRefresh)) {
-        paramsToSet.secondQueryId = response?.data?.data?.query_id
+        const secondQueryId = response?.data?.data?.query_id
+        if (secondQueryId) {
+          paramsToSet.secondQueryId = secondQueryId
+        }
       }
 
       if (isError) {
@@ -2025,7 +2030,7 @@ export class DashboardTile extends React.Component {
   }
 
   renderBottomResponse = () => {
-    // Text-only: filter differences are handled by processTile running processTileBottom separately.
+    // Query text only — filter differences cause processTile to run processTileBottom separately.
     const bottomQuery = this.props.tile?.secondQuery
     const isQuerySameAsTop = !bottomQuery || this.props.tile?.query === bottomQuery
     let isExecuting = this.state.isBottomExecuting
