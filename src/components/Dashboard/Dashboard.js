@@ -796,6 +796,7 @@ class DashboardWithoutTheme extends React.Component {
         tile = {
           ...tile,
           ...content,
+          queryId: content.queryResponse?.data?.data?.query_id,
         }
       }
 
