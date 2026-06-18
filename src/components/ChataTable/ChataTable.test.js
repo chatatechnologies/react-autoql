@@ -1011,6 +1011,295 @@ describe('ChataTable', () => {
   })
 })
 
+describe('ChataTable filter/badge initialization', () => {
+  test('baseFilters is initialized from initialTableParams.filter', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const instance = setup({ initialTableParams: { filter: filters } }).instance()
+    expect(instance.baseFilters).toEqual(filters)
+  })
+
+  test('baseFilters is empty array when no initialTableParams', () => {
+    const instance = setup().instance()
+    expect(instance.baseFilters).toEqual([])
+  })
+
+  test('baseFilters is a deep clone (mutations do not affect initialTableParams)', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const instance = setup({ initialTableParams: { filter: filters } }).instance()
+    instance.baseFilters[0].value = 'MUTATED'
+    expect(filters[0].value).toBe('online')
+  })
+
+  test('isFiltering state is false by default when initialIsFiltering is not set', () => {
+    const instance = setup().instance()
+    expect(instance.state.isFiltering).toBe(false)
+  })
+
+  test('isFiltering state is true when initialIsFiltering=true is passed', () => {
+    const instance = setup({ initialIsFiltering: true }).instance()
+    expect(instance.state.isFiltering).toBe(true)
+  })
+
+  test('isFiltering state is false when initialIsFiltering=false is passed', () => {
+    const instance = setup({ initialIsFiltering: false }).instance()
+    expect(instance.state.isFiltering).toBe(false)
+  })
+})
+
+describe('disableBaseFilterInputs', () => {
+  function setupWithDOM(filters) {
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    // Build DOM elements matching the selectors used by disableBaseFilterInputs
+    const container = document.createElement('div')
+    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
+
+    filters.forEach((filter) => {
+      const col = document.createElement('div')
+      col.className = 'tabulator-col'
+      col.setAttribute('tabulator-field', filter.field)
+
+      const content = document.createElement('div')
+      content.className = 'tabulator-col-content'
+      const input = document.createElement('input')
+      content.appendChild(input)
+      col.appendChild(content)
+      container.appendChild(col)
+
+      const clearBtn = document.createElement('div')
+      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
+      document.body.appendChild(clearBtn)
+    })
+
+    document.body.appendChild(container)
+
+    return { wrapper, instance, container }
+  }
+
+  afterEach(() => {
+    // Clean up DOM nodes
+    document.body.innerHTML = ''
+  })
+
+  test('disables header input and adds disabled class for each base filter with a value', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.disableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    expect(input.disabled).toBe(true)
+    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(true)
+  })
+
+  test('makes clear button non-interactive for each base filter', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance } = setupWithDOM(filters)
+
+    instance.disableBaseFilterInputs()
+
+    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
+    expect(clearBtn.style.pointerEvents).toBe('none')
+    expect(clearBtn.style.opacity).toBe('0.3')
+  })
+
+  test('skips filters with no value', () => {
+    const filters = [{ field: '1', type: '=', value: '' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.disableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    expect(input.disabled).toBe(false)
+  })
+
+  test('does nothing when isDashboardEditing=true', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: true })
+    const instance = wrapper.instance()
+
+    const spy = jest.spyOn(document, 'querySelector')
+    instance.disableBaseFilterInputs()
+
+    // Should return immediately without querying DOM
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('does nothing when baseFilters is empty', () => {
+    const wrapper = setup({ isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    const spy = jest.spyOn(document, 'querySelector')
+    instance.disableBaseFilterInputs()
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('handles missing DOM nodes gracefully (no throw)', () => {
+    const filters = [{ field: '99', type: '=', value: 'missing' }]
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+    expect(() => instance.disableBaseFilterInputs()).not.toThrow()
+  })
+})
+
+describe('toggleIsFiltering callback behavior', () => {
+  function makeFullRef() {
+    return {
+      tabulator: {
+        getColumns: jest.fn(() => []),
+        setHeaderFilterValue: jest.fn(),
+        getHeaderFilters: jest.fn(() => []),
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
+      },
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+  }
+
+  test('calls setFilters with current tableParams.filter when toggling on', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance.ref = makeFullRef()
+    instance._isMounted = true
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+    const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+
+    instance.toggleIsFiltering(true)
+
+    expect(setFiltersSpy).toHaveBeenCalledWith(instance.tableParams.filter)
+  })
+
+  test('does not call setFilters when toggling off', () => {
+    const wrapper = setup({ initialIsFiltering: true })
+    const instance = wrapper.instance()
+    instance.ref = makeFullRef()
+    instance._isMounted = true
+    const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+
+    instance.toggleIsFiltering(false)
+
+    expect(setFiltersSpy).not.toHaveBeenCalled()
+  })
+
+  test('returns the new isFiltering value', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = true
+
+    expect(instance.toggleIsFiltering(true)).toBe(true)
+    expect(instance.toggleIsFiltering(false)).toBe(false)
+  })
+
+  test('toggles from false to true when no explicit value passed', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = true
+
+    const result = instance.toggleIsFiltering()
+    expect(result).toBe(true)
+  })
+})
+
+describe('setFilterBadgeClasses non-pivot path', () => {
+  test('adds is-filtered class to columns with active filters', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const toggleSpy = jest.fn()
+    const mockColumn = {
+      getField: () => '1',
+      getDefinition: () => ({ name: '1', origColumn: { field: '1' } }),
+      getElement: () => ({ classList: { toggle: toggleSpy } }),
+    }
+    const unmatchedColumn = {
+      getField: () => '2',
+      getDefinition: () => ({ name: '2', origColumn: { field: '2' } }),
+      getElement: () => ({ classList: { toggle: toggleSpy } }),
+    }
+
+    instance.ref = { tabulator: { getColumns: () => [mockColumn, unmatchedColumn] } }
+    instance._isMounted = true
+    instance.state.tabulatorMounted = true
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+
+    instance.setFilterBadgeClasses()
+
+    expect(toggleSpy).toHaveBeenCalledWith('is-filtered', true)
+    expect(toggleSpy).toHaveBeenCalledWith('is-filtered', false)
+  })
+
+  test('removes is-filtered from all columns when there are no filters (direct remove path)', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const removeSpy = jest.fn()
+    const mockColumns = ['1', '2'].map((f) => ({
+      getField: () => f,
+      getDefinition: () => ({ name: f, origColumn: { field: f } }),
+      getElement: () => ({ classList: { remove: removeSpy } }),
+    }))
+
+    instance.ref = { tabulator: { getColumns: () => mockColumns } }
+    instance._isMounted = true
+    instance.state.tabulatorMounted = true
+    instance.tableParams.filter = []
+
+    instance.setFilterBadgeClasses()
+
+    expect(removeSpy).toHaveBeenCalledTimes(2)
+    expect(removeSpy).toHaveBeenCalledWith('is-filtered')
+  })
+
+  test('does not run when !_isMounted', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const getColumnsSpy = jest.fn(() => [])
+    instance.ref = { tabulator: { getColumns: getColumnsSpy } }
+    instance._isMounted = false
+    instance.state.tabulatorMounted = true
+
+    instance.setFilterBadgeClasses()
+
+    expect(getColumnsSpy).not.toHaveBeenCalled()
+  })
+
+  test('does not run when !tabulatorMounted', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const getColumnsSpy = jest.fn(() => [])
+    instance.ref = { tabulator: { getColumns: getColumnsSpy } }
+    instance._isMounted = true
+    instance.state.tabulatorMounted = false
+
+    instance.setFilterBadgeClasses()
+
+    expect(getColumnsSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('onDataFiltered tabulatorMounted guard', () => {
+  test('returns initialData without updating when tabulatorMounted is false', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance.hasSetInitialData = true
+    instance._isMounted = true
+    wrapper.setState({ tabulatorMounted: false })
+
+    const forceUpdateSpy = jest.spyOn(instance, 'forceUpdate').mockImplementation(() => {})
+
+    const result = instance.onDataFiltered([{ field: '1', type: '=', value: 'online' }], [['online', 'John']])
+
+    // When tabulatorMounted=false, should bail out early (return initialData)
+    expect(forceUpdateSpy).not.toHaveBeenCalled()
+    forceUpdateSpy.mockRestore()
+  })
+})
+
 describe('Dashboard edit-mode filtering', () => {
   const smallResponse = { data: { data: { rows: [], count_rows: 10, query_id: 'q1' } } }
   const filters = [{ field: '1', type: '=', value: 'online' }]

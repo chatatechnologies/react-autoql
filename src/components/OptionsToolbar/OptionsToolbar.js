@@ -89,6 +89,7 @@ export class OptionsToolbar extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
+    hideReportProblem: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
   }
@@ -1008,7 +1009,7 @@ export class OptionsToolbar extends React.Component {
           (displayType === 'table' || isChartType(displayType)) &&
           !allColumnsHidden &&
           hasMoreThanOneRow,
-        showCopyButton: !isMarkdownOnly && this.props.enableCopyBtn && isTable && !allColumnsHidden,
+        showCopyButton: !isMarkdownOnly && isDataResponse && this.props.enableCopyBtn && isTable && !allColumnsHidden,
         showCopyMarkdownButton: isMarkdownOnly,
         showSaveAsPNGButton: !isMarkdownOnly && isChart,
         // TODO: re-enable when column visibility is re-added for dashboards
@@ -1020,10 +1021,10 @@ export class OptionsToolbar extends React.Component {
         //   (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: false, // !isMarkdownOnly && someColumnsHidden,
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
-        showSaveAsCSVButton: !isMarkdownOnly && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+        showSaveAsCSVButton: !isMarkdownOnly && isDataResponse && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton:
-          !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+          !isMarkdownOnly && !props.hideReportProblem && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           !isMarkdownOnly &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
@@ -1052,6 +1053,7 @@ export class OptionsToolbar extends React.Component {
       const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
       const willShowRefreshInMenu =
         !!props.showResetQueryOption && (shouldShowButton.showRefreshDataButton || !!props.showRefreshInEdit)
+      const willShowResetQuery = !!props.showResetQueryOption && !!props.isEditing
 
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&
@@ -1061,6 +1063,7 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showSaveAsCSVButton ||
           shouldShowButton.showSaveAsPNGButton ||
           willShowRefreshInMenu ||
+          willShowResetQuery ||
           hasCustomOptions)
     } catch (error) {
       console.error(error)

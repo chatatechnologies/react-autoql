@@ -446,6 +446,20 @@ export class DashboardTile extends React.Component {
     return true
   }
 
+  shouldHideOptions = (response) => {
+    if (response?.data?.data?.replacements) return true
+    if (response?.data?.data?.items) return true
+    return false
+  }
+
+  shouldShowDirtyBadge = () => {
+    return (
+      (this.props.isDirty && !!this.props.tile?.queryId) ||
+      !!this.props.tile?.queryResponse?.data?.data?.replacements ||
+      !!this.props.tile?.queryResponse?.data?.data?.items
+    )
+  }
+
   // Return true only for query translation errors (29.9.502) that warrant a force-retry
   isServerError = (resp) => {
     try {
@@ -1792,27 +1806,29 @@ export class DashboardTile extends React.Component {
           )}
         </div>
         <div className='dashboard-tile-toolbars-right-container'>
-          <OptionsToolbar
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            onErrorCallback={this.props.onErrorCallback}
-            onSuccessAlert={this.props.onSuccessCallback}
-            onCSVDownloadStart={this.onCSVDownloadStart}
-            onCSVDownloadProgress={this.onCSVDownloadProgress}
-            onCSVDownloadFinish={this.onCSVDownloadFinish}
-            onPNGDownloadFinish={this.onPNGDownloadFinish}
-            shouldRender={!this.props.isDragging}
-            tooltipID={this.props.tooltipID}
-            popoverPositions={['top', 'left', 'bottom', 'right']}
-            customOptions={this.props.customToolbarOptions}
-            popoverAlign='end'
-            enableMagicWand={this.props.enableMagicWand}
-            showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
-            isEditing={this.props.isEditing}
-            source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
-            scope={this.props.scope}
-            {...optionsToolbarProps}
-          />
+          {!optionsToolbarProps.hideOnError && (
+            <OptionsToolbar
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              onErrorCallback={this.props.onErrorCallback}
+              onSuccessAlert={this.props.onSuccessCallback}
+              onCSVDownloadStart={this.onCSVDownloadStart}
+              onCSVDownloadProgress={this.onCSVDownloadProgress}
+              onCSVDownloadFinish={this.onCSVDownloadFinish}
+              onPNGDownloadFinish={this.onPNGDownloadFinish}
+              shouldRender={!this.props.isDragging}
+              tooltipID={this.props.tooltipID}
+              popoverPositions={['top', 'left', 'bottom', 'right']}
+              customOptions={this.props.customToolbarOptions}
+              popoverAlign='end'
+              enableMagicWand={this.props.enableMagicWand}
+              showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+              isEditing={this.props.isEditing}
+              source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+              scope={this.props.scope}
+              {...optionsToolbarProps}
+            />
+          )}
         </div>
       </div>
     )
@@ -2018,8 +2034,13 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         onResetClick: () => this.props.resetTile?.(this.props.tile.i),
-        showRefreshInEdit: this.props.isEditing && this.props.tile?.displayType !== 'single-value',
+        showRefreshInEdit:
+          this.props.isEditing &&
+          this.props.tile?.displayType !== 'single-value' &&
+          !this.hasError(this.props.tile?.queryResponse),
         showResetQueryOption: this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
+        hideReportProblem: this.hasError(this.props.tile?.queryResponse),
+        hideOnError: this.shouldHideOptions(this.props.tile?.queryResponse),
       },
     })
   }
@@ -2035,9 +2056,7 @@ export class DashboardTile extends React.Component {
   }
 
   renderBottomResponse = () => {
-    // Query text only — filter differences cause processTile to run processTileBottom separately.
-    const bottomQuery = this.props.tile?.secondQuery
-    const isQuerySameAsTop = !bottomQuery || this.props.tile?.query === bottomQuery
+    const isQuerySameAsTop = this.areTopAndBottomSameQuery()
     let isExecuting = this.state.isBottomExecuting
     let isExecuted = this.state.isBottomExecuted
     let queryRequestData = this.bottomRequestData
@@ -2166,6 +2185,7 @@ export class DashboardTile extends React.Component {
           this.props.isEditing ? '-editing' : ''
         }`,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
+        hideOnError: this.shouldHideOptions(this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse),
       },
       isSecondHalf: true,
     })
@@ -2242,7 +2262,7 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.props.isDirty && this.props.tile?.queryId ? ' dirty' : ''}${this.props.isFailed ? ' failed' : ''}`}
+          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isFailed ? ' failed' : ''}`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2260,7 +2280,7 @@ export class DashboardTile extends React.Component {
               {this.renderContent()}
             </>
           </div>
-          {this.props.isDirty && this.props.tile?.queryId && (
+          {this.shouldShowDirtyBadge() && (
             <div
               className='react-autoql-dashboard-tile-dirty-badge'
               data-tooltip-content='Re-execute this query before saving the dashboard'

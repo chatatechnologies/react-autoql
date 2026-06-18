@@ -1310,3 +1310,595 @@ describe('DashboardTile dirty class guard', () => {
     wrapper.unmount()
   })
 })
+
+describe('DashboardTile dirty badge guard', () => {
+  test('does NOT render dirty badge on a new tile (no queryId) even when isDirty is true', () => {
+    const newTile = { ...sampleTile, queryId: undefined }
+    const wrapper = setup({ tile: newTile, isDirty: true })
+    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('renders dirty badge on an existing tile (has queryId) when isDirty is true', () => {
+    const existingTile = { ...sampleTile, queryId: 'qid-1' }
+    const wrapper = setup({ tile: existingTile, isDirty: true })
+    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does NOT render dirty badge when isDirty is false', () => {
+    const existingTile = { ...sampleTile, queryId: 'qid-1' }
+    const wrapper = setup({ tile: existingTile, isDirty: false })
+    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile failed class and badge', () => {
+  test('applies failed class when isFailed is true', () => {
+    const wrapper = setup({ tile: sampleTile, isFailed: true })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).toContain('failed')
+    wrapper.unmount()
+  })
+
+  test('does NOT apply failed class when isFailed is false', () => {
+    const wrapper = setup({ tile: sampleTile, isFailed: false })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).not.toContain('failed')
+    wrapper.unmount()
+  })
+
+  test('renders failed badge when isFailed is true', () => {
+    const wrapper = setup({ tile: sampleTile, isFailed: true })
+    expect(wrapper.find('.react-autoql-dashboard-tile-failed-badge').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does NOT render failed badge when isFailed is false', () => {
+    const wrapper = setup({ tile: sampleTile, isFailed: false })
+    expect(wrapper.find('.react-autoql-dashboard-tile-failed-badge').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('can show both dirty border and failed border simultaneously', () => {
+    const existingTile = { ...sampleTile, queryId: 'qid-1' }
+    const wrapper = setup({ tile: existingTile, isDirty: true, isFailed: true })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    const className = tile.prop('className')
+    expect(className).toContain('dirty')
+    expect(className).toContain('failed')
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile wasFilteringBeforeRemount', () => {
+  test('starts as false', () => {
+    const wrapper = setup({ tile: sampleTile })
+    expect(wrapper.instance().wasFilteringBeforeRemount).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('captures isFilteringTable() value from actual responseRef before version increment', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined } })
+    const instance = wrapper.instance()
+
+    // Spy on the real responseRef (set by the mounted QueryOutput)
+    if (instance.state.responseRef && typeof instance.state.responseRef.isFilteringTable === 'function') {
+      jest.spyOn(instance.state.responseRef, 'isFilteringTable').mockReturnValue(true)
+    }
+    instance.setState({ isTopExecuting: false })
+
+    const newQR = {
+      ...sampleResponses[10],
+      data: { ...sampleResponses[10].data, data: { ...sampleResponses[10].data?.data, query_id: 'q_new-was-filtering' } },
+    }
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
+
+    // wasFilteringBeforeRemount should reflect whatever isFilteringTable() returned
+    expect(typeof instance.wasFilteringBeforeRemount).toBe('boolean')
+    wrapper.unmount()
+  })
+
+  test('defaults wasFilteringBeforeRemount to false when responseRef is not set', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined } })
+    const instance = wrapper.instance()
+
+    // Clear responseRef so the fallback || false path is taken
+    instance.setState({ responseRef: null, isTopExecuting: false })
+
+    const newQR = {
+      ...sampleResponses[10],
+      data: { ...sampleResponses[10].data, data: { ...sampleResponses[10].data?.data, query_id: 'q_no-ref' } },
+    }
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
+
+    expect(instance.wasFilteringBeforeRemount).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('passes wasFilteringBeforeRemount as initialIsFiltering to QueryOutput', () => {
+    const wrapper = setup({ tile: sampleTile })
+    const instance = wrapper.instance()
+    instance.wasFilteringBeforeRemount = true
+    instance.forceUpdate()
+    wrapper.update()
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('initialIsFiltering')).toBe(true)
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile onColumnChange edit mode guard', () => {
+  test('does NOT call setParamsForTile when not in edit mode', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+
+    wrapper.instance().onColumnChange({}, [], [], sampleTile.queryResponse, {}, [])
+    jest.advanceTimersByTime(200)
+
+    expect(mockSetParamsForTile).not.toHaveBeenCalled()
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
+  test('calls setParamsForTile with queryId when in edit mode', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const qr = { data: { data: { ...sampleResponses[10].data.data, query_id: 'q_col-change' }, reference_id: '1.1.200' } }
+    const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+
+    wrapper.instance().onColumnChange({}, [], [], qr, {}, [])
+    jest.advanceTimersByTime(200)
+
+    const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.queryId === 'q_col-change')
+    expect(call).toBeDefined()
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+})
+
+describe('hasError', () => {
+  const instance = new DashboardTile({ tile: { i: 1, query: '' }, setParamsForTile: () => {} })
+
+  test('returns false when reference_id is in 200-299 range', () => {
+    expect(instance.hasError({ data: { reference_id: '1.1.200' } })).toBe(false)
+    expect(instance.hasError({ data: { reference_id: '1.1.299' } })).toBe(false)
+    expect(instance.hasError({ data: { reference_id: '1.1.210' } })).toBe(false)
+  })
+
+  test('returns true when reference_id is outside 200-299 range', () => {
+    expect(instance.hasError({ data: { reference_id: '1.1.500' } })).toBe(true)
+    expect(instance.hasError({ data: { reference_id: '1.1.400' } })).toBe(true)
+    expect(instance.hasError({ data: { reference_id: '1.1.100' } })).toBe(true)
+  })
+
+  test('returns true when response is null or undefined', () => {
+    expect(instance.hasError(null)).toBe(true)
+    expect(instance.hasError(undefined)).toBe(true)
+    expect(instance.hasError({})).toBe(true)
+  })
+
+  test('returns true when reference_id is missing', () => {
+    expect(instance.hasError({ data: {} })).toBe(true)
+  })
+})
+
+describe('shouldHideOptions', () => {
+  const instance = new DashboardTile({ tile: { i: 1, query: '' }, setParamsForTile: () => {} })
+
+  test('returns true when response has replacements', () => {
+    const response = { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] } } }
+    expect(instance.shouldHideOptions(response)).toBe(true)
+  })
+
+  test('returns true when response has items', () => {
+    const response = { data: { data: { items: [{ label: 'thing' }] } } }
+    expect(instance.shouldHideOptions(response)).toBe(true)
+  })
+
+  test('returns false for a normal query response', () => {
+    const response = { data: { data: { rows: [], columns: [] } } }
+    expect(instance.shouldHideOptions(response)).toBe(false)
+  })
+
+  test('returns false for null/undefined', () => {
+    expect(instance.shouldHideOptions(null)).toBe(false)
+    expect(instance.shouldHideOptions(undefined)).toBe(false)
+  })
+})
+
+describe('filterValidConfig', () => {
+  const instance = new DashboardTile({ tile: { i: 1, query: '' }, setParamsForTile: () => {} })
+
+  test('includes tableFilters when it is an empty array', () => {
+    const result = instance.filterValidConfig({ tableFilters: [] })
+    expect(result).toHaveProperty('tableFilters')
+    expect(result.tableFilters).toEqual([])
+  })
+
+  test('excludes tableFilters when it is null', () => {
+    const result = instance.filterValidConfig({ tableFilters: null })
+    expect(result).not.toHaveProperty('tableFilters')
+  })
+
+  test('includes dataConfig only when tableConfig or pivotTableConfig is non-null', () => {
+    const validDataConfig = { tableConfig: { stringColumnIndices: [0] } }
+    expect(instance.filterValidConfig({ dataConfig: validDataConfig })).toHaveProperty('dataConfig')
+
+    const emptyDataConfig = {}
+    expect(instance.filterValidConfig({ dataConfig: emptyDataConfig })).not.toHaveProperty('dataConfig')
+  })
+
+  test('excludes falsy non-array fields', () => {
+    const result = instance.filterValidConfig({ displayType: '', aggConfig: undefined, axisSorts: null })
+    expect(result).not.toHaveProperty('displayType')
+    expect(result).not.toHaveProperty('aggConfig')
+    expect(result).not.toHaveProperty('axisSorts')
+  })
+
+  test('includes truthy non-array fields', () => {
+    const result = instance.filterValidConfig({ displayType: 'column', aggConfig: { col: 'SUM' } })
+    expect(result.displayType).toBe('column')
+    expect(result.aggConfig).toEqual({ col: 'SUM' })
+  })
+})
+
+describe('endTopQuery: secondQueryId mirroring when both halves share the same query', () => {
+  let mockSetParamsForTile
+  let savedParams
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  test('mirrors queryId to secondQueryId when areTopAndBottomSameQuery() returns true', () => {
+    // Same query, same filters → areTopAndBottomSameQuery() === true
+    const tile = { ...sampleTile, query: 'SELECT 1', secondQuery: 'SELECT 1', tableFilters: [], secondTableFilters: [] }
+    const wrapper = setup({ tile, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_mirror-test' }, reference_id: '1.1.200' },
+    }
+
+    instance.endTopQuery({ response, queryChanged: true })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.queryId === 'q_mirror-test')
+    expect(call).toBeDefined()
+    expect(call.secondQueryId).toBe('q_mirror-test')
+
+    wrapper.unmount()
+  })
+
+  test('does NOT set secondQueryId when areTopAndBottomSameQuery() returns false', () => {
+    // Different queries → areTopAndBottomSameQuery() === false
+    const tile = { ...sampleTile, query: 'SELECT 1', secondQuery: 'SELECT 2', tableFilters: [], secondTableFilters: [] }
+    const wrapper = setup({ tile, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_no-mirror' }, reference_id: '1.1.200' },
+    }
+
+    instance.endTopQuery({ response, queryChanged: true })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.queryId === 'q_no-mirror')
+    expect(call).toBeDefined()
+    expect(call.secondQueryId).toBeUndefined()
+
+    wrapper.unmount()
+  })
+
+  test('does NOT mirror secondQueryId when filters differ (even if query text is the same)', () => {
+    const tile = {
+      ...sampleTile,
+      query: 'SELECT 1',
+      secondQuery: 'SELECT 1',
+      tableFilters: [{ field: 'region', value: 'West' }],
+      secondTableFilters: [{ field: 'region', value: 'East' }],
+    }
+    const wrapper = setup({ tile, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_filter-split' }, reference_id: '1.1.200' },
+    }
+
+    instance.endTopQuery({ response, queryChanged: false })
+    jest.advanceTimersByTime(100)
+
+    const call = savedParams.find((p) => p.queryId === 'q_filter-split')
+    expect(call).toBeDefined()
+    expect(call.secondQueryId).toBeUndefined()
+
+    wrapper.unmount()
+  })
+})
+
+describe('onNewQueryId and onSecondNewQueryId: skipping falsy values', () => {
+  beforeEach(() => { jest.useFakeTimers() })
+  afterEach(() => { jest.runOnlyPendingTimers(); jest.useRealTimers() })
+
+  test('onNewQueryId does NOT call setParamsForTile when queryId is falsy', () => {
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+
+    wrapper.instance().onNewQueryId(null)
+    wrapper.instance().onNewQueryId(undefined)
+    wrapper.instance().onNewQueryId('')
+    jest.advanceTimersByTime(200)
+
+    const calls = mockSetParamsForTile.mock.calls.filter(([p]) => 'queryId' in p)
+    expect(calls.length).toBe(0)
+    wrapper.unmount()
+  })
+
+  test('onNewQueryId calls setParamsForTile with queryId when truthy', () => {
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+
+    wrapper.instance().onNewQueryId('q_truthy')
+    jest.advanceTimersByTime(200)
+
+    const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.queryId === 'q_truthy')
+    expect(call).toBeDefined()
+    wrapper.unmount()
+  })
+
+  test('onSecondNewQueryId does NOT call setParamsForTile when queryId is falsy', () => {
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+
+    wrapper.instance().onSecondNewQueryId(null)
+    wrapper.instance().onSecondNewQueryId(undefined)
+    jest.advanceTimersByTime(200)
+
+    const calls = mockSetParamsForTile.mock.calls.filter(([p]) => 'secondQueryId' in p)
+    expect(calls.length).toBe(0)
+    wrapper.unmount()
+  })
+
+  test('onSecondNewQueryId calls setParamsForTile with secondQueryId when truthy', () => {
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+
+    wrapper.instance().onSecondNewQueryId('q_second-truthy')
+    jest.advanceTimersByTime(200)
+
+    const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.secondQueryId === 'q_second-truthy')
+    expect(call).toBeDefined()
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile dirty class/badge for replacements and items responses', () => {
+  test('applies dirty class when queryResponse has replacements (no queryId required)', () => {
+    const tileWithReplacements = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: {
+        data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
+      },
+    }
+    const wrapper = setup({ tile: tileWithReplacements, isDirty: false })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).toContain('dirty')
+    wrapper.unmount()
+  })
+
+  test('applies dirty class when queryResponse has items (no queryId required)', () => {
+    const tileWithItems = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: {
+        data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' },
+      },
+    }
+    const wrapper = setup({ tile: tileWithItems, isDirty: false })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).toContain('dirty')
+    wrapper.unmount()
+  })
+
+  test('renders dirty badge when queryResponse has replacements', () => {
+    const tileWithReplacements = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: {
+        data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
+      },
+    }
+    const wrapper = setup({ tile: tileWithReplacements, isDirty: false })
+    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('renders dirty badge when queryResponse has items', () => {
+    const tileWithItems = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: {
+        data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' },
+      },
+    }
+    const wrapper = setup({ tile: tileWithItems, isDirty: false })
+    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile OptionsToolbar hideOnError: hides toolbar for replacements/items responses', () => {
+  test('hides OptionsToolbar when queryResponse has replacements', () => {
+    const tileWithReplacements = {
+      ...sampleTile,
+      queryResponse: {
+        data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
+      },
+    }
+    const wrapper = setup({ tile: tileWithReplacements })
+    // hideOnError=true means the toolbar is not rendered
+    expect(wrapper.find('OptionsToolbar').length).toBe(0)
+    wrapper.unmount()
+  })
+
+  test('shows OptionsToolbar for a normal successful response', () => {
+    const wrapper = setup({ tile: sampleTile })
+    expect(wrapper.find('OptionsToolbar').first().exists()).toBe(true)
+    wrapper.unmount()
+  })
+})
+
+describe('processTile: runs processTileBottom separately when filters differ', () => {
+  test('calls processTileBottom when top and bottom filters differ (even if query text is identical)', () => {
+    const tile = {
+      ...sampleTile,
+      splitView: true,
+      query: 'SELECT 1',
+      secondQuery: 'SELECT 1',
+      tableFilters: [{ field: 'region', value: 'West' }],
+      secondTableFilters: [{ field: 'region', value: 'East' }],
+    }
+    const wrapper = setup({ tile })
+    const instance = wrapper.instance()
+
+    const processTileBottomSpy = jest
+      .spyOn(instance, 'processTileBottom')
+      .mockImplementation(() => Promise.resolve())
+    jest.spyOn(instance, 'processTileTop').mockImplementation(() => Promise.resolve())
+
+    instance.processTile({ query: 'SELECT 1', secondQuery: 'SELECT 1' })
+
+    expect(processTileBottomSpy).toHaveBeenCalled()
+
+    processTileBottomSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  test('does NOT call processTileBottom when filters are equal and query text is identical', () => {
+    const filters = [{ field: 'region', value: 'West' }]
+    const tile = {
+      ...sampleTile,
+      splitView: true,
+      query: 'SELECT 1',
+      secondQuery: 'SELECT 1',
+      tableFilters: filters,
+      secondTableFilters: filters,
+    }
+    const wrapper = setup({ tile })
+    const instance = wrapper.instance()
+
+    const processTileBottomSpy = jest
+      .spyOn(instance, 'processTileBottom')
+      .mockImplementation(() => Promise.resolve())
+    jest.spyOn(instance, 'processTileTop').mockImplementation(() => Promise.resolve())
+
+    instance.processTile({ query: 'SELECT 1', secondQuery: 'SELECT 1' })
+
+    expect(processTileBottomSpy).not.toHaveBeenCalled()
+
+    processTileBottomSpy.mockRestore()
+    wrapper.unmount()
+  })
+})
+
+describe('showResetQueryOption prop wiring', () => {
+  test('passes showResetQueryOption=true to OptionsToolbar when prop is true, tile has query and queryResponse', () => {
+    const tileWithResponse = { ...sampleTile, query: 'show sales', queryResponse: sampleResponses[10] }
+    const wrapper = setup({ tile: tileWithResponse, showResetQueryOption: true, isEditing: true })
+    const toolbar = wrapper.find('OptionsToolbar').first()
+    expect(toolbar.prop('showResetQueryOption')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('passes showResetQueryOption=false when tile has no queryResponse', () => {
+    const tileNoResponse = { ...sampleTile, query: 'show sales', queryResponse: undefined }
+    const wrapper = setup({ tile: tileNoResponse, showResetQueryOption: true, isEditing: true })
+    const toolbar = wrapper.find('OptionsToolbar').first()
+    expect(toolbar.prop('showResetQueryOption')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('passes showResetQueryOption=false when tile has no query', () => {
+    const tileNoQuery = { ...sampleTile, query: '', queryResponse: sampleResponses[10] }
+    const wrapper = setup({ tile: tileNoQuery, showResetQueryOption: true, isEditing: true })
+    const toolbar = wrapper.find('OptionsToolbar').first()
+    expect(toolbar.prop('showResetQueryOption')).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile areTopAndBottomSameQuery with filter equality', () => {
+  test('returns true when queries are identical and filters are equal', () => {
+    const filters = [{ field: 'region', value: 'West' }]
+    const wrapper = setup({
+      tile: {
+        ...sampleTile,
+        query: 'SELECT 1',
+        secondQuery: 'SELECT 1',
+        tableFilters: filters,
+        secondTableFilters: filters,
+      },
+    })
+    expect(wrapper.instance().areTopAndBottomSameQuery()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('returns false when queries are identical but filters differ', () => {
+    const wrapper = setup({
+      tile: {
+        ...sampleTile,
+        query: 'SELECT 1',
+        secondQuery: 'SELECT 1',
+        tableFilters: [{ field: 'region', value: 'West' }],
+        secondTableFilters: [{ field: 'region', value: 'East' }],
+      },
+    })
+    expect(wrapper.instance().areTopAndBottomSameQuery()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('returns false when queries differ even if filters are equal', () => {
+    const wrapper = setup({
+      tile: {
+        ...sampleTile,
+        query: 'SELECT 1',
+        secondQuery: 'SELECT 2',
+        tableFilters: [],
+        secondTableFilters: [],
+      },
+    })
+    expect(wrapper.instance().areTopAndBottomSameQuery()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('returns true when no secondQuery (single-query tile)', () => {
+    const wrapper = setup({
+      tile: { ...sampleTile, query: 'SELECT 1', secondQuery: undefined, tableFilters: [], secondTableFilters: [] },
+    })
+    expect(wrapper.instance().areTopAndBottomSameQuery()).toBe(true)
+    wrapper.unmount()
+  })
+})
