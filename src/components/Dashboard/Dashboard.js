@@ -50,6 +50,7 @@ class DashboardWithoutTheme extends React.Component {
     this.pendingResetTiles = null
     this.isDiscardingResetChanges = false
     this.discardResetTileId = null
+    this.baselineQueryIds = new Map()
 
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
@@ -218,22 +219,9 @@ class DashboardWithoutTheme extends React.Component {
     if (!prevProps.isEditing && this.props.isEditing) {
       this.refreshTileLayouts()
       this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
-    }
-
-    // Keep uneditedDashboardTiles.queryId current after execution so dirty detection stays accurate.
-    if (this.props.isEditing && this.state.uneditedDashboardTiles) {
-      const currentByKey = new Map((this.getMostRecentTiles() || []).map((t) => [t.key, t]))
-      let needsSync = false
-      const synced = this.state.uneditedDashboardTiles.map((saved) => {
-        const cur = currentByKey.get(saved.key)
-        if (!cur) return saved
-        const update = {}
-        if (cur.query === saved.query && cur.queryId !== saved.queryId) update.queryId = cur.queryId
-        if (cur.secondQuery === saved.secondQuery && cur.secondQueryId !== saved.secondQueryId) update.secondQueryId = cur.secondQueryId
-        if (Object.keys(update).length) { needsSync = true; return { ...saved, ...update } }
-        return saved
-      })
-      if (needsSync) this.setState({ uneditedDashboardTiles: synced })
+      this.baselineQueryIds = new Map(
+        (this.props.tiles || []).map((t) => [t.key, { queryId: t.queryId, secondQueryId: t.secondQueryId }]),
+      )
     }
 
     // Re-execute dashboard when slicers change (force execution to rerun all tiles)
@@ -368,14 +356,25 @@ class DashboardWithoutTheme extends React.Component {
       (current || [])
         .filter((tile) => {
           const saved = savedByKey.get(tile.key)
-          if (!saved) return !!tile.queryId &&(!tile.query || tile.query !== tile.queryResponse?.data?.data?.text)
-          // Dirty = query text changed but queryId unchanged (not yet re-executed).
-          const topDirty = tile.query !== saved.query && tile.queryId === saved.queryId
-          const bottomDirty = tile.secondQuery !== saved.secondQuery && tile.secondQueryId === saved.secondQueryId
+          if (!saved) return !!tile.queryId && (!tile.query || tile.query !== tile.queryResponse?.data?.data?.text)
+          // Dirty = query text changed but not yet re-executed (queryId matches the baseline set when editing started).
+          const baseline = this.baselineQueryIds.get(tile.key) || {}
+          const topDirty = tile.query !== saved.query && tile.queryId === baseline.queryId
+          const bottomDirty = tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
           return topDirty || bottomDirty
         })
         .map((tile) => tile.key),
     )
+  }
+
+  getFailedTiles = () => {
+    const tiles = this.getMostRecentTiles() || []
+    const failedTiles = tiles.filter((tile) => {
+      if (!tile.queryId || !tile.queryResponse) return false
+      const refId = Number(String(tile.queryResponse?.data?.reference_id || '').split('.')[2])
+      return refId < 200 || refId >= 300
+    })
+    return new Set(failedTiles.map((tile) => tile.key))
   }
 
   subscribeToCallback = (callbackArray) => {
@@ -828,8 +827,8 @@ class DashboardWithoutTheme extends React.Component {
       }
 
       if (content?.queryResponse) {
-        // Strip queryResponse in edit mode so the tile re-executes via API and captures queryId.
-        if (this.props.isEditing) {
+        // Strip response only for pre-feature tiles (no queryId) so they re-execute once to capture it.
+        if (this.props.isEditing && !content.queryId) {
           const { queryResponse, secondQueryResponse, ...contentWithoutResponse } = content
           tile = { ...tile, ...contentWithoutResponse }
         } else {
@@ -1071,6 +1070,18 @@ class DashboardWithoutTheme extends React.Component {
         ...params,
       }
 
+      // Update baseline after execution so getDirtyTileKeys doesn't flag a freshly-run tile.
+      if (this.props.isEditing && (params.queryId !== undefined || params.secondQueryId !== undefined)) {
+        const tileKey = tiles[tileIndex]?.key
+        if (tileKey) {
+          const cur = this.baselineQueryIds.get(tileKey) || {}
+          this.baselineQueryIds.set(tileKey, {
+            queryId: params.queryId !== undefined ? params.queryId : cur.queryId,
+            secondQueryId: params.secondQueryId !== undefined ? params.secondQueryId : cur.secondQueryId,
+          })
+        }
+      }
+
       if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex]?.query) {
         tiles[tileIndex].dataConfig = undefined
         tiles[tileIndex].skipQueryValidation = false
@@ -1301,7 +1312,7 @@ class DashboardWithoutTheme extends React.Component {
     )
   }
 
-  renderTiles = (dirtyTileKeys) => {
+  renderTiles = (dirtyTileKeys, failedTileKeys) => {
     const tiles = this.getMostRecentTiles()
     const tileLayout = tiles.map((tile) => {
       return {
@@ -1373,6 +1384,7 @@ class DashboardWithoutTheme extends React.Component {
             secondDisplayPercentage={tile.secondDisplayPercentage}
             isEditing={this.props.isEditing}
             isDirty={dirtyTileKeys.has(tile.key)}
+            isFailed={failedTileKeys.has(tile.key)}
             isDragging={this.state.isDragging || this.state.isWindowResizing}
             isWindowResizing={this.state.isWindowResizing}
             setParamsForTile={this.setParamsForTile}
@@ -1417,6 +1429,7 @@ class DashboardWithoutTheme extends React.Component {
   render = () => {
     const tiles = this.getMostRecentTiles()
     const dirtyTileKeys = this.getDirtyTileKeys()
+    const failedTileKeys = this.getFailedTiles()
 
     // Check if any tile is currently executing
     const isAnyTileExecuting = Object.keys(this.tileRefs).some((key) => {
@@ -1471,7 +1484,7 @@ class DashboardWithoutTheme extends React.Component {
             className={`react-autoql-dashboard-container${this.props.isEditing ? ' edit-mode' : ''}`}
             data-test='react-autoql-dashboard'
           >
-            {tiles.length ? this.renderTiles(dirtyTileKeys) : this.renderEmptyDashboardMessage()}
+            {tiles.length ? this.renderTiles(dirtyTileKeys, failedTileKeys) : this.renderEmptyDashboardMessage()}
           </div>
           <DrilldownModal
             authentication={this.props.authentication}

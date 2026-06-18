@@ -56,6 +56,7 @@ export class DashboardTile extends React.Component {
     this.debounceTime = 50
     this.paramsToSet = {}
     this.callbackArray = []
+    this.wasFilteringBeforeRemount = false
 
     // Store original saved tile config from DB to restore after errors
     this.savedTileConfig = {}
@@ -184,6 +185,7 @@ export class DashboardTile extends React.Component {
     }).isRequired,
     isEditing: PropTypes.bool,
     isDirty: PropTypes.bool,
+    isFailed: PropTypes.bool,
     deleteTile: PropTypes.func,
     resetTile: PropTypes.func,
     executeSingleTile: PropTypes.func,
@@ -223,6 +225,7 @@ export class DashboardTile extends React.Component {
     title: '',
     isEditing: false,
     isDirty: false,
+    isFailed: false,
     dataPageSize: undefined,
     queryValidationSelections: undefined,
     defaultSelectedSuggestion: undefined,
@@ -304,6 +307,7 @@ export class DashboardTile extends React.Component {
     const prevQRId = prevQR?.data?.data?.query_id
     const nextQRId = nextQR?.data?.data?.query_id
     if (nextQR && !this.state.isTopExecuting && (prevQR === null || (prevQR && prevQRId !== nextQRId))) {
+      this.wasFilteringBeforeRemount = this.state.responseRef?.isFilteringTable() || false
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
 
@@ -2001,6 +2005,7 @@ export class DashboardTile extends React.Component {
         isDashboardEditing: this.props.isEditing,
         skipInitialFilters: true,
         onNewQueryId: this.onNewQueryId,
+        initialIsFiltering: this.wasFilteringBeforeRemount,
       },
       vizToolbarProps: {
         ref: (r) => (this.vizToolbarRef = r),
@@ -2237,7 +2242,7 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.props.isDirty ? ' dirty' : ''}`}
+          className={`${this.props.className}${this.props.isDirty && this.props.tile?.queryId ? ' dirty' : ''}${this.props.isFailed ? ' failed' : ''}`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2259,6 +2264,15 @@ export class DashboardTile extends React.Component {
             <div
               className='react-autoql-dashboard-tile-dirty-badge'
               data-tooltip-content='Re-execute this query before saving the dashboard'
+              data-tooltip-id={this.props.tooltipID}
+            >
+              !
+            </div>
+          )}
+          {this.props.isFailed && (
+            <div
+              className='react-autoql-dashboard-tile-failed-badge'
+              data-tooltip-content='This query has failed'
               data-tooltip-id={this.props.tooltipID}
             >
               !

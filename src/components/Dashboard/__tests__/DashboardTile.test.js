@@ -1284,3 +1284,29 @@ describe('onTableParamsChange — filter interactions', () => {
     jest.useRealTimers()
   })
 })
+
+describe('DashboardTile dirty class guard', () => {
+  test('does NOT apply dirty class on a new tile (no queryId) even when isDirty is true', () => {
+    const newTile = { ...sampleTile, queryId: undefined }
+    const wrapper = setup({ tile: newTile, isDirty: true })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).not.toContain('dirty')
+    wrapper.unmount()
+  })
+
+  test('applies dirty class on an existing tile (has queryId) when isDirty is true', () => {
+    const existingTile = { ...sampleTile, queryId: 'qid-1' }
+    const wrapper = setup({ tile: existingTile, isDirty: true })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).toContain('dirty')
+    wrapper.unmount()
+  })
+
+  test('does NOT apply dirty class when isDirty is false even with queryId', () => {
+    const existingTile = { ...sampleTile, queryId: 'qid-1' }
+    const wrapper = setup({ tile: existingTile, isDirty: false })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).not.toContain('dirty')
+    wrapper.unmount()
+  })
+})

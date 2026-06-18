@@ -130,6 +130,7 @@ export class QueryOutput extends React.Component {
       page: 1,
     }
     this.tableID = uuid()
+    this.wasFiltering = props.initialIsFiltering
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.isOriginalData = true
@@ -357,6 +358,7 @@ export class QueryOutput extends React.Component {
     isDashboardEditing: PropTypes.bool,
     onNewQueryId: PropTypes.func,
     skipInitialFilters: PropTypes.bool,
+    initialIsFiltering: PropTypes.bool,
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
@@ -1650,7 +1652,7 @@ export class QueryOutput extends React.Component {
 
     const effectiveDisplayOverrides = args?.displayOverrides ?? queryRequestData?.display_overrides
     const result = this.applyDisplayOverridesToResponse(response, effectiveDisplayOverrides)
-    if (this.props.isDashboardEditing && this.props.onNewQueryId) {
+    if (this.props.onNewQueryId) {
       const newQueryId = result?.data?.data?.query_id
       if (newQueryId) {
         this.props.onNewQueryId(newQueryId)
