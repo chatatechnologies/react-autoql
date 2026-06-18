@@ -2260,7 +2260,7 @@ export class DashboardTile extends React.Component {
               {this.renderContent()}
             </>
           </div>
-          {this.props.isDirty && (
+          {this.props.isDirty && this.props.tile?.queryId && (
             <div
               className='react-autoql-dashboard-tile-dirty-badge'
               data-tooltip-content='Re-execute this query before saving the dashboard'
