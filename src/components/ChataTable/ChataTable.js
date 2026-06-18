@@ -384,8 +384,9 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
-      this.tableParams.filter = _cloneDeep(this.baseFilters)
       if (this.state.tabulatorMounted && this.state.isFiltering) {
+        this.tableParams.filter = _cloneDeep(this.baseFilters)
+        this._setFiltersTime = Date.now()
         this.ref?.tabulator?.clearHeaderFilter()
         if (this.baseFilters.length) this.setFilters(this.baseFilters)
         if (!this.props.isDashboardEditing) {
@@ -394,6 +395,7 @@ export default class ChataTable extends React.Component {
           }, 0)
         }
       }
+      this.setFilterBadgeClasses()
     }
 
     this.summaryStats = this.calculateSummaryStats(this.props)

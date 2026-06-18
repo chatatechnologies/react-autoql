@@ -1154,4 +1154,128 @@ describe('Dashboard edit-mode filtering', () => {
       expect(mockPropsQueryFn).not.toHaveBeenCalled()
     })
   })
+
+  describe('isDashboardEditing change handler', () => {
+    function makeEditingRef({ clearHeaderFilter = jest.fn() } = {}) {
+      const tabulator = {
+        getColumns: jest.fn(() => [
+          {
+            getField: () => '1',
+            getDefinition: () => ({ headerFilter: true }),
+            getElement: () => ({ classList: { toggle: jest.fn(), add: jest.fn(), remove: jest.fn() } }),
+          },
+        ]),
+        setHeaderFilterValue: jest.fn(),
+        getHeaderFilters: jest.fn(() => []),
+        clearHeaderFilter,
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
+      }
+      return { tabulator, blockRedraw: tabulator.blockRedraw, restoreRedraw: tabulator.restoreRedraw }
+    }
+
+    // Issue 1: badge always refreshed on editing state change
+    test('calls setFilterBadgeClasses when isDashboardEditing changes to true with filter row closed', () => {
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    test('calls setFilterBadgeClasses when isDashboardEditing changes to false with filter row closed', () => {
+      const wrapper = setup({ isDashboardEditing: true, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: false })
+
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    test('calls setFilterBadgeClasses when isDashboardEditing changes with filter row open', () => {
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: true })
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    // Issue 1: tableParams.filter not wiped when filter row is closed
+    test('does not reset tableParams.filter to baseFilters when isFiltering is false', () => {
+      const sessionFilters = [{ field: '1', type: '=', value: 'online' }]
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: [] } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      // Suppress tabulatorMounted side-effects so we can control tableParams.filter
+      jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      // Set in-session applied filters AFTER tabulatorMounted block has run
+      instance.tableParams.filter = sessionFilters
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      // tableParams.filter should remain unchanged (session filters preserved)
+      expect(instance.tableParams.filter).toEqual(sessionFilters)
+    })
+
+    // Issue 2: _setFiltersTime stamped before clearHeaderFilter to guard AJAX
+    test('stamps _setFiltersTime before clearHeaderFilter so the AJAX debounce guard fires', () => {
+      const callOrder = []
+      const clearHeaderFilterMock = jest.fn(() => callOrder.push('clearHeaderFilter'))
+
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.baseFilters = filters
+      instance.ref = makeEditingRef({ clearHeaderFilter: clearHeaderFilterMock })
+      instance._isMounted = true
+      instance._setFiltersTime = 0 // stale — older than DEBOUNCE_MS
+
+      wrapper.setState({ tabulatorMounted: true, isFiltering: true })
+
+      // Track when _setFiltersTime is written relative to clearHeaderFilter
+      let timeWhenClearCalled = null
+      clearHeaderFilterMock.mockImplementation(() => {
+        timeWhenClearCalled = instance._setFiltersTime
+        callOrder.push('clearHeaderFilter')
+      })
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      // _setFiltersTime must be set (non-zero) at the moment clearHeaderFilter runs
+      expect(timeWhenClearCalled).toBeGreaterThan(0)
+      expect(clearHeaderFilterMock).toHaveBeenCalled()
+    })
+
+    test('does not call clearHeaderFilter when filter row is closed', () => {
+      const clearHeaderFilterMock = jest.fn()
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef({ clearHeaderFilter: clearHeaderFilterMock })
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(clearHeaderFilterMock).not.toHaveBeenCalled()
+    })
+  })
 })

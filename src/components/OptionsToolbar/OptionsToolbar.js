@@ -613,7 +613,9 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length
+    const responseData = this.props.responseRef?.queryResponse?.data?.data
+    const isDataResponse = responseData?.display_type === 'data'
+    const isFiltered = isDataResponse && !!this.props.responseRef?.formattedTableParams?.filters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -978,6 +980,10 @@ export class OptionsToolbar extends React.Component {
   getShouldShowButtonObj = (props) => {
     let shouldShowButton = {}
     try {
+      if (props.responseRef?.state?.customResponse) {
+        return shouldShowButton
+      }
+
       const displayType = props.responseRef?.state?.displayType
       const columns = props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
