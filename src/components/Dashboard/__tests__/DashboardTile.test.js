@@ -1902,3 +1902,108 @@ describe('DashboardTile areTopAndBottomSameQuery with filter equality', () => {
     wrapper.unmount()
   })
 })
+
+describe('shouldShowDirtyBadge', () => {
+  test('returns true when isDirty and tile has queryId', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: 'qid-1' }, isDirty: true })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('returns false when isDirty but tile has no queryId', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined }, isDirty: true })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('returns true when queryResponse has replacements regardless of isDirty', () => {
+    const tile = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' } },
+    }
+    const wrapper = setup({ tile, isDirty: false })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('returns true when queryResponse has items regardless of isDirty', () => {
+    const tile = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: { data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' } },
+    }
+    const wrapper = setup({ tile, isDirty: false })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('returns false when not dirty, no queryId, and no replacements or items', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined }, isDirty: false })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('renderBottomResponse: delegates to areTopAndBottomSameQuery for execution state', () => {
+  test('calls areTopAndBottomSameQuery (filter-aware) rather than comparing query text directly', () => {
+    const tile = {
+      ...sampleTile,
+      splitView: true,
+      secondQuery: sampleTile.query,
+      tableFilters: [{ field: 'region', value: 'West' }],
+      secondTableFilters: [{ field: 'region', value: 'East' }],
+    }
+    const wrapper = setup({ tile })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'areTopAndBottomSameQuery')
+    instance.renderBottomResponse()
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
+    wrapper.unmount()
+  })
+
+  test('uses bottom execution state (isBottomExecuted) when filters differ', () => {
+    const tile = {
+      ...sampleTile,
+      splitView: true,
+      secondQuery: sampleTile.query,
+      tableFilters: [{ field: 'region', value: 'West' }],
+      secondTableFilters: [{ field: 'region', value: 'East' }],
+      secondQueryResponse: null,
+    }
+    const wrapper = setup({ tile })
+    // Top executed, bottom not — with filter split areTopAndBottomSameQuery()=false so bottom state is used
+    wrapper.setState({ isTopExecuted: true, isTopExecuting: false, isBottomExecuted: false })
+    const instance = wrapper.instance()
+    expect(instance.areTopAndBottomSameQuery()).toBe(false)
+    const spy = jest.spyOn(instance, 'renderResponse').mockReturnValue(null)
+    instance.renderBottomResponse()
+    // renderPlaceholder=true because isBottomExecuted=false and secondQueryResponse=null
+    expect(spy.mock.calls[0][0].renderPlaceholder).toBe(true)
+    spy.mockRestore()
+    wrapper.unmount()
+  })
+
+  test('uses top execution state (isTopExecuted) when query and filters are identical', () => {
+    const filters = [{ field: 'region', value: 'West' }]
+    const tile = {
+      ...sampleTile,
+      splitView: true,
+      secondQuery: sampleTile.query,
+      tableFilters: filters,
+      secondTableFilters: filters,
+      secondQueryResponse: sampleResponses[10],
+    }
+    const wrapper = setup({ tile })
+    wrapper.setState({ isTopExecuted: true, isTopExecuting: false, isBottomExecuted: false })
+    const instance = wrapper.instance()
+    expect(instance.areTopAndBottomSameQuery()).toBe(true)
+    const spy = jest.spyOn(instance, 'renderResponse').mockReturnValue(null)
+    instance.renderBottomResponse()
+    // areTopAndBottomSameQuery()=true → reads isTopExecuted=true → renderPlaceholder=false
+    expect(spy.mock.calls[0][0].renderPlaceholder).toBe(false)
+    spy.mockRestore()
+    wrapper.unmount()
+  })
+})
