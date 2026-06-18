@@ -738,6 +738,43 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(setupDirtyTest({ queryResponse: { data: { data: { rows: [[999]] } } } }).has('tile-abc')).toBe(false)
   })
 
+  test('does NOT mark dirty for a brand new tile (not in uneditedDashboardTiles)', () => {
+    const newTile = { key: 'tile-new', i: 'tile-new', query: 'player stats', queryId: undefined }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId })
+    instance.getMostRecentTiles = jest.fn(() => [savedTile, newTile])
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a new tile that has been run (has queryId, not in saved)', () => {
+    const newTile = { key: 'tile-new', i: 'tile-new', query: 'player stats', queryId: 'qid-new' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [newTile])
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a pre-AQLP-792 tile with empty saved.query after running', () => {
+    const preLegacyTile = { ...savedTile, query: '', queryId: 'qid-old' }
+    const currentTile = { ...savedTile, query: 'avrg spread profit', queryId: 'qid-new' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [preLegacyTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-old' })
+    instance.getMostRecentTiles = jest.fn(() => [currentTile])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a pre-AQLP-792 tile while user is typing (legacy queryId still present on tile)', () => {
+    const preLegacyTile = { ...savedTile, query: '', queryId: 'qid-old' }
+    const typingTile = { ...savedTile, query: 'player stats', queryId: 'qid-old' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [preLegacyTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-old' })
+    instance.getMostRecentTiles = jest.fn(() => [typingTile])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
   test('only marks the changed tile as dirty in a multi-tile dashboard', () => {
     const savedTile2 = { ...savedTile, key: 'tile-xyz', i: 'tile-xyz', query: 'revenue by month' }
     const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile, savedTile2] })
@@ -764,42 +801,63 @@ describe('Dashboard.baselineQueryIds — tracks executed queryIds', () => {
     secondQueryId: undefined,
   }
 
-  test('setParamsForTile updates baselineQueryIds when queryId changes in edit mode', () => {
-    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+  const setupBaseline = (isEditing = true) => {
+    const wrapper = setup({ isEditing }, { uneditedDashboardTiles: [savedTile] })
     const instance = wrapper.instance()
     instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: undefined })
     instance.getMostRecentTiles = jest.fn(() => [savedTile])
     instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+    return instance
+  }
 
-    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
-
-    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-after-run')
-  })
-
-  test('does NOT update baselineQueryIds when not editing', () => {
-    const wrapper = setup({ isEditing: false }, { uneditedDashboardTiles: [savedTile] })
-    const instance = wrapper.instance()
-    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: undefined })
-    instance.getMostRecentTiles = jest.fn(() => [savedTile])
-    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
-
-    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
-
+  test('setParamsForTile snapshots queryId into baseline when query TEXT changes in edit mode', () => {
+    const instance = setupBaseline()
+    instance.setParamsForTile({ query: 'new query text' }, 'tile-abc', [])
     expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
   })
 
-  test('after tile re-executes, a subsequent text change is detected as dirty', () => {
-    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
-    const instance = wrapper.instance()
-    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: undefined })
-    instance.getMostRecentTiles = jest.fn(() => [savedTile])
-    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
-
-    // Tile re-executes — baselineQueryIds updates
+  test('does NOT update baseline when only queryId changes (post-run)', () => {
+    const instance = setupBaseline()
     instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
+    // baseline stays at the value set before the run
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+  })
+
+  test('does NOT update baselineQueryIds when not editing', () => {
+    const instance = setupBaseline(false)
+    instance.setParamsForTile({ query: 'new query text' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+  })
+
+  test('dirty clears after re-run: text change sets baseline, new queryId differs from it', () => {
+    const instance = setupBaseline()
+
+    // User changes query text → baseline snaps to current queryId ('qid-original')
+    instance.setParamsForTile({ query: 'sales by product' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+
+    // While unrun: tile still has old queryId — dirty
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, query: 'sales by product' }])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
+
+    // Tile re-executes — queryId becomes new; baseline stays at 'qid-original'
+    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, query: 'sales by product', queryId: 'qid-after-run' }])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
+  test('after re-run, a subsequent text change is detected as dirty', () => {
+    const instance = setupBaseline()
+
+    // First run changes queryId but NOT baseline
+    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run' }])
+
+    // User then changes query text → baseline snaps to current queryId ('qid-after-run')
+    instance.setParamsForTile({ query: 'sales by product' }, 'tile-abc', [])
     expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-after-run')
 
-    // User edits query text — now dirty against new baseline
+    // Tile has new text but queryId still 'qid-after-run' = baseline → dirty
     instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run', query: 'sales by product' }])
     expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
   })

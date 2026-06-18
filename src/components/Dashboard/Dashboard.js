@@ -356,11 +356,15 @@ class DashboardWithoutTheme extends React.Component {
       (current || [])
         .filter((tile) => {
           const saved = savedByKey.get(tile.key)
-          if (!saved) return !!tile.queryId && (!tile.query || tile.query !== tile.queryResponse?.data?.data?.text)
-          // Dirty = query text changed but not yet re-executed (queryId matches the baseline set when editing started).
+          if (!saved) return false
           const baseline = this.baselineQueryIds.get(tile.key) || {}
-          const topDirty = tile.query !== saved.query && tile.queryId === baseline.queryId
-          const bottomDirty = tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
+          // Tiles with no saved query text: dirty only if text entered but tile not yet run (legacy tiles with a queryId won't trigger this while typing).
+          const topDirty = saved.query
+            ? tile.query !== saved.query && tile.queryId === baseline.queryId
+            : !!tile.query && !tile.queryId
+          const bottomDirty = saved.secondQuery
+            ? tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
+            : !!tile.secondQuery && !tile.secondQueryId
           return topDirty || bottomDirty
         })
         .map((tile) => tile.key),
@@ -1070,15 +1074,16 @@ class DashboardWithoutTheme extends React.Component {
         ...params,
       }
 
-      // Update baseline after execution so getDirtyTileKeys doesn't flag a freshly-run tile.
-      if (this.props.isEditing && (params.queryId !== undefined || params.secondQueryId !== undefined)) {
+      // Snapshot queryId on text change so dirty clears after re-run (tile.queryId updates away from baseline).
+      if (this.props.isEditing) {
         const tileKey = tiles[tileIndex]?.key
         if (tileKey) {
           const cur = this.baselineQueryIds.get(tileKey) || {}
-          this.baselineQueryIds.set(tileKey, {
-            queryId: params.queryId !== undefined ? params.queryId : cur.queryId,
-            secondQueryId: params.secondQueryId !== undefined ? params.secondQueryId : cur.secondQueryId,
-          })
+          const before = originalTiles[tileIndex] || {}
+          const update = {}
+          if (params.query !== undefined && params.query !== before.query) update.queryId = before.queryId
+          if (params.secondQuery !== undefined && params.secondQuery !== before.secondQuery) update.secondQueryId = before.secondQueryId
+          if (Object.keys(update).length) this.baselineQueryIds.set(tileKey, { ...cur, ...update })
         }
       }
 
