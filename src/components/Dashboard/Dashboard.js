@@ -499,7 +499,7 @@ class DashboardWithoutTheme extends React.Component {
           // Edit mode: re-execute filtered tiles so SQL reflects current filters and queryId is captured.
           const needsFilterExecution = this.props.isEditing && (tile?.tableFilters?.length > 0 || tile?.secondTableFilters?.length > 0)
           if (forceExecution || needsFilterExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
-            promises.push(this.tileRefs[dashboardTile].processTile({ isCachedRefresh: !this.props.isEditing }))
+            promises.push(this.tileRefs[dashboardTile].processTile())
           }
         }
       }
