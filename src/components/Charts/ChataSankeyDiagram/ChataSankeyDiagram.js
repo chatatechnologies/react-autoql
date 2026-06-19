@@ -585,6 +585,13 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     const svg = select(chartRef.current)
     svg.selectAll('*').remove()
 
+    // Get computed CSS value for PNG export (CSS variables don't work in PNG)
+    const getComputedCSSValue = (cssVar) => {
+      const computed = window.getComputedStyle(document.documentElement)
+      return computed.getPropertyValue(cssVar).trim() || undefined
+    }
+    const textColorPrimary = getComputedCSSValue('--react-autoql-text-color-primary')
+
     const { height } = props
     const margin = { top: 10, right: 10, bottom: 10, left: 10 }
     const chartWidth = Math.max(120, chartRightBound - margin.left - margin.right)
@@ -821,6 +828,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       .attr('dy', '0.35em')
       .attr('text-anchor', (d) => (d.x0 < chartWidth / 2 ? 'start' : 'end'))
       .attr('class', 'sankey-node-label')
+      .attr('fill', textColorPrimary) // Attribute for PNG export (CSS variables don't resolve in canvas)
       .text((d) => d.displayName || d.name)
       .style('font-size', '0.75rem')
       .style('font-weight', 'bold')

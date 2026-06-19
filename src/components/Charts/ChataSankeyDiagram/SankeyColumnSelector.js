@@ -262,6 +262,7 @@ const SankeyColumnSelector = ({
             height={buttonSize}
             rx='4'
             strokeWidth='1'
+            opacity={0} // CSS opacity: 1 !important keeps it visible in browser; opacity=0 hides it in PNG export
             onClick={(e) => {
               e.stopPropagation()
               setShowDropdown(!showDropdown)
@@ -279,6 +280,7 @@ const SankeyColumnSelector = ({
               dominantBaseline='middle'
               fontSize='1rem'
               fontWeight='bold'
+              opacity={0} // CSS opacity: 1 !important keeps it visible in browser; opacity=0 hides it in PNG export
               style={{ pointerEvents: 'none' }}
             >
               Σ
@@ -287,6 +289,7 @@ const SankeyColumnSelector = ({
             <g
               transform={`translate(${buttonIconOffset}, ${buttonIconOffset})`}
               className={`sankey-${type}-button-icon`}
+              opacity={0} // CSS opacity: 1 !important keeps it visible in browser; opacity=0 hides it in PNG export
               style={{ pointerEvents: 'none' }}
             >
               <foreignObject width={buttonIconSize} height={buttonIconSize}>

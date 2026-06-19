@@ -1129,8 +1129,11 @@ export class QueryOutput extends React.Component {
   }
 
   usePivotDataForChart = () => {
-    // Network graphs always use original data, never pivot data
-    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH) {
+    // Network graphs and sankey diagrams always use original data, never pivot data
+    if (
+      this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
+      this.state?.displayType === DisplayTypes.SANKEY
+    ) {
       return false
     }
 
@@ -4141,7 +4144,8 @@ export class QueryOutput extends React.Component {
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
       !this.potentiallySupportsDatePivot() &&
-      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH
+      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH &&
+      this.state?.displayType !== DisplayTypes.SANKEY
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
