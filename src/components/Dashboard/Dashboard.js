@@ -355,6 +355,7 @@ class DashboardWithoutTheme extends React.Component {
     return new Set(
       (current || [])
         .filter((tile) => {
+          if (tile.queryResponse?.data?.data?.replacements || tile.queryResponse?.data?.data?.items) return true
           const saved = savedByKey.get(tile.key)
           if (!saved) return false
           const baseline = this.baselineQueryIds.get(tile.key) || {}
@@ -365,10 +366,7 @@ class DashboardWithoutTheme extends React.Component {
           const bottomDirty = saved.secondQuery
             ? tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
             : !!tile.secondQuery && !tile.secondQueryId
-          const hasSuggestions =
-            !!tile.queryResponse?.data?.data?.replacements ||
-            !!tile.queryResponse?.data?.data?.items
-          return topDirty || bottomDirty || hasSuggestions
+          return topDirty || bottomDirty
         })
         .map((tile) => tile.key),
     )

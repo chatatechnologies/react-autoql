@@ -756,6 +756,19 @@ describe('Dashboard.getDirtyTileKeys', () => {
     ).toBe(false)
   })
 
+  test('marks dirty for a new tile (not in uneditedDashboardTiles) that has suggestions', () => {
+    const newTile = {
+      key: 'tile-new',
+      i: 'tile-new',
+      query: '9999',
+      queryResponse: { data: { data: { replacements: [{ text: 'all cogs 9999' }] } } },
+    }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [newTile])
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(true)
+  })
+
   test('does NOT mark dirty for a brand new tile (not in uneditedDashboardTiles)', () => {
     const newTile = { key: 'tile-new', i: 'tile-new', query: 'player stats', queryId: undefined }
     const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
