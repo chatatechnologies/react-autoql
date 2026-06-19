@@ -453,7 +453,7 @@ export class DashboardTile extends React.Component {
   }
 
   shouldShowDirtyBadge = () => {
-    if (this.props.isFailed) return false
+    if (!this.props.isEditing || this.props.isFailed) return false
     return (
       (this.props.isDirty && !!this.props.tile?.queryId) ||
       !!this.props.tile?.queryResponse?.data?.data?.replacements ||
@@ -2262,7 +2262,7 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isFailed ? ' failed' : ''}`}
+          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed ? ' failed' : ''}`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2289,7 +2289,7 @@ export class DashboardTile extends React.Component {
               !
             </div>
           )}
-          {this.props.isFailed && (
+          {this.props.isEditing && this.props.isFailed && (
             <div
               className='react-autoql-dashboard-tile-failed-badge'
               data-tooltip-content='This query has failed'

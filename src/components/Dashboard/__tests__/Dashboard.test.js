@@ -405,7 +405,7 @@ describe('Dashboard.executeSingleTile', () => {
 describe('Dashboard.executeDashboard', () => {
   const tileWithoutResponse = { key: 'tile-1', i: 'tile-1', query: 'SELECT 1' }
 
-  test('passes isCachedRefresh=true in view mode (isEditing=false)', () => {
+  test('calls processTile with no args in view mode', () => {
     const wrapper = setup({ isEditing: false, tiles: [tileWithoutResponse] })
     const instance = wrapper.instance()
     const processTile = jest.fn(() => Promise.resolve())
@@ -414,10 +414,10 @@ describe('Dashboard.executeDashboard', () => {
 
     instance.executeDashboard()
 
-    expect(processTile).toHaveBeenCalledWith({ isCachedRefresh: true })
+    expect(processTile).toHaveBeenCalledWith()
   })
 
-  test('passes isCachedRefresh=false in edit mode (isEditing=true)', () => {
+  test('calls processTile with no args in edit mode', () => {
     const wrapper = setup({ isEditing: true, tiles: [tileWithoutResponse] })
     const instance = wrapper.instance()
     const processTile = jest.fn(() => Promise.resolve())
@@ -426,7 +426,7 @@ describe('Dashboard.executeDashboard', () => {
 
     instance.executeDashboard()
 
-    expect(processTile).toHaveBeenCalledWith({ isCachedRefresh: false })
+    expect(processTile).toHaveBeenCalledWith()
   })
 })
 

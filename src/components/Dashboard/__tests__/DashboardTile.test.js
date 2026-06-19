@@ -1296,7 +1296,7 @@ describe('DashboardTile dirty class guard', () => {
 
   test('applies dirty class on an existing tile (has queryId) when isDirty is true', () => {
     const existingTile = { ...sampleTile, queryId: 'qid-1' }
-    const wrapper = setup({ tile: existingTile, isDirty: true })
+    const wrapper = setup({ tile: existingTile, isDirty: true, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).toContain('dirty')
     wrapper.unmount()
@@ -1304,7 +1304,15 @@ describe('DashboardTile dirty class guard', () => {
 
   test('does NOT apply dirty class when isDirty is false even with queryId', () => {
     const existingTile = { ...sampleTile, queryId: 'qid-1' }
-    const wrapper = setup({ tile: existingTile, isDirty: false })
+    const wrapper = setup({ tile: existingTile, isDirty: false, isEditing: true })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).not.toContain('dirty')
+    wrapper.unmount()
+  })
+
+  test('does NOT apply dirty class in view mode (isEditing=false)', () => {
+    const existingTile = { ...sampleTile, queryId: 'qid-1' }
+    const wrapper = setup({ tile: existingTile, isDirty: true, isEditing: false })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).not.toContain('dirty')
     wrapper.unmount()
@@ -1321,14 +1329,14 @@ describe('DashboardTile dirty badge guard', () => {
 
   test('renders dirty badge on an existing tile (has queryId) when isDirty is true', () => {
     const existingTile = { ...sampleTile, queryId: 'qid-1' }
-    const wrapper = setup({ tile: existingTile, isDirty: true })
+    const wrapper = setup({ tile: existingTile, isDirty: true, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
     wrapper.unmount()
   })
 
   test('does NOT render dirty badge when isDirty is false', () => {
     const existingTile = { ...sampleTile, queryId: 'qid-1' }
-    const wrapper = setup({ tile: existingTile, isDirty: false })
+    const wrapper = setup({ tile: existingTile, isDirty: false, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(false)
     wrapper.unmount()
   })
@@ -1336,38 +1344,51 @@ describe('DashboardTile dirty badge guard', () => {
 
 describe('DashboardTile failed class and badge', () => {
   test('applies failed class when isFailed is true', () => {
-    const wrapper = setup({ tile: sampleTile, isFailed: true })
+    const wrapper = setup({ tile: sampleTile, isFailed: true, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).toContain('failed')
     wrapper.unmount()
   })
 
   test('does NOT apply failed class when isFailed is false', () => {
-    const wrapper = setup({ tile: sampleTile, isFailed: false })
+    const wrapper = setup({ tile: sampleTile, isFailed: false, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).not.toContain('failed')
     wrapper.unmount()
   })
 
   test('renders failed badge when isFailed is true', () => {
-    const wrapper = setup({ tile: sampleTile, isFailed: true })
+    const wrapper = setup({ tile: sampleTile, isFailed: true, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-failed-badge').exists()).toBe(true)
     wrapper.unmount()
   })
 
   test('does NOT render failed badge when isFailed is false', () => {
-    const wrapper = setup({ tile: sampleTile, isFailed: false })
+    const wrapper = setup({ tile: sampleTile, isFailed: false, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-failed-badge').exists()).toBe(false)
     wrapper.unmount()
   })
 
-  test('can show both dirty border and failed border simultaneously', () => {
+  test('does NOT apply failed class in view mode (isEditing=false)', () => {
+    const wrapper = setup({ tile: sampleTile, isFailed: true, isEditing: false })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).not.toContain('failed')
+    wrapper.unmount()
+  })
+
+  test('does NOT render failed badge in view mode (isEditing=false)', () => {
+    const wrapper = setup({ tile: sampleTile, isFailed: true, isEditing: false })
+    expect(wrapper.find('.react-autoql-dashboard-tile-failed-badge').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('shows failed class but NOT dirty class when both isFailed and isDirty (prevents badge overlap)', () => {
     const existingTile = { ...sampleTile, queryId: 'qid-1' }
-    const wrapper = setup({ tile: existingTile, isDirty: true, isFailed: true })
+    const wrapper = setup({ tile: existingTile, isDirty: true, isFailed: true, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     const className = tile.prop('className')
-    expect(className).toContain('dirty')
     expect(className).toContain('failed')
+    expect(className).not.toContain('dirty')
     wrapper.unmount()
   })
 })
@@ -1703,7 +1724,7 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
         data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
       },
     }
-    const wrapper = setup({ tile: tileWithReplacements, isDirty: false })
+    const wrapper = setup({ tile: tileWithReplacements, isDirty: false, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).toContain('dirty')
     wrapper.unmount()
@@ -1717,7 +1738,7 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
         data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' },
       },
     }
-    const wrapper = setup({ tile: tileWithItems, isDirty: false })
+    const wrapper = setup({ tile: tileWithItems, isDirty: false, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).toContain('dirty')
     wrapper.unmount()
@@ -1731,7 +1752,7 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
         data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
       },
     }
-    const wrapper = setup({ tile: tileWithReplacements, isDirty: false })
+    const wrapper = setup({ tile: tileWithReplacements, isDirty: false, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
     wrapper.unmount()
   })
@@ -1744,7 +1765,7 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
         data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' },
       },
     }
-    const wrapper = setup({ tile: tileWithItems, isDirty: false })
+    const wrapper = setup({ tile: tileWithItems, isDirty: false, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
     wrapper.unmount()
   })
@@ -1905,13 +1926,13 @@ describe('DashboardTile areTopAndBottomSameQuery with filter equality', () => {
 
 describe('shouldShowDirtyBadge', () => {
   test('returns true when isDirty and tile has queryId', () => {
-    const wrapper = setup({ tile: { ...sampleTile, queryId: 'qid-1' }, isDirty: true })
+    const wrapper = setup({ tile: { ...sampleTile, queryId: 'qid-1' }, isDirty: true, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
     wrapper.unmount()
   })
 
   test('returns false when isDirty but tile has no queryId', () => {
-    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined }, isDirty: true })
+    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined }, isDirty: true, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
     wrapper.unmount()
   })
@@ -1922,7 +1943,7 @@ describe('shouldShowDirtyBadge', () => {
       queryId: undefined,
       queryResponse: { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' } },
     }
-    const wrapper = setup({ tile, isDirty: false })
+    const wrapper = setup({ tile, isDirty: false, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
     wrapper.unmount()
   })
@@ -1933,13 +1954,25 @@ describe('shouldShowDirtyBadge', () => {
       queryId: undefined,
       queryResponse: { data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' } },
     }
-    const wrapper = setup({ tile, isDirty: false })
+    const wrapper = setup({ tile, isDirty: false, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
     wrapper.unmount()
   })
 
   test('returns false when not dirty, no queryId, and no replacements or items', () => {
-    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined }, isDirty: false })
+    const wrapper = setup({ tile: { ...sampleTile, queryId: undefined }, isDirty: false, isEditing: true })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('returns false in view mode (isEditing=false)', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: 'qid-1' }, isDirty: true, isEditing: false })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('returns false when isFailed=true even if isDirty (prevents badge overlap)', () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: 'qid-1' }, isDirty: true, isFailed: true, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
     wrapper.unmount()
   })
