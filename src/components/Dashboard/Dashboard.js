@@ -496,7 +496,7 @@ class DashboardWithoutTheme extends React.Component {
             continue
           }
 
-          // In edit mode, also re-execute filtered tiles so SQL reflects the saved filters and queryId is captured.
+          // Edit mode: re-execute filtered tiles so SQL reflects current filters and queryId is captured.
           const needsFilterExecution = this.props.isEditing && (tile?.tableFilters?.length > 0 || tile?.secondTableFilters?.length > 0)
           if (forceExecution || needsFilterExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
             promises.push(this.tileRefs[dashboardTile].processTile({ isCachedRefresh: !this.props.isEditing }))
@@ -832,7 +832,6 @@ class DashboardWithoutTheme extends React.Component {
       }
 
       if (content?.queryResponse) {
-        // Strip response only for pre-feature tiles (no queryId) so they re-execute once to capture it.
         if (this.props.isEditing && !content.queryId) {
           const { queryResponse, secondQueryResponse, ...contentWithoutResponse } = content
           tile = { ...tile, ...contentWithoutResponse }
@@ -1075,7 +1074,6 @@ class DashboardWithoutTheme extends React.Component {
         ...params,
       }
 
-      // Snapshot queryId on text change so dirty clears after re-run (tile.queryId updates away from baseline).
       if (this.props.isEditing) {
         const tileKey = tiles[tileIndex]?.key
         if (tileKey) {

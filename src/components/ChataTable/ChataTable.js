@@ -894,7 +894,6 @@ export default class ChataTable extends React.Component {
       return this.props.queryFn(params)
     }
 
-    // Column changes and infinite scroll also require server-side.
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else if (this.props.pivot) {

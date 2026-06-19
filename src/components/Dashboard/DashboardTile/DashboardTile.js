@@ -453,6 +453,7 @@ export class DashboardTile extends React.Component {
   }
 
   shouldShowDirtyBadge = () => {
+    if (this.props.isFailed) return false
     return (
       (this.props.isDirty && !!this.props.tile?.queryId) ||
       !!this.props.tile?.queryResponse?.data?.data?.replacements ||
@@ -589,7 +590,6 @@ export class DashboardTile extends React.Component {
         // Merge restoration directly into the same debounced call to avoid timing issues
         Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
       } else {
-        // Capture new queryId unless this is a cached view-mode refresh that already has one.
         if (queryChanged || !this.props.tile?.queryId || !isCachedRefresh) {
           const queryId = response?.data?.data?.query_id
           if (queryId) {

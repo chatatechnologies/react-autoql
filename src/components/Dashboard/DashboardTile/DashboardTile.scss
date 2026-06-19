@@ -832,34 +832,15 @@
   background: inherit;
 }
 
-// Dirty tile indicator
 .react-autoql-dashboard-tile.dirty .react-autoql-dashboard-tile-inner-div {
   border-top: 3px solid #FFA700 !important;
 }
 
-.react-autoql-dashboard-tile-dirty-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background-color: #FFA700;
-  color: #fff;
-  font-size: 11px;
-  font-weight: bold;
-  line-height: 18px;
-  text-align: center;
-  z-index: 200;
-  cursor: default;
-  user-select: none;
-}
-
-// Failed tile indicator
 .react-autoql-dashboard-tile.failed .react-autoql-dashboard-tile-inner-div {
   border-top: 3px solid #ff0000 !important;
 }
 
+.react-autoql-dashboard-tile-dirty-badge,
 .react-autoql-dashboard-tile-failed-badge {
   position: absolute;
   top: 8px;
@@ -867,7 +848,6 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background-color: #ff0000;
   color: #fff;
   font-size: 11px;
   font-weight: bold;
@@ -876,4 +856,12 @@
   z-index: 200;
   cursor: default;
   user-select: none;
+}
+
+.react-autoql-dashboard-tile-dirty-badge {
+  background-color: #FFA700;
+}
+
+.react-autoql-dashboard-tile-failed-badge {
+  background-color: #ff0000;
 }
