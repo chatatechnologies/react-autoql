@@ -365,7 +365,10 @@ class DashboardWithoutTheme extends React.Component {
           const bottomDirty = saved.secondQuery
             ? tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
             : !!tile.secondQuery && !tile.secondQueryId
-          return topDirty || bottomDirty
+          const hasSuggestions =
+            !!tile.queryResponse?.data?.data?.replacements ||
+            !!tile.queryResponse?.data?.data?.items
+          return topDirty || bottomDirty || hasSuggestions
         })
         .map((tile) => tile.key),
     )

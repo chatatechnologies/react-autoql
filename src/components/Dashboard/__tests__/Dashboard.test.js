@@ -738,6 +738,24 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(setupDirtyTest({ queryResponse: { data: { data: { rows: [[999]] } } } }).has('tile-abc')).toBe(false)
   })
 
+  test('marks dirty when queryResponse contains replacements (suggestion pending)', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { replacements: [{ text: 'sales by region' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('marks dirty when queryResponse contains items (list suggestion pending)', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { items: [{ label: 'Region' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('does NOT mark dirty when queryResponse has neither replacements nor items', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { rows: [[1]], replacements: undefined, items: undefined } } } }).has('tile-abc'),
+    ).toBe(false)
+  })
+
   test('does NOT mark dirty for a brand new tile (not in uneditedDashboardTiles)', () => {
     const newTile = { key: 'tile-new', i: 'tile-new', query: 'player stats', queryId: undefined }
     const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
