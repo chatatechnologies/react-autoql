@@ -376,8 +376,9 @@ class DashboardWithoutTheme extends React.Component {
     const tiles = this.getMostRecentTiles() || []
     const failedTiles = tiles.filter((tile) => {
       if (!tile.queryId || !tile.queryResponse) return false
-      const refId = Number(String(tile.queryResponse?.data?.reference_id || '').split('.')[2])
-      return refId < 200 || refId >= 300
+      const referenceId = String(tile.queryResponse?.data?.reference_id || '')
+      const refId = Number(referenceId.split('.')[2])
+      return !(refId >= 200 && refId < 300)
     })
     return new Set(failedTiles.map((tile) => tile.key))
   }
@@ -833,7 +834,7 @@ class DashboardWithoutTheme extends React.Component {
 
       if (content?.queryResponse) {
         if (this.props.isEditing && !content.queryId) {
-          const { queryResponse, secondQueryResponse, ...contentWithoutResponse } = content
+          const { queryResponse: _queryResponse, secondQueryResponse: _secondQueryResponse, ...contentWithoutResponse } = content
           tile = { ...tile, ...contentWithoutResponse }
         } else {
           tile = { ...tile, ...content }

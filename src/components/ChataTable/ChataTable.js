@@ -393,6 +393,10 @@ export default class ChataTable extends React.Component {
           setTimeout(() => {
             if (this._isMounted) this.disableBaseFilterInputs()
           }, 0)
+        } else {
+          setTimeout(() => {
+            if (this._isMounted) this.enableBaseFilterInputs()
+          }, 0)
         }
       }
       this.setFilterBadgeClasses()
@@ -1200,6 +1204,25 @@ export default class ChataTable extends React.Component {
       if (clearBtn) {
         clearBtn.style.pointerEvents = 'none'
         clearBtn.style.opacity = '0.3'
+      }
+    })
+  }
+
+  enableBaseFilterInputs = () => {
+    if (!this.baseFilters.length) return
+    this.baseFilters.forEach((filter) => {
+      if (!filter.value) return
+      const inputEl = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
+      )
+      if (inputEl) {
+        inputEl.disabled = false
+        inputEl.classList.remove('react-autoql-base-filter-disabled')
+      }
+      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
+      if (clearBtn) {
+        clearBtn.style.pointerEvents = ''
+        clearBtn.style.opacity = ''
       }
     })
   }
