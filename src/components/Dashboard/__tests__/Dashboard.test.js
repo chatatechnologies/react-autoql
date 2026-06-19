@@ -430,6 +430,47 @@ describe('Dashboard.executeDashboard', () => {
   })
 })
 
+describe('executeTiles: needsFilterExecution', () => {
+  const tileWithFilterAndResponse = {
+    key: 'tile-1',
+    i: 'tile-1',
+    query: 'SELECT 1',
+    tableFilters: [{ value: 'West' }],
+    queryResponse: { data: { data: { query_id: 'qid-existing' } } },
+  }
+
+  test('re-executes a filtered tile in edit mode even when it has a queryResponse', () => {
+    const wrapper = setup({ isEditing: true, tiles: [tileWithFilterAndResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithFilterAndResponse])
+    instance.executeDashboard()
+    expect(processTile).toHaveBeenCalled()
+  })
+
+  test('does NOT re-execute a filtered tile in view mode when it has a queryResponse', () => {
+    const wrapper = setup({ isEditing: false, tiles: [tileWithFilterAndResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithFilterAndResponse])
+    instance.executeDashboard()
+    expect(processTile).not.toHaveBeenCalled()
+  })
+
+  test('does NOT re-execute a tile with no filters and an existing queryResponse', () => {
+    const tileNoFilters = { key: 'tile-1', i: 'tile-1', query: 'SELECT 1', tableFilters: [], queryResponse: { data: {} } }
+    const wrapper = setup({ isEditing: true, tiles: [tileNoFilters] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileNoFilters])
+    instance.executeDashboard()
+    expect(processTile).not.toHaveBeenCalled()
+  })
+})
+
 describe('Dashboard.canUndo() and canRedo()', () => {
   const tile = (key, query = '', overrides = {}) => ({
     key,
@@ -819,6 +860,36 @@ describe('Dashboard.getDirtyTileKeys', () => {
     const result = instance.getDirtyTileKeys()
     expect(result.has('tile-abc')).toBe(true)
     expect(result.has('tile-xyz')).toBe(false)
+  })
+})
+
+describe('Dashboard.hasDirtyTiles', () => {
+  const savedTile = {
+    key: 'tile-abc',
+    i: 'tile-abc',
+    query: 'sales by region',
+    tableFilters: [],
+    orders: [],
+    displayType: 'table',
+    queryId: 'qid-1',
+    queryResponse: { data: { data: { rows: [[1]], count_rows: 1 } } },
+  }
+
+  test('returns false when no tiles are dirty', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId })
+    instance.getMostRecentTiles = jest.fn(() => [savedTile])
+    expect(instance.hasDirtyTiles()).toBe(false)
+  })
+
+  test('returns true when at least one tile is dirty', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId })
+    const changedTile = { ...savedTile, query: 'different query' }
+    instance.getMostRecentTiles = jest.fn(() => [changedTile])
+    expect(instance.hasDirtyTiles()).toBe(true)
   })
 })
 

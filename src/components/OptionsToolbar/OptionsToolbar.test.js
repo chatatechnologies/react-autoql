@@ -787,6 +787,48 @@ describe('getShouldShowButtonObj — customResponse guard (Thank you for your fe
   })
 })
 
+function makeReportProblemRef() {
+  return {
+    state: { displayType: 'table', customResponse: null, customColumnSelects: [] },
+    queryResponse: {
+      data: { data: { display_type: 'data', rows: [[1]], columns: [{ name: 'col' }], query_id: 'qid-123' } },
+    },
+    formattedTableParams: { filters: [], sorters: [] },
+    getColumns: () => [{ name: 'col', is_visible: true }],
+    isFilteringTable: () => false,
+    getTabulatorHeaderFilters: () => [],
+    getCombinedFilters: () => [],
+  }
+}
+
+describe('getShouldShowButtonObj — hideReportProblem prop', () => {
+  test('showReportProblemButton is false when hideReportProblem=true', () => {
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        autoQLConfig={{ ...OptionsToolbar.defaultProps.autoQLConfig, enableReportProblem: true }}
+        hideReportProblem={true}
+        responseRef={makeReportProblemRef()}
+      />,
+    )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(result.showReportProblemButton).toBe(false)
+  })
+
+  test('showReportProblemButton is true when hideReportProblem=false and conditions are met', () => {
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        autoQLConfig={{ ...OptionsToolbar.defaultProps.autoQLConfig, enableReportProblem: true }}
+        hideReportProblem={false}
+        responseRef={makeReportProblemRef()}
+      />,
+    )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(result.showReportProblemButton).toBe(true)
+  })
+})
+
 describe('toolbar state for error and feedback response types', () => {
   // The filter button is gated by hasMoreThanOneRow (getShouldShowButtonObj).
   // Error responses have no rows so showFilterButton=false regardless of display_type.
