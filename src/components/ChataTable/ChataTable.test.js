@@ -458,6 +458,10 @@ describe('ChataTable', () => {
 
       // Mock hasSetInitialData to be true so ajaxRequestFunc processes the request
       instance.hasSetInitialData = true
+      // tabulatorMounted must be true or the guard at line 715 returns initialData early
+      wrapper.setState({ tabulatorMounted: true })
+      // _setFiltersTime=0 prevents the hasRecentlySetHeaderFilters debounce guard from firing
+      instance._setFiltersTime = 0
 
       // Call ajaxRequestFunc
       const params = { page: 1, filter: [{ field: '1', type: '=', value: 'online' }] }
@@ -552,6 +556,10 @@ describe('ChataTable', () => {
       instance.pageSize = 10
       instance.useInfiniteScroll = true
       instance.hasSetInitialData = true
+      // tabulatorMounted must be true or the guard at line 715 returns initialData early
+      wrapper.setState({ tabulatorMounted: true })
+      // _setFiltersTime=0 prevents the hasRecentlySetHeaderFilters debounce guard from firing
+      instance._setFiltersTime = 0
 
       // Mock queryFn to return filtered data (simulating a filter applied)
       const filteredResponse = {
@@ -751,7 +759,7 @@ describe('ChataTable', () => {
         response: mockResponseWithNoData,
         initialTableParams: { filter: initialFilters },
         queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
-        useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
+        isEditing: true, // Edit mode forces REMOTE so queryFn is used server-side
       }
 
       const wrapper = setup(props)
@@ -790,7 +798,7 @@ describe('ChataTable', () => {
         response: mockResponseWithNoData,
         initialTableParams: { filter: initialFilters },
         queryFn: jest.fn().mockResolvedValue(mockResponseWithData),
-        useInfiniteScroll: true, // Enable infinite scroll to use server-side queryFn
+        isEditing: true, // Edit mode forces REMOTE so filter changes call the API
       }
 
       const wrapper = setup(props)
@@ -1000,5 +1008,729 @@ describe('ChataTable', () => {
       // But total is 4, so should show 4
       expect(JSON.stringify(result)).toContain('Scrolled 4')
     })
+  })
+})
+
+describe('ChataTable filter/badge initialization', () => {
+  test('baseFilters is initialized from initialTableParams.filter', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const instance = setup({ initialTableParams: { filter: filters } }).instance()
+    expect(instance.baseFilters).toEqual(filters)
+  })
+
+  test('baseFilters is empty array when no initialTableParams', () => {
+    const instance = setup().instance()
+    expect(instance.baseFilters).toEqual([])
+  })
+
+  test('baseFilters is a deep clone (mutations do not affect initialTableParams)', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const instance = setup({ initialTableParams: { filter: filters } }).instance()
+    instance.baseFilters[0].value = 'MUTATED'
+    expect(filters[0].value).toBe('online')
+  })
+
+  test('isFiltering state is false by default when initialIsFiltering is not set', () => {
+    const instance = setup().instance()
+    expect(instance.state.isFiltering).toBe(false)
+  })
+
+  test('isFiltering state is true when initialIsFiltering=true is passed', () => {
+    const instance = setup({ initialIsFiltering: true }).instance()
+    expect(instance.state.isFiltering).toBe(true)
+  })
+
+  test('isFiltering state is false when initialIsFiltering=false is passed', () => {
+    const instance = setup({ initialIsFiltering: false }).instance()
+    expect(instance.state.isFiltering).toBe(false)
+  })
+})
+
+describe('disableBaseFilterInputs', () => {
+  function setupWithDOM(filters) {
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    // Build DOM elements matching the selectors used by disableBaseFilterInputs
+    const container = document.createElement('div')
+    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
+
+    filters.forEach((filter) => {
+      const col = document.createElement('div')
+      col.className = 'tabulator-col'
+      col.setAttribute('tabulator-field', filter.field)
+
+      const content = document.createElement('div')
+      content.className = 'tabulator-col-content'
+      const input = document.createElement('input')
+      content.appendChild(input)
+      col.appendChild(content)
+      container.appendChild(col)
+
+      const clearBtn = document.createElement('div')
+      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
+      document.body.appendChild(clearBtn)
+    })
+
+    document.body.appendChild(container)
+
+    return { wrapper, instance, container }
+  }
+
+  afterEach(() => {
+    // Clean up DOM nodes
+    document.body.innerHTML = ''
+  })
+
+  test('disables header input and adds disabled class for each base filter with a value', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.disableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    expect(input.disabled).toBe(true)
+    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(true)
+  })
+
+  test('makes clear button non-interactive for each base filter', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance } = setupWithDOM(filters)
+
+    instance.disableBaseFilterInputs()
+
+    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
+    expect(clearBtn.style.pointerEvents).toBe('none')
+    expect(clearBtn.style.opacity).toBe('0.3')
+  })
+
+  test('skips filters with no value', () => {
+    const filters = [{ field: '1', type: '=', value: '' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.disableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    expect(input.disabled).toBe(false)
+  })
+
+  test('does nothing when isDashboardEditing=true', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: true })
+    const instance = wrapper.instance()
+
+    const spy = jest.spyOn(document, 'querySelector')
+    instance.disableBaseFilterInputs()
+
+    // Should return immediately without querying DOM
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('does nothing when baseFilters is empty', () => {
+    const wrapper = setup({ isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    const spy = jest.spyOn(document, 'querySelector')
+    instance.disableBaseFilterInputs()
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('handles missing DOM nodes gracefully (no throw)', () => {
+    const filters = [{ field: '99', type: '=', value: 'missing' }]
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+    expect(() => instance.disableBaseFilterInputs()).not.toThrow()
+  })
+})
+
+describe('toggleIsFiltering callback behavior', () => {
+  function makeFullRef() {
+    return {
+      tabulator: {
+        getColumns: jest.fn(() => []),
+        setHeaderFilterValue: jest.fn(),
+        getHeaderFilters: jest.fn(() => []),
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
+      },
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+  }
+
+  test('calls setFilters with current tableParams.filter when toggling on', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance.ref = makeFullRef()
+    instance._isMounted = true
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+    const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+
+    instance.toggleIsFiltering(true)
+
+    expect(setFiltersSpy).toHaveBeenCalledWith(instance.tableParams.filter)
+  })
+
+  test('does not call setFilters when toggling off', () => {
+    const wrapper = setup({ initialIsFiltering: true })
+    const instance = wrapper.instance()
+    instance.ref = makeFullRef()
+    instance._isMounted = true
+    const setFiltersSpy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+
+    instance.toggleIsFiltering(false)
+
+    expect(setFiltersSpy).not.toHaveBeenCalled()
+  })
+
+  test('returns the new isFiltering value', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = true
+
+    expect(instance.toggleIsFiltering(true)).toBe(true)
+    expect(instance.toggleIsFiltering(false)).toBe(false)
+  })
+
+  test('toggles from false to true when no explicit value passed', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = true
+
+    const result = instance.toggleIsFiltering()
+    expect(result).toBe(true)
+  })
+})
+
+describe('setFilterBadgeClasses non-pivot path', () => {
+  test('adds is-filtered class to columns with active filters', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const toggleSpy = jest.fn()
+    const mockColumn = {
+      getField: () => '1',
+      getDefinition: () => ({ name: '1', origColumn: { field: '1' } }),
+      getElement: () => ({ classList: { toggle: toggleSpy } }),
+    }
+    const unmatchedColumn = {
+      getField: () => '2',
+      getDefinition: () => ({ name: '2', origColumn: { field: '2' } }),
+      getElement: () => ({ classList: { toggle: toggleSpy } }),
+    }
+
+    instance.ref = { tabulator: { getColumns: () => [mockColumn, unmatchedColumn] } }
+    instance._isMounted = true
+    instance.state.tabulatorMounted = true
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+
+    instance.setFilterBadgeClasses()
+
+    expect(toggleSpy).toHaveBeenCalledWith('is-filtered', true)
+    expect(toggleSpy).toHaveBeenCalledWith('is-filtered', false)
+  })
+
+  test('removes is-filtered from all columns when there are no filters (direct remove path)', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const removeSpy = jest.fn()
+    const mockColumns = ['1', '2'].map((f) => ({
+      getField: () => f,
+      getDefinition: () => ({ name: f, origColumn: { field: f } }),
+      getElement: () => ({ classList: { remove: removeSpy } }),
+    }))
+
+    instance.ref = { tabulator: { getColumns: () => mockColumns } }
+    instance._isMounted = true
+    instance.state.tabulatorMounted = true
+    instance.tableParams.filter = []
+
+    instance.setFilterBadgeClasses()
+
+    expect(removeSpy).toHaveBeenCalledTimes(2)
+    expect(removeSpy).toHaveBeenCalledWith('is-filtered')
+  })
+
+  test('does not run when !_isMounted', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const getColumnsSpy = jest.fn(() => [])
+    instance.ref = { tabulator: { getColumns: getColumnsSpy } }
+    instance._isMounted = false
+    instance.state.tabulatorMounted = true
+
+    instance.setFilterBadgeClasses()
+
+    expect(getColumnsSpy).not.toHaveBeenCalled()
+  })
+
+  test('does not run when !tabulatorMounted', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const getColumnsSpy = jest.fn(() => [])
+    instance.ref = { tabulator: { getColumns: getColumnsSpy } }
+    instance._isMounted = true
+    instance.state.tabulatorMounted = false
+
+    instance.setFilterBadgeClasses()
+
+    expect(getColumnsSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('onDataFiltered tabulatorMounted guard', () => {
+  test('returns initialData without updating when tabulatorMounted is false', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance.hasSetInitialData = true
+    instance._isMounted = true
+    wrapper.setState({ tabulatorMounted: false })
+
+    const forceUpdateSpy = jest.spyOn(instance, 'forceUpdate').mockImplementation(() => {})
+
+    const result = instance.onDataFiltered([{ field: '1', type: '=', value: 'online' }], [['online', 'John']])
+
+    // When tabulatorMounted=false, should bail out early (return initialData)
+    expect(forceUpdateSpy).not.toHaveBeenCalled()
+    forceUpdateSpy.mockRestore()
+  })
+})
+
+describe('Dashboard edit-mode filtering', () => {
+  const smallResponse = { data: { data: { rows: [], count_rows: 10, query_id: 'q1' } } }
+  const filters = [{ field: '1', type: '=', value: 'online' }]
+
+  function makeMockRef(setHeaderFilterValueSpy) {
+    const tabulator = {
+      getColumns: jest.fn(() => [
+        {
+          getField: () => '1',
+          getDefinition: () => ({ headerFilter: true }),
+          getElement: () => ({ classList: { add: jest.fn(), remove: jest.fn() } }),
+        },
+      ]),
+      setHeaderFilterValue: setHeaderFilterValueSpy,
+      blockRedraw: jest.fn(),
+      restoreRedraw: jest.fn(),
+    }
+    return { tabulator, blockRedraw: tabulator.blockRedraw, restoreRedraw: tabulator.restoreRedraw }
+  }
+
+  describe('useRemote initialization', () => {
+    test('is REMOTE when isEditing=true regardless of row count', () => {
+      expect(setup({ isEditing: true, response: smallResponse }).instance().isLocal).toBe(false)
+    })
+
+    test('is REMOTE when isDashboardEditing=true regardless of row count', () => {
+      expect(setup({ isDashboardEditing: true, response: smallResponse }).instance().isLocal).toBe(false)
+    })
+
+    test('is LOCAL for small row count when isEditing=false', () => {
+      expect(setup({ isEditing: false, response: smallResponse }).instance().isLocal).toBe(true)
+    })
+
+    test('skipInitialFilters=true does not affect useRemote decision', () => {
+      expect(setup({ skipInitialFilters: true, response: smallResponse }).instance().isLocal).toBe(true)
+    })
+
+    test('fe_req.filters in response does NOT force REMOTE in view mode', () => {
+      const response = {
+        data: { data: { rows: [], count_rows: 10, query_id: 'q1', fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] } } },
+      }
+      expect(setup({ response }).instance().isLocal).toBe(true)
+    })
+
+    test('initialTableParams.filter does NOT force REMOTE in view mode', () => {
+      const wrapper = setup({ response: smallResponse, initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] } })
+      expect(wrapper.instance().isLocal).toBe(true)
+    })
+  })
+
+  describe('skipInitialFilters', () => {
+    test('does not call setFilters on tabulator mount when skipInitialFilters=true', () => {
+      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true })
+      expect(spy).not.toHaveBeenCalled()
+    })
+
+    test('header inputs are not set when skipInitialFilters=true', () => {
+      const setHeaderFilterValueSpy = jest.fn()
+      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeMockRef(setHeaderFilterValueSpy)
+      jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true })
+      expect(setHeaderFilterValueSpy).not.toHaveBeenCalled()
+    })
+
+    test('tableParams.filter is still set when skipInitialFilters=true so API calls carry filters', () => {
+      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
+      expect(wrapper.instance().tableParams.filter).toEqual(filters)
+    })
+
+    test('setFilterBadgeClasses still runs on mount when skipInitialFilters=true', () => {
+      const wrapper = setup({ skipInitialFilters: true, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true })
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    test('calls setFilters on tabulator mount when skipInitialFilters=false', () => {
+      const wrapper = setup({ initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true })
+      expect(spy).toHaveBeenCalled()
+    })
+
+    test('setFilters populates header input values', () => {
+      const setHeaderFilterValueSpy = jest.fn()
+      const wrapper = setup({ initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeMockRef(setHeaderFilterValueSpy)
+      instance.setFilters(filters)
+      expect(setHeaderFilterValueSpy).toHaveBeenCalledWith('1', 'online')
+    })
+
+    test('does not call setFilters when skipInitialFilters stays false', () => {
+      const wrapper = setup({ skipInitialFilters: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      wrapper.setState({ tabulatorMounted: true })
+      const spy = jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      wrapper.setProps({ skipInitialFilters: false })
+      expect(spy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('isDashboardEditing queryFn bypass', () => {
+    test('calls props.queryFn directly when isDashboardEditing=true', () => {
+      const mockPropsQueryFn = jest.fn().mockResolvedValue({})
+      const wrapper = setup({ isDashboardEditing: true, queryFn: mockPropsQueryFn })
+      wrapper.instance().queryFn({ tableFilters: [{ field: '1', type: '=', value: 'x' }] })
+      expect(mockPropsQueryFn).toHaveBeenCalledWith({ tableFilters: [{ field: '1', type: '=', value: 'x' }] })
+    })
+
+    test('calls props.queryFn directly when isEditing=true', () => {
+      const mockPropsQueryFn = jest.fn().mockResolvedValue({})
+      const wrapper = setup({ isEditing: true, queryFn: mockPropsQueryFn })
+      wrapper.instance().queryFn({ tableFilters: [] })
+      expect(mockPropsQueryFn).toHaveBeenCalled()
+    })
+
+    test('uses client-side path when neither isEditing nor isDashboardEditing', () => {
+      const mockPropsQueryFn = jest.fn()
+      const wrapper = setup({ isEditing: false, isDashboardEditing: false, queryFn: mockPropsQueryFn, response: smallResponse, useInfiniteScroll: false })
+      wrapper.instance().queryFn({ tableFilters: [] })
+      expect(mockPropsQueryFn).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('isDashboardEditing change handler', () => {
+    function makeEditingRef({ clearHeaderFilter = jest.fn() } = {}) {
+      const tabulator = {
+        getColumns: jest.fn(() => [
+          {
+            getField: () => '1',
+            getDefinition: () => ({ headerFilter: true }),
+            getElement: () => ({ classList: { toggle: jest.fn(), add: jest.fn(), remove: jest.fn() } }),
+          },
+        ]),
+        setHeaderFilterValue: jest.fn(),
+        getHeaderFilters: jest.fn(() => []),
+        clearHeaderFilter,
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
+      }
+      return { tabulator, blockRedraw: tabulator.blockRedraw, restoreRedraw: tabulator.restoreRedraw }
+    }
+
+    // Issue 1: badge always refreshed on editing state change
+    test('calls setFilterBadgeClasses when isDashboardEditing changes to true with filter row closed', () => {
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    test('calls setFilterBadgeClasses when isDashboardEditing changes to false with filter row closed', () => {
+      const wrapper = setup({ isDashboardEditing: true, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: false })
+
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    test('calls setFilterBadgeClasses when isDashboardEditing changes with filter row open', () => {
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: true })
+      const badgeSpy = jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(badgeSpy).toHaveBeenCalled()
+    })
+
+    // Issue 1: tableParams.filter not wiped when filter row is closed
+    test('does not reset tableParams.filter to baseFilters when isFiltering is false', () => {
+      const sessionFilters = [{ field: '1', type: '=', value: 'online' }]
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: [] } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      // Suppress tabulatorMounted side-effects so we can control tableParams.filter
+      jest.spyOn(instance, 'setFilters').mockImplementation(() => {})
+      jest.spyOn(instance, 'setHeaderInputEventListeners').mockImplementation(() => {})
+      jest.spyOn(instance, 'setTableHeight').mockImplementation(() => {})
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      // Set in-session applied filters AFTER tabulatorMounted block has run
+      instance.tableParams.filter = sessionFilters
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      // tableParams.filter should remain unchanged (session filters preserved)
+      expect(instance.tableParams.filter).toEqual(sessionFilters)
+    })
+
+    // Issue 2: _setFiltersTime stamped before clearHeaderFilter to guard AJAX
+    test('stamps _setFiltersTime before clearHeaderFilter so the AJAX debounce guard fires', () => {
+      const callOrder = []
+      const clearHeaderFilterMock = jest.fn(() => callOrder.push('clearHeaderFilter'))
+
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.baseFilters = filters
+      instance.ref = makeEditingRef({ clearHeaderFilter: clearHeaderFilterMock })
+      instance._isMounted = true
+      instance._setFiltersTime = 0 // stale — older than DEBOUNCE_MS
+
+      wrapper.setState({ tabulatorMounted: true, isFiltering: true })
+
+      // Track when _setFiltersTime is written relative to clearHeaderFilter
+      let timeWhenClearCalled = null
+      clearHeaderFilterMock.mockImplementation(() => {
+        timeWhenClearCalled = instance._setFiltersTime
+        callOrder.push('clearHeaderFilter')
+      })
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      // _setFiltersTime must be set (non-zero) at the moment clearHeaderFilter runs
+      expect(timeWhenClearCalled).toBeGreaterThan(0)
+      expect(clearHeaderFilterMock).toHaveBeenCalled()
+    })
+
+    test('does not call clearHeaderFilter when filter row is closed', () => {
+      const clearHeaderFilterMock = jest.fn()
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef({ clearHeaderFilter: clearHeaderFilterMock })
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(clearHeaderFilterMock).not.toHaveBeenCalled()
+    })
+  })
+})
+
+describe('enableBaseFilterInputs', () => {
+  function setupWithDOM(filters) {
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    const container = document.createElement('div')
+    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
+
+    filters.forEach((filter) => {
+      const col = document.createElement('div')
+      col.className = 'tabulator-col'
+      col.setAttribute('tabulator-field', filter.field)
+
+      const content = document.createElement('div')
+      content.className = 'tabulator-col-content'
+      const input = document.createElement('input')
+      input.disabled = true
+      input.classList.add('react-autoql-base-filter-disabled')
+      content.appendChild(input)
+      col.appendChild(content)
+      container.appendChild(col)
+
+      const clearBtn = document.createElement('div')
+      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
+      clearBtn.style.pointerEvents = 'none'
+      clearBtn.style.opacity = '0.3'
+      document.body.appendChild(clearBtn)
+    })
+
+    document.body.appendChild(container)
+    return { wrapper, instance, container }
+  }
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  test('re-enables header input and removes disabled class', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.enableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    expect(input.disabled).toBe(false)
+    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(false)
+  })
+
+  test('restores clear button interactivity', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance } = setupWithDOM(filters)
+
+    instance.enableBaseFilterInputs()
+
+    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
+    expect(clearBtn.style.pointerEvents).toBe('')
+    expect(clearBtn.style.opacity).toBe('')
+  })
+
+  test('skips filters with no value', () => {
+    const filters = [{ field: '1', type: '=', value: '' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.enableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    // Input was never disabled (no value), still not disabled after enable call
+    expect(input.disabled).toBe(true) // DOM was set disabled in setupWithDOM, but enableBaseFilterInputs skips it
+  })
+
+  test('does nothing when baseFilters is empty', () => {
+    const wrapper = setup({ isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    const spy = jest.spyOn(document, 'querySelector')
+    instance.enableBaseFilterInputs()
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('handles missing DOM nodes gracefully (no throw)', () => {
+    const filters = [{ field: '99', type: '=', value: 'missing' }]
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+    expect(() => instance.enableBaseFilterInputs()).not.toThrow()
+  })
+})
+
+describe('onDataFiltered: showQueryInterpretation guard', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  function makeRef(getHeaderFiltersResult) {
+    return {
+      tabulator: {
+        getHeaderFilters: jest.fn(() => getHeaderFiltersResult),
+        setHeaderFilterValue: jest.fn(),
+        getColumns: jest.fn(() => []),
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
+      },
+    }
+  }
+
+  test('does NOT call getRTForRemoteFilterAndSort when showQueryInterpretation=false', () => {
+    const wrapper = setup({ showQueryInterpretation: false })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockResolvedValue(undefined)
+
+    instance._isMounted = true
+    instance.useInfiniteScroll = false
+    instance.ref = makeRef([{ field: '1', type: '=', value: 'online' }])
+    wrapper.setState({ tabulatorMounted: true })
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+
+    instance.onDataFiltered([], [])
+    jest.advanceTimersByTime(200)
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('calls getRTForRemoteFilterAndSort when showQueryInterpretation=true and filters are set', () => {
+    const wrapper = setup({ showQueryInterpretation: true })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockResolvedValue(undefined)
+
+    instance._isMounted = true
+    instance.useInfiniteScroll = false
+    instance.ref = makeRef([{ field: '1', type: '=', value: 'online' }])
+    wrapper.setState({ tabulatorMounted: true })
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+
+    instance.onDataFiltered([], [])
+    jest.advanceTimersByTime(200)
+
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('does NOT call getRTForRemoteFilterAndSort when filters are empty even if showQueryInterpretation=true', () => {
+    const wrapper = setup({ showQueryInterpretation: true })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockResolvedValue(undefined)
+
+    instance._isMounted = true
+    instance.useInfiniteScroll = false
+    instance.ref = makeRef([])
+    wrapper.setState({ tabulatorMounted: true })
+    instance.tableParams.filter = []
+
+    instance.onDataFiltered([], [])
+    jest.advanceTimersByTime(200)
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
   })
 })

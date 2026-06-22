@@ -663,16 +663,217 @@ describe('exportCSV with filters', () => {
       getTabulatorHeaderFilters: () => [],
       getCombinedFilters: () => [{ field: 'col1', operator: '=', value: 'bar' }],
     }
+    // Verify responseRef methods are accessible
+    expect(responseRef.getCombinedFilters()).toEqual([{ field: 'col1', operator: '=', value: 'bar' }])
+    expect(responseRef.getColumns()).toHaveLength(1)
+  })
+})
+
+function makeResponseRef({ displayType, display_type, filters = [], customResponse = null }) {
+  return {
+    state: { displayType, customResponse },
+    queryResponse: { data: { data: { display_type } } },
+    formattedTableParams: { filters },
+    getColumns: () => [{ name: 'col1', is_visible: true }],
+    isFilteringTable: () => false,
+    getTabulatorHeaderFilters: () => [],
+    getCombinedFilters: () => [],
+  }
+}
+
+describe('renderFilterBtn — display_type guard', () => {
+  // showFilterButton is gated by row count/column count (getShouldShowButtonObj), not display_type.
+  // The display_type=data guard only controls isFiltered (the visual active-filter indicator).
+  // These tests verify isFiltered via renderFilterBtn() directly on the instance.
+
+  test('isFiltered=false when display_type is not data, even with non-empty filters', () => {
+    const { wrapper } = setup(undefined, { initialDisplayType: 'column' })
+    const instance = wrapper.instance()
+    instance.props.responseRef.queryResponse = { data: { data: { display_type: undefined } } }
+    instance.props.responseRef.formattedTableParams = { filters: [{ field: 'col1', value: 'x' }] }
+    const rendered = instance.renderFilterBtn()
+    // isFiltered=false, displayType is not table → tooltip is 'Filter data from table'
+    expect(rendered.props.tooltip).toBe('Filter data from table')
+  })
+
+  test('isFiltered=true when display_type=data and filters are applied', () => {
+    const { wrapper } = setup(undefined, { initialDisplayType: 'column' })
+    const instance = wrapper.instance()
+    instance.props.responseRef.queryResponse = { data: { data: { display_type: 'data' } } }
+    instance.props.responseRef.formattedTableParams = { filters: [{ field: 'col1', value: 'x' }] }
+    const rendered = instance.renderFilterBtn()
+    // isFiltered=true, displayType is not table → tooltip is 'Edit table filters'
+    expect(rendered.props.tooltip).toBe('Edit table filters')
+  })
+
+  test('isFiltered=false when display_type=data but no filters', () => {
+    const { wrapper } = setup(undefined, { initialDisplayType: 'column' })
+    const instance = wrapper.instance()
+    instance.props.responseRef.queryResponse = { data: { data: { display_type: 'data' } } }
+    instance.props.responseRef.formattedTableParams = { filters: [] }
+    const rendered = instance.renderFilterBtn()
+    expect(rendered.props.tooltip).toBe('Filter data from table')
+  })
+})
+
+describe('getShouldShowButtonObj — customResponse guard (Thank you for your feedback)', () => {
+  function makeFeedbackRef() {
+    return {
+      state: {
+        displayType: 'table',
+        customResponse: <div>Thank you for your feedback!</div>,
+        customColumnSelects: [],
+      },
+      queryResponse: { data: { data: { display_type: 'data', rows: [[1]], columns: [{ name: 'col1' }] } } },
+      formattedTableParams: { filters: [], sorters: [] },
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+  }
+
+  test('returns empty object (hides all buttons) when customResponse is set', () => {
     const wrapper = shallow(
       <OptionsToolbar
         {...OptionsToolbar.defaultProps}
         isEditing={true}
-        responseRef={responseRef}
+        onRefreshClick={jest.fn()}
+        showResetQueryOption={true}
+        responseRef={makeFeedbackRef()}
       />,
     )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(Object.keys(result)).toHaveLength(0)
+  })
 
-    // Verify responseRef methods are accessible
-    expect(responseRef.getCombinedFilters()).toEqual([{ field: 'col1', operator: '=', value: 'bar' }])
-    expect(responseRef.getColumns()).toHaveLength(1)
+  test('showMoreOptionsButton is false for customResponse (no more-options btn on feedback tiles)', () => {
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        onRefreshClick={jest.fn()}
+        showResetQueryOption={true}
+        responseRef={makeFeedbackRef()}
+      />,
+    )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(result.showMoreOptionsButton).toBeFalsy()
+  })
+
+  test('does NOT hide buttons when customResponse is null/undefined (normal data response)', () => {
+    const normalRef = {
+      state: { displayType: 'table', customResponse: null, customColumnSelects: [] },
+      queryResponse: { data: { data: { display_type: 'data', rows: [[1]], columns: [{ name: 'col' }] } } },
+      formattedTableParams: { filters: [], sorters: [] },
+      getColumns: () => [{ name: 'col', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        isEditing={true}
+        onRefreshClick={jest.fn()}
+        showResetQueryOption={true}
+        showRefreshInEdit={true}
+        responseRef={normalRef}
+      />,
+    )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    // Normal response — at least some buttons should be visible
+    expect(Object.keys(result).some((k) => result[k])).toBe(true)
+  })
+})
+
+function makeReportProblemRef() {
+  return {
+    state: { displayType: 'table', customResponse: null, customColumnSelects: [] },
+    queryResponse: {
+      data: { data: { display_type: 'data', rows: [[1]], columns: [{ name: 'col' }], query_id: 'qid-123' } },
+    },
+    formattedTableParams: { filters: [], sorters: [] },
+    getColumns: () => [{ name: 'col', is_visible: true }],
+    isFilteringTable: () => false,
+    getTabulatorHeaderFilters: () => [],
+    getCombinedFilters: () => [],
+  }
+}
+
+describe('getShouldShowButtonObj — hideReportProblem prop', () => {
+  test('showReportProblemButton is false when hideReportProblem=true', () => {
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        autoQLConfig={{ ...OptionsToolbar.defaultProps.autoQLConfig, enableReportProblem: true }}
+        hideReportProblem={true}
+        responseRef={makeReportProblemRef()}
+      />,
+    )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(result.showReportProblemButton).toBe(false)
+  })
+
+  test('showReportProblemButton is true when hideReportProblem=false and conditions are met', () => {
+    const wrapper = shallow(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        autoQLConfig={{ ...OptionsToolbar.defaultProps.autoQLConfig, enableReportProblem: true }}
+        hideReportProblem={false}
+        responseRef={makeReportProblemRef()}
+      />,
+    )
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(result.showReportProblemButton).toBe(true)
+  })
+})
+
+describe('toolbar state for error and feedback response types', () => {
+  // The filter button is gated by hasMoreThanOneRow (getShouldShowButtonObj).
+  // Error responses have no rows so showFilterButton=false regardless of display_type.
+  // The display_type guard ensures isFiltered stays false for non-data responses.
+
+  test('isFiltered is false for a 4xx client error response (no display_type=data)', () => {
+    const { wrapper } = setup(undefined, { initialDisplayType: 'column' })
+    const instance = wrapper.instance()
+    instance.props.responseRef.queryResponse = { data: { reference_id: '1.1.400', data: {} } }
+    instance.props.responseRef.formattedTableParams = { filters: [] }
+    const rendered = instance.renderFilterBtn()
+    expect(rendered.props.tooltip).toBe('Filter data from table')
+  })
+
+  test('isFiltered is false for a 5xx database error response (no display_type=data)', () => {
+    const { wrapper } = setup(undefined, { initialDisplayType: 'column' })
+    const instance = wrapper.instance()
+    instance.props.responseRef.queryResponse = { data: { reference_id: '1.1.502', data: {} } }
+    instance.props.responseRef.formattedTableParams = { filters: [{ field: 'col1', value: 'x' }] }
+    const rendered = instance.renderFilterBtn()
+    // Even with filters, isFiltered must be false because there's no display_type=data
+    expect(rendered.props.tooltip).toBe('Filter data from table')
+  })
+
+  test('getShouldShowButtonObj hides all buttons for customResponse (thank you for your feedback)', () => {
+    const feedbackRef = {
+      state: { displayType: 'table', customResponse: <div>Thank you!</div>, customColumnSelects: [] },
+      queryResponse: responseTestCases[8],
+      formattedTableParams: { filters: [], sorters: [] },
+      getColumns: () => [{ name: 'col1', is_visible: true }],
+      isFilteringTable: () => false,
+      getTabulatorHeaderFilters: () => [],
+      getCombinedFilters: () => [],
+    }
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={feedbackRef} />)
+    const result = wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+    expect(Object.keys(result)).toHaveLength(0)
+  })
+
+  test('isFiltered is true for a successful data response with active filters', () => {
+    const { wrapper } = setup(undefined, { initialDisplayType: 'column' })
+    const instance = wrapper.instance()
+    instance.props.responseRef.queryResponse = { data: { data: { display_type: 'data' } } }
+    instance.props.responseRef.formattedTableParams = { filters: [{ field: 'col1', value: 'x' }] }
+    const rendered = instance.renderFilterBtn()
+    expect(rendered.props.tooltip).toBe('Edit table filters')
   })
 })
