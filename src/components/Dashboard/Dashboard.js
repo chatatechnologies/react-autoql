@@ -373,12 +373,10 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   getFailedTiles = () => {
-    const savedByKey = new Map((this.state.uneditedDashboardTiles || []).map((t) => [t.key, t]))
     const tiles = this.getMostRecentTiles() || []
     const failedTiles = tiles.filter((tile) => {
-      if (!savedByKey.has(tile.key)) return false
       if (tile.queryResponse?.data?.data?.items) return true
-      if (!tile.queryId || !tile.queryResponse) return false
+      if (!tile.queryResponse) return false
       const referenceId = String(tile.queryResponse?.data?.reference_id || '')
       const refId = Number(referenceId.split('.')[2])
       return !(refId >= 200 && refId < 300)
@@ -1484,6 +1482,7 @@ class DashboardWithoutTheme extends React.Component {
               slicerSuggestion={this.props.slicerSuggestion}
               hasTiles={tiles.length > 0}
               hasDirtyTiles={dirtyTileKeys.size > 0}
+              hasFailedTiles={failedTileKeys.size > 0}
               enableSlicers={this.props.enableSlicers}
             />
           )}

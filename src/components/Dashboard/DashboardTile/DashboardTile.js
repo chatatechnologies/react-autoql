@@ -455,12 +455,7 @@ export class DashboardTile extends React.Component {
 
   shouldShowDirtyBadge = () => {
     if (!this.props.isEditing || this.props.isFailed) return false
-    return (
-      this.props.isDirty &&
-      (!!this.props.tile?.queryId ||
-        !!this.props.tile?.queryResponse?.data?.data?.replacements ||
-        !!this.props.tile?.queryResponse?.data?.data?.items)
-    )
+    return this.props.isDirty
   }
 
   // Return true only for query translation errors (29.9.502) that warrant a force-retry
@@ -1084,13 +1079,18 @@ export class DashboardTile extends React.Component {
 
     clearTimeout(this.queryInputTimer)
     this.queryInputTimer = setTimeout(() => {
-      this.debouncedSetParamsForTile({
+      const params = {
         query,
         pageSize: undefined,
         aggConfig: undefined,
         dataConfig: undefined,
         queryValidationSelections: undefined,
-      })
+      }
+      if (!query) {
+        params.queryResponse = null
+        params.queryId = undefined
+      }
+      this.debouncedSetParamsForTile(params)
     }, 600)
   }
 
@@ -1103,13 +1103,18 @@ export class DashboardTile extends React.Component {
 
     clearTimeout(this.secondQueryInputTimer)
     this.secondQueryInputTimer = setTimeout(() => {
-      this.debouncedSetParamsForTile({
+      const params = {
         secondQuery,
         secondPageSize: undefined,
         secondAggConfig: undefined,
         secondDataConfig: undefined,
         secondQueryValidationSelections: undefined,
-      })
+      }
+      if (!secondQuery) {
+        params.secondQueryResponse = null
+        params.secondQueryId = undefined
+      }
+      this.debouncedSetParamsForTile(params)
     }, 600)
   }
 

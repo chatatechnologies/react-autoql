@@ -975,37 +975,37 @@ describe('Dashboard.getFailedTiles', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1], [2]], count_rows: 2 } } }
   const emptySuccessResponse = { data: { reference_id: '1.1.200', data: { rows: [], count_rows: 0 } } }
   const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
+  const timeoutResponse = { data: { reference_id: '1.1.422', data: {} } }
+  const suggestionsResponse = { data: { data: { items: ['option 1', 'option 2'] } } }
 
-  const savedTileBase = { key: 'tile-1' }
-
-  const setupFailedTest = (tileOverrides, { isSaved = false } = {}) => {
-    const wrapper = setup({}, isSaved ? { uneditedDashboardTiles: [savedTileBase] } : {})
+  const setupFailedTest = (tileOverrides) => {
+    const wrapper = setup({})
     const instance = wrapper.instance()
     instance.getMostRecentTiles = jest.fn(() => [{ key: 'tile-1', ...tileOverrides }])
     return instance.getFailedTiles()
   }
 
-  test('does NOT flag a new tile with no queryId', () => {
-    expect(setupFailedTest({ queryResponse: errorResponse }).has('tile-1')).toBe(false)
-  })
-
-  test('does NOT flag a tile with queryId that has not run yet (no queryResponse)', () => {
-    expect(setupFailedTest({ queryId: 'qid-1' }, { isSaved: true }).has('tile-1')).toBe(false)
+  test('does NOT flag a tile with no queryResponse', () => {
+    expect(setupFailedTest({}).has('tile-1')).toBe(false)
   })
 
   test('does NOT flag a tile with a successful response', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: successResponse }, { isSaved: true }).has('tile-1')).toBe(false)
+    expect(setupFailedTest({ queryResponse: successResponse }).has('tile-1')).toBe(false)
   })
 
   test('does NOT flag a tile with a successful empty-result response', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: emptySuccessResponse }, { isSaved: true }).has('tile-1')).toBe(false)
+    expect(setupFailedTest({ queryResponse: emptySuccessResponse }).has('tile-1')).toBe(false)
   })
 
-  test('flags a saved tile whose query returned an error reference_id', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: errorResponse }, { isSaved: true }).has('tile-1')).toBe(true)
+  test('flags a tile whose query returned an error reference_id', () => {
+    expect(setupFailedTest({ queryResponse: errorResponse }).has('tile-1')).toBe(true)
   })
 
-  test('does NOT flag a new (unsaved) tile even if its query returned an error reference_id', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: errorResponse }, { isSaved: false }).has('tile-1')).toBe(false)
+  test('flags a tile whose query timed out', () => {
+    expect(setupFailedTest({ queryResponse: timeoutResponse }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile whose query returned suggestions (items)', () => {
+    expect(setupFailedTest({ queryResponse: suggestionsResponse }).has('tile-1')).toBe(true)
   })
 })

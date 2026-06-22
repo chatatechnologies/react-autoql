@@ -48,6 +48,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     isDashboardFullyExecuted: PropTypes.bool,
     hasTiles: PropTypes.bool,
     hasDirtyTiles: PropTypes.bool,
+    hasFailedTiles: PropTypes.bool,
     slicers: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
@@ -77,6 +78,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     isDashboardFullyExecuted: false,
     hasTiles: false,
     hasDirtyTiles: false,
+    hasFailedTiles: false,
     slicers: [],
   }
 
@@ -315,9 +317,13 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   <Button
                     type='primary'
                     icon='save'
-                    tooltip={this.props.hasDirtyTiles ? 'Re-execute all queries before saving' : 'Save and close'}
+                    tooltip={
+                      this.props.hasDirtyTiles || this.props.hasFailedTiles
+                        ? 'Re-execute all queries before saving'
+                        : 'Save and close'
+                    }
                     tooltipID={this.props.tooltipID}
-                    disabled={this.props.hasDirtyTiles}
+                    disabled={this.props.hasDirtyTiles || this.props.hasFailedTiles}
                     onClick={this.props.onSaveClick}
                   >
                     Save
