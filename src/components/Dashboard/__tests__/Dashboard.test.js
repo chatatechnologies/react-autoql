@@ -737,97 +737,170 @@ describe('Dashboard.addTile — DM response handling', () => {
 })
 
 // Edit-mode state matrix
-// ┌─────────────────────────────────────┬────────┬────────┬────────────┬─────────────┬──────────────┐
-// │ Scenario                            │isDirty │isFailed│ dirty badge│ failed badge│ save disabled│
-// ├─────────────────────────────────────┼────────┼────────┼────────────┼─────────────┼──────────────┤
-// │ Edit, fresh success run             │ false  │ false  │    no      │     no      │     no       │
-// │ Query text changed, not re-run      │ true   │ false  │    yes     │     no      │     yes      │
-// │ Query re-run → success              │ false  │ false  │    no      │     no      │     no       │
-// │ DB/server error                     │ false  │ true   │    no      │     yes     │     yes      │
-// │ Timeout (422)                       │ false  │ true   │    no      │     yes     │     yes      │
-// │ Disambiguation (items)              │ true   │ true   │    yes     │     yes     │     yes      │
-// │ Replacements                        │ true   │ false  │    yes     │     no      │     yes      │
-// │ Error added as new tile (bug fixed) │ false  │ true   │    no      │     yes     │     yes      │
-// │ isFailed overrides dirty badge      │ true   │ true   │    no      │     yes     │     yes      │
-// └─────────────────────────────────────┴────────┴────────┴────────────┴─────────────┴──────────────┘
-describe('edit-mode state matrix: dirty + failed interactions', () => {
+//
+// Axes:
+//   Dashboard: NEW (no prior tiles, uneditedDashboardTiles=[])
+//              EXISTING (has prior saved tiles, uneditedDashboardTiles=[...])
+//   Tile:      NEW (added during this edit session — never in uneditedDashboardTiles)
+//              EXISTING (was on dashboard before edit started)
+//
+// Key rules:
+//   isDirty  — only possible on EXISTING dashboard + EXISTING tile with changed query/ambiguous response
+//   isFailed — possible on ANY tile with a non-2xx reference_id or items response
+//   New tiles can NEVER be dirty (no saved state to diff against)
+//   New dashboards can NEVER have dirty tiles (uneditedDashboardTiles is empty)
+//
+// ┌──────────────┬──────────────┬────────────────────────────┬────────┬────────┬──────────────┐
+// │ Dashboard    │ Tile         │ Scenario                   │isDirty │isFailed│ save disabled│
+// ├──────────────┼──────────────┼────────────────────────────┼────────┼────────┼──────────────┤
+// │ New          │ New          │ Success run                │ false  │ false  │     no       │
+// │ New          │ New          │ DB/server error            │ false  │ true   │     yes      │
+// │ New          │ New          │ Disambiguation (items)     │ false  │ true   │     yes      │
+// │ Existing     │ New (added)  │ Success run                │ false  │ false  │     no       │
+// │ Existing     │ New (added)  │ DB/server error            │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Success, query unchanged   │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ Query text changed, no run │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ Query re-run → success     │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ DB/server error            │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Timeout (422)              │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Disambiguation (items)     │ true   │ true   │     yes      │
+// │ Existing     │ Existing     │ Replacements               │ true   │ false  │     yes      │
+// └──────────────┴──────────────┴────────────────────────────┴────────┴────────┴──────────────┘
+describe('edit-mode state matrix', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
   const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
   const timeoutResponse = { data: { reference_id: '1.1.422', data: {} } }
   const itemsResponse = { data: { data: { items: ['opt 1', 'opt 2'] } } }
-  const replacementsResponse = {
-    data: { reference_id: '1.1.200', data: { replacements: [{ value: 'foo', text: 'bar' }] } },
-  }
+  const replacementsResponse = { data: { reference_id: '1.1.200', data: { replacements: [{ value: 'foo', text: 'bar' }] } } }
 
-  const savedTile = {
-    key: 'tile-1',
-    i: 'tile-1',
-    query: 'sales by region',
-    queryId: 'qid-original',
-    queryResponse: successResponse,
-  }
+  const existingTile = { key: 'tile-1', i: 'tile-1', query: 'sales by region', queryId: 'qid-original', queryResponse: successResponse }
+  const newTile = { key: 'tile-new', i: 'tile-new', query: 'revenue by month', queryId: 'qid-new' }
 
-  function setupMatrix(tileOverride, isEditing = true) {
-    const wrapper = setup({ isEditing })
-    const instance = wrapper.instance()
-    instance.baselineQueryIds.set('tile-1', { queryId: savedTile.queryId })
-    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, ...tileOverride }])
-    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
-    return instance
-  }
+  // NEW dashboard: uneditedDashboardTiles=[] — nothing can ever be dirty
+  describe('new dashboard', () => {
+    function setupNew(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      wrapper.setState({ uneditedDashboardTiles: [] })
+      instance.getMostRecentTiles = jest.fn(() => [{ ...newTile, ...tileOverride }])
+      return instance
+    }
 
-  test('success run: not dirty, not failed, save enabled', () => {
-    const instance = setupMatrix({})
-    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(false)
-    expect(instance.getFailedTiles().has('tile-1')).toBe(false)
-    expect(instance.hasDirtyTiles()).toBe(false)
+    test('new tile, success: not dirty, not failed, save enabled', () => {
+      const i = setupNew({ queryResponse: successResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(false)
+    })
+
+    test('new tile, DB error: not dirty, failed, save disabled', () => {
+      const i = setupNew({ queryResponse: errorResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(true)
+    })
+
+    test('new tile, disambiguation (items): not dirty (no saved state), failed, save disabled', () => {
+      const i = setupNew({ queryResponse: itemsResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(true)
+    })
   })
 
-  test('query text changed but not re-run: dirty, not failed, save disabled', () => {
-    const instance = setupMatrix({ query: 'different query' })
-    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(true)
-    expect(instance.getFailedTiles().has('tile-1')).toBe(false)
-    expect(instance.hasDirtyTiles()).toBe(true)
+  // EXISTING dashboard, NEW tile added during edit — new tile is never in uneditedDashboardTiles
+  describe('existing dashboard — new tile added during edit', () => {
+    function setupNewTileOnExisting(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      // existing tile is in uneditedDashboardTiles; new tile is NOT
+      wrapper.setState({ uneditedDashboardTiles: [existingTile] })
+      instance.baselineQueryIds.set('tile-1', { queryId: existingTile.queryId })
+      instance.getMostRecentTiles = jest.fn(() => [existingTile, { ...newTile, ...tileOverride }])
+      return instance
+    }
+
+    test('success run: new tile not dirty, not failed', () => {
+      const i = setupNewTileOnExisting({ queryResponse: successResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(false)
+    })
+
+    test('DB error: new tile not dirty but failed, save disabled', () => {
+      const i = setupNewTileOnExisting({ queryResponse: errorResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(true)
+      expect(i.hasDirtyTiles() || i.getFailedTiles().size > 0).toBe(true)
+    })
+
+    test('addTile with error preserves queryResponse so getFailedTiles can detect it', () => {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      instance.getMostRecentTiles = jest.fn(() => [])
+      instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+      instance.addTile({ query: 'bad query', queryResponse: errorResponse })
+      const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+      expect(addedTile.queryResponse).toEqual(errorResponse)
+
+      instance.getMostRecentTiles = jest.fn(() => [{ ...addedTile, key: addedTile.key || addedTile.i }])
+      expect(instance.getFailedTiles().has(addedTile.key || addedTile.i)).toBe(true)
+    })
   })
 
-  test('DB error: not dirty, failed, save disabled', () => {
-    const instance = setupMatrix({ queryResponse: errorResponse })
-    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(false)
-    expect(instance.getFailedTiles().has('tile-1')).toBe(true)
-  })
+  // EXISTING dashboard, EXISTING tile — full dirty + failed detection
+  describe('existing dashboard — existing tile', () => {
+    function setupExisting(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      wrapper.setState({ uneditedDashboardTiles: [existingTile] })
+      instance.baselineQueryIds.set('tile-1', { queryId: existingTile.queryId })
+      instance.getMostRecentTiles = jest.fn(() => [{ ...existingTile, ...tileOverride }])
+      return instance
+    }
 
-  test('timeout error (422): not dirty, failed, save disabled', () => {
-    const instance = setupMatrix({ queryResponse: timeoutResponse })
-    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(false)
-    expect(instance.getFailedTiles().has('tile-1')).toBe(true)
-  })
+    test('query unchanged, success: not dirty, not failed, save enabled', () => {
+      const i = setupExisting({})
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(false)
+    })
 
-  test('disambiguation (items): dirty AND failed, save disabled', () => {
-    const instance = setupMatrix({ queryResponse: itemsResponse })
-    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(true)
-    expect(instance.getFailedTiles().has('tile-1')).toBe(true)
-    expect(instance.hasDirtyTiles()).toBe(true)
-  })
+    test('query text changed, not re-run: dirty, not failed, save disabled', () => {
+      const i = setupExisting({ query: 'different query' })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
 
-  test('replacements: dirty, not failed, save disabled', () => {
-    const instance = setupMatrix({ queryResponse: replacementsResponse })
-    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(true)
-    expect(instance.getFailedTiles().has('tile-1')).toBe(false)
-    expect(instance.hasDirtyTiles()).toBe(true)
-  })
+    test('query re-run → new queryId: not dirty, not failed, save enabled', () => {
+      const i = setupExisting({ queryId: 'qid-after-run', queryResponse: successResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+    })
 
-  test('error added as new tile via addTile: getFailedTiles detects it (regression fix)', () => {
-    const wrapper = setup({ isEditing: true })
-    const instance = wrapper.instance()
-    instance.getMostRecentTiles = jest.fn(() => [])
-    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+    test('DB error (400): not dirty, failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: errorResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+    })
 
-    instance.addTile({ query: 'bad query', queryResponse: errorResponse })
-    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
-    const tileWithKey = { ...addedTile, key: addedTile.key || addedTile.i }
+    test('timeout (422): not dirty, failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: timeoutResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+    })
 
-    instance.getMostRecentTiles = jest.fn(() => [tileWithKey])
-    expect(instance.getFailedTiles().has(tileWithKey.key)).toBe(true)
+    test('disambiguation (items): dirty AND failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: itemsResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+
+    test('replacements: dirty, not failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: replacementsResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
   })
 })
 
