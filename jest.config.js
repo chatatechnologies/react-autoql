@@ -12,7 +12,7 @@ module.exports = {
     NODE_ENV: 'test',
   },
   transform: {
-    '^.+\\.(js|jsx)$': 'babel-jest',
+    '^.+\\.(js|jsx)$': ['babel-jest', { envName: 'test' }],
   },
   moduleDirectories: ['node_modules', 'example/node_modules', 'src'],
   coverageReporters: ['json-summary', 'text', 'lcov'],

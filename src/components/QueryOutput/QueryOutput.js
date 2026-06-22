@@ -130,6 +130,7 @@ export class QueryOutput extends React.Component {
       page: 1,
     }
     this.tableID = uuid()
+    this.wasFiltering = props.initialIsFiltering
     this.pivotTableID = uuid()
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
     this.isOriginalData = true
@@ -354,6 +355,10 @@ export class QueryOutput extends React.Component {
     onUpdateFilterResponse: PropTypes.func,
     enableResizing: PropTypes.bool,
     isEditing: PropTypes.bool,
+    isDashboardEditing: PropTypes.bool,
+    onNewQueryId: PropTypes.func,
+    skipInitialFilters: PropTypes.bool,
+    initialIsFiltering: PropTypes.bool,
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
     resizeMultiplier: PropTypes.number,
@@ -413,6 +418,8 @@ export class QueryOutput extends React.Component {
     subjects: [],
     initialFormattedTableParams: undefined,
     isEditing: false,
+    isDashboardEditing: false,
+    skipInitialFilters: false,
     onTableConfigChange: () => {},
     onAggConfigChange: () => {},
     initialNetworkColumnConfig: undefined,
@@ -562,6 +569,7 @@ export class QueryOutput extends React.Component {
         if (isChartType(this.state.displayType)) {
           newState.chartID = uuid()
         } else {
+          this.wasFiltering = !!this.tableRef?.state.isFiltering
           this.tableID = uuid()
           this.pivotTableID = uuid()
           newState._tableRemountKey = uuid()
@@ -676,6 +684,7 @@ export class QueryOutput extends React.Component {
       // Using a count variable so it doesn't have to deep compare on every udpate
       const columnsChanged = this.state.columnChangeCount !== prevState.columnChangeCount
       if (columnsChanged) {
+        this.wasFiltering = !!this.tableRef?.state.isFiltering
         this.tableID = uuid()
         const dataConfig = {
           tableConfig: this.tableConfig,
@@ -1581,9 +1590,11 @@ export class QueryOutput extends React.Component {
 
     this.setState({ isLoadingData: true })
 
-    const sessionFilters =
+    const baseFilters =
       queryRequestData?.session_filter_locks ||
-      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : [])
+      (this.props.scope === 'dashboards' ? this.initialFormattedTableParams?.sessionFilters : []) ||
+      []
+    const sessionFilters = [...baseFilters]
     let response
 
     if (isDrilldown(this.queryResponse)) {
@@ -1640,7 +1651,14 @@ export class QueryOutput extends React.Component {
     this.setState({ isLoadingData: false })
 
     const effectiveDisplayOverrides = args?.displayOverrides ?? queryRequestData?.display_overrides
-    return this.applyDisplayOverridesToResponse(response, effectiveDisplayOverrides)
+    const result = this.applyDisplayOverridesToResponse(response, effectiveDisplayOverrides)
+    if (this.props.onNewQueryId) {
+      const newQueryId = result?.data?.data?.query_id
+      if (newQueryId) {
+        this.props.onNewQueryId(newQueryId)
+      }
+    }
+    return result
   }
 
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
@@ -2123,7 +2141,7 @@ export class QueryOutput extends React.Component {
 
     this.props.onNewData()
 
-    if (this.props.scope === 'dashboards') {
+    if (this.props.scope === 'dashboards' && this.props.isDashboardEditing) {
       const dataConfig = {
         tableConfig: this.tableConfig,
         pivotTableConfig: this.pivotTableConfig,
@@ -4192,7 +4210,12 @@ export class QueryOutput extends React.Component {
           initialTableParams={this.tableParams}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
+          showQueryInterpretation={this.props.showQueryInterpretation}
           isLoadingLocal={this.props.isLoadingLocal}
+          isEditing={this.props.isEditing}
+          isDashboardEditing={this.props.isDashboardEditing}
+          skipInitialFilters={this.props.skipInitialFilters}
+          initialIsFiltering={!!this.wasFiltering}
         />
       </ErrorBoundary>
     )
@@ -4233,6 +4256,7 @@ export class QueryOutput extends React.Component {
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
+          initialIsFiltering={!!this.wasFiltering}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
           pivot

@@ -405,6 +405,13 @@
         visibility: hidden;
       }
 
+      input.react-autoql-base-filter-disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+        font-style: italic;
+      }
+
       // Show filter badge for regular columns (direct child only, not descendants)
       .tabulator-col.is-filtered > .tabulator-col-content .tabulator-col-title:before {
         opacity: 1;
@@ -445,7 +452,7 @@
       /* user-select: none; This breaks copy/paste */
       border-bottom: none;
       background-color: var(--react-autoql-background-color-secondary);
-      height: 36px !important; // Must match rowHeight in TableWrapper.js
+      height: 28px !important; // Must match rowHeight in TableWrapper.js
       z-index: 1;
 
       .tabulator-cell {

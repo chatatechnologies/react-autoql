@@ -89,6 +89,7 @@ export class OptionsToolbar extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
+    hideReportProblem: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
   }
@@ -412,52 +413,6 @@ export class OptionsToolbar extends React.Component {
         onClose={() => this.setState({ isResetQueryConfirmVisible: false })}
         onConfirm={() => {
           this.setState({ isResetQueryConfirmVisible: false })
-          try {
-            if (window && window.dispatchEvent) {
-              const payload = {
-                timestamp: Date.now(),
-                queryResponse:
-                  this.props.responseRef && this.props.responseRef.queryResponse
-                    ? this.props.responseRef.queryResponse
-                    : undefined,
-              }
-
-              // Capture QueryInput state snapshot (prefers direct ref, falls back to global registry).
-              try {
-                let queryInputState = undefined
-                if (
-                  this.props.responseRef &&
-                  this.props.responseRef.props &&
-                  this.props.responseRef.props.queryInputRef &&
-                  typeof this.props.responseRef.props.queryInputRef.getState === 'function'
-                ) {
-                  queryInputState = this.props.responseRef.props.queryInputRef.getState()
-                }
-
-                if (!queryInputState) {
-                  const qid = this.props.responseRef?.queryResponse?.data?.data?.query_id
-                  if (qid && window && window.__qa_query_input_registry) {
-                    try {
-                      const registryRef = window.__qa_query_input_registry[qid]
-                      if (registryRef && registryRef.current && typeof registryRef.current.getState === 'function') {
-                        queryInputState = registryRef.current.getState()
-                        payload.queryInputStateFromRegistry = true
-                      }
-                    } catch (err) {
-                      // ignore registry lookup failures
-                    }
-                  }
-                }
-
-                if (queryInputState) payload.queryInputState = queryInputState
-              } catch (err) {
-                console.error('Error capturing QueryInput state for reset payload', err)
-              }
-              window.dispatchEvent(new CustomEvent('react-autoql:resetQuery', { detail: payload }))
-            }
-          } catch (e) {
-            console.error('Error dispatching resetQuery event', e)
-          }
 
           if (this.props.onResetClick) {
             this.props.onResetClick()
@@ -567,6 +522,7 @@ export class OptionsToolbar extends React.Component {
                     this.setState({ activeMenu: undefined })
                     option.callback?.({
                       query: responseRef?.queryResponse?.data?.data?.text,
+                      queryId: responseRef?.queryResponse?.data?.data?.query_id,
                       queryResponse: responseCopy,
                       aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
                       displayType: responseRef?.state?.displayType,
@@ -659,7 +615,9 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFilterBtn = () => {
-    const isFiltered = !!this.props.responseRef?.formattedTableParams?.filters?.length
+    const responseData = this.props.responseRef?.queryResponse?.data?.data
+    const isDataResponse = responseData?.display_type === 'data'
+    const isFiltered = isDataResponse && !!this.props.responseRef?.formattedTableParams?.filters?.length
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -1024,6 +982,10 @@ export class OptionsToolbar extends React.Component {
   getShouldShowButtonObj = (props) => {
     let shouldShowButton = {}
     try {
+      if (props.responseRef?.state?.customResponse) {
+        return shouldShowButton
+      }
+
       const displayType = props.responseRef?.state?.displayType
       const columns = props.responseRef?.getColumns()
       const isTable = isTableType(displayType)
@@ -1048,7 +1010,7 @@ export class OptionsToolbar extends React.Component {
           (displayType === 'table' || isChartType(displayType)) &&
           !allColumnsHidden &&
           hasMoreThanOneRow,
-        showCopyButton: !isMarkdownOnly && this.props.enableCopyBtn && isTable && !allColumnsHidden,
+        showCopyButton: !isMarkdownOnly && isDataResponse && this.props.enableCopyBtn && isTable && !allColumnsHidden,
         showCopyMarkdownButton: isMarkdownOnly,
         showSaveAsPNGButton: !isMarkdownOnly && isChart,
         // TODO: re-enable when column visibility is re-added for dashboards
@@ -1060,10 +1022,10 @@ export class OptionsToolbar extends React.Component {
         //   (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: false, // !isMarkdownOnly && someColumnsHidden,
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
-        showSaveAsCSVButton: !isMarkdownOnly && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+        showSaveAsCSVButton: !isMarkdownOnly && isDataResponse && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton:
-          !isMarkdownOnly && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+          !isMarkdownOnly && !props.hideReportProblem && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           !isMarkdownOnly &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
@@ -1092,6 +1054,7 @@ export class OptionsToolbar extends React.Component {
       const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
       const willShowRefreshInMenu =
         !!props.showResetQueryOption && (shouldShowButton.showRefreshDataButton || !!props.showRefreshInEdit)
+      const willShowResetQuery = !!props.showResetQueryOption && !!props.isEditing
 
       shouldShowButton.showMoreOptionsButton =
         !isMarkdownOnly &&
@@ -1101,6 +1064,7 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showSaveAsCSVButton ||
           shouldShowButton.showSaveAsPNGButton ||
           willShowRefreshInMenu ||
+          willShowResetQuery ||
           hasCustomOptions)
     } catch (error) {
       console.error(error)
@@ -1125,8 +1089,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {shouldShowButton.showRefreshDataButton &&
-          this.props.isEditing &&
+        {this.props.isEditing &&
           this.props.showResetQueryOption &&
           this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
