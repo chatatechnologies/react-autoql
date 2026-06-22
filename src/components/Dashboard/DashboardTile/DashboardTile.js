@@ -455,7 +455,12 @@ export class DashboardTile extends React.Component {
 
   shouldShowDirtyBadge = () => {
     if (!this.props.isEditing || this.props.isFailed) return false
-    return this.props.isDirty
+    if (!this.props.isDirty) return false
+    const { tile } = this.props
+    if (tile?.queryId) return true
+    if (tile?.queryResponse?.data?.data?.replacements) return true
+    if (tile?.queryResponse?.data?.data?.items) return true
+    return false
   }
 
   // Return true only for query translation errors (29.9.502) that warrant a force-retry

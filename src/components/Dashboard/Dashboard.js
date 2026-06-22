@@ -359,13 +359,14 @@ class DashboardWithoutTheme extends React.Component {
           if (!saved) return false
           if (tile.queryResponse?.data?.data?.replacements || tile.queryResponse?.data?.data?.items) return true
           const baseline = this.baselineQueryIds.get(tile.key) || {}
-          // Tiles with no saved query text: dirty only if text entered but tile not yet run (legacy tiles with a queryId won't trigger this while typing).
           const topDirty = saved.query
             ? tile.query !== saved.query && tile.queryId === baseline.queryId
-            : !!tile.query && !tile.queryId
+            : false
           const bottomDirty = saved.secondQuery
             ? tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
-            : !!tile.secondQuery && !tile.secondQueryId
+            : saved.queryId
+            ? !!tile.secondQuery && !tile.secondQueryId
+            : false
           return topDirty || bottomDirty
         })
         .map((tile) => tile.key),

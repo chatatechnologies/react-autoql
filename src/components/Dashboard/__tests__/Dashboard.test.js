@@ -853,6 +853,16 @@ describe('Dashboard.getDirtyTileKeys', () => {
     expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
   })
 
+  test('does NOT mark dirty for a blank tile (no saved query, no queryId) when user types a new query', () => {
+    const blankTile = { ...savedTile, query: '', queryId: undefined }
+    const typingTile = { ...savedTile, query: 'player stats', queryId: undefined }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [blankTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: undefined })
+    instance.getMostRecentTiles = jest.fn(() => [typingTile])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
   test('only marks the changed tile as dirty in a multi-tile dashboard', () => {
     const savedTile2 = { ...savedTile, key: 'tile-xyz', i: 'tile-xyz', query: 'revenue by month' }
     const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile, savedTile2] })
