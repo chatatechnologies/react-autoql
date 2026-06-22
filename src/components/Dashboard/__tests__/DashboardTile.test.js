@@ -618,6 +618,42 @@ describe('isReset flag in processTileTop', () => {
   })
 })
 
+describe('normalizeAxisSorts unit', () => {
+  test('converts array-of-objects to a merged plain object', () => {
+    const instance = setup({ tile: sampleTile }).instance()
+    expect(instance.normalizeAxisSorts([{ 'x-col1': 'asc' }, { 'x-col2': 'desc' }])).toEqual({
+      'x-col1': 'asc',
+      'x-col2': 'desc',
+    })
+    instance.props // suppress enzyme warning
+  })
+
+  test('passes a plain object through unchanged', () => {
+    const instance = setup({ tile: sampleTile }).instance()
+    expect(instance.normalizeAxisSorts({ 'x-col1': 'asc' })).toEqual({ 'x-col1': 'asc' })
+  })
+
+  test('returns empty object for undefined', () => {
+    const instance = setup({ tile: sampleTile }).instance()
+    expect(instance.normalizeAxisSorts(undefined)).toEqual({})
+  })
+
+  test('returns empty object for null', () => {
+    const instance = setup({ tile: sampleTile }).instance()
+    expect(instance.normalizeAxisSorts(null)).toEqual({})
+  })
+
+  test('returns empty object for an empty array', () => {
+    const instance = setup({ tile: sampleTile }).instance()
+    expect(instance.normalizeAxisSorts([])).toEqual({})
+  })
+
+  test('skips non-object array items without throwing', () => {
+    const instance = setup({ tile: sampleTile }).instance()
+    expect(() => instance.normalizeAxisSorts([null, 'bad', { 'x-col1': 'asc' }])).not.toThrow()
+  })
+})
+
 describe('axisSorts array normalization', () => {
   test('converts array-of-objects to plain object for QueryOutput', () => {
     const arrayAxisSorts = [{ 'x-col1': 'value-asc' }, { 'x-col2': 'value-desc' }]

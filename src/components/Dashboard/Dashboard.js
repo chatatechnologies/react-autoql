@@ -835,7 +835,9 @@ class DashboardWithoutTheme extends React.Component {
       }
 
       if (content?.queryResponse) {
-        if (this.props.isEditing && !content.queryId) {
+        const refId = Number(String(content.queryResponse?.data?.reference_id || '').split('.')[2])
+        const isErrorResponse = content.queryResponse?.data?.data?.items || (content.queryResponse?.data?.reference_id && !(refId >= 200 && refId < 300))
+        if (this.props.isEditing && !content.queryId && !isErrorResponse) {
           const { queryResponse: _queryResponse, secondQueryResponse: _secondQueryResponse, ...contentWithoutResponse } = content
           tile = { ...tile, ...contentWithoutResponse }
         } else {

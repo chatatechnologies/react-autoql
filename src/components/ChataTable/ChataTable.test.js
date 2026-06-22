@@ -1568,3 +1568,169 @@ describe('Dashboard edit-mode filtering', () => {
     })
   })
 })
+
+describe('enableBaseFilterInputs', () => {
+  function setupWithDOM(filters) {
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    const container = document.createElement('div')
+    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
+
+    filters.forEach((filter) => {
+      const col = document.createElement('div')
+      col.className = 'tabulator-col'
+      col.setAttribute('tabulator-field', filter.field)
+
+      const content = document.createElement('div')
+      content.className = 'tabulator-col-content'
+      const input = document.createElement('input')
+      input.disabled = true
+      input.classList.add('react-autoql-base-filter-disabled')
+      content.appendChild(input)
+      col.appendChild(content)
+      container.appendChild(col)
+
+      const clearBtn = document.createElement('div')
+      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
+      clearBtn.style.pointerEvents = 'none'
+      clearBtn.style.opacity = '0.3'
+      document.body.appendChild(clearBtn)
+    })
+
+    document.body.appendChild(container)
+    return { wrapper, instance, container }
+  }
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  test('re-enables header input and removes disabled class', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.enableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    expect(input.disabled).toBe(false)
+    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(false)
+  })
+
+  test('restores clear button interactivity', () => {
+    const filters = [{ field: '1', type: '=', value: 'online' }]
+    const { instance } = setupWithDOM(filters)
+
+    instance.enableBaseFilterInputs()
+
+    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
+    expect(clearBtn.style.pointerEvents).toBe('')
+    expect(clearBtn.style.opacity).toBe('')
+  })
+
+  test('skips filters with no value', () => {
+    const filters = [{ field: '1', type: '=', value: '' }]
+    const { instance, container } = setupWithDOM(filters)
+
+    instance.enableBaseFilterInputs()
+
+    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
+    // Input was never disabled (no value), still not disabled after enable call
+    expect(input.disabled).toBe(true) // DOM was set disabled in setupWithDOM, but enableBaseFilterInputs skips it
+  })
+
+  test('does nothing when baseFilters is empty', () => {
+    const wrapper = setup({ isDashboardEditing: false })
+    const instance = wrapper.instance()
+
+    const spy = jest.spyOn(document, 'querySelector')
+    instance.enableBaseFilterInputs()
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('handles missing DOM nodes gracefully (no throw)', () => {
+    const filters = [{ field: '99', type: '=', value: 'missing' }]
+    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
+    const instance = wrapper.instance()
+    expect(() => instance.enableBaseFilterInputs()).not.toThrow()
+  })
+})
+
+describe('onDataFiltered: showQueryInterpretation guard', () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  function makeRef(getHeaderFiltersResult) {
+    return {
+      tabulator: {
+        getHeaderFilters: jest.fn(() => getHeaderFiltersResult),
+        setHeaderFilterValue: jest.fn(),
+        getColumns: jest.fn(() => []),
+        blockRedraw: jest.fn(),
+        restoreRedraw: jest.fn(),
+      },
+    }
+  }
+
+  test('does NOT call getRTForRemoteFilterAndSort when showQueryInterpretation=false', () => {
+    const wrapper = setup({ showQueryInterpretation: false })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockResolvedValue(undefined)
+
+    instance._isMounted = true
+    instance.useInfiniteScroll = false
+    instance.ref = makeRef([{ field: '1', type: '=', value: 'online' }])
+    wrapper.setState({ tabulatorMounted: true })
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+
+    instance.onDataFiltered([], [])
+    jest.advanceTimersByTime(200)
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('calls getRTForRemoteFilterAndSort when showQueryInterpretation=true and filters are set', () => {
+    const wrapper = setup({ showQueryInterpretation: true })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockResolvedValue(undefined)
+
+    instance._isMounted = true
+    instance.useInfiniteScroll = false
+    instance.ref = makeRef([{ field: '1', type: '=', value: 'online' }])
+    wrapper.setState({ tabulatorMounted: true })
+    instance.tableParams.filter = [{ field: '1', type: '=', value: 'online' }]
+
+    instance.onDataFiltered([], [])
+    jest.advanceTimersByTime(200)
+
+    expect(spy).toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('does NOT call getRTForRemoteFilterAndSort when filters are empty even if showQueryInterpretation=true', () => {
+    const wrapper = setup({ showQueryInterpretation: true })
+    const instance = wrapper.instance()
+    const spy = jest.spyOn(instance, 'getRTForRemoteFilterAndSort').mockResolvedValue(undefined)
+
+    instance._isMounted = true
+    instance.useInfiniteScroll = false
+    instance.ref = makeRef([])
+    wrapper.setState({ tabulatorMounted: true })
+    instance.tableParams.filter = []
+
+    instance.onDataFiltered([], [])
+    jest.advanceTimersByTime(200)
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
+})

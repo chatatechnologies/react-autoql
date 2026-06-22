@@ -708,6 +708,127 @@ describe('Dashboard.addTile — DM response handling', () => {
     expect(addedTile.query).toBe('')
     expect(addedTile.queryResponse).toBeUndefined()
   })
+
+  test('preserves error queryResponse in edit mode even without queryId (bug: save was allowed)', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    const errorContent = { query: 'bad query', queryResponse: { data: { reference_id: '1.1.400', data: {} } } }
+    instance.addTile(errorContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(errorContent.queryResponse)
+  })
+
+  test('preserves items/disambiguation queryResponse in edit mode even without queryId', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    const itemsContent = { query: 'ambiguous', queryResponse: { data: { data: { items: ['opt 1', 'opt 2'] } } } }
+    instance.addTile(itemsContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(itemsContent.queryResponse)
+  })
+})
+
+// Edit-mode state matrix
+// ┌─────────────────────────────────────┬────────┬────────┬────────────┬─────────────┬──────────────┐
+// │ Scenario                            │isDirty │isFailed│ dirty badge│ failed badge│ save disabled│
+// ├─────────────────────────────────────┼────────┼────────┼────────────┼─────────────┼──────────────┤
+// │ Edit, fresh success run             │ false  │ false  │    no      │     no      │     no       │
+// │ Query text changed, not re-run      │ true   │ false  │    yes     │     no      │     yes      │
+// │ Query re-run → success              │ false  │ false  │    no      │     no      │     no       │
+// │ DB/server error                     │ false  │ true   │    no      │     yes     │     yes      │
+// │ Timeout (422)                       │ false  │ true   │    no      │     yes     │     yes      │
+// │ Disambiguation (items)              │ true   │ true   │    yes     │     yes     │     yes      │
+// │ Replacements                        │ true   │ false  │    yes     │     no      │     yes      │
+// │ Error added as new tile (bug fixed) │ false  │ true   │    no      │     yes     │     yes      │
+// │ isFailed overrides dirty badge      │ true   │ true   │    no      │     yes     │     yes      │
+// └─────────────────────────────────────┴────────┴────────┴────────────┴─────────────┴──────────────┘
+describe('edit-mode state matrix: dirty + failed interactions', () => {
+  const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
+  const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
+  const timeoutResponse = { data: { reference_id: '1.1.422', data: {} } }
+  const itemsResponse = { data: { data: { items: ['opt 1', 'opt 2'] } } }
+  const replacementsResponse = {
+    data: { reference_id: '1.1.200', data: { replacements: [{ value: 'foo', text: 'bar' }] } },
+  }
+
+  const savedTile = {
+    key: 'tile-1',
+    i: 'tile-1',
+    query: 'sales by region',
+    queryId: 'qid-original',
+    queryResponse: successResponse,
+  }
+
+  function setupMatrix(tileOverride, isEditing = true) {
+    const wrapper = setup({ isEditing })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-1', { queryId: savedTile.queryId })
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, ...tileOverride }])
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+    return instance
+  }
+
+  test('success run: not dirty, not failed, save enabled', () => {
+    const instance = setupMatrix({})
+    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(false)
+    expect(instance.getFailedTiles().has('tile-1')).toBe(false)
+    expect(instance.hasDirtyTiles()).toBe(false)
+  })
+
+  test('query text changed but not re-run: dirty, not failed, save disabled', () => {
+    const instance = setupMatrix({ query: 'different query' })
+    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(true)
+    expect(instance.getFailedTiles().has('tile-1')).toBe(false)
+    expect(instance.hasDirtyTiles()).toBe(true)
+  })
+
+  test('DB error: not dirty, failed, save disabled', () => {
+    const instance = setupMatrix({ queryResponse: errorResponse })
+    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(false)
+    expect(instance.getFailedTiles().has('tile-1')).toBe(true)
+  })
+
+  test('timeout error (422): not dirty, failed, save disabled', () => {
+    const instance = setupMatrix({ queryResponse: timeoutResponse })
+    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(false)
+    expect(instance.getFailedTiles().has('tile-1')).toBe(true)
+  })
+
+  test('disambiguation (items): dirty AND failed, save disabled', () => {
+    const instance = setupMatrix({ queryResponse: itemsResponse })
+    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(true)
+    expect(instance.getFailedTiles().has('tile-1')).toBe(true)
+    expect(instance.hasDirtyTiles()).toBe(true)
+  })
+
+  test('replacements: dirty, not failed, save disabled', () => {
+    const instance = setupMatrix({ queryResponse: replacementsResponse })
+    expect(instance.getDirtyTileKeys().has('tile-1')).toBe(true)
+    expect(instance.getFailedTiles().has('tile-1')).toBe(false)
+    expect(instance.hasDirtyTiles()).toBe(true)
+  })
+
+  test('error added as new tile via addTile: getFailedTiles detects it (regression fix)', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile({ query: 'bad query', queryResponse: errorResponse })
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    const tileWithKey = { ...addedTile, key: addedTile.key || addedTile.i }
+
+    instance.getMostRecentTiles = jest.fn(() => [tileWithKey])
+    expect(instance.getFailedTiles().has(tileWithKey.key)).toBe(true)
+  })
 })
 
 describe('Dashboard.getDirtyTileKeys', () => {
@@ -1017,5 +1138,9 @@ describe('Dashboard.getFailedTiles', () => {
 
   test('flags a tile whose query returned suggestions (items)', () => {
     expect(setupFailedTest({ queryResponse: suggestionsResponse }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile whose queryResponse has no reference_id (NaN path)', () => {
+    expect(setupFailedTest({ queryResponse: { data: { data: { rows: [] } } } }).has('tile-1')).toBe(true)
   })
 })
