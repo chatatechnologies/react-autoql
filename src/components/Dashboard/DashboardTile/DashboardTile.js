@@ -449,15 +449,17 @@ export class DashboardTile extends React.Component {
   shouldHideOptions = (response) => {
     if (response?.data?.data?.replacements) return true
     if (response?.data?.data?.items) return true
-    return false
+    if (!response?.data?.reference_id) return false
+    return this.hasError(response)
   }
 
   shouldShowDirtyBadge = () => {
     if (!this.props.isEditing || this.props.isFailed) return false
     return (
-      (this.props.isDirty && !!this.props.tile?.queryId) ||
-      !!this.props.tile?.queryResponse?.data?.data?.replacements ||
-      !!this.props.tile?.queryResponse?.data?.data?.items
+      this.props.isDirty &&
+      (!!this.props.tile?.queryId ||
+        !!this.props.tile?.queryResponse?.data?.data?.replacements ||
+        !!this.props.tile?.queryResponse?.data?.data?.items)
     )
   }
 

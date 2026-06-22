@@ -355,9 +355,9 @@ class DashboardWithoutTheme extends React.Component {
     return new Set(
       (current || [])
         .filter((tile) => {
-          if (tile.queryResponse?.data?.data?.replacements || tile.queryResponse?.data?.data?.items) return true
           const saved = savedByKey.get(tile.key)
           if (!saved) return false
+          if (tile.queryResponse?.data?.data?.replacements || tile.queryResponse?.data?.data?.items) return true
           const baseline = this.baselineQueryIds.get(tile.key) || {}
           // Tiles with no saved query text: dirty only if text entered but tile not yet run (legacy tiles with a queryId won't trigger this while typing).
           const topDirty = saved.query
@@ -373,8 +373,11 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   getFailedTiles = () => {
+    const savedByKey = new Map((this.state.uneditedDashboardTiles || []).map((t) => [t.key, t]))
     const tiles = this.getMostRecentTiles() || []
     const failedTiles = tiles.filter((tile) => {
+      if (!savedByKey.has(tile.key)) return false
+      if (tile.queryResponse?.data?.data?.items) return true
       if (!tile.queryId || !tile.queryResponse) return false
       const referenceId = String(tile.queryResponse?.data?.reference_id || '')
       const refId = Number(referenceId.split('.')[2])

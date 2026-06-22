@@ -1532,6 +1532,21 @@ describe('shouldHideOptions', () => {
     expect(instance.shouldHideOptions(null)).toBe(false)
     expect(instance.shouldHideOptions(undefined)).toBe(false)
   })
+
+  test('returns false when response has data but no reference_id', () => {
+    const response = { data: { data: { rows: [[1, 2]], columns: [] } } }
+    expect(instance.shouldHideOptions(response)).toBe(false)
+  })
+
+  test('returns true when response has an error reference_id', () => {
+    const response = { data: { reference_id: '1.1.500' } }
+    expect(instance.shouldHideOptions(response)).toBe(true)
+  })
+
+  test('returns false when response has a success reference_id', () => {
+    const response = { data: { reference_id: '1.1.200' } }
+    expect(instance.shouldHideOptions(response)).toBe(false)
+  })
 })
 
 describe('filterValidConfig', () => {
@@ -1716,7 +1731,7 @@ describe('onNewQueryId and onSecondNewQueryId: skipping falsy values', () => {
 })
 
 describe('DashboardTile dirty class/badge for replacements and items responses', () => {
-  test('applies dirty class when queryResponse has replacements (no queryId required)', () => {
+  test('does NOT apply dirty class when queryResponse has replacements but isDirty is false (new tile)', () => {
     const tileWithReplacements = {
       ...sampleTile,
       queryId: undefined,
@@ -1726,11 +1741,11 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
     }
     const wrapper = setup({ tile: tileWithReplacements, isDirty: false, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
-    expect(tile.prop('className')).toContain('dirty')
+    expect(tile.prop('className')).not.toContain('dirty')
     wrapper.unmount()
   })
 
-  test('applies dirty class when queryResponse has items (no queryId required)', () => {
+  test('does NOT apply dirty class when queryResponse has items but isDirty is false (new tile)', () => {
     const tileWithItems = {
       ...sampleTile,
       queryId: undefined,
@@ -1740,11 +1755,11 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
     }
     const wrapper = setup({ tile: tileWithItems, isDirty: false, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
-    expect(tile.prop('className')).toContain('dirty')
+    expect(tile.prop('className')).not.toContain('dirty')
     wrapper.unmount()
   })
 
-  test('renders dirty badge when queryResponse has replacements', () => {
+  test('renders dirty badge when queryResponse has replacements and isDirty is true', () => {
     const tileWithReplacements = {
       ...sampleTile,
       queryId: undefined,
@@ -1752,12 +1767,12 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
         data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
       },
     }
-    const wrapper = setup({ tile: tileWithReplacements, isDirty: false, isEditing: true })
+    const wrapper = setup({ tile: tileWithReplacements, isDirty: true, isEditing: true })
     expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
     wrapper.unmount()
   })
 
-  test('renders dirty badge when queryResponse has items', () => {
+  test('does NOT render dirty badge when queryResponse has items but isDirty is false (new tile)', () => {
     const tileWithItems = {
       ...sampleTile,
       queryId: undefined,
@@ -1766,7 +1781,7 @@ describe('DashboardTile dirty class/badge for replacements and items responses',
       },
     }
     const wrapper = setup({ tile: tileWithItems, isDirty: false, isEditing: true })
-    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(true)
+    expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(false)
     wrapper.unmount()
   })
 })
@@ -1937,25 +1952,47 @@ describe('shouldShowDirtyBadge', () => {
     wrapper.unmount()
   })
 
-  test('returns true when queryResponse has replacements regardless of isDirty', () => {
+  test('returns true when queryResponse has replacements and isDirty is true', () => {
+    const tile = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' } },
+    }
+    const wrapper = setup({ tile, isDirty: true, isEditing: true })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('returns false when queryResponse has replacements but isDirty is false (new tile)', () => {
     const tile = {
       ...sampleTile,
       queryId: undefined,
       queryResponse: { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' } },
     }
     const wrapper = setup({ tile, isDirty: false, isEditing: true })
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('returns true when queryResponse has items and isDirty is true', () => {
+    const tile = {
+      ...sampleTile,
+      queryId: undefined,
+      queryResponse: { data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' } },
+    }
+    const wrapper = setup({ tile, isDirty: true, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
     wrapper.unmount()
   })
 
-  test('returns true when queryResponse has items regardless of isDirty', () => {
+  test('returns false when queryResponse has items but isDirty is false (new tile)', () => {
     const tile = {
       ...sampleTile,
       queryId: undefined,
       queryResponse: { data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' } },
     }
     const wrapper = setup({ tile, isDirty: false, isEditing: true })
-    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(true)
+    expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
     wrapper.unmount()
   })
 

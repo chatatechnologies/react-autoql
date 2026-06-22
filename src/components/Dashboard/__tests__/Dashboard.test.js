@@ -791,13 +791,19 @@ describe('Dashboard.getDirtyTileKeys', () => {
     ).toBe(true)
   })
 
+  test('marks dirty when queryResponse contains both replacements and items', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { replacements: [{ text: 'x' }], items: [{ label: 'y' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
   test('does NOT mark dirty when queryResponse has neither replacements nor items', () => {
     expect(
       setupDirtyTest({ queryResponse: { data: { data: { rows: [[1]], replacements: undefined, items: undefined } } } }).has('tile-abc'),
     ).toBe(false)
   })
 
-  test('marks dirty for a new tile (not in uneditedDashboardTiles) that has suggestions', () => {
+  test('does NOT mark dirty for a new tile (not in uneditedDashboardTiles) that has suggestions', () => {
     const newTile = {
       key: 'tile-new',
       i: 'tile-new',
@@ -807,7 +813,7 @@ describe('Dashboard.getDirtyTileKeys', () => {
     const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
     const instance = wrapper.instance()
     instance.getMostRecentTiles = jest.fn(() => [newTile])
-    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(true)
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(false)
   })
 
   test('does NOT mark dirty for a brand new tile (not in uneditedDashboardTiles)', () => {
@@ -970,8 +976,10 @@ describe('Dashboard.getFailedTiles', () => {
   const emptySuccessResponse = { data: { reference_id: '1.1.200', data: { rows: [], count_rows: 0 } } }
   const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
 
-  const setupFailedTest = (tileOverrides) => {
-    const wrapper = setup()
+  const savedTileBase = { key: 'tile-1' }
+
+  const setupFailedTest = (tileOverrides, { isSaved = false } = {}) => {
+    const wrapper = setup({}, isSaved ? { uneditedDashboardTiles: [savedTileBase] } : {})
     const instance = wrapper.instance()
     instance.getMostRecentTiles = jest.fn(() => [{ key: 'tile-1', ...tileOverrides }])
     return instance.getFailedTiles()
@@ -982,18 +990,22 @@ describe('Dashboard.getFailedTiles', () => {
   })
 
   test('does NOT flag a tile with queryId that has not run yet (no queryResponse)', () => {
-    expect(setupFailedTest({ queryId: 'qid-1' }).has('tile-1')).toBe(false)
+    expect(setupFailedTest({ queryId: 'qid-1' }, { isSaved: true }).has('tile-1')).toBe(false)
   })
 
   test('does NOT flag a tile with a successful response', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: successResponse }).has('tile-1')).toBe(false)
+    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: successResponse }, { isSaved: true }).has('tile-1')).toBe(false)
   })
 
   test('does NOT flag a tile with a successful empty-result response', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: emptySuccessResponse }).has('tile-1')).toBe(false)
+    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: emptySuccessResponse }, { isSaved: true }).has('tile-1')).toBe(false)
   })
 
-  test('flags a tile whose query returned an error reference_id', () => {
-    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: errorResponse }).has('tile-1')).toBe(true)
+  test('flags a saved tile whose query returned an error reference_id', () => {
+    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: errorResponse }, { isSaved: true }).has('tile-1')).toBe(true)
+  })
+
+  test('does NOT flag a new (unsaved) tile even if its query returned an error reference_id', () => {
+    expect(setupFailedTest({ queryId: 'qid-1', queryResponse: errorResponse }, { isSaved: false }).has('tile-1')).toBe(false)
   })
 })
