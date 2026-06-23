@@ -71,7 +71,7 @@ export default class DataAlertRow extends React.Component {
     ['GENERAL_ERROR', 'EVALUATION_ERROR', 'UNRECOVERABLE'].includes(this.state.status)
 
   isEnabled = () => DATA_ALERT_ENABLED_STATUSES.includes(this.state.status)
-  isDisabled = () => DATA_ALERT_STATUSES.UNRECOVERABLE.includes(this.state.status)
+  isDisabled = () => this.state.status === DATA_ALERT_STATUSES.UNRECOVERABLE
 
   getDataAlertObj = () => ({
     ...this.props.dataAlert,
