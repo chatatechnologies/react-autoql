@@ -586,7 +586,7 @@ export default class SimpleTable extends Component {
         {visibleRows.slice(startIdx, endIdx).map((row, i) => {
           const rowIndex = startIdx + i
           return (
-            <tr key={rowIndex} className={`simple-table-row${rowIndex % 2 === 1 ? ' simple-table-row-even' : ''}`}>
+            <tr key={rowIndex} className={`simple-table-row${rowIndex % 2 === 0 ? ' simple-table-row-even' : ''}`}>
               {columns.map((col, colIndex) => this.renderCell(row[colIndex], col, colIndex))}
             </tr>
           )
