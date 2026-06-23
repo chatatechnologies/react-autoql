@@ -433,6 +433,27 @@ describe('ChataChart observe lifecycle', () => {
     expect(inst._observedNode).toBeNull()
   })
 
+  test('replaces observer when called a second time with a different node', () => {
+    const inst = new ChataChart({})
+    inst._isMounted = true
+
+    const nodeA = { getBoundingClientRect: () => ({ width: 100, height: 100 }) }
+    const nodeB = { getBoundingClientRect: () => ({ width: 200, height: 200 }) }
+
+    inst.chartContainerRef = nodeA
+    inst.attachResizeObserver()
+    expect(observeContainer).toHaveBeenCalledTimes(1)
+    const cleanupA = inst.cleanupObserve
+
+    inst.chartContainerRef = nodeB
+    inst.attachResizeObserver()
+
+    expect(observeContainer).toHaveBeenCalledTimes(2)
+    expect(observeContainer).toHaveBeenLastCalledWith(nodeB, expect.any(Function), { debounceMs: 0 })
+    expect(cleanupA.mock.calls.length).toBeGreaterThan(0)
+    expect(inst._observedNode).toBe(nodeB)
+  })
+
   test('multiple instances each get observed and cleaned up independently', () => {
     const instA = new ChataChart({})
     const instB = new ChataChart({})

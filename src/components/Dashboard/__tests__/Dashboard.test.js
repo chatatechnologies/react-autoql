@@ -1173,6 +1173,30 @@ describe('Dashboard.baselineQueryIds — tracks executed queryIds', () => {
     instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run', query: 'sales by product' }])
     expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
   })
+
+  test('secondQuery text change snapshots secondQueryId into baseline', () => {
+    const tileWithSecond = { ...savedTile, secondQuery: 'revenue by month', secondQueryId: 'qid-second-original' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [tileWithSecond] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: 'qid-second-original' })
+    instance.getMostRecentTiles = jest.fn(() => [tileWithSecond])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.setParamsForTile({ secondQuery: 'new second query text' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').secondQueryId).toBe('qid-second-original')
+  })
+
+  test('does NOT update baseline.secondQueryId when only secondQueryId changes (post-run)', () => {
+    const tileWithSecond = { ...savedTile, secondQuery: 'revenue by month', secondQueryId: 'qid-second-original' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [tileWithSecond] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: 'qid-second-original' })
+    instance.getMostRecentTiles = jest.fn(() => [tileWithSecond])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.setParamsForTile({ secondQueryId: 'qid-second-after-run' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').secondQueryId).toBe('qid-second-original')
+  })
 })
 
 describe('Dashboard.getFailedTiles', () => {
@@ -1215,6 +1239,10 @@ describe('Dashboard.getFailedTiles', () => {
 
   test('flags a tile whose queryResponse has no reference_id (NaN path)', () => {
     expect(setupFailedTest({ queryResponse: { data: { data: { rows: [] } } } }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile with a malformed reference_id that has no dot separator', () => {
+    expect(setupFailedTest({ queryResponse: { data: { reference_id: '400' } } }).has('tile-1')).toBe(true)
   })
 })
 
