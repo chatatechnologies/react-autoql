@@ -29,7 +29,6 @@ import { Input } from '../Input'
 import SummaryFooter from './SummaryFooter'
 import SummaryContent from '../SummaryContent/SummaryContent'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
-import FollowOnResult from '../FollowOnResult/FollowOnResult'
 import SimpleTable from '../SimpleTable/SimpleTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
@@ -1241,15 +1240,6 @@ export default class ChatMessage extends React.Component {
   }
 
   onDeleteMessage = () => this.props.deleteMessageCallback(this.props.id)
-
-  onFollowOnQueryResult = ({ columns, rows, question }) => {
-    this.props.addMessageToDM?.({
-      content: (
-        <FollowOnResult columns={columns} rows={rows} dataFormatting={this.props.dataFormatting} question={question} />
-      ),
-      type: 'follow-on',
-    })
-  }
 
   renderRightToolbar = () => {
     // For data preview responses, only show delete button
