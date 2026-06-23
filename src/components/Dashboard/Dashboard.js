@@ -51,6 +51,7 @@ class DashboardWithoutTheme extends React.Component {
     this.isDiscardingResetChanges = false
     this.discardResetTileId = null
     this.baselineQueryIds = new Map()
+    this.isDragging = false
 
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
@@ -656,7 +657,7 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   setIsDragging = (isDragging) => {
-    if (this._isMounted && isDragging !== this.state.isDragging && this.isDragging !== isDragging) {
+    if (this._isMounted && this.isDragging !== isDragging) {
       this.isDragging = isDragging
       this.setState({ isDragging })
     }

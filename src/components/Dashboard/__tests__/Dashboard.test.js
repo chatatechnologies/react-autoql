@@ -1217,3 +1217,128 @@ describe('Dashboard.getFailedTiles', () => {
     expect(setupFailedTest({ queryResponse: { data: { data: { rows: [] } } } }).has('tile-1')).toBe(true)
   })
 })
+
+describe('Dashboard.setIsDragging', () => {
+  // setIsDragging guards on this.isDragging (instance var, set synchronously) rather than
+  // this.state.isDragging (async). The bug it fixes: when setIsDragging(true) queues a
+  // setState and setIsDragging(false) fires 50 ms later before React commits that state,
+  // the old guard `isDragging !== this.state.isDragging` evaluated false and dropped the call,
+  // leaving pointer-events:none on tile inner divs permanently.
+
+  test('sets isDragging to true in state', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.setIsDragging(true)
+
+    expect(wrapper.state('isDragging')).toBe(true)
+  })
+
+  test('sets isDragging to false in state', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.setIsDragging(true)
+    instance.setIsDragging(false)
+
+    expect(wrapper.state('isDragging')).toBe(false)
+  })
+
+  test('no-op when called with the same value it already holds', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const setStateSpy = jest.spyOn(instance, 'setState')
+
+    // Initial value is false — calling with false again must not call setState.
+    instance.setIsDragging(false)
+
+    expect(setStateSpy).not.toHaveBeenCalled()
+  })
+
+  test('no-op when called with the same value twice in a row', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.setIsDragging(true)
+
+    const setStateSpy = jest.spyOn(instance, 'setState')
+    instance.setIsDragging(true) // second call with same value
+
+    expect(setStateSpy).not.toHaveBeenCalled()
+  })
+
+  // Core regression test: simulates the race condition where setIsDragging(false) fires
+  // before React commits the isDragging:true state (state still shows false).
+  test('race condition — setIsDragging(false) fires before state commits isDragging:true', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    // Step 1: setIsDragging(true) updates the instance var synchronously and queues setState.
+    instance.setIsDragging(true)
+
+    // Step 2: Simulate React NOT having committed the state yet by manually resetting
+    // state.isDragging back to false (as if the setState batch hasn't flushed).
+    wrapper.setState({ isDragging: false })
+
+    // Step 3: setIsDragging(false) fires (the 50 ms timeout from AQLP-792).
+    // With the old guard `isDragging !== this.state.isDragging`, this was a no-op
+    // because `false !== false` evaluated to false.  With the new guard (instance var only)
+    // it must proceed and queue setState({ isDragging: false }).
+    const setStateSpy = jest.spyOn(instance, 'setState')
+    instance.setIsDragging(false)
+
+    expect(setStateSpy).toHaveBeenCalledWith({ isDragging: false })
+  })
+
+  test('does nothing when component is unmounted (_isMounted false)', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = false
+
+    const setStateSpy = jest.spyOn(instance, 'setState')
+    instance.setIsDragging(true)
+
+    expect(setStateSpy).not.toHaveBeenCalled()
+  })
+
+  test('componentDidUpdate toggle: isDragging returns to false after isEditing changes', () => {
+    jest.useFakeTimers()
+
+    const wrapper = setup({ isEditing: false })
+    const instance = wrapper.instance()
+
+    // Simulate isEditing changing from false to true (as the portal does without remounting).
+    wrapper.setProps({ isEditing: true })
+
+    // Immediately after the prop update isDragging should be true.
+    expect(wrapper.state('isDragging')).toBe(true)
+
+    // After the 50 ms timeout it must have cleared itself.
+    jest.advanceTimersByTime(50)
+    expect(wrapper.state('isDragging')).toBe(false)
+
+    jest.useRealTimers()
+  })
+
+  test('isEditing toggle does not leave isDragging stuck when rapid prop updates occur', () => {
+    jest.useFakeTimers()
+
+    const wrapper = setup({ isEditing: false })
+    const instance = wrapper.instance()
+
+    // First toggle: false -> true
+    wrapper.setProps({ isEditing: true })
+    expect(wrapper.state('isDragging')).toBe(true)
+
+    // Second toggle before timer fires: true -> false
+    wrapper.setProps({ isEditing: false })
+
+    // Advance past both possible timeouts.
+    jest.advanceTimersByTime(100)
+
+    // isDragging must not be stuck true.
+    expect(wrapper.state('isDragging')).toBe(false)
+
+    jest.useRealTimers()
+  })
+})
