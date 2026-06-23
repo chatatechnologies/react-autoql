@@ -292,7 +292,7 @@
   }
 
   .dashboard-tile-response-wrapper.editing {
-    padding-top: 30px;
+    padding-top: 16px;
 
     .dashboard-tile-toolbars-container {
       padding: 13px;
@@ -830,4 +830,38 @@
 .dashboard-tile-response-container .layout-pane,
 .dashboard-tile-response-container .dashboard-tile-split-pane-container {
   background: inherit;
+}
+
+.react-autoql-dashboard-tile.dirty .react-autoql-dashboard-tile-inner-div {
+  box-shadow: inset 0 3px 0 var(--react-autoql-warning-color, #ffa700), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
+}
+
+.react-autoql-dashboard-tile.failed .react-autoql-dashboard-tile-inner-div {
+  box-shadow: inset 0 3px 0 var(--react-autoql-error-color, #ff0000), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
+}
+
+.react-autoql-dashboard-tile-dirty-badge,
+.react-autoql-dashboard-tile-failed-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 18px;
+  text-align: center;
+  z-index: 200;
+  cursor: default;
+  user-select: none;
+}
+
+.react-autoql-dashboard-tile-dirty-badge {
+  background-color: var(--react-autoql-warning-color, #ffa700);
+}
+
+.react-autoql-dashboard-tile-failed-badge {
+  background-color: var(--react-autoql-error-color, #ff0000);
 }

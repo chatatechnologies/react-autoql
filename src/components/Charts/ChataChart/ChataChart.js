@@ -59,6 +59,16 @@ import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPro
 
 import './ChataChart.scss'
 
+const _suppressResizeObserverError = (e) => {
+  if (
+    e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
+    e.message === 'ResizeObserver loop limit exceeded'
+  ) {
+    e.stopImmediatePropagation()
+    return false
+  }
+}
+
 export default class ChataChart extends React.Component {
   constructor(props) {
     super(props)
@@ -181,15 +191,10 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  suppressResizeObserverError = (e) => {
-    if (
-      e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
-      e.message === 'ResizeObserver loop limit exceeded'
-    ) {
-      e.stopImmediatePropagation()
-      return false
-    }
-  }
+  // All instances share the same function reference so the browser deduplicates
+  // addEventListener calls — regardless of how many charts are mounted, only one
+  // error handler fires. removeEventListener with the same reference is always safe.
+  suppressResizeObserverError = _suppressResizeObserverError
 
   componentDidMount = () => {
     this._isMounted = true

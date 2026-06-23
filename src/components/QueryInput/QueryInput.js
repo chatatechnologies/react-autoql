@@ -74,59 +74,6 @@ class QueryInput extends React.Component {
     }
   }
 
-  // Returns a serializable state snapshot (restore point before a reset).
-  getState = () => {
-    try {
-      return {
-        inputValue: this.state.inputValue,
-        lastQuery: this.state.lastQuery,
-        queryHistoryIndex: this.state.queryHistoryIndex,
-        selectedTopic: this.state.selectedTopic ? { ...this.state.selectedTopic } : null,
-        selectedColumns: Array.isArray(this.state.selectedColumns) ? [...this.state.selectedColumns] : [],
-        isExpanded: this.state.isExpanded,
-      }
-    } catch (e) {
-      console.error('Error getting QueryInput state', e)
-      return null
-    }
-  }
-
-  // Restores a state snapshot previously captured by getState().
-  restoreState = (stateSnapshot = {}, opts = { autoSubmit: false }) => {
-    try {
-      const nextState = {}
-      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'inputValue')) {
-        nextState.inputValue = stateSnapshot.inputValue
-      }
-      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'lastQuery')) {
-        nextState.lastQuery = stateSnapshot.lastQuery
-      }
-      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'queryHistoryIndex')) {
-        nextState.queryHistoryIndex = stateSnapshot.queryHistoryIndex
-      }
-      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'selectedTopic')) {
-        nextState.selectedTopic = stateSnapshot.selectedTopic
-      }
-      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'selectedColumns')) {
-        nextState.selectedColumns = Array.isArray(stateSnapshot.selectedColumns)
-          ? [...stateSnapshot.selectedColumns]
-          : []
-      }
-      if (stateSnapshot && Object.prototype.hasOwnProperty.call(stateSnapshot, 'isExpanded')) {
-        nextState.isExpanded = !!stateSnapshot.isExpanded
-      }
-
-      this.setState(nextState, () => {
-        if (opts && opts.autoSubmit && this.state.inputValue) {
-          // Use submitQuery so the component's internal flow is preserved
-          this.submitQuery({ queryText: this.state.inputValue })
-        }
-      })
-    } catch (e) {
-      console.error('Error restoring QueryInput state', e)
-    }
-  }
-
   static propTypes = {
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,

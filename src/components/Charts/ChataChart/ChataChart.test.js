@@ -519,4 +519,12 @@ describe('ResizeObserver error suppression', () => {
     inst.suppressResizeObserverError(fakeEvent)
     expect(fakeEvent.stopImmediatePropagation).not.toHaveBeenCalled()
   })
+
+  test('all instances share the same suppressResizeObserverError reference (browser deduplication)', () => {
+    const wrapperA = setup({ ...listSampleProps, type: 'bar' })
+    const wrapperB = setup({ ...listSampleProps, type: 'bar' })
+    const instA = wrapperA.instance()
+    const instB = wrapperB.instance()
+    expect(instA.suppressResizeObserverError).toBe(instB.suppressResizeObserverError)
+  })
 })

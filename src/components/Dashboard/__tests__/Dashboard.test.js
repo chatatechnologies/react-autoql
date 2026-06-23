@@ -402,6 +402,75 @@ describe('Dashboard.executeSingleTile', () => {
   })
 })
 
+describe('Dashboard.executeDashboard', () => {
+  const tileWithoutResponse = { key: 'tile-1', i: 'tile-1', query: 'SELECT 1' }
+
+  test('calls processTile with no args in view mode', () => {
+    const wrapper = setup({ isEditing: false, tiles: [tileWithoutResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithoutResponse])
+
+    instance.executeDashboard()
+
+    expect(processTile).toHaveBeenCalledWith()
+  })
+
+  test('calls processTile with no args in edit mode', () => {
+    const wrapper = setup({ isEditing: true, tiles: [tileWithoutResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithoutResponse])
+
+    instance.executeDashboard()
+
+    expect(processTile).toHaveBeenCalledWith()
+  })
+})
+
+describe('executeTiles: needsFilterExecution', () => {
+  const tileWithFilterAndResponse = {
+    key: 'tile-1',
+    i: 'tile-1',
+    query: 'SELECT 1',
+    tableFilters: [{ value: 'West' }],
+    queryResponse: { data: { data: { query_id: 'qid-existing' } } },
+  }
+
+  test('re-executes a filtered tile in edit mode even when it has a queryResponse', () => {
+    const wrapper = setup({ isEditing: true, tiles: [tileWithFilterAndResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithFilterAndResponse])
+    instance.executeDashboard()
+    expect(processTile).toHaveBeenCalled()
+  })
+
+  test('does NOT re-execute a filtered tile in view mode when it has a queryResponse', () => {
+    const wrapper = setup({ isEditing: false, tiles: [tileWithFilterAndResponse] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileWithFilterAndResponse])
+    instance.executeDashboard()
+    expect(processTile).not.toHaveBeenCalled()
+  })
+
+  test('does NOT re-execute a tile with no filters and an existing queryResponse', () => {
+    const tileNoFilters = { key: 'tile-1', i: 'tile-1', query: 'SELECT 1', tableFilters: [], queryResponse: { data: {} } }
+    const wrapper = setup({ isEditing: true, tiles: [tileNoFilters] })
+    const instance = wrapper.instance()
+    const processTile = jest.fn(() => Promise.resolve())
+    instance.tileRefs = { 'tile-1': { processTile } }
+    instance.getMostRecentTiles = jest.fn(() => [tileNoFilters])
+    instance.executeDashboard()
+    expect(processTile).not.toHaveBeenCalled()
+  })
+})
+
 describe('Dashboard.canUndo() and canRedo()', () => {
   const tile = (key, query = '', overrides = {}) => ({
     key,
@@ -557,5 +626,594 @@ describe('Dashboard.canUndo() and canRedo()', () => {
     // At index 19 (oldest after limit), cannot undo because 19 < 19 is false
     instance.currentLogIndex = 19
     expect(instance.canUndo()).toBe(false)
+  })
+})
+
+describe('Dashboard.addTile — DM response handling', () => {
+  const dmContent = {
+    query: 'SELECT * FROM sales',
+    title: 'Sales',
+    tableFilters: [{ field: 'region', type: '=', value: 'US' }],
+    queryResponse: { data: { data: { rows: [[1]], count_rows: 1, query_id: 'dm-qid-1' } } },
+    secondQueryResponse: { data: { data: { rows: [[2]] } } },
+    queryId: 'dm-qid-1',
+  }
+
+  test('strips queryResponse when isEditing=true and tile has no queryId (pre-feature tile)', () => {
+    const mockOnChange = jest.fn(() => Promise.resolve())
+    const wrapper = setup({ isEditing: true, onChange: mockOnChange })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    const { queryId: _qid, ...contentWithoutQueryId } = dmContent
+    instance.addTile(contentWithoutQueryId)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('SELECT * FROM sales')
+    expect(addedTile.queryResponse).toBeUndefined()
+    expect(addedTile.secondQueryResponse).toBeUndefined()
+  })
+
+  test('preserves queryResponse when isEditing=true and tile already has queryId', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile(dmContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(dmContent.queryResponse)
+    expect(addedTile.secondQueryResponse).toEqual(dmContent.secondQueryResponse)
+  })
+
+  test('preserves non-response fields (query, title, tableFilters, queryId) when isEditing=true', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile(dmContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('SELECT * FROM sales')
+    expect(addedTile.title).toBe('Sales')
+    expect(addedTile.tableFilters).toEqual(dmContent.tableFilters)
+    expect(addedTile.queryId).toBe('dm-qid-1')
+  })
+
+  test('preserves queryResponse when isEditing=false', () => {
+    const wrapper = setup({ isEditing: false })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile(dmContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(dmContent.queryResponse)
+    expect(addedTile.secondQueryResponse).toEqual(dmContent.secondQueryResponse)
+  })
+
+  test('creates blank tile when no content provided', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile()
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('')
+    expect(addedTile.queryResponse).toBeUndefined()
+  })
+
+  test('preserves error queryResponse in edit mode even without queryId (bug: save was allowed)', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    const errorContent = { query: 'bad query', queryResponse: { data: { reference_id: '1.1.400', data: {} } } }
+    instance.addTile(errorContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(errorContent.queryResponse)
+  })
+
+  test('preserves items/disambiguation queryResponse in edit mode even without queryId', () => {
+    const wrapper = setup({ isEditing: true })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    const itemsContent = { query: 'ambiguous', queryResponse: { data: { data: { items: ['opt 1', 'opt 2'] } } } }
+    instance.addTile(itemsContent)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.queryResponse).toEqual(itemsContent.queryResponse)
+  })
+})
+
+// Edit-mode state matrix
+//
+// Axes:
+//   Dashboard: NEW (no prior tiles, uneditedDashboardTiles=[])
+//              EXISTING (has prior saved tiles, uneditedDashboardTiles=[...])
+//   Tile:      NEW (added during this edit session — never in uneditedDashboardTiles)
+//              EXISTING (was on dashboard before edit started)
+//
+// Key rules:
+//   isDirty  — only possible on EXISTING dashboard + EXISTING tile with changed query/ambiguous response
+//   isFailed — possible on ANY tile with a non-2xx reference_id or items response
+//   New tiles can NEVER be dirty (no saved state to diff against)
+//   New dashboards can NEVER have dirty tiles (uneditedDashboardTiles is empty)
+//
+// ┌──────────────┬──────────────┬────────────────────────────┬────────┬────────┬──────────────┐
+// │ Dashboard    │ Tile         │ Scenario                   │isDirty │isFailed│ save disabled│
+// ├──────────────┼──────────────┼────────────────────────────┼────────┼────────┼──────────────┤
+// │ New          │ New          │ Success run                │ false  │ false  │     no       │
+// │ New          │ New          │ DB/server error            │ false  │ true   │     yes      │
+// │ New          │ New          │ Disambiguation (items)     │ false  │ true   │     yes      │
+// │ Existing     │ New (added)  │ Success run                │ false  │ false  │     no       │
+// │ Existing     │ New (added)  │ DB/server error            │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Success, query unchanged   │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ Query text changed, no run │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ Query re-run → success     │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ DB/server error            │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Timeout (422)              │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Disambiguation (items)     │ true   │ true   │     yes      │
+// │ Existing     │ Existing     │ Replacements               │ true   │ false  │     yes      │
+// └──────────────┴──────────────┴────────────────────────────┴────────┴────────┴──────────────┘
+describe('edit-mode state matrix', () => {
+  const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
+  const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
+  const timeoutResponse = { data: { reference_id: '1.1.422', data: {} } }
+  const itemsResponse = { data: { data: { items: ['opt 1', 'opt 2'] } } }
+  const replacementsResponse = { data: { reference_id: '1.1.200', data: { replacements: [{ value: 'foo', text: 'bar' }] } } }
+
+  const existingTile = { key: 'tile-1', i: 'tile-1', query: 'sales by region', queryId: 'qid-original', queryResponse: successResponse }
+  const newTile = { key: 'tile-new', i: 'tile-new', query: 'revenue by month', queryId: 'qid-new' }
+
+  // NEW dashboard: uneditedDashboardTiles=[] — nothing can ever be dirty
+  describe('new dashboard', () => {
+    function setupNew(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      wrapper.setState({ uneditedDashboardTiles: [] })
+      instance.getMostRecentTiles = jest.fn(() => [{ ...newTile, ...tileOverride }])
+      return instance
+    }
+
+    test('new tile, success: not dirty, not failed, save enabled', () => {
+      const i = setupNew({ queryResponse: successResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(false)
+    })
+
+    test('new tile, DB error: not dirty, failed, save disabled', () => {
+      const i = setupNew({ queryResponse: errorResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(true)
+    })
+
+    test('new tile, disambiguation (items): not dirty (no saved state), failed, save disabled', () => {
+      const i = setupNew({ queryResponse: itemsResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(true)
+    })
+  })
+
+  // EXISTING dashboard, NEW tile added during edit — new tile is never in uneditedDashboardTiles
+  describe('existing dashboard — new tile added during edit', () => {
+    function setupNewTileOnExisting(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      // existing tile is in uneditedDashboardTiles; new tile is NOT
+      wrapper.setState({ uneditedDashboardTiles: [existingTile] })
+      instance.baselineQueryIds.set('tile-1', { queryId: existingTile.queryId })
+      instance.getMostRecentTiles = jest.fn(() => [existingTile, { ...newTile, ...tileOverride }])
+      return instance
+    }
+
+    test('success run: new tile not dirty, not failed', () => {
+      const i = setupNewTileOnExisting({ queryResponse: successResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(false)
+    })
+
+    test('DB error: new tile not dirty but failed, save disabled', () => {
+      const i = setupNewTileOnExisting({ queryResponse: errorResponse })
+      expect(i.getDirtyTileKeys().has('tile-new')).toBe(false)
+      expect(i.getFailedTiles().has('tile-new')).toBe(true)
+      expect(i.hasDirtyTiles() || i.getFailedTiles().size > 0).toBe(true)
+    })
+
+    test('addTile with error preserves queryResponse so getFailedTiles can detect it', () => {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      instance.getMostRecentTiles = jest.fn(() => [])
+      instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+      instance.addTile({ query: 'bad query', queryResponse: errorResponse })
+      const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+      expect(addedTile.queryResponse).toEqual(errorResponse)
+
+      instance.getMostRecentTiles = jest.fn(() => [{ ...addedTile, key: addedTile.key || addedTile.i }])
+      expect(instance.getFailedTiles().has(addedTile.key || addedTile.i)).toBe(true)
+    })
+  })
+
+  // EXISTING dashboard, EXISTING tile — full dirty + failed detection
+  describe('existing dashboard — existing tile', () => {
+    function setupExisting(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      wrapper.setState({ uneditedDashboardTiles: [existingTile] })
+      instance.baselineQueryIds.set('tile-1', { queryId: existingTile.queryId })
+      instance.getMostRecentTiles = jest.fn(() => [{ ...existingTile, ...tileOverride }])
+      return instance
+    }
+
+    test('query unchanged, success: not dirty, not failed, save enabled', () => {
+      const i = setupExisting({})
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(false)
+    })
+
+    test('query text changed, not re-run: dirty, not failed, save disabled', () => {
+      const i = setupExisting({ query: 'different query' })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+
+    test('query re-run → new queryId: not dirty, not failed, save enabled', () => {
+      const i = setupExisting({ queryId: 'qid-after-run', queryResponse: successResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+    })
+
+    test('DB error (400): not dirty, failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: errorResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+    })
+
+    test('timeout (422): not dirty, failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: timeoutResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+    })
+
+    test('disambiguation (items): dirty AND failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: itemsResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+
+    test('replacements: dirty, not failed, save disabled', () => {
+      const i = setupExisting({ queryResponse: replacementsResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+  })
+})
+
+describe('Dashboard.getDirtyTileKeys', () => {
+  const savedTile = {
+    key: 'tile-abc',
+    i: 'tile-abc',
+    query: 'sales by region',
+    tableFilters: [],
+    orders: [],
+    displayType: 'table',
+    queryId: 'qid-1',
+    queryResponse: { data: { data: { rows: [[1]], count_rows: 1 } } },
+  }
+
+  const setupDirtyTest = (currentTileOverrides, { isEditing = true } = {}) => {
+    const currentTile = { ...savedTile, ...currentTileOverrides }
+    const wrapper = setup({ isEditing }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    // Simulate entering edit mode: baselineQueryIds initialized from saved tile
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId, secondQueryId: savedTile.secondQueryId })
+    instance.getMostRecentTiles = jest.fn(() => [currentTile])
+    return instance.getDirtyTileKeys()
+  }
+
+  test('returns empty Set when not in edit mode', () => {
+    expect(setupDirtyTest({}, { isEditing: false }).size).toBe(0)
+  })
+
+  test('returns empty Set when uneditedDashboardTiles is null', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: null })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [savedTile])
+    expect(instance.getDirtyTileKeys().size).toBe(0)
+  })
+
+  test('returns empty Set when nothing has changed', () => {
+    expect(setupDirtyTest({}).size).toBe(0)
+  })
+
+  test('detects query text change', () => {
+    expect(setupDirtyTest({ query: 'sales by product' }).has('tile-abc')).toBe(true)
+  })
+
+  test('does NOT mark dirty when displayType changes (chart switch needs no re-fetch)', () => {
+    expect(setupDirtyTest({ displayType: 'bar' }).has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty when dataConfig changes', () => {
+    expect(setupDirtyTest({ dataConfig: { tableConfig: { numberColumnIndex: 1 } } }).has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty when query text changed AND new queryId (already re-executed)', () => {
+    expect(setupDirtyTest({ query: 'sales by product', queryId: 'qid-new' }).has('tile-abc')).toBe(false)
+  })
+
+  test('detects secondQuery change when secondQueryId is unchanged (not yet re-executed)', () => {
+    expect(setupDirtyTest({ secondQuery: 'revenue by month' }).has('tile-abc')).toBe(true)
+  })
+
+  test('does NOT mark dirty when secondQuery changed AND new secondQueryId (already re-executed)', () => {
+    expect(setupDirtyTest({ secondQuery: 'revenue by month', secondQueryId: 'qid-second-new' }).has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty when only queryId changes', () => {
+    expect(setupDirtyTest({ queryId: 'qid-new' }).has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty when only queryResponse changes', () => {
+    expect(setupDirtyTest({ queryResponse: { data: { data: { rows: [[999]] } } } }).has('tile-abc')).toBe(false)
+  })
+
+  test('marks dirty when queryResponse contains replacements (suggestion pending)', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { replacements: [{ text: 'sales by region' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('marks dirty when queryResponse contains items (list suggestion pending)', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { items: [{ label: 'Region' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('marks dirty when queryResponse contains both replacements and items', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { replacements: [{ text: 'x' }], items: [{ label: 'y' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('does NOT mark dirty when queryResponse has neither replacements nor items', () => {
+    expect(
+      setupDirtyTest({ queryResponse: { data: { data: { rows: [[1]], replacements: undefined, items: undefined } } } }).has('tile-abc'),
+    ).toBe(false)
+  })
+
+  test('does NOT mark dirty for a new tile (not in uneditedDashboardTiles) that has suggestions', () => {
+    const newTile = {
+      key: 'tile-new',
+      i: 'tile-new',
+      query: '9999',
+      queryResponse: { data: { data: { replacements: [{ text: 'all cogs 9999' }] } } },
+    }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [newTile])
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a brand new tile (not in uneditedDashboardTiles)', () => {
+    const newTile = { key: 'tile-new', i: 'tile-new', query: 'player stats', queryId: undefined }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId })
+    instance.getMostRecentTiles = jest.fn(() => [savedTile, newTile])
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a new tile that has been run (has queryId, not in saved)', () => {
+    const newTile = { key: 'tile-new', i: 'tile-new', query: 'player stats', queryId: 'qid-new' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [newTile])
+    expect(instance.getDirtyTileKeys().has('tile-new')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a pre-AQLP-792 tile with empty saved.query after running', () => {
+    const preLegacyTile = { ...savedTile, query: '', queryId: 'qid-old' }
+    const currentTile = { ...savedTile, query: 'avrg spread profit', queryId: 'qid-new' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [preLegacyTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-old' })
+    instance.getMostRecentTiles = jest.fn(() => [currentTile])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a pre-AQLP-792 tile while user is typing (legacy queryId still present on tile)', () => {
+    const preLegacyTile = { ...savedTile, query: '', queryId: 'qid-old' }
+    const typingTile = { ...savedTile, query: 'player stats', queryId: 'qid-old' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [preLegacyTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-old' })
+    instance.getMostRecentTiles = jest.fn(() => [typingTile])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
+  test('does NOT mark dirty for a blank tile (no saved query, no queryId) when user types a new query', () => {
+    const blankTile = { ...savedTile, query: '', queryId: undefined }
+    const typingTile = { ...savedTile, query: 'player stats', queryId: undefined }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [blankTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: undefined })
+    instance.getMostRecentTiles = jest.fn(() => [typingTile])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
+  test('only marks the changed tile as dirty in a multi-tile dashboard', () => {
+    const savedTile2 = { ...savedTile, key: 'tile-xyz', i: 'tile-xyz', query: 'revenue by month' }
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile, savedTile2] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId, secondQueryId: savedTile.secondQueryId })
+    instance.baselineQueryIds.set('tile-xyz', { queryId: savedTile2.queryId, secondQueryId: savedTile2.secondQueryId })
+    instance.getMostRecentTiles = jest.fn(() => [
+      { ...savedTile, query: 'sales by product' },
+      { ...savedTile2 },
+    ])
+    const result = instance.getDirtyTileKeys()
+    expect(result.has('tile-abc')).toBe(true)
+    expect(result.has('tile-xyz')).toBe(false)
+  })
+})
+
+describe('Dashboard.hasDirtyTiles', () => {
+  const savedTile = {
+    key: 'tile-abc',
+    i: 'tile-abc',
+    query: 'sales by region',
+    tableFilters: [],
+    orders: [],
+    displayType: 'table',
+    queryId: 'qid-1',
+    queryResponse: { data: { data: { rows: [[1]], count_rows: 1 } } },
+  }
+
+  test('returns false when no tiles are dirty', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId })
+    instance.getMostRecentTiles = jest.fn(() => [savedTile])
+    expect(instance.hasDirtyTiles()).toBe(false)
+  })
+
+  test('returns true when at least one tile is dirty', () => {
+    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: savedTile.queryId })
+    const changedTile = { ...savedTile, query: 'different query' }
+    instance.getMostRecentTiles = jest.fn(() => [changedTile])
+    expect(instance.hasDirtyTiles()).toBe(true)
+  })
+})
+
+describe('Dashboard.baselineQueryIds — tracks executed queryIds', () => {
+  const savedTile = {
+    key: 'tile-abc',
+    i: 'tile-abc',
+    query: 'sales by region',
+    queryId: 'qid-original',
+    secondQuery: undefined,
+    secondQueryId: undefined,
+  }
+
+  const setupBaseline = (isEditing = true) => {
+    const wrapper = setup({ isEditing }, { uneditedDashboardTiles: [savedTile] })
+    const instance = wrapper.instance()
+    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: undefined })
+    instance.getMostRecentTiles = jest.fn(() => [savedTile])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+    return instance
+  }
+
+  test('setParamsForTile snapshots queryId into baseline when query TEXT changes in edit mode', () => {
+    const instance = setupBaseline()
+    instance.setParamsForTile({ query: 'new query text' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+  })
+
+  test('does NOT update baseline when only queryId changes (post-run)', () => {
+    const instance = setupBaseline()
+    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
+    // baseline stays at the value set before the run
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+  })
+
+  test('does NOT update baselineQueryIds when not editing', () => {
+    const instance = setupBaseline(false)
+    instance.setParamsForTile({ query: 'new query text' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+  })
+
+  test('dirty clears after re-run: text change sets baseline, new queryId differs from it', () => {
+    const instance = setupBaseline()
+
+    // User changes query text → baseline snaps to current queryId ('qid-original')
+    instance.setParamsForTile({ query: 'sales by product' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-original')
+
+    // While unrun: tile still has old queryId — dirty
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, query: 'sales by product' }])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
+
+    // Tile re-executes — queryId becomes new; baseline stays at 'qid-original'
+    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, query: 'sales by product', queryId: 'qid-after-run' }])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(false)
+  })
+
+  test('after re-run, a subsequent text change is detected as dirty', () => {
+    const instance = setupBaseline()
+
+    // First run changes queryId but NOT baseline
+    instance.setParamsForTile({ queryId: 'qid-after-run' }, 'tile-abc', [])
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run' }])
+
+    // User then changes query text → baseline snaps to current queryId ('qid-after-run')
+    instance.setParamsForTile({ query: 'sales by product' }, 'tile-abc', [])
+    expect(instance.baselineQueryIds.get('tile-abc').queryId).toBe('qid-after-run')
+
+    // Tile has new text but queryId still 'qid-after-run' = baseline → dirty
+    instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run', query: 'sales by product' }])
+    expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
+  })
+})
+
+describe('Dashboard.getFailedTiles', () => {
+  const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1], [2]], count_rows: 2 } } }
+  const emptySuccessResponse = { data: { reference_id: '1.1.200', data: { rows: [], count_rows: 0 } } }
+  const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
+  const timeoutResponse = { data: { reference_id: '1.1.422', data: {} } }
+  const suggestionsResponse = { data: { data: { items: ['option 1', 'option 2'] } } }
+
+  const setupFailedTest = (tileOverrides) => {
+    const wrapper = setup({})
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [{ key: 'tile-1', ...tileOverrides }])
+    return instance.getFailedTiles()
+  }
+
+  test('does NOT flag a tile with no queryResponse', () => {
+    expect(setupFailedTest({}).has('tile-1')).toBe(false)
+  })
+
+  test('does NOT flag a tile with a successful response', () => {
+    expect(setupFailedTest({ queryResponse: successResponse }).has('tile-1')).toBe(false)
+  })
+
+  test('does NOT flag a tile with a successful empty-result response', () => {
+    expect(setupFailedTest({ queryResponse: emptySuccessResponse }).has('tile-1')).toBe(false)
+  })
+
+  test('flags a tile whose query returned an error reference_id', () => {
+    expect(setupFailedTest({ queryResponse: errorResponse }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile whose query timed out', () => {
+    expect(setupFailedTest({ queryResponse: timeoutResponse }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile whose query returned suggestions (items)', () => {
+    expect(setupFailedTest({ queryResponse: suggestionsResponse }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile whose queryResponse has no reference_id (NaN path)', () => {
+    expect(setupFailedTest({ queryResponse: { data: { data: { rows: [] } } } }).has('tile-1')).toBe(true)
   })
 })
