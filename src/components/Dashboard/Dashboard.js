@@ -119,6 +119,7 @@ class DashboardWithoutTheme extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
   }
 
@@ -157,6 +158,7 @@ class DashboardWithoutTheme extends React.Component {
     enableSlicers: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
     enableResetQuery: false,
   }
 
@@ -204,11 +206,7 @@ class DashboardWithoutTheme extends React.Component {
     // 2. We're not entering edit mode (preserve user's slicer selections)
     // 3. State slicers are empty (don't override user changes)
     // Never update from props when entering edit mode to preserve any slicers user added
-    if (
-      !deepEqual(currentSlicers, prevSlicers) &&
-      !isEnteringEditMode &&
-      this.state.dashboardSlicers.length === 0
-    ) {
+    if (!deepEqual(currentSlicers, prevSlicers) && !isEnteringEditMode && this.state.dashboardSlicers.length === 0) {
       this.setState({ dashboardSlicers: currentSlicers })
     }
 
@@ -259,7 +257,7 @@ class DashboardWithoutTheme extends React.Component {
       // Check if slicer already exists (by key or canonical_key)
       const slicerKey = slicer.key || slicer.canonical_key
       const exists = this.state.dashboardSlicers.some(
-        (s) => (s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === (slicer.value || '')
+        (s) => (s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === (slicer.value || ''),
       )
 
       if (!exists) {
@@ -281,7 +279,7 @@ class DashboardWithoutTheme extends React.Component {
 
     this.setState({
       dashboardSlicers: this.state.dashboardSlicers.filter(
-        (s) => !((s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === slicerValue)
+        (s) => !((s.data?.key || s.data?.canonical_key) === slicerKey && (s.data?.value || '') === slicerValue),
       ),
     })
   }
@@ -541,18 +539,13 @@ class DashboardWithoutTheme extends React.Component {
   executeSingleTile = (tileId) => {
     const directRef = this.tileRefs?.[tileId] || this.tileRefs?.[String(tileId)]
     if (directRef?.processTile) {
-      return this.props.enableAutoRefresh
-        ? directRef.processTile({ isCachedRefresh: true })
-        : directRef.processTile()
+      return this.props.enableAutoRefresh ? directRef.processTile({ isCachedRefresh: true }) : directRef.processTile()
     }
 
     const tiles = this.getMostRecentTiles() || []
     const tile = tiles.find(
       (t) =>
-        t?.i === tileId ||
-        t?.key === tileId ||
-        String(t?.i) === String(tileId) ||
-        String(t?.key) === String(tileId),
+        t?.i === tileId || t?.key === tileId || String(t?.i) === String(tileId) || String(t?.key) === String(tileId),
     )
 
     const fallbackRef = this.tileRefs?.[tile?.key] || this.tileRefs?.[tile?.i]
@@ -710,8 +703,7 @@ class DashboardWithoutTheme extends React.Component {
       }
     })
 
-  stripRuntimeFields = (tiles) =>
-    tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => rest)
+  stripRuntimeFields = (tiles) => tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => rest)
 
   addTileStateToLog = (tiles) => {
     if (!this.props.isEditing || !tiles) {
@@ -734,8 +726,7 @@ class DashboardWithoutTheme extends React.Component {
 
     const current = this.tileLog[this.currentLogIndex]
     const prevEntry = this.tileLog[this.currentLogIndex + 1]
-    const isJustAddedTile =
-      current && prevEntry && current.length > prevEntry.length && tiles.length === current.length
+    const isJustAddedTile = current && prevEntry && current.length > prevEntry.length && tiles.length === current.length
 
     if (current) {
       const stripped = this.stripRuntimeFields(tiles)
@@ -1211,7 +1202,9 @@ class DashboardWithoutTheme extends React.Component {
                 if (idx !== -1) {
                   pending[idx] = {
                     ...pending[idx],
-                    ...(processedTile.queryResponse !== undefined ? { queryResponse: processedTile.queryResponse } : {}),
+                    ...(processedTile.queryResponse !== undefined
+                      ? { queryResponse: processedTile.queryResponse }
+                      : {}),
                     ...(processedTile.secondQueryResponse !== undefined
                       ? { secondQueryResponse: processedTile.secondQueryResponse }
                       : {}),
@@ -1428,6 +1421,7 @@ class DashboardWithoutTheme extends React.Component {
             enableCyclicalDates={this.props.enableCyclicalDates}
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            enableFollowOnQuery={this.props.enableFollowOnQuery}
             showResetQueryOption={this.props.enableResetQuery}
           />
         ))}

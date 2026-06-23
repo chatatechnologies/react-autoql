@@ -74,7 +74,7 @@
 .filter-dropdown-item-text {
   pointer-events: none;
   user-select: none;
-  font-size: 12px;
+  font-size: 0.75rem;
   fill: var(--react-autoql-text-color-primary);
 }
 
@@ -259,7 +259,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-primary);
   background-color: transparent;
   transition: background-color 0.2s ease;
@@ -289,7 +289,7 @@
 .amount-dropdown-title,
 .filter-dropdown-title {
   padding: 8px 12px 6px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--react-autoql-text-color-primary);
   text-transform: uppercase;
@@ -301,7 +301,7 @@
 
 .amount-dropdown-empty {
   padding: 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-secondary);
 }
 

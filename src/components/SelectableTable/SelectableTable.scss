@@ -10,7 +10,7 @@
     justify-content: space-between;
     align-items: center;
     white-space: nowrap;
-    font-size: 13px;
+    font-size: 0.8125rem;
     color: var(--react-autoql-text-color-secondary);
     font-weight: 600;
 
@@ -46,7 +46,7 @@
     }
 
     table {
-      font-size: 13px;
+      font-size: 0.8125rem;
       min-width: 100%;
       border-collapse: collapse;
 
@@ -175,7 +175,7 @@
       tbody {
         tr {
           height: 28px;
-          font-size: 12px;
+          font-size: 0.75rem;
           background: var(--react-autoql-background-color-secondary);
 
           &:not(:last-child) {
@@ -244,12 +244,12 @@
   }
 
   .selectable-table-tooltip-section {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .selectable-table-tooltip-title {
     font-weight: 600;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 }
 
@@ -283,7 +283,7 @@
     align-items: center;
     font-size: 0.9em;
     white-space: pre-wrap;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .selectable-table-tooltip-title {

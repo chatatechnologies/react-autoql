@@ -81,7 +81,7 @@
           margin-bottom: 2px;
           padding: 2px 8px;
           line-height: 15px;
-          font-size: 10px;
+          font-size: 0.625rem;
           transition: opacity 0.2s ease;
         }
 
@@ -102,7 +102,7 @@
       }
 
       .react-autoql-slider-mark-label {
-        font-size: 10px;
+        font-size: 0.625rem;
         line-height: 12px;
         color: var(--react-autoql-placeholder-color);
         white-space: nowrap;

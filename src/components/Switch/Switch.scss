@@ -12,7 +12,7 @@
     height: 26px;
     line-height: 26px;
     min-width: 42px;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .react-autoql-toggle-switch {
@@ -44,7 +44,7 @@
         display: flex;
         align-items: center;
         height: 100%;
-        font-size: 12px;
+        font-size: 0.75rem;
         font-weight: bold;
         color: var(--react-autoql-background-color-switch-thumb);
         right: 15px;

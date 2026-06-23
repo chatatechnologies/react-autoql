@@ -7,6 +7,7 @@ import { CHART_TYPES, authenticationDefault, autoQLConfigDefault, dataFormatting
 
 import { Modal } from '../Modal'
 import { QueryOutput } from '../QueryOutput'
+import { Tooltip } from '../Tooltip'
 import { LoadingDots } from '../LoadingDots'
 import DrilldownTable from './DrilldownTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
@@ -51,6 +52,8 @@ export default class DrilldownModal extends React.Component {
     cancelQueriesOnUnmount: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    tooltipID: PropTypes.string,
+    chartTooltipID: PropTypes.string,
   }
 
   static defaultProps = {
@@ -272,6 +275,10 @@ export default class DrilldownModal extends React.Component {
                 </div>
                 {this.renderDrilldownTable()}
               </SplitterLayout>
+            )}
+            {this.props.tooltipID && <Tooltip tooltipId={this.props.tooltipID} />}
+            {this.props.chartTooltipID && (
+              <Tooltip tooltipId={this.props.chartTooltipID} className='react-autoql-chart-tooltip' delayShow={0} />
             )}
           </>
         </Modal>

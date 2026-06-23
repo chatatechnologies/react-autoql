@@ -110,7 +110,7 @@
     text-align: center;
     display: flex;
     flex-direction: column;
-    font-size: 15px;
+    font-size: 0.9375rem;
     min-height: 0;
     justify-content: flex-start;
 
@@ -175,7 +175,7 @@
     text-align: center;
     margin: 50px auto;
     padding: 0 40px;
-    font-size: 15px;
+    font-size: 0.9375rem;
     min-height: 0;
     flex: 1;
 
@@ -283,7 +283,7 @@
         padding-left: 12px;
 
         .react-autoql-data-preview-selected-columns-selector {
-          font-size: 11px;
+          font-size: 0.6875rem;
           margin-left: 7px;
           color: var(--react-autoql-text-color-secondary);
           padding-left: 8px;
@@ -316,7 +316,7 @@
         .react-autoql-data-preview-selected-columns-clear-btn {
           color: var(--react-autoql-text-color-placeholder);
           height: 25px;
-          font-size: 11px;
+          font-size: 0.6875rem;
           padding: 0px 6px;
           font-weight: 600;
           border-radius: 4px;
@@ -354,13 +354,13 @@
     align-items: center;
     flex: 0 0 auto;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 1rem;
     margin: 2px;
     margin-top: 4px;
     margin-bottom: 10px;
 
     .react-autoql-icon {
-      font-size: 17px;
+      font-size: 1.0625rem;
       margin-right: 5px;
     }
   }
@@ -369,7 +369,7 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    font-size: 18px;
+    font-size: 1.125rem;
     margin: 4px 0px;
     font-weight: 600;
 
@@ -382,7 +382,7 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 600;
     margin-bottom: 5px;
     margin-top: 15px;
@@ -496,7 +496,7 @@
     top: 0;
     width: 50px;
     height: 100%;
-    font-size: 20px;
+    font-size: 1.25rem;
     visibility: hidden;
     color: var(--react-autoql-text-color-placeholder);
     cursor: pointer;

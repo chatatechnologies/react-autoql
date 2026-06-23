@@ -15,10 +15,11 @@ export function isMagicWandDatasetTooLarge(queryResponse) {
 }
 
 /**
- * Shared visibility rules for the magic wand (Analyze / summary): same inputs for Data Messenger and dashboard.
+ * Shared visibility rules for query action buttons (magic wand, follow-on queries, etc.)
+ * Returns false for single-value responses, empty data, previews, and disabled features.
  */
-export function shouldShowMagicWandForQueryCore(enableMagicWand, queryResponse) {
-  if (!enableMagicWand) {
+export function shouldShowQueryActionButton(enableFeature, queryResponse) {
+  if (!enableFeature) {
     return false
   }
 
@@ -32,10 +33,6 @@ export function shouldShowMagicWandForQueryCore(enableMagicWand, queryResponse) 
 
   const rows = queryResponse?.data?.data?.rows || []
   if (rows.length <= 1) {
-    return false
-  }
-
-  if (isMagicWandDatasetTooLarge(queryResponse)) {
     return false
   }
 
