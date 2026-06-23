@@ -853,12 +853,15 @@ export default class ChatMessage extends React.Component {
   }
 
   handleFollowOnQueryKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
       this.handleFollowOnQuerySubmit()
     }
   }
 
   handleFollowOnQuerySubmit = async () => {
+    if (!this.state.followOnQueryText.trim() || this.state.isFollowOnQueryLoading) return
+
     this.setState({ isFollowOnQueryLoading: true, followOnError: null })
     try {
       const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
@@ -884,20 +887,24 @@ export default class ChatMessage extends React.Component {
 
       const { columns, rows } = response?.data ?? {}
       const question = this.state.followOnQueryText.trim()
-      this.setState(
-        (prev) => ({
-          followOnQueryText: '',
-          followOnResults: [{ id: Date.now(), question, columns, rows }, ...prev.followOnResults],
-        }),
-        () => setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50),
-      )
+      if (this._isMounted) {
+        this.setState(
+          (prev) => ({
+            followOnQueryText: '',
+            followOnResults: [{ id: Date.now(), question, columns, rows }, ...prev.followOnResults],
+          }),
+          () => setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50),
+        )
+      }
     } catch (error) {
       const errorMessage =
         error?.response?.data?.data?.message ||
         error?.response?.data?.message ||
         error?.message ||
         'Something went wrong. Please try again.'
-      this.setState({ followOnError: errorMessage })
+      if (this._isMounted) {
+        this.setState({ followOnError: errorMessage })
+      }
     } finally {
       if (this._isMounted) {
         this.setState({ isFollowOnQueryLoading: false })
