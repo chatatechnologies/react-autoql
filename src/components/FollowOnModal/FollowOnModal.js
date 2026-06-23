@@ -16,6 +16,7 @@ export default class FollowOnModal extends React.Component {
   static propTypes = {
     isVisible: PropTypes.bool,
     onClose: PropTypes.func,
+    onResultsChange: PropTypes.func,
     initialResults: PropTypes.arrayOf(PropTypes.shape({})),
     authentication: authenticationType,
     autoQLConfig: autoQLConfigType,
@@ -27,6 +28,7 @@ export default class FollowOnModal extends React.Component {
   static defaultProps = {
     isVisible: false,
     onClose: () => {},
+    onResultsChange: undefined,
     initialResults: [],
     dataFormatting: dataFormattingDefault,
     queryResponse: undefined,
@@ -105,10 +107,11 @@ export default class FollowOnModal extends React.Component {
       const question = queryText.trim()
 
       this.setState(
-        (prev) => ({
-          queryText: '',
-          results: [...prev.results, { id: Date.now(), question, columns, rows }],
-        }),
+        (prev) => {
+          const results = [...prev.results, { id: Date.now(), question, columns, rows }]
+          this.props.onResultsChange?.(results)
+          return { queryText: '', results }
+        },
         () => setTimeout(() => this.scrollToBottom(), 50),
       )
     } catch (error) {

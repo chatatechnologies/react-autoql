@@ -133,6 +133,7 @@ export class DashboardTile extends React.Component {
       isSecondRTHovered: false,
       currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
       isFollowOnModalOpen: false,
+      followOnResults: [],
       queryResponseVersion: 0,
     }
   }
@@ -2369,6 +2370,8 @@ export class DashboardTile extends React.Component {
               dataFormatting={this.props.dataFormatting}
               responseRef={this.state.responseRef}
               queryResponse={this.props.tile?.queryResponse}
+              initialResults={this.state.followOnResults}
+              onResultsChange={(results) => this.setState({ followOnResults: results })}
             />
           )}
         </div>
