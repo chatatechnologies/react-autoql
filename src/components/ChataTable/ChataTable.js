@@ -94,7 +94,7 @@ export default class ChataTable extends React.Component {
       page: 1,
     }
 
-    this.baseFilters = _cloneDeep(props?.initialTableParams?.filter || [])
+    this.baseFilters = _cloneDeep(props?.lockedFilters ?? props?.initialTableParams?.filter ?? [])
 
     // pivot table headers reflect the correct sort direction
     let initialSort = undefined
@@ -189,6 +189,7 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: PropTypes.func,
     enableContextMenu: PropTypes.bool,
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
+    lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
     updateColumnsAndData: PropTypes.func,
     onUpdateFilterResponse: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
@@ -370,6 +371,14 @@ export default class ChataTable extends React.Component {
         this.setFilters(this.props?.initialTableParams?.filter)
       } else if (this.state.isFiltering) {
         this.setFilters(this.tableParams.filter)
+      }
+      // Remote mode: debounce blocks the setFilters fetch on mount, so reset and replay.
+      if (!this.isLocal && this.tableParams.filter?.length) {
+        setTimeout(() => {
+          if (!this._isMounted || !this.state.tabulatorMounted) return
+          this._setFiltersTime = 0
+          this.ref?.tabulator?.replaceData()
+        }, 0)
       }
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {

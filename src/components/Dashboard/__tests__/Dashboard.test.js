@@ -749,23 +749,31 @@ describe('Dashboard.addTile — DM response handling', () => {
 //   isFailed — possible on ANY tile with a non-2xx reference_id or items response
 //   New tiles can NEVER be dirty (no saved state to diff against)
 //   New dashboards can NEVER have dirty tiles (uneditedDashboardTiles is empty)
+//   Split-view tiles carry an independent secondQuery/secondQueryId — dirty rules apply to each independently
+//   Malformed reference_id (no dot separator) is treated as a failure the same as a 4xx code
 //
-// ┌──────────────┬──────────────┬────────────────────────────┬────────┬────────┬──────────────┐
-// │ Dashboard    │ Tile         │ Scenario                   │isDirty │isFailed│ save disabled│
-// ├──────────────┼──────────────┼────────────────────────────┼────────┼────────┼──────────────┤
-// │ New          │ New          │ Success run                │ false  │ false  │     no       │
-// │ New          │ New          │ DB/server error            │ false  │ true   │     yes      │
-// │ New          │ New          │ Disambiguation (items)     │ false  │ true   │     yes      │
-// │ Existing     │ New (added)  │ Success run                │ false  │ false  │     no       │
-// │ Existing     │ New (added)  │ DB/server error            │ false  │ true   │     yes      │
-// │ Existing     │ Existing     │ Success, query unchanged   │ false  │ false  │     no       │
-// │ Existing     │ Existing     │ Query text changed, no run │ true   │ false  │     yes      │
-// │ Existing     │ Existing     │ Query re-run → success     │ false  │ false  │     no       │
-// │ Existing     │ Existing     │ DB/server error            │ false  │ true   │     yes      │
-// │ Existing     │ Existing     │ Timeout (422)              │ false  │ true   │     yes      │
-// │ Existing     │ Existing     │ Disambiguation (items)     │ true   │ true   │     yes      │
-// │ Existing     │ Existing     │ Replacements               │ true   │ false  │     yes      │
-// └──────────────┴──────────────┴────────────────────────────┴────────┴────────┴──────────────┘
+// ┌──────────────┬──────────────┬─────────────────────────────────────────┬────────┬────────┬──────────────┐
+// │ Dashboard    │ Tile         │ Scenario                                │isDirty │isFailed│ save disabled│
+// ├──────────────┼──────────────┼─────────────────────────────────────────┼────────┼────────┼──────────────┤
+// │ New          │ New          │ Success run                             │ false  │ false  │     no       │
+// │ New          │ New          │ DB/server error                         │ false  │ true   │     yes      │
+// │ New          │ New          │ Disambiguation (items)                  │ false  │ true   │     yes      │
+// │ Existing     │ New (added)  │ Success run                             │ false  │ false  │     no       │
+// │ Existing     │ New (added)  │ DB/server error                         │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Success, query unchanged                │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ Query text changed, no run              │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ Query re-run → success                  │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ DB/server error                         │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Timeout (422)                           │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Malformed reference_id (no dot)         │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Disambiguation (items)                  │ true   │ true   │     yes      │
+// │ Existing     │ Existing     │ Replacements                            │ true   │ false  │     yes      │
+// ├──────────────┼──────────────┼─────────────────────────────────────────┼────────┼────────┼──────────────┤
+// │ Split-view   │              │                                         │        │        │              │
+// │ Existing     │ Existing     │ secondQuery text changed, no re-run     │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ secondQuery re-run → new secondQueryId  │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ primary dirty + secondQuery unchanged   │ true   │ false  │     yes      │
+// └──────────────┴──────────────┴─────────────────────────────────────────┴────────┴────────┴──────────────┘
 describe('edit-mode state matrix', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
   const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
@@ -897,6 +905,59 @@ describe('edit-mode state matrix', () => {
 
     test('replacements: dirty, not failed, save disabled', () => {
       const i = setupExisting({ queryResponse: replacementsResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+
+    test('malformed reference_id (no dot): not dirty, failed, save disabled', () => {
+      const malformedResponse = { data: { reference_id: '400', data: {} } }
+      const i = setupExisting({ queryResponse: malformedResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+    })
+  })
+
+  // EXISTING dashboard, EXISTING split-view tile — secondQuery dirty/failed detection
+  describe('existing dashboard — existing split-view tile', () => {
+    const existingSplitTile = {
+      key: 'tile-1',
+      i: 'tile-1',
+      query: 'sales by region',
+      queryId: 'qid-original',
+      queryResponse: { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } },
+      secondQuery: 'revenue by month',
+      secondQueryId: 'qid-second-original',
+    }
+
+    function setupSplit(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      wrapper.setState({ uneditedDashboardTiles: [existingSplitTile] })
+      instance.baselineQueryIds.set('tile-1', {
+        queryId: existingSplitTile.queryId,
+        secondQueryId: existingSplitTile.secondQueryId,
+      })
+      instance.getMostRecentTiles = jest.fn(() => [{ ...existingSplitTile, ...tileOverride }])
+      return instance
+    }
+
+    test('secondQuery text changed, no re-run: dirty, not failed, save disabled', () => {
+      const i = setupSplit({ secondQuery: 'profit by quarter' })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+
+    test('secondQuery re-run → new secondQueryId: not dirty, not failed, save enabled', () => {
+      const i = setupSplit({ secondQuery: 'profit by quarter', secondQueryId: 'qid-second-new' })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(false)
+    })
+
+    test('primary query changed + secondQuery unchanged: dirty, not failed, save disabled', () => {
+      const i = setupSplit({ query: 'different primary query' })
       expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
       expect(i.getFailedTiles().has('tile-1')).toBe(false)
       expect(i.hasDirtyTiles()).toBe(true)

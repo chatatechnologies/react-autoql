@@ -168,14 +168,14 @@
     }
   }
 
-  &.react-autoql-table-infinite .tabulator-col.DATE_STRING .tabulator-header-filter,
+  .tabulator-col.DATE_STRING .tabulator-header-filter,
   .tabulator-col.DRILLDOWN .tabulator-header-filter {
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
   }
 
-  &.react-autoql-table-limited .tabulator-col .tabulator-header-filter,
+  &.react-autoql-table-limited .tabulator-col:not(.DATE_STRING) .tabulator-header-filter,
   &.react-autoql-table-infinite .tabulator-col:not(.DATE_STRING) .tabulator-header-filter {
     visibility: visible;
     opacity: 1;

@@ -357,6 +357,7 @@ export class QueryOutput extends React.Component {
     isEditing: PropTypes.bool,
     isDashboardEditing: PropTypes.bool,
     onNewQueryId: PropTypes.func,
+    lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
     skipInitialFilters: PropTypes.bool,
     initialIsFiltering: PropTypes.bool,
     minHeight: PropTypes.number,
@@ -4161,14 +4162,14 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
-    if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters) {
+    if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters?.length) {
       this.tableParams.filter = formatFiltersForTabulator(
         this.props?.initialFormattedTableParams?.filters,
         this.state.columns,
       )
     }
 
-    if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters) {
+    if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters?.length) {
       this.tableParams.sort = formatSortersForTabulator(
         this.props?.initialFormattedTableParams?.sorters,
         this.state.columns,
@@ -4214,6 +4215,7 @@ export class QueryOutput extends React.Component {
           onCustomColumnChange={this.onCustomColumnChange}
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
+          lockedFilters={this.props.lockedFilters}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
           showQueryInterpretation={this.props.showQueryInterpretation}
@@ -4262,6 +4264,7 @@ export class QueryOutput extends React.Component {
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
+          lockedFilters={this.props.lockedFilters}
           initialIsFiltering={!!this.wasFiltering}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}
