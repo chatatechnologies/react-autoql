@@ -177,6 +177,7 @@ const SankeyColumnSelector = ({
                     type='button'
                     className='sankey-path-control-btn danger'
                     onClick={() => removePathColumn(columnIndex)}
+                    disabled={pathColumnIndices.length <= 2}
                   >
                     ×
                   </button>

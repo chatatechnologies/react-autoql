@@ -161,8 +161,8 @@ export default class FollowOnModal extends React.Component {
         isVisible={this.props.isVisible}
         onClose={this.props.onClose}
         showFooter={false}
-        width='700px'
-        height='600px'
+        width='clamp(700px, 60vw, 1200px)'
+        height='clamp(600px, 70vh, 900px)'
         enableBodyScroll={false}
         bodyClassName='follow-on-modal-body-override'
       >
