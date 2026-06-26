@@ -372,14 +372,6 @@ export default class ChataTable extends React.Component {
       } else if (this.state.isFiltering) {
         this.setFilters(this.tableParams.filter)
       }
-      // Remote mode: debounce blocks the setFilters fetch on mount, so reset and replay.
-      if (!this.isLocal && this.tableParams.filter?.length) {
-        setTimeout(() => {
-          if (!this._isMounted || !this.state.tabulatorMounted) return
-          this._setFiltersTime = 0
-          this.ref?.tabulator?.replaceData()
-        }, 0)
-      }
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()

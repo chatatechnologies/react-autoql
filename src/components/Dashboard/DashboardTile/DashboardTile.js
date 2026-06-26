@@ -458,11 +458,42 @@ export class DashboardTile extends React.Component {
   shouldShowDirtyBadge = () => {
     if (!this.props.isEditing || this.props.isFailed) return false
     if (!this.props.isDirty) return false
+    if (this.props.tile?.splitView) return false // split view uses per-pane banners
     const { tile } = this.props
     if (tile?.queryId) return true
     if (tile?.queryResponse?.data?.data?.replacements) return true
     if (tile?.queryResponse?.data?.data?.items) return true
     return false
+  }
+
+  // Returns 'dirty', 'failed', or null for a split-view pane.
+  // isTopHalf=true checks the top query; false checks the bottom query.
+  getPaneBannerType = (isTopHalf) => {
+    if (!this.props.isEditing) return null
+    const { tile } = this.props
+    if (!tile?.splitView) return null
+
+    const response = isTopHalf ? tile?.queryResponse : tile?.secondQueryResponse
+
+    if (this.props.isFailed && this.hasError(response)) return 'failed'
+
+    if (!this.props.isDirty) return null
+
+    if (response?.data?.data?.replacements) return 'dirty'
+    if (response?.data?.data?.items) return 'dirty'
+
+    if (!isTopHalf && !!tile.secondQuery && !tile.secondQueryId) return 'dirty'
+
+    // Top fallback: if isDirty has no attributable bottom reason, show on top
+    if (isTopHalf) {
+      const bottomHasOwnReason =
+        !!tile?.secondQueryResponse?.data?.data?.replacements ||
+        !!tile?.secondQueryResponse?.data?.data?.items ||
+        (!!tile.secondQuery && !tile.secondQueryId)
+      if (!bottomHasOwnReason) return 'dirty'
+    }
+
+    return null
   }
 
   // Return true only for query translation errors (29.9.502) that warrant a force-retry
@@ -1419,12 +1450,13 @@ export class DashboardTile extends React.Component {
 
   onSplitViewClick = () => {
     const splitView = !this.props.tile?.splitView
-    let secondQuery = this.props.tile?.secondQuery
 
-    if (splitView && !secondQuery) {
-      secondQuery = this.state.query
+    if (!splitView) {
+      this.debouncedSetParamsForTile({ splitView, secondQuery: undefined, secondQueryId: undefined, secondQueryResponse: undefined })
+      return
     }
 
+    const secondQuery = this.props.tile?.secondQuery || this.state.query
     this.debouncedSetParamsForTile({ splitView, secondQuery })
   }
 
@@ -1459,9 +1491,33 @@ export class DashboardTile extends React.Component {
           }, 1000)
         }}
       >
-        <div className='dashboard-tile-split-pane-container'>{topContent}</div>
-        <div className='dashboard-tile-split-pane-container'>
+        <div
+          className={`dashboard-tile-split-pane-container${this.getPaneBannerType(true) ? ` top-${this.getPaneBannerType(true)}` : ''}`}
+        >
+          {topContent}
+          {this.getPaneBannerType(true) && (
+            <div
+              className={`react-autoql-dashboard-tile-${this.getPaneBannerType(true)}-badge split-pane-badge`}
+              data-tooltip-content={this.getPaneBannerType(true) === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
+              data-tooltip-id={this.props.tooltipID}
+            >
+              !
+            </div>
+          )}
+        </div>
+        <div
+          className={`dashboard-tile-split-pane-container${this.getPaneBannerType(false) ? ` bottom-${this.getPaneBannerType(false)}` : ''}`}
+        >
           {bottomContent}
+          {this.getPaneBannerType(false) && (
+            <div
+              className={`react-autoql-dashboard-tile-${this.getPaneBannerType(false)}-badge split-pane-badge`}
+              data-tooltip-content={this.getPaneBannerType(false) === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
+              data-tooltip-id={this.props.tooltipID}
+            >
+              !
+            </div>
+          )}
           {this.props.isEditing && (
             <div
               className={`split-view-query-btn-container react-autoql-toolbar ${
@@ -2280,7 +2336,7 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed ? ' failed' : ''}`}
+          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed && !this.props.tile?.splitView ? ' failed' : ''}`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2307,7 +2363,7 @@ export class DashboardTile extends React.Component {
               !
             </div>
           )}
-          {this.props.isEditing && this.props.isFailed && (
+          {this.props.isEditing && this.props.isFailed && !this.props.tile?.splitView && (
             <div
               className='react-autoql-dashboard-tile-failed-badge'
               data-tooltip-content='This query has failed'

@@ -358,7 +358,13 @@ class DashboardWithoutTheme extends React.Component {
         .filter((tile) => {
           const saved = savedByKey.get(tile.key)
           if (!saved) return false
-          if (tile.queryResponse?.data?.data?.replacements || tile.queryResponse?.data?.data?.items) return true
+          if (
+            tile.queryResponse?.data?.data?.replacements ||
+            tile.queryResponse?.data?.data?.items ||
+            tile.secondQueryResponse?.data?.data?.replacements ||
+            tile.secondQueryResponse?.data?.data?.items
+          )
+            return true
           const baseline = this.baselineQueryIds.get(tile.key) || {}
           const topDirty = saved.query
             ? tile.query !== saved.query && tile.queryId === baseline.queryId
@@ -376,12 +382,17 @@ class DashboardWithoutTheme extends React.Component {
 
   getFailedTiles = () => {
     const tiles = this.getMostRecentTiles() || []
-    const failedTiles = tiles.filter((tile) => {
-      if (tile.queryResponse?.data?.data?.items) return true
-      if (!tile.queryResponse) return false
-      const referenceId = String(tile.queryResponse?.data?.reference_id || '')
+    const isResponseFailed = (response) => {
+      if (!response) return false
+      if (response?.data?.data?.items) return true
+      const referenceId = String(response?.data?.reference_id || '')
       const refId = Number(referenceId.split('.')[2])
       return !(refId >= 200 && refId < 300)
+    }
+    const failedTiles = tiles.filter((tile) => {
+      if (isResponseFailed(tile.queryResponse)) return true
+      if (tile.secondQuery && isResponseFailed(tile.secondQueryResponse)) return true
+      return false
     })
     return new Set(failedTiles.map((tile) => tile.key))
   }

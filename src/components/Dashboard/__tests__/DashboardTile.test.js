@@ -1376,6 +1376,52 @@ describe('DashboardTile dirty badge guard', () => {
     expect(wrapper.find('.react-autoql-dashboard-tile-dirty-badge').exists()).toBe(false)
     wrapper.unmount()
   })
+
+  test('applies bottom-dirty class to bottom pane when split view newly enabled and bottom not yet run', () => {
+    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query }
+    const wrapper = setup({ tile: splitTile, isDirty: true, isEditing: true })
+    expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-dirty').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does NOT apply bottom-dirty class when bottom query has been executed', () => {
+    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryId: 'qid-second' }
+    const wrapper = setup({ tile: splitTile, isDirty: false, isEditing: true })
+    expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-dirty').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('does NOT apply bottom-dirty class when not editing', () => {
+    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query }
+    const wrapper = setup({ tile: splitTile, isDirty: true, isEditing: false })
+    expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-dirty').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('applies top-dirty class to top pane when only top is dirty (no bottom-specific reason)', () => {
+    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryId: 'qid-second' }
+    const wrapper = setup({ tile: splitTile, isDirty: true, isEditing: true })
+    expect(wrapper.find('.dashboard-tile-split-pane-container.top-dirty').exists()).toBe(true)
+    expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-dirty').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('applies bottom-failed class when split view bottom response fails', () => {
+    const failedResponse = { data: { reference_id: '1.1.400', data: {} } }
+    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryResponse: failedResponse }
+    const wrapper = setup({ tile: splitTile, isFailed: true, isEditing: true })
+    expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-failed').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('does NOT apply tile-level failed class for split view (per-pane banners handle it)', () => {
+    const failedResponse = { data: { reference_id: '1.1.400', data: {} } }
+    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryResponse: failedResponse }
+    const wrapper = setup({ tile: splitTile, isFailed: true, isEditing: true })
+    const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
+    expect(tile.prop('className')).not.toContain('failed')
+    wrapper.unmount()
+  })
 })
 
 describe('DashboardTile failed class and badge', () => {
@@ -2110,6 +2156,200 @@ describe('shouldShowDirtyBadge', () => {
   test('returns false when isFailed=true even if isDirty (prevents badge overlap)', () => {
     const wrapper = setup({ tile: { ...sampleTile, queryId: 'qid-1' }, isDirty: true, isFailed: true, isEditing: true })
     expect(wrapper.instance().shouldShowDirtyBadge()).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('onSplitViewClick: closing split view clears second-query state', () => {
+  let mockSetParamsForTile
+  let savedParams
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    savedParams = []
+    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+  })
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
+
+  test('closing split view passes splitView=false and clears secondQuery, secondQueryId, secondQueryResponse', () => {
+    const failedResponse = { data: { reference_id: '1.1.500' } }
+    const splitTile = {
+      ...sampleTile,
+      splitView: true,
+      secondQuery: 'show second data',
+      secondQueryId: 'q_second-id',
+      secondQueryResponse: failedResponse,
+    }
+    const wrapper = setup({ tile: splitTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+    savedParams = []
+
+    wrapper.instance().onSplitViewClick()
+    jest.advanceTimersByTime(200)
+
+    expect(savedParams.length).toBeGreaterThan(0)
+    const call = savedParams[savedParams.length - 1]
+    expect(call.splitView).toBe(false)
+    expect(call.secondQuery).toBeUndefined()
+    expect(call.secondQueryId).toBeUndefined()
+    expect(call.secondQueryResponse).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  test('closing split view when bottom query was dirty clears all second-query fields', () => {
+    const splitTile = {
+      ...sampleTile,
+      splitView: true,
+      secondQuery: 'dirty query text',
+      secondQueryId: undefined,
+      secondQueryResponse: undefined,
+    }
+    const wrapper = setup({ tile: splitTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+    savedParams = []
+
+    wrapper.instance().onSplitViewClick()
+    jest.advanceTimersByTime(200)
+
+    const call = savedParams[savedParams.length - 1]
+    expect(call.splitView).toBe(false)
+    expect(call.secondQuery).toBeUndefined()
+    expect(call.secondQueryId).toBeUndefined()
+    expect(call.secondQueryResponse).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  test('opening split view with no existing secondQuery pre-populates from top query', () => {
+    const singleTile = { ...sampleTile, splitView: false, secondQuery: undefined }
+    const wrapper = setup({ tile: singleTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+    savedParams = []
+
+    wrapper.instance().onSplitViewClick()
+    jest.advanceTimersByTime(200)
+
+    const call = savedParams[savedParams.length - 1]
+    expect(call.splitView).toBe(true)
+    expect(call.secondQuery).toBe(sampleTile.query)
+    wrapper.unmount()
+  })
+
+  test('opening split view preserves existing secondQuery when tile already has one', () => {
+    const singleTile = { ...sampleTile, splitView: false, secondQuery: 'previous second query' }
+    const wrapper = setup({ tile: singleTile, setParamsForTile: mockSetParamsForTile })
+    jest.advanceTimersByTime(200)
+    mockSetParamsForTile.mockClear()
+    savedParams = []
+
+    wrapper.instance().onSplitViewClick()
+    jest.advanceTimersByTime(200)
+
+    const call = savedParams[savedParams.length - 1]
+    expect(call.splitView).toBe(true)
+    expect(call.secondQuery).toBe('previous second query')
+    wrapper.unmount()
+  })
+})
+
+describe('getPaneBannerType', () => {
+  const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
+  const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
+  const replacementsResponse = { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' } }
+  const itemsResponse = { data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' } }
+
+  const splitTile = (overrides = {}) => ({
+    ...sampleTile,
+    splitView: true,
+    queryId: 'qid-1',
+    query: sampleTile.query,
+    queryResponse: successResponse,
+    secondQuery: sampleTile.query,
+    secondQueryId: 'qid-second',
+    ...overrides,
+  })
+
+  test('returns null when not editing', () => {
+    const wrapper = setup({ tile: splitTile(), isEditing: false, isDirty: true, isFailed: false })
+    expect(wrapper.instance().getPaneBannerType(true)).toBeNull()
+    expect(wrapper.instance().getPaneBannerType(false)).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('returns null when tile is not in split view', () => {
+    const wrapper = setup({ tile: { ...sampleTile, splitView: false }, isEditing: true, isDirty: true })
+    expect(wrapper.instance().getPaneBannerType(true)).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('returns "failed" for top pane when top response has an error and isFailed=true', () => {
+    const wrapper = setup({ tile: splitTile({ queryResponse: errorResponse }), isEditing: true, isFailed: true })
+    expect(wrapper.instance().getPaneBannerType(true)).toBe('failed')
+    wrapper.unmount()
+  })
+
+  test('returns "failed" for bottom pane when bottom response has an error and isFailed=true', () => {
+    const wrapper = setup({ tile: splitTile({ secondQueryResponse: errorResponse }), isEditing: true, isFailed: true })
+    expect(wrapper.instance().getPaneBannerType(false)).toBe('failed')
+    wrapper.unmount()
+  })
+
+  test('returns null when isDirty is false (no dirty banner needed)', () => {
+    const wrapper = setup({ tile: splitTile(), isEditing: true, isDirty: false, isFailed: false })
+    expect(wrapper.instance().getPaneBannerType(true)).toBeNull()
+    expect(wrapper.instance().getPaneBannerType(false)).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('returns "dirty" for top pane when top response has replacements', () => {
+    const wrapper = setup({ tile: splitTile({ queryResponse: replacementsResponse }), isEditing: true, isDirty: true })
+    expect(wrapper.instance().getPaneBannerType(true)).toBe('dirty')
+    wrapper.unmount()
+  })
+
+  test('returns "dirty" for bottom pane when bottom response has items', () => {
+    const wrapper = setup({ tile: splitTile({ secondQueryResponse: itemsResponse }), isEditing: true, isDirty: true })
+    expect(wrapper.instance().getPaneBannerType(false)).toBe('dirty')
+    wrapper.unmount()
+  })
+
+  test('returns "dirty" for bottom pane when secondQuery exists but has no secondQueryId (not yet run)', () => {
+    const wrapper = setup({
+      tile: splitTile({ secondQueryId: undefined }),
+      isEditing: true,
+      isDirty: true,
+    })
+    expect(wrapper.instance().getPaneBannerType(false)).toBe('dirty')
+    wrapper.unmount()
+  })
+
+  test('returns "dirty" for top pane when bottom has no own reason (top fallback)', () => {
+    // Bottom pane has secondQueryId so no attributable bottom reason → banner goes to top
+    const wrapper = setup({
+      tile: splitTile({ secondQueryId: 'qid-second', secondQueryResponse: successResponse }),
+      isEditing: true,
+      isDirty: true,
+    })
+    expect(wrapper.instance().getPaneBannerType(true)).toBe('dirty')
+    expect(wrapper.instance().getPaneBannerType(false)).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('returns null for top pane when bottom already has its own dirty reason', () => {
+    // Bottom has replacements → bottom gets the banner, top should return null
+    const wrapper = setup({
+      tile: splitTile({ secondQueryResponse: replacementsResponse }),
+      isEditing: true,
+      isDirty: true,
+    })
+    expect(wrapper.instance().getPaneBannerType(true)).toBeNull()
+    expect(wrapper.instance().getPaneBannerType(false)).toBe('dirty')
     wrapper.unmount()
   })
 })

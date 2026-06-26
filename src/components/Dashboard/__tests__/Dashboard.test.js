@@ -653,6 +653,7 @@ describe('Dashboard.addTile — DM response handling', () => {
     expect(addedTile.query).toBe('SELECT * FROM sales')
     expect(addedTile.queryResponse).toBeUndefined()
     expect(addedTile.secondQueryResponse).toBeUndefined()
+    expect(addedTile.queryId).toBe('dm-qid-1')
   })
 
   test('preserves queryResponse when isEditing=true and tile already has queryId', () => {
@@ -773,6 +774,9 @@ describe('Dashboard.addTile — DM response handling', () => {
 // │ Existing     │ Existing     │ secondQuery text changed, no re-run     │ true   │ false  │     yes      │
 // │ Existing     │ Existing     │ secondQuery re-run → new secondQueryId  │ false  │ false  │     no       │
 // │ Existing     │ Existing     │ primary dirty + secondQuery unchanged   │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ Split view newly enabled, bottom not run yet    │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ Split view newly enabled, bottom query executed │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ Split view disabled (secondQuery cleared)        │ false  │ false  │     no       │
 // └──────────────┴──────────────┴─────────────────────────────────────────┴────────┴────────┴──────────────┘
 describe('edit-mode state matrix', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
@@ -963,6 +967,46 @@ describe('edit-mode state matrix', () => {
       expect(i.hasDirtyTiles()).toBe(true)
     })
   })
+
+  // EXISTING dashboard, EXISTING tile — split view newly enabled during edit
+  describe('existing dashboard — split view newly enabled on existing tile', () => {
+    // Saved tile had NO secondQuery/secondQueryId (split view was off).
+    // onSplitViewClick sets secondQuery but NOT secondQueryId — tile must be dirty
+    // until the user runs the bottom query.
+    const existingNonSplitTile = {
+      key: 'tile-1',
+      i: 'tile-1',
+      query: 'sales by region',
+      queryId: 'qid-original',
+      queryResponse: { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } },
+    }
+
+    function setupNewlySplit(tileOverride) {
+      const wrapper = setup({ isEditing: true })
+      const instance = wrapper.instance()
+      wrapper.setState({ uneditedDashboardTiles: [existingNonSplitTile] })
+      instance.baselineQueryIds.set('tile-1', { queryId: existingNonSplitTile.queryId })
+      instance.getMostRecentTiles = jest.fn(() => [{ ...existingNonSplitTile, ...tileOverride }])
+      return instance
+    }
+
+    test('split view newly enabled, bottom not run yet: dirty', () => {
+      const i = setupNewlySplit({ secondQuery: 'sales by region', splitView: true })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
+      expect(i.hasDirtyTiles()).toBe(true)
+    })
+
+    test('split view newly enabled, bottom query executed: not dirty', () => {
+      const i = setupNewlySplit({ secondQuery: 'sales by region', splitView: true, secondQueryId: 'qid-second-new' })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.hasDirtyTiles()).toBe(false)
+    })
+
+    test('split view disabled (secondQuery cleared): not dirty', () => {
+      const i = setupNewlySplit({ splitView: false })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+    })
+  })
 })
 
 describe('Dashboard.getDirtyTileKeys', () => {
@@ -1055,6 +1099,24 @@ describe('Dashboard.getDirtyTileKeys', () => {
   test('does NOT mark dirty when queryResponse has neither replacements nor items', () => {
     expect(
       setupDirtyTest({ queryResponse: { data: { data: { rows: [[1]], replacements: undefined, items: undefined } } } }).has('tile-abc'),
+    ).toBe(false)
+  })
+
+  test('marks dirty when secondQueryResponse contains replacements', () => {
+    expect(
+      setupDirtyTest({ secondQueryResponse: { data: { data: { replacements: [{ text: 'revenue by month' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('marks dirty when secondQueryResponse contains items', () => {
+    expect(
+      setupDirtyTest({ secondQueryResponse: { data: { data: { items: [{ label: 'Region' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('does NOT mark dirty when secondQueryResponse has no replacements or items', () => {
+    expect(
+      setupDirtyTest({ secondQueryResponse: { data: { data: { rows: [[2]] } } } }).has('tile-abc'),
     ).toBe(false)
   })
 
@@ -1304,6 +1366,205 @@ describe('Dashboard.getFailedTiles', () => {
 
   test('flags a tile with a malformed reference_id that has no dot separator', () => {
     expect(setupFailedTest({ queryResponse: { data: { reference_id: '400' } } }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a split-view tile whose secondQueryResponse is an error (top query succeeded)', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: errorResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('flags a split-view tile whose secondQueryResponse is a timeout (top query succeeded)', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: timeoutResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('flags a split-view tile whose secondQueryResponse has items (top query succeeded)', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: suggestionsResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('flags a split-view tile with no top queryResponse when secondQueryResponse fails', () => {
+    expect(
+      setupFailedTest({ secondQuery: 'q2', secondQueryResponse: errorResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('does NOT flag a split-view tile when both responses succeed', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: successResponse }).has('tile-1'),
+    ).toBe(false)
+  })
+
+  test('does NOT flag a tile based on secondQueryResponse when secondQuery is absent', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQueryResponse: errorResponse }).has('tile-1'),
+    ).toBe(false)
+  })
+})
+
+describe('Dashboard.redo', () => {
+  const tile = (overrides = {}) => ({
+    i: 'tile-1', key: 'tile-1', query: 'SELECT 1', x: 0, y: 0, w: 4, h: 4,
+    tableFilters: [], filters: [], columnSelects: [], columns: [], orders: [],
+    ...overrides,
+  })
+
+  test('does nothing when not in edit mode', () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ tiles: [tile()], isEditing: false, onChange })
+    const instance = wrapper.instance()
+
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    instance.currentLogIndex = 1
+
+    instance.redo()
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test('moves currentLogIndex backward (toward newer state) and fires onChange', () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ tiles: [tile()], isEditing: true, onChange })
+    const instance = wrapper.instance()
+
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    instance.currentLogIndex = 1
+
+    instance.redo()
+
+    expect(instance.currentLogIndex).toBe(0)
+    expect(onChange).toHaveBeenCalled()
+    const [calledWith] = onChange.mock.calls[0]
+    expect(calledWith[0].tableFilters).toEqual([])
+  })
+
+  test('is a no-op when already at the newest state (index 0)', () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ tiles: [tile()], isEditing: true, onChange })
+    const instance = wrapper.instance()
+
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    instance.currentLogIndex = 0
+
+    instance.redo()
+
+    // changeCurrentTileState(-1) finds no entry at index -1 — onChange must not fire
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('Dashboard.deleteTile', () => {
+  const tile = (id, overrides = {}) => ({
+    i: id, key: id, query: 'SELECT 1', x: 0, y: 0, w: 4, h: 4, ...overrides,
+  })
+
+  test('removes the tile with the given id', () => {
+    const wrapper = setup({ tiles: [tile('a'), tile('b'), tile('c')] })
+    const instance = wrapper.instance()
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+    instance.getMostRecentTiles = jest.fn(() => [tile('a'), tile('b'), tile('c')])
+
+    instance.deleteTile('b')
+
+    const [remaining] = debouncedOnChange.mock.calls[0]
+    expect(remaining).toHaveLength(2)
+    expect(remaining.map((t) => t.i)).toEqual(['a', 'c'])
+  })
+
+  test('is a no-op when the id does not exist (tile list unchanged)', () => {
+    const wrapper = setup({ tiles: [tile('a'), tile('b')] })
+    const instance = wrapper.instance()
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+    instance.getMostRecentTiles = jest.fn(() => [tile('a'), tile('b')])
+
+    instance.deleteTile('z')
+
+    const [remaining] = debouncedOnChange.mock.calls[0]
+    expect(remaining).toHaveLength(2)
+  })
+
+  test('leaves an empty array when the last tile is deleted', () => {
+    const wrapper = setup({ tiles: [tile('solo')] })
+    const instance = wrapper.instance()
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+    instance.getMostRecentTiles = jest.fn(() => [tile('solo')])
+
+    instance.deleteTile('solo')
+
+    const [remaining] = debouncedOnChange.mock.calls[0]
+    expect(remaining).toHaveLength(0)
+  })
+})
+
+describe('Dashboard.discardChanges', () => {
+  const tile = (overrides = {}) => ({
+    i: 'tile-1', key: 'tile-1', query: 'SELECT 1', x: 0, y: 0, w: 4, h: 4,
+    tableFilters: [], filters: [], columnSelects: [], columns: [], orders: [],
+    ...overrides,
+  })
+
+  test('restores uneditedDashboardTiles and resets the log to a single entry', () => {
+    const savedTile = tile()
+    const wrapper = setup({ tiles: [tile({ tableFilters: ['f1'] })], isEditing: true })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+
+    instance.addTileStateToLog([tile({ tableFilters: ['f2'] })])
+    expect(instance.tileLog.length).toBeGreaterThan(1)
+
+    instance.debouncedOnChange = jest.fn()
+    instance.discardChanges()
+
+    expect(instance.tileLog).toHaveLength(1)
+    expect(instance.currentLogIndex).toBe(0)
+  })
+
+  test('calls debouncedOnChange with the unedited tiles', () => {
+    const savedTile = tile()
+    const wrapper = setup({ tiles: [tile({ tableFilters: ['f1'] })], isEditing: true })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+
+    instance.discardChanges()
+
+    expect(debouncedOnChange).toHaveBeenCalled()
+    const [restoredTiles] = debouncedOnChange.mock.calls[0]
+    expect(restoredTiles[0].tableFilters).toEqual([])
+  })
+
+  test('calls stopEditingCallback when provided', () => {
+    const stopEditingCallback = jest.fn()
+    const savedTile = tile()
+    const wrapper = setup({ tiles: [savedTile], isEditing: true, stopEditingCallback })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+    instance.debouncedOnChange = jest.fn()
+
+    instance.discardChanges()
+
+    expect(stopEditingCallback).toHaveBeenCalled()
+  })
+
+  test('falls back to tileLog[0] when uneditedDashboardTiles is null', () => {
+    const wrapper = setup({ tiles: [tile({ tableFilters: ['f1'] })], isEditing: true })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: null })
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+
+    instance.discardChanges()
+
+    expect(debouncedOnChange).toHaveBeenCalled()
+    expect(instance.tileLog).toHaveLength(1)
   })
 })
 

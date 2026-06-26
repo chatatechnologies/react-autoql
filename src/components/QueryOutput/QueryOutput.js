@@ -1768,7 +1768,6 @@ export class QueryOutput extends React.Component {
             } catch (error) {
               response = error
             }
-            // Restore so the filter badge on the original tile is not affected by the drilldown
             this.formattedTableParams = savedFormattedTableParams
             this.props.onDrilldownEnd({
               response,
