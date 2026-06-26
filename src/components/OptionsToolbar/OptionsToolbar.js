@@ -18,6 +18,7 @@ import {
   getAutoQLConfig,
   dataFormattingDefault,
   fetchLLMSummaryQuote,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -748,6 +749,7 @@ export class OptionsToolbar extends React.Component {
     }
 
     try {
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummaryQuote({
         data: {
           additional_context: {
@@ -755,8 +757,9 @@ export class OptionsToolbar extends React.Component {
             interpretation: queryData.interpretation,
             focus_prompt: this.state.summaryFocusPrompt?.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryData.query_id,
         apiKey: auth.apiKey,

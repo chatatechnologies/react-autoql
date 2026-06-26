@@ -1,4 +1,4 @@
-import { getMagicWandDatasetRowCount, isMagicWandDatasetTooLarge, shouldShowQueryActionButton } from './magicWandHelpers'
+import { getMagicWandDatasetRowCount, shouldShowQueryActionButton } from './magicWandHelpers'
 
 export { shouldShowQueryActionButton, isMagicWandDatasetTooLarge, getMagicWandDatasetRowCount } from './magicWandHelpers'
 
@@ -63,16 +63,11 @@ export function shouldShowSummaryButton({
 export function getSummaryButtonDisabledState({ queryResponse, isGenerating, isChataThinking }) {
   const rowCount = getMagicWandDatasetRowCount(queryResponse)
 
-  const isDatasetTooLarge = isMagicWandDatasetTooLarge(queryResponse)
   const hasNoData = rowCount === 0
 
-  const isDisabled = isDatasetTooLarge || hasNoData || isGenerating || Boolean(isChataThinking)
+  const isDisabled = hasNoData || isGenerating || Boolean(isChataThinking)
 
-  const tooltip = isDatasetTooLarge
-    ? `The dataset is too large to generate a summary. Please refine your dataset to generate a summary.`
-    : hasNoData
-    ? `No data available to generate a summary.`
-    : undefined
+  const tooltip = hasNoData ? `No data available to generate a summary.` : undefined
 
   return { isDisabled, tooltip }
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { dataFormattingDefault, getAuthentication, fetchFollowOnQuery } from 'autoql-fe-utils'
+import { dataFormattingDefault, getAuthentication, fetchFollowOnQuery, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
@@ -42,12 +42,15 @@ export default class FollowOnModal extends React.Component {
       queryText: '',
       isLoading: false,
       error: null,
+      historyIndex: -1,
     }
+    this.draftText = ''
   }
 
   componentDidUpdate(prevProps) {
     if (!prevProps.isVisible && this.props.isVisible) {
-      this.setState({ results: this.props.initialResults || [], queryText: '', error: null })
+      this.draftText = ''
+      this.setState({ results: this.props.initialResults || [], queryText: '', historyIndex: -1, error: null })
       setTimeout(() => this.scrollToBottom(), 100)
     }
 
@@ -65,13 +68,29 @@ export default class FollowOnModal extends React.Component {
   }
 
   handleTextChange = (e) => {
-    this.setState({ queryText: e.target.value, error: null })
+    this.draftText = e.target.value
+    this.setState({ queryText: e.target.value, historyIndex: -1, error: null })
   }
 
   handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       this.handleSubmit()
+    } else if (e.key === 'ArrowUp') {
+      const history = this.state.results.map((r) => r.question)
+      if (!history.length) return
+      e.preventDefault()
+      const nextIndex = Math.min(this.state.historyIndex + 1, history.length - 1)
+      this.setState({ historyIndex: nextIndex, queryText: history[history.length - 1 - nextIndex] })
+    } else if (e.key === 'ArrowDown') {
+      if (this.state.historyIndex <= 0) {
+        this.setState({ historyIndex: -1, queryText: this.draftText })
+        return
+      }
+      const history = this.state.results.map((r) => r.question)
+      e.preventDefault()
+      const nextIndex = this.state.historyIndex - 1
+      this.setState({ historyIndex: nextIndex, queryText: history[history.length - 1 - nextIndex] })
     }
   }
 
@@ -86,6 +105,7 @@ export default class FollowOnModal extends React.Component {
       const queryResponse = this.props.responseRef?.queryResponse || this.props.queryResponse
       const filteredRows = this.props.responseRef?.tableData || queryResponse?.data?.data?.rows
 
+      const isOverRowLimit = (filteredRows?.length ?? 0) > MAX_DATA_PAGE_SIZE
       const response = await fetchFollowOnQuery({
         data: {
           question: queryText.trim(),
@@ -94,8 +114,9 @@ export default class FollowOnModal extends React.Component {
             interpretation: queryResponse?.data?.data?.interpretation,
             focus_prompt: '',
           },
-          columns: queryResponse?.data?.data?.columns,
-          rows: filteredRows,
+          columns: isOverRowLimit ? [] : queryResponse?.data?.data?.columns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryResponse?.data?.data?.query_id,
         apiKey: auth.apiKey,
@@ -106,8 +127,9 @@ export default class FollowOnModal extends React.Component {
       const { columns, rows } = response?.data ?? {}
       const question = queryText.trim()
 
+      this.draftText = ''
       this.setState(
-        (prev) => ({ queryText: '', results: [...prev.results, { id: Date.now(), question, columns, rows }] }),
+        (prev) => ({ queryText: '', historyIndex: -1, results: [...prev.results, { id: Date.now(), question, columns, rows }] }),
         () => {
           this.props.onResultsChange?.(this.state.results)
           setTimeout(() => this.scrollToBottom(), 50)

@@ -14,6 +14,7 @@ import {
   fetchLLMSummaryQuote,
   fetchFollowOnQuery,
   isChartType,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
@@ -556,6 +557,7 @@ export default class ChatMessage extends React.Component {
       const currentColumns =
         this.responseRef?.queryResponse?.data?.data?.columns || this.props.response.data.data.columns
 
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -563,8 +565,9 @@ export default class ChatMessage extends React.Component {
             interpretation: this.props.response.data.data.interpretation,
             focus_prompt: this.state.focusPrompt.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -667,6 +670,7 @@ export default class ChatMessage extends React.Component {
     }
 
     try {
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummaryQuote({
         data: {
           additional_context: {
@@ -674,8 +678,9 @@ export default class ChatMessage extends React.Component {
             interpretation: this.props.response.data.data.interpretation,
             focus_prompt: this.state.focusPrompt?.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -746,6 +751,7 @@ export default class ChatMessage extends React.Component {
     this.props.setGeneratingSummary?.(true)
 
     try {
+      const isOverRowLimit = responseData.rows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -753,8 +759,9 @@ export default class ChatMessage extends React.Component {
             interpretation: responseData.interpretation,
             focus_prompt: focusPrompt.trim() || '',
           },
-          rows: responseData.rows,
-          columns: responseData.columns,
+          rows: isOverRowLimit ? [] : responseData.rows,
+          columns: isOverRowLimit ? [] : responseData.columns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: responseData.query_id,
         apiKey: auth.apiKey,
@@ -867,6 +874,7 @@ export default class ChatMessage extends React.Component {
       const queryResponse = this.responseRef?.queryResponse || this.props.response
       const filteredRows = this.responseRef?.tableData || queryResponse?.data?.data?.rows
 
+      const isOverRowLimit = (filteredRows?.length ?? 0) > MAX_DATA_PAGE_SIZE
       const response = await fetchFollowOnQuery({
         data: {
           question: this.state.followOnQueryText.trim(),
@@ -875,8 +883,9 @@ export default class ChatMessage extends React.Component {
             interpretation: queryResponse?.data?.data?.interpretation,
             focus_prompt: '',
           },
-          columns: queryResponse?.data?.data?.columns,
-          rows: filteredRows,
+          columns: isOverRowLimit ? [] : queryResponse?.data?.data?.columns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryResponse?.data?.data?.query_id,
         apiKey: auth.apiKey,
