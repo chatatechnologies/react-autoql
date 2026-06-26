@@ -15,7 +15,6 @@ import {
   getAutoQLConfig,
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
-import { Tooltip } from '../../Tooltip'
 import SankeyColumnSelector from './SankeyColumnSelector'
 
 import './ChataSankeyDiagram.scss'
@@ -992,8 +991,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         </g>
       </g>
 
-      {/* Tooltip for buttons */}
-      {props.chartTooltipID && <Tooltip tooltipId={props.chartTooltipID} />}
     </g>
   )
 })
