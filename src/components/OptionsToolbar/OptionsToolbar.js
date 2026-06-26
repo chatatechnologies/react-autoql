@@ -540,6 +540,7 @@ export class OptionsToolbar extends React.Component {
                         pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
                       },
                       networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
+                      chartControls: _cloneDeep(responseRef?.state?.chartControls),
                     })
                   }}
                 >
