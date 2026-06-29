@@ -95,8 +95,10 @@ export default class ChatMessage extends React.Component {
       isFollowOnQueryLoading: false,
       followOnError: null,
       followOnResults: [],
+      followOnHistoryIndex: -1,
     }
 
+    this.followOnDraftText = ''
     // Minimum height for the message container
     this.minMessageHeight = 300
   }
@@ -855,13 +857,28 @@ export default class ChatMessage extends React.Component {
   }
 
   handleFollowOnQueryTextChange = (e) => {
-    this.setState({ followOnQueryText: e.target.value, followOnError: null })
+    this.followOnDraftText = e.target.value
+    this.setState({ followOnQueryText: e.target.value, followOnError: null, followOnHistoryIndex: -1 })
   }
 
   handleFollowOnQueryKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       this.handleFollowOnQuerySubmit()
+    } else if (e.key === 'ArrowUp') {
+      const history = this.state.followOnResults.map((r) => r.question)
+      if (!history.length) return
+      e.preventDefault()
+      const nextIndex = Math.min(this.state.followOnHistoryIndex + 1, history.length - 1)
+      this.setState({ followOnHistoryIndex: nextIndex, followOnQueryText: history[nextIndex] })
+    } else if (e.key === 'ArrowDown') {
+      if (this.state.followOnHistoryIndex <= 0) {
+        this.setState({ followOnHistoryIndex: -1, followOnQueryText: this.followOnDraftText })
+        return
+      }
+      e.preventDefault()
+      const nextIndex = this.state.followOnHistoryIndex - 1
+      this.setState({ followOnHistoryIndex: nextIndex, followOnQueryText: this.state.followOnResults[nextIndex].question })
     }
   }
 
@@ -895,10 +912,12 @@ export default class ChatMessage extends React.Component {
 
       const { columns, rows } = response?.data ?? {}
       const question = this.state.followOnQueryText.trim()
+      this.followOnDraftText = ''
       if (this._isMounted) {
         this.setState(
           (prev) => ({
             followOnQueryText: '',
+            followOnHistoryIndex: -1,
             followOnResults: [{ id: Date.now(), question, columns, rows }, ...prev.followOnResults],
           }),
           () => setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50),
@@ -915,7 +934,9 @@ export default class ChatMessage extends React.Component {
       }
     } finally {
       if (this._isMounted) {
-        this.setState({ isFollowOnQueryLoading: false })
+        this.setState({ isFollowOnQueryLoading: false }, () => {
+          this.followOnInputRef?.focus()
+        })
       }
     }
   }
@@ -998,6 +1019,7 @@ export default class ChatMessage extends React.Component {
         </Button>
         <div className='chat-message-follow-on-thread-input-row'>
           <Input
+            ref={(r) => (this.followOnInputRef = r)}
             value={followOnQueryText}
             onChange={this.handleFollowOnQueryTextChange}
             onKeyDown={this.handleFollowOnQueryKeyDown}

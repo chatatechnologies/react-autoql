@@ -160,6 +160,10 @@ class QueryInput extends React.Component {
     if (this.state.inputValue && !prevState.inputValue && !this.userSelectedSuggestion) {
       this.setState({ suggestions: [] })
     }
+
+    if (prevProps.isDisabled && !this.props.isDisabled) {
+      this.focus()
+    }
   }
 
   componentWillUnmount = () => {

@@ -143,7 +143,9 @@ export default class FollowOnModal extends React.Component {
         'Something went wrong. Please try again.'
       this.setState({ error: errorMessage })
     } finally {
-      this.setState({ isLoading: false })
+      this.setState({ isLoading: false }, () => {
+        this.inputRef?.focus()
+      })
     }
   }
 
@@ -203,6 +205,7 @@ export default class FollowOnModal extends React.Component {
             {error && <div className='follow-on-modal-error'>{error}</div>}
             <div className='follow-on-modal-input-row'>
               <Input
+                ref={(r) => (this.inputRef = r)}
                 value={queryText}
                 onChange={this.handleTextChange}
                 onKeyDown={this.handleKeyDown}

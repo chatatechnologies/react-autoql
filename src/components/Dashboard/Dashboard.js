@@ -1411,6 +1411,7 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.props.enableAutoRefresh ? this.executeCachedDashboard : this.executeDashboard}
+              onEditRefreshClick={this.executeDashboard}
               onDownloadClick={this.exportDashboard}
               isDashboardFullyExecuted={
                 tiles.length > 0 &&
