@@ -171,13 +171,16 @@
 }
 
 .sankey-path-selected-list {
-  padding: 8px 12px;
   min-height: 120px;
   max-height: 240px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-path-selected-list-inner {
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border-bottom: 1px solid var(--react-autoql-border-color);
 }
 
 .sankey-path-selected-item {
