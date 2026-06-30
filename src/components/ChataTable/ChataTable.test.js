@@ -1445,7 +1445,7 @@ describe('Dashboard edit-mode filtering', () => {
   })
 
   describe('isDashboardEditing change handler', () => {
-    function makeEditingRef({ clearHeaderFilter = jest.fn() } = {}) {
+    function makeEditingRef({ clearHeaderFilter = jest.fn(), clearSort = jest.fn() } = {}) {
       const tabulator = {
         getColumns: jest.fn(() => [
           {
@@ -1457,6 +1457,7 @@ describe('Dashboard edit-mode filtering', () => {
         setHeaderFilterValue: jest.fn(),
         getHeaderFilters: jest.fn(() => []),
         clearHeaderFilter,
+        clearSort,
         blockRedraw: jest.fn(),
         restoreRedraw: jest.fn(),
       }
@@ -1503,8 +1504,8 @@ describe('Dashboard edit-mode filtering', () => {
       expect(badgeSpy).toHaveBeenCalled()
     })
 
-    // Issue 1: tableParams.filter not wiped when filter row is closed
-    test('does not reset tableParams.filter to baseFilters when isFiltering is false', () => {
+    // Entering edit mode always resets tableParams.filter to baseFilters (regardless of isFiltering)
+    test('resets tableParams.filter to baseFilters when entering edit mode (even when isFiltering is false)', () => {
       const sessionFilters = [{ field: '1', type: '=', value: 'online' }]
       const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: [] } })
       const instance = wrapper.instance()
@@ -1521,8 +1522,8 @@ describe('Dashboard edit-mode filtering', () => {
 
       wrapper.setProps({ isDashboardEditing: true })
 
-      // tableParams.filter should remain unchanged (session filters preserved)
-      expect(instance.tableParams.filter).toEqual(sessionFilters)
+      // Edit mode always resets to baseFilters (empty here) — view-mode filters are discarded
+      expect(instance.tableParams.filter).toEqual([])
     })
 
     // Issue 2: _setFiltersTime stamped before clearHeaderFilter to guard AJAX
@@ -1553,7 +1554,7 @@ describe('Dashboard edit-mode filtering', () => {
       expect(clearHeaderFilterMock).toHaveBeenCalled()
     })
 
-    test('does not call clearHeaderFilter when filter row is closed', () => {
+    test('calls clearHeaderFilter when entering edit mode (even when filter row is closed)', () => {
       const clearHeaderFilterMock = jest.fn()
       const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
@@ -1564,7 +1565,7 @@ describe('Dashboard edit-mode filtering', () => {
 
       wrapper.setProps({ isDashboardEditing: true })
 
-      expect(clearHeaderFilterMock).not.toHaveBeenCalled()
+      expect(clearHeaderFilterMock).toHaveBeenCalled()
     })
   })
 })

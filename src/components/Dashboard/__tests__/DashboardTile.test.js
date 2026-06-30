@@ -1275,7 +1275,7 @@ describe('onSecondColumnChange: secondQueryId capture', () => {
 describe('onTableParamsChange — filter interactions', () => {
   const formattedParams = { filters: [{ field: 'region', value: 'West' }], sorters: [] }
 
-  test('applies filter changes in view mode (isEditing=false)', () => {
+  test('does NOT apply filter changes in view mode (isEditing=false)', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
     const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
@@ -1284,8 +1284,7 @@ describe('onTableParamsChange — filter interactions', () => {
     wrapper.instance().onTableParamsChange({}, formattedParams)
     jest.advanceTimersByTime(200)
     const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.tableFilters)
-    expect(call).toBeDefined()
-    expect(call[0].tableFilters).toEqual(formattedParams.filters)
+    expect(call).toBeUndefined()
     wrapper.unmount()
     jest.useRealTimers()
   })
@@ -1305,7 +1304,7 @@ describe('onTableParamsChange — filter interactions', () => {
     jest.useRealTimers()
   })
 
-  test('onSecondTableParamsChange applies filter changes in view mode', () => {
+  test('onSecondTableParamsChange does NOT apply filter changes in view mode', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
     const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
@@ -1314,8 +1313,7 @@ describe('onTableParamsChange — filter interactions', () => {
     wrapper.instance().onSecondTableParamsChange({}, formattedParams)
     jest.advanceTimersByTime(200)
     const call = mockSetParamsForTile.mock.calls.find(([p]) => p?.secondTableFilters)
-    expect(call).toBeDefined()
-    expect(call[0].secondTableFilters).toEqual(formattedParams.filters)
+    expect(call).toBeUndefined()
     wrapper.unmount()
     jest.useRealTimers()
   })

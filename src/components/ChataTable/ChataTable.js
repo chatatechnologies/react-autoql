@@ -95,6 +95,7 @@ export default class ChataTable extends React.Component {
     }
 
     this.baseFilters = _cloneDeep(props?.lockedFilters ?? props?.initialTableParams?.filter ?? [])
+    this.baseSort = _cloneDeep(props?.initialTableParams?.sort || [])
 
     // pivot table headers reflect the correct sort direction
     let initialSort = undefined
@@ -354,11 +355,6 @@ export default class ChataTable extends React.Component {
       this.setFilters()
       this.setSorters()
       this.clearLoadingIndicators()
-      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
-        setTimeout(() => {
-          if (this._isMounted) this.disableBaseFilterInputs()
-        }, 0)
-      }
     }
 
     if (this.tabulatorMounted && !prevState.tabulatorJustMounted) {
@@ -368,8 +364,12 @@ export default class ChataTable extends React.Component {
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       if (!this.props.skipInitialFilters) {
         this.tableParams.filter = this.props?.initialTableParams?.filter
-        this.setFilters(this.props?.initialTableParams?.filter)
-      } else if (this.state.isFiltering) {
+      }
+      // In edit mode, always reset to base filters only — discards any stale view-mode filters
+      if (this.props.isDashboardEditing && this.baseFilters.length) {
+        this.tableParams.filter = _cloneDeep(this.baseFilters)
+      }
+      if (!this.props.skipInitialFilters || this.state.isFiltering) {
         this.setFilters(this.tableParams.filter)
       }
       this.setHeaderInputEventListeners()
@@ -377,27 +377,42 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
       this.setFilterBadgeClasses()
-      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
-        setTimeout(() => {
-          if (this._isMounted) this.disableBaseFilterInputs()
-        }, 0)
-      }
     }
 
     if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
-      if (this.state.tabulatorMounted && this.state.isFiltering) {
-        this.tableParams.filter = _cloneDeep(this.baseFilters)
-        this._setFiltersTime = Date.now()
-        this.ref?.tabulator?.clearHeaderFilter()
-        if (this.baseFilters.length) this.setFilters(this.baseFilters)
-        if (!this.props.isDashboardEditing) {
-          setTimeout(() => {
-            if (this._isMounted) this.disableBaseFilterInputs()
-          }, 0)
+      if (this.state.tabulatorMounted) {
+        if (this.props.isDashboardEditing) {
+          // Entering edit mode: discard view-mode filter/sort changes and show unfiltered data.
+          // Reset tableParams FIRST so the blocked AJAXes below return the correct initialData.
+          // Use this.baseSort (constructor-time snapshot) not props.initialTableParams?.sort
+          // because QueryOutput may have updated initialTableParams with view-mode values.
+          this.tableParams = {
+            filter: _cloneDeep(this.baseFilters),
+            sort: _cloneDeep(this.baseSort),
+            page: 1,
+          }
+
+          // Block all AJAXes while resetting the UI. The blocked AJAXes return initialData
+          // which uses the reset tableParams above — no server call needed.
+          // Do NOT reset _setFiltersTime to 0 or call replaceData(): that fires a server-side
+          // query in edit mode which would fail with auth errors (view-mode tables are LOCAL).
+          this._setFiltersTime = Date.now()
+          this.enableBaseFilterInputs() // re-enable any disabled inputs before clearing
+          this.ref?.tabulator?.clearHeaderFilter()
+          this.ref?.tabulator?.clearSort()
+          this.baseFilters.forEach((bf) => {
+            if (bf.value) this.ref?.tabulator?.setHeaderFilterValue(bf.field, bf.value)
+          })
+          if (this.baseSort.length) {
+            this.setSorters(this.baseSort)
+          }
         } else {
-          setTimeout(() => {
-            if (this._isMounted) this.enableBaseFilterInputs()
-          }, 0)
+          // Exiting edit mode (going to view mode): always clear any edit-mode filters/sorts.
+          this._setFiltersTime = Date.now()
+          this.ref?.tabulator?.clearHeaderFilter()
+          this.ref?.tabulator?.clearSort()
+          if (this.baseFilters.length) this.setFilters(this.baseFilters)
+          if (this.baseSort.length) this.setSorters(this.baseSort)
         }
       }
       this.setFilterBadgeClasses()
@@ -1501,11 +1516,6 @@ export default class ChataTable extends React.Component {
           setTimeout(() => {
             if (this._isMounted) this.setHeaderInputEventListeners()
           }, 0)
-          if (!this.props.isDashboardEditing && this.baseFilters.length) {
-            setTimeout(() => {
-              if (this._isMounted) this.disableBaseFilterInputs()
-            }, 0)
-          }
         }
       })
     }

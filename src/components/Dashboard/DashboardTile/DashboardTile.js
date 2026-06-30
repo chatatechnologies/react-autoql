@@ -303,6 +303,14 @@ export class DashboardTile extends React.Component {
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
+    if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
+      this.setState({ localRTFilterResponse: null })
+    }
+    if (!prevProps.isEditing && this.props.isEditing && this.state.localRTFilterResponse) {
+      this.setState({ localRTFilterResponse: null })
+      this.processTile()
+    }
+
     const prevQR = prevProps.tile?.queryResponse
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
@@ -466,8 +474,7 @@ export class DashboardTile extends React.Component {
     return false
   }
 
-  // Returns 'dirty', 'failed', or null for a split-view pane.
-  // isTopHalf=true checks the top query; false checks the bottom query.
+  // Returns 'dirty', 'failed', or null for a split-view pane (isTopHalf=true → top query).
   getPaneBannerType = (isTopHalf) => {
     if (!this.props.isEditing) return null
     const { tile } = this.props
@@ -1369,6 +1376,7 @@ export class DashboardTile extends React.Component {
   }
 
   onTableParamsChange = (params, formattedParams) => {
+    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
       orders: formattedParams.sorters,
@@ -1376,6 +1384,7 @@ export class DashboardTile extends React.Component {
   }
 
   onSecondTableParamsChange = (params, formattedParams) => {
+    if (!this.props.isEditing) return
     this.debouncedSetParamsForTile({
       secondTableFilters: formattedParams.filters,
       secondOrders: formattedParams.sorters,
@@ -1463,6 +1472,8 @@ export class DashboardTile extends React.Component {
   renderSplitResponse = () => {
     const topContent = this.renderTopResponse()
     const bottomContent = this.renderBottomResponse()
+    const topBanner = this.getPaneBannerType(true)
+    const bottomBanner = this.getPaneBannerType(false)
 
     return (
       <SplitterLayout
@@ -1491,28 +1502,24 @@ export class DashboardTile extends React.Component {
           }, 1000)
         }}
       >
-        <div
-          className={`dashboard-tile-split-pane-container${this.getPaneBannerType(true) ? ` top-${this.getPaneBannerType(true)}` : ''}`}
-        >
+        <div className={`dashboard-tile-split-pane-container${topBanner ? ` top-${topBanner}` : ''}`}>
           {topContent}
-          {this.getPaneBannerType(true) && (
+          {topBanner && (
             <div
-              className={`react-autoql-dashboard-tile-${this.getPaneBannerType(true)}-badge split-pane-badge`}
-              data-tooltip-content={this.getPaneBannerType(true) === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
+              className={`react-autoql-dashboard-tile-${topBanner}-badge split-pane-badge`}
+              data-tooltip-content={topBanner === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
               data-tooltip-id={this.props.tooltipID}
             >
               !
             </div>
           )}
         </div>
-        <div
-          className={`dashboard-tile-split-pane-container${this.getPaneBannerType(false) ? ` bottom-${this.getPaneBannerType(false)}` : ''}`}
-        >
+        <div className={`dashboard-tile-split-pane-container${bottomBanner ? ` bottom-${bottomBanner}` : ''}`}>
           {bottomContent}
-          {this.getPaneBannerType(false) && (
+          {bottomBanner && (
             <div
-              className={`react-autoql-dashboard-tile-${this.getPaneBannerType(false)}-badge split-pane-badge`}
-              data-tooltip-content={this.getPaneBannerType(false) === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
+              className={`react-autoql-dashboard-tile-${bottomBanner}-badge split-pane-badge`}
+              data-tooltip-content={bottomBanner === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
               data-tooltip-id={this.props.tooltipID}
             >
               !

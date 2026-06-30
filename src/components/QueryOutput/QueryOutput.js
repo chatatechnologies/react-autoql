@@ -193,6 +193,10 @@ export class QueryOutput extends React.Component {
       this.formattedTableParams = { filters: [], sorters: [] }
     }
 
+    this.formattedLockedFilters = props.lockedFilters?.length
+      ? formatFiltersForTabulator(props.lockedFilters, columns)
+      : props.lockedFilters
+
     this.DEFAULT_TABLE_PAGE_SIZE = 100
     this.shouldEnableResize = props.enableResizing && isChart
     this.state = {
@@ -616,6 +620,15 @@ export class QueryOutput extends React.Component {
             this.refreshLayout()
           }, 50)
         }
+      }
+
+      if (
+        this.props.lockedFilters !== prevProps.lockedFilters ||
+        this.state.columns !== prevState.columns
+      ) {
+        this.formattedLockedFilters = this.props.lockedFilters?.length
+          ? formatFiltersForTabulator(this.props.lockedFilters, this.state.columns)
+          : this.props.lockedFilters
       }
 
       if (prevProps.isEditing !== this.props.isEditing) {
@@ -1717,9 +1730,8 @@ export class QueryOutput extends React.Component {
               source: this.props.source,
               groupBys,
               pageSize,
-              tableFilters: allFilters, // Include existing filters
+              tableFilters: allFilters,
             })
-            // Convert groupBys to filter objects so DrilldownTable can show the filter badge
             const groupByFilters = (groupBys || []).map((gb) => ({ name: gb.name, value: gb.value, operator: gb.operator || '=' }))
             this.props.onDrilldownEnd({
               response,
@@ -1761,7 +1773,6 @@ export class QueryOutput extends React.Component {
             // Normal AND logic - combine filters and send to backend
             const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
             const allFilters = this.getCombinedFilters(filtersToCombine)
-            // Save formattedTableParams before queryFn mutates it — drilldown filters must not persist on the original tile
             const savedFormattedTableParams = { ...this.formattedTableParams }
             try {
               response = await this.queryFn({ tableFilters: allFilters, pageSize })
@@ -4214,7 +4225,7 @@ export class QueryOutput extends React.Component {
           onCustomColumnChange={this.onCustomColumnChange}
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
-          lockedFilters={this.props.lockedFilters}
+          lockedFilters={this.formattedLockedFilters}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
           showQueryInterpretation={this.props.showQueryInterpretation}
@@ -4263,7 +4274,7 @@ export class QueryOutput extends React.Component {
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
-          lockedFilters={this.props.lockedFilters}
+          lockedFilters={this.formattedLockedFilters}
           initialIsFiltering={!!this.wasFiltering}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}

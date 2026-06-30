@@ -279,9 +279,7 @@ export default class TableWrapper extends React.Component {
         try {
           await this.tabulator.replaceData()
 
-          // Wait two rAF frames so react-grid-layout has applied tile dimensions
-          // before fitColumns runs. A fixed timeout can fire while the tile is
-          // still at its initial (smaller) size, locking columns at the wrong width.
+          // Two rAF frames ensure react-grid-layout has applied final tile dimensions before fitColumns runs.
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               if (this._isMounted && this.tabulator) {
@@ -333,9 +331,7 @@ export default class TableWrapper extends React.Component {
 
   attachTabulatorEventHandlers = (tabulator) => {
     tabulator.on('renderComplete', () => {
-      // Only lock down auto-resize when the container has valid dimensions.
-      // If the tile isn't sized yet (clientWidth === 0), leave autoResize enabled
-      // so tabulator reflows automatically once the container grows to its final size.
+      // Leave autoResize enabled when clientWidth === 0 so tabulator reflows once the container reaches its final size.
       if (!this.tableRef || this.tableRef.clientWidth > 0) {
         tabulator.modules.layout.autoResize = false
         tabulator.modules.layout.columnAutoResize = false

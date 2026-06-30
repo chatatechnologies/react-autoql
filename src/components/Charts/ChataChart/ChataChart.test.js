@@ -503,49 +503,55 @@ describe('ResizeObserver error suppression', () => {
   })
 
   test('registers error listener on mount', () => {
-    const wrapper = setup({ ...listSampleProps, type: 'bar' })
-    const inst = wrapper.instance()
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
     inst.componentDidMount()
-    expect(addSpy).toHaveBeenCalledWith('error', inst.suppressResizeObserverError)
+    expect(addSpy).toHaveBeenCalledWith('error', inst._suppressResizeObserverError)
+    inst.componentWillUnmount()
   })
 
-  test('removes the same error listener on unmount', () => {
-    const wrapper = setup({ ...listSampleProps, type: 'bar' })
-    const inst = wrapper.instance()
+  test('removes its own error listener on unmount', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
     inst.componentDidMount()
     inst.componentWillUnmount()
-    expect(removeSpy).toHaveBeenCalledWith('error', inst.suppressResizeObserverError)
+    expect(removeSpy).toHaveBeenCalledWith('error', inst._suppressResizeObserverError)
   })
 
-  test('suppressResizeObserverError stops propagation for ResizeObserver loop message', () => {
-    const wrapper = setup({ ...listSampleProps, type: 'bar' })
-    const inst = wrapper.instance()
+  test('each instance has its own handler reference so unmounting one does not affect others', () => {
+    const instA = setup({ ...listSampleProps, type: 'bar' }).instance()
+    const instB = setup({ ...listSampleProps, type: 'bar' }).instance()
+    instA.componentDidMount()
+    instB.componentDidMount()
+    expect(instA._suppressResizeObserverError).not.toBe(instB._suppressResizeObserverError)
+    instA.componentWillUnmount()
+    expect(removeSpy).toHaveBeenCalledWith('error', instA._suppressResizeObserverError)
+    expect(removeSpy).not.toHaveBeenCalledWith('error', instB._suppressResizeObserverError)
+    instB.componentWillUnmount()
+  })
+
+  test('stops propagation for ResizeObserver loop completed message', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
     const fakeEvent = { message: 'ResizeObserver loop completed with undelivered notifications.', stopImmediatePropagation: jest.fn() }
-    inst.suppressResizeObserverError(fakeEvent)
+    inst._suppressResizeObserverError(fakeEvent)
     expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
+    inst.componentWillUnmount()
   })
 
-  test('suppressResizeObserverError stops propagation for ResizeObserver loop limit message', () => {
-    const wrapper = setup({ ...listSampleProps, type: 'bar' })
-    const inst = wrapper.instance()
+  test('stops propagation for ResizeObserver loop limit exceeded message', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
     const fakeEvent = { message: 'ResizeObserver loop limit exceeded', stopImmediatePropagation: jest.fn() }
-    inst.suppressResizeObserverError(fakeEvent)
+    inst._suppressResizeObserverError(fakeEvent)
     expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
+    inst.componentWillUnmount()
   })
 
-  test('suppressResizeObserverError does not stop propagation for unrelated errors', () => {
-    const wrapper = setup({ ...listSampleProps, type: 'bar' })
-    const inst = wrapper.instance()
+  test('does not stop propagation for unrelated errors', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
     const fakeEvent = { message: 'SomeOtherError', stopImmediatePropagation: jest.fn() }
-    inst.suppressResizeObserverError(fakeEvent)
+    inst._suppressResizeObserverError(fakeEvent)
     expect(fakeEvent.stopImmediatePropagation).not.toHaveBeenCalled()
-  })
-
-  test('all instances share the same suppressResizeObserverError reference (browser deduplication)', () => {
-    const wrapperA = setup({ ...listSampleProps, type: 'bar' })
-    const wrapperB = setup({ ...listSampleProps, type: 'bar' })
-    const instA = wrapperA.instance()
-    const instB = wrapperB.instance()
-    expect(instA.suppressResizeObserverError).toBe(instB.suppressResizeObserverError)
+    inst.componentWillUnmount()
   })
 })

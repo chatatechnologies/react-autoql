@@ -191,14 +191,11 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  // All instances share the same function reference so the browser deduplicates
-  // addEventListener calls — regardless of how many charts are mounted, only one
-  // error handler fires. removeEventListener with the same reference is always safe.
-  suppressResizeObserverError = _suppressResizeObserverError
-
   componentDidMount = () => {
     this._isMounted = true
-    window.addEventListener('error', this.suppressResizeObserverError)
+    // Each instance gets its own reference so unmounting one chart doesn't remove others' handlers.
+    this._suppressResizeObserverError = (e) => _suppressResizeObserverError(e)
+    window.addEventListener('error', this._suppressResizeObserverError)
     if (!this.props.isResizing && !this.props.hidden) {
       // The first render is to determine the chart size based on its parent container
       this.firstRender = false
@@ -369,7 +366,7 @@ export default class ChataChart extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    window.removeEventListener('error', this.suppressResizeObserverError)
+    window.removeEventListener('error', this._suppressResizeObserverError)
     clearTimeout(this.adjustVerticalPositionTimeout)
     this.stopThrottledRefresh()
     if (this.cleanupObserve) {
