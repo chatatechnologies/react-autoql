@@ -684,6 +684,124 @@
   z-index: 2;
 }
 
+// LLM empty state — input + topics are one unified rounded container
+.react-autoql-query-input-wrapper.llm-empty-state {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+
+  // Bar container rounds all corners by default (no topics below)
+  .react-autoql-bar-container {
+    padding: 0;
+    border: none;
+    border-radius: 20px;
+    box-shadow: none;
+    background-color: var(--react-autoql-background-color-secondary);
+
+    .react-autoql-input-row {
+      align-items: center;
+    }
+
+    .react-autoql-chatbar-input {
+      margin: 0;
+      width: 100%;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      height: 60px;
+      padding-left: 20px;
+
+      &::before {
+        display: none;
+      }
+
+      &:hover {
+        box-shadow: none;
+        border-color: transparent;
+      }
+    }
+
+    .react-autosuggest__container {
+      flex: 1;
+    }
+
+    .input-microphone-button {
+      right: 0;
+    }
+
+    .chat-voice-record-button {
+      margin: 0;
+    }
+
+    &.autosuggest-top .react-autosuggest__suggestions-container--open {
+      bottom: 54px;
+    }
+
+    &.autosuggest-bottom .react-autosuggest__suggestions-container--open {
+      top: 54px;
+    }
+  }
+
+  // When topics are present, flatten bar-container bottom corners and round topics bottom
+  &:has(.react-autoql-input-query-suggestions.placement-below) {
+    .react-autoql-bar-container {
+      border-radius: 20px 20px 0 0;
+    }
+  }
+
+  .react-autoql-input-query-suggestions.placement-below {
+    background-color: var(--react-autoql-background-color-secondary);
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    border-radius: 0 0 20px 20px;
+    box-shadow: none;
+    padding: 8px 12px;
+
+    .query-suggestions-collapse-btn {
+      pointer-events: none;
+      cursor: default;
+
+      .react-autoql-icon:first-child {
+        display: none;
+      }
+    }
+  }
+
+  .react-autoql-input-send-button {
+    margin-right: 8px;
+  }
+
+  @media (max-width: 576px) {
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+    .react-autoql-bar-container {
+      border-radius: 16px;
+
+      .react-autoql-chatbar-input {
+        height: 52px;
+        font-size: 0.9375rem;
+      }
+    }
+
+    &:has(.react-autoql-input-query-suggestions.placement-below) {
+      .react-autoql-bar-container {
+        border-radius: 16px 16px 0 0;
+      }
+    }
+
+    .react-autoql-input-query-suggestions.placement-below {
+      border-radius: 0 0 16px 16px;
+      padding: 4px 8px;
+    }
+  }
+}
+
 /* Send button */
 .react-autoql-input-send-button {
   width: 42px;
