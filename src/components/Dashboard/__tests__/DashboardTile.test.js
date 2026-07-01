@@ -1585,6 +1585,38 @@ describe('DashboardTile wasBottomFilteringBeforeRemount', () => {
   })
 })
 
+describe('DashboardTile localRTFilterResponse cleared on mode transitions', () => {
+  test('clears localRTFilterResponse when switching from edit to view mode', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: true })
+    const instance = wrapper.instance()
+    instance.setState({ localRTFilterResponse: { data: { data: {} } } })
+    wrapper.setProps({ isEditing: false })
+    expect(instance.state.localRTFilterResponse).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('clears localRTFilterResponse and calls processTile when switching from view to edit mode', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => {})
+    instance.setState({ localRTFilterResponse: { data: { data: {} } } })
+    wrapper.setProps({ isEditing: true })
+    expect(instance.state.localRTFilterResponse).toBeNull()
+    expect(processTileSpy).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('does not call processTile when localRTFilterResponse is null on entering edit mode', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => {})
+    instance.setState({ localRTFilterResponse: null })
+    wrapper.setProps({ isEditing: true })
+    expect(processTileSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('DashboardTile onColumnChange edit mode guard', () => {
   test('does NOT call setParamsForTile when not in edit mode', () => {
     jest.useFakeTimers()

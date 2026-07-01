@@ -1567,6 +1567,56 @@ describe('Dashboard edit-mode filtering', () => {
 
       expect(clearHeaderFilterMock).toHaveBeenCalled()
     })
+
+    test('calls clearSort when entering edit mode', () => {
+      const clearSortMock = jest.fn()
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef({ clearSort: clearSortMock })
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(clearSortMock).toHaveBeenCalled()
+    })
+
+    test('resets tableParams to baseSort when entering edit mode', () => {
+      const sort = [{ field: '1', dir: 'asc' }]
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: [], sort } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      instance.tableParams.sort = [{ field: '1', dir: 'desc' }] // simulate view-mode sort change
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      jest.spyOn(instance, 'setSorters').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(instance.tableParams.sort).toEqual(sort)
+    })
+  })
+})
+
+describe('lockedFilters as baseFilters', () => {
+  const locked = [{ field: '1', type: '=', value: 'locked-val' }]
+  const initial = [{ field: '1', type: '=', value: 'initial-val' }]
+
+  test('lockedFilters takes precedence over initialTableParams.filter for baseFilters', () => {
+    const wrapper = setup({ lockedFilters: locked, initialTableParams: { filter: initial } })
+    expect(wrapper.instance().baseFilters).toEqual(locked)
+  })
+
+  test('falls back to initialTableParams.filter when lockedFilters is undefined', () => {
+    const wrapper = setup({ lockedFilters: undefined, initialTableParams: { filter: initial } })
+    expect(wrapper.instance().baseFilters).toEqual(initial)
+  })
+
+  test('falls back to empty array when both lockedFilters and initialTableParams.filter are absent', () => {
+    const wrapper = setup({ lockedFilters: undefined, initialTableParams: {} })
+    expect(wrapper.instance().baseFilters).toEqual([])
   })
 })
 

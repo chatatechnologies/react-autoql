@@ -382,20 +382,14 @@ export default class ChataTable extends React.Component {
     if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
       if (this.state.tabulatorMounted) {
         if (this.props.isDashboardEditing) {
-          // Entering edit mode: discard view-mode filter/sort changes and show unfiltered data.
-          // Reset tableParams FIRST so the blocked AJAXes below return the correct initialData.
-          // Use this.baseSort (constructor-time snapshot) not props.initialTableParams?.sort
-          // because QueryOutput may have updated initialTableParams with view-mode values.
+          // Reset FIRST so blocked AJAXes below return base filter state (uses constructor-time baseSort, not stale initialTableParams).
           this.tableParams = {
             filter: _cloneDeep(this.baseFilters),
             sort: _cloneDeep(this.baseSort),
             page: 1,
           }
 
-          // Block all AJAXes while resetting the UI. The blocked AJAXes return initialData
-          // which uses the reset tableParams above — no server call needed.
-          // Do NOT reset _setFiltersTime to 0 or call replaceData(): that fires a server-side
-          // query in edit mode which would fail with auth errors (view-mode tables are LOCAL).
+          // Date.now() blocks AJAXes without replaceData() — avoids a server call on local (view-mode) tables.
           this._setFiltersTime = Date.now()
           this.enableBaseFilterInputs() // re-enable any disabled inputs before clearing
           this.ref?.tabulator?.clearHeaderFilter()
