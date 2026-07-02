@@ -1,4 +1,4 @@
-import { getMagicWandDatasetRowCount, shouldShowQueryActionButton } from './magicWandHelpers'
+import { getMagicWandDatasetRowCount, isMagicWandDatasetTooLarge, shouldShowQueryActionButton } from './magicWandHelpers'
 
 export { shouldShowQueryActionButton, isMagicWandDatasetTooLarge, getMagicWandDatasetRowCount } from './magicWandHelpers'
 
@@ -26,7 +26,7 @@ export function shouldShowSummaryButton({
     return false
   }
 
-  // Data Messenger — response bubbles with QueryOutput
+  // Data Messenger — response bubbles with QueryOutput (show but disabled when too large)
   if (isResponse !== undefined) {
     if (!isResponse) {
       return false
@@ -40,9 +40,12 @@ export function shouldShowSummaryButton({
     return true
   }
 
-  // OptionsToolbar — dashboard tiles, chat toolbars, etc. (match DM: same core + no markdown-only)
+  // OptionsToolbar — dashboard tiles (hide entirely when too large)
   if (isMarkdownOnly !== undefined) {
     if (isMarkdownOnly) {
+      return false
+    }
+    if (isMagicWandDatasetTooLarge(queryResponse)) {
       return false
     }
     return true
@@ -60,14 +63,29 @@ export function shouldShowSummaryButton({
  * @param {boolean} params.isChataThinking - Whether Chata is thinking (query/drilldown running)
  * @returns {Object} Object with `isDisabled` boolean and optional `tooltip` string
  */
+const LARGE_DATASET_TOOLTIP = 'This dataset is too large for this feature.'
+
 export function getSummaryButtonDisabledState({ queryResponse, isGenerating, isChataThinking }) {
   const rowCount = getMagicWandDatasetRowCount(queryResponse)
 
   const hasNoData = rowCount === 0
+  const isTooLarge = isMagicWandDatasetTooLarge(queryResponse)
 
-  const isDisabled = hasNoData || isGenerating || Boolean(isChataThinking)
+  const isDisabled = hasNoData || isTooLarge || isGenerating || Boolean(isChataThinking)
 
-  const tooltip = hasNoData ? `No data available to generate a summary.` : undefined
+  const tooltip = hasNoData
+    ? 'No data available to generate a summary.'
+    : isTooLarge
+      ? LARGE_DATASET_TOOLTIP
+      : undefined
 
   return { isDisabled, tooltip }
+}
+
+export function getFollowOnQueryDisabledState({ queryResponse }) {
+  const isTooLarge = isMagicWandDatasetTooLarge(queryResponse)
+  return {
+    isDisabled: isTooLarge,
+    tooltip: isTooLarge ? LARGE_DATASET_TOOLTIP : undefined,
+  }
 }

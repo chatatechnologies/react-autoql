@@ -16,7 +16,7 @@ import {
   isChartType,
   MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -953,13 +953,21 @@ export default class ChatMessage extends React.Component {
     if (!this.shouldShowFollowOnButton()) return null
     const hasResults = this.state.followOnResults.length > 0
     const isOpen = this.state.isFollowOnThreadOpen
-    const tooltip = isOpen ? 'Collapse thread' : hasResults ? 'Reopen thread' : 'Ask a follow-up question'
+    const queryResponse = this.responseRef?.queryResponse || this.props.response
+    const { isDisabled, tooltip: disabledTooltip } = getFollowOnQueryDisabledState({ queryResponse })
+    const tooltip = isDisabled
+      ? disabledTooltip
+      : isOpen
+        ? 'Collapse thread'
+        : hasResults
+          ? 'Reopen thread'
+          : 'Ask a follow-up question'
     return (
       <Button
         type='default'
         size='medium'
         border={true}
-        onClick={() => {
+        onClick={isDisabled ? undefined : () => {
           const opening = !isOpen
           this.setState({ isFollowOnThreadOpen: opening, followOnError: null, followOnQueryText: '' }, () => {
             if (opening) {
@@ -968,6 +976,7 @@ export default class ChatMessage extends React.Component {
           })
         }}
         className={`follow-on-reply-btn${isOpen || hasResults ? ' follow-on-reply-btn--active' : ''}`}
+        style={isDisabled ? { opacity: 0.4, cursor: 'default' } : undefined}
         tooltip={tooltip}
         tooltipID={this.props.tooltipID}
       >
