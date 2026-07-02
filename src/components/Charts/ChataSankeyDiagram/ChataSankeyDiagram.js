@@ -595,7 +595,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
 
     // Create zoom behavior - vertical only, no horizontal movement
     const zoomBehavior = zoom()
-      .scaleExtent([0.5, 5]) // Allow zoom from 50% to 500%
+      .scaleExtent([0.5, 10]) // Allow zoom from 50% to 1000%
       .filter((event) => {
         // Prevent default browser scroll for wheel events
         if (event.type === 'wheel') {
