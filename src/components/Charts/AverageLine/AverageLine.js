@@ -39,7 +39,7 @@ export class AverageLine extends React.Component {
     }
 
     this.labelInlineStyles = {
-      fontSize: '11px',
+      fontSize: '0.6875rem',
       fontWeight: 'bold',
       fill: 'currentColor',
       fontFamily: 'var(--react-autoql-font-family)',

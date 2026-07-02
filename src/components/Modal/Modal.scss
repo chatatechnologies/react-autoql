@@ -22,6 +22,8 @@
   transform: scale(50%);
   transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
   color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary) !important;
   box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
@@ -66,6 +68,8 @@
     transform: scale(50%);
     transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
 
+    font-size: 0.9375rem;
+    font-family: var(--react-autoql-font-family), sans-serif;
     color: var(--react-autoql-text-color-primary);
     background: var(--react-autoql-background-color-secondary) !important;
     box-shadow: 0 0 14px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
@@ -109,6 +113,8 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
 }
 .react-autoql-modal-mobile {
   width: 100vw;
@@ -141,7 +147,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    font-size: 17px;
+    font-size: 1.0625rem;
     margin-left: 20px;
     font-weight: 600;
 
@@ -151,7 +157,7 @@
   }
 
   .react-autoql-modal-header-subtitle {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 }
 .react-autoql-modal-footer {
@@ -180,7 +186,7 @@
 }
 .react-autoql-modal-close-btn {
   flex: 0;
-  font-size: 22px;
+  font-size: 1.375rem;
   margin: 16px;
   opacity: 0.6 !important;
   cursor: pointer;

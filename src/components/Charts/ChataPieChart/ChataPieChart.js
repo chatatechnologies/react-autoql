@@ -456,7 +456,7 @@ export default class ChataPieChart extends React.Component {
       .style('fill-opacity', 1)
       .style('font-family', 'inherit')
       .style('font-family', 'inherit')
-      .style('font-size', `${this.props.fontSize}px`)
+      .style('font-size', `${(this.props.fontSize / 16).toFixed(4)}rem`)
       .style('stroke-width', '2px')
 
     var legendOrdinal = legendColor()
@@ -491,7 +491,7 @@ export default class ChataPieChart extends React.Component {
     if (legendElement) {
       select(legendElement)
         .selectAll('.cell')
-        .style('font-size', `${this.props.fontSize - 2}px`)
+        .style('font-size', `${((this.props.fontSize - 2) / 16).toFixed(4)}rem`)
 
       this.applyTitleStyles(title, legendElement)
       this.applyColumnSelectorStyles(legendElement)
@@ -531,7 +531,7 @@ export default class ChataPieChart extends React.Component {
       .select('.legendTitle')
       .append('tspan')
       .text('  ▼')
-      .style('font-size', '8px')
+      .style('font-size', '0.5rem')
       .style('opacity', 0)
       .attr('class', 'react-autoql-axis-selector-arrow')
 

@@ -1,7 +1,6 @@
-import { MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
-import { getMagicWandDatasetRowCount, isMagicWandDatasetTooLarge, shouldShowMagicWandForQueryCore } from './magicWandHelpers'
+import { getMagicWandDatasetRowCount, isMagicWandDatasetTooLarge, shouldShowQueryActionButton } from './magicWandHelpers'
 
-export { shouldShowMagicWandForQueryCore, isMagicWandDatasetTooLarge, getMagicWandDatasetRowCount } from './magicWandHelpers'
+export { shouldShowQueryActionButton, isMagicWandDatasetTooLarge, getMagicWandDatasetRowCount } from './magicWandHelpers'
 
 /**
  * Determines whether the magic wand (summary) button should be shown.
@@ -23,7 +22,7 @@ export function shouldShowSummaryButton({
   isCSVProgressMessage,
   isMarkdownOnly,
 }) {
-  if (!shouldShowMagicWandForQueryCore(enableMagicWand, queryResponse)) {
+  if (!shouldShowQueryActionButton(enableMagicWand, queryResponse)) {
     return false
   }
 

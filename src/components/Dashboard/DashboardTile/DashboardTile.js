@@ -34,6 +34,7 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
+import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
@@ -133,6 +134,8 @@ export class DashboardTile extends React.Component {
       isRTHovered: false,
       isSecondRTHovered: false,
       currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
+      isFollowOnModalOpen: false,
+      followOnResults: [],
       queryResponseVersion: 0,
     }
   }
@@ -214,6 +217,7 @@ export class DashboardTile extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
   }
 
@@ -254,6 +258,7 @@ export class DashboardTile extends React.Component {
     dashboardSlicers: [],
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
   }
 
   componentDidMount = () => {
@@ -804,7 +809,15 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  processQuery = ({ query, userSelection, skipQueryValidation, source, isSecondHalf, isCachedRefresh, isReset = false }) => {
+  processQuery = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    isSecondHalf,
+    isCachedRefresh,
+    isReset = false,
+  }) => {
     if (this.isQueryValid(query)) {
       let pageSize
       if (isSecondHalf && isChartType(this.props.tile.secondDisplayType)) {
@@ -815,18 +828,32 @@ export class DashboardTile extends React.Component {
 
       const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
       // isReset: use empty arrays — props may carry stale values before parent re-renders.
-      const additionalColumnSelects = isReset ? [] : (isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects)
-      const currentDisplayOverrides = isReset ? [] : (isSecondHalf
+      const additionalColumnSelects = isReset
+        ? []
+        : isSecondHalf
+        ? this.props.tile.secondColumnSelects
+        : this.props.tile.columnSelects
+      const currentDisplayOverrides = isReset
+        ? []
+        : isSecondHalf
         ? this.props.tile?.secondDisplayOverrides
-        : this.props.tile?.displayOverrides)
-      let currentSessionFilters = isReset ? [] : (isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || [])
+        : this.props.tile?.displayOverrides
+      let currentSessionFilters = isReset
+        ? []
+        : isSecondHalf
+        ? this.props.tile.secondFilters
+        : this.props.tile.filters || []
 
       // Merge dashboard-level slicers (applied even during reset, not tile-specific).
       if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0 && !isSecondHalf) {
         currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
       }
-      const currentOrders = isReset ? [] : (isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders)
-      const currentFilter = isReset ? [] : (isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters)
+      const currentOrders = isReset ? [] : isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders
+      const currentFilter = isReset
+        ? []
+        : isSecondHalf
+        ? this.props.tile.secondTableFilters
+        : this.props.tile.tableFilters
       const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
 
       const requestData = {
@@ -905,7 +932,15 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize, isCachedRefresh, isReset = false }) => {
+  processTileTop = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    pageSize,
+    isCachedRefresh,
+    isReset = false,
+  }) => {
     this.setState({ isTopExecuting: true, queryResponse: null })
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
@@ -925,8 +960,12 @@ export class DashboardTile extends React.Component {
       : this.savedTileConfig.dataConfig
 
     // isReset: use empty arrays since props may carry stale values before parent re-renders.
-    const columns = isReset ? [] : (queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns)
-    const tableFilters = isReset ? [] : (queryChanged ? undefined : this.props.tile.tableFilters || this.savedTileConfig.tableFilters)
+    const columns = isReset ? [] : queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns
+    const tableFilters = isReset
+      ? []
+      : queryChanged
+      ? undefined
+      : this.props.tile.tableFilters || this.savedTileConfig.tableFilters
 
     // New query is running, reset temporary state fields
     // Only include dataConfig if it has valid values
@@ -1002,10 +1041,11 @@ export class DashboardTile extends React.Component {
       ? undefined
       : this.props.tile.secondDataConfig || this.savedTileConfig.secondDataConfig
     const secondColumns = queryChanged ? undefined : this.props.tile.secondColumns || this.savedTileConfig.secondColumns
-    const secondTableFilters = isReset ? []
-      : (queryChanged
+    const secondTableFilters = isReset
+      ? []
+      : queryChanged
       ? undefined
-      : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters)
+      : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters
 
     // New query is running, reset temporary state fields
     const paramsToSet = {
@@ -1886,6 +1926,10 @@ export class DashboardTile extends React.Component {
 
   onPNGDownloadFinish = () => this.props.onPNGDownloadFinish({ tileId: this.props.tile.i })
 
+  onOpenFollowOnModal = () => {
+    this.setState({ isFollowOnModalOpen: true })
+  }
+
   onDrilldownStart = (activeKey) =>
     this.props.onDrilldownStart({
       tileId: this.props.tile.i,
@@ -1927,6 +1971,8 @@ export class DashboardTile extends React.Component {
               popoverAlign='end'
               enableMagicWand={this.props.enableMagicWand}
               showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+              enableFollowOnQuery={this.props.enableFollowOnQuery}
+              onOpenFollowOnModal={this.onOpenFollowOnModal}
               isEditing={this.props.isEditing}
               source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
               scope={this.props.scope}
@@ -2144,7 +2190,8 @@ export class DashboardTile extends React.Component {
           this.props.isEditing &&
           this.props.tile?.displayType !== 'single-value' &&
           !this.hasError(this.props.tile?.queryResponse),
-        showResetQueryOption: this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
+        showResetQueryOption:
+          this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
         hideReportProblem: this.hasError(this.props.tile?.queryResponse),
         hideOnError: this.shouldHideOptions(this.props.tile?.queryResponse),
       },
@@ -2371,7 +2418,7 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed && !this.props.tile?.splitView ? ' failed' : ''}`}
+          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed ? ' failed' : ''}`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2409,6 +2456,19 @@ export class DashboardTile extends React.Component {
           )}
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
+          {this.props.enableFollowOnQuery && (
+            <FollowOnModal
+              isVisible={this.state.isFollowOnModalOpen}
+              onClose={() => this.setState({ isFollowOnModalOpen: false })}
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              dataFormatting={this.props.dataFormatting}
+              responseRef={this.state.responseRef}
+              queryResponse={this.props.tile?.queryResponse}
+              initialResults={this.state.followOnResults}
+              onResultsChange={(results) => this.setState({ followOnResults: results })}
+            />
+          )}
         </div>
       </ErrorBoundary>
     )

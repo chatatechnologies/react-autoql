@@ -95,7 +95,7 @@
   align-items: flex-end;
   justify-content: space-between;
   transition: opacity 0.3s ease, color 0.3s ease;
-  padding: 7px;
+  padding: 0.4375rem;
   width: 100%;
   z-index: 3;
   bottom: 0;
@@ -123,9 +123,9 @@
   .split-view-btn {
     background: var(--react-autoql-background-color-secondary);
     display: inline-block;
-    margin-right: 7px;
+    margin-right: 0.4375rem;
     .react-autoql-icon {
-      font-size: 14px;
+      font-size: 0.875rem;
     }
   }
 }
@@ -152,9 +152,9 @@
   position: absolute;
   display: flex;
   width: 100%;
-  padding: 0 15px;
+  padding: 0 0.9375rem;
   bottom: unset;
-  top: 7px;
+  top: 0.4375rem;
   z-index: 1;
   opacity: 0;
   overflow: visible;
@@ -181,7 +181,7 @@
     }
     .react-autoql-btn {
       flex: 0 0 auto;
-      margin: 0 10px;
+      margin: 0 0.625rem;
 
       .split-view-query-btn-icon-container {
         display: flex;
@@ -190,8 +190,8 @@
 
         .react-autoql-icon-caret-left,
         .react-autoql-icon-caret-right {
-          font-size: 10px;
-          padding-left: 5px;
+          font-size: 0.625rem;
+          padding-left: 0.3125rem;
         }
       }
     }
@@ -201,7 +201,7 @@
       color: var(--react-autoql-text-color-primary, #356f90);
       background: var(--react-autoql-background-color-secondary);
       outline: none !important;
-      padding: 0 10px;
+      padding: 0 0.625rem;
       margin: 0px;
       height: 100%;
       flex: 1;
@@ -217,10 +217,10 @@
 
     .query-input-interpretation-badge {
       position: absolute;
-      top: calc(100% + 4px);
-      left: -26px;
-      width: 32px;
-      height: 32px;
+      top: calc(100% + 0.25rem);
+      left: -1.625rem;
+      width: 2rem;
+      height: 2rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -234,8 +234,8 @@
 
       // Flip icon vertically so the tail points up toward the icon
       .react-autoql-icon {
-        width: 32px;
-        height: 32px;
+        width: 2rem;
+        height: 2rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -247,8 +247,8 @@
 
 .react-autoql-dashboard-tile-inner-div {
   .react-autoql-table-add-column-btn {
-    right: 15px;
-    top: 5px;
+    right: 0.9375rem;
+    top: 0.3125rem;
   }
 
   .single-value-response-flex-container {
@@ -256,7 +256,7 @@
     align-items: center;
 
     .single-value-response {
-      font-size: 36px;
+      font-size: 2.25rem;
       font-weight: 600;
     }
   }
@@ -264,7 +264,7 @@
   .react-autoql-table,
   .table-row-count {
     color: var(--react-autoql-text-color-primary);
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   .react-autoql-table-container.pivot
@@ -273,7 +273,7 @@
     .tabulator-headers
     .tabulator-col
     .tabulator-col-content {
-    padding: 7px 5px;
+    padding: 0.4375rem 0.3125rem;
   }
 
   .dashboard-tile-response-wrapper {
@@ -295,7 +295,7 @@
     padding-top: 16px;
 
     .dashboard-tile-toolbars-container {
-      padding: 13px;
+      padding: 0.8125rem;
     }
 
     .layout-splitter {
@@ -339,10 +339,19 @@
 
   cursor: default;
 
+  .loading-container-centered {
+    flex: 1;
+    min-height: 0;
+  }
+
   .react-autoql-response-content-container {
     position: relative;
-    padding: 8px 15px 20px 15px;
+    padding: 0.5rem 0.9375rem 1.25rem 0.9375rem;
     align-items: center;
+  }
+
+  .react-autoql-response-content-container.table {
+    max-height: none !important;
   }
 }
 
@@ -357,9 +366,9 @@
 .dashboard-tile-title-container {
   width: 100%;
   text-align: left;
-  padding: 17px 24px 12px 24px;
+  padding: 1.0625rem 1.5rem 0.75rem 1.5rem;
   height: auto;
-  min-height: 56px;
+  min-height: 3.5rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -388,7 +397,7 @@
 
 .dashboard-tile-title-container .dashboard-tile-title {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.4;
   margin: 0;
 }
@@ -410,8 +419,8 @@
 .dashboard-tile-edit-wrapper {
   display: flex;
   width: 100%;
-  height: 55px;
-  padding: 20px 20px 0 25px;
+  height: 3.4375rem;
+  padding: 1.25rem 1.25rem 0 1.5625rem;
   flex-shrink: 0;
   flex-grow: 0;
   border-top-left-radius: 12px;
@@ -420,7 +429,7 @@
 
 .dashboard-tile-send-button {
   position: absolute;
-  right: 8px;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   z-index: 6;
@@ -435,7 +444,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1;
   transition: all 0.2s ease;
 
@@ -470,10 +479,10 @@
 .dashboard-tile-delete-button {
   opacity: 0;
   position: absolute;
-  top: -11px;
-  right: -11px;
-  width: 28px;
-  height: 28px;
+  top: -0.6875rem;
+  right: -0.6875rem;
+  width: 1.75rem;
+  height: 1.75rem;
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -488,7 +497,7 @@
   color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
 
   .react-autoql-icon {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   &:hover {
@@ -515,7 +524,7 @@
   display: flex;
   height: 100%;
   width: 100%;
-  padding: 20px;
+  padding: 1.25rem;
   align-items: center;
   justify-content: center;
 }
@@ -530,14 +539,14 @@
   display: flex;
   width: 100%;
   height: 100%;
-  font-size: 15px;
+  font-size: 0.9375rem;
 
   .dashboard-tile-input,
   .dashboard-tile-autocomplete-input {
     width: 100%;
     height: 100%;
-    padding: 12px;
-    padding-left: 33px;
+    padding: 0.75rem;
+    padding-left: 2.0625rem;
 
     border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
     outline: none !important;
@@ -558,10 +567,10 @@
 
     .query-input-interpretation-badge {
       position: absolute;
-      top: -32px;
-      left: -26px;
-      width: 32px;
-      height: 32px;
+      top: -2rem;
+      left: -1.625rem;
+      width: 2rem;
+      height: 2rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -574,8 +583,8 @@
       opacity: 0 !important;
 
       .react-autoql-icon {
-        width: 32px;
-        height: 32px;
+        width: 2rem;
+        height: 2rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -585,12 +594,12 @@
 
   .dashboard-tile-input.query,
   .dashboard-tile-autocomplete-input {
-    padding-right: 36px; // Make room for the send button
+    padding-right: 2.25rem; // Make room for the send button
   }
 
   .dashboard-tile-rt-container {
     position: absolute;
-    right: 44px; // leave room for the send button
+    right: 2.75rem; // leave room for the send button
     z-index: 5;
     pointer-events: auto;
 
@@ -632,8 +641,8 @@
   .react-autoql-icon {
     display: flex;
     height: 100%;
-    font-size: 17px;
-    margin-left: 10px;
+    font-size: 1.0625rem;
+    margin-left: 0.625rem;
   }
 
   .dashboard-tile-send-button .react-autoql-icon {
@@ -652,7 +661,7 @@
 }
 .dashboard-tile-input-container .dashboard-tile-input.query,
 .dashboard-tile-input-container .dashboard-tile-autocomplete-input {
-  padding-left: 36px;
+  padding-left: 2.25rem;
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
 }
@@ -693,19 +702,19 @@
 .dashboard-tile-input-container .react-autosuggest__suggestions-container--open {
   position: absolute;
   bottom: unset;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding-top: 0.3125rem;
+  padding-bottom: 0.3125rem;
   display: block;
   height: unset;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: normal;
   z-index: 2;
   overflow: hidden;
   box-shadow: var(--react-autoql-box-shadow-1);
   text-align: left;
   width: 100%;
-  top: 35px;
+  top: 2.1875rem;
   border-radius: 4px;
   margin: 0;
 }
@@ -716,17 +725,17 @@
 }
 .dashboard-tile-input-container .react-autosuggest__suggestion {
   cursor: pointer;
-  padding: 2px;
-  padding-left: 18px;
+  padding: 0.125rem;
+  padding-left: 1.125rem;
   letter-spacing: 0.05em;
-  line-height: 22.5px;
+  line-height: 1.4rem;
 }
 .dashboard-tile-input-container .react-autosuggest__suggestion--highlighted {
   background-color: rgba(0, 0, 0, 0.1) !important;
 }
 .dashboard-tile-input-container .react-autosuggest__section-title {
-  padding: 10px 0 0 10px;
-  font-size: 12px;
+  padding: 0.625rem 0 0 0.625rem;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-placeholder);
 }
 
@@ -734,15 +743,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-style: italic;
   color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.3));
-  padding: 0 20px;
-  margin-bottom: 30px;
+  padding: 0 1.25rem;
+  margin-bottom: 1.875rem;
   font-style: italic;
 
   .react-autoql-icon {
-    margin: 0px 5px;
+    margin: 0 0.3125rem;
   }
 }
 

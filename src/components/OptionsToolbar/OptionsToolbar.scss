@@ -3,9 +3,9 @@
   flex-wrap: nowrap;
   flex-direction: row;
   background: inherit;
-  padding: 5px 8px;
+  padding: 0.3125rem 0.5rem;
   border-radius: 25px;
-  line-height: 28px;
+  line-height: 1.75rem;
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
@@ -23,17 +23,26 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: 0.8125rem;
   background: var(--react-autoql-background-color-secondary);
-  padding: 10px 0;
+  padding: 0.375rem 0;
 
   span.react-autoql-icon {
-    margin-right: 10px;
+    margin-right: 0.5rem;
   }
 
   li {
     display: flex;
     align-items: center;
+  }
+
+  .react-autoql-toolbar-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0.2rem 0.625rem !important;
+    height: auto !important;
+    border-radius: 0;
+    font-size: 0.8125rem;
   }
 }
 
@@ -58,14 +67,14 @@
 }
 
 .options-toolbar-summary-dropdown-label {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--react-autoql-text-color-primary);
   margin: 0;
 }
 
 .options-toolbar-summary-dropdown-description {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
   margin: 0;
   line-height: 1.4;
@@ -101,7 +110,7 @@
   align-items: center;
   justify-content: center;
   padding: 2px 5px;
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -116,7 +125,7 @@
 }
 
 .options-toolbar-summary-focus-error {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--react-autoql-error-color, #d32f2f);
   margin-top: 0;
   padding: 8px 12px;
@@ -126,18 +135,26 @@
 }
 
 .report-problem-modal-body {
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
+
   h3 {
     margin-top: 0;
-    margin-bottom: 5px;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--react-autoql-text-color-primary);
   }
 
   .report-problem-radio-group {
     display: block;
     margin-bottom: 10px;
+    font-size: 0.9375rem;
   }
 
   .report-problem-text-area {
     font-family: var(--react-autoql-font-family);
+    font-size: 0.9375rem;
     width: 100% !important;
     max-width: 100% !important;
     min-height: 80px;

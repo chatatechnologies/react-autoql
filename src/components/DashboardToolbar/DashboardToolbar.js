@@ -431,8 +431,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
             this.setState({ isConfirmCloseModalOpen: false })
           }}
         >
-          <h3>Are you sure you want to leave?</h3>
-          <p>Any unsaved changes will be lost.</p>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to leave?</h3>
+          <p style={{ fontSize: '0.9375rem', margin: 0 }}>Any unsaved changes will be lost.</p>
         </ConfirmModal>
         <ConfirmModal
           isVisible={this.state.isConfirmDeleteModalVisible}
@@ -443,8 +443,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
             this.setState({ isConfirmDeleteModalVisible: false })
           }}
         >
-          <h3>Are you sure you want to delete this Dashboard?</h3>
-          <p>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to delete this Dashboard?</h3>
+          <p style={{ fontSize: '0.9375rem', margin: 0 }}>
             This will permanently delete this Dashboard and all Tiles housed within it. This action cannot be undone. Do
             you wish to continue?
           </p>

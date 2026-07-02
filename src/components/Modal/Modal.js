@@ -11,7 +11,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './Modal.scss'
 
-export default class Modal extends React.Component {
+class Modal extends React.Component {
   static propTypes = {
     title: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
     titleIcon: PropTypes.oneOfType([PropTypes.element, PropTypes.instanceOf(Icon)]),
@@ -168,11 +168,13 @@ export default class Modal extends React.Component {
               this.setState({ isConfirmCloseModalVisible: false })
             }}
           >
-            <h3>Are you sure you want to leave this page?</h3>
-            <p>All unsaved changes will be lost.</p>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to leave this page?</h3>
+            <p style={{ fontSize: '0.9375rem', margin: 0 }}>All unsaved changes will be lost.</p>
           </ConfirmModal>
         )}
       </ErrorBoundary>
     )
   }
 }
+
+export default Modal

@@ -1510,7 +1510,7 @@ export default class ChataChart extends React.Component {
                 width='100%'
                 height='100%'
                 style={{
-                  fontSize: '12px',
+                  fontSize: '0.75rem',
                   fontFamily: chartFontFamily,
                   color: chartTextColor,
                   background: chartBackgroundColor,

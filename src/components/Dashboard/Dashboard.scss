@@ -2,19 +2,19 @@
   background: transparent;
   width: 100%;
   overflow: visible;
-  margin-top: -18px;
+  margin-top: -1.125rem;
 }
 
 .react-autoql-dashboard-container.edit-mode {
-  padding-top: 11px;
-  padding-bottom: 200px;
+  padding-top: 0.6875rem;
+  padding-bottom: 12.5rem;
 }
 
 .dashboard-drilldown-modal {
   .dashboard-drilldown-modal-content {
     .layout-splitter {
-      margin-top: 8px;
-      padding: 2px;
+      margin-top: 0.5rem;
+      padding: 0.125rem;
       height: 2px;
       background: transparent;
       border-bottom: 1px solid var(--react-autoql-border-color);
@@ -36,12 +36,12 @@
     .splitter-collapse-btn {
       display: flex;
       justify-content: center;
-      line-height: 24px;
+      line-height: 1.5rem;
       width: 20px;
       height: 20px;
       border-radius: 10px;
       margin-left: 90%;
-      transform: translate(0px, -10px);
+      transform: translate(0, -0.625rem);
       background: var(--react-autoql-background-color-secondary);
       border: 1px solid var(--react-autoql-border-color);
       border-color: var(--react-autoql-border-color);
@@ -71,11 +71,11 @@
       }
 
       .layout-splitter {
-        margin-top: 14px;
+        margin-top: 0.875rem;
       }
 
       .splitter-collapse-btn {
-        transform: translate(-11px, -11px) rotate(180deg);
+        transform: translate(-0.6875rem, -0.6875rem) rotate(180deg);
       }
 
       .layout-pane.layout-pane-primary {
@@ -98,7 +98,7 @@
       }
 
       .react-autoql-dashboard-drilldown-table {
-        padding-top: 10px;
+        padding-top: 0.625rem;
       }
     }
 
@@ -107,11 +107,11 @@
     }
 
     .react-autoql-table {
-      font-size: 11px;
+      font-size: 0.6875rem;
     }
 
     .splitter-layout {
-      height: calc(100% - 55px);
+      height: calc(100% - 3.4375rem);
     }
 
     .dashboard-drilldown-table-and-toolbars-container {
@@ -129,31 +129,31 @@
     }
 
     .react-autoql-dashboard-drilldown-original {
-      padding: 10px;
+      padding: 0.625rem;
       padding-bottom: 0;
     }
     .drilldown-hide-chart-btn {
       text-align: right;
       width: 100%;
-      padding-right: 20px;
+      padding-right: 1.25rem;
 
       &.bottom {
         position: absolute;
-        bottom: 5px;
+        bottom: 0.3125rem;
         width: 100px;
         right: 0;
       }
 
       &.top {
-        padding-top: 10px;
-        margin-bottom: -8px;
+        padding-top: 0.625rem;
+        margin-bottom: -0.5rem;
       }
     }
   }
 
   .react-autoql-dashboard-drilldown-table {
     flex: 1;
-    padding: 10px 20px;
+    padding: 0.625rem 1.25rem;
     padding-top: 0;
     overflow: hidden;
     height: 100%;
@@ -166,7 +166,7 @@
   color: var(--react-autoql-text-color-primary);
   letter-spacing: 0.02em;
   text-align: center;
-  padding: 100px;
+  padding: 6.25rem;
   height: 100%;
   width: 100%;
 }

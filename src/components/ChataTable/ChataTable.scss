@@ -25,7 +25,7 @@
 
   .react-autoql-table-data-limit-icon,
   .react-autoql-table-filter-warning-icon {
-    font-size: 18px;
+    font-size: 1.125rem;
     cursor: help;
     display: flex;
     align-items: center;
@@ -52,7 +52,7 @@
   .table-row-count {
     flex: 0;
     width: 100%;
-    font-size: 13px;
+    font-size: 0.8125rem;
     opacity: 0.6;
     text-align: center;
     padding-top: 3px;
@@ -76,12 +76,14 @@
     // Frozen (pinned) column borders/shadows — basic structure
     .tabulator-frozen {
       &.tabulator-frozen-left {
-        border-right: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
+        border-right: 1px solid
+          var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
         box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.1);
       }
 
       &.tabulator-frozen-right {
-        border-left: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
+        border-left: 1px solid
+          var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
         box-shadow: -4px 0 8px -2px rgba(0, 0, 0, 0.1);
       }
     }
@@ -274,7 +276,7 @@
       span {
         font-family: sans-serif;
         height: 12px;
-        font-size: 11px;
+        font-size: 0.6875rem;
         line-height: 100%;
       }
     }
@@ -365,7 +367,7 @@
       color: var(--react-autoql-text-color-primary);
       cursor: pointer;
       padding: 0;
-      font-size: 12px;
+      font-size: 0.75rem;
       line-height: 1;
       margin: 0;
     }
@@ -388,7 +390,8 @@
     background-color: inherit;
     border-color: transparent;
     margin-bottom: 0 !important;
-    font-size: 12.5px;
+    font-size: 0.78125rem;
+    padding: 0;
 
     .comparison-value-positive {
       color: #2ecc40;
@@ -484,7 +487,7 @@
         padding-left: 12px !important;
         padding-right: 15px !important;
         font-weight: 600;
-        font-size: 11px;
+        font-size: 0.6875rem;
         letter-spacing: 0.05em;
       }
       .tabulator-col-content {
@@ -554,11 +557,13 @@
 
     // Match the frozen column header borders on body cells too
     .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
-      border-right: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
+      border-right: 1px solid
+        var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
     }
 
     .tabulator-cell.tabulator-frozen.tabulator-frozen-right {
-      border-left: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
+      border-left: 1px solid
+        var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.12))) !important;
     }
 
     // Frozen header columns — solid background so they stay opaque when scrolling
@@ -678,7 +683,7 @@
 
   &.table-placeholder {
     color: var(--react-autoql-text-color-primary);
-    font-size: 12px;
+    font-size: 0.75rem;
     opacity: 0.5;
     top: 20px;
   }
@@ -769,7 +774,7 @@
   }
 
   .pivot-axis-title-arrow {
-    font-size: 20px;
+    font-size: 1.25rem;
     opacity: 0.6;
     flex-shrink: 0;
     margin-left: 2px;
@@ -793,7 +798,7 @@
   color: var(--react-autoql-text-color-primary);
   border: 1px solid transparent;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
   border-radius: 4px;
 
@@ -824,7 +829,7 @@
       line-height: 30px;
       padding: 0 15px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 0.75rem;
 
       &:hover {
         background: rgba(0, 0, 0, 0.05);

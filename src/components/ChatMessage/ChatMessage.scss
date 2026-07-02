@@ -4,12 +4,12 @@
   justify-content: flex-start;
   align-items: flex-start;
   width: 100%;
-  padding: 15px 20px 20px 20px;
+  padding: 0.9375rem 1.25rem 1.25rem 1.25rem;
   transition: background-color 0.2s ease;
   position: relative;
 
   &:first-child {
-    padding-top: 20px;
+    padding-top: 1.25rem;
   }
 
   &.request {
@@ -155,7 +155,7 @@
       transition-property: color, border-color, background-color, opacity;
       transition-duration: 0.3s;
       transition-timing-function: ease;
-      font-size: 22px;
+      font-size: 1.375rem;
       padding: 13px;
       margin-bottom: 6px;
       height: 42px;
@@ -180,12 +180,12 @@
       flex-direction: column;
       position: relative;
       flex: 1;
-      padding: 13px 20px;
+      padding: 0.8125rem 1.25rem;
       border-radius: 25px;
       max-width: 100%;
       word-wrap: break-word;
       font-family: inherit;
-      font-size: 14px;
+      font-size: 0.875rem;
       letter-spacing: 0.04em;
       box-sizing: border-box;
       // Glassmorphism: semi-transparent bubbles with blur
@@ -214,7 +214,7 @@
       }
 
       &:not(.resizable) {
-        max-height: min(calc(100vh - 300px), 600px);
+        max-height: min(calc(100vh - 340px), 600px);
       }
       &.resizable {
         max-height: none;
@@ -255,7 +255,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 18px;
+      font-size: 1.125rem;
       font-weight: 600;
       margin-bottom: 12px;
       line-height: 1.5;
@@ -271,7 +271,7 @@
       }
 
       .chat-message-summary-focus-badge {
-        font-size: 13px;
+        font-size: 0.8125rem;
         font-weight: 500;
         color: var(--react-autoql-text-color-primary);
         background-color: var(--react-autoql-background-color-secondary, rgba(0, 0, 0, 0.05));
@@ -324,14 +324,14 @@
     }
 
     .chat-message-summary-dropdown-label {
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 600;
       color: var(--react-autoql-text-color-primary);
       margin: 0;
     }
 
     .chat-message-summary-dropdown-description {
-      font-size: 13px;
+      font-size: 0.8125rem;
       color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
       margin: 0;
       line-height: 1.4;
@@ -361,18 +361,18 @@
       }
 
       .chat-message-summary-estimated-cost-label {
-        font-size: 13px;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--react-autoql-accent-color, #26a7df);
       }
 
       .chat-message-summary-estimated-cost-details {
-        font-size: 12px;
+        font-size: 0.75rem;
         color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
       }
 
       .chat-message-summary-estimated-cost-price {
-        font-size: 18px;
+        font-size: 1.125rem;
         font-weight: 600;
         color: var(--react-autoql-accent-color, #26a7df);
       }
@@ -384,7 +384,7 @@
       border: 1.5px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
       background-color: rgba(0, 0, 0, 0.04);
       color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
-      font-size: 13px;
+      font-size: 0.8125rem;
     }
 
     .chat-message-summary-dropdown-actions {
@@ -395,7 +395,7 @@
     }
 
     .chat-message-summary-focus-error {
-      font-size: 13px;
+      font-size: 0.8125rem;
       color: var(--react-autoql-error-color, #d32f2f);
       margin-top: 0;
       padding: 8px 12px;
@@ -410,16 +410,17 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 8px;
   padding-top: 12px;
 
   .chat-message-summary-feedback-buttons {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: 0.75rem;
 
     .chat-message-feedback-label {
-      font-size: 13px;
+      font-size: 0.8125rem;
       color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
       margin-right: 4px;
     }
@@ -489,14 +490,58 @@
   }
 
   .react-autoql-btn {
-    font-size: 13px;
+    font-size: 0.8125rem;
+    border-radius: 50px !important;
+  }
+
+  // Split button (Auto Analyze + caret): pill left side, straight middle, pill right side
+  .react-autoql-btn.btn-split-left {
+    border-top-left-radius: 50px !important;
+    border-bottom-left-radius: 50px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  .react-autoql-btn.btn-split-right {
+    border-top-right-radius: 50px !important;
+    border-bottom-right-radius: 50px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
   }
 
   .chat-message-summary-button-group {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 8px;
     position: relative;
+  }
+
+  .follow-on-reply-btn {
+    position: relative;
+
+    &.follow-on-reply-btn--active {
+      color: var(--react-autoql-accent-color) !important;
+      border-color: var(--react-autoql-accent-color) !important;
+    }
+  }
+
+  .follow-on-reply-btn-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background-color: var(--react-autoql-accent-color, #26a7df);
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+    border: 2px solid var(--react-autoql-background-color-secondary, #fff);
   }
 
   .analyze-button-content {
@@ -512,7 +557,7 @@
     align-items: center;
     justify-content: center;
     padding: 2px 5px;
-    font-size: 9px;
+    font-size: 0.5625rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
@@ -542,14 +587,14 @@
       }
 
       .chat-message-summary-focus-label {
-        font-size: 16px;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--react-autoql-text-color-primary);
         margin: 0;
       }
 
       .chat-message-summary-focus-description {
-        font-size: 14px;
+        font-size: 0.875rem;
         color: var(--react-autoql-text-color-primary);
         margin: 0;
         line-height: 1.5;
@@ -569,7 +614,7 @@
       }
 
       .chat-message-summary-focus-error {
-        font-size: 13px;
+        font-size: 0.8125rem;
         color: var(--react-autoql-error-color, #d32f2f);
         margin-top: 8px;
         padding: 8px 12px;
@@ -601,5 +646,192 @@
   100% {
     transform: scale(1);
     transform-origin: 0% 100%;
+  }
+}
+
+.chat-message-bubble.type-follow-on {
+  margin-left: 24px;
+  border-left: 3px solid var(--react-autoql-accent-color);
+}
+
+.chat-message-follow-on-stub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 30px;
+  margin-top: 2px;
+  padding: 4px 10px 4px 18px;
+  position: relative;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.5));
+  border-radius: 8px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  width: fit-content;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: var(--react-autoql-accent-color, #26a7df);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 3px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--react-autoql-accent-color, #26a7df) 25%,
+      var(--react-autoql-accent-color, #26a7df) 75%,
+      transparent 100%
+    );
+  }
+}
+
+.chat-message-follow-on-thread {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% - 50px); // 30px left margin + 20px right to align with bubble edge
+  margin-left: 30px;
+  margin-top: 2px;
+  padding: 8px 0 12px 14px;
+  gap: 8px;
+  position: relative; // for absolutely-positioned collapse button and ::before line
+
+  // Gradient thread line
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 3px;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      var(--react-autoql-accent-color, #26a7df) 8%,
+      var(--react-autoql-accent-color, #26a7df) 72%,
+      transparent 100%
+    );
+  }
+
+  .chat-message-follow-on-thread-collapse-btn {
+    position: absolute;
+    left: -34px;
+    top: 2px;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    padding: 0 !important;
+    opacity: 0.45;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem !important;
+
+    &:hover {
+      opacity: 1;
+      background: transparent !important;
+    }
+  }
+
+  .chat-message-follow-on-thread-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    .react-autoql-input-and-label-container {
+      flex: 1;
+      min-width: 0;
+
+      .react-autoql-input {
+        border-radius: 24px !important;
+
+        &:disabled {
+          background: transparent !important;
+          opacity: 0.5;
+        }
+      }
+    }
+
+    // Circular send button
+    .react-autoql-btn {
+      border-radius: 50% !important;
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      padding: 0 !important;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      // Override default spinner margin so it centers in the circular button
+      .spinner-loader {
+        width: 14px;
+        height: 14px;
+        margin: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:after {
+          width: 14px;
+          height: 14px;
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  .chat-message-follow-on-thread-error {
+    font-size: 0.75rem;
+    color: var(--react-autoql-error-color, #d32f2f);
+    padding-left: 4px;
+  }
+
+  .chat-message-follow-on-thread-result {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    position: relative;
+
+    // Dot on the left border line
+    &::before {
+      content: '';
+      position: absolute;
+      left: -18px; // sits on the border-left
+      top: 14px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--react-autoql-accent-color, #26a7df);
+      border: 2px solid var(--react-autoql-background-color-secondary, #fff);
+    }
+
+    .chat-message-follow-on-thread-result-question {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+    }
+
+    .simple-table-outer-container {
+      overflow-x: auto;
+      max-width: 100%;
+    }
   }
 }

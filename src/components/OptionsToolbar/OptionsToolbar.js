@@ -33,7 +33,7 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -96,6 +96,8 @@ export class OptionsToolbar extends React.Component {
     hideReportProblem: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
+    enableFollowOnQuery: PropTypes.bool,
+    onOpenFollowOnModal: PropTypes.func,
     initialIsFiltering: PropTypes.bool,
   }
 
@@ -127,6 +129,8 @@ export class OptionsToolbar extends React.Component {
     showResetQueryOption: false,
     source: undefined,
     scope: undefined,
+    enableFollowOnQuery: false,
+    onOpenFollowOnModal: () => {},
   }
 
   componentDidMount = () => {
@@ -845,6 +849,21 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
+  renderFollowOnQueryBtn = () => {
+    return (
+      <Button
+        key={`follow-on-query-button-${this.COMPONENT_KEY}`}
+        onClick={this.props.onOpenFollowOnModal}
+        className={this.getMenuItemClass()}
+        tooltip='Ask a follow-up question'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        size='small'
+      >
+        <Icon type='reply' />
+      </Button>
+    )
+  }
+
   renderMagicWandBtn = () => {
     const queryResponse = this.props.responseRef?.queryResponse
     const { isDisabled, tooltip: disabledTooltip } = getSummaryButtonDisabledState({
@@ -942,6 +961,7 @@ export class OptionsToolbar extends React.Component {
             this.props.enableMagicWand &&
             shouldShowButton.showMagicWandButton &&
             this.renderMagicWandBtn()}
+          {!isMarkdownOnly && shouldShowButton.showFollowOnQueryButton && this.renderFollowOnQueryBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {shouldShowButton.showCopyMarkdownButton && this.renderCopyMarkdownBtn()}
           {shouldShowButton.showDeleteButton && (
@@ -1048,6 +1068,8 @@ export class OptionsToolbar extends React.Component {
           queryResponse: response,
           isMarkdownOnly,
         }),
+        showFollowOnQueryButton:
+          !isMarkdownOnly && shouldShowQueryActionButton(props.enableFollowOnQuery, response),
       }
 
       // Hide reset button when there's no query text or display type is single-value.

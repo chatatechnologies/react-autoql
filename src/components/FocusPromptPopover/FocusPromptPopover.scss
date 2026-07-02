@@ -14,14 +14,14 @@
 }
 
 .focus-prompt-popover-label {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--react-autoql-text-color-primary);
   margin: 0;
 }
 
 .focus-prompt-popover-description {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
   margin: 0;
   line-height: 1.4;
@@ -51,13 +51,13 @@
   }
 
   .focus-prompt-popover-estimated-cost-label {
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--react-autoql-accent-color, #26a7df);
   }
 
   .focus-prompt-popover-estimated-cost-price {
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--react-autoql-accent-color, #26a7df);
   }
@@ -69,11 +69,11 @@
   border: 1.5px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
   background-color: rgba(0, 0, 0, 0.04);
   color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .focus-prompt-popover-error {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--react-autoql-error-color, #d32f2f);
   margin-top: 0;
   padding: 8px 12px;
