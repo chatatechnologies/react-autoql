@@ -271,6 +271,7 @@ export default class TableWrapper extends React.Component {
     })
 
     this.attachTabulatorEventHandlers(this.tabulator)
+    this.silenceProgressiveLoadNextPageRejections(this.tabulator)
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
@@ -294,6 +295,16 @@ export default class TableWrapper extends React.Component {
 
       this.props.onTableBuilt()
     })
+  }
+
+  // Tabulator schedules progressive-load nextPage() via an internal, un-awaited setTimeout that can
+  // reject with an uncatchable error if a reload (e.g. edit-mode filter reset) changes page/max first.
+  silenceProgressiveLoadNextPageRejections = (tabulator) => {
+    const pageModule = tabulator?.modules?.page
+    if (!pageModule || pageModule.__nextPagePatched) return
+    const originalNextPage = pageModule.nextPage.bind(pageModule)
+    pageModule.nextPage = (...args) => originalNextPage(...args)?.catch?.(() => {})
+    pageModule.__nextPagePatched = true
   }
 
   // Temporarily block Tabulator redraws; callers must call `restoreRedraw()` (use try/finally).
@@ -371,6 +382,7 @@ export default class TableWrapper extends React.Component {
     })
 
     this.attachTabulatorEventHandlers(this.tabulator)
+    this.silenceProgressiveLoadNextPageRejections(this.tabulator)
 
     // Mark initialized and notify parent
     this.isInitialized = true

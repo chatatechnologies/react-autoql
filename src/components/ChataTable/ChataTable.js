@@ -392,19 +392,18 @@ export default class ChataTable extends React.Component {
           // Date.now() blocks AJAXes without replaceData() — avoids a server call on local (view-mode) tables.
           this._setFiltersTime = Date.now()
           this.enableBaseFilterInputs() // re-enable any disabled inputs before clearing
-          this.ref?.tabulator?.clearHeaderFilter()
-          this.ref?.tabulator?.clearSort()
-          this.baseFilters.forEach((bf) => {
-            if (bf.value) this.ref?.tabulator?.setHeaderFilterValue(bf.field, bf.value)
-          })
+          this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
+          this.ref?.tabulator?.clearSort()?.catch?.(() => {})
+          // Batch via setFilters() — per-field setHeaderFilterValue calls each fire their own reload and race each other.
+          if (this.baseFilters.length) this.setFilters(this.baseFilters)
           if (this.baseSort.length) {
             this.setSorters(this.baseSort)
           }
         } else {
           // Exiting edit mode (going to view mode): always clear any edit-mode filters/sorts.
           this._setFiltersTime = Date.now()
-          this.ref?.tabulator?.clearHeaderFilter()
-          this.ref?.tabulator?.clearSort()
+          this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
+          this.ref?.tabulator?.clearSort()?.catch?.(() => {})
           if (this.baseFilters.length) this.setFilters(this.baseFilters)
           if (this.baseSort.length) this.setSorters(this.baseSort)
         }
@@ -843,7 +842,7 @@ export default class ChataTable extends React.Component {
         console.error(error)
         this.clearLoadingIndicators()
       } else {
-        return
+        return response
       }
     }
 
@@ -1062,7 +1061,7 @@ export default class ChataTable extends React.Component {
         }, 0)
       }
     } else {
-      return {}
+      return { data: [], last_page: this.totalPages }
     }
 
     return modResponse
@@ -1396,6 +1395,13 @@ export default class ChataTable extends React.Component {
         // TableWrapper API so wrapper state (redrawRestored) stays in sync.
         this.ref?.blockRedraw?.()
 
+        // setHeaderFilterValue() reloads on every call; suppress that per-field and refresh once below instead.
+        const filterModule = this.ref.tabulator.modules?.filter
+        const wasInitialized = filterModule?.tableInitialized
+        if (filterModule) {
+          filterModule.tableInitialized = false
+        }
+
         try {
           filterValues.forEach((filter) => {
             const columns = this.ref.tabulator.getColumns()
@@ -1406,6 +1412,10 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
+          if (filterModule) {
+            filterModule.tableInitialized = wasInitialized
+          }
+          this.ref?.tabulator?.refreshFilter?.()?.catch?.(() => {})
           this.ref?.restoreRedraw?.()
         }
 
@@ -1477,13 +1487,12 @@ export default class ChataTable extends React.Component {
     this.settingSorters = true
 
     if (this.ref?.tabulator && sorterValues && Array.isArray(sorterValues)) {
-      sorterValues.forEach((sorter) => {
-        try {
-          this.ref.tabulator.setSort(sorter.field, sorter.dir)
-        } catch (_) {
-          // Error silently handled by tabulator
-        }
-      })
+      try {
+        // setSort() replaces the whole sort list per call, so apply all sorters in one call, not a loop.
+        this.ref.tabulator.setSort(sorterValues.map(({ field, dir }) => ({ column: field, dir })))?.catch?.(() => {})
+      } catch (_) {
+        // Error silently handled by tabulator
+      }
     }
 
     this.settingSorters = false

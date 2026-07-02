@@ -52,7 +52,11 @@ export class OptionsToolbar extends React.Component {
       // isSettingColumnVisibility: false,
       reportProblemMessage: undefined,
       isCSVDownloading: false,
-      isFiltering: !!props.responseRef?.isFilteringTable(),
+      // Prefer initialIsFiltering when provided — responseRef may be mid-unmount, making isFilteringTable() unreliable here.
+      isFiltering:
+        typeof props.initialIsFiltering === 'boolean'
+          ? props.initialIsFiltering
+          : !!props.responseRef?.isFilteringTable(),
       isSummaryModalVisible: false,
       isSummaryPopoverOpen: false,
       isResetQueryConfirmVisible: false,
@@ -92,6 +96,7 @@ export class OptionsToolbar extends React.Component {
     hideReportProblem: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
+    initialIsFiltering: PropTypes.bool,
   }
 
   static defaultProps = {

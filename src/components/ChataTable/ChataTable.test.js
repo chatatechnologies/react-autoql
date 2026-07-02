@@ -482,8 +482,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with empty response
       const result = instance.ajaxResponseFunc({}, null)
 
-      // Should return empty object and not force update
-      expect(result).toEqual({})
+      // Should return an empty Tabulator-shaped page and not force update
+      expect(result).toEqual({ data: [], last_page: instance.totalPages })
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -496,8 +496,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with undefined response
       const result = instance.ajaxResponseFunc({}, undefined)
 
-      // Should return empty object and not force update
-      expect(result).toEqual({})
+      // Should return an empty Tabulator-shaped page and not force update
+      expect(result).toEqual({ data: [], last_page: instance.totalPages })
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 

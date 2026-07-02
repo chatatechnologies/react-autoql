@@ -633,6 +633,11 @@ export class QueryOutput extends React.Component {
 
       if (prevProps.isEditing !== this.props.isEditing) {
         if (this.props.isEditing) {
+          // Reset filters/sorters (otherwise only set on mount) so stale view-mode header filters don't leak into edit mode.
+          this.formattedTableParams = {
+            filters: this.props.initialFormattedTableParams?.filters || [],
+            sorters: this.props.initialFormattedTableParams?.sorters || [],
+          }
           this.originalLegendState = {
             hiddenLegendLabels: [...this.state.hiddenLegendLabels],
             isEditing: true,

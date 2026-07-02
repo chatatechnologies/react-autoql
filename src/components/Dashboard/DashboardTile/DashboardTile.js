@@ -117,6 +117,7 @@ export class DashboardTile extends React.Component {
       isSecondQueryInputOpen: false,
       isTopExecuted: !!tile.queryResponse,
       localRTFilterResponse: null,
+      viewModeFiltersDiffer: false,
       isBottomExecuted:
         tile.splitView && (this.areTopAndBottomSameQuery() ? !!tile.queryResponse : !!tile.secondQueryResponse),
       initialFormattedTableParams: {
@@ -285,6 +286,14 @@ export class DashboardTile extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // OptionsToolbar remounts on every view<->edit toggle and reads this at construction time, so keep it live.
+    if (this.state.responseRef?._isMounted) {
+      this.wasFilteringBeforeRemount = !!this.state.responseRef.isFilteringTable()
+    }
+    if (this.state.secondResponseRef?._isMounted) {
+      this.wasBottomFilteringBeforeRemount = !!this.state.secondResponseRef.isFilteringTable()
+    }
+
     // If query or title change from props (due to undo for example), update state
     if (this.props.tile?.title !== prevProps.tile?.title) {
       this.setState({ title: this.props.tile?.title })
@@ -310,14 +319,24 @@ export class DashboardTile extends React.Component {
       this.setState({ localRTFilterResponse: null })
       this.processTile()
     }
+    if (!prevProps.isEditing && this.props.isEditing && this.state.viewModeFiltersDiffer) {
+      // View-mode filters narrowed the rows below the tile's base filter — refetch base data for edit mode.
+      this.setState({ viewModeFiltersDiffer: false })
+      this._forceRemountOnNextResponse = true
+      this.processTile().catch(() => {}) // errors already surface via tile state; just avoid an unhandled rejection
+    }
 
     const prevQR = prevProps.tile?.queryResponse
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
     const nextQRId = nextQR?.data?.data?.query_id
-    if (nextQR && !this.state.isTopExecuting && (prevQR === null || (prevQR && prevQRId !== nextQRId))) {
-      this.wasFilteringBeforeRemount = this.state.responseRef?.isFilteringTable() || false
-      this.wasBottomFilteringBeforeRemount = this.state.secondResponseRef?.isFilteringTable() || false
+    if (
+      nextQR &&
+      nextQR !== prevQR &&
+      !this.state.isTopExecuting &&
+      (prevQR === null || (prevQR && prevQRId !== nextQRId) || this._forceRemountOnNextResponse)
+    ) {
+      this._forceRemountOnNextResponse = false
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
 
@@ -1376,7 +1395,14 @@ export class DashboardTile extends React.Component {
   }
 
   onTableParamsChange = (params, formattedParams) => {
-    if (!this.props.isEditing) return
+    if (!this.props.isEditing) {
+      // Track whether view-mode header filters narrowed the rows below the tile's base filter (see componentDidUpdate).
+      const viewModeFiltersDiffer = !_isEqual(formattedParams?.filters || [], this.props.tile?.tableFilters || [])
+      if (viewModeFiltersDiffer !== this.state.viewModeFiltersDiffer) {
+        this.setState({ viewModeFiltersDiffer })
+      }
+      return
+    }
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
       orders: formattedParams.sorters,
@@ -2111,6 +2137,7 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        initialIsFiltering: this.wasFilteringBeforeRemount,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         onResetClick: () => this.props.resetTile?.(this.props.tile.i),
         showRefreshInEdit:
@@ -2265,6 +2292,7 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
           this.props.isEditing ? '-editing' : ''
         }`,
+        initialIsFiltering: this.wasBottomFilteringBeforeRemount,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         hideOnError: this.shouldHideOptions(this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse),
       },
