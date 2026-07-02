@@ -1046,106 +1046,6 @@ describe('ChataTable filter/badge initialization', () => {
   })
 })
 
-describe('disableBaseFilterInputs', () => {
-  function setupWithDOM(filters) {
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    // Build DOM elements matching the selectors used by disableBaseFilterInputs
-    const container = document.createElement('div')
-    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
-
-    filters.forEach((filter) => {
-      const col = document.createElement('div')
-      col.className = 'tabulator-col'
-      col.setAttribute('tabulator-field', filter.field)
-
-      const content = document.createElement('div')
-      content.className = 'tabulator-col-content'
-      const input = document.createElement('input')
-      content.appendChild(input)
-      col.appendChild(content)
-      container.appendChild(col)
-
-      const clearBtn = document.createElement('div')
-      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
-      document.body.appendChild(clearBtn)
-    })
-
-    document.body.appendChild(container)
-
-    return { wrapper, instance, container }
-  }
-
-  afterEach(() => {
-    // Clean up DOM nodes
-    document.body.innerHTML = ''
-  })
-
-  test('disables header input and adds disabled class for each base filter with a value', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.disableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    expect(input.disabled).toBe(true)
-    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(true)
-  })
-
-  test('makes clear button non-interactive for each base filter', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance } = setupWithDOM(filters)
-
-    instance.disableBaseFilterInputs()
-
-    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
-    expect(clearBtn.style.pointerEvents).toBe('none')
-    expect(clearBtn.style.opacity).toBe('0.3')
-  })
-
-  test('skips filters with no value', () => {
-    const filters = [{ field: '1', type: '=', value: '' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.disableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    expect(input.disabled).toBe(false)
-  })
-
-  test('does nothing when isDashboardEditing=true', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: true })
-    const instance = wrapper.instance()
-
-    const spy = jest.spyOn(document, 'querySelector')
-    instance.disableBaseFilterInputs()
-
-    // Should return immediately without querying DOM
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
-  })
-
-  test('does nothing when baseFilters is empty', () => {
-    const wrapper = setup({ isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    const spy = jest.spyOn(document, 'querySelector')
-    instance.disableBaseFilterInputs()
-
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
-  })
-
-  test('handles missing DOM nodes gracefully (no throw)', () => {
-    const filters = [{ field: '99', type: '=', value: 'missing' }]
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-    expect(() => instance.disableBaseFilterInputs()).not.toThrow()
-  })
-})
-
 describe('toggleIsFiltering callback behavior', () => {
   function makeFullRef() {
     return {
@@ -1339,13 +1239,23 @@ describe('Dashboard edit-mode filtering', () => {
 
     test('fe_req.filters in response does NOT force REMOTE in view mode', () => {
       const response = {
-        data: { data: { rows: [], count_rows: 10, query_id: 'q1', fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] } } },
+        data: {
+          data: {
+            rows: [],
+            count_rows: 10,
+            query_id: 'q1',
+            fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] },
+          },
+        },
       }
       expect(setup({ response }).instance().isLocal).toBe(true)
     })
 
     test('initialTableParams.filter does NOT force REMOTE in view mode', () => {
-      const wrapper = setup({ response: smallResponse, initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] } })
+      const wrapper = setup({
+        response: smallResponse,
+        initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] },
+      })
       expect(wrapper.instance().isLocal).toBe(true)
     })
   })
@@ -1438,7 +1348,13 @@ describe('Dashboard edit-mode filtering', () => {
 
     test('uses client-side path when neither isEditing nor isDashboardEditing', () => {
       const mockPropsQueryFn = jest.fn()
-      const wrapper = setup({ isEditing: false, isDashboardEditing: false, queryFn: mockPropsQueryFn, response: smallResponse, useInfiniteScroll: false })
+      const wrapper = setup({
+        isEditing: false,
+        isDashboardEditing: false,
+        queryFn: mockPropsQueryFn,
+        response: smallResponse,
+        useInfiniteScroll: false,
+      })
       wrapper.instance().queryFn({ tableFilters: [] })
       expect(mockPropsQueryFn).not.toHaveBeenCalled()
     })
@@ -1617,95 +1533,6 @@ describe('lockedFilters as baseFilters', () => {
   test('falls back to empty array when both lockedFilters and initialTableParams.filter are absent', () => {
     const wrapper = setup({ lockedFilters: undefined, initialTableParams: {} })
     expect(wrapper.instance().baseFilters).toEqual([])
-  })
-})
-
-describe('enableBaseFilterInputs', () => {
-  function setupWithDOM(filters) {
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    const container = document.createElement('div')
-    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
-
-    filters.forEach((filter) => {
-      const col = document.createElement('div')
-      col.className = 'tabulator-col'
-      col.setAttribute('tabulator-field', filter.field)
-
-      const content = document.createElement('div')
-      content.className = 'tabulator-col-content'
-      const input = document.createElement('input')
-      input.disabled = true
-      input.classList.add('react-autoql-base-filter-disabled')
-      content.appendChild(input)
-      col.appendChild(content)
-      container.appendChild(col)
-
-      const clearBtn = document.createElement('div')
-      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
-      clearBtn.style.pointerEvents = 'none'
-      clearBtn.style.opacity = '0.3'
-      document.body.appendChild(clearBtn)
-    })
-
-    document.body.appendChild(container)
-    return { wrapper, instance, container }
-  }
-
-  afterEach(() => {
-    document.body.innerHTML = ''
-  })
-
-  test('re-enables header input and removes disabled class', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.enableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    expect(input.disabled).toBe(false)
-    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(false)
-  })
-
-  test('restores clear button interactivity', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance } = setupWithDOM(filters)
-
-    instance.enableBaseFilterInputs()
-
-    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
-    expect(clearBtn.style.pointerEvents).toBe('')
-    expect(clearBtn.style.opacity).toBe('')
-  })
-
-  test('skips filters with no value', () => {
-    const filters = [{ field: '1', type: '=', value: '' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.enableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    // Input was never disabled (no value), still not disabled after enable call
-    expect(input.disabled).toBe(true) // DOM was set disabled in setupWithDOM, but enableBaseFilterInputs skips it
-  })
-
-  test('does nothing when baseFilters is empty', () => {
-    const wrapper = setup({ isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    const spy = jest.spyOn(document, 'querySelector')
-    instance.enableBaseFilterInputs()
-
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
-  })
-
-  test('handles missing DOM nodes gracefully (no throw)', () => {
-    const filters = [{ field: '99', type: '=', value: 'missing' }]
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-    expect(() => instance.enableBaseFilterInputs()).not.toThrow()
   })
 })
 

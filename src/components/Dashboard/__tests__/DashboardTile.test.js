@@ -413,7 +413,10 @@ describe('queryResponseVersion', () => {
     // Simulate a new query result with a different query_id (version detection uses query_id)
     const newQR = {
       ...sampleResponses[10],
-      data: { ...sampleResponses[10].data, data: { ...sampleResponses[10].data?.data, query_id: 'q_replaced-external' } },
+      data: {
+        ...sampleResponses[10].data,
+        data: { ...sampleResponses[10].data?.data, query_id: 'q_replaced-external' },
+      },
     }
     const wrapper = setup({ tile: { ...sampleTile, queryResponse: initialQR } })
 
@@ -475,7 +478,9 @@ describe('endTopQuery: queryId capture in edit mode', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     savedParams = []
-    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+    mockSetParamsForTile = jest.fn((params) => {
+      savedParams.push(params)
+    })
   })
 
   afterEach(() => {
@@ -587,9 +592,7 @@ describe('isReset flag in processTileTop', () => {
     const instance = wrapper.instance()
 
     const mockResponse = { data: { data: { rows: [] } } }
-    const processQuerySpy = jest
-      .spyOn(instance, 'processQuery')
-      .mockImplementation(() => Promise.resolve(mockResponse))
+    const processQuerySpy = jest.spyOn(instance, 'processQuery').mockImplementation(() => Promise.resolve(mockResponse))
 
     instance.processTileTop({ isReset: true })
 
@@ -604,9 +607,7 @@ describe('isReset flag in processTileTop', () => {
     const instance = wrapper.instance()
 
     const mockResponse = { data: { data: { rows: [] } } }
-    const processQuerySpy = jest
-      .spyOn(instance, 'processQuery')
-      .mockImplementation(() => Promise.resolve(mockResponse))
+    const processQuerySpy = jest.spyOn(instance, 'processQuery').mockImplementation(() => Promise.resolve(mockResponse))
 
     instance.processTileTop({})
 
@@ -813,7 +814,9 @@ describe('endBottomQuery: secondQueryId capture with isCachedRefresh', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     savedParams = []
-    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+    mockSetParamsForTile = jest.fn((params) => {
+      savedParams.push(params)
+    })
   })
 
   afterEach(() => {
@@ -844,7 +847,10 @@ describe('endBottomQuery: secondQueryId capture with isCachedRefresh', () => {
     const instance = wrapper.instance()
 
     const response = {
-      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_should-not-set-second' }, reference_id: '1.1.200' },
+      data: {
+        data: { ...sampleResponses[10].data.data, query_id: 'q_should-not-set-second' },
+        reference_id: '1.1.200',
+      },
     }
 
     instance.endBottomQuery({ response, queryChanged: false, isCachedRefresh: true })
@@ -878,9 +884,7 @@ describe('debouncedSetParamsForTile does not fire after unmount', () => {
 
     // The initial aggConfig call from the constructor fires immediately (not debounced),
     // so we check that no call happened AFTER unmount (i.e. with the title param)
-    const postUnmountCall = mockSetParamsForTile.mock.calls.find(
-      ([params]) => params?.title === 'new title',
-    )
+    const postUnmountCall = mockSetParamsForTile.mock.calls.find(([params]) => params?.title === 'new title')
     expect(postUnmountCall).toBeUndefined()
 
     jest.useRealTimers()
@@ -1232,7 +1236,9 @@ describe('onSecondColumnChange: secondQueryId capture', () => {
   beforeEach(() => {
     jest.useFakeTimers()
     savedParams = []
-    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+    mockSetParamsForTile = jest.fn((params) => {
+      savedParams.push(params)
+    })
   })
 
   afterEach(() => {
@@ -1279,7 +1285,7 @@ describe('onTableParamsChange — filter interactions', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
     const wrapper = setup({ tile: sampleTile, isEditing: false, setParamsForTile: mockSetParamsForTile })
-    jest.advanceTimersByTime(200)   // flush any init debounced calls
+    jest.advanceTimersByTime(200) // flush any init debounced calls
     mockSetParamsForTile.mockClear()
     wrapper.instance().onTableParamsChange({}, formattedParams)
     jest.advanceTimersByTime(200)
@@ -1383,7 +1389,13 @@ describe('DashboardTile dirty badge guard', () => {
   })
 
   test('does NOT apply bottom-dirty class when bottom query has been executed', () => {
-    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryId: 'qid-second' }
+    const splitTile = {
+      ...sampleTile,
+      queryId: 'qid-1',
+      splitView: true,
+      secondQuery: sampleTile.query,
+      secondQueryId: 'qid-second',
+    }
     const wrapper = setup({ tile: splitTile, isDirty: false, isEditing: true })
     expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-dirty').exists()).toBe(false)
     wrapper.unmount()
@@ -1397,7 +1409,13 @@ describe('DashboardTile dirty badge guard', () => {
   })
 
   test('applies top-dirty class to top pane when only top is dirty (no bottom-specific reason)', () => {
-    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryId: 'qid-second' }
+    const splitTile = {
+      ...sampleTile,
+      queryId: 'qid-1',
+      splitView: true,
+      secondQuery: sampleTile.query,
+      secondQueryId: 'qid-second',
+    }
     const wrapper = setup({ tile: splitTile, isDirty: true, isEditing: true })
     expect(wrapper.find('.dashboard-tile-split-pane-container.top-dirty').exists()).toBe(true)
     expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-dirty').exists()).toBe(false)
@@ -1406,7 +1424,13 @@ describe('DashboardTile dirty badge guard', () => {
 
   test('applies bottom-failed class when split view bottom response fails', () => {
     const failedResponse = { data: { reference_id: '1.1.400', data: {} } }
-    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryResponse: failedResponse }
+    const splitTile = {
+      ...sampleTile,
+      queryId: 'qid-1',
+      splitView: true,
+      secondQuery: sampleTile.query,
+      secondQueryResponse: failedResponse,
+    }
     const wrapper = setup({ tile: splitTile, isFailed: true, isEditing: true })
     expect(wrapper.find('.dashboard-tile-split-pane-container.bottom-failed').exists()).toBe(true)
     wrapper.unmount()
@@ -1414,7 +1438,13 @@ describe('DashboardTile dirty badge guard', () => {
 
   test('does NOT apply tile-level failed class for split view (per-pane banners handle it)', () => {
     const failedResponse = { data: { reference_id: '1.1.400', data: {} } }
-    const splitTile = { ...sampleTile, queryId: 'qid-1', splitView: true, secondQuery: sampleTile.query, secondQueryResponse: failedResponse }
+    const splitTile = {
+      ...sampleTile,
+      queryId: 'qid-1',
+      splitView: true,
+      secondQuery: sampleTile.query,
+      secondQueryResponse: failedResponse,
+    }
     const wrapper = setup({ tile: splitTile, isFailed: true, isEditing: true })
     const tile = findByTestAttr(wrapper, 'react-autoql-dashboard-tile')
     expect(tile.prop('className')).not.toContain('failed')
@@ -1492,7 +1522,10 @@ describe('DashboardTile wasFilteringBeforeRemount', () => {
 
     const newQR = {
       ...sampleResponses[10],
-      data: { ...sampleResponses[10].data, data: { ...sampleResponses[10].data?.data, query_id: 'q_new-was-filtering' } },
+      data: {
+        ...sampleResponses[10].data,
+        data: { ...sampleResponses[10].data?.data, query_id: 'q_new-was-filtering' },
+      },
     }
     wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
 
@@ -1563,7 +1596,10 @@ describe('DashboardTile wasBottomFilteringBeforeRemount', () => {
 
     const newQR = {
       ...sampleResponses[10],
-      data: { ...sampleResponses[10].data, data: { ...sampleResponses[10].data?.data, query_id: 'q_bottom-filtering' } },
+      data: {
+        ...sampleResponses[10].data,
+        data: { ...sampleResponses[10].data?.data, query_id: 'q_bottom-filtering' },
+      },
     }
     wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
 
@@ -1572,7 +1608,12 @@ describe('DashboardTile wasBottomFilteringBeforeRemount', () => {
   })
 
   test('passes wasBottomFilteringBeforeRemount as initialIsFiltering to bottom QueryOutput', () => {
-    const splitTile = { ...sampleTile, splitView: true, secondQuery: sampleTile.query, secondQueryResponse: sampleResponses[10] }
+    const splitTile = {
+      ...sampleTile,
+      splitView: true,
+      secondQuery: sampleTile.query,
+      secondQueryResponse: sampleResponses[10],
+    }
     const wrapper = setup({ tile: splitTile })
     const instance = wrapper.instance()
     instance.wasBottomFilteringBeforeRemount = true
@@ -1636,7 +1677,9 @@ describe('DashboardTile onColumnChange edit mode guard', () => {
   test('calls setParamsForTile with queryId when in edit mode', () => {
     jest.useFakeTimers()
     const mockSetParamsForTile = jest.fn()
-    const qr = { data: { data: { ...sampleResponses[10].data.data, query_id: 'q_col-change' }, reference_id: '1.1.200' } }
+    const qr = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_col-change' }, reference_id: '1.1.200' },
+    }
     const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
     jest.advanceTimersByTime(200)
     mockSetParamsForTile.mockClear()
@@ -1759,7 +1802,9 @@ describe('endTopQuery: secondQueryId mirroring when both halves share the same q
   beforeEach(() => {
     jest.useFakeTimers()
     savedParams = []
-    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+    mockSetParamsForTile = jest.fn((params) => {
+      savedParams.push(params)
+    })
   })
 
   afterEach(() => {
@@ -1834,8 +1879,13 @@ describe('endTopQuery: secondQueryId mirroring when both halves share the same q
 })
 
 describe('onNewQueryId and onSecondNewQueryId: skipping falsy values', () => {
-  beforeEach(() => { jest.useFakeTimers() })
-  afterEach(() => { jest.runOnlyPendingTimers(); jest.useRealTimers() })
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+  afterEach(() => {
+    jest.runOnlyPendingTimers()
+    jest.useRealTimers()
+  })
 
   test('onNewQueryId does NOT call setParamsForTile when queryId is falsy', () => {
     const mockSetParamsForTile = jest.fn()
@@ -1995,9 +2045,7 @@ describe('processTile: runs processTileBottom separately when filters differ', (
     const wrapper = setup({ tile })
     const instance = wrapper.instance()
 
-    const processTileBottomSpy = jest
-      .spyOn(instance, 'processTileBottom')
-      .mockImplementation(() => Promise.resolve())
+    const processTileBottomSpy = jest.spyOn(instance, 'processTileBottom').mockImplementation(() => Promise.resolve())
     jest.spyOn(instance, 'processTileTop').mockImplementation(() => Promise.resolve())
 
     instance.processTile({ query: 'SELECT 1', secondQuery: 'SELECT 1' })
@@ -2021,9 +2069,7 @@ describe('processTile: runs processTileBottom separately when filters differ', (
     const wrapper = setup({ tile })
     const instance = wrapper.instance()
 
-    const processTileBottomSpy = jest
-      .spyOn(instance, 'processTileBottom')
-      .mockImplementation(() => Promise.resolve())
+    const processTileBottomSpy = jest.spyOn(instance, 'processTileBottom').mockImplementation(() => Promise.resolve())
     jest.spyOn(instance, 'processTileTop').mockImplementation(() => Promise.resolve())
 
     instance.processTile({ query: 'SELECT 1', secondQuery: 'SELECT 1' })
@@ -2197,7 +2243,9 @@ describe('onSplitViewClick: closing split view clears second-query state', () =>
   beforeEach(() => {
     jest.useFakeTimers()
     savedParams = []
-    mockSetParamsForTile = jest.fn((params) => { savedParams.push(params) })
+    mockSetParamsForTile = jest.fn((params) => {
+      savedParams.push(params)
+    })
   })
 
   afterEach(() => {
@@ -2291,7 +2339,9 @@ describe('onSplitViewClick: closing split view clears second-query state', () =>
 describe('getPaneBannerType', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
   const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
-  const replacementsResponse = { data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' } }
+  const replacementsResponse = {
+    data: { data: { replacements: [{ value: 'foo', text: 'bar' }] }, reference_id: '1.1.200' },
+  }
   const itemsResponse = { data: { data: { items: [{ label: 'thing' }] }, reference_id: '1.1.200' } }
 
   const splitTile = (overrides = {}) => ({
@@ -2443,6 +2493,50 @@ describe('renderBottomResponse: delegates to areTopAndBottomSameQuery for execut
     // areTopAndBottomSameQuery()=true → reads isTopExecuted=true → renderPlaceholder=false
     expect(spy.mock.calls[0][0].renderPlaceholder).toBe(false)
     spy.mockRestore()
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile viewModeFiltersDiffer tracking', () => {
+  test('sets viewModeFiltersDiffer when view-mode filters differ from tile.tableFilters', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const instance = wrapper.instance()
+    instance.onTableParamsChange({}, { filters: [{ field: 'region', value: 'West' }], sorters: [] })
+    expect(instance.state.viewModeFiltersDiffer).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('clears viewModeFiltersDiffer when view-mode filters match tile.tableFilters', () => {
+    const tableFilters = [{ field: 'region', value: 'West' }]
+    const wrapper = setup({ tile: { ...sampleTile, tableFilters }, isEditing: false })
+    const instance = wrapper.instance()
+    instance.setState({ viewModeFiltersDiffer: true })
+    instance.onTableParamsChange({}, { filters: tableFilters, sorters: [] })
+    expect(instance.state.viewModeFiltersDiffer).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('refetches base data (processTile) and resets flag when entering edit mode with differing view filters', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => Promise.resolve())
+    instance.setState({ viewModeFiltersDiffer: true })
+    wrapper.setProps({ isEditing: true })
+    expect(processTileSpy).toHaveBeenCalledTimes(1)
+    expect(instance.state.viewModeFiltersDiffer).toBe(false)
+    expect(instance._forceRemountOnNextResponse).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('calls processTile only once when both localRTFilterResponse and viewModeFiltersDiffer are set', () => {
+    const wrapper = setup({ tile: sampleTile, isEditing: false })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => Promise.resolve())
+    instance.setState({ viewModeFiltersDiffer: true, localRTFilterResponse: { data: { data: {} } } })
+    wrapper.setProps({ isEditing: true })
+    expect(processTileSpy).toHaveBeenCalledTimes(1)
+    expect(instance.state.localRTFilterResponse).toBeNull()
+    expect(instance.state.viewModeFiltersDiffer).toBe(false)
     wrapper.unmount()
   })
 })

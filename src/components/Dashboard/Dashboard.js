@@ -364,9 +364,7 @@ class DashboardWithoutTheme extends React.Component {
           )
             return true
           const baseline = this.baselineQueryIds.get(tile.key) || {}
-          const topDirty = saved.query
-            ? tile.query !== saved.query && tile.queryId === baseline.queryId
-            : false
+          const topDirty = saved.query ? tile.query !== saved.query && tile.queryId === baseline.queryId : false
           const bottomDirty = saved.secondQuery
             ? tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
             : saved.queryId
@@ -510,7 +508,8 @@ class DashboardWithoutTheme extends React.Component {
           }
 
           // Edit mode: re-execute filtered tiles so SQL reflects current filters and queryId is captured.
-          const needsFilterExecution = this.props.isEditing && (tile?.tableFilters?.length > 0 || tile?.secondTableFilters?.length > 0)
+          const needsFilterExecution =
+            this.props.isEditing && (tile?.tableFilters?.length > 0 || tile?.secondTableFilters?.length > 0)
           if (forceExecution || needsFilterExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
             promises.push(this.tileRefs[dashboardTile].processTile())
           }
@@ -839,12 +838,19 @@ class DashboardWithoutTheme extends React.Component {
 
       if (content?.queryResponse) {
         const refId = Number(String(content.queryResponse?.data?.reference_id || '').split('.')[2])
-        const isErrorResponse = content.queryResponse?.data?.data?.items || (content.queryResponse?.data?.reference_id && !(refId >= 200 && refId < 300))
+        const isErrorResponse =
+          content.queryResponse?.data?.data?.items ||
+          (content.queryResponse?.data?.reference_id && !(refId >= 200 && refId < 300))
+        const queryId = content.queryResponse?.data?.data?.query_id
         if (this.props.isEditing && !content.queryId && !isErrorResponse) {
-          const { queryResponse: _queryResponse, secondQueryResponse: _secondQueryResponse, ...contentWithoutResponse } = content
-          tile = { ...tile, ...contentWithoutResponse, queryId: content.queryResponse?.data?.data?.query_id }
+          const {
+            queryResponse: _queryResponse,
+            secondQueryResponse: _secondQueryResponse,
+            ...contentWithoutResponse
+          } = content
+          tile = { ...tile, ...contentWithoutResponse, queryId }
         } else {
-          tile = { ...tile, ...content, queryId: content.queryResponse?.data?.data?.query_id }
+          tile = { ...tile, ...content, queryId }
         }
       }
 
@@ -1089,7 +1095,8 @@ class DashboardWithoutTheme extends React.Component {
           const before = originalTiles[tileIndex] || {}
           const update = {}
           if (params.query !== undefined && params.query !== before.query) update.queryId = before.queryId
-          if (params.secondQuery !== undefined && params.secondQuery !== before.secondQuery) update.secondQueryId = before.secondQueryId
+          if (params.secondQuery !== undefined && params.secondQuery !== before.secondQuery)
+            update.secondQueryId = before.secondQueryId
           if (Object.keys(update).length) this.baselineQueryIds.set(tileKey, { ...cur, ...update })
         }
       }

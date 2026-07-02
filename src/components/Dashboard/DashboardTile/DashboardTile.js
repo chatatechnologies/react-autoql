@@ -320,15 +320,15 @@ export class DashboardTile extends React.Component {
     if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
       this.setState({ localRTFilterResponse: null })
     }
-    if (!prevProps.isEditing && this.props.isEditing && this.state.localRTFilterResponse) {
-      this.setState({ localRTFilterResponse: null })
-      this.processTile()
-    }
-    if (!prevProps.isEditing && this.props.isEditing && this.state.viewModeFiltersDiffer) {
-      // View-mode filters narrowed the rows below the tile's base filter — refetch base data for edit mode.
-      this.setState({ viewModeFiltersDiffer: false })
-      this._forceRemountOnNextResponse = true
-      this.processTile().catch(() => {}) // errors already surface via tile state; just avoid an unhandled rejection
+    if (
+      !prevProps.isEditing &&
+      this.props.isEditing &&
+      (this.state.localRTFilterResponse || this.state.viewModeFiltersDiffer)
+    ) {
+      // View-mode RT edits or header filters changed the displayed data — refetch base data for edit mode
+      if (this.state.viewModeFiltersDiffer) this._forceRemountOnNextResponse = true
+      this.setState({ localRTFilterResponse: null, viewModeFiltersDiffer: false })
+      this.processTile()?.catch?.(() => {}) // errors already surface via tile state; just avoid an unhandled rejection
     }
 
     const prevQR = prevProps.tile?.queryResponse
@@ -1527,13 +1527,31 @@ export class DashboardTile extends React.Component {
     const splitView = !this.props.tile?.splitView
 
     if (!splitView) {
-      this.debouncedSetParamsForTile({ splitView, secondQuery: undefined, secondQueryId: undefined, secondQueryResponse: undefined })
+      this.debouncedSetParamsForTile({
+        splitView,
+        secondQuery: undefined,
+        secondQueryId: undefined,
+        secondQueryResponse: undefined,
+      })
       return
     }
 
     const secondQuery = this.props.tile?.secondQuery || this.state.query
     this.debouncedSetParamsForTile({ splitView, secondQuery })
   }
+
+  renderPaneBanner = (banner) =>
+    banner && (
+      <div
+        className={`react-autoql-dashboard-tile-${banner}-badge split-pane-badge`}
+        data-tooltip-content={
+          banner === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'
+        }
+        data-tooltip-id={this.props.tooltipID}
+      >
+        !
+      </div>
+    )
 
   renderSplitResponse = () => {
     const topContent = this.renderTopResponse()
@@ -1570,27 +1588,11 @@ export class DashboardTile extends React.Component {
       >
         <div className={`dashboard-tile-split-pane-container${topBanner ? ` top-${topBanner}` : ''}`}>
           {topContent}
-          {topBanner && (
-            <div
-              className={`react-autoql-dashboard-tile-${topBanner}-badge split-pane-badge`}
-              data-tooltip-content={topBanner === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
-              data-tooltip-id={this.props.tooltipID}
-            >
-              !
-            </div>
-          )}
+          {this.renderPaneBanner(topBanner)}
         </div>
         <div className={`dashboard-tile-split-pane-container${bottomBanner ? ` bottom-${bottomBanner}` : ''}`}>
           {bottomContent}
-          {bottomBanner && (
-            <div
-              className={`react-autoql-dashboard-tile-${bottomBanner}-badge split-pane-badge`}
-              data-tooltip-content={bottomBanner === 'dirty' ? 'Re-execute this query before saving the dashboard' : 'This query has failed'}
-              data-tooltip-id={this.props.tooltipID}
-            >
-              !
-            </div>
-          )}
+          {this.renderPaneBanner(bottomBanner)}
           {this.props.isEditing && (
             <div
               className={`split-view-query-btn-container react-autoql-toolbar ${
@@ -2418,7 +2420,9 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed ? ' failed' : ''}`}
+          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${
+            this.props.isEditing && this.props.isFailed && !this.props.tile?.splitView ? ' failed' : ''
+          }`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'

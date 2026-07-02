@@ -734,7 +734,7 @@ describe('filter badge (isFiltered)', () => {
     // Original tile's QueryOutput receives no drilldownFilters prop
     const responseRef = buildResponseRef({
       formattedTableParams: { filters: [], sorters: [] },
-      props: {},  // no drilldownFilters key at all
+      props: {}, // no drilldownFilters key at all
     })
     const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
     const icon = wrapper.find('[data-test="react-autoql-filter-button"]').find('Icon')
@@ -948,5 +948,21 @@ describe('toolbar state for error and feedback response types', () => {
     instance.props.responseRef.formattedTableParams = { filters: [{ field: 'col1', value: 'x' }] }
     const rendered = instance.renderFilterBtn()
     expect(rendered.props.tooltip).toBe('Edit table filters')
+  })
+})
+describe('initialIsFiltering prop', () => {
+  test('initialIsFiltering=true takes precedence over responseRef.isFilteringTable()', () => {
+    const { wrapper } = setup({ initialIsFiltering: true })
+    expect(wrapper.instance().state.isFiltering).toBe(true)
+  })
+
+  test('initialIsFiltering=false takes precedence over responseRef.isFilteringTable()', () => {
+    const { wrapper } = setup({ initialIsFiltering: false })
+    expect(wrapper.instance().state.isFiltering).toBe(false)
+  })
+
+  test('falls back to responseRef.isFilteringTable() when initialIsFiltering is not provided', () => {
+    const { wrapper } = setup()
+    expect(wrapper.instance().state.isFiltering).toBe(false)
   })
 })

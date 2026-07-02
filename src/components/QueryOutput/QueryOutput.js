@@ -193,9 +193,7 @@ export class QueryOutput extends React.Component {
       this.formattedTableParams = { filters: [], sorters: [] }
     }
 
-    this.formattedLockedFilters = props.lockedFilters?.length
-      ? formatFiltersForTabulator(props.lockedFilters, columns)
-      : props.lockedFilters
+    this.formattedLockedFilters = this.formatLockedFilters(props.lockedFilters, columns)
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
     this.shouldEnableResize = props.enableResizing && isChart
@@ -622,13 +620,8 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      if (
-        this.props.lockedFilters !== prevProps.lockedFilters ||
-        this.state.columns !== prevState.columns
-      ) {
-        this.formattedLockedFilters = this.props.lockedFilters?.length
-          ? formatFiltersForTabulator(this.props.lockedFilters, this.state.columns)
-          : this.props.lockedFilters
+      if (this.props.lockedFilters !== prevProps.lockedFilters || this.state.columns !== prevState.columns) {
+        this.formattedLockedFilters = this.formatLockedFilters(this.props.lockedFilters, this.state.columns)
       }
 
       if (prevProps.isEditing !== this.props.isEditing) {
@@ -755,6 +748,9 @@ export class QueryOutput extends React.Component {
       console.error(error)
     }
   }
+
+  formatLockedFilters = (lockedFilters, columns) =>
+    lockedFilters?.length ? formatFiltersForTabulator(lockedFilters, columns) : lockedFilters
 
   componentWillUnmount = () => {
     this._isMounted = false
@@ -947,7 +943,9 @@ export class QueryOutput extends React.Component {
       // Circuit breaker: a corrupted tile config can cause repeated correction attempts if the
       // rebuilt config is still rejected. Cap at 3 attempts per query response to break the loop.
       if (this._consecutiveConfigResets >= 3) {
-        console.warn('[react-autoql] Tile config correction loop detected — skipping reset to prevent infinite loop. Check the saved dataConfig for this tile.')
+        console.warn(
+          '[react-autoql] Tile config correction loop detected — skipping reset to prevent infinite loop. Check the saved dataConfig for this tile.',
+        )
         return
       }
 
@@ -1158,10 +1156,7 @@ export class QueryOutput extends React.Component {
 
   usePivotDataForChart = () => {
     // Network graphs and sankey diagrams always use original data, never pivot data
-    if (
-      this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
-      this.state?.displayType === DisplayTypes.SANKEY
-    ) {
+    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH || this.state?.displayType === DisplayTypes.SANKEY) {
       return false
     }
 
@@ -1740,7 +1735,11 @@ export class QueryOutput extends React.Component {
               pageSize,
               tableFilters: allFilters,
             })
-            const groupByFilters = (groupBys || []).map((gb) => ({ name: gb.name, value: gb.value, operator: gb.operator || '=' }))
+            const groupByFilters = (groupBys || []).map((gb) => ({
+              name: gb.name,
+              value: gb.value,
+              operator: gb.operator || '=',
+            }))
             this.props.onDrilldownEnd({
               response,
               originalQueryID: this.queryID,
@@ -2751,7 +2750,8 @@ export class QueryOutput extends React.Component {
       // When there is no response data yet (tile not executed) we skip this check since
       // isTableConfigValid always returns false without rows and we don't want to block resets.
       const hasResponseData = !!this.queryResponse?.data?.data?.rows?.length
-      const newConfigIsValid = !hasResponseData || this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state?.displayType)
+      const newConfigIsValid =
+        !hasResponseData || this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state?.displayType)
       if (newConfigIsValid) {
         this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
       }
@@ -3788,13 +3788,15 @@ export class QueryOutput extends React.Component {
     if (column?._snapshotDisplayOverride) {
       result = result.filter(
         (o) =>
-          !(o.english === column._snapshotDisplayOverride.english &&
-            o.table_column === column._snapshotDisplayOverride.table_column),
+          !(
+            o.english === column._snapshotDisplayOverride.english &&
+            o.table_column === column._snapshotDisplayOverride.table_column
+          ),
       )
     }
 
     // Add or update display override entry
-    const displayOverrideName = column?.custom_column_display_name ?? (column?.display_name)
+    const displayOverrideName = column?.custom_column_display_name ?? column?.display_name
     if (displayOverrideName) {
       const overrideEntry = {
         english: displayOverrideName,

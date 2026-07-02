@@ -297,8 +297,7 @@ export default class TableWrapper extends React.Component {
     })
   }
 
-  // Tabulator schedules progressive-load nextPage() via an internal, un-awaited setTimeout that can
-  // reject with an uncatchable error if a reload (e.g. edit-mode filter reset) changes page/max first.
+  // Tabulator's progressive-load nextPage() runs in an un-awaited setTimeout that rejects uncatchably if a reload changes pagination first
   silenceProgressiveLoadNextPageRejections = (tabulator) => {
     const pageModule = tabulator?.modules?.page
     if (!pageModule || pageModule.__nextPagePatched) return

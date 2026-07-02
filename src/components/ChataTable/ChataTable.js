@@ -382,31 +382,19 @@ export default class ChataTable extends React.Component {
     if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
       if (this.state.tabulatorMounted) {
         if (this.props.isDashboardEditing) {
-          // Reset FIRST so blocked AJAXes below return base filter state (uses constructor-time baseSort, not stale initialTableParams).
+          // Reset first so blocked AJAXes return base filter state (constructor-time baseSort, not stale initialTableParams)
           this.tableParams = {
             filter: _cloneDeep(this.baseFilters),
             sort: _cloneDeep(this.baseSort),
             page: 1,
           }
-
-          // Date.now() blocks AJAXes without replaceData() — avoids a server call on local (view-mode) tables.
-          this._setFiltersTime = Date.now()
-          this.enableBaseFilterInputs() // re-enable any disabled inputs before clearing
-          this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
-          this.ref?.tabulator?.clearSort()?.catch?.(() => {})
-          // Batch via setFilters() — per-field setHeaderFilterValue calls each fire their own reload and race each other.
-          if (this.baseFilters.length) this.setFilters(this.baseFilters)
-          if (this.baseSort.length) {
-            this.setSorters(this.baseSort)
-          }
-        } else {
-          // Exiting edit mode (going to view mode): always clear any edit-mode filters/sorts.
-          this._setFiltersTime = Date.now()
-          this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
-          this.ref?.tabulator?.clearSort()?.catch?.(() => {})
-          if (this.baseFilters.length) this.setFilters(this.baseFilters)
-          if (this.baseSort.length) this.setSorters(this.baseSort)
         }
+        // Date.now() blocks AJAXes without replaceData() — avoids a server call on local (view-mode) tables
+        this._setFiltersTime = Date.now()
+        this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
+        this.ref?.tabulator?.clearSort()?.catch?.(() => {})
+        if (this.baseFilters.length) this.setFilters(this.baseFilters)
+        if (this.baseSort.length) this.setSorters(this.baseSort)
       }
       this.setFilterBadgeClasses()
     }
@@ -652,7 +640,12 @@ export default class ChataTable extends React.Component {
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0 && this.props.showQueryInterpretation) {
+    if (
+      !this.useInfiniteScroll &&
+      !this.props.pivot &&
+      this.tableParams?.filter?.length > 0 &&
+      this.props.showQueryInterpretation
+    ) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -1196,44 +1189,6 @@ export default class ChataTable extends React.Component {
     })
 
     inputElement.parentNode.appendChild(clearBtn)
-  }
-
-  disableBaseFilterInputs = () => {
-    if (this.props.isDashboardEditing || !this.baseFilters.length) return
-    this.baseFilters.forEach((filter) => {
-      if (!filter.value) return
-      const inputEl = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
-      )
-      if (inputEl) {
-        inputEl.disabled = true
-        inputEl.classList.add('react-autoql-base-filter-disabled')
-      }
-      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
-      if (clearBtn) {
-        clearBtn.style.pointerEvents = 'none'
-        clearBtn.style.opacity = '0.3'
-      }
-    })
-  }
-
-  enableBaseFilterInputs = () => {
-    if (!this.baseFilters.length) return
-    this.baseFilters.forEach((filter) => {
-      if (!filter.value) return
-      const inputEl = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
-      )
-      if (inputEl) {
-        inputEl.disabled = false
-        inputEl.classList.remove('react-autoql-base-filter-disabled')
-      }
-      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
-      if (clearBtn) {
-        clearBtn.style.pointerEvents = ''
-        clearBtn.style.opacity = ''
-      }
-    })
   }
 
   setHeaderInputEventListeners = (cols) => {
