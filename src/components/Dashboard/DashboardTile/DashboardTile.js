@@ -335,11 +335,13 @@ export class DashboardTile extends React.Component {
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
     const nextQRId = nextQR?.data?.data?.query_id
+    // Self-reported query_id changes (onColumnChange) must not remount, or in-memory column state (frozen/drag-order) is lost
+    const isSelfColumnChange = !!nextQRId && nextQRId === this._columnChangeQueryId
     if (
       nextQR &&
       nextQR !== prevQR &&
       !this.state.isTopExecuting &&
-      (prevQR === null || (prevQR && prevQRId !== nextQRId) || this._forceRemountOnNextResponse)
+      (prevQR === null || (prevQR && prevQRId !== nextQRId && !isSelfColumnChange) || this._forceRemountOnNextResponse)
     ) {
       this._forceRemountOnNextResponse = false
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
@@ -1459,6 +1461,8 @@ export class DashboardTile extends React.Component {
 
   onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, filters) => {
     if (!this.props.isEditing) return
+    // Mark this query_id as self-reported so componentDidUpdate skips the remount bump (isSelfColumnChange)
+    this._columnChangeQueryId = queryResponse?.data?.data?.query_id
     this.debouncedSetParamsForTile({
       columns,
       columnSelects,

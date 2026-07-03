@@ -453,6 +453,30 @@ describe('queryResponseVersion', () => {
     wrapper.unmount()
   })
 
+  test('does not increment when the new query_id came from onColumnChange (self column change)', () => {
+    // A remount here would wipe QueryOutput's in-memory frozen/drag-order column state
+    jest.useFakeTimers()
+    const initialQR = sampleResponses[10]
+    const newQR = {
+      ...sampleResponses[10],
+      data: {
+        ...sampleResponses[10].data,
+        data: { ...sampleResponses[10].data?.data, query_id: 'q_custom-column-add' },
+      },
+    }
+    const wrapper = setup({ tile: { ...sampleTile, queryResponse: initialQR }, isEditing: true })
+
+    const initialVersion = wrapper.state('queryResponseVersion')
+
+    wrapper.instance().onColumnChange({}, [], [], newQR, {}, [])
+    jest.advanceTimersByTime(200)
+    wrapper.setProps({ tile: { ...sampleTile, queryResponse: newQR } })
+
+    expect(wrapper.state('queryResponseVersion')).toBe(initialVersion)
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
   test('does not increment while isTopExecuting is true', () => {
     const initialQR = sampleResponses[10]
     const newQR = {

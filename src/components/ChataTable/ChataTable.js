@@ -188,6 +188,8 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: PropTypes.bool,
     allowCustomColumns: PropTypes.bool,
     onCustomColumnChange: PropTypes.func,
+    onColumnFreezeChange: PropTypes.func,
+    onColumnOrderChange: PropTypes.func,
     enableContextMenu: PropTypes.bool,
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
     lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
@@ -236,6 +238,8 @@ export default class ChataTable extends React.Component {
     onNewData: () => {},
     updateColumns: () => {},
     onCustomColumnChange: () => {},
+    onColumnFreezeChange: () => {},
+    onColumnOrderChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
     showQueryInterpretation: false,
@@ -391,7 +395,12 @@ export default class ChataTable extends React.Component {
         }
         // Date.now() blocks AJAXes without replaceData() — avoids a server call on local (view-mode) tables
         this._setFiltersTime = Date.now()
-        this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
+        try {
+          // Can throw synchronously if a stale column ref remains in Tabulator's header-filter bookkeeping (Tabulator bug)
+          this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
+        } catch (error) {
+          console.error(error)
+        }
         this.ref?.tabulator?.clearSort()?.catch?.(() => {})
         if (this.baseFilters.length) this.setFilters(this.baseFilters)
         if (this.baseSort.length) this.setSorters(this.baseSort)
@@ -1518,25 +1527,16 @@ export default class ChataTable extends React.Component {
 
   onFreezeColumnClick = (column) => {
     this.setState({ contextMenuColumn: undefined })
-    const columns = this.ref?.tabulator?.getColumns()
-    const targetColumn = columns?.find((col) => col.getField() === column.field)
+    // Persist via parent + setColumns() rebuild — updateDefinition() leaves a stale ref that crashes clearHeaderFilter()
+    this.props.onColumnFreezeChange(column.name, !this.isColumnFrozen(column))
+  }
 
-    if (targetColumn) {
-      // Capture current filter values before freezing/unfreezing
-      const currentFilters = this.ref?.tabulator?.getHeaderFilters()
-
-      const isCurrentlyFrozen = this.isColumnFrozen(column)
-      targetColumn.updateDefinition({ frozen: !isCurrentlyFrozen })
-
-      // Re-attach event listeners and restore filters after DOM recreation
-      setTimeout(() => {
-        this.setHeaderInputEventListeners()
-        // Restore filter values after column recreation
-        if (currentFilters && currentFilters.length > 0) {
-          this.setFilters(currentFilters)
-        }
-      }, 0)
-    }
+  onColumnMoved = (movedColumn, columns) => {
+    // Match by field, not array index — props.columns may already be user-reordered
+    const orderedNames = columns
+      .map((col) => this.props.columns?.find((c) => c.field === col.getField())?.name)
+      .filter(Boolean)
+    this.props.onColumnOrderChange(orderedNames)
   }
 
   onRemoveColumnClick = async () => {
@@ -2190,6 +2190,7 @@ export default class ChataTable extends React.Component {
                     onDataProcessed={(...args) => this.onDataProcessed(...args)}
                     onDataLoadError={(...args) => this.onDataLoadError(...args)}
                     onScrollVertical={(...args) => this.onScrollVertical(...args)}
+                    onColumnMoved={(...args) => this.onColumnMoved(...args)}
                     pivot={this.props.pivot}
                     scope={this.props.scope}
                     isDrilldown={this.props.isDrilldown}

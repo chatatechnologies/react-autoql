@@ -64,6 +64,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    onColumnMoved: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
@@ -83,6 +84,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    onColumnMoved: () => {},
     pivot: false,
     scope: undefined,
     height: undefined,
@@ -355,6 +357,7 @@ export default class TableWrapper extends React.Component {
     tabulator.on('dataFiltering', this.props.onDataFiltering)
     tabulator.on('dataFiltered', this.props.onDataFiltered)
     tabulator.on('scrollVertical', this.props.onScrollVertical)
+    tabulator.on('columnMoved', this.props.onColumnMoved)
   }
 
   recreateTabulatorForPivot = (data) => {

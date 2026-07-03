@@ -116,6 +116,8 @@ export class QueryOutput extends React.Component {
     // Resets to 0 whenever a fresh query result arrives. Capped at 3 to break loops caused by
     // corrupted saved dataConfig that setTableConfig cannot repair.
     this._consecutiveConfigResets = 0
+    // User-dragged column order (names), reapplied on every column rebuild
+    this.columnOrder = undefined
 
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
@@ -2919,7 +2921,7 @@ export class QueryOutput extends React.Component {
 
     const rows = this.queryResponse?.data?.data?.rows
 
-    const formattedColumns = columns.map((col, i) => {
+    let formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
       newCol.id = col.id ?? uuid()
@@ -2931,6 +2933,10 @@ export class QueryOutput extends React.Component {
       // Visibility flag: this can be changed through the column visibility editor modal
       newCol.visible = col.is_visible
       newCol.download = col.is_visible
+
+      // Preserve frozen state across column rebuilds (matched by name, since field is positional)
+      const prevCol = this.state?.columns?.find((c) => c.name === col.name)
+      newCol.frozen = prevCol?.frozen ?? false
 
       newCol.minWidth = '90px'
       if (newCol.type === ColumnTypes.DATE) {
@@ -3069,7 +3075,23 @@ export class QueryOutput extends React.Component {
       return newCol
     })
 
+    formattedColumns = this.reorderColumnsByUserOrder(formattedColumns)
+
     return formattedColumns
+  }
+
+  // Reapply user drag-order by name (field stays tied to row-data index); unknown columns are appended at the end
+  reorderColumnsByUserOrder = (columns) => {
+    if (!this.columnOrder?.length || !columns?.length) {
+      return columns
+    }
+
+    const orderIndex = new Map(this.columnOrder.map((name, i) => [name, i]))
+    return [...columns].sort((a, b) => {
+      const aIdx = orderIndex.has(a.name) ? orderIndex.get(a.name) : Infinity
+      const bIdx = orderIndex.has(b.name) ? orderIndex.get(b.name) : Infinity
+      return aIdx - bIdx
+    })
   }
 
   formatDatePivotYear = (data, dateColumnIndex) => {
@@ -3994,6 +4016,21 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onColumnFreezeChange = (columnName, isFrozen) => {
+    this.setState((prevState) => {
+      const updatedColumns = prevState.columns?.map((col) =>
+        col.name === columnName ? { ...col, frozen: isFrozen } : col,
+      )
+      return { columns: this.reorderColumnsByUserOrder(updatedColumns) }
+    })
+  }
+
+  onColumnOrderChange = (orderedNames) => {
+    if (orderedNames?.length) {
+      this.columnOrder = orderedNames
+    }
+  }
+
   renderCustomColumnModal = () => {
     if (!this.state.showCustomColumnModal) {
       return null
@@ -4115,6 +4152,8 @@ export class QueryOutput extends React.Component {
           tableConfig={this.tableConfig}
           aggConfig={this.state.aggConfig}
           onCustomColumnChange={this.onCustomColumnChange}
+          onColumnFreezeChange={this.onColumnFreezeChange}
+          onColumnOrderChange={this.onColumnOrderChange}
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
           lockedFilters={this.formattedLockedFilters}
