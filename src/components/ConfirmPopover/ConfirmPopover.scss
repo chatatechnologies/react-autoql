@@ -5,13 +5,15 @@
 .react-autoql-confirm-popover-content {
   padding: 10px;
   flex: 1;
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
 
   .react-autoql-confirm-popover-title {
     display: flex;
     align-items: center;
     padding: 10px;
     margin-bottom: 8px;
-    font-size: 15px;
+    font-size: 0.9375rem;
     min-width: 200px;
     color: var(--react-autoql-text-color-primary);
 

@@ -1,0 +1,393 @@
+.react-autoql-sankey-chart {
+  user-select: none;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  .sankey-background {
+    pointer-events: all;
+    cursor: grab;
+  }
+
+  .sankey-link {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    pointer-events: all;
+
+    &:hover {
+      opacity: 0.7 !important;
+    }
+  }
+
+  .sankey-node {
+    cursor: pointer;
+    pointer-events: all;
+
+    rect {
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 1 !important;
+      }
+    }
+  }
+
+  .sankey-node-label {
+    pointer-events: all;
+    user-select: none;
+    fill: var(--react-autoql-text-color-primary, currentColor);
+    cursor: default;
+    font-weight: bold;
+  }
+
+  // Disable browser focus outlines on SVG/D3 interactive elements.
+  &:focus,
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
+}
+
+// Column selector buttons
+.sankey-source-button-rect,
+.sankey-target-button-rect,
+.sankey-path-button-rect,
+.sankey-value-button-rect,
+.sankey-filter-button-rect,
+.sankey-reset-zoom-button-rect {
+  box-shadow: 0px 2px 3px -2px var(--react-autoql-box-shadow-color);
+  stroke-width: 1px;
+  stroke: var(--react-autoql-border-color);
+  fill: var(--react-autoql-background-color-secondary);
+  cursor: pointer;
+  outline: none;
+  opacity: 1 !important;
+  transition: all 0.2s ease;
+
+  &:hover {
+    stroke: var(--react-autoql-accent-color);
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.sankey-source-button-icon,
+.sankey-target-button-icon,
+.sankey-path-button-icon,
+.sankey-value-button-icon,
+.sankey-filter-button-icon,
+.sankey-reset-zoom-button-icon {
+  fill: var(--react-autoql-text-color-primary) !important;
+  color: var(--react-autoql-text-color-primary) !important;
+  pointer-events: none;
+  opacity: 1 !important;
+}
+
+.sankey-reset-zoom-button {
+  &:hover .sankey-reset-zoom-button-rect {
+    stroke: var(--react-autoql-accent-color);
+  }
+  
+  g {
+    color: var(--react-autoql-text-color-primary) !important;
+    pointer-events: none;
+  }
+}
+
+// Column dropdown styles
+.sankey-column-dropdown-popover-content {
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sankey-column-dropdown-title {
+  padding: 10px 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-primary);
+}
+
+.sankey-column-dropdown-container {
+  overflow-y: auto;
+  max-height: 250px;
+}
+
+.sankey-column-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: var(--react-autoql-background-color-hover);
+  }
+
+  &.sankey-column-dropdown-item-selected {
+    background: var(--react-autoql-accent-color-secondary);
+  }
+}
+
+.sankey-column-dropdown-item-check {
+  color: var(--react-autoql-primary-color);
+  font-size: 0.875rem;
+}
+
+.sankey-column-dropdown-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--react-autoql-text-color-muted);
+}
+
+.sankey-path-dropdown-popover-content {
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 460px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+}
+
+.sankey-path-dropdown-subtitle {
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-muted);
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-path-selected-list {
+  padding: 8px 12px;
+  min-height: 120px;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-path-selected-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  background: var(--react-autoql-background-color-primary);
+}
+
+.sankey-path-selected-index {
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-muted);
+}
+
+.sankey-path-selected-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.sankey-path-drag-handle {
+  color: var(--react-autoql-text-color-muted);
+  cursor: grab;
+  user-select: none;
+  letter-spacing: -1px;
+}
+
+.sankey-path-selected-select {
+  flex: 1;
+  min-width: 0;
+
+  .react-autoql-select-and-label {
+    width: 100%;
+  }
+
+  .react-autoql-select {
+    width: 100%;
+    min-height: 28px;
+  }
+}
+
+.sankey-path-selected-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.sankey-path-control-btn {
+  border: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-default);
+  border-radius: 3px;
+  padding: 0 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &.danger {
+    color: var(--react-autoql-danger-color, #c0392b);
+  }
+}
+
+.sankey-path-warning {
+  margin: 0 12px 8px;
+  padding: 8px;
+  border-radius: 4px;
+  background: var(--react-autoql-background-color-hover);
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-muted);
+}
+
+.sankey-path-add-title {
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-top: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-column-dropdown-container {
+  max-height: 220px;
+}
+
+// Filter dropdown styles
+.sankey-filter-dropdown-popover-content {
+  background: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 300px;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sankey-filter-dropdown-title {
+  padding: 10px 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-primary);
+}
+
+.sankey-filter-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-filter-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  outline: none;
+
+  &:focus {
+    border-color: var(--react-autoql-primary-color);
+  }
+}
+
+.sankey-filter-dropdown-container {
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.sankey-filter-section {
+  padding: 12px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.sankey-filter-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sankey-filter-section-title {
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+.sankey-filter-section-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.sankey-filter-quick-btn {
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+  background: var(--react-autoql-background-color-hover);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--react-autoql-primary-color);
+    color: white;
+    border-color: var(--react-autoql-primary-color);
+  }
+}
+
+.sankey-filter-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.sankey-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: var(--react-autoql-background-color-hover);
+  }
+}
+
+.sankey-filter-checkbox {
+  cursor: pointer;
+}
+
+.sankey-filter-label {
+  font-size: 0.8125rem;
+  user-select: none;
+}
+
+.sankey-filter-empty {
+  padding: 8px;
+  text-align: center;
+  color: var(--react-autoql-text-color-muted);
+  font-size: 0.8125rem;
+}
+

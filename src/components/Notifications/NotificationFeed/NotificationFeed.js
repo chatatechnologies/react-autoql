@@ -19,7 +19,6 @@ import { Checkbox } from '../../Checkbox'
 import { Spinner } from '../../Spinner'
 import { Tooltip } from '../../Tooltip'
 import { DataAlerts } from '../DataAlerts'
-import { LoadingDots } from '../../LoadingDots'
 import { DataAlertModal } from '../DataAlertModal'
 import { ConfirmPopover } from '../../ConfirmPopover'
 import { InfiniteScroll } from '../../InfiniteScroll'
@@ -754,8 +753,17 @@ class NotificationFeed extends React.Component {
 
     if (this.state.isFetchingFirstNotifications) {
       return (
-        <div style={style} className='notification-list-loading-container' data-test='notification-list'>
-          <LoadingDots />
+        <div style={style} className='notification-feed-skeleton-container' data-test='notification-list'>
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className='notification-feed-skeleton-item'>
+              <div className='notification-feed-skeleton-strip' />
+              <div className='notification-feed-skeleton-content'>
+                <div className='notification-feed-skeleton-block title' />
+                <div className='notification-feed-skeleton-block description' />
+                <div className='notification-feed-skeleton-block timestamp' />
+              </div>
+            </div>
+          ))}
         </div>
       )
     } else if (this.state.fetchNotificationsError) {

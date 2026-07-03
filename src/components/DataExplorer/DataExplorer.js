@@ -87,6 +87,7 @@ export default class DataExplorer extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    this.setState({ isMounted: true })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -565,7 +566,7 @@ export default class DataExplorer extends React.Component {
           ) : null}
           {this.renderDataPreview()}
           {this.renderTopicsListForVL()}
-          {this.props.enableQuerySuggestions && this.renderQuerySuggestions()}
+          {this.props.enableQuerySuggestions && !this.props.disableColumnSelection && this.renderQuerySuggestions()}
         </div>
       </div>
     )
@@ -580,7 +581,7 @@ export default class DataExplorer extends React.Component {
     return (
       <div
         ref={(r) => (this.dataExplorerPage = r)}
-        className={`data-explorer-page-container ${this._isMounted ? 'mounted' : ''}`}
+        className={`data-explorer-page-container ${this.state.isMounted ? 'mounted' : ''}`}
         data-test='data-explorer-tab'
         style={{ display }}
       >

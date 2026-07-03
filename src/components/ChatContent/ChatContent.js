@@ -23,6 +23,7 @@ import { ChatMessage } from '../ChatMessage'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import { Tooltip } from '../Tooltip'
 
 // Styles
 import './ChatContent.scss'
@@ -33,6 +34,7 @@ export default class ChatContent extends React.Component {
   constructor(props) {
     super(props)
 
+    this.TOOLTIP_ID = `react-autoql-chat-content-tooltip-${uuid()}`
     this.messageRefs = {}
     this.csvProgressLog = {}
     this.keepLoading = false
@@ -75,6 +77,7 @@ export default class ChatContent extends React.Component {
     executeQuery: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -90,6 +93,7 @@ export default class ChatContent extends React.Component {
     executeQuery: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
   }
 
   componentDidMount = () => {
@@ -128,7 +132,7 @@ export default class ChatContent extends React.Component {
           clearTimeout(this.scrollTimeout)
           this.scrollTimeout = null
         }
-        
+
         // Request messages don't have animations, so scroll immediately
         // Response messages need delay for CSS animation to complete
         if (!lastNewMessage.isResponse) {
@@ -246,7 +250,7 @@ export default class ChatContent extends React.Component {
       // Easing function (ease-out)
       const easeOut = 1 - Math.pow(1 - progress, 3)
 
-      const currentScrollTop = startScrollTop + (distance * easeOut)
+      const currentScrollTop = startScrollTop + distance * easeOut
       container.scrollTop = currentScrollTop
 
       // Update scrollbars during animation
@@ -302,21 +306,21 @@ export default class ChatContent extends React.Component {
       // Use getBoundingClientRect to get accurate positions
       const containerRect = container.getBoundingClientRect()
       const messageRect = messageElement.getBoundingClientRect()
-      
+
       const containerHeight = container.clientHeight
       const messageHeight = messageRect.height
 
       // Calculate message positions relative to container
       const messageTopOffset = messageRect.top - containerRect.top
       const messageBottomOffset = messageRect.bottom - containerRect.bottom
-      
+
       // Find the scrollable content container to calculate absolute position
       const scrollContent = container.querySelector('.chat-content-container')
       if (!scrollContent) {
         this.scrollToBottom()
         return
       }
-      
+
       // Calculate the absolute position of the message within the scrollable content
       let messageAbsoluteTop = 0
       let element = messageElement
@@ -324,7 +328,7 @@ export default class ChatContent extends React.Component {
         messageAbsoluteTop += element.offsetTop
         element = element.offsetParent
       }
-      
+
       // If message is bigger than screen, align top with top (with toolbar offset)
       if (messageHeight > containerHeight) {
         // Scroll so message top is TOOLBAR_OFFSET above container top
@@ -333,7 +337,7 @@ export default class ChatContent extends React.Component {
         this.messengerScrollComponent?.update()
         return
       }
-      
+
       // Message is smaller than screen - fit it in viewport
       // Check if message top is above the desired position (TOOLBAR_OFFSET above container top)
       const desiredTopPosition = TOOLBAR_OFFSET
@@ -345,7 +349,7 @@ export default class ChatContent extends React.Component {
         this.messengerScrollComponent?.update()
         return
       }
-      
+
       // If bottom is below screen, scroll up to align bottom with bottom
       if (messageBottomOffset > 0) {
         // Calculate absolute bottom position
@@ -358,7 +362,7 @@ export default class ChatContent extends React.Component {
         this.lastScrollTime = Date.now()
         return
       }
-      
+
       // Message is already fully visible, no need to scroll
       this.lastScrollMessageId = messageId
       this.lastScrollTime = Date.now()
@@ -404,7 +408,7 @@ export default class ChatContent extends React.Component {
       if (!scrollContent) {
         return
       }
-      
+
       // Calculate the absolute position of the message within the scrollable content
       let messageAbsoluteTop = 0
       let element = messageElement
@@ -412,7 +416,7 @@ export default class ChatContent extends React.Component {
         messageAbsoluteTop += element.offsetTop
         element = element.offsetParent
       }
-      
+
       // Calculate target scroll: align message top with container top (minus toolbar offset)
       // If this would scroll past the bottom, cap at the max scroll position
       const maxScrollTop = container.scrollHeight - container.clientHeight
@@ -424,20 +428,20 @@ export default class ChatContent extends React.Component {
       const distance = targetScrollTop - startScrollTop
       const duration = 300 // ms
       const startTime = performance.now()
-      
+
       const animateScroll = (currentTime) => {
         const elapsed = currentTime - startTime
         const progress = Math.min(elapsed / duration, 1)
-        
+
         // Easing function (ease-out)
         const easeOut = 1 - Math.pow(1 - progress, 3)
-        
-        const currentScrollTop = startScrollTop + (distance * easeOut)
+
+        const currentScrollTop = startScrollTop + distance * easeOut
         container.scrollTop = currentScrollTop
-        
+
         // Update scrollbars during animation
         this.messengerScrollComponent?.update()
-        
+
         if (progress < 1) {
           requestAnimationFrame(animateScroll)
         } else {
@@ -447,9 +451,9 @@ export default class ChatContent extends React.Component {
           this.checkIfAtBottom()
         }
       }
-      
+
       requestAnimationFrame(animateScroll)
-      
+
       this.lastScrollMessageId = messageId
       this.lastScrollTime = Date.now()
     }
@@ -575,7 +579,7 @@ export default class ChatContent extends React.Component {
   addMessages = (newMessages) => {
     const { messages } = this.state
     let updatedMessages = [...messages]
-    
+
     // Update existing messages or add new ones
     newMessages.forEach((newMessage) => {
       const existingIndex = updatedMessages.findIndex((msg) => msg.id === newMessage.id)
@@ -587,7 +591,7 @@ export default class ChatContent extends React.Component {
         updatedMessages.push(newMessage)
       }
     })
-    
+
     if (updatedMessages.length > this.props.maxMessages) {
       updatedMessages = updatedMessages.slice(-this.props.maxMessages)
     }
@@ -778,11 +782,14 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-scroll-container ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}
-            ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
-            ${isMobile ? 'mobile-padding' : ''}`}
+          className={`chat-content-wrapper ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity, display: chatMessageDisplay }}
         >
+          <div
+            className={`chat-content-scroll-container
+              ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
+              ${isMobile ? 'mobile-padding' : ''}`}
+          >
           <CustomScrollbars
             ref={(r) => (this.messengerScrollComponent = r)}
             className='chat-content-scrollbars-container'
@@ -844,7 +851,7 @@ export default class ChatContent extends React.Component {
                     shouldRender={this.props.shouldRender}
                     source={this.props.source}
                     scope={this.props.scope}
-                    tooltipID={this.props.tooltipID}
+                    tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                     chartTooltipID={this.props.chartTooltipID}
                     subjects={this.state.subjects}
                     onMessageResize={this.onMessageResize}
@@ -854,16 +861,12 @@ export default class ChatContent extends React.Component {
                     preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                     enableMagicWand={this.props.enableMagicWand}
                     showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                    enableFollowOnQuery={this.props.enableFollowOnQuery}
                   />
                 )
               })}
             </div>
           </CustomScrollbars>
-          {this.isChataThinking() && (
-            <div className={`response-loading-container ${isMobile ? 'mobile-padding' : ''}`}>
-              <LoadingDots />
-            </div>
-          )}
           {!this.state.isAtBottom && (
             <button
               className='scroll-to-bottom-button'
@@ -873,16 +876,21 @@ export default class ChatContent extends React.Component {
               <Icon type='caret-down' />
             </button>
           )}
-          <div className='watermark-fade' />
-          <div className='watermark'>
-            <Icon type='react-autoql-bubbles-outlined' />
-            {lang.run}
+          <div className='chat-content-bottom-bar'>
+            <div className='bottom-bar-left'>
+              {this.isChataThinking() && <LoadingDots />}
+            </div>
+            <div className='watermark'>
+              <Icon type='react-autoql-bubbles-outlined' />
+              {lang.run}
+            </div>
+            <div className='bottom-bar-right' />
           </div>
-        </div>
-        <div
-          style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
-          className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
-        >
+          </div>
+          <div
+            style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
+            className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
+          >
           <QueryInput
             ref={(r) => (this.queryInputRef = r)}
             className='chat-drawer-chat-bar'
@@ -906,11 +914,14 @@ export default class ChatContent extends React.Component {
             dataPageSize={this.props.dataPageSize}
             isResizing={this.props.isResizing}
             shouldRender={this.props.shouldRender}
-            tooltipID={this.props.tooltipID}
+            tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
             executeQuery={this.props.executeQuery}
             enableQueryInputTopics={this.props.enableQueryInputTopics}
+            disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
           />
+          </div>
         </div>
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} positionStrategy='fixed' />}
       </ErrorBoundary>
     )
   }

@@ -1,0 +1,419 @@
+$mobile-breakpoint: 700px;
+
+// Table wrapper
+.data-alerts-table {
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 24px;
+  overflow: hidden;
+  margin: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+
+  @media (max-width: $mobile-breakpoint) {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    margin: 0.5rem 0.75rem;
+  }
+}
+
+.data-alerts-table-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+
+  // Styled native scrollbars
+  scrollbar-width: thin;
+  scrollbar-color: var(--react-autoql-text-color-primary) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--react-autoql-text-color-primary);
+    border-radius: 10px;
+    opacity: 0.2;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    overflow: visible;
+    padding: 0.75rem 0.75rem 0;
+  }
+}
+
+.data-alerts-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--react-autoql-text-color-primary);
+  opacity: 0.7;
+
+  .data-alerts-empty-img {
+    width: 140px;
+    height: 140px;
+    margin-bottom: 0.75rem;
+  }
+}
+
+// ─── Column definitions ───────────────────────────────────────────────────────
+// Change widths here — header and rows stay in sync automatically
+$col-name: minmax(180px, 3fr);
+$col-frequency: minmax(120px, 1.5fr);
+$col-state: minmax(110px, 1.5fr);
+$col-next-check: minmax(110px, 1.5fr);
+$col-status: 140px;
+$col-actions: 90px;
+
+@mixin data-alert-grid {
+  display: grid;
+  grid-template-columns: $col-name $col-frequency $col-state $col-next-check $col-status $col-actions;
+  align-items: center;
+}
+
+@mixin data-alert-grid-no-actions {
+  display: grid;
+  grid-template-columns: $col-name $col-frequency $col-state $col-next-check $col-status;
+  align-items: center;
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+.data-alert-table-header {
+  @include data-alert-grid;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+  background-color: var(--react-autoql-background-color-primary);
+  border-radius: 24px 24px 0 0;
+
+  &.no-actions-column {
+    @include data-alert-grid-no-actions;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+
+  .data-alert-header-cell {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--react-autoql-text-color-primary);
+    opacity: 0.7;
+    white-space: nowrap;
+
+    &:first-child { padding-left: 1.25rem; }
+    &:last-child  { padding-right: 1.25rem; }
+  }
+}
+
+// ─── Table row (desktop) ──────────────────────────────────────────────────────
+.data-alert-card {
+  @media (min-width: #{$mobile-breakpoint + 1px}) {
+    display: none;
+  }
+}
+
+.data-alert-table-row {
+  @media (max-width: $mobile-breakpoint) {
+    display: none !important;
+  }
+  @include data-alert-grid;
+  background-color: var(--react-autoql-background-color-secondary);
+  border-bottom: 1px solid var(--react-autoql-box-shadow-color);
+  min-height: 3.125rem;
+  transition: background-color 0.15s ease;
+
+  &.no-actions-column {
+    @include data-alert-grid-no-actions;
+  }
+
+  &.data-alert-row-clickable {
+    cursor: pointer;
+  }
+
+  &:hover {
+    background-color: var(--react-autoql-mask-color);
+  }
+
+  &:last-child {
+    border-bottom: none;
+    border-radius: 0 0 24px 24px;
+  }
+
+  &.data-alert-disabled {
+    .data-alert-cell-frequency,
+    .data-alert-cell-state,
+    .data-alert-cell-next-check {
+      opacity: 0.45;
+    }
+  }
+
+}
+
+// ─── Cells ────────────────────────────────────────────────────────────────────
+.data-alert-table-cell {
+  padding: 0.875rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--react-autoql-text-color-primary);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+
+  &:first-child { padding-left: 1.25rem; }
+  &:last-child  { padding-right: 1.25rem; }
+}
+
+.data-alert-cell-name {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+
+  .data-alert-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    width: 100%;
+  }
+
+  .data-alert-description-text {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    opacity: 0.55;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    line-height: 1.4;
+  }
+}
+
+// ─── Mobile card ─────────────────────────────────────────────────────────────
+.data-alert-card {
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 24px;
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.625rem;
+  transition: background-color 0.15s ease;
+
+  &:last-child { margin-bottom: 0; }
+
+  &.data-alert-row-clickable { cursor: pointer; }
+
+  &:hover { background-color: var(--react-autoql-mask-color); }
+
+  &.data-alert-disabled {
+    .data-alert-card-meta { opacity: 0.55; }
+  }
+}
+
+.data-alert-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.data-alert-card-title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+
+  .data-alert-name-text {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  .data-alert-description-text {
+    font-size: 0.75rem;
+    font-weight: 400;
+    opacity: 0.55;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.4;
+  }
+}
+
+.data-alert-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  flex-shrink: 0;
+}
+
+.data-alert-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 0.625rem;
+}
+
+.data-alert-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--react-autoql-text-color-primary);
+}
+
+.data-alert-card-meta-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.5;
+  white-space: nowrap;
+  min-width: 5.5rem;
+}
+
+.data-alert-card-footer {
+  border-top: 1px solid var(--react-autoql-box-shadow-color);
+  padding-top: 0.625rem;
+}
+
+// ─── State badges ─────────────────────────────────────────────────────────────
+.data-alert-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  cursor: default;
+
+  .react-autoql-icon-filled {
+    border-radius: 20px;
+    color: #fff;
+    padding: 3px;
+    font-size: 1.1em;
+    box-sizing: content-box;
+  }
+
+  &.data-alert-on {
+    &.data-alert-active    { color: var(--react-autoql-success-color); }
+    &.data-alert-scheduled { color: var(--react-autoql-success-color); }
+    &.data-alert-triggered { color: var(--react-autoql-info-color); }
+    &.data-alert-warning   { color: var(--react-autoql-warning-color); cursor: pointer; }
+    &.data-alert-error     { color: var(--react-autoql-error-color); cursor: pointer; }
+  }
+
+  &.data-alert-off {
+    &.data-alert-ready,
+    &.data-alert-paused,
+    &.data-alert-triggered { color: var(--react-autoql-text-color-primary); }
+    &.data-alert-warning   { color: var(--react-autoql-warning-color); font-size: 1.125rem; }
+    &.data-alert-error     { color: var(--react-autoql-error-color); font-size: 1.125rem; }
+  }
+}
+
+// ─── Reinitialize button ──────────────────────────────────────────────────────
+.data-alert-row-state-action-btn {
+  display: inline-flex;
+  padding: 4px;
+  margin-left: 6px;
+  font-size: 0.6875rem;
+  border-radius: 20px;
+  color: var(--react-autoql-info-color);
+  border: 1px solid var(--react-autoql-info-color);
+  cursor: pointer;
+  box-sizing: content-box;
+  transition: background-color 0.2s ease;
+
+  &:hover { background-color: var(--react-autoql-hover-color); }
+}
+
+// ─── Action icons ─────────────────────────────────────────────────────────────
+.data-alert-cell-actions {
+  gap: 0.125rem;
+  justify-content: flex-start;
+}
+
+.data-alert-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.0625rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  color: var(--react-autoql-text-color-primary);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    background-color: var(--react-autoql-hover-color);
+  }
+
+  &.data-alert-action-btn-delete:hover {
+    color: var(--react-autoql-danger-color);
+  }
+}
+
+// ─── Skeleton rows ────────────────────────────────────────────────────────────
+@keyframes data-alert-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+@mixin shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--react-autoql-border-color) 25%,
+    var(--react-autoql-mask-color)   50%,
+    var(--react-autoql-border-color) 75%
+  );
+  background-size: 600px 100%;
+  animation: data-alert-shimmer 1.4s infinite linear;
+  border-radius: 4px;
+}
+
+.data-alert-skeleton-row {
+  @include data-alert-grid;
+  background-color: var(--react-autoql-background-color-secondary);
+  border-bottom: 1px solid var(--react-autoql-box-shadow-color);
+  height: 3.125rem;
+
+  &:last-child {
+    border-bottom: none;
+    border-radius: 0 0 24px 24px;
+  }
+}
+
+.data-alert-skeleton-cell {
+  padding: 0.5rem 0.75rem;
+
+  &:first-child { padding-left: 1rem; }
+  &:last-child  { padding-right: 1rem; }
+}
+
+.data-alert-skeleton-block {
+  @include shimmer;
+  height: 0.75rem;
+  width: 70%;
+
+  &.short  { width: 40%; }
+  &.medium { width: 55%; }
+}

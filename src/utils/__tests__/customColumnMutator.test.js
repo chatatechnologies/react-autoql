@@ -39,15 +39,12 @@ describe('tryCreateMutatorWithCoercion', () => {
 
     expect(res).toBeTruthy()
     expect(res.result).toBe('ok-second')
-    // Two attempts: original tokens, then sanitized tokens
     expect(createMutatorFn).toHaveBeenCalledTimes(2)
 
     const firstArg = createMutatorFn.mock.calls[0][0]
     const secondArg = createMutatorFn.mock.calls[1][0]
 
-    // Original tokens preserved on first attempt
     expect(firstArg[0].value).toBe(3.14)
-    // Second attempt should coerce numeric token to string
     expect(typeof secondArg[0].value).toBe('string')
     expect(secondArg[0].value).toBe(String(3.14))
   })
@@ -59,7 +56,6 @@ describe('tryCreateMutatorWithCoercion', () => {
 
     const tokens = [{ type: 'number', value: 1 }]
     expect(() => tryCreateMutatorWithCoercion(tokens)).toThrow('always fail')
-    // First attempt with original tokens, second attempt with coerced tokens
     expect(createMutatorFn).toHaveBeenCalledTimes(2)
   })
 })
@@ -87,7 +83,41 @@ describe('tryCreateMutatorWithCoercion immutability', () => {
 
     expect(res).toBeTruthy()
     expect(res.result).toBe('ok')
-    // original array and objects remain unchanged
     expect(tokens).toEqual(tokensCopy)
+  })
+})
+
+describe('tryCreateMutatorWithCoercion function/window params', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  test('coerces numeric fields on function token without stringifying objects', () => {
+    createMutatorFn
+      .mockImplementationOnce(() => {
+        throw new Error('parse error')
+      })
+      .mockImplementationOnce((fn) => ({ result: 'ok', fn }))
+
+    const tokens = [
+      {
+        type: 'FUNCTION',
+        fn: 'MOVING_AVG',
+        nTileNumber: 3,
+        params: {
+          movingAvgTimeInterval: 7,
+          arg: { type: 'column', value: 'A' },
+        },
+      },
+    ]
+
+    const res = tryCreateMutatorWithCoercion(tokens)
+
+    expect(res).toBeTruthy()
+    expect(createMutatorFn).toHaveBeenCalledTimes(2)
+    const secondArg = createMutatorFn.mock.calls[1][0]
+    expect(secondArg[0].nTileNumber).toBe('3')
+    expect(secondArg[0].params.movingAvgTimeInterval).toBe('7')
+    expect(secondArg[0].params.arg).toEqual({ type: 'column', value: 'A' })
   })
 })

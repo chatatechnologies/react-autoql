@@ -1,3 +1,8 @@
+.ps:not(.ps--active-x) > .ps__rail-x,
+.ps:not(.ps--active-y) > .ps__rail-y {
+  display: none !important;
+}
+
 .react-autoql-custom-scrollbars {
   &.always-visible {
     .ps__rail-y,

@@ -1269,7 +1269,7 @@ describe('CustomColumnModal auto-wrap and formula helpers', () => {
   })
 
   describe('addColumnToFormula', () => {
-    it('adds column and wraps it with brackets if multi-component', () => {
+    it('inserts complex custom column as a single bracketed reference', () => {
       const inst = getInst()
       const multiCompCol = {
         field: '0',
@@ -1285,13 +1285,12 @@ describe('CustomColumnModal auto-wrap and formula helpers', () => {
       const columnFn = []
       inst.addColumnToFormula(multiCompCol, columnFn, null)
 
-      // Should have: [LEFT_BRACKET, column, ADDITION, number, RIGHT_BRACKET]
-      expect(columnFn).toHaveLength(5)
+      // Custom columns with columnFnArray are inserted as a single COLUMN reference wrapped in brackets
+      expect(columnFn).toHaveLength(3)
       expect(columnFn[0].value).toBe(CustomColumnValues.LEFT_BRACKET)
       expect(columnFn[1].type).toBe(CustomColumnTypes.COLUMN)
-      expect(columnFn[2].type).toBe(CustomColumnTypes.OPERATOR)
-      expect(columnFn[3].type).toBe(CustomColumnTypes.NUMBER)
-      expect(columnFn[4].value).toBe(CustomColumnValues.RIGHT_BRACKET)
+      expect(columnFn[1].column).toBe(multiCompCol)
+      expect(columnFn[2].value).toBe(CustomColumnValues.RIGHT_BRACKET)
     })
 
     it('does not wrap single-component columns', () => {
@@ -1732,7 +1731,7 @@ describe('CustomColumnModal - Production Ready Review', () => {
       expect(columnFn[0].type).toBe(CustomColumnTypes.COLUMN)
     })
 
-    it('wraps complex custom columns', () => {
+    it('wraps complex custom columns as a single bracketed reference', () => {
       const wrapper = mount(
         <CustomColumnModal
           isOpen={true}
@@ -1757,13 +1756,12 @@ describe('CustomColumnModal - Production Ready Review', () => {
       }
       const columnFn = []
       inst.addColumnToFormula(customCol, columnFn, null)
-      // Should wrap the inner expression tokens inside brackets
-      expect(columnFn).toHaveLength(5)
+      // Custom columns with columnFnArray are inserted as a single COLUMN reference wrapped in brackets
+      expect(columnFn).toHaveLength(3)
       expect(columnFn[0].value).toBe(CustomColumnValues.LEFT_BRACKET)
       expect(columnFn[1].type).toBe(CustomColumnTypes.COLUMN)
-      expect(columnFn[2].type).toBe(CustomColumnTypes.OPERATOR)
-      expect(columnFn[3].type).toBe(CustomColumnTypes.COLUMN)
-      expect(columnFn[4].value).toBe(CustomColumnValues.RIGHT_BRACKET)
+      expect(columnFn[1].column).toBe(customCol)
+      expect(columnFn[2].value).toBe(CustomColumnValues.RIGHT_BRACKET)
       wrapper.unmount()
     })
 
@@ -1776,6 +1774,123 @@ describe('CustomColumnModal - Production Ready Review', () => {
       // Should replace, not append
       expect(columnFn).toHaveLength(1)
       expect(columnFn[0].value).toBe('1')
+    })
+
+    it('inserts a custom column with stale tokens as a single atomic reference', () => {
+      const overProfit = {
+        id: 'op',
+        field: '2',
+        name: 'over_profit',
+        display_name: 'Over Profit',
+        type: 'PERCENT',
+      }
+      const underProfit = {
+        id: 'up',
+        field: '3',
+        name: 'under_profit',
+        display_name: 'Under Profit',
+        type: 'PERCENT',
+      }
+      const newColumnVar = {
+        id: 'new-col',
+        field: '4',
+        name: 'over_profit + under_profit',
+        display_name: 'New Column',
+        custom: true,
+        custom_column_display_name: 'New Column',
+        type: 'PERCENT',
+        table_column: 'over_profit + under_profit',
+        columnFnArray: [
+          {
+            type: CustomColumnTypes.COLUMN,
+            value: '0',
+            column: { id: 'op', field: '0', name: 'over_profit', display_name: 'Over Profit' },
+          },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          {
+            type: CustomColumnTypes.COLUMN,
+            value: '1',
+            column: { id: 'up', field: '1', name: 'under_profit', display_name: 'Under Profit' },
+          },
+        ],
+      }
+
+      const wrapper = mount(
+        <CustomColumnModal
+          isOpen={true}
+          columns={[
+            { id: 's', field: '0', name: 'season_type', display_name: 'Season Type', type: 'STRING' },
+            { id: 'g', field: '1', name: 'games', display_name: 'Number of Games', type: 'QUANTITY' },
+            overProfit,
+            underProfit,
+            newColumnVar,
+          ]}
+          queryResponse={{ data: { data: {} } }}
+        />,
+      )
+      const inst = wrapper.instance()
+
+      const columnFn = []
+      inst.addColumnToFormula(newColumnVar, columnFn, null)
+
+      // Custom columns with columnFnArray are inserted as a single COLUMN reference (not expanded)
+      const innerColumns = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN)
+      expect(innerColumns).toHaveLength(1)
+      expect(innerColumns[0].value).toBe('4')
+      expect(innerColumns[0].column).toBe(newColumnVar)
+
+      wrapper.unmount()
+    })
+
+    it('inserts a custom column as a single atomic reference regardless of token count', () => {
+      const overProfit = {
+        field: '2',
+        name: 'over_profit',
+        table_column: 'over_profit',
+        display_name: 'Over Profit',
+        type: 'PERCENT',
+      }
+      const colVar = {
+        field: '3',
+        name: 'over_profit + 1',
+        custom: true,
+        type: 'PERCENT',
+        table_column: 'over_profit + 1',
+        columnFnArray: [
+          {
+            type: CustomColumnTypes.COLUMN,
+            value: '99',
+            column: { table_column: 'over_profit', name: 'over_profit' },
+          },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.NUMBER, value: '1' },
+        ],
+      }
+
+      const wrapper = mount(
+        <CustomColumnModal
+          isOpen={true}
+          columns={[
+            { field: '0', name: 'season', display_name: 'Season', type: 'STRING' },
+            { field: '1', name: 'games', display_name: 'Games', type: 'QUANTITY' },
+            overProfit,
+            colVar,
+          ]}
+          queryResponse={{ data: { data: {} } }}
+        />,
+      )
+      const inst = wrapper.instance()
+
+      const columnFn = []
+      inst.addColumnToFormula(colVar, columnFn, null)
+
+      // colVar is a custom column — inserted as a single COLUMN reference, not expanded
+      const colTokens = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN)
+      expect(colTokens).toHaveLength(1)
+      expect(colTokens[0].value).toBe('3')
+      expect(colTokens[0].column).toBe(colVar)
+
+      wrapper.unmount()
     })
   })
 
@@ -3135,5 +3250,579 @@ describe('CustomColumnModal - buildFunctionSql MEDIAN median_type', () => {
     } finally {
       consoleSpy.mockRestore()
     }
+  })
+})
+
+describe('custom column as atomic variable - regression', () => {
+  const numericCols = [
+    { field: '0', name: 'Revenue', display_name: 'Revenue', type: 'DOLLAR_AMT', table_column: 'revenue' },
+    { field: '1', name: 'Cost', display_name: 'Cost', type: 'DOLLAR_AMT', table_column: 'cost' },
+  ]
+  const customCol = {
+    field: '2',
+    name: 'Revenue - Cost',
+    display_name: 'Profit',
+    custom: true,
+    custom_column_display_name: 'Profit',
+    type: 'DOLLAR_AMT',
+    table_column: 'revenue - cost',
+    columnFnArray: [
+      { type: CustomColumnTypes.COLUMN, value: '0', column: numericCols[0] },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.SUBTRACTION },
+      { type: CustomColumnTypes.COLUMN, value: '1', column: numericCols[1] },
+    ],
+  }
+
+  const getInst = (extraCols = []) => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[...numericCols, ...extraCols]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    return { inst: wrapper.instance(), wrapper }
+  }
+
+  it('inserts numeric custom column as a single bracketed COLUMN reference', () => {
+    const { inst, wrapper } = getInst([customCol])
+    const columnFn = []
+    inst.addColumnToFormula(customCol, columnFn, null)
+
+    expect(columnFn).toHaveLength(3)
+    expect(columnFn[0].value).toBe(CustomColumnValues.LEFT_BRACKET)
+    expect(columnFn[1].type).toBe(CustomColumnTypes.COLUMN)
+    expect(columnFn[1].column).toBe(customCol)
+    expect(columnFn[2].value).toBe(CustomColumnValues.RIGHT_BRACKET)
+    wrapper.unmount()
+  })
+
+  it('does not expand custom column sub-tokens into the parent formula', () => {
+    const { inst, wrapper } = getInst([customCol])
+    const columnFn = []
+    inst.addColumnToFormula(customCol, columnFn, null)
+
+    // There must be exactly one COLUMN chunk — not one per sub-column of the custom formula
+    const columnTokens = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN)
+    expect(columnTokens).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('getColumnType returns numeric type when formula contains a numeric custom column reference', () => {
+    const { inst, wrapper } = getInst([customCol])
+    inst.setState({
+      columnFn: [
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+        { type: CustomColumnTypes.COLUMN, value: customCol.field, column: customCol },
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+      ],
+    })
+
+    const colType = inst.getColumnType()
+    // DOLLAR_AMT is a numeric type — should NOT resolve to STRING
+    expect(colType).not.toBe('STRING')
+    wrapper.unmount()
+  })
+
+  it('getNextSupportedOperators does not include CONCAT when custom column is numeric', () => {
+    const { inst, wrapper } = getInst([customCol])
+    inst.setState({
+      columnFn: [
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+        { type: CustomColumnTypes.COLUMN, value: customCol.field, column: customCol },
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+      ],
+    })
+
+    const ops = inst.getNextSupportedOperators()
+    expect(ops).not.toContain('CONCAT')
+    wrapper.unmount()
+  })
+
+  it('buildProtoTableColumn uses table_column for a complex column reference', () => {
+    const { inst, wrapper } = getInst([customCol])
+    const columnFnArray = [
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+      { type: CustomColumnTypes.COLUMN, value: customCol.field, column: customCol },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+    ]
+
+    const sql = inst.buildProtoTableColumn({ columnFnArray })
+    // Should embed the custom column's SQL expression, not its display name
+    expect(sql).toContain('revenue - cost')
+    expect(sql).not.toContain('Profit')
+    wrapper.unmount()
+  })
+})
+
+describe('formula delete (x) button', () => {
+  const cols = [
+    { field: '0', name: 'Sales', display_name: 'Sales', type: 'DOLLAR_AMT', table_column: 'sales' },
+    { field: '1', name: 'Qty', display_name: 'Qty', type: 'QUANTITY', table_column: 'qty' },
+  ]
+  const customCol = {
+    field: '2',
+    name: 'Sales + Qty',
+    display_name: 'Extended',
+    custom: true,
+    custom_column_display_name: 'Extended',
+    type: 'DOLLAR_AMT',
+    table_column: 'sales + qty',
+    columnFnArray: [
+      { type: CustomColumnTypes.COLUMN, value: '0', column: cols[0] },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+      { type: CustomColumnTypes.COLUMN, value: '1', column: cols[1] },
+    ],
+  }
+
+  const getInst = () => {
+    const wrapper = mount(
+      <CustomColumnModal
+        isOpen={true}
+        columns={[...cols, customCol]}
+        queryResponse={{ data: { data: {} } }}
+      />,
+    )
+    return { inst: wrapper.instance(), wrapper }
+  }
+
+  it('removes the correct chunk when delete button is clicked', () => {
+    const { inst, wrapper } = getInst()
+    inst.setState({
+      columnFn: [
+        { type: CustomColumnTypes.COLUMN, value: '0', column: cols[0] },
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+        { type: CustomColumnTypes.COLUMN, value: '1', column: cols[1] },
+      ],
+    })
+
+    // Simulate clicking x on the operator at index 1
+    const btn = inst.renderOperatorDeleteBtn(1)
+    act(() => btn.props.onClick())
+
+    expect(inst.state.columnFn).toHaveLength(2)
+    expect(inst.state.columnFn[0].value).toBe('0')
+    expect(inst.state.columnFn[1].value).toBe('1')
+    wrapper.unmount()
+  })
+
+  it('removes a custom column reference chunk on delete', () => {
+    const { inst, wrapper } = getInst()
+    // Formula: ( CustomCol )
+    inst.setState({
+      columnFn: [
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+        { type: CustomColumnTypes.COLUMN, value: customCol.field, column: customCol },
+        { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+      ],
+    })
+
+    // Click x on the COLUMN chunk (index 1)
+    const btn = inst.renderOperatorDeleteBtn(1)
+    act(() => btn.props.onClick())
+
+    // Only the brackets remain
+    expect(inst.state.columnFn).toHaveLength(2)
+    expect(inst.state.columnFn.every((t) => t.type === CustomColumnTypes.OPERATOR)).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('clears the entire formula when every chunk is deleted', () => {
+    const { inst, wrapper } = getInst()
+    inst.setState({
+      columnFn: [{ type: CustomColumnTypes.COLUMN, value: '0', column: cols[0] }],
+    })
+
+    const btn = inst.renderOperatorDeleteBtn(0)
+    act(() => btn.props.onClick())
+
+    expect(inst.state.columnFn).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('renderColumnFnChunk wraps each chunk with a delete button', () => {
+    const { inst, wrapper } = getInst()
+    const formula = [
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+      { type: CustomColumnTypes.COLUMN, value: customCol.field, column: customCol },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+    ]
+
+    formula.forEach((chunk, i) => {
+      const rendered = inst.renderColumnFnChunk(chunk, i)
+      // Each chunk wrapper should contain a delete button child
+      const deleteBtn = rendered.props.children[1]
+      expect(deleteBtn).toBeTruthy()
+      expect(deleteBtn.props.className).toContain('react-autoql-operator-delete-btn')
+    })
+    wrapper.unmount()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full scenario matrix — every combination that could regress the atomic-variable
+// rule, operator display rules, parentheses rules, SQL generation, and display.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('custom column formula builder — full scenario matrix', () => {
+  const revenue = { field: '0', name: 'revenue', display_name: 'Revenue', type: 'DOLLAR_AMT', table_column: 'revenue' }
+  const cost = { field: '1', name: 'cost', display_name: 'Cost', type: 'DOLLAR_AMT', table_column: 'cost' }
+  const label = { field: '2', name: 'label', display_name: 'Label', type: 'STRING', table_column: 'label' }
+  const numericCustom = {
+    field: '3',
+    name: 'revenue - cost',
+    display_name: 'Profit',
+    custom: true,
+    custom_column_display_name: 'Profit',
+    type: 'DOLLAR_AMT',
+    table_column: 'revenue - cost',
+    columnFnArray: [
+      { type: CustomColumnTypes.COLUMN, value: '0', column: revenue },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.SUBTRACTION },
+      { type: CustomColumnTypes.COLUMN, value: '1', column: cost },
+    ],
+  }
+  const stringCustom = {
+    field: '4',
+    name: 'label',
+    display_name: 'Tag',
+    custom: true,
+    custom_column_display_name: 'Tag',
+    type: 'STRING',
+    table_column: 'label',
+    columnFnArray: [
+      { type: CustomColumnTypes.COLUMN, value: '2', column: label },
+    ],
+  }
+  const wrappedCustom = {
+    field: '5',
+    name: 'revenue + cost',
+    display_name: 'Total',
+    custom: true,
+    custom_column_display_name: 'Total',
+    type: 'DOLLAR_AMT',
+    table_column: 'revenue + cost',
+    columnFnArray: [
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+      { type: CustomColumnTypes.COLUMN, value: '0', column: revenue },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+      { type: CustomColumnTypes.COLUMN, value: '1', column: cost },
+      { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+    ],
+  }
+  const dbComputed = {
+    field: '6',
+    name: 'revenue - cost',
+    display_name: 'DB Profit',
+    table_column: 'revenue - cost',
+    // No columnFnArray — DB-computed column
+  }
+
+  const allCols = [revenue, cost, label, numericCustom, stringCustom, wrappedCustom, dbComputed]
+
+  const getInst = () => {
+    const wrapper = mount(
+      <CustomColumnModal isOpen={true} columns={allCols} queryResponse={{ data: { data: {} } }} />,
+    )
+    return { inst: wrapper.instance(), wrapper }
+  }
+
+  // ── addColumnToFormula rules ──────────────────────────────────────────────
+
+  describe('addColumnToFormula — insertion rules', () => {
+    it('custom column (columnFnArray) inserted as single COLUMN chunk with brackets', () => {
+      const { inst, wrapper } = getInst()
+      const columnFn = []
+      inst.addColumnToFormula(numericCustom, columnFn, null)
+      expect(columnFn).toHaveLength(3)
+      expect(columnFn[0].value).toBe(CustomColumnValues.LEFT_BRACKET)
+      expect(columnFn[1].type).toBe(CustomColumnTypes.COLUMN)
+      expect(columnFn[1].column).toBe(numericCustom)
+      expect(columnFn[2].value).toBe(CustomColumnValues.RIGHT_BRACKET)
+      wrapper.unmount()
+    })
+
+    it('custom column already internally wrapped does not get double brackets', () => {
+      // wrappedCustom.columnFnArray starts/ends with brackets → isFormulaAlreadyWrapped = true
+      const { inst, wrapper } = getInst()
+      const columnFn = []
+      inst.addColumnToFormula(wrappedCustom, columnFn, null)
+      // No extra brackets added — just a single COLUMN chunk
+      const bracketCount = columnFn.filter(
+        (t) => t.value === CustomColumnValues.LEFT_BRACKET || t.value === CustomColumnValues.RIGHT_BRACKET,
+      ).length
+      expect(bracketCount).toBe(0)
+      expect(columnFn).toHaveLength(1)
+      expect(columnFn[0].type).toBe(CustomColumnTypes.COLUMN)
+      expect(columnFn[0].column).toBe(wrappedCustom)
+      wrapper.unmount()
+    })
+
+    it('DB-computed column (no columnFnArray) expands its SQL tokens inline', () => {
+      // DB-computed columns have no columnFnArray but have complex table_column → still expand
+      const { inst, wrapper } = getInst()
+      const columnFn = []
+      inst.addColumnToFormula(dbComputed, columnFn, null)
+      // Should expand to at least 3 tokens (e.g. left-bracket, col, op, col, right-bracket)
+      expect(columnFn.length).toBeGreaterThan(1)
+      // The expanded form should NOT reference the dbComputed column as a whole
+      const refs = columnFn.filter((t) => t.type === CustomColumnTypes.COLUMN && t.column === dbComputed)
+      expect(refs).toHaveLength(0)
+      wrapper.unmount()
+    })
+
+    it('appends custom column after an operator (does not replace it)', () => {
+      const { inst, wrapper } = getInst()
+      const lastTerm = { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION }
+      const columnFn = [
+        { type: CustomColumnTypes.COLUMN, value: '0', column: revenue },
+        lastTerm,
+      ]
+      inst.addColumnToFormula(numericCustom, columnFn, lastTerm)
+      // revenue, +, (, Profit, )
+      expect(columnFn).toHaveLength(5)
+      expect(columnFn[0].column).toBe(revenue)
+      expect(columnFn[1].value).toBe(CustomColumnValues.ADDITION)
+      expect(columnFn[2].value).toBe(CustomColumnValues.LEFT_BRACKET)
+      expect(columnFn[3].column).toBe(numericCustom)
+      expect(columnFn[4].value).toBe(CustomColumnValues.RIGHT_BRACKET)
+      wrapper.unmount()
+    })
+
+    it('replaces a column placeholder when lastTerm is a COLUMN', () => {
+      const { inst, wrapper } = getInst()
+      const placeholder = { type: CustomColumnTypes.COLUMN, value: '0', column: revenue }
+      const columnFn = [placeholder]
+      inst.addColumnToFormula(numericCustom, columnFn, placeholder)
+      // Placeholder replaced by ( Profit )
+      expect(columnFn.filter((t) => t.column === revenue)).toHaveLength(0)
+      const ref = columnFn.find((t) => t.type === CustomColumnTypes.COLUMN)
+      expect(ref.column).toBe(numericCustom)
+      wrapper.unmount()
+    })
+
+    it('simple column is inserted without brackets', () => {
+      const { inst, wrapper } = getInst()
+      const columnFn = []
+      inst.addColumnToFormula(revenue, columnFn, null)
+      expect(columnFn).toHaveLength(1)
+      expect(columnFn[0].type).toBe(CustomColumnTypes.COLUMN)
+      expect(columnFn[0].column).toBe(revenue)
+      wrapper.unmount()
+    })
+  })
+
+  // ── operator display rules ────────────────────────────────────────────────
+
+  describe('operator display — CONCAT rules', () => {
+    it('no CONCAT when formula contains only numeric columns', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [{ type: CustomColumnTypes.COLUMN, value: '0', column: revenue }],
+      })
+      expect(inst.getNextSupportedOperators()).not.toContain('CONCAT')
+      wrapper.unmount()
+    })
+
+    it('no CONCAT when formula contains a numeric custom column reference', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+        ],
+      })
+      expect(inst.getNextSupportedOperators()).not.toContain('CONCAT')
+      wrapper.unmount()
+    })
+
+    it('CONCAT appears when formula contains a string column', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [{ type: CustomColumnTypes.COLUMN, value: '2', column: label }],
+      })
+      expect(inst.getNextSupportedOperators()).toContain('CONCAT')
+      wrapper.unmount()
+    })
+
+    it('CONCAT appears when formula contains a string custom column reference', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [{ type: CustomColumnTypes.COLUMN, value: stringCustom.field, column: stringCustom }],
+      })
+      expect(inst.getNextSupportedOperators()).toContain('CONCAT')
+      wrapper.unmount()
+    })
+
+    it('CONCAT appears (STRING wins) when formula has mixed numeric and string columns', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [
+          { type: CustomColumnTypes.COLUMN, value: '0', column: revenue },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.COLUMN, value: '2', column: label },
+        ],
+      })
+      expect(inst.getColumnType()).toBe('STRING')
+      expect(inst.getNextSupportedOperators()).toContain('CONCAT')
+      wrapper.unmount()
+    })
+
+    it('empty formula has no CONCAT and no arithmetic — only brackets', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({ columnFn: [] })
+      const ops = inst.getNextSupportedOperators()
+      expect(ops).not.toContain('CONCAT')
+      expect(ops).not.toContain('ADDITION')
+      expect(ops).toContain('LEFT_BRACKET')
+      expect(ops).toContain('RIGHT_BRACKET')
+      wrapper.unmount()
+    })
+  })
+
+  // ── SQL generation rules ──────────────────────────────────────────────────
+
+  describe('buildProtoTableColumn — SQL generation rules', () => {
+    it('simple column uses its name in SQL', () => {
+      const { inst, wrapper } = getInst()
+      const sql = inst.buildProtoTableColumn({
+        columnFnArray: [{ type: CustomColumnTypes.COLUMN, value: '0', column: revenue }],
+      })
+      expect(sql).toContain('revenue')
+      wrapper.unmount()
+    })
+
+    it('custom column reference uses table_column in SQL (not display name)', () => {
+      const { inst, wrapper } = getInst()
+      const sql = inst.buildProtoTableColumn({
+        columnFnArray: [
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+        ],
+      })
+      expect(sql).toContain('revenue - cost')
+      expect(sql).not.toContain('Profit')
+      wrapper.unmount()
+    })
+
+    it('formula with both simple and custom column produces correct SQL', () => {
+      const { inst, wrapper } = getInst()
+      // SQL for: revenue + (Profit)  →  "revenue + (revenue - cost)"
+      const sql = inst.buildProtoTableColumn({
+        columnFnArray: [
+          { type: CustomColumnTypes.COLUMN, value: '0', column: revenue },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+        ],
+      })
+      expect(sql).toContain('revenue')
+      expect(sql).toContain('revenue - cost')
+      wrapper.unmount()
+    })
+
+    it('full pipeline: addColumnToFormula → buildProtoTableColumn uses table_column', () => {
+      const { inst, wrapper } = getInst()
+      const columnFn = []
+      inst.addColumnToFormula(numericCustom, columnFn, null)
+      const sql = inst.buildProtoTableColumn({ columnFnArray: columnFn })
+      expect(sql).toContain('revenue - cost')
+      expect(sql).not.toContain('Profit')
+      wrapper.unmount()
+    })
+  })
+
+  // ── structural validity rules ─────────────────────────────────────────────
+
+  describe('isStructurallyValidColumnFn — validity rules', () => {
+    it('( customCol ) is structurally valid', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+        ],
+      })
+      expect(inst.isStructurallyValidColumnFn().valid).toBe(true)
+      wrapper.unmount()
+    })
+
+    it('( customCol ) + simpleCol is structurally valid', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.COLUMN, value: '0', column: revenue },
+        ],
+      })
+      expect(inst.isStructurallyValidColumnFn().valid).toBe(true)
+      wrapper.unmount()
+    })
+
+    it('( customCol1 ) + ( customCol2 ) is structurally valid', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.ADDITION },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.LEFT_BRACKET },
+          { type: CustomColumnTypes.COLUMN, value: wrappedCustom.field, column: wrappedCustom },
+          { type: CustomColumnTypes.OPERATOR, value: CustomColumnValues.RIGHT_BRACKET },
+        ],
+      })
+      expect(inst.isStructurallyValidColumnFn().valid).toBe(true)
+      wrapper.unmount()
+    })
+
+    it('two adjacent custom column references (no operator) is invalid', () => {
+      const { inst, wrapper } = getInst()
+      inst.setState({
+        columnFn: [
+          { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom },
+          { type: CustomColumnTypes.COLUMN, value: wrappedCustom.field, column: wrappedCustom },
+        ],
+      })
+      expect(inst.isStructurallyValidColumnFn().valid).toBe(false)
+      wrapper.unmount()
+    })
+  })
+
+  // ── selector display rules ────────────────────────────────────────────────
+
+  describe('renderAvailableColumnSelector — display rules', () => {
+    it('COLUMN chunk with custom column resolves to the correct field value', () => {
+      const { inst, wrapper } = getInst()
+      const chunk = { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom }
+      const el = inst.renderAvailableColumnSelector(chunk, 0)
+      expect(String(el.props.value)).toBe(String(numericCustom.field))
+      wrapper.unmount()
+    })
+
+    it('COLUMN chunk with custom column does not show "Select a Column" placeholder', () => {
+      const { inst, wrapper } = getInst()
+      const chunk = { type: CustomColumnTypes.COLUMN, value: numericCustom.field, column: numericCustom }
+      const el = inst.renderAvailableColumnSelector(chunk, 0)
+      // When value is resolved, placeholder is not shown
+      expect(el.props.value).not.toBeNull()
+      expect(el.props.value).not.toBeUndefined()
+      wrapper.unmount()
+    })
+
+    it('COLUMN chunk with no column reference shows placeholder', () => {
+      const { inst, wrapper } = getInst()
+      // Chunk with no column and an unresolvable value
+      const chunk = { type: CustomColumnTypes.COLUMN, value: 'unresolvable_xyz' }
+      const el = inst.renderAvailableColumnSelector(chunk, 0)
+      expect(el.props.placeholder).toBe('Select a Column')
+      wrapper.unmount()
+    })
   })
 })

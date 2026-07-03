@@ -82,7 +82,7 @@ import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
-import { MdOutlineUndo, MdOutlineRedo, MdFilterList } from 'react-icons/md'
+import { MdOutlineUndo, MdOutlineRedo, MdFilterList, MdReply } from 'react-icons/md'
 import { MdSchedule } from 'react-icons/md'
 import { RxOpenInNewWindow } from 'react-icons/rx'
 import { TfiArrowsCorner } from 'react-icons/tfi'
@@ -114,6 +114,7 @@ import {
   networkIcon,
   magicWandIcon,
   thinkingBubbleIcon,
+  sankeyIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -435,6 +436,10 @@ export default class Icon extends React.Component {
         icon = networkIcon
         break
       }
+      case 'sankey': {
+        icon = sankeyIcon
+        break
+      }
       case 'more-vertical': {
         icon = <FiMoreVertical />
         break
@@ -497,6 +502,10 @@ export default class Icon extends React.Component {
       }
       case 'redo': {
         icon = <MdOutlineRedo />
+        break
+      }
+      case 'reply': {
+        icon = <MdReply />
         break
       }
       case 'refresh': {

@@ -433,7 +433,7 @@ export default class StackedLines extends PureComponent {
                     x={label.x}
                     y={label.y}
                     textAnchor='middle'
-                    fontSize='11'
+                    fontSize='0.6875rem'
                     fill={textFill}
                     stroke={textStroke}
                     strokeWidth={2}
@@ -450,7 +450,7 @@ export default class StackedLines extends PureComponent {
                     x={label.x}
                     y={label.y}
                     textAnchor='middle'
-                    fontSize='11'
+                    fontSize='0.6875rem'
                     fill={textFill}
                     style={HOVER_LABEL_TEXT_STYLE}
                   >

@@ -64,13 +64,16 @@ export default class ChataTable extends React.Component {
     // WeakMap to keep pivot header capture handlers without polluting DOM
     this.pivotHeaderHandlers = new WeakMap()
     this.pivotHeaderElements = new Set()
+    // WeakMaps to track header/input listeners so they can be replaced instead of stacked
+    this.headerContextMenuHandlers = new WeakMap()
+    this.inputDateClickHandlers = new WeakMap()
 
     // Pre-rendered hamburger icon markup for header injection
     this.PIVOT_HAMBURGER_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='menu' />)
     this.useRemote =
-      this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
+      props.isEditing || props.isDashboardEditing
         ? LOCAL_OR_REMOTE.REMOTE
-        : this.props.response?.data?.data?.fe_req?.filters?.length > 0 || props.initialTableParams?.filter?.length > 0
+        : this.props.response?.data?.data?.count_rows > TABULATOR_LOCAL_ROW_LIMIT
         ? LOCAL_OR_REMOTE.REMOTE
         : LOCAL_OR_REMOTE.LOCAL
     this.isLocal = this.useRemote === LOCAL_OR_REMOTE.LOCAL
@@ -90,6 +93,8 @@ export default class ChataTable extends React.Component {
       sort: props?.initialTableParams?.sort || [],
       page: 1,
     }
+
+    this.baseFilters = _cloneDeep(props?.initialTableParams?.filter || [])
 
     // pivot table headers reflect the correct sort direction
     let initialSort = undefined
@@ -133,7 +138,7 @@ export default class ChataTable extends React.Component {
     this.summaryStats = {}
 
     this.state = {
-      isFiltering: false,
+      isFiltering: props.initialIsFiltering || false,
       isSorting: false,
       loading: false,
       pageLoading: false,
@@ -186,7 +191,12 @@ export default class ChataTable extends React.Component {
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
     updateColumnsAndData: PropTypes.func,
     onUpdateFilterResponse: PropTypes.func,
+    showQueryInterpretation: PropTypes.bool,
     isDrilldown: PropTypes.bool,
+    isEditing: PropTypes.bool,
+    isDashboardEditing: PropTypes.bool,
+    skipInitialFilters: PropTypes.bool,
+    initialIsFiltering: PropTypes.bool,
     scope: PropTypes.string,
     // Pivot axis selector props
     pivotAxisOptions: PropTypes.arrayOf(PropTypes.shape({ value: PropTypes.number, label: PropTypes.string })),
@@ -211,6 +221,9 @@ export default class ChataTable extends React.Component {
     tooltipID: undefined,
     pivot: false,
     pivotTableDataLimited: false,
+    isEditing: false,
+    isDashboardEditing: false,
+    skipInitialFilters: false,
     tableOptions: {},
     keepScrolledRight: false,
     allowCustomColumns: true,
@@ -223,6 +236,7 @@ export default class ChataTable extends React.Component {
     onCustomColumnChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
+    showQueryInterpretation: false,
     isDrilldown: false,
     scope: undefined,
     // Pivot axis selector defaults
@@ -339,6 +353,11 @@ export default class ChataTable extends React.Component {
       this.setFilters()
       this.setSorters()
       this.clearLoadingIndicators()
+      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
+        setTimeout(() => {
+          if (this._isMounted) this.disableBaseFilterInputs()
+        }, 0)
+      }
     }
 
     if (this.tabulatorMounted && !prevState.tabulatorJustMounted) {
@@ -346,15 +365,43 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
-      this.tableParams.filter = this.props?.initialTableParams?.filter
-      this.setFilters(this.props?.initialTableParams?.filter)
+      if (!this.props.skipInitialFilters) {
+        this.tableParams.filter = this.props?.initialTableParams?.filter
+        this.setFilters(this.props?.initialTableParams?.filter)
+      } else if (this.state.isFiltering) {
+        this.setFilters(this.tableParams.filter)
+      }
       this.setHeaderInputEventListeners()
       if (!this.props.hidden) {
         this.setTableHeight()
       }
-      // Refresh filter badges after initial filters are set
+      this.setFilterBadgeClasses()
+      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
+        setTimeout(() => {
+          if (this._isMounted) this.disableBaseFilterInputs()
+        }, 0)
+      }
+    }
+
+    if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
+      if (this.state.tabulatorMounted && this.state.isFiltering) {
+        this.tableParams.filter = _cloneDeep(this.baseFilters)
+        this._setFiltersTime = Date.now()
+        this.ref?.tabulator?.clearHeaderFilter()
+        if (this.baseFilters.length) this.setFilters(this.baseFilters)
+        if (!this.props.isDashboardEditing) {
+          setTimeout(() => {
+            if (this._isMounted) this.disableBaseFilterInputs()
+          }, 0)
+        } else {
+          setTimeout(() => {
+            if (this._isMounted) this.enableBaseFilterInputs()
+          }, 0)
+        }
+      }
       this.setFilterBadgeClasses()
     }
+
     this.summaryStats = this.calculateSummaryStats(this.props)
   }
 
@@ -586,8 +633,17 @@ export default class ChataTable extends React.Component {
       this.debounceSetState({ loading: false })
     }
 
+    // Update tableParams.filter immediately from current header filters so badge shows correctly
+    // This must be done BEFORE setFilterBadgeClasses() to ensure badge reflects current filter state
+    if (this._isMounted && this.state.tabulatorMounted) {
+      const headerFilters = this.ref?.tabulator?.getHeaderFilters()
+      if (headerFilters) {
+        this.tableParams.filter = _cloneDeep(headerFilters)
+      }
+    }
+
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0) {
+    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0 && this.props.showQueryInterpretation) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -693,7 +749,7 @@ export default class ChataTable extends React.Component {
       const hasRecentlySetHeaderFilters =
         this.state.tabulatorMounted && Date.now() - (this._setFiltersTime || 0) < DEBOUNCE_MS
 
-      if (!this.hasSetInitialData || !this._isMounted || hasRecentlySetHeaderFilters) {
+      if (!this.hasSetInitialData || !this._isMounted || !this.state.tabulatorMounted || hasRecentlySetHeaderFilters) {
         return initialData
       }
 
@@ -837,8 +893,11 @@ export default class ChataTable extends React.Component {
   }
 
   queryFn = (params) => {
-    // Always use server-side queryFn when dealing with column changes (newColumns)
-    // because column removal is a schema change, not just data filtering
+    // Force server-side in edit mode so every filter is applied in SQL and query_id is captured.
+    if ((this.props.isEditing || this.props.isDashboardEditing) && !this.props.pivot) {
+      return this.props.queryFn(params)
+    }
+
     if ((this.useInfiniteScroll || typeof params.newColumns !== 'undefined') && !this.props.pivot) {
       return this.props.queryFn(params)
     } else if (this.props.pivot) {
@@ -1130,6 +1189,44 @@ export default class ChataTable extends React.Component {
     inputElement.parentNode.appendChild(clearBtn)
   }
 
+  disableBaseFilterInputs = () => {
+    if (this.props.isDashboardEditing || !this.baseFilters.length) return
+    this.baseFilters.forEach((filter) => {
+      if (!filter.value) return
+      const inputEl = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
+      )
+      if (inputEl) {
+        inputEl.disabled = true
+        inputEl.classList.add('react-autoql-base-filter-disabled')
+      }
+      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
+      if (clearBtn) {
+        clearBtn.style.pointerEvents = 'none'
+        clearBtn.style.opacity = '0.3'
+      }
+    })
+  }
+
+  enableBaseFilterInputs = () => {
+    if (!this.baseFilters.length) return
+    this.baseFilters.forEach((filter) => {
+      if (!filter.value) return
+      const inputEl = document.querySelector(
+        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
+      )
+      if (inputEl) {
+        inputEl.disabled = false
+        inputEl.classList.remove('react-autoql-base-filter-disabled')
+      }
+      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
+      if (clearBtn) {
+        clearBtn.style.pointerEvents = ''
+        clearBtn.style.opacity = ''
+      }
+    })
+  }
+
   setHeaderInputEventListeners = (cols) => {
     const columns = cols ?? this.props.columns
     if (!columns) {
@@ -1154,7 +1251,13 @@ export default class ChataTable extends React.Component {
         }
 
         if (!this.props.pivot) {
-          headerElement.addEventListener('contextmenu', (e) => this.headerContextMenuClick(e, col))
+          const prevContextMenu = this.headerContextMenuHandlers.get(headerElement)
+          if (prevContextMenu) {
+            headerElement.removeEventListener('contextmenu', prevContextMenu)
+          }
+          const contextMenuHandler = (e) => this.headerContextMenuClick(e, col)
+          this.headerContextMenuHandlers.set(headerElement, contextMenuHandler)
+          headerElement.addEventListener('contextmenu', contextMenuHandler)
         }
 
         // Attach capture handler to the first pivot header only
@@ -1184,14 +1287,20 @@ export default class ChataTable extends React.Component {
         inputElement.addEventListener('keydown', this.inputKeydownListener)
 
         const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${col.field}"]`)
-        if (!clearBtn) {
+        if (!clearBtn || inputElement.nextElementSibling !== clearBtn) {
+          clearBtn?.remove()
           this.renderHeaderInputClearBtn(inputElement, col)
         }
 
         if (col.type === ColumnTypes.DATE && !col.pivot) {
           // Open Calendar Picker when user clicks on this field
-          inputElement.removeEventListener('click', (e) => this.inputDateClickListener(e, col))
-          inputElement.addEventListener('click', (e) => this.inputDateClickListener(e, col))
+          const prevDateClick = this.inputDateClickHandlers.get(inputElement)
+          if (prevDateClick) {
+            inputElement.removeEventListener('click', prevDateClick)
+          }
+          const dateClickHandler = (e) => this.inputDateClickListener(e, col)
+          this.inputDateClickHandlers.set(inputElement, dateClickHandler)
+          inputElement.addEventListener('click', dateClickHandler)
 
           // Do not allow user to type in this field
           const keyboardEvents = ['keypress', 'keydown', 'keyup']
@@ -1385,7 +1494,19 @@ export default class ChataTable extends React.Component {
     }
 
     if (this._isMounted) {
-      this.setState({ isFiltering })
+      this.setState({ isFiltering }, () => {
+        if (isFiltering) {
+          this.setFilters(this.tableParams.filter)
+          setTimeout(() => {
+            if (this._isMounted) this.setHeaderInputEventListeners()
+          }, 0)
+          if (!this.props.isDashboardEditing && this.baseFilters.length) {
+            setTimeout(() => {
+              if (this._isMounted) this.disableBaseFilterInputs()
+            }, 0)
+          }
+        }
+      })
     }
 
     return isFiltering
@@ -1475,19 +1596,18 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    const newColumns = this.props.columns.map((col) =>
-      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
-    )
-
-    this.props.updateColumns(
-      newColumns,
-      this.props.response?.data?.data?.fe_req,
-      this.props.response?.data?.data?.available_selects,
-    )
-
-    setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-      console.error(error)
-    })
+    // TODO: re-enable when column visibility is re-added for dashboards (without API call)
+    // const newColumns = this.props.columns.map((col) =>
+    //   col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    // )
+    // this.props.updateColumns(
+    //   newColumns,
+    //   this.props.response?.data?.data?.fe_req,
+    //   this.props.response?.data?.data?.available_selects,
+    // )
+    // setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
+    //   console.error(error)
+    // })
   }
 
   updateColumn = (field, newParams) => {
@@ -1617,10 +1737,11 @@ export default class ChataTable extends React.Component {
               Edit Column
             </li>
           )}
-          <li onClick={this.onRemoveColumnClick}>
+          {/* TODO: re-enable when column visibility is re-added for dashboards */}
+          {/* <li onClick={this.onRemoveColumnClick}>
             <Icon type='close' />
             Remove Column
-          </li>
+          </li> */}
         </ul>
       </div>
     )

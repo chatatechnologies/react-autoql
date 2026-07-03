@@ -29,10 +29,12 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
+import DataPreview from '../DataExplorer/DataPreview'
 import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
@@ -46,6 +48,7 @@ class QueryInput extends React.Component {
     super(props)
 
     this.UNIQUE_ID = uuid()
+    this.TOOLTIP_ID = `react-autoql-query-input-tooltip-${this.UNIQUE_ID}`
     this.MAX_QUERY_HISTORY = 5
     this.autoCompleteTimer = undefined
     this.autoCompleteArray = []
@@ -67,6 +70,7 @@ class QueryInput extends React.Component {
       isInputFocused: false,
       selectedTopic: null,
       isExpanded: false,
+      topicsCollapsed: false,
       selectedColumns: [],
       dataPreview: undefined,
       isDataPreviewLoading: false,
@@ -98,6 +102,7 @@ class QueryInput extends React.Component {
     enableQueryInputTopics: PropTypes.bool,
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
+    disableColumnSelection: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -125,6 +130,7 @@ class QueryInput extends React.Component {
     onResponseCallback: () => {},
     addResponseMessage: () => {},
     executeQuery: () => {},
+    disableColumnSelection: false,
   }
 
   componentDidMount = () => {
@@ -875,7 +881,7 @@ class QueryInput extends React.Component {
     }
   }
 
-  moveCaretAtEnd = (e) => {
+  moveCaretAtEnd = () => {
     clearTimeout(this.caretMoveTimeout)
     this.caretMoveTimeout = setTimeout(() => {
       try {
@@ -910,47 +916,74 @@ class QueryInput extends React.Component {
     const showTopics =
       this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
 
+    const toggleTopicsCollapsed = () =>
+      this.setState((s) => ({ topicsCollapsed: !s.topicsCollapsed, isExpanded: s.topicsCollapsed ? s.isExpanded : false }))
+
     const renderQuerySuggestions = () => (
       <div
-        className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} placement-${
+        className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} ${this.state.topicsCollapsed ? 'topics-collapsed' : ''} placement-${
           this.props.quickTopicsPlacement
         }`}
       >
-        {/* Expanded Sample Queries Section */}
+        {/* Expanded Section */}
         {this.state.isExpanded && this.state.selectedTopic && (
           <div className='query-suggestions-expanded'>
             <div className='query-suggestions-expanded-header'>
-              {this.renderSampleQueriesHeader()}
+              {this.props.disableColumnSelection ? (
+                <div className='react-autoql-data-explorer-title-text'>
+                  <span className='react-autoql-data-explorer-title-text-sample-queries'>
+                    {this.state.selectedTopic.displayName}
+                  </span>
+                </div>
+              ) : (
+                this.renderSampleQueriesHeader()
+              )}
               <div className='query-suggestions-expanded-header-actions'>
                 <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
                   <Icon type='close' />
                 </button>
               </div>
             </div>
-            <div className='query-suggestions-sample-list'>
-              <SampleQueryList
-                authentication={this.props.authentication}
-                columns={this.getColumnsForSuggestions()}
-                context={this.state.selectedTopic.context}
-                valueLabel={this.state.selectedTopic.valueLabel}
-                searchText=''
-                executeQuery={this.props.executeQuery}
-                skipQueryValidation={false}
-                userSelection={null}
-                tooltipID={this.props.tooltipID}
-                scope={this.props.scope}
-                shouldRender={this.props.shouldRender}
-                onSuggestionListResponse={() => {}}
-              />
-            </div>
+            {this.props.disableColumnSelection ? (
+              <div className='query-suggestions-data-preview'>
+                <DataPreview
+                  authentication={this.props.authentication}
+                  dataFormatting={this.props.dataFormatting}
+                  subject={this.state.selectedTopic}
+                  disableColumnSelection={true}
+                  shouldRender={this.props.shouldRender}
+                  tooltipID={this.props.tooltipID}
+                />
+              </div>
+            ) : (
+              <div className='query-suggestions-sample-list'>
+                <SampleQueryList
+                  authentication={this.props.authentication}
+                  columns={this.getColumnsForSuggestions()}
+                  context={this.state.selectedTopic.context}
+                  valueLabel={this.state.selectedTopic.valueLabel}
+                  searchText=''
+                  executeQuery={this.props.executeQuery}
+                  skipQueryValidation={false}
+                  userSelection={null}
+                  tooltipID={this.props.tooltipID}
+                  scope={this.props.scope}
+                  shouldRender={this.props.shouldRender}
+                  onSuggestionListResponse={() => {}}
+                />
+              </div>
+            )}
           </div>
         )}
 
         <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
           <div className='query-suggestions-buttons'>
-            <span className='query-suggestions-buttons-label'>
-              <Icon type='lightning' /> Quick Topics:{' '}
-            </span>
+            <button className='query-suggestions-collapse-btn' onClick={toggleTopicsCollapsed} type='button'>
+              <Icon type='caret-down' />
+              <span className='query-suggestions-buttons-label'>
+                <Icon type='lightning' /> Quick Topics:{' '}
+              </span>
+            </button>
             {this.state.topics.map((topic, index) => (
               <button
                 key={`topic-${index}-${topic.context || ''}`}
@@ -984,7 +1017,7 @@ class QueryInput extends React.Component {
             data-test='chat-bar'
           >
             <div className='react-autoql-input-row'>
-              <div className='react-autoql-chatbar-input-container'>
+              <div className={`react-autoql-chatbar-input-container${showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''}`}>
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
                     onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
@@ -1002,6 +1035,19 @@ class QueryInput extends React.Component {
                   />
                 ) : (
                   <input {...inputProps} />
+                )}
+                {/* Lightning bolt icon inside input when topics are collapsed */}
+                {showTopics && (
+                  <button
+                    className={`topics-collapsed-icon${this.state.topicsCollapsed ? ' visible' : ''}`}
+                    onClick={toggleTopicsCollapsed}
+                    type='button'
+                    data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                    data-tooltip-content='Show Quick Topics'
+                    data-tooltip-place='right'
+                  >
+                    <Icon type='lightning' />
+                  </button>
                 )}
                 {/* Microphone button inside input */}
                 {!isMobile && this.props.enableVoiceRecord && (
@@ -1041,6 +1087,7 @@ class QueryInput extends React.Component {
           {/* Query Suggestions - Render BELOW input when placement is 'below' */}
           {showTopics && isTopicsBelow && renderQuerySuggestions()}
         </div>
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} positionStrategy='fixed' />}
       </ErrorBoundary>
     )
   }

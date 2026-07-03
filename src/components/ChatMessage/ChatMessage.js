@@ -12,10 +12,12 @@ import {
   isDrilldown,
   fetchLLMSummary,
   fetchLLMSummaryQuote,
+  fetchFollowOnQuery,
   isChartType,
 } from 'autoql-fe-utils'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
+import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
@@ -23,9 +25,11 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import { Spinner } from '../Spinner'
 import { Button } from '../Button'
 import { Tooltip } from '../Tooltip'
+import { Input } from '../Input'
 import SummaryFooter from './SummaryFooter'
 import SummaryContent from '../SummaryContent/SummaryContent'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
+import SimpleTable from '../SimpleTable/SimpleTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
@@ -85,6 +89,11 @@ export default class ChatMessage extends React.Component {
       focusError: null, // Error message for focus summary
       quoteResult: null, // { wandable, cost } when quote is fetched
       isFetchingQuote: false,
+      isFollowOnThreadOpen: false,
+      followOnQueryText: '',
+      isFollowOnQueryLoading: false,
+      followOnError: null,
+      followOnResults: [],
     }
 
     // Minimum height for the message container
@@ -129,6 +138,7 @@ export default class ChatMessage extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
     onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
+    enableFollowOnQuery: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -165,6 +175,7 @@ export default class ChatMessage extends React.Component {
     onMessageResize: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
   }
 
   componentDidMount = () => {
@@ -361,6 +372,88 @@ export default class ChatMessage extends React.Component {
     if (Math.abs(distance) < 2) return
 
     const duration = 400
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      container.scrollTop = startScrollTop + distance * easeOut
+      this.props.scrollContainerRef?.update?.()
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        container.scrollTop = targetScrollTop
+        this.props.scrollContainerRef?.update?.()
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+
+  scrollFollowOnThreadIntoView = () => {
+    const container = this.props.scrollContainerRef?.getContainer?.()
+    const thread = this.followOnThreadRef
+    if (!container || !thread) return
+
+    const containerRect = container.getBoundingClientRect()
+    const threadRect = thread.getBoundingClientRect()
+    const BOTTOM_BUFFER = 24
+
+    const deltaScroll = threadRect.bottom + BOTTOM_BUFFER - containerRect.bottom
+    if (deltaScroll <= 0) return
+
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    const targetScrollTop = Math.min(maxScrollTop, container.scrollTop + deltaScroll)
+    const startScrollTop = container.scrollTop
+    const distance = targetScrollTop - startScrollTop
+
+    if (Math.abs(distance) < 2) return
+
+    const duration = 300
+    const startTime = performance.now()
+
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+
+      container.scrollTop = startScrollTop + distance * easeOut
+      this.props.scrollContainerRef?.update?.()
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        container.scrollTop = targetScrollTop
+        this.props.scrollContainerRef?.update?.()
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }
+
+  scrollFollowOnThreadTopIntoView = () => {
+    const container = this.props.scrollContainerRef?.getContainer?.()
+    const thread = this.followOnThreadRef
+    if (!container || !thread) return
+
+    const containerRect = container.getBoundingClientRect()
+    const threadRect = thread.getBoundingClientRect()
+    const TOP_BUFFER = 20
+
+    const deltaScroll = threadRect.top - containerRect.top - TOP_BUFFER
+    if (Math.abs(deltaScroll) < 2) return
+
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    const targetScrollTop = Math.max(0, Math.min(maxScrollTop, container.scrollTop + deltaScroll))
+    const startScrollTop = container.scrollTop
+    const distance = targetScrollTop - startScrollTop
+
+    if (Math.abs(distance) < 2) return
+
+    const duration = 300
     const startTime = performance.now()
 
     const animate = (currentTime) => {
@@ -754,6 +847,179 @@ export default class ChatMessage extends React.Component {
     }
   }
 
+  handleFollowOnQueryTextChange = (e) => {
+    this.setState({ followOnQueryText: e.target.value, followOnError: null })
+  }
+
+  handleFollowOnQueryKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      this.handleFollowOnQuerySubmit()
+    }
+  }
+
+  handleFollowOnQuerySubmit = async () => {
+    if (!this.state.followOnQueryText.trim() || this.state.isFollowOnQueryLoading) return
+
+    this.setState({ isFollowOnQueryLoading: true, followOnError: null })
+    try {
+      const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
+      const queryResponse = this.responseRef?.queryResponse || this.props.response
+      const filteredRows = this.responseRef?.tableData || queryResponse?.data?.data?.rows
+
+      const response = await fetchFollowOnQuery({
+        data: {
+          question: this.state.followOnQueryText.trim(),
+          additional_context: {
+            text: queryResponse?.data?.data?.text,
+            interpretation: queryResponse?.data?.data?.interpretation,
+            focus_prompt: '',
+          },
+          columns: queryResponse?.data?.data?.columns,
+          rows: filteredRows,
+        },
+        queryID: queryResponse?.data?.data?.query_id,
+        apiKey: auth.apiKey,
+        token: auth.token,
+        domain: auth.domain,
+      })
+
+      const { columns, rows } = response?.data ?? {}
+      const question = this.state.followOnQueryText.trim()
+      if (this._isMounted) {
+        this.setState(
+          (prev) => ({
+            followOnQueryText: '',
+            followOnResults: [{ id: Date.now(), question, columns, rows }, ...prev.followOnResults],
+          }),
+          () => setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50),
+        )
+      }
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.data?.message ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Something went wrong. Please try again.'
+      if (this._isMounted) {
+        this.setState({ followOnError: errorMessage })
+      }
+    } finally {
+      if (this._isMounted) {
+        this.setState({ isFollowOnQueryLoading: false })
+      }
+    }
+  }
+
+  shouldShowFollowOnButton = () => {
+    if (this.props.type === 'markdown' || this.props.type === 'md') return false
+    if (this.props.isCSVProgressMessage) return false
+    if (this.props.content) return false
+    const queryResponse = this.responseRef?.queryResponse || this.props.response
+    return shouldShowQueryActionButton(this.props.enableFollowOnQuery, queryResponse)
+  }
+
+  renderFollowOnIconButton = () => {
+    if (!this.shouldShowFollowOnButton()) return null
+    const hasResults = this.state.followOnResults.length > 0
+    const isOpen = this.state.isFollowOnThreadOpen
+    const tooltip = isOpen ? 'Collapse thread' : hasResults ? 'Reopen thread' : 'Ask a follow-up question'
+    return (
+      <Button
+        type='default'
+        size='medium'
+        border={true}
+        onClick={() => {
+          const opening = !isOpen
+          this.setState({ isFollowOnThreadOpen: opening, followOnError: null, followOnQueryText: '' }, () => {
+            if (opening) {
+              setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50)
+            }
+          })
+        }}
+        className={`follow-on-reply-btn${isOpen || hasResults ? ' follow-on-reply-btn--active' : ''}`}
+        tooltip={tooltip}
+        tooltipID={this.props.tooltipID}
+      >
+        <Icon type='reply' />
+        {hasResults && !isOpen && (
+          <span className='follow-on-reply-btn-count'>{this.state.followOnResults.length}</span>
+        )}
+      </Button>
+    )
+  }
+
+  renderFollowOnQueryThread = () => {
+    if (!this.shouldShowFollowOnButton()) return null
+
+    const { followOnQueryText, isFollowOnQueryLoading, followOnError, followOnResults, isFollowOnThreadOpen } =
+      this.state
+
+    if (!isFollowOnThreadOpen) {
+      if (followOnResults.length === 0) return null
+      return (
+        <div
+          className='chat-message-follow-on-stub'
+          onClick={() =>
+            this.setState({ isFollowOnThreadOpen: true }, () => {
+              setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50)
+            })
+          }
+        >
+          <Icon type='reply' />
+          <span>
+            {followOnResults.length} follow-up{followOnResults.length !== 1 ? 's' : ''}
+          </span>
+          <Icon type='caret-down' />
+        </div>
+      )
+    }
+
+    return (
+      <div className='chat-message-follow-on-thread' ref={(r) => (this.followOnThreadRef = r)}>
+        <Button
+          type='default'
+          size='small'
+          onClick={() => this.setState({ isFollowOnThreadOpen: false })}
+          className='chat-message-follow-on-thread-collapse-btn'
+          tooltip='Collapse thread'
+          tooltipID={this.props.tooltipID}
+        >
+          <Icon type='caret-up' />
+        </Button>
+        <div className='chat-message-follow-on-thread-input-row'>
+          <Input
+            value={followOnQueryText}
+            onChange={this.handleFollowOnQueryTextChange}
+            onKeyDown={this.handleFollowOnQueryKeyDown}
+            placeholder='Ask a follow-up question...'
+            disabled={isFollowOnQueryLoading}
+            inputStyle={{ paddingLeft: '14px' }}
+            autoFocus
+          />
+          <Button
+            type='primary'
+            size='small'
+            onClick={this.handleFollowOnQuerySubmit}
+            disabled={!followOnQueryText?.trim() || isFollowOnQueryLoading}
+          >
+            {isFollowOnQueryLoading ? <Spinner /> : <Icon type='send' />}
+          </Button>
+        </div>
+        {followOnError && <div className='chat-message-follow-on-thread-error'>{followOnError}</div>}
+        {followOnResults.map((result) => (
+          <div key={result.id} className='chat-message-follow-on-thread-result'>
+            <div className='chat-message-follow-on-thread-result-question'>
+              <Icon type='reply' />
+              {result.question}
+            </div>
+            <SimpleTable columns={result.columns} rows={result.rows} dataFormatting={this.props.dataFormatting} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   renderSummaryFooter = () => {
     const isSummaryMessage = this.props.type === 'markdown' || this.props.type === 'md'
 
@@ -779,17 +1045,21 @@ export default class ChatMessage extends React.Component {
     // This ensures we check the most up-to-date data (e.g., after columns are added)
     const currentResponse = this.responseRef?.queryResponse || this.props.response
 
-    // Use centralized function to determine if summary button should be shown
-    if (
-      !shouldShowSummaryButton({
-        enableMagicWand: this.props.enableMagicWand,
-        queryResponse: currentResponse,
-        isResponse: this.props.isResponse,
-        type: this.props.type,
-        isCSVProgressMessage: this.props.isCSVProgressMessage,
-      })
-    ) {
+    const showMagicWand = shouldShowSummaryButton({
+      enableMagicWand: this.props.enableMagicWand,
+      queryResponse: currentResponse,
+      isResponse: this.props.isResponse,
+      type: this.props.type,
+      isCSVProgressMessage: this.props.isCSVProgressMessage,
+    })
+    const showFollowOn = this.shouldShowFollowOnButton()
+
+    if (!showMagicWand && !showFollowOn) {
       return null
+    }
+
+    if (!showMagicWand) {
+      return <div className='chat-message-summary-footer'>{this.renderFollowOnIconButton()}</div>
     }
 
     // Get disabled state and tooltip from centralized function
@@ -865,11 +1135,13 @@ export default class ChatMessage extends React.Component {
             </span>
           </Button>
         </div>
+        {this.renderFollowOnIconButton()}
         {tooltipContent && <Tooltip tooltipId={tooltipId} delayShow={500} />}
         <Tooltip tooltipId={`${tooltipId}-beta`} delayShow={500} />
       </div>
     )
   }
+
   renderContent = () => {
     if (this.props.isCSVProgressMessage || typeof this.state.csvDownloadProgress !== 'undefined') {
       return <div className='chat-message-bubble-content-container'>{this.renderCSVProgressMessage()}</div>
@@ -1002,19 +1274,21 @@ export default class ChatMessage extends React.Component {
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
             enableDeleteBtn={!this.props.isIntroMessage}
-            enableFilterBtn={!isDataPreview}
-            enableCopyBtn={!isDataPreview}
+            enableFilterBtn={!isDataPreview && !this.props.isIntroMessage}
+            enableCopyBtn={!isDataPreview && !this.props.isIntroMessage}
             isMarkdownMessage={isMarkdownMessage}
             markdownContent={isMarkdownMessage ? this.props.content : undefined}
             onCopyMarkdown={this.copyMarkdownAsPlainText}
             popoverParentElement={this.props.popoverParentElement}
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
-            createDataAlertCallback={this.props.createDataAlertCallback}
-            customOptions={isDataPreview ? [] : this.props.customToolbarOptions}
+            createDataAlertCallback={this.props.isIntroMessage ? undefined : this.props.createDataAlertCallback}
+            customOptions={isDataPreview || this.props.isIntroMessage || (this.props.content && !this.props.response) ? [] : this.props.customToolbarOptions}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            source={this.props.source}
+            scope={this.props.scope}
           />
         ) : null}
       </div>
@@ -1082,10 +1356,11 @@ export default class ChatMessage extends React.Component {
               {this.renderRightToolbar()}
             </div>
             <div
-              className={`chat-message-bubble 
-        ${isResizable ? 'resizable' : ''} 
+              className={`chat-message-bubble
+        ${isResizable ? 'resizable' : ''}
         ${this.state.isUserResizing ? 'user-resizing' : ''}
-        ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}`}
+        ${this.props.type === 'markdown' || this.props.type === 'md' ? 'markdown-message' : ''}
+        ${this.props.type === 'follow-on' ? 'type-follow-on' : ''}`}
               ref={(r) => (this.messageBubbleRef = r)}
             >
               {this.renderContent()}
@@ -1111,6 +1386,7 @@ export default class ChatMessage extends React.Component {
               />
             </div>
           )}
+          {this.renderFollowOnQueryThread()}
         </div>
       </ErrorBoundary>
     )

@@ -99,13 +99,13 @@ g.legendOrdinal tspan {
       padding: 10px 20px;
 
       .agg-type-selector-fields {
-        font-size: 12px;
+        font-size: 0.75rem;
         font-style: italic;
       }
 
       .react-autoql-radio-btn-container-list {
         p {
-          font-size: 12px;
+          font-size: 0.75rem;
           margin: 4px 0px;
 
           [type='radio']:checked + label,
@@ -141,7 +141,7 @@ g.legendOrdinal tspan {
     .react-autoql-list-item {
       padding: 0;
       padding-right: 10px;
-      font-size: 12px;
+      font-size: 0.75rem;
       line-height: 25px;
       cursor: default;
 
@@ -183,7 +183,7 @@ g.legendOrdinal tspan {
       justify-content: space-between;
       margin-bottom: 5px;
       padding: 10px;
-      font-size: 12px;
+      font-size: 0.75rem;
       border-bottom: 1px solid var(--react-autoql-border-color);
       background: var(--react-autoql-background-color-primary);
 
@@ -216,7 +216,7 @@ g.legendOrdinal tspan {
 
     .agg-type-symbol .react-autoql-select {
       font-weight: 600;
-      font-size: 12px;
+      font-size: 0.75rem;
       height: 26px;
       line-height: 25px;
       padding: 0 8px;
@@ -256,7 +256,7 @@ g.legendOrdinal tspan {
     }
 
     li {
-      font-size: 12px;
+      font-size: 0.75rem;
       padding: 5px 15px;
     }
   }
@@ -291,7 +291,7 @@ g.legendOrdinal tspan {
   z-index: 9999;
   min-width: 45vw;
   .string-select-list-item {
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 28px;
 
     &.active {
@@ -301,7 +301,7 @@ g.legendOrdinal tspan {
   }
 
   .axis-selector-header {
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 600;
     line-height: 24px;
     padding: 4px 12px;
@@ -329,7 +329,7 @@ g.legendOrdinal tspan {
   max-height: 300px;
 
   .string-select-list-item {
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 28px;
 
     &.active {
@@ -339,7 +339,7 @@ g.legendOrdinal tspan {
   }
 
   .axis-selector-header {
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 600;
     line-height: 24px;
     padding: 4px 12px;

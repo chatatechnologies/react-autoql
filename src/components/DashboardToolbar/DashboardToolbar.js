@@ -47,6 +47,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
     enableSlicers: PropTypes.bool,
     isDashboardFullyExecuted: PropTypes.bool,
     hasTiles: PropTypes.bool,
+    hasDirtyTiles: PropTypes.bool,
+    hasFailedTiles: PropTypes.bool,
     slicers: PropTypes.arrayOf(PropTypes.shape({})),
   }
 
@@ -75,6 +77,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
     slicerSuggestion: undefined,
     isDashboardFullyExecuted: false,
     hasTiles: false,
+    hasDirtyTiles: false,
+    hasFailedTiles: false,
     slicers: [],
   }
 
@@ -313,33 +317,46 @@ export class DashboardToolbarWithoutRef extends React.Component {
                   <Button
                     type='primary'
                     icon='save'
-                    tooltip='Save and close'
+                    tooltip={
+                      this.props.hasDirtyTiles || this.props.hasFailedTiles
+                        ? 'Re-execute all queries before saving'
+                        : 'Save and close'
+                    }
                     tooltipID={this.props.tooltipID}
+                    disabled={this.props.hasDirtyTiles || this.props.hasFailedTiles}
                     onClick={this.props.onSaveClick}
                   >
                     Save
                   </Button>
                 </div>
               )}
-              {!this.props.isEditing && (
-                <Popover
-                  align='end'
-                  positions={['bottom', 'left', 'top', 'right']}
-                  padding={0}
-                  content={this.optionsMenu()}
-                  isOpen={this.state.isOptionsMenuOpen}
-                  onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
-                >
-                  <Button
-                    iconOnly
-                    icon='more-vertical'
-                    border={false}
-                    tooltip='Options'
-                    tooltipID={this.props.tooltipID}
-                    onClick={() => this.setState({ isOptionsMenuOpen: true })}
-                  />
-                </Popover>
-              )}
+              {!this.props.isEditing && (() => {
+                const hasAvailableOptions = !!(
+                  this.props.isEditable || this.props.isDashboardFullyExecuted
+                )
+
+                if (!hasAvailableOptions) return null
+
+                return (
+                  <Popover
+                    align='end'
+                    positions={['bottom', 'left', 'top', 'right']}
+                    padding={0}
+                    content={this.optionsMenu()}
+                    isOpen={this.state.isOptionsMenuOpen}
+                    onClickOutside={() => this.setState({ isOptionsMenuOpen: false })}
+                  >
+                    <Button
+                      iconOnly
+                      icon='more-vertical'
+                      border={false}
+                      tooltip='Options'
+                      tooltipID={this.props.tooltipID}
+                      onClick={() => this.setState({ isOptionsMenuOpen: true })}
+                    />
+                  </Popover>
+                )
+              })()}
             </div>
           </div>
           {this.dashboardSlicingFeatureToggle && this.renderFilterList()}
@@ -414,8 +431,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
             this.setState({ isConfirmCloseModalOpen: false })
           }}
         >
-          <h3>Are you sure you want to leave?</h3>
-          <p>Any unsaved changes will be lost.</p>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to leave?</h3>
+          <p style={{ fontSize: '0.9375rem', margin: 0 }}>Any unsaved changes will be lost.</p>
         </ConfirmModal>
         <ConfirmModal
           isVisible={this.state.isConfirmDeleteModalVisible}
@@ -426,8 +443,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
             this.setState({ isConfirmDeleteModalVisible: false })
           }}
         >
-          <h3>Are you sure you want to delete this Dashboard?</h3>
-          <p>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to delete this Dashboard?</h3>
+          <p style={{ fontSize: '0.9375rem', margin: 0 }}>
             This will permanently delete this Dashboard and all Tiles housed within it. This action cannot be undone. Do
             you wish to continue?
           </p>

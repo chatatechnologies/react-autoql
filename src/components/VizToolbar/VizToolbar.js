@@ -142,20 +142,33 @@ class VizToolbar extends React.Component {
               {this.createVisButton(DisplayTypes.HEATMAP, 'Heatmap', <Icon type='heatmap' />)}
               {this.createVisButton(DisplayTypes.BUBBLE, 'Bubble Chart', <Icon type='bubble-chart' />)}
               {this.createVisButton(DisplayTypes.STACKED_BAR, 'Stacked Bar Chart', <Icon type='stacked-bar-chart' />)}
-              {this.createVisButton(DisplayTypes.STACKED_COLUMN, 'Stacked Column Chart', <Icon type='stacked-column-chart' />)}
-              {this.createVisButton(DisplayTypes.STACKED_LINE, 'Stacked Area Chart', <Icon type='stacked-line-chart' />)}
-              {this.createVisButton(DisplayTypes.COLUMN_LINE, 'Column Line Combo Chart', <Icon type='column-line-chart' />)}
+              {this.createVisButton(
+                DisplayTypes.STACKED_COLUMN,
+                'Stacked Column Chart',
+                <Icon type='stacked-column-chart' />,
+              )}
+              {this.createVisButton(
+                DisplayTypes.STACKED_LINE,
+                'Stacked Area Chart',
+                <Icon type='stacked-line-chart' />,
+              )}
+              {this.createVisButton(
+                DisplayTypes.COLUMN_LINE,
+                'Column Line Combo Chart',
+                <Icon type='column-line-chart' />,
+              )}
               {this.createVisButton(DisplayTypes.HISTOGRAM, 'Histogram', <Icon type='histogram-chart' />)}
               {this.createVisButton(DisplayTypes.SCATTERPLOT, 'Scatterplot', <Icon type='scatterplot' />)}
               {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
+              {this.createVisButton(DisplayTypes.SANKEY, 'Sankey Diagram', <Icon type='sankey' />)}
             </div>
           </div>
         </div>
         {!this.props.tooltipID && (
           <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />
         )}
-        </ErrorBoundary>
-      )
+      </ErrorBoundary>
+    )
   }
 
   createVisButton = (displayType, name, icon) => {
@@ -233,6 +246,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton(DisplayTypes.HISTOGRAM, 'Histogram', <Icon type='histogram-chart' />)}
             {this.createVisButton(DisplayTypes.SCATTERPLOT, 'Scatterplot', <Icon type='scatterplot' />)}
             {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
+            {this.createVisButton(DisplayTypes.SANKEY, 'Sankey Diagram', <Icon type='sankey' />)}
           </div>
           {!this.props.tooltipID && (
             <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />

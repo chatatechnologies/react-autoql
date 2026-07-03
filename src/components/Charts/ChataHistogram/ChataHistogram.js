@@ -87,6 +87,10 @@ export default class ChataHistogram extends React.Component {
       defaultConfig.maxNumBuckets = props.data.length
     }
 
+    if (defaultConfig.maxNumBuckets <= defaultConfig.minNumBuckets) {
+      defaultConfig.maxNumBuckets = defaultConfig.minNumBuckets + 1
+    }
+
     return defaultConfig
   }
 
@@ -175,15 +179,20 @@ export default class ChataHistogram extends React.Component {
         this.bucketConfig = this.getDefaultBucketConfig(props)
       }
 
-      const uniqueNumberValues = props.data.map((d) => d[props.numberColumnIndex]).filter(onlyUnique).length
+      const filteredData = data.filter((d) => d[numberColumnIndex] != null)
+      if (!filteredData.length) {
+        return
+      }
+
+      const uniqueNumberValues = filteredData.map((d) => d[numberColumnIndex]).filter(onlyUnique).length
       if (uniqueNumberValues < this.bucketConfig.maxBucketSize) {
-        this.bucketConfig.maxNumBuckets = uniqueNumberValues
+        this.bucketConfig.maxNumBuckets = Math.max(uniqueNumberValues, (this.bucketConfig.minNumBuckets ?? 2) + 1)
       }
 
       const { buckets, bins } = getBinData({
         newBucketSize: bucketSize,
         bucketConfig: this.bucketConfig,
-        data,
+        data: filteredData,
         numberColumnIndex,
       })
 
