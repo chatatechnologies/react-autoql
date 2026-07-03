@@ -104,20 +104,25 @@ describe('observeContainer', () => {
         bottom: 300,
       })
 
-      let callCount = 0
+      // NOTE: observeContainer fires the initial measurement synchronously, before
+      // its return value is assigned. Defer cleanup/done to the next tick so we
+      // don't hit the temporal dead zone on `cleanup` (the error would be
+      // swallowed by observeContainer's try/catch and the test would time out).
+      let cleanup = null
+      let finished = false
       const callback = (dims) => {
-        callCount++
-        if (callCount >= 1) {
-          // Either first call or any later call with correct dimensions
-          expect(dims.width).toBeGreaterThan(0)
-          expect(dims.height).toBeGreaterThan(0)
-          cleanup()
+        if (finished) return
+        finished = true
+        expect(dims.width).toBeGreaterThan(0)
+        expect(dims.height).toBeGreaterThan(0)
+        setTimeout(() => {
+          cleanup?.()
           document.body.removeChild(container)
           done()
-        }
+        }, 0)
       }
 
-      const cleanup = observeContainer(container, callback, { debounce: 10 })
+      cleanup = observeContainer(container, callback, { debounce: 10 })
     }, 10000)
   })
 

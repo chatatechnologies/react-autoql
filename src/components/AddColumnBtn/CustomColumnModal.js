@@ -858,6 +858,12 @@ export default class CustomColumnModal extends React.Component {
     return false
   }
 
+  // Normalized (uppercase) median_type from the query response: 'AGG', 'WINDOW', or undefined
+  getMedianType = () => {
+    const medianType = this.props.queryResponse?.data?.data?.median_type
+    return typeof medianType === 'string' ? medianType.trim().toUpperCase() : undefined
+  }
+
   // Build SQL for function chunks
   buildFunctionSql = (columnFn, customColumn) => {
     const colName = this.sanitizeColumnName(columnFn?.column?.name)
@@ -902,62 +908,19 @@ export default class CustomColumnModal extends React.Component {
       return `(COALESCE(SUM(${colName}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${colName}) OVER(), 0), 0) * 100)`
     }
 
-    // MEDIAN - database-specific handling
+    // MEDIAN - exactly two cases per backend contract; backend post-processing
+    // converts these into the dialect-specific SQL:
+    //   median_type = AGG    -> MEDIAN(col)
+    //   median_type = WINDOW -> MEDIAN(col) OVER()
     if (columnFn.fn === CustomColumnValues.MEDIAN) {
-      const medianType = this.props.queryResponse?.data?.data?.median_type
-      const userHasOverClause = !!columnFn?.orderby || !!columnFn?.groupby || !!columnFn?.rowsOrRange
-      // AGG databases don't support OVER clause, so ignore user settings
-      const hasOverClause = medianType !== 'AGG' && userHasOverClause
-
-      // Aggregate-only form (AGG type with no OVER clause)
-      if (medianType === 'AGG' && !hasOverClause) {
+      if (this.getMedianType() === 'AGG') {
         return `MEDIAN(${colName})`
       }
 
-      // Aggregate POSTGRES-only form (when no OVER clause)
-      if (medianType === 'POSTGRES' && !hasOverClause) {
-        return `PERCENTILE_CONT(${colName})`
-      }
-
-      // Window functions with OVER clause
-      const partitionClause = this.buildPartitionClause(columnFn)
-      const orderbyCol = getVisibleColumns(this.props.columns).find(
-        (column) => column.field === (columnFn?.orderby ?? this.state.selectedFnOrderBy),
-      )?.name
-      const orderbyDir = this.getOrderByDirection(columnFn?.orderbyDirection ?? this.state?.selectedFnOrderByDirection)
-      const orderClause = this.buildOrderByClause(columnFn, true)
-      const overInner = `${partitionClause}${partitionClause && orderClause ? ' ' : ''}${orderClause}`
-
-      // Group 1: PERCENTILE_CONT with WITHIN GROUP syntax
-      if (
-        medianType === 'AMAZON REDSHIFT' ||
-        medianType === 'LIBERATOR' ||
-        medianType === 'MYSQL' ||
-        medianType === 'ATHENA' ||
-        medianType === 'AURORA' ||
-        medianType === 'MICROSOFT'
-      ) {
-        const withinGroup = orderbyCol ? `WITHIN GROUP (ORDER BY ${orderbyCol} ${orderbyDir})` : ''
-        return `PERCENTILE_CONT(0.5) ${withinGroup} OVER(${partitionClause || ''})`
-      }
-
-      // Group 2: BigQuery - PERCENTILE_CONT with positional arguments
-      if (medianType === 'BIGQUERY') {
-        return `PERCENTILE_CONT(${colName}, 0.5) OVER(${overInner})`
-      }
-
-      // Group 3: Vertica - MEDIAN OVER() without ORDER BY (only PARTITION BY and ROWS/RANGE)
-      if (medianType === 'VERTICA') {
-        const rowsRangeClause = columnFn?.rowsOrRange || this.state.selectedFnRowsOrRange
-          ? this.buildOrderByClause(columnFn, false) // Only ROWS/RANGE, no ORDER BY
-          : ''
-        const verticaOverInner = `${partitionClause}${partitionClause && rowsRangeClause ? ' ' : ''}${rowsRangeClause}`
-        return `MEDIAN(${colName}) OVER(${verticaOverInner})`
-      }
-
-      // Group 4: MEDIAN window function (Snowflake, Databricks, Oracle, POSTGRES with OVER, window type, undefined)
-      // Includes: SNOWFLAKE, DATABRICKS, ORACLE, POSTGRES (with OVER), window (generic), undefined
-      return `MEDIAN(${colName}) OVER(${overInner})`
+      // WINDOW (or unrecognized/absent median_type): always send an empty OVER clause.
+      // The backend post-processor fills in the OVER clause as needed, so user
+      // partition/order-by settings must NOT be included here.
+      return `MEDIAN(${colName}) OVER()`
     }
 
     // SUM-derived percent (window function whose nextSelector is SUM)
@@ -1767,11 +1730,10 @@ export default class CustomColumnModal extends React.Component {
       !!this.state.selectedFnOrderBy &&
       !!this.state.selectedFnMovingAverageTimeInterval &&
       this.state.selectedFnMovingAverageTimeInterval > 0
-    const medianType = this.props.queryResponse?.data?.data?.median_type
+    // Median only needs a column - the FE always sends MEDIAN(col) or MEDIAN(col) OVER()
+    // and the backend post-processor fills in the OVER clause as needed
     const medianComplete =
-      this.state.selectedFnOperation === CustomColumnValues.MEDIAN &&
-      !!this.state.selectedFnColumn &&
-      (medianType !== 'window' || !!this.state.selectedFnOrderBy)
+      this.state.selectedFnOperation === CustomColumnValues.MEDIAN && !!this.state.selectedFnColumn
     const cumulateiveSumComplete =
       this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM &&
       !!this.state.selectedFnColumn &&
@@ -2731,90 +2693,9 @@ export default class CustomColumnModal extends React.Component {
                   })}
                 />
               </div>
-              {this.props.queryResponse?.data?.data?.median_type !== 'AGG' && (
-                <>
-                  <div>
-                    <Select
-                      label='Partition By Column'
-                      isRequired={false}
-                      className='custom-column-window-fn-selector'
-                      value={this.state.selectedFnGroupby ?? null}
-                      onChange={(selectedFnGroupby) => {
-                        this.setState({ selectedFnGroupby })
-                      }}
-                      positions={['bottom', 'top', 'right', 'left']}
-                      options={allColumnsOptions}
-                    />
-                  </div>
-                  {this.props.queryResponse?.data?.data?.median_type !== 'VERTICA' && (
-                    <div>
-                      <Select
-                        label='Order By Column'
-                        isRequired={false}
-                        className='custom-column-window-fn-selector'
-                        value={this.state.selectedFnOrderBy ?? null}
-                        onChange={(selectedFnOrderBy) =>
-                          this.setState({ selectedFnOrderBy }, () => this.syncNewColumnFnArray(this.state.columnFn))
-                        }
-                        positions={['bottom', 'top', 'right', 'left']}
-                        options={allColumnsOptions}
-                      />
-                      {this.state.selectedFnOrderBy && (
-                        <Select
-                          label='Order By Direction'
-                          isRequired={false}
-                          className='custom-column-window-fn-selector'
-                          value={this.state.selectedFnOrderByDirection ?? null}
-                          onChange={(selectedFnOrderByDirection) =>
-                            this.setState(
-                              { selectedFnOrderByDirection },
-                              () => this.syncNewColumnFnArray(this.state.columnFn),
-                            )
-                          }
-                          positions={['bottom', 'top', 'right', 'left']}
-                          options={ORDERBY_DIRECTIONS}
-                          outlined={true}
-                        />
-                      )}
-                    </div>
-                  )}
-                  <div>
-                    <Select
-                      label='Rows or Range'
-                      isRequired={false}
-                      className='custom-column-window-fn-selector'
-                      value={this.state.selectedFnRowsOrRange ?? null}
-                      onChange={(value) => this.changeChunkRowsOrRange(value, CustomColumnTypes.FUNCTION, 0)}
-                      positions={['bottom', 'top', 'right', 'left']}
-                      options={ROWS_RANGE}
-                    />
-                    {this.state.selectedFnRowsOrRange && (
-                      <>
-                        <Select
-                          label='Start With'
-                          isRequired={false}
-                          className='custom-column-window-fn-selector'
-                          value={this.state.selectedFnRowsOrRangeOptionPre ?? null}
-                          onChange={(value) => this.changeChunkRowsOrRangeStart(value, CustomColumnTypes.FUNCTION, 0)}
-                          positions={['bottom', 'top', 'right', 'left']}
-                          options={ROWS_RANGE_OPTIONS.filter((option) => option.canStartWith === true)}
-                        />
-                        <Select
-                          label='End With'
-                          isRequired={false}
-                          className='custom-column-window-fn-selector'
-                          value={this.state.selectedFnRowsOrRangeOptionPost ?? null}
-                          onChange={(value) => this.changeChunkRowsOrRangeEnd(value, CustomColumnTypes.FUNCTION, 0)}
-                          positions={['bottom', 'top', 'right', 'left']}
-                          options={ROWS_RANGE_OPTIONS.filter(
-                            (option) => option.canEndWith === true && option.value !== this.state.selectedFnRowsOrRangeOptionPre,
-                          )}
-                        />
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
+              {/* No partition/order-by/rows-range options for median: the FE sends exactly
+                  MEDIAN(col) or MEDIAN(col) OVER() and the backend post-processor
+                  fills in the OVER clause per database dialect */}
             </>
           )}
           {this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG && (

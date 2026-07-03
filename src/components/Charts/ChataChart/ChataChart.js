@@ -868,7 +868,7 @@ export default class ChataChart extends React.Component {
       this.props.hidden ||
       this.props.isAnimating ||
       this.firstRender ||
-      isContainerCollapsed(this.chartContainerRef)
+      this.isContainerCollapsed()
     ) {
       return defaultDimensions
     }

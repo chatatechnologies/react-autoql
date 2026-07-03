@@ -3143,7 +3143,25 @@ describe('CustomColumnModal - buildFunctionSql MEDIAN median_type', () => {
     expect(sql.trim()).toBe('MEDIAN(revenue)')
   })
 
-  it('generates MEDIAN(col) OVER() when median_type is window', () => {
+  it('generates MEDIAN(col) when median_type is lowercase agg (case-insensitive)', () => {
+    const inst = makeInst('agg')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql.trim()).toBe('MEDIAN(revenue)')
+  })
+
+  it('generates MEDIAN(col) when median_type is Agg with surrounding whitespace', () => {
+    const inst = makeInst(' Agg ')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql.trim()).toBe('MEDIAN(revenue)')
+  })
+
+  it('generates MEDIAN(col) OVER() when median_type is WINDOW', () => {
+    const inst = makeInst('WINDOW')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql.replace(/\s+/g, ' ').trim()).toBe('MEDIAN(revenue) OVER()')
+  })
+
+  it('generates MEDIAN(col) OVER() when median_type is lowercase window', () => {
     const inst = makeInst('window')
     const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
     expect(sql.replace(/\s+/g, ' ').trim()).toBe('MEDIAN(revenue) OVER()')
@@ -3165,6 +3183,72 @@ describe('CustomColumnModal - buildFunctionSql MEDIAN median_type', () => {
     const inst = makeInst('window')
     const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
     expect(sql).toContain('OVER')
+  })
+
+  it('window median sends empty OVER() even when user has partition/orderby/rows settings', () => {
+    const inst = makeInst('WINDOW')
+    const chunk = {
+      ...medianChunk(col),
+      groupby: '0',
+      orderby: '0',
+      orderbyDirection: 'DESC',
+      rowsOrRange: 'ROWS',
+    }
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [chunk] })
+    expect(sql.replace(/\s+/g, ' ').trim()).toBe('MEDIAN(revenue) OVER()')
+  })
+
+  it('AGG median ignores user OVER settings from legacy tokens', () => {
+    const inst = makeInst('AGG')
+    const chunk = { ...medianChunk(col), groupby: '0', orderby: '0' }
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [chunk] })
+    expect(sql.trim()).toBe('MEDIAN(revenue)')
+  })
+
+  // Legacy dialect median_type values are handled by backend post-processing now;
+  // the FE must fall through to the plain window form for all of them
+  it.each(['POSTGRES', 'BIGQUERY', 'VERTICA', 'AMAZON REDSHIFT', 'LIBERATOR', 'MYSQL', 'ATHENA', 'AURORA', 'MICROSOFT', 'SNOWFLAKE', 'ORACLE', 'DATABRICKS'])(
+    'generates MEDIAN(col) OVER() when median_type is legacy dialect value %s',
+    (dialect) => {
+      const inst = makeInst(dialect)
+      const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+      expect(sql.replace(/\s+/g, ' ').trim()).toBe('MEDIAN(revenue) OVER()')
+    },
+  )
+
+  it('never emits PERCENTILE_CONT from the frontend', () => {
+    const inst = makeInst('POSTGRES')
+    const sql = inst.buildProtoTableColumn({ columnFnArray: [medianChunk(col)] })
+    expect(sql).not.toContain('PERCENTILE_CONT')
+  })
+
+  // Mirrors the state set when the user clicks the MEDIAN function operator button
+  const setMedianState = (inst, extra = {}) => {
+    inst.setState({
+      selectedFnOperation: CustomColumnValues.MEDIAN,
+      selectedFnType: null,
+      selectedFnColumn: null,
+      selectedFnOrderBy: null,
+      ...extra,
+    })
+  }
+
+  it('median completeness only requires a column (no order by) for WINDOW type', () => {
+    const inst = makeInst('WINDOW')
+    setMedianState(inst, { selectedFnColumn: '0' })
+    expect(inst.isFunctionConfigComplete()).toBe(true)
+  })
+
+  it('median completeness only requires a column (no order by) for lowercase window type', () => {
+    const inst = makeInst('window')
+    setMedianState(inst, { selectedFnColumn: '0' })
+    expect(inst.isFunctionConfigComplete()).toBe(true)
+  })
+
+  it('median completeness fails without a column', () => {
+    const inst = makeInst('WINDOW')
+    setMedianState(inst)
+    expect(inst.isFunctionConfigComplete()).toBe(false)
   })
 
   it('recovers gracefully when expansion fails during mount, keeping modal usable', async () => {
