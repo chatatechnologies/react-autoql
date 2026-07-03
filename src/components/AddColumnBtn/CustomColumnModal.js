@@ -912,18 +912,13 @@ export default class CustomColumnModal extends React.Component {
       return `(COALESCE(SUM(${colName}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${colName}) OVER(), 0), 0) * 100)`
     }
 
-    // MEDIAN - exactly two cases per backend contract; backend post-processing
-    // converts these into the dialect-specific SQL:
-    //   median_type = AGG    -> MEDIAN(col)
-    //   median_type = WINDOW -> MEDIAN(col) OVER()
+    // MEDIAN - backend post-processing converts these into dialect-specific SQL
     if (columnFn.fn === CustomColumnValues.MEDIAN) {
       if (this.getMedianType() === 'AGG') {
         return `MEDIAN(${colName})`
       }
 
-      // WINDOW (or unrecognized/absent median_type): always send an empty OVER clause.
-      // The backend post-processor fills in the OVER clause as needed, so user
-      // partition/order-by settings must NOT be included here.
+      // WINDOW (or absent median_type): send empty OVER() - backend fills in the clause
       return `MEDIAN(${colName}) OVER()`
     }
 
@@ -1775,8 +1770,7 @@ export default class CustomColumnModal extends React.Component {
       !!this.state.selectedFnOrderBy &&
       !!this.state.selectedFnMovingAverageTimeInterval &&
       this.state.selectedFnMovingAverageTimeInterval > 0
-    // Median only needs a column - the FE always sends MEDIAN(col) or MEDIAN(col) OVER()
-    // and the backend post-processor fills in the OVER clause as needed
+    // Median only needs a column - the backend fills in the OVER clause
     const medianComplete = this.state.selectedFnOperation === CustomColumnValues.MEDIAN && !!this.state.selectedFnColumn
     const cumulateiveSumComplete =
       this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM &&
@@ -2729,9 +2723,7 @@ export default class CustomColumnModal extends React.Component {
                   })}
                 />
               </div>
-              {/* No partition/order-by/rows-range options for median: the FE sends exactly
-                  MEDIAN(col) or MEDIAN(col) OVER() and the backend post-processor
-                  fills in the OVER clause per database dialect */}
+              {/* No partition/order-by/rows-range options for median - the backend fills in the OVER clause */}
             </>
           )}
           {this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG && (
