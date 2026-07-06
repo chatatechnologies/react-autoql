@@ -103,6 +103,7 @@ class VizToolbar extends React.Component {
       [DisplayTypes.HISTOGRAM]: 'histogram-chart',
       [DisplayTypes.SCATTERPLOT]: 'scatterplot',
       [DisplayTypes.NETWORK_GRAPH]: 'network',
+      [DisplayTypes.SANKEY]: 'sankey',
     }
     return map[displayType] || 'column-chart'
   }

@@ -390,6 +390,15 @@ export class DashboardToolbarWithoutRef extends React.Component {
                 >
                   Add Tile
                 </Button>
+                <hr className='react-autoql-horizontal-divider' />
+                <Button
+                  iconOnly
+                  icon='refresh'
+                  border={false}
+                  tooltip='Refresh all tiles'
+                  tooltipID={this.props.tooltipID}
+                  onClick={this.props.onEditRefreshClick}
+                />
               </div>
               <div className='react-autoql-dashboard-edit-toolbar-container-right'>
                 {this.dashboardSlicingFeatureToggle && this.renderFilterInput()}

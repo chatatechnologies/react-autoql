@@ -14,8 +14,9 @@ import {
   fetchLLMSummaryQuote,
   fetchFollowOnQuery,
   isChartType,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -94,8 +95,10 @@ export default class ChatMessage extends React.Component {
       isFollowOnQueryLoading: false,
       followOnError: null,
       followOnResults: [],
+      followOnHistoryIndex: -1,
     }
 
+    this.followOnDraftText = ''
     // Minimum height for the message container
     this.minMessageHeight = 300
   }
@@ -556,6 +559,7 @@ export default class ChatMessage extends React.Component {
       const currentColumns =
         this.responseRef?.queryResponse?.data?.data?.columns || this.props.response.data.data.columns
 
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -563,8 +567,9 @@ export default class ChatMessage extends React.Component {
             interpretation: this.props.response.data.data.interpretation,
             focus_prompt: this.state.focusPrompt.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -667,6 +672,7 @@ export default class ChatMessage extends React.Component {
     }
 
     try {
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummaryQuote({
         data: {
           additional_context: {
@@ -674,8 +680,9 @@ export default class ChatMessage extends React.Component {
             interpretation: this.props.response.data.data.interpretation,
             focus_prompt: this.state.focusPrompt?.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: this.props.response.data.data.query_id,
         apiKey: auth.apiKey,
@@ -746,6 +753,7 @@ export default class ChatMessage extends React.Component {
     this.props.setGeneratingSummary?.(true)
 
     try {
+      const isOverRowLimit = responseData.rows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -753,8 +761,9 @@ export default class ChatMessage extends React.Component {
             interpretation: responseData.interpretation,
             focus_prompt: focusPrompt.trim() || '',
           },
-          rows: responseData.rows,
-          columns: responseData.columns,
+          rows: isOverRowLimit ? [] : responseData.rows,
+          columns: isOverRowLimit ? [] : responseData.columns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: responseData.query_id,
         apiKey: auth.apiKey,
@@ -848,13 +857,28 @@ export default class ChatMessage extends React.Component {
   }
 
   handleFollowOnQueryTextChange = (e) => {
-    this.setState({ followOnQueryText: e.target.value, followOnError: null })
+    this.followOnDraftText = e.target.value
+    this.setState({ followOnQueryText: e.target.value, followOnError: null, followOnHistoryIndex: -1 })
   }
 
   handleFollowOnQueryKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       this.handleFollowOnQuerySubmit()
+    } else if (e.key === 'ArrowUp') {
+      const history = this.state.followOnResults.map((r) => r.question)
+      if (!history.length) return
+      e.preventDefault()
+      const nextIndex = Math.min(this.state.followOnHistoryIndex + 1, history.length - 1)
+      this.setState({ followOnHistoryIndex: nextIndex, followOnQueryText: history[nextIndex] })
+    } else if (e.key === 'ArrowDown') {
+      if (this.state.followOnHistoryIndex <= 0) {
+        this.setState({ followOnHistoryIndex: -1, followOnQueryText: this.followOnDraftText })
+        return
+      }
+      e.preventDefault()
+      const nextIndex = this.state.followOnHistoryIndex - 1
+      this.setState({ followOnHistoryIndex: nextIndex, followOnQueryText: this.state.followOnResults[nextIndex].question })
     }
   }
 
@@ -867,6 +891,7 @@ export default class ChatMessage extends React.Component {
       const queryResponse = this.responseRef?.queryResponse || this.props.response
       const filteredRows = this.responseRef?.tableData || queryResponse?.data?.data?.rows
 
+      const isOverRowLimit = (filteredRows?.length ?? 0) > MAX_DATA_PAGE_SIZE
       const response = await fetchFollowOnQuery({
         data: {
           question: this.state.followOnQueryText.trim(),
@@ -875,8 +900,9 @@ export default class ChatMessage extends React.Component {
             interpretation: queryResponse?.data?.data?.interpretation,
             focus_prompt: '',
           },
-          columns: queryResponse?.data?.data?.columns,
-          rows: filteredRows,
+          columns: isOverRowLimit ? [] : queryResponse?.data?.data?.columns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryResponse?.data?.data?.query_id,
         apiKey: auth.apiKey,
@@ -886,10 +912,12 @@ export default class ChatMessage extends React.Component {
 
       const { columns, rows } = response?.data ?? {}
       const question = this.state.followOnQueryText.trim()
+      this.followOnDraftText = ''
       if (this._isMounted) {
         this.setState(
           (prev) => ({
             followOnQueryText: '',
+            followOnHistoryIndex: -1,
             followOnResults: [{ id: Date.now(), question, columns, rows }, ...prev.followOnResults],
           }),
           () => setTimeout(() => this.scrollFollowOnThreadTopIntoView(), 50),
@@ -906,7 +934,9 @@ export default class ChatMessage extends React.Component {
       }
     } finally {
       if (this._isMounted) {
-        this.setState({ isFollowOnQueryLoading: false })
+        this.setState({ isFollowOnQueryLoading: false }, () => {
+          this.followOnInputRef?.focus()
+        })
       }
     }
   }
@@ -923,13 +953,21 @@ export default class ChatMessage extends React.Component {
     if (!this.shouldShowFollowOnButton()) return null
     const hasResults = this.state.followOnResults.length > 0
     const isOpen = this.state.isFollowOnThreadOpen
-    const tooltip = isOpen ? 'Collapse thread' : hasResults ? 'Reopen thread' : 'Ask a follow-up question'
+    const queryResponse = this.responseRef?.queryResponse || this.props.response
+    const { isDisabled, tooltip: disabledTooltip } = getFollowOnQueryDisabledState({ queryResponse })
+    const tooltip = isDisabled
+      ? disabledTooltip
+      : isOpen
+        ? 'Collapse thread'
+        : hasResults
+          ? 'Reopen thread'
+          : 'Ask a follow-up question'
     return (
       <Button
         type='default'
         size='medium'
         border={true}
-        onClick={() => {
+        onClick={isDisabled ? undefined : () => {
           const opening = !isOpen
           this.setState({ isFollowOnThreadOpen: opening, followOnError: null, followOnQueryText: '' }, () => {
             if (opening) {
@@ -938,6 +976,7 @@ export default class ChatMessage extends React.Component {
           })
         }}
         className={`follow-on-reply-btn${isOpen || hasResults ? ' follow-on-reply-btn--active' : ''}`}
+        style={isDisabled ? { opacity: 0.4, cursor: 'default' } : undefined}
         tooltip={tooltip}
         tooltipID={this.props.tooltipID}
       >
@@ -989,6 +1028,7 @@ export default class ChatMessage extends React.Component {
         </Button>
         <div className='chat-message-follow-on-thread-input-row'>
           <Input
+            ref={(r) => (this.followOnInputRef = r)}
             value={followOnQueryText}
             onChange={this.handleFollowOnQueryTextChange}
             onKeyDown={this.handleFollowOnQueryKeyDown}

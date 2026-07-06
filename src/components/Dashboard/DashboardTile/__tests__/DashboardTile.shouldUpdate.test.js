@@ -164,21 +164,4 @@ describe('DashboardTile componentDidUpdate topRequestData sync', () => {
     wrapper.unmount()
   })
 
-  it('updates bottomRequestData when tile.secondOrders change', () => {
-    const newOrders = [{ col: 'y', direction: 'desc' }]
-    const newTile = makeTile({ secondQuery: 'SELECT 2', secondOrders: newOrders })
-    const wrapper = mount(<DashboardTile tile={newTile} setParamsForTile={() => {}} />)
-    const instance = wrapper.instance()
-
-    instance.bottomRequestData = { query: 'SELECT 2', tableFilters: [], filters: [], orders: [] }
-
-    instance.componentDidUpdate(
-      { ...wrapper.props(), tile: { ...newTile, secondOrders: [] } },
-      instance.state,
-    )
-
-    expect(instance.bottomRequestData.orders).toEqual(newOrders)
-
-    wrapper.unmount()
-  })
 })

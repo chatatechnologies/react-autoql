@@ -18,6 +18,7 @@ import {
   getAutoQLConfig,
   dataFormattingDefault,
   fetchLLMSummaryQuote,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -33,7 +34,7 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -540,6 +541,7 @@ export class OptionsToolbar extends React.Component {
                         pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
                       },
                       networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
+                      chartControls: _cloneDeep(responseRef?.state?.chartControls),
                     })
                   }}
                 >
@@ -747,6 +749,7 @@ export class OptionsToolbar extends React.Component {
     }
 
     try {
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummaryQuote({
         data: {
           additional_context: {
@@ -754,8 +757,9 @@ export class OptionsToolbar extends React.Component {
             interpretation: queryData.interpretation,
             focus_prompt: this.state.summaryFocusPrompt?.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryData.query_id,
         apiKey: auth.apiKey,
@@ -842,6 +846,11 @@ export class OptionsToolbar extends React.Component {
   }
 
   renderFollowOnQueryBtn = () => {
+    const queryResponse = this.props.responseRef?.queryResponse
+    const { isDisabled } = getFollowOnQueryDisabledState({ queryResponse })
+
+    if (isDisabled) return null
+
     return (
       <Button
         key={`follow-on-query-button-${this.COMPONENT_KEY}`}

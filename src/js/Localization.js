@@ -3,6 +3,7 @@ import LocalizedStrings from 'react-localization'
 export const lang = new LocalizedStrings({
   en: {
     introPrompt: 'Some things you can ask me: ',
+    llmEmptyStateTitle: 'What would you like to know?',
     use: 'Use',
     dataExplorer: 'Data Explorer',
     exploreQueries: 'Explore Queries',

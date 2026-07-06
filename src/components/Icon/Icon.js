@@ -88,6 +88,7 @@ import { RxOpenInNewWindow } from 'react-icons/rx'
 import { TfiArrowsCorner } from 'react-icons/tfi'
 import { TfiArrowsVertical } from 'react-icons/tfi'
 import {
+  autoqlLogoIcon,
   bubblesIcon,
   bubblesIconFilledAlt,
   tableIcon,
@@ -218,6 +219,10 @@ export default class Icon extends React.Component {
       }
       case 'caret-up': {
         icon = <IoIosArrowUp />
+        break
+      }
+      case 'react-autoql-logo': {
+        icon = autoqlLogoIcon
         break
       }
       case 'react-autoql-bubbles-outlined': {

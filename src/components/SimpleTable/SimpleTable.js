@@ -20,7 +20,7 @@ import { Button } from '../Button'
 
 import './SimpleTable.scss'
 
-const ROW_HEIGHT = 36
+const ROW_HEIGHT = 28
 const OVERSCAN = 10
 const MIN_COL_WIDTH = 50
 const WIDTH_BUFFER = 20
@@ -46,7 +46,7 @@ export default class SimpleTable extends Component {
     columns: [],
     rows: [],
     dataFormatting: dataFormattingDefault,
-    maxHeight: undefined,
+    maxHeight: 400,
   }
 
   constructor(props) {
@@ -622,7 +622,7 @@ export default class SimpleTable extends Component {
       <div
         className={`simple-table-outer-container${isResizing ? ' simple-table-resizing' : ''}`}
         ref={this.scrollContainerRef}
-        style={this.props.maxHeight != null ? { maxHeight: this.props.maxHeight, height: 'auto' } : undefined}
+        style={{ maxHeight: this.props.maxHeight, height: 'auto' }}
       >
         <div className='simple-table-scroll-inner'>
           <table
