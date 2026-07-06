@@ -78,6 +78,8 @@ export default class ChatContent extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     enableFollowOnQuery: PropTypes.bool,
+    enableLLMStyleEmptyState: PropTypes.bool,
+    llmEmptyStateTitle: PropTypes.string,
   }
 
   static defaultProps = {
@@ -94,11 +96,13 @@ export default class ChatContent extends React.Component {
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     enableFollowOnQuery: false,
+    enableLLMStyleEmptyState: false,
+    llmEmptyStateTitle: undefined,
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    if (this.props.introMessages?.length) {
+    if (!this.props.enableLLMStyleEmptyState && this.props.introMessages?.length) {
       this.addIntroMessages(this.props.introMessages)
     }
 
@@ -757,6 +761,8 @@ export default class ChatContent extends React.Component {
 
   render = () => {
     const { messages } = this.state
+    const isLLMEmptyState = this.props.enableLLMStyleEmptyState && messages.length === 0 && !this.isChataThinking()
+
     let chatMessageVisibility
     let chatMessageOpacity
     let chatMessageDisplay
@@ -782,7 +788,9 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-wrapper ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'}`}
+          className={`chat-content-wrapper ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'} ${
+            isLLMEmptyState ? 'llm-empty-state' : ''
+          }`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity, display: chatMessageDisplay }}
         >
           <div
@@ -790,135 +798,140 @@ export default class ChatContent extends React.Component {
               ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
               ${isMobile ? 'mobile-padding' : ''}`}
           >
-          <CustomScrollbars
-            ref={(r) => (this.messengerScrollComponent = r)}
-            className='chat-content-scrollbars-container'
-            suppressScrollX
-          >
-            <div className='chat-content-container'>
-              {messages.map((message) => {
-                return (
-                  <ChatMessage
-                    key={message.id}
-                    id={message.id}
-                    ref={(r) => (this.messageRefs[message.id] = r)}
-                    isIntroMessage={message.isIntroMessage}
-                    authentication={this.props.authentication}
-                    autoQLConfig={this.props.autoQLConfig}
-                    isCSVProgressMessage={message.isCSVProgressMessage}
-                    initialCSVDownloadProgress={this.csvProgressLog[message.id]}
-                    onCSVDownloadProgress={this.onCSVDownloadProgress}
-                    queryId={message.queryId}
-                    queryText={message.query}
-                    originalQueryID={message.originalQueryID}
-                    isDataMessengerOpen={this.props.isDataMessengerOpen}
-                    isActive={this.state.activeMessageId === message.id}
-                    addMessageToDM={this.addResponseMessage}
-                    onDrilldownStart={this.onDrilldownStart}
-                    onDrilldownEnd={this.onDrilldownEnd}
-                    isResponse={message.isResponse}
-                    isChataThinking={this.isChataThinking()}
-                    onSuggestionClick={this.animateInputTextAndSubmit}
-                    setGeneratingSummary={this.setGeneratingSummary}
-                    customToolbarOptions={this.props.customToolbarOptions}
-                    content={message.content}
-                    scrollToBottom={this.scrollToBottom}
-                    scrollToMessageTop={this.scrollToMessageTop}
-                    scrollToMessageFit={this.scrollToMessageFit}
-                    dataFormatting={this.props.dataFormatting}
-                    response={message.response}
-                    type={message.type}
-                    drilldownFilters={message.drilldownFilters}
-                    summaryResponseData={message.summaryResponseData}
-                    focusPromptUsed={message.focusPromptUsed}
-                    onErrorCallback={this.props.onErrorCallback}
-                    enableCyclicalDates={this.props.enableCyclicalDates}
-                    onSuccessAlert={this.props.onSuccessAlert}
-                    deleteMessageCallback={this.deleteMessage}
-                    createDataAlertCallback={this.props.createDataAlertCallback}
-                    scrollContainerRef={this.messengerScrollComponent}
-                    isResizing={this.props.isResizing}
-                    enableDynamicCharting={this.props.enableDynamicCharting}
-                    onNoneOfTheseClick={this.onNoneOfTheseClick}
-                    autoChartAggregations={this.props.autoChartAggregations}
-                    onRTValueLabelClick={this.props.onRTValueLabelClick}
-                    appliedFilters={message.appliedFilters}
-                    disableMaxHeight={this.props.disableMaxMessageHeight}
-                    queryRequestData={message.queryRequestData}
-                    popoverParentElement={this.chatContentRef}
-                    isVisibleInDOM={this.props.shouldRender}
-                    dataPageSize={this.props.dataPageSize}
-                    shouldRender={this.props.shouldRender}
-                    source={this.props.source}
-                    scope={this.props.scope}
-                    tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-                    chartTooltipID={this.props.chartTooltipID}
-                    subjects={this.state.subjects}
-                    onMessageResize={this.onMessageResize}
-                    enableCustomColumns={this.props.enableCustomColumns}
-                    disableAggregationMenu={this.props.disableAggregationMenu}
-                    allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
-                    preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
-                    enableMagicWand={this.props.enableMagicWand}
-                    showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
-                    enableFollowOnQuery={this.props.enableFollowOnQuery}
-                  />
-                )
-              })}
-            </div>
-          </CustomScrollbars>
-          {!this.state.isAtBottom && (
-            <button
-              className='scroll-to-bottom-button'
-              onClick={this.smoothScrollToBottom}
-              aria-label='Scroll to bottom'
+            <CustomScrollbars
+              ref={(r) => (this.messengerScrollComponent = r)}
+              className='chat-content-scrollbars-container'
+              suppressScrollX
             >
-              <Icon type='caret-down' />
-            </button>
-          )}
-          <div className='chat-content-bottom-bar'>
-            <div className='bottom-bar-left'>
-              {this.isChataThinking() && <LoadingDots />}
+              <div className='chat-content-container'>
+                {messages.map((message) => {
+                  return (
+                    <ChatMessage
+                      key={message.id}
+                      id={message.id}
+                      ref={(r) => (this.messageRefs[message.id] = r)}
+                      isIntroMessage={message.isIntroMessage}
+                      authentication={this.props.authentication}
+                      autoQLConfig={this.props.autoQLConfig}
+                      isCSVProgressMessage={message.isCSVProgressMessage}
+                      initialCSVDownloadProgress={this.csvProgressLog[message.id]}
+                      onCSVDownloadProgress={this.onCSVDownloadProgress}
+                      queryId={message.queryId}
+                      queryText={message.query}
+                      originalQueryID={message.originalQueryID}
+                      isDataMessengerOpen={this.props.isDataMessengerOpen}
+                      isActive={this.state.activeMessageId === message.id}
+                      addMessageToDM={this.addResponseMessage}
+                      onDrilldownStart={this.onDrilldownStart}
+                      onDrilldownEnd={this.onDrilldownEnd}
+                      isResponse={message.isResponse}
+                      isChataThinking={this.isChataThinking()}
+                      onSuggestionClick={this.animateInputTextAndSubmit}
+                      setGeneratingSummary={this.setGeneratingSummary}
+                      customToolbarOptions={this.props.customToolbarOptions}
+                      content={message.content}
+                      scrollToBottom={this.scrollToBottom}
+                      scrollToMessageTop={this.scrollToMessageTop}
+                      scrollToMessageFit={this.scrollToMessageFit}
+                      dataFormatting={this.props.dataFormatting}
+                      response={message.response}
+                      type={message.type}
+                      drilldownFilters={message.drilldownFilters}
+                      summaryResponseData={message.summaryResponseData}
+                      focusPromptUsed={message.focusPromptUsed}
+                      onErrorCallback={this.props.onErrorCallback}
+                      enableCyclicalDates={this.props.enableCyclicalDates}
+                      onSuccessAlert={this.props.onSuccessAlert}
+                      deleteMessageCallback={this.deleteMessage}
+                      createDataAlertCallback={this.props.createDataAlertCallback}
+                      scrollContainerRef={this.messengerScrollComponent}
+                      isResizing={this.props.isResizing}
+                      enableDynamicCharting={this.props.enableDynamicCharting}
+                      onNoneOfTheseClick={this.onNoneOfTheseClick}
+                      autoChartAggregations={this.props.autoChartAggregations}
+                      onRTValueLabelClick={this.props.onRTValueLabelClick}
+                      appliedFilters={message.appliedFilters}
+                      disableMaxHeight={this.props.disableMaxMessageHeight}
+                      queryRequestData={message.queryRequestData}
+                      popoverParentElement={this.chatContentRef}
+                      isVisibleInDOM={this.props.shouldRender}
+                      dataPageSize={this.props.dataPageSize}
+                      shouldRender={this.props.shouldRender}
+                      source={this.props.source}
+                      scope={this.props.scope}
+                      tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+                      chartTooltipID={this.props.chartTooltipID}
+                      subjects={this.state.subjects}
+                      onMessageResize={this.onMessageResize}
+                      enableCustomColumns={this.props.enableCustomColumns}
+                      disableAggregationMenu={this.props.disableAggregationMenu}
+                      allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
+                      preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+                      enableMagicWand={this.props.enableMagicWand}
+                      showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                      enableFollowOnQuery={this.props.enableFollowOnQuery}
+                    />
+                  )
+                })}
+              </div>
+            </CustomScrollbars>
+            {!this.state.isAtBottom && (
+              <button
+                className='scroll-to-bottom-button'
+                onClick={this.smoothScrollToBottom}
+                aria-label='Scroll to bottom'
+              >
+                <Icon type='caret-down' />
+              </button>
+            )}
+            <div className='chat-content-bottom-bar'>
+              <div className='bottom-bar-left'>{this.isChataThinking() && <LoadingDots />}</div>
+              <div className='watermark'>
+                <Icon type='react-autoql-bubbles-outlined' />
+                {lang.run}
+              </div>
+              <div className='bottom-bar-right' />
             </div>
-            <div className='watermark'>
-              <Icon type='react-autoql-bubbles-outlined' />
-              {lang.run}
-            </div>
-            <div className='bottom-bar-right' />
-          </div>
           </div>
           <div
             style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
             className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
           >
-          <QueryInput
-            ref={(r) => (this.queryInputRef = r)}
-            className='chat-drawer-chat-bar'
-            authentication={this.props.authentication}
-            autoQLConfig={this.props.autoQLConfig}
-            onSubmit={this.onInputSubmit}
-            onResponseCallback={this.onResponse}
-            addResponseMessage={this.addResponseMessage}
-            isDisabled={this.state.isInputDisabled}
-            enableVoiceRecord={this.props.enableVoiceRecord}
-            autoCompletePlacement='above'
-            showChataIcon={false}
-            showLoadingDots={false}
-            placeholder={this.props.inputPlaceholder}
-            onErrorCallback={this.props.onErrorCallback}
-            hideInput={this.props.hideInput}
-            source={this.props.source}
-            scope={this.props.scope}
-            queryFilters={this.props.queryFilters}
-            sessionId={this.props.sessionId}
-            dataPageSize={this.props.dataPageSize}
-            isResizing={this.props.isResizing}
-            shouldRender={this.props.shouldRender}
-            tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
-            executeQuery={this.props.executeQuery}
-            enableQueryInputTopics={this.props.enableQueryInputTopics}
-            disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
-          />
+            {isLLMEmptyState && (
+              <div className='llm-empty-state-title'>
+                <Icon type='react-autoql-logo' />
+                {lang.llmEmptyStateTitle}
+              </div>
+            )}
+            <QueryInput
+              ref={(r) => (this.queryInputRef = r)}
+              className='chat-drawer-chat-bar'
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              onSubmit={this.onInputSubmit}
+              onResponseCallback={this.onResponse}
+              addResponseMessage={this.addResponseMessage}
+              isDisabled={this.state.isInputDisabled}
+              enableVoiceRecord={this.props.enableVoiceRecord}
+              autoCompletePlacement='above'
+              showChataIcon={false}
+              showLoadingDots={false}
+              placeholder={this.props.inputPlaceholder}
+              onErrorCallback={this.props.onErrorCallback}
+              hideInput={this.props.hideInput}
+              source={this.props.source}
+              scope={this.props.scope}
+              queryFilters={this.props.queryFilters}
+              sessionId={this.props.sessionId}
+              dataPageSize={this.props.dataPageSize}
+              isResizing={this.props.isResizing}
+              shouldRender={this.props.shouldRender}
+              tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+              executeQuery={this.props.executeQuery}
+              enableQueryInputTopics={this.props.enableQueryInputTopics}
+              disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
+              isLLMEmptyState={isLLMEmptyState}
+            />
           </div>
         </div>
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} positionStrategy='fixed' />}

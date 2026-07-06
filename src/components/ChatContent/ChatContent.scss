@@ -144,6 +144,77 @@
   animation: fadeIn 0.3s;
 }
 
+// LLM-style empty state: centers the input like Claude/ChatGPT
+.chat-content-wrapper.llm-empty-state {
+  .chat-content-scroll-container {
+    flex: 0 0 0;
+    max-height: 0;
+    overflow: hidden;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .chat-bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 24px 48px;
+
+    .llm-empty-state-title {
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto 16px;
+      padding-left: 6px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--react-autoql-text-color-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .react-autoql-icon {
+        color: var(--react-autoql-accent-color);
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+
+        svg {
+          width: 1.4em;
+          height: 1.4em;
+        }
+      }
+    }
+
+    @media (max-width: 576px) {
+      padding: 0 12px 24px;
+
+      .llm-empty-state-title {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-left: 0;
+
+        .react-autoql-icon {
+          font-size: 2.5rem;
+
+          svg {
+            width: 2em;
+            height: 2em;
+          }
+        }
+      }
+    }
+  }
+}
+
 .scroll-to-bottom-button {
   position: absolute;
   bottom: 32px;

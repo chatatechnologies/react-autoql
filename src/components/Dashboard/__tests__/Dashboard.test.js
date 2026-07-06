@@ -639,22 +639,6 @@ describe('Dashboard.addTile — DM response handling', () => {
     queryId: 'dm-qid-1',
   }
 
-  test('strips queryResponse when isEditing=true and tile has no queryId (pre-feature tile)', () => {
-    const mockOnChange = jest.fn(() => Promise.resolve())
-    const wrapper = setup({ isEditing: true, onChange: mockOnChange })
-    const instance = wrapper.instance()
-    instance.getMostRecentTiles = jest.fn(() => [])
-    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
-
-    const { queryId: _qid, ...contentWithoutQueryId } = dmContent
-    instance.addTile(contentWithoutQueryId)
-
-    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
-    expect(addedTile.query).toBe('SELECT * FROM sales')
-    expect(addedTile.queryResponse).toBeUndefined()
-    expect(addedTile.secondQueryResponse).toBeUndefined()
-  })
-
   test('preserves queryResponse when isEditing=true and tile already has queryId', () => {
     const wrapper = setup({ isEditing: true })
     const instance = wrapper.instance()
@@ -955,14 +939,6 @@ describe('Dashboard.getDirtyTileKeys', () => {
 
   test('does NOT mark dirty when query text changed AND new queryId (already re-executed)', () => {
     expect(setupDirtyTest({ query: 'sales by product', queryId: 'qid-new' }).has('tile-abc')).toBe(false)
-  })
-
-  test('detects secondQuery change when secondQueryId is unchanged (not yet re-executed)', () => {
-    expect(setupDirtyTest({ secondQuery: 'revenue by month' }).has('tile-abc')).toBe(true)
-  })
-
-  test('does NOT mark dirty when secondQuery changed AND new secondQueryId (already re-executed)', () => {
-    expect(setupDirtyTest({ secondQuery: 'revenue by month', secondQueryId: 'qid-second-new' }).has('tile-abc')).toBe(false)
   })
 
   test('does NOT mark dirty when only queryId changes', () => {

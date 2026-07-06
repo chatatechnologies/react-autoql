@@ -887,6 +887,7 @@ export class QueryOutput extends React.Component {
             ...col,
             type: override.type,
             precision: override.precision,
+            isCyclical: override.isCyclical,
           }
         }
       }
@@ -1920,6 +1921,11 @@ export class QueryOutput extends React.Component {
     useOrLogic,
     groupBys: explicitGroupBys,
   }) => {
+    const stringCol = columns?.[stringColumnIndex]
+    if (stringCol?.isCyclical) {
+      return
+    }
+
     if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
       return this.processDrilldown({
         supportedByAPI: true,
@@ -2308,12 +2314,14 @@ export class QueryOutput extends React.Component {
         const existingOverride = overrides[newCol.index]
         const needsUpdate =
           (newCol.type && newCol.type !== existingOverride?.type) ||
-          (newCol.precision && newCol.precision !== existingOverride?.precision)
+          (newCol.precision && newCol.precision !== existingOverride?.precision) ||
+          (newCol.isCyclical !== undefined && newCol.isCyclical !== existingOverride?.isCyclical)
 
         if (needsUpdate) {
           overrides[newCol.index] = {
             type: newCol.type || existingOverride?.type,
             precision: newCol.precision || existingOverride?.precision,
+            isCyclical: newCol.isCyclical ?? existingOverride?.isCyclical,
           }
         }
       })
@@ -4642,7 +4650,7 @@ export class QueryOutput extends React.Component {
         {!this.props.tooltipID && !this.props.isResizing && !this.props.isUserResizing && (
           <Tooltip tooltipId={this.TOOLTIP_ID} />
         )}
-        {!this.props.chartTooltipID && !this.props.isResizing && !this.props.isUserResizing && (
+        {!this.props.chartTooltipID && (
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />
         )}
         {this.renderAddColumnBtn()}

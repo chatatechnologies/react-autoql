@@ -123,7 +123,8 @@ const SankeyColumnSelector = ({
       <div className='sankey-path-dropdown-popover-content' ref={setPathPopoverElement}>
         <div className='sankey-column-dropdown-title'>Path Columns</div>
         <div className='sankey-path-dropdown-subtitle'>Order defines flow direction</div>
-        <CustomScrollbars className='sankey-path-selected-list' suppressScrollX>
+        <CustomScrollbars className='sankey-path-selected-list' suppressScrollX maxHeight={240}>
+          <div className='sankey-path-selected-list-inner'>
           {pathColumnIndices.map((columnIndex, listIndex) => {
             const column = columns[columnIndex]
             if (!column) return null
@@ -177,6 +178,7 @@ const SankeyColumnSelector = ({
                     type='button'
                     className='sankey-path-control-btn danger'
                     onClick={() => removePathColumn(columnIndex)}
+                    disabled={pathColumnIndices.length <= 2}
                   >
                     ×
                   </button>
@@ -184,6 +186,7 @@ const SankeyColumnSelector = ({
               </div>
             )
           })}
+          </div>
         </CustomScrollbars>
         {!hasMinPath && <div className='sankey-path-warning'>Select at least 2 columns to render a Sankey path.</div>}
         <div className='sankey-path-add-title'>Add column</div>

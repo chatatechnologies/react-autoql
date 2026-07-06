@@ -101,10 +101,9 @@ describe('Dashboard resetTile new fields', () => {
     wrapper.unmount()
   })
 
-  it('clears dataConfig and secondDataConfig on reset', () => {
+  it('clears dataConfig on reset', () => {
     const tile = makeTile({
       dataConfig: { tableConfig: { columnMap: {} }, pivotTableConfig: null },
-      secondDataConfig: { tableConfig: null, pivotTableConfig: { cols: [] } },
     })
     const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
     const instance = wrapper.find('DashboardWithoutTheme').instance()
@@ -115,7 +114,6 @@ describe('Dashboard resetTile new fields', () => {
     const resetTile = instance.pendingResetTiles?.find((t) => t.i === 'tile-1')
     expect(resetTile).toBeDefined()
     expect(resetTile.dataConfig).toBeUndefined()
-    expect(resetTile.secondDataConfig).toBeUndefined()
     expect(resetTile.tableFilters).toEqual([])
     expect(resetTile.orders).toEqual([])
 
@@ -262,36 +260,6 @@ describe('addTileStateToLog clears reset flags immediately', () => {
     expect(instance.isResettingTile).toBe(false)
     expect(instance.resettingTileId).toBeNull()
     expect(instance.pendingResetTiles).toBeNull()
-
-    wrapper.unmount()
-  })
-
-  it('keeps isResettingTile active for split-view tiles until both halves have responded', () => {
-    const tile = makeTile({ secondQuery: 'SELECT 2', secondQueryResponse: null })
-    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
-    const instance = wrapper.find('DashboardWithoutTheme').instance()
-
-    instance.tileLog = [[{ ...tile, queryResponse: null }]]
-    instance.currentLogIndex = 0
-    instance.isResettingTile = true
-    instance.resettingTileId = 'tile-1'
-    instance.pendingResetTiles = [{ ...tile, queryResponse: null }]
-
-    // First flush — only top query responded; secondQueryResponse still null
-    instance.addTileStateToLog([tile])
-
-    // Flags must still be active — bottom half has not yet responded
-    expect(instance.isResettingTile).toBe(true)
-    expect(instance.tileLog).toHaveLength(1) // absorbed into [0], no new entry
-
-    // Second flush — bottom query also responded
-    const tileBothDone = { ...tile, secondQueryResponse: { data: { rows: [[4]] } } }
-    instance.addTileStateToLog([tileBothDone])
-
-    expect(instance.isResettingTile).toBe(false)
-    expect(instance.resettingTileId).toBeNull()
-    expect(instance.pendingResetTiles).toBeNull()
-    expect(instance.tileLog).toHaveLength(1) // still only one entry
 
     wrapper.unmount()
   })
@@ -529,15 +497,14 @@ describe('canUndo / canRedo', () => {
 })
 
 describe('stripRuntimeFields', () => {
-  it('strips queryResponse and secondQueryResponse from each tile', () => {
-    const tile = makeTile({ queryResponse: { data: {} }, secondQueryResponse: { data: {} } })
+  it('strips queryResponse from each tile', () => {
+    const tile = makeTile({ queryResponse: { data: {} } })
     const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} />)
     const instance = wrapper.find('DashboardWithoutTheme').instance()
 
     const result = instance.stripRuntimeFields([tile])
 
     expect(result[0].queryResponse).toBeUndefined()
-    expect(result[0].secondQueryResponse).toBeUndefined()
     expect(result[0].query).toBe(tile.query)
 
     wrapper.unmount()

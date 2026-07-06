@@ -103,6 +103,7 @@ class QueryInput extends React.Component {
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
     disableColumnSelection: PropTypes.bool,
+    isLLMEmptyState: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -131,6 +132,7 @@ class QueryInput extends React.Component {
     addResponseMessage: () => {},
     executeQuery: () => {},
     disableColumnSelection: false,
+    isLLMEmptyState: false,
   }
 
   componentDidMount = () => {
@@ -159,6 +161,10 @@ class QueryInput extends React.Component {
 
     if (this.state.inputValue && !prevState.inputValue && !this.userSelectedSuggestion) {
       this.setState({ suggestions: [] })
+    }
+
+    if (prevProps.isDisabled && !this.props.isDisabled) {
+      this.focus()
     }
   }
 
@@ -912,20 +918,18 @@ class QueryInput extends React.Component {
       autoComplete: 'one-time-code',
     }
 
-    const isTopicsBelow = this.props.quickTopicsPlacement === 'below'
+    const isTopicsBelow = this.props.isLLMEmptyState || this.props.quickTopicsPlacement === 'below'
     const showTopics =
       this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
 
     const toggleTopicsCollapsed = () =>
-      this.setState((s) => ({ topicsCollapsed: !s.topicsCollapsed, isExpanded: s.topicsCollapsed ? s.isExpanded : false }))
+      this.setState((s) => ({
+        topicsCollapsed: !s.topicsCollapsed,
+        isExpanded: s.topicsCollapsed ? s.isExpanded : false,
+      }))
 
-    const renderQuerySuggestions = () => (
-      <div
-        className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} ${this.state.topicsCollapsed ? 'topics-collapsed' : ''} placement-${
-          this.props.quickTopicsPlacement
-        }`}
-      >
-        {/* Expanded Section */}
+    const renderExpandedContent = () => (
+      <>
         {this.state.isExpanded && this.state.selectedTopic && (
           <div className='query-suggestions-expanded'>
             <div className='query-suggestions-expanded-header'>
@@ -975,36 +979,51 @@ class QueryInput extends React.Component {
             )}
           </div>
         )}
-
-        <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
-          <div className='query-suggestions-buttons'>
-            <button className='query-suggestions-collapse-btn' onClick={toggleTopicsCollapsed} type='button'>
-              <Icon type='caret-down' />
-              <span className='query-suggestions-buttons-label'>
-                <Icon type='lightning' /> Quick Topics:{' '}
-              </span>
-            </button>
-            {this.state.topics.map((topic, index) => (
-              <button
-                key={`topic-${index}-${topic.context || ''}`}
-                className={`query-suggestion-button ${
-                  this.state.selectedTopic?.context === topic.context ? 'selected' : ''
-                }`}
-                onClick={() => this.onTopicClick(topic)}
-                type='button'
-              >
-                {topic.displayName}
-              </button>
-            ))}
-          </div>
-        </CustomScrollbars>
-      </div>
+      </>
     )
+
+    const renderQuerySuggestions = () => {
+
+      return (
+        <div
+          className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} ${
+            this.state.topicsCollapsed ? 'topics-collapsed' : ''
+          } placement-${isTopicsBelow ? 'below' : 'above'}`}
+        >
+          {renderExpandedContent()}
+
+          <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
+            <div className='query-suggestions-buttons'>
+              <button className='query-suggestions-collapse-btn' onClick={toggleTopicsCollapsed} type='button'>
+                <Icon type='caret-down' />
+                <span className='query-suggestions-buttons-label'>
+                  <Icon type='lightning' /> Quick Topics:{' '}
+                </span>
+              </button>
+              {this.state.topics.map((topic, index) => (
+                <button
+                  key={`topic-${index}-${topic.context || ''}`}
+                  className={`query-suggestion-button ${
+                    this.state.selectedTopic?.context === topic.context ? 'selected' : ''
+                  }`}
+                  onClick={() => this.onTopicClick(topic)}
+                  type='button'
+                >
+                  {topic.displayName}
+                </button>
+              ))}
+            </div>
+          </CustomScrollbars>
+        </div>
+      )
+    }
 
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'}`}
+          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'} ${
+            this.props.isLLMEmptyState ? 'llm-empty-state' : ''
+          }`}
           ref={(ref) => (this.queryInputWrapperRef = ref)}
         >
           {/* Query Suggestions - Render ABOVE input when placement is 'above' */}
@@ -1017,7 +1036,11 @@ class QueryInput extends React.Component {
             data-test='chat-bar'
           >
             <div className='react-autoql-input-row'>
-              <div className={`react-autoql-chatbar-input-container${showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''}`}>
+              <div
+                className={`react-autoql-chatbar-input-container${
+                  showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''
+                }`}
+              >
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
                     onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
