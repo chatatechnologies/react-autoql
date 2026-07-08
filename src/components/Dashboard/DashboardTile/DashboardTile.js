@@ -129,6 +129,8 @@ export class DashboardTile extends React.Component {
       queryResponse: PropTypes.shape({}),
       defaultSelectedSuggestion: PropTypes.string,
       queryValidationSelections: PropTypes.any,
+      // Project this tile's query should run against (multi-project dashboards)
+      projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     }).isRequired,
     isEditing: PropTypes.bool,
     isDirty: PropTypes.bool,
@@ -248,6 +250,10 @@ export class DashboardTile extends React.Component {
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
+    // Re-run the query if the tile's project changed (e.g. reassigned to a different project)
+    if (this.props.tile?.projectId !== prevProps.tile?.projectId && this.isQueryValid(this.props.tile?.query)) {
+      this.processTile({ query: this.props.tile.query })
+    }
     const prevQR = prevProps.tile?.queryResponse
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
@@ -267,7 +273,8 @@ export class DashboardTile extends React.Component {
         !_isEqual(prevTile.filters, nextTile.filters) ||
         !_isEqual(prevTile.orders, nextTile.orders) ||
         prevTile.pageSize !== nextTile.pageSize ||
-        prevTile.query !== nextTile.query
+        prevTile.query !== nextTile.query ||
+        prevTile.projectId !== nextTile.projectId
 
       if (topChanged && this.topRequestData) {
         this.topRequestData = {
@@ -277,6 +284,7 @@ export class DashboardTile extends React.Component {
           orders: nextTile.orders || [],
           pageSize: nextTile.pageSize,
           query: nextTile.query || this.topRequestData.query,
+          projectId: nextTile.projectId,
         }
       }
     } catch (e) {
@@ -578,6 +586,8 @@ export class DashboardTile extends React.Component {
       const requestData = {
         ...getAuthentication(this.props.authentication),
         ...getAutoQLConfig(this.props.autoQLConfig),
+        // Tile-level projectId overrides the dashboard-wide autoQLConfig projectId
+        ...(this.props.tile?.projectId != null ? { projectId: this.props.tile.projectId } : {}),
         enableQueryValidation: !this.props.isEditing
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
@@ -964,6 +974,36 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  // Project the tile's query was executed against: flat project_id/project_name on response.data.data (AQLP-585)
+  getTileProject = (response) => {
+    const data = response?.data?.data
+    if (!data?.project_id && !data?.project_name) {
+      return null
+    }
+
+    return {
+      id: data.project_id,
+      name: data.project_name,
+    }
+  }
+
+  renderProjectBadge = () => {
+    const project = this.getTileProject(this.props.tile?.queryResponse)
+    if (!project?.name) {
+      return null
+    }
+
+    return (
+      <span
+        className='dashboard-tile-project-badge'
+        data-tooltip-content={`Project: ${project.name}`}
+        data-tooltip-id={this.props.tooltipID}
+      >
+        {project.name}
+      </span>
+    )
+  }
+
   renderRTPopoverContent = (queryResponse) => {
     const response = queryResponse || this.props.tile?.queryResponse
     if (!response) return null
@@ -1127,6 +1167,7 @@ export class DashboardTile extends React.Component {
             </div>
 
             <div className='dashboard-tile-right-input-container'>
+              {this.renderProjectBadge()}
               <Icon className='title-input-icon' type='title' tooltip='Title' tooltipID={this.props.tooltipID} />
               <input
                 className='dashboard-tile-input title'
@@ -1152,6 +1193,7 @@ export class DashboardTile extends React.Component {
         >
           {fullTitle}
         </span>
+        {this.renderProjectBadge()}
         <div className='dashboard-tile-title-divider'></div>
       </div>
     )

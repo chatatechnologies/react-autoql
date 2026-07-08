@@ -406,6 +406,22 @@
   display: none;
 }
 
+// Label identifying which project a tile's query was executed against
+.dashboard-tile-project-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.55));
+  background: var(--react-autoql-background-color-primary, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
+}
+
 /* Input box styling for edit mode */
 .dashboard-tile-input-container {
   display: flex;
