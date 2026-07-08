@@ -145,6 +145,7 @@ export class DataMessenger extends React.Component {
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
 
     // Projects
     projectSelectList: PropTypes.arrayOf(
@@ -215,6 +216,7 @@ export class DataMessenger extends React.Component {
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
     setMobileActivePage: () => {},
     // Callbacks
     onNotificationExpandCallback: () => {},
@@ -1145,9 +1147,7 @@ export class DataMessenger extends React.Component {
     return (
       <>
         <Tooltip tooltipId={this.TOOLTIP_ID} />
-        {!this.state.isResizing && (
-          <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />
-        )}
+        <Tooltip className='react-autoql-chart-tooltip' tooltipId={this.CHART_TOOLTIP_ID} delayShow={0} />
       </>
     )
   }

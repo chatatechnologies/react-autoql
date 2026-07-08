@@ -9,137 +9,124 @@
   }
 }
 
-.drawer-content-wrapper {
-  .drawer-content {
-    .chat-content-scroll-container {
-      position: absolute;
-      height: 100%;
-      width: 100%;
-      padding-bottom: 200px;
-      // Glassmorphism: semi-transparent background with blur
-      background-color: var(--react-autoql-background-color-primary);
-      backdrop-filter: blur(10px) saturate(180%);
-      -webkit-backdrop-filter: blur(10px) saturate(180%);
-      overflow: hidden;
-      position: relative;
-      isolation: isolate;
+.chat-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  font-size: 0.875rem;
+}
 
-      // Semi-transparent overlay for glass effect
-      &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-color: var(--react-autoql-background-color-primary);
-        opacity: 0.85;
-        pointer-events: none;
-        z-index: -1;
-      }
+.chat-content-scroll-container {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background-color: var(--react-autoql-background-color-primary);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
 
-      // Fallback for browsers without backdrop-filter support
-      @supports not (backdrop-filter: blur(10px)) {
-        background-color: var(--react-autoql-background-color-primary);
-        &::before {
-          opacity: 0.95;
-        }
-      }
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--react-autoql-background-color-primary);
+    opacity: 0.85;
+    pointer-events: none;
+    z-index: -1;
+  }
 
-      &.no-topics {
-        padding-bottom: 146px;
+  @supports not (backdrop-filter: blur(10px)) {
+    background-color: var(--react-autoql-background-color-primary);
+    &::before {
+      opacity: 0.95;
+    }
+  }
 
-        &.mobile-padding {
-          padding-bottom: 90px;
-        }
-      }
+  .chat-content-scrollbars-container {
+    height: 100%;
+  }
 
-      &.mobile-padding {
-        padding-bottom: 136px;
-      }
+  .chat-content-container {
+    overflow: hidden;
+    padding-bottom: 48px;
+  }
 
-      .chat-content-container {
-        overflow: hidden;
-      }
+  @media (hover: none) and (pointer: coarse) {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    contain: layout style;
 
-      // Improve touch handling for nested scrollable content on mobile
-      @media (hover: none) and (pointer: coarse) {
-        // Allow vertical scrolling for chat content, optimized for performance
-        touch-action: pan-y;
-        // Add performance optimizations for smooth scrolling
-        -webkit-overflow-scrolling: touch;
+    .react-autoql-table-container {
+      touch-action: auto;
+      contain: layout;
+
+      .react-autoql-tabulator-container {
+        position: relative;
+        touch-action: auto;
         contain: layout style;
 
-        // Ensure tables within chat messages can handle touch events properly
-        .react-autoql-table-container {
-          // Let the table handle its own touch events (both directions)
-          touch-action: auto;
-          // Optimize performance by containing layout changes
-          contain: layout;
-
-          // Prevent the chat scroll from interfering with table scroll
-          .react-autoql-tabulator-container {
-            // Ensure table gets priority for touch events
-            position: relative;
-            touch-action: auto;
-            // Performance optimization
-            contain: layout style;
-
-            // Create a new stacking context to isolate events
-            .tabulator-tableholder {
-              position: relative;
-              // Performance optimization for scrolling
-              contain: layout style;
-            }
-          }
+        .tabulator-tableholder {
+          position: relative;
+          contain: layout style;
         }
       }
     }
   }
 }
 
-.react-autoql-drawer .response-loading-container {
-  position: absolute;
-  bottom: 150px;
-  left: 20px;
-  z-index: 1;
 
-  &.mobile-padding {
-    bottom: 88px;
-  }
-}
-
-.chat-content-scroll-container.no-topics .response-loading-container {
-  bottom: 100px;
-  z-index: 1;
-
-  &.mobile-padding {
-    bottom: 44px;
-  }
-}
-
-.react-autoql-drawer .chat-bar-container {
-  position: absolute;
-  bottom: 0;
+.chat-bar-container {
+  flex-shrink: 0;
   padding: 0px;
-  height: 60px;
   width: 100%;
   overflow: visible;
-
   background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.chat-content-scroll-container .chat-content-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color: var(--react-autoql-background-color-primary);
+  box-shadow: 0 -6px 20px 4px var(--react-autoql-background-color-primary);
+  z-index: 3;
+  pointer-events: none;
+  padding: 4px 0;
+
+  .bottom-bar-right {
+    flex: 1;
+  }
+
+  .bottom-bar-left {
+    flex: 1;
+    position: relative;
+    align-self: stretch;
+    overflow: visible;
+
+    .response-loading {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 78px;
+    }
+  }
 }
 
 .chat-content-scroll-container .watermark {
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center;
+  font-size: 0.8125rem;
   color: var(--react-autoql-text-color-placeholder);
   opacity: 0.7;
-  position: sticky;
-  bottom: -22px;
-  width: 100%;
-  font-size: 13px;
-  z-index: 0;
-  pointer-events: none;
-  margin-bottom: -30px;
 
   .react-autoql-icon {
     margin-right: 5px;
@@ -147,35 +134,93 @@
 }
 
 .chat-content-scroll-container .watermark-fade {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 20px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--react-autoql-background-color-primary)
-  );
-  pointer-events: none;
-  z-index: 0;
-  margin-bottom: -20px;
+  display: none;
 }
+
 
 .chat-bar-container .chat-drawer-chat-bar {
   flex-shrink: 0;
   flex-grow: 0;
-  height: 60px;
   animation: fadeIn 0.3s;
 }
 
+// LLM-style empty state: centers the input like Claude/ChatGPT
+.chat-content-wrapper.llm-empty-state {
+  .chat-content-scroll-container {
+    flex: 0 0 0;
+    max-height: 0;
+    overflow: hidden;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+
+    &::before {
+      display: none;
+    }
+  }
+
+  .chat-bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 24px 48px;
+
+    .llm-empty-state-title {
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto 16px;
+      padding-left: 6px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--react-autoql-text-color-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .react-autoql-icon {
+        color: var(--react-autoql-accent-color);
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+
+        svg {
+          width: 1.4em;
+          height: 1.4em;
+        }
+      }
+    }
+
+    @media (max-width: 576px) {
+      padding: 0 12px 24px;
+
+      .llm-empty-state-title {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-left: 0;
+
+        .react-autoql-icon {
+          font-size: 2.5rem;
+
+          svg {
+            width: 2em;
+            height: 2em;
+          }
+        }
+      }
+    }
+  }
+}
+
 .scroll-to-bottom-button {
-  position: sticky;
-  bottom: -26px;
+  position: absolute;
+  bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1;
+  z-index: 4;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -188,8 +233,6 @@
   justify-content: center;
   transition: opacity 0.2s, transform 0.2s;
   animation: fadeIn 0.3s;
-  margin: 0 auto;
-  margin-bottom: -30px;
 
   &:hover {
     transform: translateX(-50%) scale(1.1);
@@ -202,6 +245,6 @@
 
   .react-autoql-icon {
     color: var(--react-autoql-text-color-on-accent, #ffffff);
-    font-size: 16px;
+    font-size: 1rem;
   }
 }

@@ -256,6 +256,9 @@ export declare const Icon: React.FC<{ type: string; className?: string; [key: st
 export declare const LoadingDots: React.FC<{ [key: string]: any }>
 
 export declare const DataAlerts: React.ComponentType<any>
+export declare const DataAlertsTabbed: React.ComponentType<any>
+export declare const DataAlertsList: React.ComponentType<any>
+export declare const DataAlertRow: React.ComponentType<any>
 export declare const DataAlertModal: React.ComponentType<any>
 export declare const DataAlertDeleteDialog: React.ComponentType<any>
 export declare const DataAlertListItem: React.ComponentType<any>

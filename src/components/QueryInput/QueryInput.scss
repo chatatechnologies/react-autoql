@@ -38,10 +38,12 @@
   margin: 0px 10px 0 10px;
   height: 42px;
   width: calc(100% - 20px);
+  transition: border-radius 0.3s ease, margin-left 0.3s ease, border-left-color 0.2s ease, width 0.3s ease,
+    box-shadow 0.3s ease, border-color 0.2s ease, padding-left 0.3s ease;
   white-space: nowrap;
   box-sizing: border-box;
   border-radius: 24px;
-  font-size: 16px;
+  font-size: 1rem;
   font-family: inherit;
   letter-spacing: 0.04em;
   outline: none !important;
@@ -57,9 +59,7 @@
   color: #5d5d5d;
   position: relative;
   isolation: isolate;
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 
   // Semi-transparent overlay for glass effect
   &::before {
@@ -88,12 +88,11 @@
   background: rgba(0, 0, 0, 0.03);
 }
 .react-autoql-chatbar-input:not(:disabled):hover {
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.1),
-    0 2px 6px rgba(0, 0, 0, 0.08),
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08),
     0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   border-color: var(--react-autoql-accent-color, rgba(38, 167, 233, 0.3));
 }
+
 .react-autoql-chatbar-input::placeholder {
   /* Default color outside of data messenger */
   color: #999 !important;
@@ -132,7 +131,7 @@
   height: unset;
   border-radius: 15px;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: normal;
   z-index: 2;
   overflow: hidden;
@@ -189,7 +188,7 @@
 
 .react-autoql-bar-container .react-autosuggest__section-title {
   padding: 10px 0 0 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-placeholder);
 }
 
@@ -208,7 +207,7 @@
   top: 0;
   width: 46px;
   height: 100%;
-  font-size: 20px;
+  font-size: 1.25rem;
   color: #28a8e0; // For chata logo
 }
 
@@ -219,37 +218,40 @@
   padding: 0;
   z-index: 1;
   background: var(--react-autoql-background-color-primary);
-  transition: box-shadow 0.3s ease;
   max-height: 200px;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  transition: max-height 0.3s ease, opacity 0.25s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  opacity: 1;
 
-  // Above placement (default)
+  // Above placement (default) — renders before input in DOM, so sits above it in flow
   &.placement-above {
-    position: absolute;
-    bottom: 100%;
-    top: unset;
+    position: relative;
     border-top: 1px solid var(--react-autoql-border-color);
     border-radius: 8px 8px 0 0;
-    box-shadow: 0 -7px 6px -4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 -4px 6px -4px rgba(0, 0, 0, 0.05);
   }
 
-  // Below placement
+  // Below placement — renders after input in DOM, so sits below it in flow
   &.placement-below {
     position: relative;
-    top: unset;
-    bottom: unset;
     border-top: 1px solid var(--react-autoql-border-color);
     border-radius: 0 0 8px 8px;
     box-shadow: 0 7px 6px -4px rgba(0, 0, 0, 0.05);
-    flex-direction: column-reverse; // Reverse order so buttons are on top, expanded content below
+    flex-direction: column-reverse;
   }
 
   &.expanded {
     max-height: 300px;
     z-index: 999999;
+  }
+
+  &.topics-collapsed {
+    max-height: 0;
+    opacity: 0;
+    border-color: transparent;
+    box-shadow: none;
   }
 
   .query-suggestions-main-close {
@@ -289,11 +291,78 @@
 }
 
 .query-suggestions-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-placeholder);
   margin-bottom: 8px;
   font-weight: 500;
   flex-shrink: 0;
+}
+
+.query-suggestions-collapse-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px 4px 4px;
+  border-radius: 4px;
+  color: var(--react-autoql-text-color-primary);
+  opacity: 0.6;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+    background-color: var(--react-autoql-mask-color, rgba(0, 0, 0, 0.05));
+  }
+
+  .react-autoql-icon:first-child {
+    font-size: 0.625rem;
+    transition: transform 0.3s ease;
+  }
+}
+
+.react-autoql-input-query-suggestions.topics-collapsed {
+  .query-suggestions-collapse-btn .react-autoql-icon:first-child {
+    transform: rotate(-90deg);
+  }
+}
+
+.react-autoql-chatbar-input-container {
+  &.has-collapsed-icon .react-autoql-chatbar-input {
+    padding-left: 3rem;
+  }
+}
+
+.topics-collapsed-icon {
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--react-autoql-accent-color, #28a8e0);
+  font-size: 1.25rem;
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 1;
+
+  &.visible {
+    opacity: 0.75;
+    pointer-events: auto;
+  }
+
+  &:hover {
+    opacity: 1;
+  }
 }
 
 .query-suggestions-buttons-wrapper {
@@ -334,17 +403,16 @@
 
 .query-suggestions-buttons {
   display: flex;
+  align-items: center;
   gap: 6px;
-  padding: 10px 0 10px 22px;
+  padding: 8px 10px 8px 6px;
   white-space: nowrap;
 }
 
 .query-suggestions-buttons-label {
-  color: var(--react-autoql-text-color-primary);
-  opacity: 0.7;
   white-space: nowrap;
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   display: flex;
   align-items: center;
 
@@ -355,12 +423,12 @@
 }
 
 .query-suggestion-button {
-  padding: 6px 12px;
+  padding: 0.25rem 0.75rem;
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 16px;
   background-color: var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -496,19 +564,19 @@
   .data-explorer-sample-query {
     padding: 6px 8px;
     margin-bottom: 4px;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.3;
     min-height: 40px;
   }
 
   .react-autoql-sample-query-title {
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 500;
     margin-bottom: 2px;
   }
 
   .react-autoql-sample-query-description {
-    font-size: 11px;
+    font-size: 0.6875rem;
     color: var(--react-autoql-text-color-placeholder);
     line-height: 1.2;
   }
@@ -519,13 +587,13 @@
 
   .react-autoql-sample-query-button {
     padding: 4px 8px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 }
 
 /* Sample Queries Header Styles - QueryInput specific */
 .react-autoql-query-input-wrapper .react-autoql-data-explorer-title-text {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   color: var(--react-autoql-text-color-primary);
 }
@@ -540,7 +608,7 @@
 }
 
 .react-autoql-query-input-wrapper .react-autoql-data-explorer-title-text-sample-queries {
-  font-size: 16px;
+  font-size: 1rem;
   color: var(--react-autoql-text-color-primary);
   display: flex;
   align-items: center;
@@ -574,7 +642,7 @@
   gap: 5px;
   padding: 8px 12px;
   margin-left: 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
@@ -600,7 +668,7 @@
   }
 
   .react-autoql-icon {
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 }
 
@@ -614,6 +682,124 @@
   align-items: center;
   justify-content: center;
   z-index: 2;
+}
+
+// LLM empty state — input + topics are one unified rounded container
+.react-autoql-query-input-wrapper.llm-empty-state {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+
+  // Bar container rounds all corners by default (no topics below)
+  .react-autoql-bar-container {
+    padding: 0;
+    border: none;
+    border-radius: 20px;
+    box-shadow: none;
+    background-color: var(--react-autoql-background-color-secondary);
+
+    .react-autoql-input-row {
+      align-items: center;
+    }
+
+    .react-autoql-chatbar-input {
+      margin: 0;
+      width: 100%;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      height: 60px;
+      padding-left: 20px;
+
+      &::before {
+        display: none;
+      }
+
+      &:hover {
+        box-shadow: none;
+        border-color: transparent;
+      }
+    }
+
+    .react-autosuggest__container {
+      flex: 1;
+    }
+
+    .input-microphone-button {
+      right: 0;
+    }
+
+    .chat-voice-record-button {
+      margin: 0;
+    }
+
+    &.autosuggest-top .react-autosuggest__suggestions-container--open {
+      bottom: 54px;
+    }
+
+    &.autosuggest-bottom .react-autosuggest__suggestions-container--open {
+      top: 54px;
+    }
+  }
+
+  // When topics are present, flatten bar-container bottom corners and round topics bottom
+  &:has(.react-autoql-input-query-suggestions.placement-below) {
+    .react-autoql-bar-container {
+      border-radius: 20px 20px 0 0;
+    }
+  }
+
+  .react-autoql-input-query-suggestions.placement-below {
+    background-color: var(--react-autoql-background-color-secondary);
+    border-top: 1px solid var(--react-autoql-border-color);
+    border-bottom: none;
+    border-radius: 0 0 20px 20px;
+    box-shadow: none;
+    padding: 8px 12px;
+
+    .query-suggestions-collapse-btn {
+      pointer-events: none;
+      cursor: default;
+
+      .react-autoql-icon:first-child {
+        display: none;
+      }
+    }
+  }
+
+  .react-autoql-input-send-button {
+    margin-right: 8px;
+  }
+
+  @media (max-width: 576px) {
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+
+    .react-autoql-bar-container {
+      border-radius: 16px;
+
+      .react-autoql-chatbar-input {
+        height: 52px;
+        font-size: 0.9375rem;
+      }
+    }
+
+    &:has(.react-autoql-input-query-suggestions.placement-below) {
+      .react-autoql-bar-container {
+        border-radius: 16px 16px 0 0;
+      }
+    }
+
+    .react-autoql-input-query-suggestions.placement-below {
+      border-radius: 0 0 16px 16px;
+      padding: 4px 8px;
+    }
+  }
 }
 
 /* Send button */
@@ -631,7 +817,7 @@
   margin: 0px 2px;
   flex-shrink: 0;
   transition: all 0.2s ease;
-  font-size: 20px;
+  font-size: 1.25rem;
 
   &:hover:not(:disabled) {
     transform: scale(1.05);

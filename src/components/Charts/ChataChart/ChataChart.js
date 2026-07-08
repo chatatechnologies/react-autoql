@@ -1487,7 +1487,7 @@ export default class ChataChart extends React.Component {
                 : ''
             }
             ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
+            ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns && !this.props.columns?.[this.props.stringColumnIndex]?.isCyclical ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
             {!this.firstRender && !this.props.isAnimating && (
               <svg
@@ -1496,7 +1496,7 @@ export default class ChataChart extends React.Component {
                 width='100%'
                 height='100%'
                 style={{
-                  fontSize: '12px',
+                  fontSize: '0.75rem',
                   fontFamily: chartFontFamily,
                   color: chartTextColor,
                   background: chartBackgroundColor,

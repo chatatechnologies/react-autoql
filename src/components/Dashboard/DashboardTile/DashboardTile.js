@@ -5,8 +5,6 @@ import axios from 'axios'
 import _cloneDeep from 'lodash.clonedeep'
 import _isEqual from 'lodash.isequal'
 import Autosuggest from 'react-autosuggest'
-import SplitterLayout from 'react-splitter-layout'
-
 import {
   runQuery,
   fetchAutocomplete,
@@ -26,7 +24,6 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
-import { Button } from '../../Button'
 import { VizToolbar } from '../../VizToolbar'
 import { QueryOutput } from '../../QueryOutput'
 import { OptionsToolbar } from '../../OptionsToolbar'
@@ -34,6 +31,7 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
+import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 
@@ -47,10 +45,8 @@ export class DashboardTile extends React.Component {
     this._isMounted = false
     this.dashboardTileTitleRef = undefined
     this.optionsToolbarRef = undefined
-    this.secondOptionsToolbarRef = undefined
     this.COMPONENT_KEY = uuid()
     this.FIRST_QUERY_RESPONSE_KEY = uuid()
-    this.SECOND_QUERY_RESPONSE_KEY = uuid()
     this.DEFAULT_AJAX_PAGE_SIZE = 50
     this.autoCompleteTimer = undefined
     this.debounceTime = 50
@@ -62,19 +58,12 @@ export class DashboardTile extends React.Component {
     this.savedTileConfig = {}
     this.configKeys = [
       'displayType',
-      'secondDisplayType',
       'dataConfig',
-      'secondDataConfig',
       'aggConfig',
-      'secondAggConfig',
       'columns',
-      'secondColumns',
       'tableFilters',
-      'secondTableFilters',
       'axisSorts',
-      'secondAxisSorts',
       'networkColumnConfig',
-      'secondNetworkColumnConfig',
     ]
 
     const tile = props.tile
@@ -88,18 +77,9 @@ export class DashboardTile extends React.Component {
         }
       })
 
-    const newSecondAggConfig = {}
-    tile?.secondAggConfig &&
-      Object.keys(tile.secondAggConfig)?.forEach((column) => {
-        if (tile.secondAggConfig?.[column]) {
-          newSecondAggConfig[column] = tile.secondAggConfig[column].toUpperCase()
-        }
-      })
-
     props.setParamsForTile(
       {
         aggConfig: newAggConfig,
-        secondAggConfig: newSecondAggConfig,
       },
       tile.i,
     )
@@ -108,29 +88,14 @@ export class DashboardTile extends React.Component {
     this.state = {
       tileIdx: tile.i,
       query: tile.query,
-      secondQuery: tile.secondQuery || tile.query,
       title: tile.title,
       isTopExecuting: false,
-      isBottomExecuting: false,
       suggestions: [],
-      isSecondQueryInputOpen: false,
       isTopExecuted: !!tile.queryResponse,
       localRTFilterResponse: null,
-      isBottomExecuted:
-        tile.splitView && (this.areTopAndBottomSameQuery() ? !!tile.queryResponse : !!tile.secondQueryResponse),
-      initialFormattedTableParams: {
-        filters: tile?.tableFilters,
-        sorters: tile?.orders,
-        sessionFilters: tile?.filters || [],
-      },
-      initialSecondFormattedTableParams: {
-        filters: tile?.secondTableFilters,
-        sorters: tile?.secondOrders,
-        sessionFilters: tile?.filters || [],
-      },
       isRTHovered: false,
-      isSecondRTHovered: false,
-      currentSplitPercent: tile?.secondDisplayPercentage ?? 50,
+      isFollowOnModalOpen: false,
+      followOnResults: [],
       queryResponseVersion: 0,
     }
   }
@@ -146,42 +111,24 @@ export class DashboardTile extends React.Component {
       i: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       h: PropTypes.number,
       query: PropTypes.string,
-      secondQuery: PropTypes.string,
       title: PropTypes.string,
       displayType: PropTypes.string,
-      secondDisplayType: PropTypes.string,
       pageSize: PropTypes.number,
-      secondPageSize: PropTypes.number,
       bucketSize: PropTypes.number,
-      secondBucketSize: PropTypes.number,
       columns: PropTypes.array,
-      secondColumns: PropTypes.array,
       columnSelects: PropTypes.array,
-      secondColumnSelects: PropTypes.array,
       dataConfig: PropTypes.object,
-      secondDataConfig: PropTypes.object,
       aggConfig: PropTypes.object,
-      secondAggConfig: PropTypes.object,
       tableFilters: PropTypes.array,
-      secondTableFilters: PropTypes.array,
       filters: PropTypes.array,
-      secondFilters: PropTypes.array,
       orders: PropTypes.array,
-      secondOrders: PropTypes.array,
       axisSorts: PropTypes.array,
-      secondAxisSorts: PropTypes.array,
       networkColumnConfig: PropTypes.any,
-      secondNetworkColumnConfig: PropTypes.any,
       chartControls: PropTypes.object,
-      secondChartControls: PropTypes.object,
       legendFilterConfig: PropTypes.any,
       queryResponse: PropTypes.shape({}),
-      secondQueryResponse: PropTypes.shape({}),
       defaultSelectedSuggestion: PropTypes.string,
-      secondDefaultSelectedSuggestion: PropTypes.string,
       queryValidationSelections: PropTypes.any,
-      secondQueryValidationSelections: PropTypes.any,
-      splitView: PropTypes.bool,
     }).isRequired,
     isEditing: PropTypes.bool,
     isDirty: PropTypes.bool,
@@ -212,6 +159,7 @@ export class DashboardTile extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableFollowOnQuery: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
   }
 
@@ -252,6 +200,7 @@ export class DashboardTile extends React.Component {
     dashboardSlicers: [],
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableFollowOnQuery: false,
   }
 
   componentDidMount = () => {
@@ -290,9 +239,6 @@ export class DashboardTile extends React.Component {
     }
     if (this.props.tile?.query !== prevProps.tile?.query) {
       this.setState({ query: this.props.tile?.query })
-    }
-    if (this.props.tile?.secondQuery !== prevProps.tile?.secondQuery) {
-      this.setState({ secondQuery: this.props.tile?.secondQuery })
     }
     if (
       this.responseRef?._isMounted &&
@@ -333,26 +279,6 @@ export class DashboardTile extends React.Component {
           query: nextTile.query || this.topRequestData.query,
         }
       }
-
-      const prevBottom = prevTile.secondQuery || null
-      const nextBottom = nextTile.secondQuery || null
-      const bottomChanged =
-        !_isEqual(prevTile.secondTableFilters, nextTile.secondTableFilters) ||
-        !_isEqual(prevTile.secondFilters, nextTile.secondFilters) ||
-        !_isEqual(prevTile.secondOrders, nextTile.secondOrders) ||
-        prevTile.secondPageSize !== nextTile.secondPageSize ||
-        prevBottom !== nextBottom
-
-      if (bottomChanged && this.bottomRequestData) {
-        this.bottomRequestData = {
-          ...this.bottomRequestData,
-          tableFilters: nextTile.secondTableFilters || [],
-          filters: nextTile.secondFilters || [],
-          orders: nextTile.secondOrders || [],
-          pageSize: nextTile.secondPageSize,
-          query: nextTile.secondQuery || this.bottomRequestData.query,
-        }
-      }
     } catch (e) {
       // non-fatal
     }
@@ -366,7 +292,6 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.dragEndTimeout)
       clearTimeout(this.setParamsForTileTimeout)
       clearTimeout(this.queryInputTimer)
-      clearTimeout(this.secondQueryInputTimer)
       clearTimeout(this.titleInputTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
@@ -379,12 +304,10 @@ export class DashboardTile extends React.Component {
 
   refreshLayout = () => {
     this.state.responseRef?.refreshLayout()
-    this.state.secondResponseRef?.refreshLayout()
   }
 
   cancelAllQueries = () => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   debouncedSetParamsForTile = (params, callback) => {
@@ -497,14 +420,14 @@ export class DashboardTile extends React.Component {
 
     this.configKeys.forEach((key) => {
       const value = config[key]
-      // For dataConfig/secondDataConfig, check if it has valid values
-      if (key === 'dataConfig' || key === 'secondDataConfig') {
+      // For dataConfig, check if it has valid values
+      if (key === 'dataConfig') {
         if (this.hasValidDataConfig(value)) {
           filtered[key] = value
         }
       }
-      // For tableFilters/secondTableFilters, allow empty arrays but not null/undefined
-      else if (key === 'tableFilters' || key === 'secondTableFilters') {
+      // For tableFilters, allow empty arrays but not null/undefined
+      else if (key === 'tableFilters') {
         if (value != null) {
           filtered[key] = value
         }
@@ -529,19 +452,12 @@ export class DashboardTile extends React.Component {
     if (hasValidResponse || hasSavedConfig) {
       this.savedTileConfig = {
         displayType: tile.displayType,
-        secondDisplayType: tile.secondDisplayType,
         dataConfig: tile.dataConfig,
-        secondDataConfig: tile.secondDataConfig,
         aggConfig: tile.aggConfig,
-        secondAggConfig: tile.secondAggConfig,
         columns: tile.columns,
-        secondColumns: tile.secondColumns,
         tableFilters: tile.tableFilters,
-        secondTableFilters: tile.secondTableFilters,
         axisSorts: tile.axisSorts,
-        secondAxisSorts: tile.secondAxisSorts,
         networkColumnConfig: tile.networkColumnConfig,
-        secondNetworkColumnConfig: tile.secondNetworkColumnConfig,
       }
     }
   }
@@ -596,10 +512,6 @@ export class DashboardTile extends React.Component {
           const queryId = response?.data?.data?.query_id
           if (queryId) {
             paramsToSet.queryId = queryId
-            // When both halves share the same execution (same query or no split), mirror the id
-            if (this.areTopAndBottomSameQuery()) {
-              paramsToSet.secondQueryId = queryId
-            }
           }
         }
         // If successful, update saved config with current tile config (preserve user's saved settings)
@@ -607,14 +519,12 @@ export class DashboardTile extends React.Component {
         if (currentTile) {
           // Only update dataConfig if it has valid values (not just an object with undefined properties)
           const hasValidCurrentDataConfig = this.hasValidDataConfig(currentTile.dataConfig)
-          const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
 
           if (isReset) {
             // props.tile is stale during reset — only update display-type fields; clear the rest to match the zeroed tile.
             this.savedTileConfig = {
               ...this.savedTileConfig,
               displayType: currentTile.displayType || this.savedTileConfig.displayType,
-              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
               columns: [],
               tableFilters: [],
               aggConfig: undefined,
@@ -626,26 +536,13 @@ export class DashboardTile extends React.Component {
             this.savedTileConfig = {
               ...this.savedTileConfig,
               displayType: currentTile.displayType || this.savedTileConfig.displayType,
-              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
               dataConfig: hasValidCurrentDataConfig ? currentTile.dataConfig : this.savedTileConfig.dataConfig,
-              secondDataConfig: hasValidSecondDataConfig
-                ? currentTile.secondDataConfig
-                : this.savedTileConfig.secondDataConfig,
               aggConfig: currentTile.aggConfig || this.savedTileConfig.aggConfig,
-              secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
               columns: currentTile.columns || this.savedTileConfig.columns,
-              secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
               tableFilters:
                 currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
-              secondTableFilters:
-                currentTile.secondTableFilters != null
-                  ? currentTile.secondTableFilters
-                  : this.savedTileConfig.secondTableFilters,
               axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
-              secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
               networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
-              secondNetworkColumnConfig:
-                currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
             }
           }
         }
@@ -661,114 +558,22 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  setBottomExecuted = () => {
-    if (this._isMounted) {
-      this.setState({
-        isBottomExecuting: false,
-        isBottomExecuted: true,
-      })
-    }
-  }
-
-  endBottomQuery = ({ response, isReset = false, queryChanged = true, isCachedRefresh = false }) => {
-    if (response?.data?.message !== REQUEST_CANCELLED_ERROR) {
-      const isError = this.hasError(response)
-
-      // Build params to set - always include secondQueryResponse
-      const paramsToSet = {
-        secondQueryResponse: response,
-        secondDefaultSelectedSuggestion: undefined,
-      }
-
-      if (!isError && (queryChanged || !this.props.tile?.secondQueryId || !isCachedRefresh)) {
-        const secondQueryId = response?.data?.data?.query_id
-        if (secondQueryId) {
-          paramsToSet.secondQueryId = secondQueryId
-        }
-      }
-
-      if (isError) {
-        // If there's an error, restore the saved tile config for second query
-        // Only restore second query specific configs
-        const secondQueryConfig = this.filterValidConfig({
-          secondDisplayType: this.savedTileConfig.secondDisplayType,
-          secondDataConfig: this.savedTileConfig.secondDataConfig,
-          secondAggConfig: this.savedTileConfig.secondAggConfig,
-          secondColumns: this.savedTileConfig.secondColumns,
-          secondTableFilters: this.savedTileConfig.secondTableFilters,
-          secondAxisSorts: this.savedTileConfig.secondAxisSorts,
-          secondNetworkColumnConfig: this.savedTileConfig.secondNetworkColumnConfig,
-        })
-        Object.assign(paramsToSet, secondQueryConfig)
-      } else {
-        const currentTile = this.props.tile
-        if (currentTile) {
-          if (isReset) {
-            // props.tile is stale during reset — only update display-type fields; clear the rest to match the zeroed tile.
-            this.savedTileConfig = {
-              ...this.savedTileConfig,
-              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
-              secondColumns: [],
-              secondTableFilters: [],
-              secondAggConfig: undefined,
-              secondDataConfig: undefined,
-              secondAxisSorts: undefined,
-              secondNetworkColumnConfig: undefined,
-            }
-          } else {
-            const hasValidSecondDataConfig = this.hasValidDataConfig(currentTile.secondDataConfig)
-            this.savedTileConfig = {
-              ...this.savedTileConfig,
-              secondDisplayType: currentTile.secondDisplayType || this.savedTileConfig.secondDisplayType,
-              secondDataConfig: hasValidSecondDataConfig
-                ? currentTile.secondDataConfig
-                : this.savedTileConfig.secondDataConfig,
-              secondAggConfig: currentTile.secondAggConfig || this.savedTileConfig.secondAggConfig,
-              secondColumns: currentTile.secondColumns || this.savedTileConfig.secondColumns,
-              secondTableFilters:
-                currentTile.secondTableFilters != null
-                  ? currentTile.secondTableFilters
-                  : this.savedTileConfig.secondTableFilters,
-              secondAxisSorts: currentTile.secondAxisSorts || this.savedTileConfig.secondAxisSorts,
-              secondNetworkColumnConfig:
-                currentTile.secondNetworkColumnConfig || this.savedTileConfig.secondNetworkColumnConfig,
-            }
-          }
-        }
-        paramsToSet.secondNetworkColumnConfig = this.getNetworkColumnConfig(response)
-      }
-
-      this.debouncedSetParamsForTile(paramsToSet, this.setBottomExecuted)
-      return response
-    } else {
-      return Promise.reject(REQUEST_CANCELLED_ERROR)
-    }
-  }
-
-  processQuery = ({ query, userSelection, skipQueryValidation, source, isSecondHalf, isCachedRefresh, isReset = false }) => {
+  processQuery = ({ query, userSelection, skipQueryValidation, source, isCachedRefresh, isReset = false }) => {
     if (this.isQueryValid(query)) {
-      let pageSize
-      if (isSecondHalf && isChartType(this.props.tile.secondDisplayType)) {
-        pageSize = this.props.tile.secondPageSize ?? this.props.dataPageSize
-      } else if (isChartType(this.props.tile.displayType)) {
-        pageSize = this.props.tile.pageSize ?? this.props.dataPageSize
-      }
+      const pageSize = isChartType(this.props.tile.displayType)
+        ? this.props.tile.pageSize ?? this.props.dataPageSize
+        : undefined
 
-      const useSecondAxiosSource = isSecondHalf && !this.areTopAndBottomSameQuery()
-      // isReset: use empty arrays — props may carry stale values before parent re-renders.
-      const additionalColumnSelects = isReset ? [] : (isSecondHalf ? this.props.tile.secondColumnSelects : this.props.tile.columnSelects)
-      const currentDisplayOverrides = isReset ? [] : (isSecondHalf
-        ? this.props.tile?.secondDisplayOverrides
-        : this.props.tile?.displayOverrides)
-      let currentSessionFilters = isReset ? [] : (isSecondHalf ? this.props.tile.secondFilters : this.props.tile.filters || [])
+      const additionalColumnSelects = isReset ? [] : this.props.tile.columnSelects
+      const currentDisplayOverrides = isReset ? [] : this.props.tile?.displayOverrides
+      let currentSessionFilters = isReset ? [] : this.props.tile.filters || []
 
       // Merge dashboard-level slicers (applied even during reset, not tile-specific).
-      if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0 && !isSecondHalf) {
+      if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0) {
         currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
       }
-      const currentOrders = isReset ? [] : (isSecondHalf ? this.props.tile.secondOrders : this.props.tile.orders)
-      const currentFilter = isReset ? [] : (isSecondHalf ? this.props.tile.secondTableFilters : this.props.tile.tableFilters)
-      const cancelToken = useSecondAxiosSource ? this.secondAxiosSource?.token : this.axiosSource?.token
+      const currentOrders = isReset ? [] : this.props.tile.orders
+      const currentFilter = isReset ? [] : this.props.tile.tableFilters
 
       const requestData = {
         ...getAuthentication(this.props.authentication),
@@ -782,12 +587,10 @@ export class DashboardTile extends React.Component {
         filters: currentSessionFilters,
         orders: currentOrders,
         tableFilters: currentFilter,
-        // Hardcode this for now until we change the filter lock blacklist to a whitelist
-        // mergeSources(this.props.source, source),
         source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
-        cancelToken,
+        cancelToken: this.axiosSource?.token,
         pageSize,
         query,
         force: false,
@@ -799,16 +602,12 @@ export class DashboardTile extends React.Component {
       if (isCachedRefresh) {
         requestData.dashboardId = this.props.dashboardId
         requestData.tileKey = this.props.tileKey
-        requestData.queryIndex = isSecondHalf ? 1 : 0
+        requestData.queryIndex = 0
       }
 
       return this.executeQueryWithForceRetry(requestData, queryFunction)
         .then((response) => {
-          if (isSecondHalf) {
-            this.bottomRequestData = requestData
-          } else {
-            this.topRequestData = requestData
-          }
+          this.topRequestData = requestData
           return Promise.resolve(response)
         })
         .catch((error) => Promise.reject(error))
@@ -846,7 +645,15 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  processTileTop = ({ query, userSelection, skipQueryValidation, source, pageSize, isCachedRefresh, isReset = false }) => {
+  processTileTop = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    pageSize,
+    isCachedRefresh,
+    isReset = false,
+  }) => {
     this.setState({ isTopExecuting: true, queryResponse: null })
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
@@ -866,8 +673,12 @@ export class DashboardTile extends React.Component {
       : this.savedTileConfig.dataConfig
 
     // isReset: use empty arrays since props may carry stale values before parent re-renders.
-    const columns = isReset ? [] : (queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns)
-    const tableFilters = isReset ? [] : (queryChanged ? undefined : this.props.tile.tableFilters || this.savedTileConfig.tableFilters)
+    const columns = isReset ? [] : queryChanged ? undefined : this.props.tile.columns || this.savedTileConfig.columns
+    const tableFilters = isReset
+      ? []
+      : queryChanged
+      ? undefined
+      : this.props.tile.tableFilters || this.savedTileConfig.tableFilters
 
     // New query is running, reset temporary state fields
     // Only include dataConfig if it has valid values
@@ -908,8 +719,6 @@ export class DashboardTile extends React.Component {
       userSelection: queryValidationSelections,
       skipQueryValidation: skipQueryValidation,
       source,
-      pageSize,
-      isSecondHalf: false,
       isCachedRefresh,
       isReset,
     })
@@ -922,77 +731,6 @@ export class DashboardTile extends React.Component {
         }
 
         return this.endTopQuery({ response, isReset, isCachedRefresh })
-      })
-  }
-
-  processTileBottom = ({ query, userSelection, skipQueryValidation, source, isCachedRefresh, isReset = false }) => {
-    this.setState({
-      isBottomExecuting: true,
-      isSecondQueryInputOpen: false,
-      secondQueryResponse: null,
-    })
-
-    const queryChanged = this.props.tile.secondQuery !== query
-    const skipValidation = skipQueryValidation || (this.props.tile.secondskipQueryValidation && !queryChanged)
-
-    const queryValidationSelections =
-      userSelection || (queryChanged ? undefined : this.props.tile?.secondQueryValidationSelections)
-
-    // Use saved config as fallback if props haven't been updated yet (e.g., after error restoration)
-    const secondDataConfig = queryChanged
-      ? undefined
-      : this.props.tile.secondDataConfig || this.savedTileConfig.secondDataConfig
-    const secondColumns = queryChanged ? undefined : this.props.tile.secondColumns || this.savedTileConfig.secondColumns
-    const secondTableFilters = isReset ? []
-      : (queryChanged
-      ? undefined
-      : this.props.tile.secondTableFilters || this.savedTileConfig.secondTableFilters)
-
-    // New query is running, reset temporary state fields
-    const paramsToSet = {
-      secondQuery: query,
-      secondDataConfig,
-      secondskipQueryValidation: skipValidation,
-      secondColumns: isReset ? [] : secondColumns,
-      secondCustomColumns: queryChanged ? undefined : this.props.tile.secondCustomColumns,
-      secondDefaultSelectedSuggestion: undefined,
-      secondQueryValidationSelections: queryValidationSelections,
-      secondTableFilters,
-    }
-
-    // Reset all tile configs when query changes
-    if (queryChanged) {
-      paramsToSet.secondColumnSelects = undefined
-      paramsToSet.secondFilters = undefined
-      paramsToSet.secondOrders = undefined
-      paramsToSet.secondDisplayOverrides = undefined
-    } else if (isReset) {
-      // secondTableFilters already set to [] above; set the remaining reset fields here.
-      paramsToSet.secondOrders = []
-      paramsToSet.secondColumnSelects = []
-      paramsToSet.secondDisplayOverrides = []
-      paramsToSet.secondFilters = []
-      paramsToSet.secondDataConfig = undefined
-    }
-
-    this.debouncedSetParamsForTile(paramsToSet)
-
-    return this.processQuery({
-      query,
-      userSelection: queryValidationSelections,
-      skipQueryValidation: skipQueryValidation,
-      source,
-      isSecondHalf: true,
-      isCachedRefresh,
-      isReset,
-    })
-      .then((response) => this.endBottomQuery({ response, isReset, queryChanged, isCachedRefresh }))
-      .catch((response) => {
-        if (response?.data?.message === REQUEST_CANCELLED_ERROR) {
-          return undefined
-        }
-
-        return this.endBottomQuery({ response, isReset, isCachedRefresh })
       })
   }
 
@@ -1009,65 +747,18 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  clearBottomQueryResponse = (newState = {}) => {
-    this.setState({
-      isBottomExecuted: false,
-      isBottomExecuting: false,
-      secondUserSelection: undefined,
-      ...newState,
-    })
-
-    this.debouncedSetParamsForTile({
-      secondQueryResponse: undefined,
-    })
-  }
-
-  processTile = ({
-    query,
-    secondQuery,
-    skipQueryValidation,
-    secondskipQueryValidation,
-    source,
-    isCachedRefresh,
-    isReset = false,
-  } = {}) => {
-    // If tile is already processing, cancel current process
+  processTile = ({ query, skipQueryValidation, source, isCachedRefresh, isReset = false } = {}) => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.secondAxiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-
-    // Create new cancel tokens for each query
     this.axiosSource = axios.CancelToken?.source()
-    this.secondAxiosSource = axios.CancelToken.source()
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
-    const q2 = secondQuery || this.props.tile.secondDefaultSelectedSuggestion || this.state.secondQuery
 
-    const promises = []
-
-    const topFilters = this.props.tile?.tableFilters || []
-    const bottomFilters = this.props.tile?.secondTableFilters || []
-    const filtersAreDifferent = !_isEqual(topFilters, bottomFilters)
-
-    if (this.getIsSplitView() && q2 && (q1 !== q2 || filtersAreDifferent)) {
-      promises[1] = this.processTileBottom({
-        query: q2,
-        skipQueryValidation: secondskipQueryValidation,
-        source,
-        isCachedRefresh,
-        isReset,
-      })
-    }
-
-    promises[0] = this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
-
-    return Promise.all(promises)
-      .then((queryResponses) => {
+    return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
+      .then((queryResponse) => {
         return {
           ...this.props.tile,
-          queryResponse: queryResponses?.[0],
-          secondQueryResponse: queryResponses?.[1],
+          queryResponse,
           defaultSelectedSuggestion: undefined,
-          secondDefaultSelectedSuggestion: undefined,
         }
       })
       .catch(() => {
@@ -1099,30 +790,6 @@ export class DashboardTile extends React.Component {
     }, 600)
   }
 
-  debounceSecondQueryInputChange = (secondQuery) => {
-    if (secondQuery === this.state.secondQuery) {
-      return
-    }
-
-    this.setState({ secondQuery })
-
-    clearTimeout(this.secondQueryInputTimer)
-    this.secondQueryInputTimer = setTimeout(() => {
-      const params = {
-        secondQuery,
-        secondPageSize: undefined,
-        secondAggConfig: undefined,
-        secondDataConfig: undefined,
-        secondQueryValidationSelections: undefined,
-      }
-      if (!secondQuery) {
-        params.secondQueryResponse = null
-        params.secondQueryId = undefined
-      }
-      this.debouncedSetParamsForTile(params)
-    }, 600)
-  }
-
   debounceTitleInputChange = (title) => {
     this.setState({ title })
 
@@ -1139,13 +806,6 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  onSecondQueryTextKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      this.processTileBottom({ query: e.target.value })
-      e.target.blur()
-    }
-  }
-
   onSuggestionClick = ({ query, userSelection, isButtonClick, source }) => {
     this.setState({ query })
 
@@ -1158,25 +818,6 @@ export class DashboardTile extends React.Component {
       })
     } else {
       this.debouncedSetParamsForTile({ defaultSelectedSuggestion: query })
-    }
-  }
-
-  onSecondSuggestionClick = ({ query, userSelection, isButtonClick, source }) => {
-    this.setState({ secondQuery: query })
-
-    if (isButtonClick) {
-      this.debouncedSetParamsForTile({
-        secondQuery: query,
-        secondQueryValidationSelections: userSelection,
-      })
-      this.processTileBottom({
-        query,
-        userSelection,
-        skipQueryValidation: true,
-        source,
-      })
-    } else {
-      this.debouncedSetParamsForTile({ secondQuery: query })
     }
   }
 
@@ -1260,32 +901,11 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  onSecondQueryInputChange = (e) => {
-    this.setState({ secondQuery: e.target.value })
-    this.debouncedSetParamsForTile({ secondSkipQueryValidation: false })
-  }
-
-  getIsSplitView = () => this.props.tile?.splitView
-
-  toggleSecondQueryInput = () => {
-    this.setState({
-      isSecondQueryInputOpen: !this.state.isSecondQueryInputOpen,
-    })
-  }
-
   onQueryValidationSelectOption = (queryText, selections) => {
     this.setState({ query: queryText })
     this.debouncedSetParamsForTile({
       query: queryText,
       queryValidationSelections: selections,
-    })
-  }
-
-  onSecondQueryValidationSelectOption = (queryText, selections) => {
-    this.setState({ secondQuery: queryText })
-    this.debouncedSetParamsForTile({
-      secondQuery: queryText,
-      secondqueryValidationSelections: selections,
     })
   }
 
@@ -1299,21 +919,6 @@ export class DashboardTile extends React.Component {
     this.debouncedSetParamsForTile({ pageSize, queryResponse })
   }
 
-  onSecondPageSizeChange = (secondPageSize, newRows = []) => {
-    let secondQueryResponse = this.props.tile?.secondQueryResponse?.data?.data?.rows
-      ? _cloneDeep(this.props.tile.secondQueryResponse)
-      : undefined
-
-    const q1 = this.props.tile.defaultSelectedSuggestion || this.state.query
-    const q2 = this.props.tile.secondDefaultSelectedSuggestion || this.state.secondQuery
-    if (this.getIsSplitView() && q2 && q1 === q2) {
-      secondQueryResponse = this.props.tile.queryResponse
-    }
-    secondQueryResponse.data.data.rows = newRows
-
-    this.debouncedSetParamsForTile({ secondPageSize, secondQueryResponse })
-  }
-
   onAggConfigChange = (aggConfig) => this.debouncedSetParamsForTile({ aggConfig })
   // Persist data config immediately so axis selector save actions are not lost
   // when users quickly save the dashboard before debounce flushes.
@@ -1325,9 +930,7 @@ export class DashboardTile extends React.Component {
   onNetworkColumnChange = (networkColumnConfig) => this.debouncedSetParamsForTile({ networkColumnConfig })
   onLegendFilterChange = (legendFilterConfig) => this.debouncedSetParamsForTile({ legendFilterConfig })
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
-  onSecondAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ secondAxisSorts: axisSorts })
   onNewQueryId = (queryId) => queryId && this.debouncedSetParamsForTile({ queryId })
-  onSecondNewQueryId = (queryId) => queryId && this.debouncedSetParamsForTile({ secondQueryId: queryId })
 
   // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
   // and chart data source update without waiting for the debounce timer.
@@ -1339,13 +942,6 @@ export class DashboardTile extends React.Component {
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
       orders: formattedParams.sorters,
-    })
-  }
-
-  onSecondTableParamsChange = (params, formattedParams) => {
-    this.debouncedSetParamsForTile({
-      secondTableFilters: formattedParams.filters,
-      secondOrders: formattedParams.sorters,
     })
   }
 
@@ -1362,167 +958,10 @@ export class DashboardTile extends React.Component {
     })
   }
 
-  onSecondAggConfigChange = (secondAggConfig) => this.debouncedSetParamsForTile({ secondAggConfig })
-  onSecondDataConfigChange = (secondDataConfig) => {
-    this.props.setParamsForTile({ secondDataConfig }, this.props.tile.i, [])
-  }
-  onSecondDisplayTypeChange = (secondDisplayType) => this.debouncedSetParamsForTile({ secondDisplayType })
-  onSecondBucketSizeChange = (secondBucketSize) => this.debouncedSetParamsForTile({ secondBucketSize })
-  onSecondCustomColumnUpdate = (secondCustomColumns) => this.debouncedSetParamsForTile({ secondCustomColumns })
-
-  onSecondChartControlsChange = (secondChartControls) => this.debouncedSetParamsForTile({ secondChartControls })
-
-  onSecondColumnChange = (
-    secondDisplayOverrides,
-    secondColumns,
-    secondColumnSelects,
-    secondQueryResponse,
-    secondDataConfig,
-    secondTableFilters,
-    secondOrders,
-    secondFilters,
-  ) => {
-    if (!this.props.isEditing) return
-    const paramsToSet = {
-      secondDisplayOverrides,
-      secondColumnSelects,
-      secondQueryResponse,
-      secondQueryId: secondQueryResponse?.data?.data?.query_id,
-      secondDataConfig,
-      secondFilters,
-    }
-
-    if (secondTableFilters && secondTableFilters.length > 0) {
-      paramsToSet.secondTableFilters = secondTableFilters
-    }
-
-    if (secondOrders && secondOrders.length > 0) {
-      paramsToSet.secondOrders = secondOrders
-    }
-
-    this.debouncedSetParamsForTile(paramsToSet)
-  }
-
   reportProblemCallback = () => {
     if (this.optionsToolbarRef?._isMounted) {
       this.optionsToolbarRef?.openReportProblemModal()
     }
-  }
-
-  secondReportProblemCallback = () => {
-    if (this.secondOptionsToolbarRef?._isMounted) {
-      this.secondOptionsToolbarRef.openReportProblemModal()
-    }
-  }
-
-  onSplitViewClick = () => {
-    const splitView = !this.props.tile?.splitView
-    let secondQuery = this.props.tile?.secondQuery
-
-    if (splitView && !secondQuery) {
-      secondQuery = this.state.query
-    }
-
-    this.debouncedSetParamsForTile({ splitView, secondQuery })
-  }
-
-  renderSplitResponse = () => {
-    const topContent = this.renderTopResponse()
-    const bottomContent = this.renderBottomResponse()
-
-    return (
-      <SplitterLayout
-        key={`dashboard-tile-splitter-layout-${this.COMPONENT_KEY}`}
-        vertical={true}
-        percentage={true}
-        primaryMinSize={30}
-        secondaryMinSize={30}
-        secondaryInitialSize={this.props.secondDisplayPercentage || 50}
-        onDragStart={() => {
-          this.setState({ isDraggingSplitter: true })
-        }}
-        onDragEnd={() => {
-          this.dragEndTimeout = setTimeout(() => {
-            const percentString = this.tileInnerDiv?.style?.height ?? ''
-            const percentNumber = Number(percentString.substring(0, percentString.length - 1))
-
-            if (!isNaN(percentNumber)) {
-              this.debouncedSetParamsForTile({
-                secondDisplayPercentage: percentNumber,
-              })
-              this.setState({ currentSplitPercent: percentNumber })
-            }
-
-            this.setState({ isDraggingSplitter: false })
-          }, 1000)
-        }}
-      >
-        <div className='dashboard-tile-split-pane-container'>{topContent}</div>
-        <div className='dashboard-tile-split-pane-container'>
-          {bottomContent}
-          {this.props.isEditing && (
-            <div
-              className={`split-view-query-btn-container react-autoql-toolbar ${
-                this.state.isSecondQueryInputOpen ? 'open' : ''
-              }`}
-            >
-              <div
-                className='react-autoql-toolbar viz-toolbar split-view-btn split-view-query-btn react-autoql-toolbar-btn'
-                data-test='split-view-query-btn'
-                style={{ position: 'relative' }}
-              >
-                <div className='query-input-icon-wrapper'>
-                  <Button
-                    onClick={() => this.toggleSecondQueryInput()}
-                    className='react-autoql-toolbar-btn'
-                    tooltip='Query'
-                    tooltipID={this.props.tooltipID}
-                  >
-                    <div className='split-view-query-btn-icon-container'>
-                      <Icon type='react-autoql-bubbles-outlined' />
-                      <Icon type={this.state.isSecondQueryInputOpen ? 'caret-left' : 'caret-right'} />
-                    </div>
-                  </Button>
-                  {(() => {
-                    const secondResponse = this.areTopAndBottomSameQuery()
-                      ? this.props.tile?.queryResponse
-                      : this.props.tile?.secondQueryResponse
-                    return secondResponse &&
-                      (secondResponse?.data?.data?.parsed_interpretation ||
-                        secondResponse?.data?.data?.interpretation) ? (
-                      <Popover
-                        isOpen={this.state.isSecondRTHovered}
-                        positions={['top', 'bottom']}
-                        align='start'
-                        padding={8}
-                        onClickOutside={() => this.setState({ isSecondRTHovered: false })}
-                        content={this.renderRTPopoverContent(secondResponse)}
-                      >
-                        <div
-                          className='query-input-interpretation-badge'
-                          onMouseEnter={() => this.setState({ isSecondRTHovered: true })}
-                          onMouseLeave={() => this.setState({ isSecondRTHovered: false })}
-                        >
-                          <Icon type='thinking-bubble' />
-                        </div>
-                      </Popover>
-                    ) : null
-                  })()}
-                </div>
-                <input
-                  className={'dashboard-tile-input query second'}
-                  value={this.state.secondQuery}
-                  spellCheck={false}
-                  onChange={this.onSecondQueryInputChange}
-                  onKeyDown={this.onSecondQueryTextKeyDown}
-                  placeholder={this.props.tile.query || 'Type a query'}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </SplitterLayout>
-    )
   }
 
   renderRTPopoverContent = (queryResponse) => {
@@ -1759,22 +1198,6 @@ export class DashboardTile extends React.Component {
     )
   }
 
-  renderSplitViewBtn = () => {
-    return (
-      <div className='viz-toolbar react-autoql-toolbar split-view-btn' data-test='split-view-btn'>
-        <Button
-          onClick={this.onSplitViewClick}
-          className={`react-autoql-toolbar-btn ${this.getIsSplitView() ? 'active' : ''}`}
-          tooltip={this.props.tile.splitView ? 'Split View On' : 'Split View Off'}
-          tooltipID={this.props.tooltipID}
-          data-test='viz-toolbar-button'
-        >
-          <Icon type='split-view' />
-        </Button>
-      </div>
-    )
-  }
-
   onCSVDownloadStart = (params) =>
     this.props.onCSVDownloadStart({
       ...params,
@@ -1795,19 +1218,21 @@ export class DashboardTile extends React.Component {
 
   onPNGDownloadFinish = () => this.props.onPNGDownloadFinish({ tileId: this.props.tile.i })
 
+  onOpenFollowOnModal = () => {
+    this.setState({ isFollowOnModalOpen: true })
+  }
+
   onDrilldownStart = (activeKey) =>
     this.props.onDrilldownStart({
       tileId: this.props.tile.i,
-      isSecondHalf: false,
       activeKey,
       queryOutputRef: this.state.responseRef,
     })
 
-  renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps, isSecondHalf }) => {
+  renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps }) => {
     return (
       <div className='dashboard-tile-toolbars-container'>
         <div className='dashboard-tile-toolbars-left-container'>
-          {this.props.isEditing && (isSecondHalf || !this.getIsSplitView()) && this.renderSplitViewBtn()}
           {this.props.isEditing && (
             <VizToolbar
               {...vizToolbarProps}
@@ -1835,6 +1260,8 @@ export class DashboardTile extends React.Component {
               popoverAlign='end'
               enableMagicWand={this.props.enableMagicWand}
               showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+              enableFollowOnQuery={this.props.enableFollowOnQuery}
+              onOpenFollowOnModal={this.onOpenFollowOnModal}
               isEditing={this.props.isEditing}
               source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
               scope={this.props.scope}
@@ -1894,7 +1321,6 @@ export class DashboardTile extends React.Component {
     queryOutputProps = {},
     vizToolbarProps = {},
     optionsToolbarProps = {},
-    isSecondHalf,
     isExecuting,
     isExecuted,
     renderPlaceholder,
@@ -1906,13 +1332,11 @@ export class DashboardTile extends React.Component {
           isExecuting,
           isExecuted,
           renderPlaceholder,
-          isSecondHalf,
         })}
         {this.renderToolbars({
           queryOutputProps,
           vizToolbarProps,
           optionsToolbarProps,
-          isSecondHalf,
         })}
       </div>
     )
@@ -2050,156 +1474,11 @@ export class DashboardTile extends React.Component {
           this.props.isEditing &&
           this.props.tile?.displayType !== 'single-value' &&
           !this.hasError(this.props.tile?.queryResponse),
-        showResetQueryOption: this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
+        showResetQueryOption:
+          this.props.showResetQueryOption && !!this.props.tile?.query && !!this.props.tile?.queryResponse,
         hideReportProblem: this.hasError(this.props.tile?.queryResponse),
         hideOnError: this.shouldHideOptions(this.props.tile?.queryResponse),
       },
-    })
-  }
-
-  areTopAndBottomSameQuery = () => {
-    const topQuery = this.props?.tile?.query
-    const bottomQuery = this.props?.tile?.secondQuery
-    const isQuerySame = !bottomQuery || topQuery === bottomQuery
-    if (!isQuerySame) return false
-    const topFilters = this.props.tile?.tableFilters || []
-    const bottomFilters = this.props.tile?.secondTableFilters || []
-    return _isEqual(topFilters, bottomFilters)
-  }
-
-  renderBottomResponse = () => {
-    const isQuerySameAsTop = this.areTopAndBottomSameQuery()
-    let isExecuting = this.state.isBottomExecuting
-    let isExecuted = this.state.isBottomExecuted
-    let queryRequestData = this.bottomRequestData
-
-    if (isQuerySameAsTop) {
-      isExecuting = this.state.isTopExecuting
-      isExecuted = this.state.isTopExecuted
-      queryRequestData = this.topRequestData
-    }
-
-    const renderPlaceholder =
-      (!isQuerySameAsTop && !this.props.tile?.secondQueryResponse) ||
-      (isQuerySameAsTop && !this.props.tile?.queryResponse) ||
-      isExecuting ||
-      !isExecuted
-
-    const initialDisplayType = this.props?.tile?.secondDisplayType
-
-    return this.renderResponse({
-      renderPlaceholder,
-      isExecuting,
-      isExecuted,
-      queryOutputProps: {
-        key: `dashboard-tile-query-bottom-${this.SECOND_QUERY_RESPONSE_KEY}`,
-        ref: (ref) =>
-          ref && ref !== this.state.secondResponseRef && this._isMounted && this.setState({ secondResponseRef: ref }),
-        optionsToolbarRef: this.secondOptionsToolbarRef,
-        vizToolbarRef: this.secondVizToolbarRef,
-        initialDisplayType,
-        queryResponse: this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse,
-        initialTableConfigs: (() => {
-          const dataConfig = this.props.tile?.secondDataConfig || {}
-          // Extract columnOverrides from tile.secondColumns if it exists (for date precision persistence)
-          // Compare tile.secondColumns with queryResponse columns to find overrides
-          // Use columnOverrides from dataConfig if it exists (preferred method)
-          let columnOverrides = dataConfig?.columnOverrides || {}
-
-          // Fallback: Extract columnOverrides from tile.secondColumns if dataConfig doesn't have it
-          // This handles backwards compatibility with dashboards saved before columnOverrides was added
-          const queryResponse = this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse
-          if (!dataConfig?.columnOverrides && this.props.tile?.secondColumns && queryResponse?.data?.data?.columns) {
-            const savedColumns = this.props.tile.secondColumns
-            const originalColumns = queryResponse.data.data.columns
-            savedColumns.forEach((savedCol) => {
-              if (savedCol?.index !== undefined) {
-                const originalCol = originalColumns.find(
-                  (oc) =>
-                    oc.index === savedCol.index ||
-                    oc.name === savedCol.name ||
-                    oc.id === savedCol.id ||
-                    oc.display_name === savedCol.display_name,
-                )
-                if (
-                  originalCol &&
-                  originalCol.index !== undefined &&
-                  (savedCol.type !== originalCol.type || savedCol.precision !== originalCol.precision)
-                ) {
-                  columnOverrides[originalCol.index] = {
-                    type: savedCol.type,
-                    precision: savedCol.precision,
-                  }
-                }
-              }
-            })
-          }
-          return {
-            ...dataConfig,
-            columnOverrides,
-          }
-        })(),
-        initialAggConfig: this.props.tile.secondAggConfig,
-        onTableConfigChange: this.onSecondDataConfigChange,
-        onTableParamsChange: this.onSecondTableParamsChange,
-        onAggConfigChange: this.onSecondAggConfigChange,
-        queryValidationSelections: this.props.tile.secondQueryValidationSelections,
-        onSuggestionClick: this.onSecondSuggestionClick,
-        defaultSelectedSuggestion: this.props.tile?.secondDefaultSelectedSuggestion,
-        reportProblemCallback: this.secondReportProblemCallback,
-        onNoneOfTheseClick: this.secondOnNoneOfTheseClick,
-        onDrilldownStart: (activeKey) => {
-          this.props.onDrilldownStart({
-            tileId: this.props.tile.i,
-            isSecondHalf: true,
-            activeKey,
-            queryOutputRef: this.state.secondResponseRef,
-          })
-        },
-        onDrilldownEnd: this.props.onDrilldownEnd,
-        onQueryValidationSelectOption: this.onSecondQueryValidationSelectOption,
-        queryRequestData,
-        onDisplayTypeChange: this.onSecondDisplayTypeChange,
-        dataPageSize: this.props.tile.secondPageSize,
-        onPageSizeChange: this.onSecondPageSizeChange,
-        onBucketSizeChange: this.onSecondBucketSizeChange,
-        onColumnChange: this.onSecondColumnChange,
-        bucketSize: this.props.tile.secondBucketSize,
-        initialNetworkColumnConfig: this.props.tile.secondNetworkColumnConfig,
-        initialAxisSorts: this.normalizeAxisSorts(this.props.tile?.secondAxisSorts),
-        onAxisSortChange: this.onSecondAxisSortChange,
-        disableAggregationMenu: this.props.disableAggregationMenu,
-        allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.secondTableFilters,
-          sorters: this.props.tile?.secondOrders,
-          sessionFilters: this.props.tile?.secondFilters || [],
-        },
-        isDashboardEditing: this.props.isEditing,
-        skipInitialFilters: true,
-        enableChartControls: true,
-        initialChartControls: this.props.tile?.secondChartControls || {
-          showAverageLine: false,
-          showRegressionLine: false,
-        },
-        onChartControlsChange: this.onSecondChartControlsChange,
-        onNewQueryId: this.onSecondNewQueryId,
-      },
-      vizToolbarProps: {
-        ref: (r) => (this.secondVizToolbarRef = r),
-        responseRef: this.state.secondResponseRef,
-        key: `dashboard-tile-viz-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
-      },
-      optionsToolbarProps: {
-        ref: (r) => (this.secondOptionsToolbarRef = r),
-        responseRef: this.state.secondResponseRef,
-        key: `dashboard-tile-options-toolbar-${this.SECOND_QUERY_RESPONSE_KEY}${
-          this.props.isEditing ? '-editing' : ''
-        }`,
-        onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
-        hideOnError: this.shouldHideOptions(this.props.tile?.secondQueryResponse || this.props.tile?.queryResponse),
-      },
-      isSecondHalf: true,
     })
   }
 
@@ -2210,9 +1489,7 @@ export class DashboardTile extends React.Component {
       ${this.props.isEditing ? ' editing' : ''}
       ${this.props.tile.h < 4 ? ' small' : ''}`}
       >
-        <div className='dashboard-tile-response-container'>
-          {this.getIsSplitView() ? this.renderSplitResponse() : this.renderTopResponse()}
-        </div>
+        <div className='dashboard-tile-response-container'>{this.renderTopResponse()}</div>
       </div>
     )
   }
@@ -2274,7 +1551,9 @@ export class DashboardTile extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.ref = r)}
-          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${this.props.isEditing && this.props.isFailed ? ' failed' : ''}`}
+          className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${
+            this.props.isEditing && this.props.isFailed ? ' failed' : ''
+          }`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
           data-test='react-autoql-dashboard-tile'
@@ -2283,8 +1562,7 @@ export class DashboardTile extends React.Component {
           <div
             id={`react-autoql-dashboard-tile-inner-div-${this.COMPONENT_KEY}`}
             ref={(r) => (this.tileInnerDiv = r)}
-            className={`react-autoql-dashboard-tile-inner-div
-              ${this.getIsSplitView() ? 'split' : ''}`}
+            className='react-autoql-dashboard-tile-inner-div'
             style={style}
           >
             <>
@@ -2312,6 +1590,19 @@ export class DashboardTile extends React.Component {
           )}
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
+          {this.props.enableFollowOnQuery && (
+            <FollowOnModal
+              isVisible={this.state.isFollowOnModalOpen}
+              onClose={() => this.setState({ isFollowOnModalOpen: false })}
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              dataFormatting={this.props.dataFormatting}
+              responseRef={this.state.responseRef}
+              queryResponse={this.props.tile?.queryResponse}
+              initialResults={this.state.followOnResults}
+              onResultsChange={(results) => this.setState({ followOnResults: results })}
+            />
+          )}
         </div>
       </ErrorBoundary>
     )

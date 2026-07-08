@@ -9,6 +9,8 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { authenticationType } from '../../props/types'
 
+import './ReportProblemModal.scss'
+
 export default class ReportProblemModal extends React.Component {
   static propTypes = {
     authentication: authenticationType,

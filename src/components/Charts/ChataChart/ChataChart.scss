@@ -9,7 +9,7 @@
   }
 
   .react-autoql-slider-wrapper {
-    font-size: var(--react-autoql-chart-font-size, 12px);
+    font-size: var(--react-autoql-chart-font-size, 0.75rem);
     &.mobile {
       font-size: 0.5rem;
     }
@@ -42,7 +42,7 @@
 
     .react-autoql-chart-data-limit-icon {
       color: var(--react-autoql-warning-color, #f39c12);
-      font-size: 18px;
+      font-size: 1.125rem;
       cursor: help;
       display: flex;
       align-items: center;
@@ -69,7 +69,7 @@
   color: var(--react-autoql-text-color-primary);
   border: none;
   padding: 4px 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
   line-height: 1;
   transition: all 0.2s ease;
@@ -389,6 +389,7 @@
     text {
       cursor: default;
       outline: none !important;
+      font-size: 0.65rem;
     }
 
     line {
@@ -412,7 +413,7 @@
   }
 
   .pie-chart .labels {
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
   }
 }

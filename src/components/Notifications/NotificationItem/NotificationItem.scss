@@ -79,7 +79,7 @@
   }
 
   .single-value-response {
-    font-size: 32px;
+    font-size: 2rem;
     margin-top: -6px;
     opacity: 0.9;
   }
@@ -306,7 +306,7 @@
   .react-autoql-notification-description {
     color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.6));
     opacity: 0.8;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
 
   .react-autoql-notification-list-item-header {
@@ -319,7 +319,7 @@
 
   .react-autoql-notification-query-title {
     flex: 0 0 auto;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-family: inherit;
     color: currentcolor;
     opacity: 0.9;
@@ -349,7 +349,7 @@
       padding-bottom: 20px;
 
       .single-value-response {
-        font-size: 17px;
+        font-size: 1.0625rem;
       }
     }
     &.mobile {
@@ -367,13 +367,13 @@
     }
     .react-autoql-table {
       color: currentColor;
-      font-size: 12px;
+      font-size: 0.75rem;
     }
   }
 
   .react-autoql-notification-data-title {
     line-height: 22px;
-    font-size: 12px;
+    font-size: 0.75rem;
     text-align: right;
     color: var(--react-autoql-text-color-primary);
     opacity: 0.5;
@@ -393,7 +393,7 @@
       opacity: 0.8;
       width: 40px;
       height: 40px;
-      font-size: 24px;
+      font-size: 1.5rem;
       line-height: 20px;
       border-radius: 20px;
       background-color: transparent;
@@ -415,7 +415,7 @@
     line-height: 10px;
     background: var(--react-autoql-background-color-secondary, #fff);
     border-radius: 10px;
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
 
   .react-autoql-notification-alert-strip {
@@ -458,7 +458,7 @@
 
     .react-autoql-notification-toolbar-more-options {
       padding: 15px 10px;
-      font-size: 18px;
+      font-size: 1.125rem;
       width: 48px;
       display: flex;
       justify-content: center;
@@ -479,7 +479,7 @@
       height: 45px;
       width: 45px;
       line-height: 45px;
-      font-size: 22px;
+      font-size: 1.375rem;
       color: var(--react-autoql-text-color-accent);
       background-color: var(--react-autoql-accent-color, #26a7df);
       text-align: center;
@@ -499,21 +499,21 @@
     }
 
     .react-autoql-notification-display-name {
-      font-size: 18px;
+      font-size: 1.125rem;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.7));
       .react-autoql-icon {
         font-size: 0.875em;
       }
     }
     .react-autoql-notification-project-name {
-      font-size: 14px;
+      font-size: 0.875rem;
       color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.7));
       .react-autoql-icon {
         font-size: 0.875em;
       }
     }
     .react-autoql-notification-timestamp-container {
-      font-size: 12px;
+      font-size: 0.75rem;
       opacity: 0.5;
 
       .react-autoql-notification-timestamp {

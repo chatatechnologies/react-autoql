@@ -146,6 +146,7 @@ export default class StringAxisSelector extends React.Component {
           ...col,
           type: bucketOption.type,
           precision: bucketOption.precision,
+          isCyclical: bucketOption.type === ColumnTypes.DATE_STRING,
         }
       }
       return col
@@ -536,7 +537,7 @@ export default class StringAxisSelector extends React.Component {
                             <span
                               style={{
                                 float: 'right',
-                                fontSize: '12px',
+                                fontSize: '0.75rem',
                                 marginLeft: '10px',
                               }}
                             >
@@ -598,7 +599,7 @@ export default class StringAxisSelector extends React.Component {
                             <span
                               style={{
                                 float: 'right',
-                                fontSize: '12px',
+                                fontSize: '0.75rem',
                                 marginLeft: '10px',
                               }}
                             >
@@ -744,7 +745,7 @@ export default class StringAxisSelector extends React.Component {
                       <span
                         style={{
                           float: 'right',
-                          fontSize: '12px',
+                          fontSize: '0.75rem',
                           marginLeft: '10px',
                         }}
                       >

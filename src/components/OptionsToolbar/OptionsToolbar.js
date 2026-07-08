@@ -18,6 +18,7 @@ import {
   getAutoQLConfig,
   dataFormattingDefault,
   fetchLLMSummaryQuote,
+  MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -33,7 +34,7 @@ import { ColumnVisibilityModal } from '../ColumnVisibilityModal'
 import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
-import { shouldShowSummaryButton, getSummaryButtonDisabledState } from '../../utils/summaryButtonUtils'
+import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -92,6 +93,8 @@ export class OptionsToolbar extends React.Component {
     hideReportProblem: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
+    enableFollowOnQuery: PropTypes.bool,
+    onOpenFollowOnModal: PropTypes.func,
   }
 
   static defaultProps = {
@@ -122,6 +125,8 @@ export class OptionsToolbar extends React.Component {
     showResetQueryOption: false,
     source: undefined,
     scope: undefined,
+    enableFollowOnQuery: false,
+    onOpenFollowOnModal: () => {},
   }
 
   componentDidMount = () => {
@@ -536,6 +541,7 @@ export class OptionsToolbar extends React.Component {
                         pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
                       },
                       networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
+                      chartControls: _cloneDeep(responseRef?.state?.chartControls),
                     })
                   }}
                 >
@@ -743,6 +749,7 @@ export class OptionsToolbar extends React.Component {
     }
 
     try {
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummaryQuote({
         data: {
           additional_context: {
@@ -750,8 +757,9 @@ export class OptionsToolbar extends React.Component {
             interpretation: queryData.interpretation,
             focus_prompt: this.state.summaryFocusPrompt?.trim() || '',
           },
-          rows: filteredRows,
-          columns: currentColumns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : currentColumns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryData.query_id,
         apiKey: auth.apiKey,
@@ -834,6 +842,26 @@ export class OptionsToolbar extends React.Component {
         />
         <Tooltip tooltipId={`${this.props.tooltipID ?? this.TOOLTIP_ID}-beta-popover`} delayShow={500} />
       </div>
+    )
+  }
+
+  renderFollowOnQueryBtn = () => {
+    const queryResponse = this.props.responseRef?.queryResponse
+    const { isDisabled } = getFollowOnQueryDisabledState({ queryResponse })
+
+    if (isDisabled) return null
+
+    return (
+      <Button
+        key={`follow-on-query-button-${this.COMPONENT_KEY}`}
+        onClick={this.props.onOpenFollowOnModal}
+        className={this.getMenuItemClass()}
+        tooltip='Ask a follow-up question'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        size='small'
+      >
+        <Icon type='reply' />
+      </Button>
     )
   }
 
@@ -934,6 +962,7 @@ export class OptionsToolbar extends React.Component {
             this.props.enableMagicWand &&
             shouldShowButton.showMagicWandButton &&
             this.renderMagicWandBtn()}
+          {!isMarkdownOnly && shouldShowButton.showFollowOnQueryButton && this.renderFollowOnQueryBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {shouldShowButton.showCopyMarkdownButton && this.renderCopyMarkdownBtn()}
           {shouldShowButton.showDeleteButton && (
@@ -995,7 +1024,6 @@ export class OptionsToolbar extends React.Component {
       const allColumnsHidden = areAllColumnsHidden(columns)
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
-      const hasData = numRows > 0
       const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
@@ -1037,6 +1065,8 @@ export class OptionsToolbar extends React.Component {
           queryResponse: response,
           isMarkdownOnly,
         }),
+        showFollowOnQueryButton:
+          !isMarkdownOnly && shouldShowQueryActionButton(props.enableFollowOnQuery, response),
       }
 
       // Hide reset button when there's no query text or display type is single-value.

@@ -82,12 +82,13 @@ import { MdLockOpen } from '@react-icons/all-files/md/MdLockOpen'
 import { MdPlayCircleOutline } from '@react-icons/all-files/md/MdPlayCircleOutline'
 import { MdAttachMoney } from '@react-icons/all-files/md/MdAttachMoney'
 import { MdFunctions } from '@react-icons/all-files/md/MdFunctions'
-import { MdOutlineUndo, MdOutlineRedo, MdFilterList } from 'react-icons/md'
+import { MdOutlineUndo, MdOutlineRedo, MdFilterList, MdReply } from 'react-icons/md'
 import { MdSchedule } from 'react-icons/md'
 import { RxOpenInNewWindow } from 'react-icons/rx'
 import { TfiArrowsCorner } from 'react-icons/tfi'
 import { TfiArrowsVertical } from 'react-icons/tfi'
 import {
+  autoqlLogoIcon,
   bubblesIcon,
   bubblesIconFilledAlt,
   tableIcon,
@@ -218,6 +219,10 @@ export default class Icon extends React.Component {
       }
       case 'caret-up': {
         icon = <IoIosArrowUp />
+        break
+      }
+      case 'react-autoql-logo': {
+        icon = autoqlLogoIcon
         break
       }
       case 'react-autoql-bubbles-outlined': {
@@ -502,6 +507,10 @@ export default class Icon extends React.Component {
       }
       case 'redo': {
         icon = <MdOutlineRedo />
+        break
+      }
+      case 'reply': {
+        icon = <MdReply />
         break
       }
       case 'refresh': {

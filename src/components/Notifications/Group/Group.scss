@@ -13,7 +13,7 @@
   color: var(--react-autoql-text-color-accent);
   line-height: 38px;
   text-align: center;
-  font-size: 20px;
+  font-size: 1.25rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.13);
   transition-property: color, border-color, background-color, opacity;
   transition-duration: 0.2s;
@@ -55,7 +55,7 @@
     padding: 4px;
     border-radius: 4px;
     text-align: center;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 
   .react-autoql-notification-group-container {
@@ -133,7 +133,7 @@
       margin-left: 5px;
       line-height: 20px;
       text-align: center;
-      font-size: 14px;
+      font-size: 0.875rem;
       color: var(--react-autoql-text-color-primary, rgba(0, 0, 0, 0.2));
       opacity: 0.5;
       border: 1px solid;

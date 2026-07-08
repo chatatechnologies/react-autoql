@@ -142,7 +142,7 @@
 
 .sankey-column-dropdown-item-check {
   color: var(--react-autoql-primary-color);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .sankey-column-dropdown-empty {
@@ -165,19 +165,22 @@
 
 .sankey-path-dropdown-subtitle {
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-muted);
   border-bottom: 1px solid var(--react-autoql-border-color);
 }
 
 .sankey-path-selected-list {
-  padding: 8px 12px;
   min-height: 120px;
   max-height: 240px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.sankey-path-selected-list-inner {
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border-bottom: 1px solid var(--react-autoql-border-color);
 }
 
 .sankey-path-selected-item {
@@ -191,7 +194,7 @@
 }
 
 .sankey-path-selected-index {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-muted);
 }
 
@@ -200,7 +203,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .sankey-path-drag-handle {
@@ -236,7 +239,7 @@
   border-radius: 3px;
   padding: 0 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
 
   &:disabled {
     opacity: 0.45;
@@ -253,13 +256,13 @@
   padding: 8px;
   border-radius: 4px;
   background: var(--react-autoql-background-color-hover);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--react-autoql-text-color-muted);
 }
 
 .sankey-path-add-title {
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   border-top: 1px solid var(--react-autoql-border-color);
 }
@@ -298,7 +301,7 @@
   padding: 6px 10px;
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 0.875rem;
   outline: none;
 
   &:focus {
@@ -329,7 +332,7 @@
 
 .sankey-filter-section-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .sankey-filter-section-buttons {
@@ -339,7 +342,7 @@
 
 .sankey-filter-quick-btn {
   padding: 2px 8px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   background: var(--react-autoql-background-color-hover);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 3px;
@@ -380,7 +383,7 @@
 }
 
 .sankey-filter-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   user-select: none;
 }
 
@@ -388,6 +391,6 @@
   padding: 8px;
   text-align: center;
   color: var(--react-autoql-text-color-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 

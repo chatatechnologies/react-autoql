@@ -1,7 +1,7 @@
 .react-autoql-menu {
   list-style-type: none;
   width: 100%;
-  padding: 10px 0;
+  padding: 0.625rem 0;
   margin: 0;
   max-height: 250px;
 
@@ -12,7 +12,7 @@
 
   .react-autoql-menu-item {
     color: var(--react-autoql-text-color-primary);
-    padding: 10px 20px;
+    padding: 0.625rem 1.25rem;
     cursor: pointer;
 
     &:hover,

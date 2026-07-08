@@ -28,7 +28,7 @@
   display: inline-block;
   margin-left: 8px;
   padding: 2px 6px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--react-autoql-text-color-placeholder);
   cursor: pointer;
   border-radius: 3px;
@@ -55,7 +55,7 @@
 
   .react-autoql-multiselect-option {
     padding: 8px 12px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     border-bottom: 1px solid var(--react-autoql-border-color);
 
     &:last-child {
