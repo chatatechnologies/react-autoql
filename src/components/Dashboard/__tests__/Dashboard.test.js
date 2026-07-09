@@ -652,7 +652,6 @@ describe('Dashboard.addTile — DM response handling', () => {
     const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
     expect(addedTile.query).toBe('SELECT * FROM sales')
     expect(addedTile.queryResponse).toBeUndefined()
-    expect(addedTile.secondQueryResponse).toBeUndefined()
     expect(addedTile.queryId).toBe('dm-qid-1')
   })
 
@@ -750,7 +749,6 @@ describe('Dashboard.addTile — DM response handling', () => {
 //   isFailed — possible on ANY tile with a non-2xx reference_id or items response
 //   New tiles can NEVER be dirty (no saved state to diff against)
 //   New dashboards can NEVER have dirty tiles (uneditedDashboardTiles is empty)
-//   Split-view tiles carry an independent secondQuery/secondQueryId — dirty rules apply to each independently
 //   Malformed reference_id (no dot separator) is treated as a failure the same as a 4xx code
 //
 // ┌──────────────┬──────────────┬─────────────────────────────────────────┬────────┬────────┬──────────────┐
@@ -769,14 +767,6 @@ describe('Dashboard.addTile — DM response handling', () => {
 // │ Existing     │ Existing     │ Malformed reference_id (no dot)         │ false  │ true   │     yes      │
 // │ Existing     │ Existing     │ Disambiguation (items)                  │ true   │ true   │     yes      │
 // │ Existing     │ Existing     │ Replacements                            │ true   │ false  │     yes      │
-// ├──────────────┼──────────────┼─────────────────────────────────────────┼────────┼────────┼──────────────┤
-// │ Split-view   │              │                                         │        │        │              │
-// │ Existing     │ Existing     │ secondQuery text changed, no re-run     │ true   │ false  │     yes      │
-// │ Existing     │ Existing     │ secondQuery re-run → new secondQueryId  │ false  │ false  │     no       │
-// │ Existing     │ Existing     │ primary dirty + secondQuery unchanged   │ true   │ false  │     yes      │
-// │ Existing     │ Existing     │ Split view newly enabled, bottom not run yet    │ true   │ false  │     yes      │
-// │ Existing     │ Existing     │ Split view newly enabled, bottom query executed │ false  │ false  │     no       │
-// │ Existing     │ Existing     │ Split view disabled (secondQuery cleared)        │ false  │ false  │     no       │
 // └──────────────┴──────────────┴─────────────────────────────────────────┴────────┴────────┴──────────────┘
 describe('edit-mode state matrix', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
@@ -921,92 +911,6 @@ describe('edit-mode state matrix', () => {
       expect(i.getFailedTiles().has('tile-1')).toBe(true)
     })
   })
-
-  // EXISTING dashboard, EXISTING split-view tile — secondQuery dirty/failed detection
-  describe('existing dashboard — existing split-view tile', () => {
-    const existingSplitTile = {
-      key: 'tile-1',
-      i: 'tile-1',
-      query: 'sales by region',
-      queryId: 'qid-original',
-      queryResponse: { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } },
-      secondQuery: 'revenue by month',
-      secondQueryId: 'qid-second-original',
-    }
-
-    function setupSplit(tileOverride) {
-      const wrapper = setup({ isEditing: true })
-      const instance = wrapper.instance()
-      wrapper.setState({ uneditedDashboardTiles: [existingSplitTile] })
-      instance.baselineQueryIds.set('tile-1', {
-        queryId: existingSplitTile.queryId,
-        secondQueryId: existingSplitTile.secondQueryId,
-      })
-      instance.getMostRecentTiles = jest.fn(() => [{ ...existingSplitTile, ...tileOverride }])
-      return instance
-    }
-
-    test('secondQuery text changed, no re-run: dirty, not failed, save disabled', () => {
-      const i = setupSplit({ secondQuery: 'profit by quarter' })
-      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
-      expect(i.getFailedTiles().has('tile-1')).toBe(false)
-      expect(i.hasDirtyTiles()).toBe(true)
-    })
-
-    test('secondQuery re-run → new secondQueryId: not dirty, not failed, save enabled', () => {
-      const i = setupSplit({ secondQuery: 'profit by quarter', secondQueryId: 'qid-second-new' })
-      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
-      expect(i.getFailedTiles().has('tile-1')).toBe(false)
-      expect(i.hasDirtyTiles()).toBe(false)
-    })
-
-    test('primary query changed + secondQuery unchanged: dirty, not failed, save disabled', () => {
-      const i = setupSplit({ query: 'different primary query' })
-      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
-      expect(i.getFailedTiles().has('tile-1')).toBe(false)
-      expect(i.hasDirtyTiles()).toBe(true)
-    })
-  })
-
-  // EXISTING dashboard, EXISTING tile — split view newly enabled during edit
-  describe('existing dashboard — split view newly enabled on existing tile', () => {
-    // Saved tile had NO secondQuery/secondQueryId (split view was off).
-    // onSplitViewClick sets secondQuery but NOT secondQueryId — tile must be dirty
-    // until the user runs the bottom query.
-    const existingNonSplitTile = {
-      key: 'tile-1',
-      i: 'tile-1',
-      query: 'sales by region',
-      queryId: 'qid-original',
-      queryResponse: { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } },
-    }
-
-    function setupNewlySplit(tileOverride) {
-      const wrapper = setup({ isEditing: true })
-      const instance = wrapper.instance()
-      wrapper.setState({ uneditedDashboardTiles: [existingNonSplitTile] })
-      instance.baselineQueryIds.set('tile-1', { queryId: existingNonSplitTile.queryId })
-      instance.getMostRecentTiles = jest.fn(() => [{ ...existingNonSplitTile, ...tileOverride }])
-      return instance
-    }
-
-    test('split view newly enabled, bottom not run yet: dirty', () => {
-      const i = setupNewlySplit({ secondQuery: 'sales by region', splitView: true })
-      expect(i.getDirtyTileKeys().has('tile-1')).toBe(true)
-      expect(i.hasDirtyTiles()).toBe(true)
-    })
-
-    test('split view newly enabled, bottom query executed: not dirty', () => {
-      const i = setupNewlySplit({ secondQuery: 'sales by region', splitView: true, secondQueryId: 'qid-second-new' })
-      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
-      expect(i.hasDirtyTiles()).toBe(false)
-    })
-
-    test('split view disabled (secondQuery cleared): not dirty', () => {
-      const i = setupNewlySplit({ splitView: false })
-      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
-    })
-  })
 })
 
 describe('Dashboard.getDirtyTileKeys', () => {
@@ -1060,14 +964,6 @@ describe('Dashboard.getDirtyTileKeys', () => {
 
   test('does NOT mark dirty when query text changed AND new queryId (already re-executed)', () => {
     expect(setupDirtyTest({ query: 'sales by product', queryId: 'qid-new' }).has('tile-abc')).toBe(false)
-  })
-
-  test('detects secondQuery change when secondQueryId is unchanged (not yet re-executed)', () => {
-    expect(setupDirtyTest({ secondQuery: 'revenue by month' }).has('tile-abc')).toBe(true)
-  })
-
-  test('does NOT mark dirty when secondQuery changed AND new secondQueryId (already re-executed)', () => {
-    expect(setupDirtyTest({ secondQuery: 'revenue by month', secondQueryId: 'qid-second-new' }).has('tile-abc')).toBe(false)
   })
 
   test('does NOT mark dirty when only queryId changes', () => {
@@ -1297,29 +1193,6 @@ describe('Dashboard.baselineQueryIds — tracks executed queryIds', () => {
     expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
   })
 
-  test('secondQuery text change snapshots secondQueryId into baseline', () => {
-    const tileWithSecond = { ...savedTile, secondQuery: 'revenue by month', secondQueryId: 'qid-second-original' }
-    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [tileWithSecond] })
-    const instance = wrapper.instance()
-    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: 'qid-second-original' })
-    instance.getMostRecentTiles = jest.fn(() => [tileWithSecond])
-    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
-
-    instance.setParamsForTile({ secondQuery: 'new second query text' }, 'tile-abc', [])
-    expect(instance.baselineQueryIds.get('tile-abc').secondQueryId).toBe('qid-second-original')
-  })
-
-  test('does NOT update baseline.secondQueryId when only secondQueryId changes (post-run)', () => {
-    const tileWithSecond = { ...savedTile, secondQuery: 'revenue by month', secondQueryId: 'qid-second-original' }
-    const wrapper = setup({ isEditing: true }, { uneditedDashboardTiles: [tileWithSecond] })
-    const instance = wrapper.instance()
-    instance.baselineQueryIds.set('tile-abc', { queryId: 'qid-original', secondQueryId: 'qid-second-original' })
-    instance.getMostRecentTiles = jest.fn(() => [tileWithSecond])
-    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
-
-    instance.setParamsForTile({ secondQueryId: 'qid-second-after-run' }, 'tile-abc', [])
-    expect(instance.baselineQueryIds.get('tile-abc').secondQueryId).toBe('qid-second-original')
-  })
 })
 
 describe('Dashboard.getFailedTiles', () => {

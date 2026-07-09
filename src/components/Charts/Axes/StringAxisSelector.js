@@ -146,6 +146,7 @@ export default class StringAxisSelector extends React.Component {
           ...col,
           type: bucketOption.type,
           precision: bucketOption.precision,
+          isCyclical: bucketOption.type === ColumnTypes.DATE_STRING,
         }
       }
       return col

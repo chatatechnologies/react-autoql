@@ -1,0 +1,42 @@
+.report-problem-modal-body {
+  font-size: 0.875rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  p {
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  .report-problem-radio-group {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+  }
+
+  .report-problem-text-area {
+    font-family: var(--react-autoql-font-family);
+    font-size: 0.875rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 80px;
+    max-height: 35vh;
+    border-radius: 4px;
+    border: 1px solid var(--react-autoql-border-color);
+    margin-top: 10px;
+    padding: 5px 10px;
+    outline: none !important;
+    &:focus,
+    &:hover {
+      border-color: var(--react-autoql-accent-color);
+    }
+  }
+}

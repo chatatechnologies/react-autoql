@@ -219,7 +219,7 @@ class DashboardWithoutTheme extends React.Component {
       this.refreshTileLayouts()
       this.setState({ uneditedDashboardTiles: _cloneDeep(this.props.tiles) })
       this.baselineQueryIds = new Map(
-        (this.props.tiles || []).map((t) => [t.key, { queryId: t.queryId, secondQueryId: t.secondQueryId }]),
+        (this.props.tiles || []).map((t) => [t.key, { queryId: t.queryId }]),
       )
     }
 
@@ -364,13 +364,10 @@ class DashboardWithoutTheme extends React.Component {
           )
             return true
           const baseline = this.baselineQueryIds.get(tile.key) || {}
-          const topDirty = saved.query ? tile.query !== saved.query && tile.queryId === baseline.queryId : false
-          const bottomDirty = saved.secondQuery
-            ? tile.secondQuery !== saved.secondQuery && tile.secondQueryId === baseline.secondQueryId
-            : saved.queryId
-            ? !!tile.secondQuery && !tile.secondQueryId
+          const topDirty = saved.query
+            ? tile.query !== saved.query && tile.queryId === baseline.queryId
             : false
-          return topDirty || bottomDirty
+          return topDirty
         })
         .map((tile) => tile.key),
     )
@@ -508,9 +505,8 @@ class DashboardWithoutTheme extends React.Component {
           }
 
           // Edit mode: re-execute filtered tiles so SQL reflects current filters and queryId is captured.
-          const needsFilterExecution =
-            this.props.isEditing && (tile?.tableFilters?.length > 0 || tile?.secondTableFilters?.length > 0)
-          if (forceExecution || needsFilterExecution || (!tile?.queryResponse && !tile?.secondQueryResponse)) {
+          const needsFilterExecution = this.props.isEditing && tile?.tableFilters?.length > 0
+          if (forceExecution || needsFilterExecution || !tile?.queryResponse) {
             promises.push(this.tileRefs[dashboardTile].processTile())
           }
         }
@@ -669,7 +665,7 @@ class DashboardWithoutTheme extends React.Component {
 
   // Shallow-clone tiles for undo history; deep-clone only fe_req to preserve custom column defs without copying full response payloads.
   cloneTilesForLog = (tiles) =>
-    tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => {
+    tiles?.map(({ queryResponse, ...rest }) => {
       const safeQueryResponse = queryResponse
         ? (() => {
             try {
@@ -689,32 +685,13 @@ class DashboardWithoutTheme extends React.Component {
           })()
         : queryResponse
 
-      const safeSecondQueryResponse = secondQueryResponse
-        ? (() => {
-            try {
-              const sqr = { ...secondQueryResponse }
-              if (sqr.data && sqr.data.data) {
-                sqr.data = { ...sqr.data }
-                sqr.data.data = { ...sqr.data.data }
-                if (sqr.data.data.fe_req) {
-                  sqr.data.data.fe_req = _cloneDeep(sqr.data.data.fe_req)
-                }
-              }
-              return sqr
-            } catch (e) {
-              return secondQueryResponse
-            }
-          })()
-        : secondQueryResponse
-
       return {
         ..._cloneDeep(rest),
         queryResponse: safeQueryResponse,
-        secondQueryResponse: safeSecondQueryResponse,
       }
     })
 
-  stripRuntimeFields = (tiles) => tiles?.map(({ queryResponse, secondQueryResponse, ...rest }) => rest)
+  stripRuntimeFields = (tiles) => tiles?.map(({ queryResponse, ...rest }) => rest)
 
   addTileStateToLog = (tiles) => {
     if (!this.props.isEditing || !tiles) {
@@ -726,7 +703,7 @@ class DashboardWithoutTheme extends React.Component {
       clearTimeout(this.resetGuardTimer)
       const resetTile = tiles?.find((t) => t.i === this.resettingTileId)
       const isFullyDone =
-        resetTile?.queryResponse != null && (!resetTile.secondQuery || resetTile.secondQueryResponse != null)
+        resetTile?.queryResponse != null
       if (isFullyDone) {
         this.isResettingTile = false
         this.resettingTileId = null
@@ -843,11 +820,7 @@ class DashboardWithoutTheme extends React.Component {
           (content.queryResponse?.data?.reference_id && !(refId >= 200 && refId < 300))
         const queryId = content.queryResponse?.data?.data?.query_id
         if (this.props.isEditing && !content.queryId && !isErrorResponse) {
-          const {
-            queryResponse: _queryResponse,
-            secondQueryResponse: _secondQueryResponse,
-            ...contentWithoutResponse
-          } = content
+          const { queryResponse: _queryResponse, ...contentWithoutResponse } = content
           tile = { ...tile, ...contentWithoutResponse, queryId }
         } else {
           tile = { ...tile, ...content, queryId }
@@ -1095,8 +1068,6 @@ class DashboardWithoutTheme extends React.Component {
           const before = originalTiles[tileIndex] || {}
           const update = {}
           if (params.query !== undefined && params.query !== before.query) update.queryId = before.queryId
-          if (params.secondQuery !== undefined && params.secondQuery !== before.secondQuery)
-            update.secondQueryId = before.secondQueryId
           if (Object.keys(update).length) this.baselineQueryIds.set(tileKey, { ...cur, ...update })
         }
       }
@@ -1104,12 +1075,6 @@ class DashboardWithoutTheme extends React.Component {
       if (Object.keys(params).includes('query') && params.query !== originalTiles[tileIndex]?.query) {
         tiles[tileIndex].dataConfig = undefined
         tiles[tileIndex].skipQueryValidation = false
-      } else if (
-        Object.keys(params).includes('secondQuery') &&
-        params.secondQuery !== originalTiles[tileIndex]?.secondQuery
-      ) {
-        tiles[tileIndex].secondDataConfig = undefined
-        tiles[tileIndex].secondskipQueryValidation = false
       }
 
       this.debouncedOnChange(tiles, true, callbackArray)
@@ -1137,24 +1102,17 @@ class DashboardWithoutTheme extends React.Component {
         ...tiles[tileIndex],
         tableFilters: [],
         filters: [],
-        secondTableFilters: [],
         columnSelects: [],
         columns: [],
         available_selects: [],
         displayOverrides: [],
         orders: [],
-        secondOrders: [],
         aggConfig: undefined,
-        secondAggConfig: undefined,
         axisSorts: undefined,
-        secondAxisSorts: undefined,
         chartControls: undefined,
-        secondChartControls: undefined,
         dataConfig: undefined,
-        secondDataConfig: undefined,
         legendFilterConfig: undefined,
         queryResponse: null,
-        secondQueryResponse: null,
       }
 
       // Save pre-reset state for undo; bypass addTileStateToLog (equality check would skip it).
@@ -1178,7 +1136,7 @@ class DashboardWithoutTheme extends React.Component {
       const runSingleTile = () => {
         const updatedTile = tiles[tileIndex]
         const refKey = updatedTile?.key || updatedTile?.i
-        const hasQuery = !!(updatedTile?.query || updatedTile?.secondQuery)
+        const hasQuery = !!updatedTile?.query
         if (!hasQuery) {
           return Promise.resolve()
         }
@@ -1224,9 +1182,6 @@ class DashboardWithoutTheme extends React.Component {
                     ...(processedTile.queryResponse !== undefined
                       ? { queryResponse: processedTile.queryResponse }
                       : {}),
-                    ...(processedTile.secondQueryResponse !== undefined
-                      ? { secondQueryResponse: processedTile.secondQueryResponse }
-                      : {}),
                   }
                   this.pendingResetTiles = pending
                 }
@@ -1252,14 +1207,13 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
-  onDrilldownStart = ({ tileId, activeKey, isSecondHalf, queryOutputRef }) => {
+  onDrilldownStart = ({ tileId, activeKey, queryOutputRef }) => {
     if (getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns) {
       this.activeDrilldownRef = queryOutputRef
       this.setState({
         isDrilldownRunning: true,
         isDrilldownChartHidden: false,
         isDrilldownModalVisible: true,
-        isDrilldownSecondHalf: isSecondHalf,
         activeDrilldownTile: tileId || this.state.activeDrilldownTile,
         activeDrilldownResponse: null,
         activeDrilldownChartElementKey: activeKey,
@@ -1401,8 +1355,6 @@ class DashboardWithoutTheme extends React.Component {
             }}
             dashboardSlicers={this.props.enableSlicers ? this.state.dashboardSlicers.map((s) => s.data) : []}
             displayType={tile.displayType}
-            secondDisplayType={tile.secondDisplayType}
-            secondDisplayPercentage={tile.secondDisplayPercentage}
             isEditing={this.props.isEditing}
             isDirty={dirtyTileKeys.has(tile.key)}
             isFailed={failedTileKeys.has(tile.key)}
@@ -1456,7 +1408,7 @@ class DashboardWithoutTheme extends React.Component {
     // Check if any tile is currently executing
     const isAnyTileExecuting = Object.keys(this.tileRefs).some((key) => {
       const tileRef = this.tileRefs[key]
-      return tileRef?.state?.isTopExecuting || tileRef?.state?.isBottomExecuting
+      return tileRef?.state?.isTopExecuting
     })
 
     return (
@@ -1474,10 +1426,11 @@ class DashboardWithoutTheme extends React.Component {
               onUndoClick={this.undo}
               onRedoClick={this.redo}
               onRefreshClick={this.props.enableAutoRefresh ? this.executeCachedDashboard : this.executeDashboard}
+              onEditRefreshClick={this.executeDashboard}
               onDownloadClick={this.exportDashboard}
               isDashboardFullyExecuted={
                 tiles.length > 0 &&
-                tiles.every((tile) => tile.queryResponse || tile.secondQueryResponse) &&
+                tiles.every((tile) => tile.queryResponse) &&
                 !isAnyTileExecuting
               }
               onSaveClick={() => {

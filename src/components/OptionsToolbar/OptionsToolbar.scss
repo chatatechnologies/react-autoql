@@ -134,42 +134,6 @@
   border-left: 3px solid var(--react-autoql-error-color, #d32f2f);
 }
 
-.report-problem-modal-body {
-  font-size: 0.9375rem;
-  font-family: var(--react-autoql-font-family), sans-serif;
-
-  h3 {
-    margin-top: 0;
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--react-autoql-text-color-primary);
-  }
-
-  .report-problem-radio-group {
-    display: block;
-    margin-bottom: 10px;
-    font-size: 0.9375rem;
-  }
-
-  .report-problem-text-area {
-    font-family: var(--react-autoql-font-family);
-    font-size: 0.9375rem;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-height: 80px;
-    max-height: 35vh;
-    border-radius: 4px;
-    border: 1px solid var(--react-autoql-border-color);
-    margin-top: 15px;
-    padding: 5px 10px;
-    outline: none !important;
-    &:focus,
-    &:hover {
-      border-color: var(--react-autoql-accent-color);
-    }
-  }
-}
 
 .copy-sql-modal-content {
   position: relative;

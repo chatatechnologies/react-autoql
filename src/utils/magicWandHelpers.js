@@ -11,7 +11,7 @@ export function getMagicWandDatasetRowCount(queryResponse) {
  * True when there are too many rows to run analyze / LLM summary (matches Data Messenger disabled rule).
  */
 export function isMagicWandDatasetTooLarge(queryResponse) {
-  return getMagicWandDatasetRowCount(queryResponse) > MAX_DATA_PAGE_SIZE
+  return getMagicWandDatasetRowCount(queryResponse) >= MAX_DATA_PAGE_SIZE
 }
 
 /**

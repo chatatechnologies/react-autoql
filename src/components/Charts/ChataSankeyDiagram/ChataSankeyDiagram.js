@@ -15,7 +15,6 @@ import {
   getAutoQLConfig,
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
-import { Tooltip } from '../../Tooltip'
 import SankeyColumnSelector from './SankeyColumnSelector'
 
 import './ChataSankeyDiagram.scss'
@@ -128,6 +127,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   const labelsRef = useRef()
   const nodesDataRef = useRef([])
   const chartWidthRef = useRef(0)
+  const chartHeightRef = useRef(0)
   const [isDataTruncated, setIsDataTruncated] = useState(false)
   const [totalFlows, setTotalFlows] = useState(0)
   const [hasCircularLinks, setHasCircularLinks] = useState(false)
@@ -442,7 +442,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     renderChart()
   }, [props.width, props.height, processedData, props.themeConfig, enableDrilldowns])
 
-  // Throttle function
   const throttle = (func, limit) => {
     let inThrottle
     return function (...args) {
@@ -454,51 +453,40 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     }
   }
 
-  // Update label positions and visibility based on zoom
+  // Update label positions, counter-scale, and visibility based on current zoom.
+  // All labels start visible; overlap detection then hides any that genuinely collide.
+  // At higher zoom the counter-scale shrinks label heights in world-space, so previously
+  // hidden labels naturally reappear as space opens up.
   const updateLabelsForZoom = (scale) => {
     if (!labelsRef.current || !nodesDataRef.current.length) return
 
     const chartWidth = chartWidthRef.current
-    const maxLabelWidth = chartWidth / 3 // Max width in world coordinates
+    const maxLabelWidth = chartWidth / 3
     const fontSize = '0.75rem'
     const inverseScale = 1 / scale
 
-    // First pass: Update all labels and make them all visible initially
+    // First pass: show all labels, update positions and counter-scale transforms
     labelsRef.current.style('display', 'block')
 
-    labelsRef.current.each(function (d, i) {
+    labelsRef.current.each(function (d) {
       const node = nodesDataRef.current.find((n) => n.id === d.id)
       if (!node) return
 
       const textElement = select(this)
       const isLeftSide = node.x0 < chartWidth / 2
       const fullText = d.displayName || d.name
-
-      // Position in world coordinates
       const xOffset = 6
       const x = isLeftSide ? node.x1 + xOffset : node.x0 - xOffset
       const y = (node.y1 + node.y0) / 2
 
-      // Position the text
       textElement.attr('x', x)
       textElement.attr('y', y)
-
-      // Apply counter-scale for vertical only around the text's Y position
-      // Parent scales as scale(1, k), so we counter with scale(1, 1/k)
-      // Use translate to set the transform origin to the text's Y position
       textElement.attr('transform', `translate(0, ${y}) scale(1, ${inverseScale}) translate(0, ${-y})`)
-
-      // Update font size to base size
       textElement.style('font-size', fontSize)
-
-      // Recalculate truncation
       textElement.text(fullText)
-
-      // Remove existing title if any
       textElement.selectAll('title').remove()
 
       if (this.getComputedTextLength() > maxLabelWidth) {
-        // Binary search for the right length
         let low = 0
         let high = fullText.length
         let truncatedText = fullText
@@ -516,55 +504,47 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           }
         }
 
-        // Set final truncated text
         textElement.text(truncatedText)
-
-        // Add tooltip with full text
         textElement.append('title').text(fullText)
       }
     })
 
-    // Second pass: Recalculate overlap detection
-    // Sort labels by Y position to ensure consistent hiding behavior
+    // Second pass: hide labels that genuinely overlap (sorted top-to-bottom)
     const labelData = []
     labelsRef.current.each(function (d) {
       const node = nodesDataRef.current.find((n) => n.id === d.id)
-      if (node) {
-        labelData.push({
-          element: this,
-          y: (node.y1 + node.y0) / 2,
-          data: d,
-        })
-      }
+      if (node) labelData.push({ element: this, y: (node.y1 + node.y0) / 2 })
     })
 
-    // Sort by Y position
     labelData.sort((a, b) => a.y - b.y)
 
-    // Check overlaps in sorted order
     const labelBounds = []
-    labelData.forEach(({ element }) => {
+    labelData.forEach(({ element, y: worldY }) => {
       try {
         const bbox = element.getBBox()
+        // Padding in world units — divide by scale so it stays ~2px on screen at any zoom level.
+        const padding = 2 / scale
+
+        // getBBox() does not account for the counter-scale transform on the text element,
+        // so bbox.height is always the raw pixel height regardless of zoom. Divide by scale
+        // to get the correct world-space height (counter-scale makes visual size constant
+        // but shrinks the world footprint of the label as zoom increases).
+        const worldHeight = bbox.height / scale
+
+        // x is unscaled (zoom is vertical only), so bbox.x and bbox.width are correct as-is.
         const bounds = {
           x: bbox.x,
-          y: bbox.y,
+          y: worldY - worldHeight / 2,
           width: bbox.width,
-          height: bbox.height,
+          height: worldHeight,
         }
 
-        // Fixed padding in screen space (not scaled)
-        const padding = 2
-
-        // Check if this label overlaps with any previous visible labels
-        const hasOverlap = labelBounds.some((otherBounds) => {
-          return !(
-            bounds.x + bounds.width + padding < otherBounds.x ||
-            bounds.x > otherBounds.x + otherBounds.width + padding ||
-            bounds.y + bounds.height + padding < otherBounds.y ||
-            bounds.y > otherBounds.y + otherBounds.height + padding
-          )
-        })
+        const hasOverlap = labelBounds.some((other) => !(
+          bounds.x + bounds.width + padding < other.x ||
+          bounds.x > other.x + other.width + padding ||
+          bounds.y + bounds.height + padding < other.y ||
+          bounds.y > other.y + other.height + padding
+        ))
 
         if (hasOverlap) {
           select(element).style('display', 'none')
@@ -573,12 +553,12 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           labelBounds.push(bounds)
         }
       } catch (error) {
-        // Ignore errors from getBBox
+        // Ignore getBBox errors
       }
     })
   }
 
-  // Throttled version - call at most once every 100ms
+  // Throttled — runs at most once every 100ms during zoom/pan
   const throttledUpdateLabels = useRef(throttle(updateLabelsForZoom, 100)).current
 
   const renderChart = () => {
@@ -615,7 +595,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
 
     // Create zoom behavior - vertical only, no horizontal movement
     const zoomBehavior = zoom()
-      .scaleExtent([0.5, 5]) // Allow zoom from 50% to 500%
+      .scaleExtent([0.5, 10]) // Allow zoom from 50% to 1000%
       .filter((event) => {
         // Prevent default browser scroll for wheel events
         if (event.type === 'wheel') {
@@ -635,7 +615,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         // Lock X position at 0, only allow vertical translation and scale
         zoomableGroup.attr('transform', `translate(0,${transform.y}) scale(1,${transform.k})`)
 
-        // Update labels (throttled)
+        // Update labels: counter-scale + overlap detection (throttled)
         throttledUpdateLabels(transform.k)
 
         setCurrentZoomScale(transform.k)
@@ -683,9 +663,10 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     // Generate sankey data (circular links already removed in processedData)
     const { nodes, links } = sankey(processedData)
 
-    // Store nodes data and chart width for label updates
+    // Store nodes data and chart dimensions for label updates
     nodesDataRef.current = nodes
     chartWidthRef.current = chartWidth
+    chartHeightRef.current = chartHeight
 
     // Color scale: use global chart palette when available.
     const fallbackColors = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
@@ -870,7 +851,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     // Store labels reference for zoom updates
     labelsRef.current = labels
 
-    // Initialize labels at scale 1 (this will handle overlap detection)
     updateLabelsForZoom(1)
   }
 
@@ -992,8 +972,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         </g>
       </g>
 
-      {/* Tooltip for buttons */}
-      {props.chartTooltipID && <Tooltip tooltipId={props.chartTooltipID} />}
     </g>
   )
 })

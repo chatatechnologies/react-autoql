@@ -120,14 +120,6 @@
     width: calc(100% - 40px);
   }
 
-  .split-view-btn {
-    background: var(--react-autoql-background-color-secondary);
-    display: inline-block;
-    margin-right: 0.4375rem;
-    .react-autoql-icon {
-      font-size: 0.875rem;
-    }
-  }
 }
 
 .react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container {
@@ -141,109 +133,6 @@
   z-index: 100 !important;
 }
 
-.react-autoql-dashboard-tile:hover .split-view-query-btn-container {
-  visibility: visible;
-  opacity: 1;
-}
-
-.split-view-query-btn-container {
-  pointer-events: none;
-  visibility: hidden;
-  position: absolute;
-  display: flex;
-  width: 100%;
-  padding: 0 0.9375rem;
-  bottom: unset;
-  top: 0.4375rem;
-  z-index: 1;
-  opacity: 0;
-  overflow: visible;
-
-  &.open .split-view-query-btn {
-    flex-grow: 1;
-
-    .dashboard-tile-input.second.query {
-      display: block;
-    }
-  }
-
-  .split-view-query-btn {
-    display: flex;
-    flex-shrink: 0;
-    flex-grow: 0;
-    flex-basis: auto;
-    overflow: visible;
-    pointer-events: all;
-    color: var(--react-autoql-accent-color);
-    transition: opacity 0.3s ease, color 0.3s ease, flex-grow 0.3s ease;
-    &.react-autoql-toolbar-btn:hover {
-      opacity: 1;
-    }
-    .react-autoql-btn {
-      flex: 0 0 auto;
-      margin: 0 0.625rem;
-
-      .split-view-query-btn-icon-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        .react-autoql-icon-caret-left,
-        .react-autoql-icon-caret-right {
-          font-size: 0.625rem;
-          padding-left: 0.3125rem;
-        }
-      }
-    }
-
-    .dashboard-tile-input.second.query {
-      border: 1px solid var(--react-autoql-border-color);
-      color: var(--react-autoql-text-color-primary, #356f90);
-      background: var(--react-autoql-background-color-secondary);
-      outline: none !important;
-      padding: 0 0.625rem;
-      margin: 0px;
-      height: 100%;
-      flex: 1;
-
-      display: none;
-    }
-
-    .query-input-icon-wrapper {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .query-input-interpretation-badge {
-      position: absolute;
-      top: calc(100% + 0.25rem);
-      left: -1.625rem;
-      width: 2rem;
-      height: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: var(--react-autoql-accent-color, #26a7df);
-      z-index: 10;
-      pointer-events: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-
-      // Flip icon vertically so the tail points up toward the icon
-      .react-autoql-icon {
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transform: scaleY(-1);
-      }
-    }
-  }
-}
 
 .react-autoql-dashboard-tile-inner-div {
   .react-autoql-table-add-column-btn {
@@ -283,12 +172,6 @@
     overflow: hidden;
     background: inherit;
 
-    .layout-splitter {
-      height: 1px !important;
-      color: var(--react-autoql-border-color);
-      opacity: 0.3;
-      pointer-events: none;
-    }
   }
 
   .dashboard-tile-response-wrapper.editing {
@@ -298,22 +181,11 @@
       padding: 0.8125rem;
     }
 
-    .layout-splitter {
-      display: block;
-      pointer-events: unset;
-      height: 4px !important;
-      color: var(--react-autoql-text-color-primary);
-      opacity: 0.8;
-    }
-
     .react-autoql-toolbar-btn.active {
       color: var(--react-autoql-accent-color);
     }
   }
 
-  &.split .dashboard-tile-response-wrapper {
-    padding: 0;
-  }
 }
 
 /* Safetynet styles specific to dashboard tiles */
@@ -817,27 +689,20 @@
   color: inherit;
 }
 
-// Splitter styles
+// Splitter styles (used by DrilldownModal)
 .dashboard-tile-response-container .layout-pane-primary {
   overflow: hidden;
 }
 .splitter-layout,
 .layout-pane,
-.dashboard-tile-split-pane-container,
 .react-autoql-dashboard-drilldown-original {
   display: flex;
   align-items: stretch;
   justify-content: center;
   width: 100%;
 }
-
-// Split pane containers need a positioning context
-.dashboard-tile-split-pane-container {
-  position: relative;
-}
 .dashboard-tile-response-container .splitter-layout,
-.dashboard-tile-response-container .layout-pane,
-.dashboard-tile-response-container .dashboard-tile-split-pane-container {
+.dashboard-tile-response-container .layout-pane {
   background: inherit;
 }
 

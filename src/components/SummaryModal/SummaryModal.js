@@ -1,7 +1,7 @@
 import React from 'react'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
-import { getAuthentication, fetchLLMSummary, authenticationDefault, autoQLConfigDefault } from 'autoql-fe-utils'
+import { getAuthentication, fetchLLMSummary, authenticationDefault, autoQLConfigDefault, MAX_DATA_PAGE_SIZE } from 'autoql-fe-utils'
 
 import { Modal } from '../Modal'
 import { LoadingDots } from '../LoadingDots'
@@ -108,6 +108,7 @@ export default class SummaryModal extends React.Component {
       // Get filtered data from QueryOutput's tableData (already filtered)
       const filteredRows = this.props.responseRef?.tableData || queryResponse.data.data.rows
 
+      const isOverRowLimit = filteredRows.length > MAX_DATA_PAGE_SIZE
       const response = await fetchLLMSummary({
         data: {
           additional_context: {
@@ -115,8 +116,9 @@ export default class SummaryModal extends React.Component {
             interpretation: queryResponse.data.data.interpretation,
             focus_prompt: promptToUse.trim() || '',
           },
-          rows: filteredRows,
-          columns: queryResponse.data.data.columns,
+          rows: isOverRowLimit ? [] : filteredRows,
+          columns: isOverRowLimit ? [] : queryResponse.data.data.columns,
+          ...(isOverRowLimit && { override_row_limit: true }),
         },
         queryID: queryResponse.data.data.query_id,
         apiKey: auth.apiKey,
