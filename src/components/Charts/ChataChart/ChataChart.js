@@ -878,7 +878,12 @@ export default class ChataChart extends React.Component {
       outerWidth: this.outerWidth,
     }
 
-    if (this.props.hidden || this.props.isAnimating || this.firstRender) {
+    if (
+      this.props.hidden ||
+      this.props.isAnimating ||
+      this.firstRender ||
+      this.isContainerCollapsed()
+    ) {
       return defaultDimensions
     }
 
@@ -1501,7 +1506,7 @@ export default class ChataChart extends React.Component {
                 : ''
             }
             ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'enable-drilldown' : 'disable-drilldown'}`}
+            ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns && !this.props.columns?.[this.props.stringColumnIndex]?.isCyclical ? 'enable-drilldown' : 'disable-drilldown'}`}
           >
             {!this.firstRender && !this.props.isAnimating && (
               <svg
@@ -1547,6 +1552,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
@@ -1576,6 +1582,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
