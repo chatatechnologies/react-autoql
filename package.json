@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.30.0",
+  "version": "8.31.0",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -10,7 +10,9 @@
   ],
   "files": [
     "dist",
-    "src/index.d.ts"
+    "src/index.d.ts",
+    "billing.js",
+    "billing.d.ts"
   ],
   "watch": {
     "devscript": {
@@ -33,7 +35,7 @@
     "test:coverage": "npm test -- --coverage",
     "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
     "test:staged": "cross-env NODE_OPTIONS= jest --findRelatedTests",
-    "build": "cross-env NODE_OPTIONS=--experimental-global-webcrypto rollup -c",
+    "build": "rollup -c",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint --fix 'src/**/*.js'",
     "format": "prettier --write 'src/**/*.{js,css,md,json}' --config ./.prettierrc",

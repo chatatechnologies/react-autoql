@@ -1,14 +1,9 @@
 import * as React from 'react'
 
 export * from 'autoql-fe-utils'
+export * from '../billing'
 
 // ─── Shared config interfaces ────────────────────────────────────────────────
-
-export interface Authentication {
-  token?: string
-  apiKey?: string
-  domain?: string
-}
 
 export interface AutoQLConfig {
   translation?: string

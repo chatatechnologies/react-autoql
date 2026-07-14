@@ -102,3 +102,25 @@ export default class App extends Component {
   }
 }
 ```
+
+## Billing hooks
+
+Authenticated applications can compose their own billing UI with the package's billing hooks:
+
+```jsx
+import { useBillingCustomerKey, useBillingHistory, useBillingQuotaUpdate, useBillingUsage } from 'react-autoql/billing'
+
+const { billingCustomerKey } = useBillingCustomerKey({ authentication })
+const { data: usage, state: usageState } = useBillingUsage({
+  authentication,
+  billingCustomerKey,
+})
+const { items: history } = useBillingHistory({ authentication, billingCustomerKey })
+const { updateQuota, isSaving } = useBillingQuotaUpdate({
+  authentication,
+  billingCustomerKey,
+})
+```
+
+The same root export includes billing period/currency formatting helpers and opt-in billing customer
+key storage helpers. The storage helpers are not used automatically by the hooks.
