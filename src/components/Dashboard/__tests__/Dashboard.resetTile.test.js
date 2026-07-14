@@ -410,6 +410,56 @@ describe('resetTile guard flags', () => {
   })
 })
 
+describe('resetTile merges the freshly-executed tile queryId into pendingResetTiles', () => {
+  it('carries processTile-resolved queryId (not just queryResponse) into pendingResetTiles', async () => {
+    const tile = makeTile({ query: 'SELECT 1', queryId: 'q_old' })
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    const freshResponse = { data: { data: { query_id: 'q_new' }, reference_id: '1.1.200' } }
+    // Simulate the mounted DashboardTile's ref registering itself, since the DashboardTile
+    // mock in this suite renders null and never calls the tileRef callback.
+    instance.tileRefs['tile-1'] = {
+      processTile: jest.fn().mockResolvedValue({ ...tile, queryId: 'q_new', queryResponse: freshResponse }),
+    }
+
+    jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
+
+    await instance.resetTile('tile-1')
+
+    const mergedTile = instance.pendingResetTiles?.find((t) => t.i === 'tile-1')
+    expect(mergedTile).toBeDefined()
+    expect(mergedTile.queryId).toBe('q_new')
+    expect(mergedTile.queryResponse).toEqual(freshResponse)
+
+    wrapper.unmount()
+  })
+
+  it('leaves queryId untouched when the resolved tile does not include one', async () => {
+    const tile = makeTile({ query: 'SELECT 1', queryId: 'q_old' })
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    const freshResponse = { data: { data: {}, reference_id: '1.1.200' } }
+    instance.tileRefs['tile-1'] = {
+      processTile: jest.fn().mockResolvedValue({ ...tile, queryId: undefined, queryResponse: freshResponse }),
+    }
+
+    jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
+
+    await instance.resetTile('tile-1')
+
+    const mergedTile = instance.pendingResetTiles?.find((t) => t.i === 'tile-1')
+    expect(mergedTile).toBeDefined()
+    // resetTile itself does not clear queryId — an undefined queryId on the resolved
+    // tile must not overwrite the queryId already carried on pendingResetTiles.
+    expect(mergedTile.queryId).toBe('q_old')
+    expect(mergedTile.queryResponse).toEqual(freshResponse)
+
+    wrapper.unmount()
+  })
+})
+
 describe('flushOnChange', () => {
   it('calls props.onChange with cloned tiles immediately', () => {
     const onChange = jest.fn()

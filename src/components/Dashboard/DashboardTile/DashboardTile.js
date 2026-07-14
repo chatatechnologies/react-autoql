@@ -356,12 +356,21 @@ export class DashboardTile extends React.Component {
     }
 
     clearTimeout(this.setParamsForTileTimeout)
-    this.setParamsForTileTimeout = setTimeout(() => {
+    const flush = () => {
       if (!this._isMounted) return
       this.props.setParamsForTile(this.paramsToSet, this.props.tile.i, _cloneDeep(this.callbackArray))
       this.paramsToSet = {}
       this.callbackArray = []
-    }, this.debounceTime)
+    }
+
+    // queryId must reach the parent's tile array immediately: a dashboard save can be
+    // triggered right after a tile finishes executing, and a debounced update would let
+    // that save ship the tile's stale, pre-execution queryId.
+    if ('queryId' in params) {
+      flush()
+    } else {
+      this.setParamsForTileTimeout = setTimeout(flush, this.debounceTime)
+    }
   }
 
   getFilteredProps = (props) => {
@@ -815,8 +824,12 @@ export class DashboardTile extends React.Component {
 
     return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
       .then((queryResponse) => {
+        // Extract queryId directly from the fresh response rather than this.props.tile.queryId,
+        // which is stale until debouncedSetParamsForTile's async round-trip lands.
+        const freshQueryId = queryResponse?.data?.data?.query_id
         return {
           ...this.props.tile,
+          ...(freshQueryId ? { queryId: freshQueryId } : {}),
           queryResponse,
           defaultSelectedSuggestion: undefined,
         }

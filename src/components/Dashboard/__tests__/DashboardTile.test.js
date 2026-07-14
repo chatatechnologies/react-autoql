@@ -788,6 +788,138 @@ describe('debouncedSetParamsForTile does not fire after unmount', () => {
   })
 })
 
+describe('debouncedSetParamsForTile flushes queryId immediately', () => {
+  test('calls setParamsForTile synchronously (no timer advance) when params include queryId', () => {
+    const mockSetParamsForTile = jest.fn()
+    jest.useFakeTimers()
+
+    const wrapper = setup({
+      tile: sampleTile,
+      setParamsForTile: mockSetParamsForTile,
+    })
+    const instance = wrapper.instance()
+    mockSetParamsForTile.mockClear()
+
+    instance.debouncedSetParamsForTile({ queryId: 'q_immediate' })
+
+    // No jest.advanceTimersByTime call — this must fire before any debounce window elapses
+    const call = mockSetParamsForTile.mock.calls.find(([params]) => params?.queryId === 'q_immediate')
+    expect(call).toBeDefined()
+
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
+  test('still debounces normally when params do not include queryId', () => {
+    const mockSetParamsForTile = jest.fn()
+    jest.useFakeTimers()
+
+    const wrapper = setup({
+      tile: sampleTile,
+      setParamsForTile: mockSetParamsForTile,
+    })
+    const instance = wrapper.instance()
+    mockSetParamsForTile.mockClear()
+
+    instance.debouncedSetParamsForTile({ title: 'debounced title' })
+
+    // Not flushed yet — regular params still wait out the debounce window
+    let call = mockSetParamsForTile.mock.calls.find(([params]) => params?.title === 'debounced title')
+    expect(call).toBeUndefined()
+
+    jest.advanceTimersByTime(instance.debounceTime + 10)
+
+    call = mockSetParamsForTile.mock.calls.find(([params]) => params?.title === 'debounced title')
+    expect(call).toBeDefined()
+
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
+  test('flushing queryId also flushes other params merged into the same pending batch', () => {
+    const mockSetParamsForTile = jest.fn()
+    jest.useFakeTimers()
+
+    const wrapper = setup({
+      tile: sampleTile,
+      setParamsForTile: mockSetParamsForTile,
+    })
+    const instance = wrapper.instance()
+    mockSetParamsForTile.mockClear()
+
+    // A debounced param lands first, then a queryId update arrives before the debounce fires.
+    instance.debouncedSetParamsForTile({ title: 'batched title' })
+    instance.debouncedSetParamsForTile({ queryId: 'q_batched' })
+
+    const call = mockSetParamsForTile.mock.calls.find(([params]) => params?.queryId === 'q_batched')
+    expect(call).toBeDefined()
+    expect(call[0].title).toBe('batched title')
+
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+
+  test('cancels a pending debounced flush so params are not sent twice', () => {
+    const mockSetParamsForTile = jest.fn()
+    jest.useFakeTimers()
+
+    const wrapper = setup({
+      tile: sampleTile,
+      setParamsForTile: mockSetParamsForTile,
+    })
+    const instance = wrapper.instance()
+    mockSetParamsForTile.mockClear()
+
+    instance.debouncedSetParamsForTile({ title: 'title before flush' })
+    instance.debouncedSetParamsForTile({ queryId: 'q_dedupe' })
+
+    // Advance well past the original debounce window; the pending timeout must have been cleared.
+    jest.advanceTimersByTime(instance.debounceTime + 50)
+
+    const callsWithQueryId = mockSetParamsForTile.mock.calls.filter(([params]) => params?.queryId === 'q_dedupe')
+    expect(callsWithQueryId).toHaveLength(1)
+
+    wrapper.unmount()
+    jest.useRealTimers()
+  })
+})
+
+describe('processTile resolves with fresh queryId from the response', () => {
+  test('uses query_id from the response body, not the stale props.tile.queryId', async () => {
+    const tileWithStaleId = { ...sampleTile, queryId: 'q_stale' }
+    const wrapper = setup({ tile: tileWithStaleId })
+    const instance = wrapper.instance()
+
+    const freshResponse = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_fresh' }, reference_id: '1.1.200' },
+    }
+    jest.spyOn(instance, 'processTileTop').mockReturnValue(Promise.resolve(freshResponse))
+
+    const result = await instance.processTile({ query: 'Total online sales by region by year' })
+
+    expect(result.queryId).toBe('q_fresh')
+
+    wrapper.unmount()
+  })
+
+  test('falls back to existing tile queryId when the response has no query_id', async () => {
+    const tileWithExistingId = { ...sampleTile, queryId: 'q_existing' }
+    const wrapper = setup({ tile: tileWithExistingId })
+    const instance = wrapper.instance()
+
+    const responseWithoutQueryId = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: undefined }, reference_id: '1.1.200' },
+    }
+    jest.spyOn(instance, 'processTileTop').mockReturnValue(Promise.resolve(responseWithoutQueryId))
+
+    const result = await instance.processTile({ query: 'Total online sales by region by year' })
+
+    expect(result.queryId).toBe('q_existing')
+
+    wrapper.unmount()
+  })
+})
+
 describe('onRefreshClick and onResetClick wiring', () => {
   test('onRefreshClick triggers executeSingleTile with tile id', () => {
     const executeSingleTile = jest.fn()

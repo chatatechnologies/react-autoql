@@ -1198,6 +1198,7 @@ class DashboardWithoutTheme extends React.Component {
                     ...(processedTile.queryResponse !== undefined
                       ? { queryResponse: processedTile.queryResponse }
                       : {}),
+                    ...(processedTile.queryId !== undefined ? { queryId: processedTile.queryId } : {}),
                   }
                   this.pendingResetTiles = pending
                 }
