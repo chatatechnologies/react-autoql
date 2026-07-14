@@ -55,6 +55,31 @@ describe('Dashboard undo after reset', () => {
 
     wrapper.unmount()
   })
+
+  it('stays undoable and does not fire onSaveCallback after a reset while editing', async () => {
+    const onSaveCallback = jest.fn().mockResolvedValue(undefined)
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(
+      <Dashboard tiles={[tile]} onChange={onChange} isEditing={true} onSaveCallback={onSaveCallback} />,
+    )
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    await instance.resetTile('tile-1')
+
+    // Reset must not save or leave the user stuck — they should still be able to undo it.
+    expect(onSaveCallback).not.toHaveBeenCalled()
+    expect(instance.canUndo()).toBe(true)
+
+    instance.undo()
+
+    const restoredTiles = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(restoredTiles[0].tableFilters).toEqual(tile.tableFilters)
+    expect(restoredTiles[0].filters).toEqual(tile.filters)
+    expect(onSaveCallback).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
 })
 
 describe('Dashboard addTileStateToLog during reset', () => {
