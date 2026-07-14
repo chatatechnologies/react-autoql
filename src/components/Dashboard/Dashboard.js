@@ -1207,7 +1207,7 @@ class DashboardWithoutTheme extends React.Component {
               }
             }
 
-            const callbacks = this.props.onSaveCallback ? [this.props.onSaveCallback] : []
+            const callbacks = !this.props.isEditing && this.props.onSaveCallback ? [this.props.onSaveCallback] : []
             return this.debouncedOnChange(this.getMostRecentTiles(), false, callbacks)
           } catch (err) {
             console.error(err)

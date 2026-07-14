@@ -307,7 +307,7 @@ describe('addTileStateToLog clears reset flags immediately', () => {
 })
 
 describe('onSaveCallback is called after resetTile completes', () => {
-  it('passes onSaveCallback into debouncedOnChange after reset', async () => {
+  it('does not pass onSaveCallback into debouncedOnChange while editing', async () => {
     const onSaveCallback = jest.fn().mockResolvedValue(undefined)
     const tile = makeTile({ query: '' }) // no query → runSingleTile resolves immediately
     const wrapper = mount(
@@ -316,6 +316,25 @@ describe('onSaveCallback is called after resetTile completes', () => {
     const instance = wrapper.find('DashboardWithoutTheme').instance()
 
     // Spy before calling resetTile; mock prevents debounce timer from running
+    const debouncedSpy = jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
+
+    await instance.resetTile('tile-1')
+
+    // While editing, resetTile must not trigger a save or exit edit mode —
+    // the user should be able to undo or explicitly save afterward.
+    expect(debouncedSpy).toHaveBeenCalledWith(expect.anything(), false, [])
+
+    wrapper.unmount()
+  })
+
+  it('passes onSaveCallback into debouncedOnChange when not editing', async () => {
+    const onSaveCallback = jest.fn().mockResolvedValue(undefined)
+    const tile = makeTile({ query: '' })
+    const wrapper = mount(
+      <Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={false} onSaveCallback={onSaveCallback} />,
+    )
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
     const debouncedSpy = jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
 
     await instance.resetTile('tile-1')
