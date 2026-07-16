@@ -12,6 +12,7 @@ import {
   isChartType,
   findNetworkColumns,
   REQUEST_CANCELLED_ERROR,
+  UNAUTHENTICATED_ERROR,
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
@@ -24,6 +25,8 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
+import { Modal } from '../../Modal'
+import { Select } from '../../Select'
 import { VizToolbar } from '../../VizToolbar'
 import { QueryOutput } from '../../QueryOutput'
 import { OptionsToolbar } from '../../OptionsToolbar'
@@ -97,6 +100,8 @@ export class DashboardTile extends React.Component {
       isFollowOnModalOpen: false,
       followOnResults: [],
       queryResponseVersion: 0,
+      isProjectModalOpen: false,
+      pendingProjectId: undefined,
     }
   }
 
@@ -163,6 +168,15 @@ export class DashboardTile extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableFollowOnQuery: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
+    // List of projects the tile can be assigned to (multi-project dashboards). When omitted or empty, no picker is shown.
+    projectSelectList: PropTypes.arrayOf(
+      PropTypes.shape({
+        projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        displayName: PropTypes.string.isRequired,
+      }),
+    ),
+    // Resolves an authentication object scoped to a given projectId (multi-project dashboards)
+    getAuthenticationForProject: PropTypes.func,
   }
 
   static defaultProps = {
@@ -203,6 +217,8 @@ export class DashboardTile extends React.Component {
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
     enableFollowOnQuery: false,
+    projectSelectList: undefined,
+    getAuthenticationForProject: undefined,
   }
 
   componentDidMount = () => {
@@ -348,6 +364,72 @@ export class DashboardTile extends React.Component {
       children: undefined,
       tileRef: undefined,
     }
+  }
+
+  // autoQLConfig scoped to this tile's own project, if it has one (multi-project dashboards)
+  getTileAutoQLConfig = () => {
+    const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
+    if (this.props.tile?.projectId == null) {
+      return autoQLConfig
+    }
+    return { ...autoQLConfig, projectId: this.props.tile.projectId }
+  }
+
+  // authentication scoped to this tile's own project, if it has one and a token is cached for it (multi-project dashboards)
+  getTileAuthentication = () => {
+    const projectId = this.props.tile?.projectId
+    if (projectId != null && this.props.getAuthenticationForProject) {
+      const tileAuthentication = this.props.getAuthenticationForProject(projectId)
+      if (tileAuthentication) {
+        return tileAuthentication
+      }
+    }
+    return this.props.authentication
+  }
+
+  // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives within the wait window
+  waitForTileAuthentication = () => {
+    const projectId = this.props.tile?.projectId
+    if (projectId == null || !this.props.getAuthenticationForProject) {
+      return Promise.resolve(true)
+    }
+    if (this.props.getAuthenticationForProject(projectId)) {
+      return Promise.resolve(true)
+    }
+
+    const POLL_INTERVAL_MS = 100
+    const MAX_WAIT_MS = 15000
+    return new Promise((resolve) => {
+      const start = Date.now()
+      const check = () => {
+        if (!this._isMounted) {
+          // Unmounted mid-wait — resolve ready so the promise doesn't dangle
+          resolve(true)
+          return
+        }
+        if (this.props.getAuthenticationForProject?.(projectId)) {
+          resolve(true)
+          return
+        }
+        if (Date.now() - start >= MAX_WAIT_MS) {
+          resolve(false)
+          return
+        }
+        setTimeout(check, POLL_INTERVAL_MS)
+      }
+      check()
+    })
+  }
+
+  // Surface a clear auth error instead of firing a query that's guaranteed to 403
+  handleUnavailableTileAuth = () => {
+    const response = {
+      data: {
+        message: UNAUTHENTICATED_ERROR,
+        reference_id: '1.1.401',
+      },
+    }
+    return this.endTopQuery({ response })
   }
 
   isQueryValid = (query) => {
@@ -584,10 +666,8 @@ export class DashboardTile extends React.Component {
       const currentFilter = isReset ? [] : this.props.tile.tableFilters
 
       const requestData = {
-        ...getAuthentication(this.props.authentication),
-        ...getAutoQLConfig(this.props.autoQLConfig),
-        // Tile-level projectId overrides the dashboard-wide autoQLConfig projectId
-        ...(this.props.tile?.projectId != null ? { projectId: this.props.tile.projectId } : {}),
+        ...getAuthentication(this.getTileAuthentication()),
+        ...this.getTileAutoQLConfig(),
         enableQueryValidation: !this.props.isEditing
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
@@ -763,7 +843,19 @@ export class DashboardTile extends React.Component {
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
 
-    return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
+    // Show the loading state while we wait for this tile's per-project token (if any) to resolve
+    if (this._isMounted) {
+      this.setState({ isTopExecuting: true })
+    }
+
+    return this.waitForTileAuthentication()
+      .then((authReady) => {
+        if (authReady === false) {
+          // Per-project token never arrived — don't fire a query that is guaranteed to 403.
+          return this.handleUnavailableTileAuth()
+        }
+        return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
+      })
       .then((queryResponse) => {
         return {
           ...this.props.tile,
@@ -838,7 +930,7 @@ export class DashboardTile extends React.Component {
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
         suggestion: value,
-        ...getAuthentication(this.props.authentication),
+        ...getAuthentication(this.getTileAuthentication()),
       })
         .then((response) => {
           if (this._isMounted) {
@@ -993,6 +1085,11 @@ export class DashboardTile extends React.Component {
       return null
     }
 
+    const currentProjectId = getAutoQLConfig(this.props.autoQLConfig).projectId
+    if (currentProjectId != null && `${project.id}` === `${currentProjectId}`) {
+      return null
+    }
+
     return (
       <span
         className='dashboard-tile-project-badge'
@@ -1001,6 +1098,84 @@ export class DashboardTile extends React.Component {
       >
         {project.name}
       </span>
+    )
+  }
+
+  onProjectSelectChange = (projectId) => {
+    this.props.setParamsForTile({ projectId }, this.props.tile.i, [])
+  }
+
+  getSelectedProjectName = () => {
+    const projectId = this.props.tile?.projectId
+    const match = this.props.projectSelectList?.find((project) => project.projectId === projectId)
+    return match?.displayName || this.getTileProject(this.props.tile?.queryResponse)?.name
+  }
+
+  openProjectModal = () => {
+    this.setState({ isProjectModalOpen: true, pendingProjectId: this.props.tile?.projectId })
+  }
+
+  closeProjectModal = () => {
+    this.setState({ isProjectModalOpen: false })
+  }
+
+  confirmProjectChange = () => {
+    this.onProjectSelectChange(this.state.pendingProjectId)
+    this.closeProjectModal()
+  }
+
+  // Icon-only button that opens a modal to deliberately change the tile's project (multi-project dashboards)
+  renderProjectButton = () => {
+    if (!this.props.projectSelectList?.length) {
+      return null
+    }
+
+    const projectName = this.getSelectedProjectName()
+
+    return (
+      <button
+        type='button'
+        className='dashboard-tile-project-button'
+        aria-label='Change project'
+        data-tooltip-content={projectName ? `Change project (current: ${projectName})` : 'Change project'}
+        data-tooltip-id={this.props.tooltipID}
+        onClick={this.openProjectModal}
+      >
+        <Icon type='database' />
+      </button>
+    )
+  }
+
+  renderProjectModal = () => {
+    if (!this.props.projectSelectList?.length) {
+      return null
+    }
+
+    return (
+      <Modal
+        isVisible={this.state.isProjectModalOpen}
+        title='Change Project'
+        subtitle='Choose which project this tile should query.'
+        width='400px'
+        confirmText='Change Project'
+        confirmDisabled={
+          this.state.pendingProjectId == null || this.state.pendingProjectId === this.props.tile?.projectId
+        }
+        onClose={this.closeProjectModal}
+        onConfirm={this.confirmProjectChange}
+      >
+        <Select
+          fullWidth
+          placeholder='Select a project'
+          options={this.props.projectSelectList.map((project) => ({
+            value: project.projectId,
+            label: project.displayName,
+          }))}
+          value={this.state.pendingProjectId}
+          onChange={(projectId) => this.setState({ pendingProjectId: projectId })}
+          color='text'
+        />
+      </Modal>
     )
   }
 
@@ -1147,7 +1322,7 @@ export class DashboardTile extends React.Component {
                   onMouseLeave={() => this.setState({ isRTHovered: false })}
                 >
                   <ReverseTranslation
-                    authentication={this.props.authentication}
+                    authentication={this.getTileAuthentication()}
                     queryResponse={this.props.tile.queryResponse}
                     tooltipID={this.props.tooltipID}
                     enableEditReverseTranslation={this.props.autoQLConfig?.enableEditReverseTranslation}
@@ -1167,7 +1342,6 @@ export class DashboardTile extends React.Component {
             </div>
 
             <div className='dashboard-tile-right-input-container'>
-              {this.renderProjectBadge()}
               <Icon className='title-input-icon' type='title' tooltip='Title' tooltipID={this.props.tooltipID} />
               <input
                 className='dashboard-tile-input title'
@@ -1178,7 +1352,10 @@ export class DashboardTile extends React.Component {
                 onBlur={() => this.setState({ isTitleInputFocused: false })}
               />
             </div>
+
+            {this.renderProjectButton()}
           </div>
+          {this.renderProjectModal()}
         </div>
       )
     }
@@ -1287,8 +1464,8 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-toolbars-right-container'>
           {!optionsToolbarProps.hideOnError && (
             <OptionsToolbar
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
+              authentication={this.getTileAuthentication()}
+              autoQLConfig={this.getTileAutoQLConfig()}
               onErrorCallback={this.props.onErrorCallback}
               onSuccessAlert={this.props.onSuccessCallback}
               onCSVDownloadStart={this.onCSVDownloadStart}
@@ -1325,8 +1502,8 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
-        authentication={this.props.authentication}
-        autoQLConfig={this.props.autoQLConfig}
+        authentication={this.getTileAuthentication()}
+        autoQLConfig={this.getTileAutoQLConfig()}
         dataFormatting={this.props.dataFormatting}
         renderTooltips={false}
         autoSelectQueryValidationSuggestion={false}
@@ -1636,8 +1813,8 @@ export class DashboardTile extends React.Component {
             <FollowOnModal
               isVisible={this.state.isFollowOnModalOpen}
               onClose={() => this.setState({ isFollowOnModalOpen: false })}
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
+              authentication={this.getTileAuthentication()}
+              autoQLConfig={this.getTileAutoQLConfig()}
               dataFormatting={this.props.dataFormatting}
               responseRef={this.state.responseRef}
               queryResponse={this.props.tile?.queryResponse}

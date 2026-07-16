@@ -121,6 +121,15 @@ class DashboardWithoutTheme extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
+    // List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown.
+    projectSelectList: PropTypes.arrayOf(
+      PropTypes.shape({
+        projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        displayName: PropTypes.string.isRequired,
+      }),
+    ),
+    // Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details.
+    getAuthenticationForProject: PropTypes.func,
   }
 
   static defaultProps = {
@@ -160,6 +169,8 @@ class DashboardWithoutTheme extends React.Component {
     showMagicWandQuoteButton: false,
     enableFollowOnQuery: false,
     enableResetQuery: false,
+    projectSelectList: undefined,
+    getAuthenticationForProject: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -799,6 +810,8 @@ class DashboardWithoutTheme extends React.Component {
         y: Number.MAX_VALUE,
         query: '',
         title: '',
+        // New tiles default to the dashboard's current project until explicitly reassigned (multi-project dashboards)
+        projectId: getAutoQLConfig(this.props.autoQLConfig).projectId,
       }
 
       if (content?.queryResponse) {
@@ -1379,6 +1392,8 @@ class DashboardWithoutTheme extends React.Component {
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             enableFollowOnQuery={this.props.enableFollowOnQuery}
             showResetQueryOption={this.props.enableResetQuery}
+            projectSelectList={this.props.projectSelectList}
+            getAuthenticationForProject={this.props.getAuthenticationForProject}
           />
         ))}
       </ReactGridLayout>

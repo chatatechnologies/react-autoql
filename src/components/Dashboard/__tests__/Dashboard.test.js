@@ -718,6 +718,42 @@ describe('Dashboard.addTile — DM response handling', () => {
     const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
     expect(addedTile.queryResponse).toEqual(itemsContent.queryResponse)
   })
+
+  test('defaults new tile projectId to autoQLConfig.projectId (multi-project dashboards)', () => {
+    const wrapper = setup({ isEditing: true, autoQLConfig: { projectId: 'proj-active' } })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile()
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.projectId).toBe('proj-active')
+  })
+
+  test('new tile projectId is undefined when autoQLConfig has no projectId', () => {
+    const wrapper = setup({ isEditing: true, autoQLConfig: {} })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile()
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.projectId).toBeFalsy()
+  })
+
+  test('explicit content.projectId overrides the autoQLConfig default', () => {
+    const wrapper = setup({ isEditing: true, autoQLConfig: { projectId: 'proj-active' } })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile({ ...dmContent, projectId: 'proj-override' })
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.projectId).toBe('proj-override')
+  })
 })
 
 // Edit-mode state matrix
