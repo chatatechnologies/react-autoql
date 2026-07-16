@@ -626,8 +626,12 @@ export class QueryOutput extends React.Component {
         this.formattedLockedFilters = this.formatLockedFilters(this.props.lockedFilters, this.state.columns)
       }
 
-      if (prevProps.isEditing !== this.props.isEditing) {
-        if (this.props.isEditing) {
+      // Dashboard tiles signal edit mode via isDashboardEditing, not isEditing (which DashboardTile
+      // never passes down to QueryOutput) - check both so this reset actually runs for tiles.
+      const wasEditing = prevProps.isEditing || prevProps.isDashboardEditing
+      const isEditingNow = this.props.isEditing || this.props.isDashboardEditing
+      if (wasEditing !== isEditingNow) {
+        if (isEditingNow) {
           // Reset filters/sorters (otherwise only set on mount) so stale view-mode header filters don't leak into edit mode.
           this.formattedTableParams = {
             filters: this.props.initialFormattedTableParams?.filters || [],
@@ -2929,7 +2933,7 @@ export class QueryOutput extends React.Component {
 
     const rows = this.queryResponse?.data?.data?.rows
 
-    let formattedColumns = columns.map((col, i) => {
+    const formattedColumns = columns.map((col, i) => {
       const newCol = _cloneDeep(col)
 
       newCol.id = col.id ?? uuid()
@@ -3083,12 +3087,14 @@ export class QueryOutput extends React.Component {
       return newCol
     })
 
-    formattedColumns = this.reorderColumnsByUserOrder(formattedColumns)
-
     return formattedColumns
   }
 
-  // Reapply user drag-order by name (field stays tied to row-data index); unknown columns are appended at the end
+  // Reapply user drag-order by name for display only. Must never be applied to this.state.columns
+  // itself - that array's positional index (col.field / col.index) is relied on throughout the app
+  // (chart/pivot/filter/sort helpers index raw data rows by array position), so permuting it desyncs
+  // those lookups from the actual row data. Use only when building the columns prop for ChataTable's
+  // Tabulator instance, which keys everything off col.field rather than array position.
   reorderColumnsByUserOrder = (columns) => {
     if (!this.columnOrder?.length || !columns?.length) {
       return columns
@@ -3101,6 +3107,8 @@ export class QueryOutput extends React.Component {
       return aIdx - bIdx
     })
   }
+
+  getOrderedTableColumns = () => this.reorderColumnsByUserOrder(this.state.columns)
 
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
@@ -4029,7 +4037,7 @@ export class QueryOutput extends React.Component {
       const updatedColumns = prevState.columns?.map((col) =>
         col.name === columnName ? { ...col, frozen: isFrozen } : col,
       )
-      return { columns: this.reorderColumnsByUserOrder(updatedColumns) }
+      return { columns: updatedColumns }
     })
   }
 
@@ -4132,7 +4140,7 @@ export class QueryOutput extends React.Component {
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
-          columns={this.state.columns}
+          columns={this.getOrderedTableColumns()}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
           columnDateRanges={this.columnDateRanges}

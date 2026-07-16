@@ -47,7 +47,7 @@ describe('QueryOutput frozen column and column order persistence', () => {
     wrapper.unmount()
   })
 
-  test('formatColumnsForTable reapplies user column order and appends new columns at the end', () => {
+  test('formatColumnsForTable keeps canonical (data-order) columns regardless of user column order', () => {
     const wrapper = setup()
     const inst = wrapper.instance()
 
@@ -55,9 +55,24 @@ describe('QueryOutput frozen column and column order persistence', () => {
     const newCol = { id: 'c3', name: 'col3', display_name: 'Col 3', index: 3, is_visible: true, type: 'QUANTITY' }
     const rebuilt = inst.formatColumnsForTable([...rawColumns, newCol])
 
-    expect(rebuilt.map((c) => c.name)).toEqual(['col2', 'col0', 'col1', 'col3'])
-    // field must stay tied to the column's index into the row data, not its display position
+    // state.columns must stay in canonical data order - index-based consumers (charts/drilldowns/
+    // pivots) rely on rebuilt[i].field === i, so user drag-order must never permute this array
+    expect(rebuilt.map((c) => c.name)).toEqual(['col0', 'col1', 'col2', 'col3'])
     expect(rebuilt.find((c) => c.name === 'col2').field).toBe('2')
+    wrapper.unmount()
+  })
+
+  test('getOrderedTableColumns reapplies user column order for display, appending new columns at the end', () => {
+    const wrapper = setup()
+    const inst = wrapper.instance()
+
+    inst.onColumnOrderChange(['col2', 'col0', 'col1'])
+    wrapper.update()
+    const ordered = inst.getOrderedTableColumns()
+
+    expect(ordered.map((c) => c.name)).toEqual(['col2', 'col0', 'col1'])
+    // field must stay tied to the column's index into the row data, not its display position
+    expect(ordered.find((c) => c.name === 'col2').field).toBe('2')
     wrapper.unmount()
   })
 

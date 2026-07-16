@@ -281,9 +281,8 @@ export class DashboardTile extends React.Component {
       nextQR &&
       nextQR !== prevQR &&
       !this.state.isTopExecuting &&
-      (prevQR === null || (prevQR && prevQRId !== nextQRId && !isSelfColumnChange) || this._forceRemountOnNextResponse)
+      (prevQR === null || (prevQR && prevQRId !== nextQRId && !isSelfColumnChange))
     ) {
-      this._forceRemountOnNextResponse = false
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
 
@@ -387,10 +386,18 @@ export class DashboardTile extends React.Component {
 
   setTopExecuted = () => {
     if (this._isMounted) {
-      this.setState({
+      // Apply the edit-entry forced remount here, once the refetch has actually settled, instead of
+      // routing it through the isTopExecuting-gated componentDidUpdate branch: that branch is gated
+      // behind !isTopExecuting, which is still true when the fresh queryResponse first propagates down,
+      // so the flag would never fire there and would instead linger to defeat a later, unrelated
+      // isSelfColumnChange guard (e.g. after a subsequent custom column edit).
+      const shouldForceRemount = this._forceRemountOnNextResponse
+      this._forceRemountOnNextResponse = false
+      this.setState((prevState) => ({
         isTopExecuting: false,
         isTopExecuted: true,
-      })
+        queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
+      }))
     }
   }
 
