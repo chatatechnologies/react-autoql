@@ -177,6 +177,8 @@ export class DashboardTile extends React.Component {
     ),
     // Resolves an authentication object scoped to a given projectId (multi-project dashboards)
     getAuthenticationForProject: PropTypes.func,
+    // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
+    showProjectIndicator: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -219,6 +221,7 @@ export class DashboardTile extends React.Component {
     enableFollowOnQuery: false,
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
+    showProjectIndicator: true,
   }
 
   componentDidMount = () => {
@@ -1080,6 +1083,10 @@ export class DashboardTile extends React.Component {
   }
 
   renderProjectBadge = () => {
+    if (!this.props.showProjectIndicator) {
+      return null
+    }
+
     const project = this.getTileProject(this.props.tile?.queryResponse)
     if (!project?.name) {
       return null
@@ -1124,9 +1131,21 @@ export class DashboardTile extends React.Component {
     this.closeProjectModal()
   }
 
-  // Icon-only button that opens a modal to deliberately change the tile's project (multi-project dashboards)
+  // True when this tile's project differs from the dashboard's default project (edit mode indicator)
+  hasNonDefaultProject = () => {
+    const tileProjectId = this.props.tile?.projectId
+    if (tileProjectId == null) {
+      return false
+    }
+    const currentProjectId = getAutoQLConfig(this.props.autoQLConfig).projectId
+    return `${tileProjectId}` !== `${currentProjectId}`
+  }
+
+  // Icon-only button that opens a modal to deliberately change the tile's project (multi-project dashboards).
+  // Shows a small dot badge when the tile's project differs from the dashboard default — the tooltip alone
+  // (revealed only on hover) is easy to miss.
   renderProjectButton = () => {
-    if (!this.props.projectSelectList?.length) {
+    if (!this.props.showProjectIndicator || !this.props.projectSelectList?.length) {
       return null
     }
 
@@ -1142,12 +1161,13 @@ export class DashboardTile extends React.Component {
         onClick={this.openProjectModal}
       >
         <Icon type='database' />
+        {this.hasNonDefaultProject() && <span className='dashboard-tile-project-button-indicator' />}
       </button>
     )
   }
 
   renderProjectModal = () => {
-    if (!this.props.projectSelectList?.length) {
+    if (!this.props.showProjectIndicator || !this.props.projectSelectList?.length) {
       return null
     }
 

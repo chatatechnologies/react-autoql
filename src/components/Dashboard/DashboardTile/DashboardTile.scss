@@ -424,6 +424,7 @@
 
 // Icon-only button that opens the "change project" modal for a tile (multi-project dashboards)
 .dashboard-tile-project-button {
+  position: relative;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -447,6 +448,18 @@
   .react-autoql-icon {
     font-size: 1rem;
   }
+}
+
+// Dot badge on the project button indicating this tile's project differs from the dashboard default
+.dashboard-tile-project-button-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--react-autoql-accent-color, #26a7e9);
+  border: 1px solid var(--react-autoql-background-color-secondary, #fff);
 }
 
 /* Input box styling for edit mode */

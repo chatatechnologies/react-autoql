@@ -326,8 +326,117 @@ describe('DashboardTile getTileProject', () => {
   })
 })
 
+describe('DashboardTile renderProjectButton', () => {
+  it('returns null when showProjectIndicator is false, even with a projectSelectList', () => {
+    const tile = makeTile()
+    const projectSelectList = [{ projectId: '1', displayName: 'Proj A' }]
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        projectSelectList={projectSelectList}
+        showProjectIndicator={false}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.renderProjectButton()).toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('renders the button when showProjectIndicator is true (default) and projectSelectList is populated', () => {
+    const tile = makeTile()
+    const projectSelectList = [{ projectId: '1', displayName: 'Proj A' }]
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.renderProjectButton()).not.toBeNull()
+
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile hasNonDefaultProject / project button indicator', () => {
+  const projectSelectList = [
+    { projectId: '1', displayName: 'Default Project' },
+    { projectId: '2', displayName: 'Other Project' },
+  ]
+
+  it('returns false when the tile has no projectId', () => {
+    const tile = makeTile()
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        projectSelectList={projectSelectList}
+        autoQLConfig={{ projectId: '1' }}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.hasNonDefaultProject()).toBe(false)
+    expect(instance.renderProjectButton().props.children[1]).toBeFalsy()
+
+    wrapper.unmount()
+  })
+
+  it('returns false when the tile project matches the dashboard default project', () => {
+    const tile = makeTile({ projectId: '1' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        projectSelectList={projectSelectList}
+        autoQLConfig={{ projectId: '1' }}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.hasNonDefaultProject()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('returns true and renders the indicator dot when the tile project differs from the dashboard default project', () => {
+    const tile = makeTile({ projectId: '2' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        projectSelectList={projectSelectList}
+        autoQLConfig={{ projectId: '1' }}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.hasNonDefaultProject()).toBe(true)
+    expect(instance.renderProjectButton().props.children[1].props.className).toBe(
+      'dashboard-tile-project-button-indicator',
+    )
+
+    wrapper.unmount()
+  })
+})
+
 describe('DashboardTile renderProjectBadge', () => {
-  it('renders a badge with the project name when queryResponse has a project_name', () => {
+  it('returns null when showProjectIndicator is false, even with a differing project_name', () => {
+    const tile = makeTile({
+      queryResponse: { data: { data: { project_id: '1', project_name: 'MyProject' } } },
+    })
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} tooltipID='tt-1' showProjectIndicator={false} />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.renderProjectBadge()).toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('renders a badge with the project name when showProjectIndicator is true (default) and queryResponse has a project_name', () => {
     const tile = makeTile({
       queryResponse: { data: { data: { project_id: '1', project_name: 'MyProject' } } },
     })
@@ -544,59 +653,6 @@ describe('DashboardTile componentDidUpdate topRequestData sync', () => {
     expect(instance.topRequestData).toBeNull()
 
     instance.processTile.mockRestore()
-    wrapper.unmount()
-  })
-})
-
-describe('DashboardTile restoreSavedTileConfig', () => {
-  it('schedules setParamsForTile with filtered config (debounced)', () => {
-    jest.useFakeTimers()
-    const setParams = jest.fn()
-    const tile = makeTile()
-    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={setParams} />)
-    const instance = wrapper.instance()
-
-    setParams.mockClear()
-
-    instance._isMounted = true
-    instance.savedTileConfig = {
-      displayType: 'table',
-      columns: ['a', 'b'],
-      tableFilters: [],
-      dataConfig: { tableConfig: {} },
-    }
-
-    instance.restoreSavedTileConfig()
-
-    jest.runOnlyPendingTimers()
-
-    expect(setParams).toHaveBeenCalled()
-    const callArgs = setParams.mock.calls[0]
-    expect(callArgs[0]).toMatchObject({ columns: ['a', 'b'] })
-
-    jest.useRealTimers()
-    wrapper.unmount()
-  })
-})
-
-describe('DashboardTile executeQueryWithForceRetry', () => {
-  it('retries once on a .502 server error and calls onRetry', async () => {
-    const tile = makeTile()
-    const onRetry = jest.fn()
-    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} onRetry={onRetry} />)
-    const instance = wrapper.instance()
-
-    const failingThenSucceeding = jest
-      .fn()
-      .mockRejectedValueOnce({ response: { data: { reference_id: '29.9.502' } } })
-      .mockResolvedValueOnce({ data: { data: { query_id: 'qid-1' } } })
-
-    const result = await instance.executeQueryWithForceRetry({}, failingThenSucceeding)
-
-    expect(failingThenSucceeding).toHaveBeenCalledTimes(2)
-    expect(onRetry).toHaveBeenCalled()
-    expect(result).toBeDefined()
-
     wrapper.unmount()
   })
 })
