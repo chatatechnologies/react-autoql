@@ -862,12 +862,16 @@ export default class ChataTable extends React.Component {
       data = []
     }
 
+    // filterDataByColumn/sortDataByColumn look up column metadata by array position, so they need
+    // columns in data order — this.props.columns may be reordered for display (columnOrder).
+    const dataOrderedColumns = [...this.props.columns].sort((a, b) => a.index - b.index)
+
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
         const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
 
-        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+        data = filterDataByColumn(data, dataOrderedColumns, filterColumnIndex, filter.value, filter.operator)
       })
     }
 
@@ -893,7 +897,7 @@ export default class ChataTable extends React.Component {
         }
       } else {
         const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
-        data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+        data = sortDataByColumn(data, dataOrderedColumns, sortColumnIndex, sortDirection)
       }
     }
 

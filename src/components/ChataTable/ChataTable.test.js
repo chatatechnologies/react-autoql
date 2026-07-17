@@ -1612,3 +1612,69 @@ describe('onDataFiltered: showQueryInterpretation guard', () => {
     spy.mockRestore()
   })
 })
+
+describe('clientSortAndFilterData with reordered columns', () => {
+  // props.columns is display-ordered (e.g. from a saved columnOrder), while each column's
+  // `.index` still points at its position in the underlying data rows. filterDataByColumn/
+  // sortDataByColumn resolve column *type* by array position, so clientSortAndFilterData must
+  // hand them a data-ordered column list rather than props.columns directly.
+  const nameCol = { id: '1', field: '1', display_name: 'Name', type: 'STRING', index: 0 }
+  const amountCol = { id: '2', field: '2', display_name: 'Amount', type: 'QUANTITY', index: 1 }
+  const categoryCol = { id: '3', field: '3', display_name: 'Category', type: 'STRING', index: 2 }
+
+  // Display order swaps Amount and Name, so array position no longer matches `.index`.
+  const reorderedColumns = [amountCol, nameCol, categoryCol]
+
+  const reorderedResponse = {
+    data: {
+      data: {
+        rows: [
+          ['Item9', 9, 'X'],
+          ['Item100', 100, 'Y'],
+          ['Item20', 20, 'Z'],
+        ],
+        count_rows: 3,
+        query_id: 'test-query-reorder',
+      },
+    },
+  }
+
+  test('sorts a numeric column numerically, not lexicographically, when columns are reordered for display', () => {
+    const wrapper = setup({ columns: reorderedColumns, response: reorderedResponse })
+    const instance = wrapper.instance()
+
+    const result = instance.clientSortAndFilterData({ orders: [{ id: '2', sort: 'ASC' }] })
+
+    // Numeric ascending: 9, 20, 100. A lexicographic sort (bug) would yield 100, 20, 9.
+    expect(result.data.data.rows.map((row) => row[1])).toEqual([9, 20, 100])
+  })
+
+  test('filters a numeric column using numeric equality, not the display-position column type', () => {
+    const wrapper = setup({
+      columns: reorderedColumns,
+      response: {
+        data: {
+          data: {
+            rows: [
+              ['Widget', 20.5, 'X'],
+              ['Gadget', 9, 'Y'],
+              ['Gizmo', 100, 'Z'],
+            ],
+            count_rows: 3,
+            query_id: 'test-query-reorder-filter',
+          },
+        },
+      },
+    })
+    const instance = wrapper.instance()
+
+    // '20.50' only numerically equals 20.5 (isNumericEqual). Resolving the Amount column's type
+    // by array position instead of by id would find the STRING `nameCol` at that slot, fall back
+    // to a plain string-equality check, and filter out the matching row entirely.
+    const result = instance.clientSortAndFilterData({
+      tableFilters: [{ id: '2', value: '20.50', operator: 'equals' }],
+    })
+
+    expect(result.data.data.rows).toEqual([['Widget', 20.5, 'X']])
+  })
+})
