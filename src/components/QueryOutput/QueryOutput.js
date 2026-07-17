@@ -637,6 +637,14 @@ export class QueryOutput extends React.Component {
             filters: this.props.initialFormattedTableParams?.filters || [],
             sorters: this.props.initialFormattedTableParams?.sorters || [],
           }
+          // this.tableParams feeds ChataTable as initialTableParams - if left stale, the view-mode
+          // sort/filter gets reapplied to the edit-mode table and reported back up via
+          // onTableParamsChange, silently overwriting the formattedTableParams reset above.
+          this.tableParams = {
+            ...this.tableParams,
+            sort: formatSortersForTabulator(this.formattedTableParams.sorters, this.state.columns),
+            filter: formatFiltersForTabulator(this.formattedTableParams.filters, this.state.columns),
+          }
           this.originalLegendState = {
             hiddenLegendLabels: [...this.state.hiddenLegendLabels],
             isEditing: true,
@@ -2946,9 +2954,11 @@ export class QueryOutput extends React.Component {
       newCol.visible = col.is_visible
       newCol.download = col.is_visible
 
-      // Preserve frozen state across column rebuilds (matched by name, since field is positional)
+      // Preserve frozen state across column rebuilds (matched by name, since field is positional).
+      // Falls back to the incoming column's own frozen flag (e.g. persisted tile config on a fresh
+      // mount after save) when there's no prior in-session state to carry forward.
       const prevCol = this.state?.columns?.find((c) => c.name === col.name)
-      newCol.frozen = prevCol?.frozen ?? false
+      newCol.frozen = prevCol?.frozen ?? col.frozen ?? false
 
       newCol.minWidth = '90px'
       if (newCol.type === ColumnTypes.DATE) {
@@ -4037,7 +4047,10 @@ export class QueryOutput extends React.Component {
       const updatedColumns = prevState.columns?.map((col) =>
         col.name === columnName ? { ...col, frozen: isFrozen } : col,
       )
-      return { columns: updatedColumns }
+      // Bump columnChangeCount so componentDidUpdate's onColumnChange propagation (used by every other
+      // column mutation) picks this up too - otherwise frozen state never reaches the persisted tile
+      // config and is lost on the next real save/re-execute remount.
+      return { columns: updatedColumns, columnChangeCount: prevState.columnChangeCount + 1 }
     })
   }
 
