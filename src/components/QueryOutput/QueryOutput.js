@@ -116,8 +116,10 @@ export class QueryOutput extends React.Component {
     // Resets to 0 whenever a fresh query result arrives. Capped at 3 to break loops caused by
     // corrupted saved dataConfig that setTableConfig cannot repair.
     this._consecutiveConfigResets = 0
-    // User-dragged column order (names), reapplied on every column rebuild
-    this.columnOrder = undefined
+    // User-dragged column order (names), reapplied on every column rebuild; seeded from the tile config.
+    this.columnOrder = props.initialColumnOrder || undefined
+    // Frozen column names, matched by name (not index) so they can't collide with an unrelated column.
+    this.initialFrozenColumns = props.initialFrozenColumns || []
 
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
@@ -326,6 +328,10 @@ export class QueryOutput extends React.Component {
     onLegendFilterChange: PropTypes.func,
     initialAxisSorts: PropTypes.object,
     onAxisSortChange: PropTypes.func,
+    initialColumnOrder: PropTypes.arrayOf(PropTypes.string),
+    onColumnOrderChange: PropTypes.func,
+    initialFrozenColumns: PropTypes.arrayOf(PropTypes.string),
+    onFrozenColumnsChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -405,6 +411,10 @@ export class QueryOutput extends React.Component {
     onNoneOfTheseClick: undefined,
     initialAxisSorts: undefined,
     onAxisSortChange: undefined,
+    initialColumnOrder: undefined,
+    onColumnOrderChange: undefined,
+    initialFrozenColumns: undefined,
+    onFrozenColumnsChange: undefined,
     autoChartAggregations: true,
     showQueryInterpretation: false,
     isTaskModule: false,
@@ -626,8 +636,18 @@ export class QueryOutput extends React.Component {
         this.formattedLockedFilters = this.formatLockedFilters(this.props.lockedFilters, this.state.columns)
       }
 
-      // Dashboard tiles signal edit mode via isDashboardEditing, not isEditing (which DashboardTile
-      // never passes down to QueryOutput) - check both so this reset actually runs for tiles.
+      // Resync from a parent-driven config change (e.g. tile reset) - otherwise these only get read once, in the constructor.
+      if (this.props.initialColumnOrder !== prevProps.initialColumnOrder) {
+        this.columnOrder = this.props.initialColumnOrder || undefined
+      }
+      if (this.props.initialFrozenColumns !== prevProps.initialFrozenColumns) {
+        this.initialFrozenColumns = this.props.initialFrozenColumns || []
+        this.setState((prevState) => ({
+          columns: prevState.columns?.map((col) => ({ ...col, frozen: this.initialFrozenColumns.includes(col.name) })),
+        }))
+      }
+
+      // Dashboard tiles signal edit mode via isDashboardEditing rather than isEditing, so check both.
       const wasEditing = prevProps.isEditing || prevProps.isDashboardEditing
       const isEditingNow = this.props.isEditing || this.props.isDashboardEditing
       if (wasEditing !== isEditingNow) {
@@ -637,9 +657,7 @@ export class QueryOutput extends React.Component {
             filters: this.props.initialFormattedTableParams?.filters || [],
             sorters: this.props.initialFormattedTableParams?.sorters || [],
           }
-          // this.tableParams feeds ChataTable as initialTableParams - if left stale, the view-mode
-          // sort/filter gets reapplied to the edit-mode table and reported back up via
-          // onTableParamsChange, silently overwriting the formattedTableParams reset above.
+          // Reset this.tableParams too, otherwise stale view-mode sort/filter leaks into the edit-mode table.
           this.tableParams = {
             ...this.tableParams,
             sort: formatSortersForTabulator(this.formattedTableParams.sorters, this.state.columns),
@@ -2954,11 +2972,9 @@ export class QueryOutput extends React.Component {
       newCol.visible = col.is_visible
       newCol.download = col.is_visible
 
-      // Preserve frozen state across column rebuilds (matched by name, since field is positional).
-      // Falls back to the incoming column's own frozen flag (e.g. persisted tile config on a fresh
-      // mount after save) when there's no prior in-session state to carry forward.
+      // Preserve frozen state across rebuilds, matched by name; falls back to initialFrozenColumns pre-mount.
       const prevCol = this.state?.columns?.find((c) => c.name === col.name)
-      newCol.frozen = prevCol?.frozen ?? col.frozen ?? false
+      newCol.frozen = prevCol?.frozen ?? col.frozen ?? this.initialFrozenColumns.includes(col.name)
 
       newCol.minWidth = '90px'
       if (newCol.type === ColumnTypes.DATE) {
@@ -3100,11 +3116,7 @@ export class QueryOutput extends React.Component {
     return formattedColumns
   }
 
-  // Reapply user drag-order by name for display only. Must never be applied to this.state.columns
-  // itself - that array's positional index (col.field / col.index) is relied on throughout the app
-  // (chart/pivot/filter/sort helpers index raw data rows by array position), so permuting it desyncs
-  // those lookups from the actual row data. Use only when building the columns prop for ChataTable's
-  // Tabulator instance, which keys everything off col.field rather than array position.
+  // Reapply user drag-order by name for display only - never apply this to this.state.columns itself.
   reorderColumnsByUserOrder = (columns) => {
     if (!this.columnOrder?.length || !columns?.length) {
       return columns
@@ -4047,16 +4059,19 @@ export class QueryOutput extends React.Component {
       const updatedColumns = prevState.columns?.map((col) =>
         col.name === columnName ? { ...col, frozen: isFrozen } : col,
       )
-      // Bump columnChangeCount so componentDidUpdate's onColumnChange propagation (used by every other
-      // column mutation) picks this up too - otherwise frozen state never reaches the persisted tile
-      // config and is lost on the next real save/re-execute remount.
+      // Bump columnChangeCount so componentDidUpdate propagates this like every other column mutation.
       return { columns: updatedColumns, columnChangeCount: prevState.columnChangeCount + 1 }
+    }, () => {
+      // Report the current frozen-name list up so the parent can persist it.
+      this.props.onFrozenColumnsChange?.(this.state.columns.filter((col) => col.frozen).map((col) => col.name))
     })
   }
 
   onColumnOrderChange = (orderedNames) => {
     if (orderedNames?.length) {
       this.columnOrder = orderedNames
+      // Report up so the parent can persist it (display-order only, doesn't touch state.columns).
+      this.props.onColumnOrderChange?.(orderedNames)
     }
   }
 

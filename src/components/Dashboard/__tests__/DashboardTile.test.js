@@ -641,6 +641,38 @@ describe('isReset flag in processTileTop', () => {
     processQuerySpy.mockRestore()
     wrapper.unmount()
   })
+
+  test('clears columnOrder on isReset so stale drag-order does not survive a tile reset', () => {
+    const wrapper = setup({ tile: { ...sampleTile, columnOrder: ['colB', 'colA'] } })
+    const instance = wrapper.instance()
+
+    const mockResponse = { data: { data: { rows: [] } } }
+    jest.spyOn(instance, 'processQuery').mockImplementation(() => Promise.resolve(mockResponse))
+    const setParamsSpy = jest.spyOn(instance, 'debouncedSetParamsForTile')
+
+    instance.processTileTop({ query: sampleTile.query, isReset: true })
+
+    expect(setParamsSpy).toHaveBeenCalledWith(expect.objectContaining({ columnOrder: [], frozenColumns: [] }))
+
+    wrapper.unmount()
+  })
+
+  test('clears columnOrder/frozenColumns when the query text changes so a new query does not inherit stale state', () => {
+    const wrapper = setup({ tile: { ...sampleTile, columnOrder: ['colB', 'colA'], frozenColumns: ['colB'] } })
+    const instance = wrapper.instance()
+
+    const mockResponse = { data: { data: { rows: [] } } }
+    jest.spyOn(instance, 'processQuery').mockImplementation(() => Promise.resolve(mockResponse))
+    const setParamsSpy = jest.spyOn(instance, 'debouncedSetParamsForTile')
+
+    instance.processTileTop({ query: 'a totally different query' })
+
+    expect(setParamsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ columnOrder: undefined, frozenColumns: undefined }),
+    )
+
+    wrapper.unmount()
+  })
 })
 
 describe('normalizeAxisSorts unit', () => {
@@ -717,6 +749,68 @@ describe('axisSorts array normalization', () => {
     const qo = wrapper.find('QueryOutput').first()
     expect(qo.prop('initialAxisSorts')).toEqual({})
 
+    wrapper.unmount()
+  })
+})
+
+describe('columnOrder persistence wiring', () => {
+  test('passes tile.columnOrder through as initialColumnOrder', () => {
+    const wrapper = setup({
+      tile: { ...sampleTile, columnOrder: ['col2', 'col0', 'col1'] },
+      isEditing: false,
+    })
+
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('initialColumnOrder')).toEqual(['col2', 'col0', 'col1'])
+
+    wrapper.unmount()
+  })
+
+  test('onColumnOrderChange callback calls debouncedSetParamsForTile with columnOrder', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const qo = wrapper.find('QueryOutput').first()
+
+    const onColumnOrderChange = qo.prop('onColumnOrderChange')
+    onColumnOrderChange(['col2', 'col0', 'col1'])
+    jest.advanceTimersByTime(100)
+
+    const call = mockSetParamsForTile.mock.calls.find(([params]) => params?.columnOrder)
+    expect(call?.[0].columnOrder).toEqual(['col2', 'col0', 'col1'])
+
+    jest.useRealTimers()
+    wrapper.unmount()
+  })
+})
+
+describe('frozen column persistence wiring', () => {
+  test('passes tile.frozenColumns through as initialFrozenColumns', () => {
+    const wrapper = setup({
+      tile: { ...sampleTile, frozenColumns: ['col_b'] },
+      isEditing: false,
+    })
+
+    const qo = wrapper.find('QueryOutput').first()
+    expect(qo.prop('initialFrozenColumns')).toEqual(['col_b'])
+
+    wrapper.unmount()
+  })
+
+  test('onFrozenColumnsChange callback calls debouncedSetParamsForTile with frozenColumns', () => {
+    jest.useFakeTimers()
+    const mockSetParamsForTile = jest.fn()
+    const wrapper = setup({ tile: sampleTile, isEditing: true, setParamsForTile: mockSetParamsForTile })
+    const qo = wrapper.find('QueryOutput').first()
+
+    const onFrozenColumnsChange = qo.prop('onFrozenColumnsChange')
+    onFrozenColumnsChange(['col_b'])
+    jest.advanceTimersByTime(100)
+
+    const call = mockSetParamsForTile.mock.calls.find(([params]) => params?.frozenColumns)
+    expect(call?.[0].frozenColumns).toEqual(['col_b'])
+
+    jest.useRealTimers()
     wrapper.unmount()
   })
 })

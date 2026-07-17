@@ -65,6 +65,8 @@ export class DashboardTile extends React.Component {
       'tableFilters',
       'axisSorts',
       'networkColumnConfig',
+      'columnOrder',
+      'frozenColumns',
     ]
 
     const tile = props.tile
@@ -125,6 +127,8 @@ export class DashboardTile extends React.Component {
       orders: PropTypes.array,
       axisSorts: PropTypes.array,
       networkColumnConfig: PropTypes.any,
+      columnOrder: PropTypes.arrayOf(PropTypes.string),
+      frozenColumns: PropTypes.arrayOf(PropTypes.string),
       chartControls: PropTypes.object,
       legendFilterConfig: PropTypes.any,
       queryResponse: PropTypes.shape({}),
@@ -362,9 +366,7 @@ export class DashboardTile extends React.Component {
       this.callbackArray = []
     }
 
-    // queryId must reach the parent's tile array immediately: a dashboard save can be
-    // triggered right after a tile finishes executing, and a debounced update would let
-    // that save ship the tile's stale, pre-execution queryId.
+    // queryId must reach the parent immediately so an in-flight dashboard save doesn't ship a stale value.
     if ('queryId' in params) {
       flush()
     } else {
@@ -386,11 +388,7 @@ export class DashboardTile extends React.Component {
 
   setTopExecuted = () => {
     if (this._isMounted) {
-      // Apply the edit-entry forced remount here, once the refetch has actually settled, instead of
-      // routing it through the isTopExecuting-gated componentDidUpdate branch: that branch is gated
-      // behind !isTopExecuting, which is still true when the fresh queryResponse first propagates down,
-      // so the flag would never fire there and would instead linger to defeat a later, unrelated
-      // isSelfColumnChange guard (e.g. after a subsequent custom column edit).
+      // Applied here (once the refetch settles) since componentDidUpdate's isTopExecuting-gated branch never fires for it.
       const shouldForceRemount = this._forceRemountOnNextResponse
       this._forceRemountOnNextResponse = false
       this.setState((prevState) => ({
@@ -534,6 +532,8 @@ export class DashboardTile extends React.Component {
         tableFilters: tile.tableFilters,
         axisSorts: tile.axisSorts,
         networkColumnConfig: tile.networkColumnConfig,
+        columnOrder: tile.columnOrder,
+        frozenColumns: tile.frozenColumns,
       }
     }
   }
@@ -607,6 +607,8 @@ export class DashboardTile extends React.Component {
               dataConfig: undefined,
               axisSorts: undefined,
               networkColumnConfig: undefined,
+              columnOrder: undefined,
+              frozenColumns: undefined,
             }
           } else {
             this.savedTileConfig = {
@@ -619,6 +621,8 @@ export class DashboardTile extends React.Component {
                 currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
               axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
               networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
+              columnOrder: currentTile.columnOrder || this.savedTileConfig.columnOrder,
+              frozenColumns: currentTile.frozenColumns || this.savedTileConfig.frozenColumns,
             }
           }
         }
@@ -779,6 +783,8 @@ export class DashboardTile extends React.Component {
       paramsToSet.filters = undefined
       paramsToSet.orders = undefined
       paramsToSet.displayOverrides = undefined
+      paramsToSet.columnOrder = undefined
+      paramsToSet.frozenColumns = undefined
     } else if (isReset) {
       // tableFilters already set to [] above; set the remaining reset fields here.
       paramsToSet.orders = []
@@ -786,6 +792,8 @@ export class DashboardTile extends React.Component {
       paramsToSet.displayOverrides = []
       paramsToSet.filters = []
       paramsToSet.dataConfig = undefined
+      paramsToSet.columnOrder = []
+      paramsToSet.frozenColumns = []
     }
 
     this.debouncedSetParamsForTile(paramsToSet)
@@ -831,8 +839,7 @@ export class DashboardTile extends React.Component {
 
     return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
       .then((queryResponse) => {
-        // Extract queryId directly from the fresh response rather than this.props.tile.queryId,
-        // which is stale until debouncedSetParamsForTile's async round-trip lands.
+        // Read queryId from the fresh response since this.props.tile.queryId is stale until the debounce lands.
         const freshQueryId = queryResponse?.data?.data?.query_id
         return {
           ...this.props.tile,
@@ -1011,6 +1018,8 @@ export class DashboardTile extends React.Component {
   onLegendFilterChange = (legendFilterConfig) => this.debouncedSetParamsForTile({ legendFilterConfig })
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
   onNewQueryId = (queryId) => queryId && this.debouncedSetParamsForTile({ queryId })
+  onColumnOrderChange = (columnOrder) => this.debouncedSetParamsForTile({ columnOrder })
+  onFrozenColumnsChange = (frozenColumns) => this.debouncedSetParamsForTile({ frozenColumns })
 
   // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
   // and chart data source update without waiting for the debounce timer.
@@ -1532,6 +1541,10 @@ export class DashboardTile extends React.Component {
         onLegendFilterChange: this.onLegendFilterChange,
         initialAxisSorts: this.normalizeAxisSorts(this.props.tile?.axisSorts),
         onAxisSortChange: this.onAxisSortChange,
+        initialColumnOrder: this.props.tile?.columnOrder,
+        onColumnOrderChange: this.onColumnOrderChange,
+        initialFrozenColumns: this.props.tile?.frozenColumns,
+        onFrozenColumnsChange: this.onFrozenColumnsChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: {
