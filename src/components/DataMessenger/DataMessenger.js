@@ -287,6 +287,7 @@ export class DataMessenger extends React.Component {
     try {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
+      this.stopResizingDrawer()
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)
@@ -1034,11 +1035,31 @@ export class DataMessenger extends React.Component {
   }
 
   resizeDrawer = (e) => {
+    // Mouse button was released outside the document, so mouseup/mouseleave never fired.
+    // Detect it here and stop resizing so the listener doesn't run forever.
+    if (e.buttons === 0) {
+      this.stopResizingDrawer()
+      return
+    }
+
+    if (this.resizeAnimationFrame) {
+      return
+    }
+
+    const pageX = e.pageX
+    const pageY = e.pageY
+    this.resizeAnimationFrame = window.requestAnimationFrame(() => {
+      this.resizeAnimationFrame = undefined
+      this.performResizeDrawer(pageX, pageY)
+    })
+  }
+
+  performResizeDrawer = (pageX, pageY) => {
     const { placement } = this.state
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
     if (placement === 'right') {
-      const offset = (this.state.startingResizePosition?.x ?? 0) - e.pageX
+      const offset = (this.state.startingResizePosition?.x ?? 0) - pageX
       let newWidth = (this.state.startingResizePosition?.width ?? 0) + offset
       if (newWidth > maxWidth) {
         newWidth = maxWidth
@@ -1053,7 +1074,7 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'left') {
-      const offset = e.pageX - (this.state.startingResizePosition?.x ?? 0)
+      const offset = pageX - (this.state.startingResizePosition?.x ?? 0)
       let newWidth = (this.state.startingResizePosition?.width ?? 0) + offset
       if (newWidth > maxWidth) {
         newWidth = maxWidth
@@ -1068,7 +1089,7 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'bottom') {
-      const offset = (this.state.startingResizePosition?.y ?? 0) - e.pageY
+      const offset = (this.state.startingResizePosition?.y ?? 0) - pageY
       let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
       if (newHeight > maxHeight) {
         newHeight = maxHeight
@@ -1083,7 +1104,7 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'top') {
-      const offset = e.pageY - (this.state.startingResizePosition?.y ?? 0)
+      const offset = pageY - (this.state.startingResizePosition?.y ?? 0)
       let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
       if (newHeight > this.maxHeight) {
         newHeight = this.maxHeight
@@ -1101,11 +1122,12 @@ export class DataMessenger extends React.Component {
   }
 
   stopResizingDrawer = () => {
-    if (this.state.placement === 'right' || this.state.placement === 'left') {
-      this.setState({
-        isResizing: false,
-      })
-    } else if (this.state.placement === 'top' || this.state.placement === 'bottom') {
+    if (this.resizeAnimationFrame) {
+      window.cancelAnimationFrame(this.resizeAnimationFrame)
+      this.resizeAnimationFrame = undefined
+    }
+
+    if (this.state.isResizing) {
       this.setState({
         isResizing: false,
       })

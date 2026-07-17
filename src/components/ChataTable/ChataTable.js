@@ -94,7 +94,8 @@ export default class ChataTable extends React.Component {
       page: 1,
     }
 
-    this.baseFilters = _cloneDeep(props?.initialTableParams?.filter || [])
+    this.baseFilters = _cloneDeep(props?.lockedFilters ?? props?.initialTableParams?.filter ?? [])
+    this.baseSort = _cloneDeep(props?.initialTableParams?.sort || [])
 
     // pivot table headers reflect the correct sort direction
     let initialSort = undefined
@@ -187,8 +188,11 @@ export default class ChataTable extends React.Component {
     keepScrolledRight: PropTypes.bool,
     allowCustomColumns: PropTypes.bool,
     onCustomColumnChange: PropTypes.func,
+    onColumnFreezeChange: PropTypes.func,
+    onColumnOrderChange: PropTypes.func,
     enableContextMenu: PropTypes.bool,
     initialTableParams: PropTypes.shape({ filter: PropTypes.array, sort: PropTypes.array, page: PropTypes.number }),
+    lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
     updateColumnsAndData: PropTypes.func,
     onUpdateFilterResponse: PropTypes.func,
     showQueryInterpretation: PropTypes.bool,
@@ -234,6 +238,8 @@ export default class ChataTable extends React.Component {
     onNewData: () => {},
     updateColumns: () => {},
     onCustomColumnChange: () => {},
+    onColumnFreezeChange: () => {},
+    onColumnOrderChange: () => {},
     updateColumnsAndData: () => {},
     onUpdateFilterResponse: () => {},
     showQueryInterpretation: false,
@@ -353,11 +359,6 @@ export default class ChataTable extends React.Component {
       this.setFilters()
       this.setSorters()
       this.clearLoadingIndicators()
-      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
-        setTimeout(() => {
-          if (this._isMounted) this.disableBaseFilterInputs()
-        }, 0)
-      }
     }
 
     if (this.tabulatorMounted && !prevState.tabulatorJustMounted) {
@@ -367,8 +368,12 @@ export default class ChataTable extends React.Component {
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
       if (!this.props.skipInitialFilters) {
         this.tableParams.filter = this.props?.initialTableParams?.filter
-        this.setFilters(this.props?.initialTableParams?.filter)
-      } else if (this.state.isFiltering) {
+      }
+      // In edit mode, always reset to base filters only — discards any stale view-mode filters
+      if (this.props.isDashboardEditing && this.baseFilters.length) {
+        this.tableParams.filter = _cloneDeep(this.baseFilters)
+      }
+      if (!this.props.skipInitialFilters || this.state.isFiltering) {
         this.setFilters(this.tableParams.filter)
       }
       this.setHeaderInputEventListeners()
@@ -376,28 +381,29 @@ export default class ChataTable extends React.Component {
         this.setTableHeight()
       }
       this.setFilterBadgeClasses()
-      if (!this.props.isDashboardEditing && this.baseFilters.length && this.state.isFiltering) {
-        setTimeout(() => {
-          if (this._isMounted) this.disableBaseFilterInputs()
-        }, 0)
-      }
     }
 
     if (this.props.isDashboardEditing !== prevProps.isDashboardEditing) {
-      if (this.state.tabulatorMounted && this.state.isFiltering) {
-        this.tableParams.filter = _cloneDeep(this.baseFilters)
-        this._setFiltersTime = Date.now()
-        this.ref?.tabulator?.clearHeaderFilter()
-        if (this.baseFilters.length) this.setFilters(this.baseFilters)
-        if (!this.props.isDashboardEditing) {
-          setTimeout(() => {
-            if (this._isMounted) this.disableBaseFilterInputs()
-          }, 0)
-        } else {
-          setTimeout(() => {
-            if (this._isMounted) this.enableBaseFilterInputs()
-          }, 0)
+      if (this.state.tabulatorMounted) {
+        if (this.props.isDashboardEditing) {
+          // Reset first so blocked AJAXes return base filter state (constructor-time baseSort, not stale initialTableParams)
+          this.tableParams = {
+            filter: _cloneDeep(this.baseFilters),
+            sort: _cloneDeep(this.baseSort),
+            page: 1,
+          }
         }
+        // Date.now() blocks AJAXes without replaceData() — avoids a server call on local (view-mode) tables
+        this._setFiltersTime = Date.now()
+        try {
+          // Can throw synchronously if a stale column ref remains in Tabulator's header-filter bookkeeping (Tabulator bug)
+          this.ref?.tabulator?.clearHeaderFilter()?.catch?.(() => {})
+        } catch (error) {
+          console.error(error)
+        }
+        this.ref?.tabulator?.clearSort()?.catch?.(() => {})
+        if (this.baseFilters.length) this.setFilters(this.baseFilters)
+        if (this.baseSort.length) this.setSorters(this.baseSort)
       }
       this.setFilterBadgeClasses()
     }
@@ -643,7 +649,12 @@ export default class ChataTable extends React.Component {
     }
 
     // Debounce getRTForRemoteFilterAndSort to prevent multiple calls after hide/show columns
-    if (!this.useInfiniteScroll && !this.props.pivot && this.tableParams?.filter?.length > 0 && this.props.showQueryInterpretation) {
+    if (
+      !this.useInfiniteScroll &&
+      !this.props.pivot &&
+      this.tableParams?.filter?.length > 0 &&
+      this.props.showQueryInterpretation
+    ) {
       if (this._debounceTimeout) clearTimeout(this._debounceTimeout)
       this._debounceTimeout = setTimeout(() => {
         if (!this._isMounted) return
@@ -833,7 +844,7 @@ export default class ChataTable extends React.Component {
         console.error(error)
         this.clearLoadingIndicators()
       } else {
-        return
+        return response
       }
     }
 
@@ -851,12 +862,16 @@ export default class ChataTable extends React.Component {
       data = []
     }
 
+    // filterDataByColumn/sortDataByColumn look up column metadata by array position, so they need
+    // columns in data order — this.props.columns may be reordered for display (columnOrder).
+    const dataOrderedColumns = [...this.props.columns].sort((a, b) => a.index - b.index)
+
     // Filters
     if (params.tableFilters?.length) {
       params.tableFilters.forEach((filter) => {
         const filterColumnIndex = this.props.columns.find((col) => col.id === filter.id)?.index
 
-        data = filterDataByColumn(data, this.props.columns, filterColumnIndex, filter.value, filter.operator)
+        data = filterDataByColumn(data, dataOrderedColumns, filterColumnIndex, filter.value, filter.operator)
       })
     }
 
@@ -882,7 +897,7 @@ export default class ChataTable extends React.Component {
         }
       } else {
         const sortColumnIndex = this.props.columns.find((col) => col.id === params?.orders[0]?.id)?.index
-        data = sortDataByColumn(data, this.props.columns, sortColumnIndex, sortDirection)
+        data = sortDataByColumn(data, dataOrderedColumns, sortColumnIndex, sortDirection)
       }
     }
 
@@ -1052,7 +1067,7 @@ export default class ChataTable extends React.Component {
         }, 0)
       }
     } else {
-      return {}
+      return { data: [], last_page: this.totalPages }
     }
 
     return modResponse
@@ -1187,44 +1202,6 @@ export default class ChataTable extends React.Component {
     })
 
     inputElement.parentNode.appendChild(clearBtn)
-  }
-
-  disableBaseFilterInputs = () => {
-    if (this.props.isDashboardEditing || !this.baseFilters.length) return
-    this.baseFilters.forEach((filter) => {
-      if (!filter.value) return
-      const inputEl = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
-      )
-      if (inputEl) {
-        inputEl.disabled = true
-        inputEl.classList.add('react-autoql-base-filter-disabled')
-      }
-      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
-      if (clearBtn) {
-        clearBtn.style.pointerEvents = 'none'
-        clearBtn.style.opacity = '0.3'
-      }
-    })
-  }
-
-  enableBaseFilterInputs = () => {
-    if (!this.baseFilters.length) return
-    this.baseFilters.forEach((filter) => {
-      if (!filter.value) return
-      const inputEl = document.querySelector(
-        `#react-autoql-table-container-${this.TABLE_ID} .tabulator-col[tabulator-field="${filter.field}"] .tabulator-col-content input`,
-      )
-      if (inputEl) {
-        inputEl.disabled = false
-        inputEl.classList.remove('react-autoql-base-filter-disabled')
-      }
-      const clearBtn = document.querySelector(`[data-clear-btn="${this.TABLE_ID}-${filter.field}"]`)
-      if (clearBtn) {
-        clearBtn.style.pointerEvents = ''
-        clearBtn.style.opacity = ''
-      }
-    })
   }
 
   setHeaderInputEventListeners = (cols) => {
@@ -1386,6 +1363,13 @@ export default class ChataTable extends React.Component {
         // TableWrapper API so wrapper state (redrawRestored) stays in sync.
         this.ref?.blockRedraw?.()
 
+        // setHeaderFilterValue() reloads on every call; suppress that per-field and refresh once below instead.
+        const filterModule = this.ref.tabulator.modules?.filter
+        const wasInitialized = filterModule?.tableInitialized
+        if (filterModule) {
+          filterModule.tableInitialized = false
+        }
+
         try {
           filterValues.forEach((filter) => {
             const columns = this.ref.tabulator.getColumns()
@@ -1396,6 +1380,10 @@ export default class ChataTable extends React.Component {
             }
           })
         } finally {
+          if (filterModule) {
+            filterModule.tableInitialized = wasInitialized
+          }
+          this.ref?.tabulator?.refreshFilter?.()?.catch?.(() => {})
           this.ref?.restoreRedraw?.()
         }
 
@@ -1467,13 +1455,12 @@ export default class ChataTable extends React.Component {
     this.settingSorters = true
 
     if (this.ref?.tabulator && sorterValues && Array.isArray(sorterValues)) {
-      sorterValues.forEach((sorter) => {
-        try {
-          this.ref.tabulator.setSort(sorter.field, sorter.dir)
-        } catch (_) {
-          // Error silently handled by tabulator
-        }
-      })
+      try {
+        // setSort() replaces the whole sort list per call, so apply all sorters in one call, not a loop.
+        this.ref.tabulator.setSort(sorterValues.map(({ field, dir }) => ({ column: field, dir })))?.catch?.(() => {})
+      } catch (_) {
+        // Error silently handled by tabulator
+      }
     }
 
     this.settingSorters = false
@@ -1500,11 +1487,6 @@ export default class ChataTable extends React.Component {
           setTimeout(() => {
             if (this._isMounted) this.setHeaderInputEventListeners()
           }, 0)
-          if (!this.props.isDashboardEditing && this.baseFilters.length) {
-            setTimeout(() => {
-              if (this._isMounted) this.disableBaseFilterInputs()
-            }, 0)
-          }
         }
       })
     }
@@ -1549,25 +1531,16 @@ export default class ChataTable extends React.Component {
 
   onFreezeColumnClick = (column) => {
     this.setState({ contextMenuColumn: undefined })
-    const columns = this.ref?.tabulator?.getColumns()
-    const targetColumn = columns?.find((col) => col.getField() === column.field)
+    // Persist via parent + setColumns() rebuild — updateDefinition() leaves a stale ref that crashes clearHeaderFilter()
+    this.props.onColumnFreezeChange(column.name, !this.isColumnFrozen(column))
+  }
 
-    if (targetColumn) {
-      // Capture current filter values before freezing/unfreezing
-      const currentFilters = this.ref?.tabulator?.getHeaderFilters()
-
-      const isCurrentlyFrozen = this.isColumnFrozen(column)
-      targetColumn.updateDefinition({ frozen: !isCurrentlyFrozen })
-
-      // Re-attach event listeners and restore filters after DOM recreation
-      setTimeout(() => {
-        this.setHeaderInputEventListeners()
-        // Restore filter values after column recreation
-        if (currentFilters && currentFilters.length > 0) {
-          this.setFilters(currentFilters)
-        }
-      }, 0)
-    }
+  onColumnMoved = (movedColumn, columns) => {
+    // Match by field, not array index — props.columns may already be user-reordered
+    const orderedNames = columns
+      .map((col) => this.props.columns?.find((c) => c.field === col.getField())?.name)
+      .filter(Boolean)
+    this.props.onColumnOrderChange(orderedNames)
   }
 
   onRemoveColumnClick = async () => {
@@ -2221,6 +2194,7 @@ export default class ChataTable extends React.Component {
                     onDataProcessed={(...args) => this.onDataProcessed(...args)}
                     onDataLoadError={(...args) => this.onDataLoadError(...args)}
                     onScrollVertical={(...args) => this.onScrollVertical(...args)}
+                    onColumnMoved={(...args) => this.onColumnMoved(...args)}
                     pivot={this.props.pivot}
                     scope={this.props.scope}
                     isDrilldown={this.props.isDrilldown}

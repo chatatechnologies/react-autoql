@@ -116,6 +116,10 @@ export class QueryOutput extends React.Component {
     // Resets to 0 whenever a fresh query result arrives. Capped at 3 to break loops caused by
     // corrupted saved dataConfig that setTableConfig cannot repair.
     this._consecutiveConfigResets = 0
+    // User-dragged column order (names), reapplied on every column rebuild; seeded from the tile config.
+    this.columnOrder = props.initialColumnOrder || undefined
+    // Frozen column names, matched by name (not index) so they can't collide with an unrelated column.
+    this.initialFrozenColumns = props.initialFrozenColumns || []
 
     let response = props.queryResponse
     this.queryResponse = _cloneDeep(response)
@@ -192,6 +196,8 @@ export class QueryOutput extends React.Component {
     } catch (err) {
       this.formattedTableParams = { filters: [], sorters: [] }
     }
+
+    this.formattedLockedFilters = this.formatLockedFilters(props.lockedFilters, columns)
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
     this.shouldEnableResize = props.enableResizing && isChart
@@ -322,6 +328,10 @@ export class QueryOutput extends React.Component {
     onLegendFilterChange: PropTypes.func,
     initialAxisSorts: PropTypes.object,
     onAxisSortChange: PropTypes.func,
+    initialColumnOrder: PropTypes.arrayOf(PropTypes.string),
+    onColumnOrderChange: PropTypes.func,
+    initialFrozenColumns: PropTypes.arrayOf(PropTypes.string),
+    onFrozenColumnsChange: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
@@ -357,6 +367,7 @@ export class QueryOutput extends React.Component {
     isEditing: PropTypes.bool,
     isDashboardEditing: PropTypes.bool,
     onNewQueryId: PropTypes.func,
+    lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
     skipInitialFilters: PropTypes.bool,
     initialIsFiltering: PropTypes.bool,
     minHeight: PropTypes.number,
@@ -400,6 +411,10 @@ export class QueryOutput extends React.Component {
     onNoneOfTheseClick: undefined,
     initialAxisSorts: undefined,
     onAxisSortChange: undefined,
+    initialColumnOrder: undefined,
+    onColumnOrderChange: undefined,
+    initialFrozenColumns: undefined,
+    onFrozenColumnsChange: undefined,
     autoChartAggregations: true,
     showQueryInterpretation: false,
     isTaskModule: false,
@@ -617,8 +632,37 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      if (prevProps.isEditing !== this.props.isEditing) {
-        if (this.props.isEditing) {
+      if (this.props.lockedFilters !== prevProps.lockedFilters || this.state.columns !== prevState.columns) {
+        this.formattedLockedFilters = this.formatLockedFilters(this.props.lockedFilters, this.state.columns)
+      }
+
+      // Resync from a parent-driven config change (e.g. tile reset) - otherwise these only get read once, in the constructor.
+      if (this.props.initialColumnOrder !== prevProps.initialColumnOrder) {
+        this.columnOrder = this.props.initialColumnOrder || undefined
+      }
+      if (this.props.initialFrozenColumns !== prevProps.initialFrozenColumns) {
+        this.initialFrozenColumns = this.props.initialFrozenColumns || []
+        this.setState((prevState) => ({
+          columns: prevState.columns?.map((col) => ({ ...col, frozen: this.initialFrozenColumns.includes(col.name) })),
+        }))
+      }
+
+      // Dashboard tiles signal edit mode via isDashboardEditing rather than isEditing, so check both.
+      const wasEditing = prevProps.isEditing || prevProps.isDashboardEditing
+      const isEditingNow = this.props.isEditing || this.props.isDashboardEditing
+      if (wasEditing !== isEditingNow) {
+        if (isEditingNow) {
+          // Reset filters/sorters (otherwise only set on mount) so stale view-mode header filters don't leak into edit mode.
+          this.formattedTableParams = {
+            filters: this.props.initialFormattedTableParams?.filters || [],
+            sorters: this.props.initialFormattedTableParams?.sorters || [],
+          }
+          // Reset this.tableParams too, otherwise stale view-mode sort/filter leaks into the edit-mode table.
+          this.tableParams = {
+            ...this.tableParams,
+            sort: formatSortersForTabulator(this.formattedTableParams.sorters, this.state.columns),
+            filter: formatFiltersForTabulator(this.formattedTableParams.filters, this.state.columns),
+          }
           this.originalLegendState = {
             hiddenLegendLabels: [...this.state.hiddenLegendLabels],
             isEditing: true,
@@ -739,6 +783,9 @@ export class QueryOutput extends React.Component {
       console.error(error)
     }
   }
+
+  formatLockedFilters = (lockedFilters, columns) =>
+    lockedFilters?.length ? formatFiltersForTabulator(lockedFilters, columns) : lockedFilters
 
   componentWillUnmount = () => {
     this._isMounted = false
@@ -932,7 +979,9 @@ export class QueryOutput extends React.Component {
       // Circuit breaker: a corrupted tile config can cause repeated correction attempts if the
       // rebuilt config is still rejected. Cap at 3 attempts per query response to break the loop.
       if (this._consecutiveConfigResets >= 3) {
-        console.warn('[react-autoql] Tile config correction loop detected — skipping reset to prevent infinite loop. Check the saved dataConfig for this tile.')
+        console.warn(
+          '[react-autoql] Tile config correction loop detected — skipping reset to prevent infinite loop. Check the saved dataConfig for this tile.',
+        )
         return
       }
 
@@ -1143,10 +1192,7 @@ export class QueryOutput extends React.Component {
 
   usePivotDataForChart = () => {
     // Network graphs and sankey diagrams always use original data, never pivot data
-    if (
-      this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
-      this.state?.displayType === DisplayTypes.SANKEY
-    ) {
+    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH || this.state?.displayType === DisplayTypes.SANKEY) {
       return false
     }
 
@@ -1723,12 +1769,17 @@ export class QueryOutput extends React.Component {
               source: this.props.source,
               groupBys,
               pageSize,
-              tableFilters: allFilters, // Include existing filters
+              tableFilters: allFilters,
             })
+            const groupByFilters = (groupBys || []).map((gb) => ({
+              name: gb.name,
+              value: gb.value,
+              operator: gb.operator || '=',
+            }))
             this.props.onDrilldownEnd({
               response,
               originalQueryID: this.queryID,
-              drilldownFilters: allFilters,
+              drilldownFilters: [...allFilters, ...groupByFilters],
             })
           } catch (error) {
             this.props.onDrilldownEnd({ response: error, drilldownFilters: [] })
@@ -1765,11 +1816,13 @@ export class QueryOutput extends React.Component {
             // Normal AND logic - combine filters and send to backend
             const filtersToCombine = Array.isArray(clickedFilter) ? clickedFilter : [clickedFilter]
             const allFilters = this.getCombinedFilters(filtersToCombine)
+            const savedFormattedTableParams = { ...this.formattedTableParams }
             try {
               response = await this.queryFn({ tableFilters: allFilters, pageSize })
             } catch (error) {
               response = error
             }
+            this.formattedTableParams = savedFormattedTableParams
             this.props.onDrilldownEnd({
               response,
               originalQueryID: this.queryID,
@@ -2740,7 +2793,8 @@ export class QueryOutput extends React.Component {
       // When there is no response data yet (tile not executed) we skip this check since
       // isTableConfigValid always returns false without rows and we don't want to block resets.
       const hasResponseData = !!this.queryResponse?.data?.data?.rows?.length
-      const newConfigIsValid = !hasResponseData || this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state?.displayType)
+      const newConfigIsValid =
+        !hasResponseData || this.isTableConfigValid(this.tableConfig, this.getColumns(), this.state?.displayType)
       if (newConfigIsValid) {
         this.onTableConfigChange(this.hasCalledInitialTableConfigChange)
       }
@@ -2921,6 +2975,10 @@ export class QueryOutput extends React.Component {
       newCol.visible = col.is_visible
       newCol.download = col.is_visible
 
+      // Preserve frozen state across rebuilds, matched by name; falls back to initialFrozenColumns pre-mount.
+      const prevCol = this.state?.columns?.find((c) => c.name === col.name)
+      newCol.frozen = prevCol?.frozen ?? col.frozen ?? this.initialFrozenColumns.includes(col.name)
+
       newCol.minWidth = '90px'
       if (newCol.type === ColumnTypes.DATE) {
         newCol.minWidth = '125px'
@@ -3060,6 +3118,22 @@ export class QueryOutput extends React.Component {
 
     return formattedColumns
   }
+
+  // Reapply user drag-order by name for display only - never apply this to this.state.columns itself.
+  reorderColumnsByUserOrder = (columns) => {
+    if (!this.columnOrder?.length || !columns?.length) {
+      return columns
+    }
+
+    const orderIndex = new Map(this.columnOrder.map((name, i) => [name, i]))
+    return [...columns].sort((a, b) => {
+      const aIdx = orderIndex.has(a.name) ? orderIndex.get(a.name) : Infinity
+      const bIdx = orderIndex.has(b.name) ? orderIndex.get(b.name) : Infinity
+      return aIdx - bIdx
+    })
+  }
+
+  getOrderedTableColumns = () => this.reorderColumnsByUserOrder(this.state.columns)
 
   formatDatePivotYear = (data, dateColumnIndex) => {
     const columns = this.getColumns()
@@ -3777,13 +3851,15 @@ export class QueryOutput extends React.Component {
     if (column?._snapshotDisplayOverride) {
       result = result.filter(
         (o) =>
-          !(o.english === column._snapshotDisplayOverride.english &&
-            o.table_column === column._snapshotDisplayOverride.table_column),
+          !(
+            o.english === column._snapshotDisplayOverride.english &&
+            o.table_column === column._snapshotDisplayOverride.table_column
+          ),
       )
     }
 
     // Add or update display override entry
-    const displayOverrideName = column?.custom_column_display_name ?? (column?.display_name)
+    const displayOverrideName = column?.custom_column_display_name ?? column?.display_name
     if (displayOverrideName) {
       const overrideEntry = {
         english: displayOverrideName,
@@ -3981,6 +4057,27 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  onColumnFreezeChange = (columnName, isFrozen) => {
+    this.setState((prevState) => {
+      const updatedColumns = prevState.columns?.map((col) =>
+        col.name === columnName ? { ...col, frozen: isFrozen } : col,
+      )
+      // Bump columnChangeCount so componentDidUpdate propagates this like every other column mutation.
+      return { columns: updatedColumns, columnChangeCount: prevState.columnChangeCount + 1 }
+    }, () => {
+      // Report the current frozen-name list up so the parent can persist it.
+      this.props.onFrozenColumnsChange?.(this.state.columns.filter((col) => col.frozen).map((col) => col.name))
+    })
+  }
+
+  onColumnOrderChange = (orderedNames) => {
+    if (orderedNames?.length) {
+      this.columnOrder = orderedNames
+      // Report up so the parent can persist it (display-order only, doesn't touch state.columns).
+      this.props.onColumnOrderChange?.(orderedNames)
+    }
+  }
+
   renderCustomColumnModal = () => {
     if (!this.state.showCustomColumnModal) {
       return null
@@ -4051,14 +4148,14 @@ export class QueryOutput extends React.Component {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
-    if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters) {
+    if (!this.tableParams.filter && this.props?.initialFormattedTableParams?.filters?.length) {
       this.tableParams.filter = formatFiltersForTabulator(
         this.props?.initialFormattedTableParams?.filters,
         this.state.columns,
       )
     }
 
-    if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters) {
+    if (!this.tableParams.sort && this.props?.initialFormattedTableParams?.sorters?.length) {
       this.tableParams.sort = formatSortersForTabulator(
         this.props?.initialFormattedTableParams?.sorters,
         this.state.columns,
@@ -4074,7 +4171,7 @@ export class QueryOutput extends React.Component {
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           dataFormatting={this.props.dataFormatting}
-          columns={this.state.columns}
+          columns={this.getOrderedTableColumns()}
           response={this.queryResponse}
           updateColumns={this.updateColumns}
           columnDateRanges={this.columnDateRanges}
@@ -4102,8 +4199,11 @@ export class QueryOutput extends React.Component {
           tableConfig={this.tableConfig}
           aggConfig={this.state.aggConfig}
           onCustomColumnChange={this.onCustomColumnChange}
+          onColumnFreezeChange={this.onColumnFreezeChange}
+          onColumnOrderChange={this.onColumnOrderChange}
           enableContextMenu={this.props.enableTableContextMenu}
           initialTableParams={this.tableParams}
+          lockedFilters={this.formattedLockedFilters}
           updateColumnsAndData={this.updateColumnsAndData}
           onUpdateFilterResponse={this.props.onUpdateFilterResponse}
           showQueryInterpretation={this.props.showQueryInterpretation}
@@ -4152,6 +4252,7 @@ export class QueryOutput extends React.Component {
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
           initialTableParams={this.tableParams}
+          lockedFilters={this.formattedLockedFilters}
           initialIsFiltering={!!this.wasFiltering}
           updateColumnsAndData={this.updateColumnsAndData}
           pivotGroups={true}

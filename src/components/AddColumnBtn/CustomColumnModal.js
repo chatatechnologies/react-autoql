@@ -535,11 +535,9 @@ export default class CustomColumnModal extends React.Component {
       cleanedName = this.replaceTypeCastWithPreserveTokens(cleanedName)
 
       // Replace column names with placeholders before tokenization (handles nested parens & multi-word names)
-      const allCols = [
-        ...(cols || []),
-        ...(this.props.queryResponse?.data?.data?.available_selects || [])
-      ]
-      const colsByLength = allCols.map((col, originalIndex) => ({ col, originalIndex }))
+      const allCols = [...(cols || []), ...(this.props.queryResponse?.data?.data?.available_selects || [])]
+      const colsByLength = allCols
+        .map((col, originalIndex) => ({ col, originalIndex }))
         .sort((a, b) => {
           const aLen = (a.col?.table_column || a.col?.name)?.length || 0
           const bLen = (b.col?.table_column || b.col?.name)?.length || 0
@@ -570,7 +568,7 @@ export default class CustomColumnModal extends React.Component {
       }
 
       const ops = buildPlainColumnArrayFn(cleanedName)
-      
+
       if (ops?.length === 0) {
         return []
       }
@@ -615,7 +613,9 @@ export default class CustomColumnModal extends React.Component {
             fnArray.push({ type: 'column', value: placeholderCol?.field, column: placeholderCol })
           } else if (
             (col = cols?.find((c) => c?.name?.trim() === op)) || // exact match in cols
-            (col = this.props.queryResponse?.data?.data?.available_selects?.find((s) => s?.table_column?.trim() === getCleanColumnName(op))) || // normalized match
+            (col = this.props.queryResponse?.data?.data?.available_selects?.find(
+              (s) => s?.table_column?.trim() === getCleanColumnName(op),
+            )) || // normalized match
             (col = cols?.find((c) => c?.table_column?.trim().toLowerCase() === op?.toLowerCase())) // case-insensitive
           ) {
             fnArray.push({ type: 'column', value: col?.field || col?.table_column, column: col })
@@ -634,17 +634,21 @@ export default class CustomColumnModal extends React.Component {
 
         // Count consecutive opening brackets at the start (skip preserved ones)
         let openCount = 0
-        while (openCount < cleaned.length &&
-               cleaned[openCount]?.value === CustomColumnValues.LEFT_BRACKET &&
-               !cleaned[openCount]?.preserve) {
+        while (
+          openCount < cleaned.length &&
+          cleaned[openCount]?.value === CustomColumnValues.LEFT_BRACKET &&
+          !cleaned[openCount]?.preserve
+        ) {
           openCount++
         }
 
         // Count consecutive closing brackets at the end (skip preserved ones)
         let closeCount = 0
-        while (closeCount < cleaned.length &&
-               cleaned[cleaned.length - 1 - closeCount]?.value === CustomColumnValues.RIGHT_BRACKET &&
-               !cleaned[cleaned.length - 1 - closeCount]?.preserve) {
+        while (
+          closeCount < cleaned.length &&
+          cleaned[cleaned.length - 1 - closeCount]?.value === CustomColumnValues.RIGHT_BRACKET &&
+          !cleaned[cleaned.length - 1 - closeCount]?.preserve
+        ) {
           closeCount++
         }
 
@@ -858,6 +862,12 @@ export default class CustomColumnModal extends React.Component {
     return false
   }
 
+  // Normalized (uppercase) median_type from the query response: 'AGG', 'WINDOW', or undefined
+  getMedianType = () => {
+    const medianType = this.props.queryResponse?.data?.data?.median_type
+    return typeof medianType === 'string' ? medianType.trim().toUpperCase() : undefined
+  }
+
   // Build SQL for function chunks
   buildFunctionSql = (columnFn, customColumn) => {
     const colName = this.sanitizeColumnName(columnFn?.column?.name)
@@ -900,6 +910,16 @@ export default class CustomColumnModal extends React.Component {
     if (columnFn.fn === CustomColumnValues.CUMULATIVE_PERCENT) {
       const orderClause = this.buildOrderByClause(columnFn, false)
       return `(COALESCE(SUM(${colName}) OVER(${orderClause} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / NULLIF(SUM(${colName}) OVER(), 0), 0) * 100)`
+    }
+
+    // MEDIAN - backend post-processing converts these into dialect-specific SQL
+    if (columnFn.fn === CustomColumnValues.MEDIAN) {
+      if (this.getMedianType() === 'AGG') {
+        return `MEDIAN(${colName})`
+      }
+
+      // WINDOW (or absent median_type): send empty OVER() - backend fills in the clause
+      return `MEDIAN(${colName}) OVER()`
     }
 
     // SUM-derived percent (window function whose nextSelector is SUM)
@@ -960,8 +980,7 @@ export default class CustomColumnModal extends React.Component {
       const tokens = _cloneDeep(customColumn?.columnFnArray || [])
 
       const isDivisionOperatorToken = (t) =>
-        t?.type === CustomColumnTypes.OPERATOR &&
-        (t?.value === '/' || this.OPERATORS?.[t?.value]?.js === '/')
+        t?.type === CustomColumnTypes.OPERATOR && (t?.value === '/' || this.OPERATORS?.[t?.value]?.js === '/')
 
       // Process tokens to wrap divisions at the token level using transformDivisionExpression
       for (let idx = 0; idx < tokens.length; idx++) {
@@ -972,7 +991,10 @@ export default class CustomColumnModal extends React.Component {
         let leftEnd = idx - 1
         if (leftEnd < 0) continue
         let leftStart = leftEnd
-        if (tokens[leftEnd]?.type === CustomColumnTypes.OPERATOR && tokens[leftEnd]?.value === CustomColumnValues.RIGHT_BRACKET) {
+        if (
+          tokens[leftEnd]?.type === CustomColumnTypes.OPERATOR &&
+          tokens[leftEnd]?.value === CustomColumnValues.RIGHT_BRACKET
+        ) {
           // find matching left bracket
           let depth = 1
           leftStart = leftEnd - 1
@@ -995,7 +1017,10 @@ export default class CustomColumnModal extends React.Component {
         let rightStart = idx + 1
         if (rightStart >= tokens.length) continue
         let rightEnd = rightStart
-        if (tokens[rightStart]?.type === CustomColumnTypes.OPERATOR && tokens[rightStart]?.value === CustomColumnValues.LEFT_BRACKET) {
+        if (
+          tokens[rightStart]?.type === CustomColumnTypes.OPERATOR &&
+          tokens[rightStart]?.value === CustomColumnValues.LEFT_BRACKET
+        ) {
           // find matching right bracket
           let depth = 1
           rightEnd = rightStart + 1
@@ -1171,7 +1196,7 @@ export default class CustomColumnModal extends React.Component {
     // Only these operators allow same-precedence bracket removal on their right side
     const ASSOC_OPS = new Set(['ADDITION', 'MULTIPLICATION'])
 
-    const getPrec = (token) => (token?.type === CustomColumnTypes.OPERATOR ? (PREC[token.value] ?? 0) : 0)
+    const getPrec = (token) => (token?.type === CustomColumnTypes.OPERATOR ? PREC[token.value] ?? 0 : 0)
 
     // Minimum precedence of all operators at depth-0 within a token slice
     const minDepth0Prec = (tokens) => {
@@ -1204,9 +1229,7 @@ export default class CustomColumnModal extends React.Component {
         }
         const rbIdx = j - 1
         const inner = result.slice(i + 1, rbIdx)
-        const preserve =
-          result[i]?.preserve ||
-          result[rbIdx]?.preserve
+        const preserve = result[i]?.preserve || result[rbIdx]?.preserve
 
         // For edit readability, unwrap non-preserved brackets around a single token.
         // Keep preserved pairs (explicit user/grouping intent).
@@ -1238,12 +1261,35 @@ export default class CustomColumnModal extends React.Component {
           if (innerHasFunction) {
             continue
           }
-          const leftWouldBeOperands = leftNeighbor && firstInner && leftNeighbor.type !== CustomColumnTypes.OPERATOR && firstInner.type !== CustomColumnTypes.OPERATOR
-          const rightWouldBeOperands = lastInner && rightNeighbor && lastInner.type !== CustomColumnTypes.OPERATOR && rightNeighbor.type !== CustomColumnTypes.OPERATOR
-          const leftWouldBeOperandThenLeftBracket = leftNeighbor && leftNeighbor.type !== CustomColumnTypes.OPERATOR && firstInner && firstInner.type === CustomColumnTypes.OPERATOR && firstInner.value === CustomColumnValues.LEFT_BRACKET
-          const rightWouldBeRightBracketThenOperand = lastInner && lastInner.type === CustomColumnTypes.OPERATOR && lastInner.value === CustomColumnValues.RIGHT_BRACKET && rightNeighbor && rightNeighbor.type !== CustomColumnTypes.OPERATOR
+          const leftWouldBeOperands =
+            leftNeighbor &&
+            firstInner &&
+            leftNeighbor.type !== CustomColumnTypes.OPERATOR &&
+            firstInner.type !== CustomColumnTypes.OPERATOR
+          const rightWouldBeOperands =
+            lastInner &&
+            rightNeighbor &&
+            lastInner.type !== CustomColumnTypes.OPERATOR &&
+            rightNeighbor.type !== CustomColumnTypes.OPERATOR
+          const leftWouldBeOperandThenLeftBracket =
+            leftNeighbor &&
+            leftNeighbor.type !== CustomColumnTypes.OPERATOR &&
+            firstInner &&
+            firstInner.type === CustomColumnTypes.OPERATOR &&
+            firstInner.value === CustomColumnValues.LEFT_BRACKET
+          const rightWouldBeRightBracketThenOperand =
+            lastInner &&
+            lastInner.type === CustomColumnTypes.OPERATOR &&
+            lastInner.value === CustomColumnValues.RIGHT_BRACKET &&
+            rightNeighbor &&
+            rightNeighbor.type !== CustomColumnTypes.OPERATOR
 
-          if (leftWouldBeOperands || rightWouldBeOperands || leftWouldBeOperandThenLeftBracket || rightWouldBeRightBracketThenOperand) {
+          if (
+            leftWouldBeOperands ||
+            rightWouldBeOperands ||
+            leftWouldBeOperandThenLeftBracket ||
+            rightWouldBeRightBracketThenOperand
+          ) {
             // Keep parentheses to preserve semantic separation
             continue
           }
@@ -1267,7 +1313,8 @@ export default class CustomColumnModal extends React.Component {
         const right = fn[i + 1]
         const leftIsOperand = left?.type !== CustomColumnTypes.OPERATOR
         const rightIsOperand = right?.type !== CustomColumnTypes.OPERATOR
-        const rightIsLeftBracket = right?.type === CustomColumnTypes.OPERATOR && right?.value === CustomColumnValues.LEFT_BRACKET
+        const rightIsLeftBracket =
+          right?.type === CustomColumnTypes.OPERATOR && right?.value === CustomColumnValues.LEFT_BRACKET
         if (leftIsOperand && (rightIsOperand || rightIsLeftBracket)) {
           return { error: new Error('Invalid operator sequence') }
         }
@@ -1295,7 +1342,9 @@ export default class CustomColumnModal extends React.Component {
     )
   }
 
-  isFormulaAlreadyWrapped = (arr) => arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET && arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
+  isFormulaAlreadyWrapped = (arr) =>
+    arr?.[0]?.value === CustomColumnValues.LEFT_BRACKET &&
+    arr?.[arr.length - 1]?.value === CustomColumnValues.RIGHT_BRACKET
 
   addColumnToFormula = (col, columnFn, lastTerm) => {
     // User-created custom columns (have columnFnArray) are always inserted as a single atomic
@@ -1334,8 +1383,10 @@ export default class CustomColumnModal extends React.Component {
       if (this.isComplexColumn(col)) {
         // Only add brackets if: (1) not adjacent-wrapped in formula, and (2) column not already wrapped
         if (
-          !(columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
-            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET) &&
+          !(
+            columnFn[chunkIndex - 1]?.value === CustomColumnValues.LEFT_BRACKET &&
+            columnFn[chunkIndex + 1]?.value === CustomColumnValues.RIGHT_BRACKET
+          ) &&
           !this.isFormulaAlreadyWrapped(col?.columnFnArray)
         ) {
           columnFn.splice(chunkIndex + 1, 0, { type: 'operator', value: CustomColumnValues.RIGHT_BRACKET })
@@ -1662,15 +1713,25 @@ export default class CustomColumnModal extends React.Component {
     fnToken.groupby = this.state.selectedFnGroupby
     fnToken.having = this.state.selectedFnHaving
     fnToken.operator = this.state.selectedFnOperator
-    fnToken.operatorValue = this.state.selectedFnOperatorValue != null ? String(this.state.selectedFnOperatorValue) : null
+    fnToken.operatorValue =
+      this.state.selectedFnOperatorValue != null ? String(this.state.selectedFnOperatorValue) : null
     fnToken.orderby = this.state.selectedFnOrderBy
     fnToken.orderbyDirection = this.state.selectedFnOrderByDirection
     fnToken.rowsOrRange = this.state.selectedFnRowsOrRange
     fnToken.rowsOrRangeOptionPre = this.state.selectedFnRowsOrRangeOptionPre
-    fnToken.rowsOrRangeOptionPreNValue = this.state.selectedFnRowsOrRangeOptionPreNValue != null ? String(this.state.selectedFnRowsOrRangeOptionPreNValue) : null
+    fnToken.rowsOrRangeOptionPreNValue =
+      this.state.selectedFnRowsOrRangeOptionPreNValue != null
+        ? String(this.state.selectedFnRowsOrRangeOptionPreNValue)
+        : null
     fnToken.rowsOrRangeOptionPost = this.state.selectedFnRowsOrRangeOptionPost
-    fnToken.rowsOrRangeOptionPostNValue = this.state.selectedFnRowsOrRangeOptionPostNValue != null ? String(this.state.selectedFnRowsOrRangeOptionPostNValue) : null
-    fnToken.movingAvgTimeInterval = this.state.selectedFnMovingAverageTimeInterval != null ? String(this.state.selectedFnMovingAverageTimeInterval) : null
+    fnToken.rowsOrRangeOptionPostNValue =
+      this.state.selectedFnRowsOrRangeOptionPostNValue != null
+        ? String(this.state.selectedFnRowsOrRangeOptionPostNValue)
+        : null
+    fnToken.movingAvgTimeInterval =
+      this.state.selectedFnMovingAverageTimeInterval != null
+        ? String(this.state.selectedFnMovingAverageTimeInterval)
+        : null
 
     columnFn.push(fnToken)
 
@@ -1709,6 +1770,8 @@ export default class CustomColumnModal extends React.Component {
       !!this.state.selectedFnOrderBy &&
       !!this.state.selectedFnMovingAverageTimeInterval &&
       this.state.selectedFnMovingAverageTimeInterval > 0
+    // Median only needs a column - the backend fills in the OVER clause
+    const medianComplete = this.state.selectedFnOperation === CustomColumnValues.MEDIAN && !!this.state.selectedFnColumn
     const cumulateiveSumComplete =
       this.state.selectedFnOperation === CustomColumnValues.CUMULATIVE_SUM &&
       !!this.state.selectedFnColumn &&
@@ -1728,6 +1791,7 @@ export default class CustomColumnModal extends React.Component {
       totalPercentComplete ||
       rankComplete ||
       movingAvgComplete ||
+      medianComplete ||
       cumulateiveSumComplete ||
       cumulateivePercentComplete ||
       changeComplete
@@ -1776,14 +1840,7 @@ export default class CustomColumnModal extends React.Component {
 
   renderColumnTypeSelector = () => {
     // Simplified column type selector for now; preserves parseability.
-    return (
-      <Input
-        ref={(r) => (this.inputRef = r)}
-        focusOnMount
-        label='Formatting'
-        value={this.getColumnType()}
-      />
-    )
+    return <Input ref={(r) => (this.inputRef = r)} focusOnMount label='Formatting' value={this.getColumnType()} />
   }
 
   renderCustomNumberInput = (chunk, i) => {
@@ -1845,7 +1902,10 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // If not resolved, attempt a fuzzy substring match (handles minor SQL formatting differences)
-    if ((selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) && colFromChunk) {
+    if (
+      (selectedValue == null || !selectableColumns.some((c) => String(c.field) === String(selectedValue))) &&
+      colFromChunk
+    ) {
       const rawTarget2 = colFromChunk.table_column || colFromChunk.name || colFromChunk.display_name || ''
       const normalizedTarget2 = this.stripCoalesceWrapper(String(rawTarget2)).trim()
       if (normalizedTarget2) {
@@ -1862,7 +1922,8 @@ export default class CustomColumnModal extends React.Component {
     }
 
     // If selectedValue doesn't match a field, try resolving by matching token value to known column SQL/name/display_name.
-    const hasFieldMatch = selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
+    const hasFieldMatch =
+      selectedValue != null && selectableColumns.some((c) => String(c.field) === String(selectedValue))
     if (!hasFieldMatch && selectedValue != null) {
       let resolved = selectableColumns.find((c) => {
         try {
@@ -2127,139 +2188,134 @@ export default class CustomColumnModal extends React.Component {
             </div>
           )}
         </div>
-        <div style={{ minWidth: '300px' }}>
-          {(columnFn.length === 0 || columnFn?.some((op) => op?.fn === undefined || op?.fn?.length === 0)) && (
-            <>
-              {!this.state.isFunctionConfigModalVisible && (
-                <span className='react-autoql-formula-builder-column-container'>
-                  <div className='react-autoql-formula-builder-column-selection-container'>
-                    <div className='react-autoql-input-label'>Variables</div>
-                    <div className='react-autoql-formula-builder-calculator-buttons-container'>
-                      {getSelectableColumns(this.props.columns)?.map((col, i) => {
-                        return (
-                          <Button
-                            key={`react-autoql-column-select-button-${i}`}
-                            className='react-autoql-formula-calculator-button'
-                            icon='table'
-                            disabled={
-                              lastTerm?.type === CustomColumnTypes.COLUMN ||
-                              lastTerm?.type === CustomColumnTypes.NUMBER ||
-                              lastTerm?.value === CustomColumnValues.RIGHT_BRACKET
-                            }
-                            onClick={() => {
-                              this.addColumnToFormula(col, columnFn, lastTerm)
-                              this.setState({ columnFn })
-                            }}
-                          >
-                            {col.display_name}
-                          </Button>
-                        )
-                      })}
-                      <Button
-                        key={`react-autoql-column-select-button-custom-number`}
-                        className='react-autoql-formula-calculator-button'
-                        disabled={
-                          lastTerm?.type === CustomColumnTypes.COLUMN ||
-                          lastTerm?.type === CustomColumnTypes.NUMBER ||
-                          lastTerm?.value === CustomColumnValues.RIGHT_BRACKET
+        {(columnFn.length === 0 || columnFn?.some((op) => op?.fn === undefined || op?.fn?.length === 0)) &&
+          !this.state.isFunctionConfigModalVisible && (
+            <div style={{ minWidth: '300px' }}>
+              <span className='react-autoql-formula-builder-column-container'>
+                <div className='react-autoql-formula-builder-column-selection-container'>
+                  <div className='react-autoql-input-label'>Variables</div>
+                  <div className='react-autoql-formula-builder-calculator-buttons-container'>
+                    {getSelectableColumns(this.props.columns)?.map((col, i) => {
+                      return (
+                        <Button
+                          key={`react-autoql-column-select-button-${i}`}
+                          className='react-autoql-formula-calculator-button'
+                          icon='table'
+                          disabled={
+                            lastTerm?.type === CustomColumnTypes.COLUMN ||
+                            lastTerm?.type === CustomColumnTypes.NUMBER ||
+                            lastTerm?.value === CustomColumnValues.RIGHT_BRACKET
+                          }
+                          onClick={() => {
+                            this.addColumnToFormula(col, columnFn, lastTerm)
+                            this.setState({ columnFn })
+                          }}
+                        >
+                          {col.display_name}
+                        </Button>
+                      )
+                    })}
+                    <Button
+                      key={`react-autoql-column-select-button-custom-number`}
+                      className='react-autoql-formula-calculator-button'
+                      disabled={
+                        lastTerm?.type === CustomColumnTypes.COLUMN ||
+                        lastTerm?.type === CustomColumnTypes.NUMBER ||
+                        lastTerm?.value === CustomColumnValues.RIGHT_BRACKET
+                      }
+                      onClick={() => {
+                        const newChunk = {
+                          type: 'number',
+                          value: undefined,
+                          id: uuid(),
                         }
-                        onClick={() => {
-                          const newChunk = {
-                            type: 'number',
-                            value: undefined,
-                            id: uuid(),
-                          }
 
-                          if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
-                            // Replace current variable
-                            columnFn[columnFn.length - 1] = newChunk
-                          } else {
-                            // Add new variable
-                            columnFn.push(newChunk)
-                          }
+                        if (lastTerm && lastTerm.type !== CustomColumnTypes.OPERATOR) {
+                          // Replace current variable
+                          columnFn[columnFn.length - 1] = newChunk
+                        } else {
+                          // Add new variable
+                          columnFn.push(newChunk)
+                        }
 
-                          this.setState({ columnFn }, () => {
-                            // Focus number input after adding it
-                            this.numberInputRefs[newChunk.id]?.focus()
-                          })
-                        }}
-                      >
-                        Custom Number...
-                      </Button>
-                    </div>
+                        this.setState({ columnFn }, () => {
+                          // Focus number input after adding it
+                          this.numberInputRefs[newChunk.id]?.focus()
+                        })
+                      }}
+                    >
+                      Custom Number...
+                    </Button>
                   </div>
-                  <div className='react-autoql-formula-builder-calculator-container'>
-                    <div className='react-autoql-input-label'>Operators</div>
-                    <div className='react-autoql-formula-builder-calculator-buttons-container'>
-                      {supportedOperators?.map((op) => {
-                        const buttonElement = (
-                          <Button
-                            key={`react-autoql-formula-calculator-button-${op}`}
-                            className='react-autoql-formula-calculator-button'
-                            disabled={this.shouldDisableOperator(op)}
-                            style={{
-                              width: `${FUNCTION_OPERATORS.includes(op) ? '-webkit-fill-available' : 'undefined'}`,
-                            }}
-                            onClick={() => {
-                              if (FUNCTION_OPERATORS.includes(op)) {
-                                return this.setState({
-                                  selectedFnOperation: op,
-                                  isFunctionConfigModalVisible: true,
-                                  selectedFnType: null,
-                                  selectedFnColumn: null,
-                                  selectedFnNTileNumber: null,
-                                  selectedFnGroupby: null,
-                                  selectedFnHaving: null,
-                                  selectedFnOperator: null,
-                                  selectedFnOperatorValue: null,
-                                  selectedFnOrderBy: null,
-                                  selectedFnOrderByDirection: null,
-                                  selectedFnRowsOrRange: null,
-                                  selectedFnRowsOrRangeOptionPre: null,
-                                  selectedFnRowsOrRangeOptionPost: null,
-                                  selectedFnMovingAverageTimeInterval: null,
-                                })
-                              }
+                </div>
+                <div className='react-autoql-formula-builder-calculator-container'>
+                  <div className='react-autoql-input-label'>Operators</div>
+                  <div className='react-autoql-formula-builder-calculator-buttons-container'>
+                    {supportedOperators?.map((op) => {
+                      const buttonElement = (
+                        <Button
+                          key={`react-autoql-formula-calculator-button-${op}`}
+                          className='react-autoql-formula-calculator-button'
+                          disabled={this.shouldDisableOperator(op)}
+                          style={{
+                            width: `${FUNCTION_OPERATORS.includes(op) ? '-webkit-fill-available' : 'undefined'}`,
+                          }}
+                          onClick={() => {
+                            if (FUNCTION_OPERATORS.includes(op)) {
+                              return this.setState({
+                                selectedFnOperation: op,
+                                isFunctionConfigModalVisible: true,
+                                selectedFnType: null,
+                                selectedFnColumn: null,
+                                selectedFnNTileNumber: null,
+                                selectedFnGroupby: null,
+                                selectedFnHaving: null,
+                                selectedFnOperator: null,
+                                selectedFnOperatorValue: null,
+                                selectedFnOrderBy: null,
+                                selectedFnOrderByDirection: null,
+                                selectedFnRowsOrRange: null,
+                                selectedFnRowsOrRangeOptionPre: null,
+                                selectedFnRowsOrRangeOptionPost: null,
+                                selectedFnMovingAverageTimeInterval: null,
+                              })
+                            }
 
-                              const newChunk = {
-                                type: 'operator',
-                                value: op,
-                              }
+                            const newChunk = {
+                              type: 'operator',
+                              value: op,
+                            }
 
-                              if (
-                                lastTerm &&
-                                lastTerm?.type === CustomColumnTypes.OPERATOR &&
-                                lastTerm?.value !== CustomColumnValues.RIGHT_BRACKET &&
-                                op !== CustomColumnValues.LEFT_BRACKET &&
-                                op !== CustomColumnValues.RIGHT_BRACKET
-                              ) {
-                                // Replace current operator
-                                columnFn[columnFn.length - 1] = newChunk
-                              } else {
-                                // Add new operator
-                                columnFn.push(newChunk)
-                              }
+                            if (
+                              lastTerm &&
+                              lastTerm?.type === CustomColumnTypes.OPERATOR &&
+                              lastTerm?.value !== CustomColumnValues.RIGHT_BRACKET &&
+                              op !== CustomColumnValues.LEFT_BRACKET &&
+                              op !== CustomColumnValues.RIGHT_BRACKET
+                            ) {
+                              // Replace current operator
+                              columnFn[columnFn.length - 1] = newChunk
+                            } else {
+                              // Add new operator
+                              columnFn.push(newChunk)
+                            }
 
-                              this.setState({ columnFn })
-                            }}
-                          >
-                            {this.getLabelForOperator(this.OPERATORS[op])}
-                          </Button>
-                        )
+                            this.setState({ columnFn })
+                          }}
+                        >
+                          {this.getLabelForOperator(this.OPERATORS[op])}
+                        </Button>
+                      )
 
-                        return buttonElement
-                      })}
-                    </div>
+                      return buttonElement
+                    })}
                   </div>
-                </span>
-              )}
-            </>
+                </div>
+              </span>
+            </div>
           )}
-        </div>
         {this.state.isFunctionConfigModalVisible && (
-          <div style={{ height: '100%' }}>
-            {this.renderFunctionConfigModalContent()}
-          </div>
+          <div style={{ height: '100%' }}>{this.renderFunctionConfigModalContent()}</div>
         )}
       </div>
     )
@@ -2642,6 +2698,32 @@ export default class CustomColumnModal extends React.Component {
                   outlined={true}
                 />
               </div>
+            </>
+          )}
+          {this.state.selectedFnOperation === CustomColumnValues.MEDIAN && (
+            <>
+              <div>Median</div>
+              <div>
+                <Select
+                  label='Median Column'
+                  isRequired={true}
+                  className='custom-column-window-fn-selector'
+                  value={this.state.selectedFnColumn ?? null}
+                  onChange={(selectedFnColumn) => {
+                    this.setState({ selectedFnColumn })
+                  }}
+                  positions={['bottom', 'top', 'right', 'left']}
+                  options={numericalColumns.map((col) => {
+                    return {
+                      value: col.field,
+                      label: col.title,
+                      listLabel: col.title,
+                      icon: 'table',
+                    }
+                  })}
+                />
+              </div>
+              {/* No partition/order-by/rows-range options for median - the backend fills in the OVER clause */}
             </>
           )}
           {this.state.selectedFnOperation === CustomColumnValues.MOVING_AVG && (

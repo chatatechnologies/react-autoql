@@ -639,6 +639,22 @@ describe('Dashboard.addTile — DM response handling', () => {
     queryId: 'dm-qid-1',
   }
 
+  test('strips queryResponse when isEditing=true and tile has no queryId (pre-feature tile)', () => {
+    const mockOnChange = jest.fn(() => Promise.resolve())
+    const wrapper = setup({ isEditing: true, onChange: mockOnChange })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    const { queryId: _qid, ...contentWithoutQueryId } = dmContent
+    instance.addTile(contentWithoutQueryId)
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.query).toBe('SELECT * FROM sales')
+    expect(addedTile.queryResponse).toBeUndefined()
+    expect(addedTile.queryId).toBe('dm-qid-1')
+  })
+
   test('preserves queryResponse when isEditing=true and tile already has queryId', () => {
     const wrapper = setup({ isEditing: true })
     const instance = wrapper.instance()
@@ -769,23 +785,25 @@ describe('Dashboard.addTile — DM response handling', () => {
 //   isFailed — possible on ANY tile with a non-2xx reference_id or items response
 //   New tiles can NEVER be dirty (no saved state to diff against)
 //   New dashboards can NEVER have dirty tiles (uneditedDashboardTiles is empty)
+//   Malformed reference_id (no dot separator) is treated as a failure the same as a 4xx code
 //
-// ┌──────────────┬──────────────┬────────────────────────────┬────────┬────────┬──────────────┐
-// │ Dashboard    │ Tile         │ Scenario                   │isDirty │isFailed│ save disabled│
-// ├──────────────┼──────────────┼────────────────────────────┼────────┼────────┼──────────────┤
-// │ New          │ New          │ Success run                │ false  │ false  │     no       │
-// │ New          │ New          │ DB/server error            │ false  │ true   │     yes      │
-// │ New          │ New          │ Disambiguation (items)     │ false  │ true   │     yes      │
-// │ Existing     │ New (added)  │ Success run                │ false  │ false  │     no       │
-// │ Existing     │ New (added)  │ DB/server error            │ false  │ true   │     yes      │
-// │ Existing     │ Existing     │ Success, query unchanged   │ false  │ false  │     no       │
-// │ Existing     │ Existing     │ Query text changed, no run │ true   │ false  │     yes      │
-// │ Existing     │ Existing     │ Query re-run → success     │ false  │ false  │     no       │
-// │ Existing     │ Existing     │ DB/server error            │ false  │ true   │     yes      │
-// │ Existing     │ Existing     │ Timeout (422)              │ false  │ true   │     yes      │
-// │ Existing     │ Existing     │ Disambiguation (items)     │ true   │ true   │     yes      │
-// │ Existing     │ Existing     │ Replacements               │ true   │ false  │     yes      │
-// └──────────────┴──────────────┴────────────────────────────┴────────┴────────┴──────────────┘
+// ┌──────────────┬──────────────┬─────────────────────────────────────────┬────────┬────────┬──────────────┐
+// │ Dashboard    │ Tile         │ Scenario                                │isDirty │isFailed│ save disabled│
+// ├──────────────┼──────────────┼─────────────────────────────────────────┼────────┼────────┼──────────────┤
+// │ New          │ New          │ Success run                             │ false  │ false  │     no       │
+// │ New          │ New          │ DB/server error                         │ false  │ true   │     yes      │
+// │ New          │ New          │ Disambiguation (items)                  │ false  │ true   │     yes      │
+// │ Existing     │ New (added)  │ Success run                             │ false  │ false  │     no       │
+// │ Existing     │ New (added)  │ DB/server error                         │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Success, query unchanged                │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ Query text changed, no run              │ true   │ false  │     yes      │
+// │ Existing     │ Existing     │ Query re-run → success                  │ false  │ false  │     no       │
+// │ Existing     │ Existing     │ DB/server error                         │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Timeout (422)                           │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Malformed reference_id (no dot)         │ false  │ true   │     yes      │
+// │ Existing     │ Existing     │ Disambiguation (items)                  │ true   │ true   │     yes      │
+// │ Existing     │ Existing     │ Replacements                            │ true   │ false  │     yes      │
+// └──────────────┴──────────────┴─────────────────────────────────────────┴────────┴────────┴──────────────┘
 describe('edit-mode state matrix', () => {
   const successResponse = { data: { reference_id: '1.1.200', data: { rows: [[1]], count_rows: 1 } } }
   const errorResponse = { data: { reference_id: '1.1.400', data: {} } }
@@ -921,6 +939,13 @@ describe('edit-mode state matrix', () => {
       expect(i.getFailedTiles().has('tile-1')).toBe(false)
       expect(i.hasDirtyTiles()).toBe(true)
     })
+
+    test('malformed reference_id (no dot): not dirty, failed, save disabled', () => {
+      const malformedResponse = { data: { reference_id: '400', data: {} } }
+      const i = setupExisting({ queryResponse: malformedResponse })
+      expect(i.getDirtyTileKeys().has('tile-1')).toBe(false)
+      expect(i.getFailedTiles().has('tile-1')).toBe(true)
+    })
   })
 })
 
@@ -1006,6 +1031,24 @@ describe('Dashboard.getDirtyTileKeys', () => {
   test('does NOT mark dirty when queryResponse has neither replacements nor items', () => {
     expect(
       setupDirtyTest({ queryResponse: { data: { data: { rows: [[1]], replacements: undefined, items: undefined } } } }).has('tile-abc'),
+    ).toBe(false)
+  })
+
+  test('marks dirty when secondQueryResponse contains replacements', () => {
+    expect(
+      setupDirtyTest({ secondQueryResponse: { data: { data: { replacements: [{ text: 'revenue by month' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('marks dirty when secondQueryResponse contains items', () => {
+    expect(
+      setupDirtyTest({ secondQueryResponse: { data: { data: { items: [{ label: 'Region' }] } } } }).has('tile-abc'),
+    ).toBe(true)
+  })
+
+  test('does NOT mark dirty when secondQueryResponse has no replacements or items', () => {
+    expect(
+      setupDirtyTest({ secondQueryResponse: { data: { data: { rows: [[2]] } } } }).has('tile-abc'),
     ).toBe(false)
   })
 
@@ -1185,6 +1228,7 @@ describe('Dashboard.baselineQueryIds — tracks executed queryIds', () => {
     instance.getMostRecentTiles = jest.fn(() => [{ ...savedTile, queryId: 'qid-after-run', query: 'sales by product' }])
     expect(instance.getDirtyTileKeys().has('tile-abc')).toBe(true)
   })
+
 })
 
 describe('Dashboard.getFailedTiles', () => {
@@ -1227,5 +1271,333 @@ describe('Dashboard.getFailedTiles', () => {
 
   test('flags a tile whose queryResponse has no reference_id (NaN path)', () => {
     expect(setupFailedTest({ queryResponse: { data: { data: { rows: [] } } } }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a tile with a malformed reference_id that has no dot separator', () => {
+    expect(setupFailedTest({ queryResponse: { data: { reference_id: '400' } } }).has('tile-1')).toBe(true)
+  })
+
+  test('flags a split-view tile whose secondQueryResponse is an error (top query succeeded)', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: errorResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('flags a split-view tile whose secondQueryResponse is a timeout (top query succeeded)', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: timeoutResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('flags a split-view tile whose secondQueryResponse has items (top query succeeded)', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: suggestionsResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('flags a split-view tile with no top queryResponse when secondQueryResponse fails', () => {
+    expect(
+      setupFailedTest({ secondQuery: 'q2', secondQueryResponse: errorResponse }).has('tile-1'),
+    ).toBe(true)
+  })
+
+  test('does NOT flag a split-view tile when both responses succeed', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQuery: 'q2', secondQueryResponse: successResponse }).has('tile-1'),
+    ).toBe(false)
+  })
+
+  test('does NOT flag a tile based on secondQueryResponse when secondQuery is absent', () => {
+    expect(
+      setupFailedTest({ queryResponse: successResponse, secondQueryResponse: errorResponse }).has('tile-1'),
+    ).toBe(false)
+  })
+})
+
+describe('Dashboard.redo', () => {
+  const tile = (overrides = {}) => ({
+    i: 'tile-1', key: 'tile-1', query: 'SELECT 1', x: 0, y: 0, w: 4, h: 4,
+    tableFilters: [], filters: [], columnSelects: [], columns: [], orders: [],
+    ...overrides,
+  })
+
+  test('does nothing when not in edit mode', () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ tiles: [tile()], isEditing: false, onChange })
+    const instance = wrapper.instance()
+
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    instance.currentLogIndex = 1
+
+    instance.redo()
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test('moves currentLogIndex backward (toward newer state) and fires onChange', () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ tiles: [tile()], isEditing: true, onChange })
+    const instance = wrapper.instance()
+
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    instance.currentLogIndex = 1
+
+    instance.redo()
+
+    expect(instance.currentLogIndex).toBe(0)
+    expect(onChange).toHaveBeenCalled()
+    const [calledWith] = onChange.mock.calls[0]
+    expect(calledWith[0].tableFilters).toEqual([])
+  })
+
+  test('is a no-op when already at the newest state (index 0)', () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ tiles: [tile()], isEditing: true, onChange })
+    const instance = wrapper.instance()
+
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    instance.currentLogIndex = 0
+
+    instance.redo()
+
+    // changeCurrentTileState(-1) finds no entry at index -1 — onChange must not fire
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('Dashboard.deleteTile', () => {
+  const tile = (id, overrides = {}) => ({
+    i: id, key: id, query: 'SELECT 1', x: 0, y: 0, w: 4, h: 4, ...overrides,
+  })
+
+  test('removes the tile with the given id', () => {
+    const wrapper = setup({ tiles: [tile('a'), tile('b'), tile('c')] })
+    const instance = wrapper.instance()
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+    instance.getMostRecentTiles = jest.fn(() => [tile('a'), tile('b'), tile('c')])
+
+    instance.deleteTile('b')
+
+    const [remaining] = debouncedOnChange.mock.calls[0]
+    expect(remaining).toHaveLength(2)
+    expect(remaining.map((t) => t.i)).toEqual(['a', 'c'])
+  })
+
+  test('is a no-op when the id does not exist (tile list unchanged)', () => {
+    const wrapper = setup({ tiles: [tile('a'), tile('b')] })
+    const instance = wrapper.instance()
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+    instance.getMostRecentTiles = jest.fn(() => [tile('a'), tile('b')])
+
+    instance.deleteTile('z')
+
+    const [remaining] = debouncedOnChange.mock.calls[0]
+    expect(remaining).toHaveLength(2)
+  })
+
+  test('leaves an empty array when the last tile is deleted', () => {
+    const wrapper = setup({ tiles: [tile('solo')] })
+    const instance = wrapper.instance()
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+    instance.getMostRecentTiles = jest.fn(() => [tile('solo')])
+
+    instance.deleteTile('solo')
+
+    const [remaining] = debouncedOnChange.mock.calls[0]
+    expect(remaining).toHaveLength(0)
+  })
+})
+
+describe('Dashboard.discardChanges', () => {
+  const tile = (overrides = {}) => ({
+    i: 'tile-1', key: 'tile-1', query: 'SELECT 1', x: 0, y: 0, w: 4, h: 4,
+    tableFilters: [], filters: [], columnSelects: [], columns: [], orders: [],
+    ...overrides,
+  })
+
+  test('restores uneditedDashboardTiles and resets the log to a single entry', () => {
+    const savedTile = tile()
+    const wrapper = setup({ tiles: [tile({ tableFilters: ['f1'] })], isEditing: true })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+
+    instance.addTileStateToLog([tile({ tableFilters: ['f2'] })])
+    expect(instance.tileLog.length).toBeGreaterThan(1)
+
+    instance.debouncedOnChange = jest.fn()
+    instance.discardChanges()
+
+    expect(instance.tileLog).toHaveLength(1)
+    expect(instance.currentLogIndex).toBe(0)
+  })
+
+  test('calls debouncedOnChange with the unedited tiles', () => {
+    const savedTile = tile()
+    const wrapper = setup({ tiles: [tile({ tableFilters: ['f1'] })], isEditing: true })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+
+    instance.discardChanges()
+
+    expect(debouncedOnChange).toHaveBeenCalled()
+    const [restoredTiles] = debouncedOnChange.mock.calls[0]
+    expect(restoredTiles[0].tableFilters).toEqual([])
+  })
+
+  test('calls stopEditingCallback when provided', () => {
+    const stopEditingCallback = jest.fn()
+    const savedTile = tile()
+    const wrapper = setup({ tiles: [savedTile], isEditing: true, stopEditingCallback })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: [savedTile] })
+    instance.debouncedOnChange = jest.fn()
+
+    instance.discardChanges()
+
+    expect(stopEditingCallback).toHaveBeenCalled()
+  })
+
+  test('falls back to tileLog[0] when uneditedDashboardTiles is null', () => {
+    const wrapper = setup({ tiles: [tile({ tableFilters: ['f1'] })], isEditing: true })
+    const instance = wrapper.instance()
+    wrapper.setState({ uneditedDashboardTiles: null })
+    instance.tileLog = [[tile()], [tile({ tableFilters: ['f1'] })]]
+    const debouncedOnChange = jest.fn()
+    instance.debouncedOnChange = debouncedOnChange
+
+    instance.discardChanges()
+
+    expect(debouncedOnChange).toHaveBeenCalled()
+    expect(instance.tileLog).toHaveLength(1)
+  })
+})
+
+describe('Dashboard.setIsDragging', () => {
+  // setIsDragging guards on this.isDragging (instance var, set synchronously) rather than
+  // this.state.isDragging (async). The bug it fixes: when setIsDragging(true) queues a
+  // setState and setIsDragging(false) fires 50 ms later before React commits that state,
+  // the old guard `isDragging !== this.state.isDragging` evaluated false and dropped the call,
+  // leaving pointer-events:none on tile inner divs permanently.
+
+  test('sets isDragging to true in state', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.setIsDragging(true)
+
+    expect(wrapper.state('isDragging')).toBe(true)
+  })
+
+  test('sets isDragging to false in state', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.setIsDragging(true)
+    instance.setIsDragging(false)
+
+    expect(wrapper.state('isDragging')).toBe(false)
+  })
+
+  test('no-op when called with the same value it already holds', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const setStateSpy = jest.spyOn(instance, 'setState')
+
+    // Initial value is false — calling with false again must not call setState.
+    instance.setIsDragging(false)
+
+    expect(setStateSpy).not.toHaveBeenCalled()
+  })
+
+  test('no-op when called with the same value twice in a row', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.setIsDragging(true)
+
+    const setStateSpy = jest.spyOn(instance, 'setState')
+    instance.setIsDragging(true) // second call with same value
+
+    expect(setStateSpy).not.toHaveBeenCalled()
+  })
+
+  // Core regression test: simulates the race condition where setIsDragging(false) fires
+  // before React commits the isDragging:true state (state still shows false).
+  test('race condition — setIsDragging(false) fires before state commits isDragging:true', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    // Step 1: setIsDragging(true) updates the instance var synchronously and queues setState.
+    instance.setIsDragging(true)
+
+    // Step 2: Simulate React NOT having committed the state yet by manually resetting
+    // state.isDragging back to false (as if the setState batch hasn't flushed).
+    wrapper.setState({ isDragging: false })
+
+    // Step 3: setIsDragging(false) fires (the 50 ms timeout from AQLP-792).
+    // With the old guard `isDragging !== this.state.isDragging`, this was a no-op
+    // because `false !== false` evaluated to false.  With the new guard (instance var only)
+    // it must proceed and queue setState({ isDragging: false }).
+    const setStateSpy = jest.spyOn(instance, 'setState')
+    instance.setIsDragging(false)
+
+    expect(setStateSpy).toHaveBeenCalledWith({ isDragging: false })
+  })
+
+  test('does nothing when component is unmounted (_isMounted false)', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = false
+
+    const setStateSpy = jest.spyOn(instance, 'setState')
+    instance.setIsDragging(true)
+
+    expect(setStateSpy).not.toHaveBeenCalled()
+  })
+
+  test('componentDidUpdate toggle: isDragging returns to false after isEditing changes', () => {
+    jest.useFakeTimers()
+
+    const wrapper = setup({ isEditing: false })
+    const instance = wrapper.instance()
+
+    // Simulate isEditing changing from false to true (as the portal does without remounting).
+    wrapper.setProps({ isEditing: true })
+
+    // Immediately after the prop update isDragging should be true.
+    expect(wrapper.state('isDragging')).toBe(true)
+
+    // After the 50 ms timeout it must have cleared itself.
+    jest.advanceTimersByTime(50)
+    expect(wrapper.state('isDragging')).toBe(false)
+
+    jest.useRealTimers()
+  })
+
+  test('isEditing toggle does not leave isDragging stuck when rapid prop updates occur', () => {
+    jest.useFakeTimers()
+
+    const wrapper = setup({ isEditing: false })
+    const instance = wrapper.instance()
+
+    // First toggle: false -> true
+    wrapper.setProps({ isEditing: true })
+    expect(wrapper.state('isDragging')).toBe(true)
+
+    // Second toggle before timer fires: true -> false
+    wrapper.setProps({ isEditing: false })
+
+    // Advance past both possible timeouts.
+    jest.advanceTimersByTime(100)
+
+    // isDragging must not be stuck true.
+    expect(wrapper.state('isDragging')).toBe(false)
+
+    jest.useRealTimers()
   })
 })

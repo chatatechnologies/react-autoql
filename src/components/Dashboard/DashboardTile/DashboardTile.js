@@ -56,6 +56,7 @@ export class DashboardTile extends React.Component {
     this.paramsToSet = {}
     this.callbackArray = []
     this.wasFilteringBeforeRemount = false
+    this.wasBottomFilteringBeforeRemount = false
 
     // Store original saved tile config from DB to restore after errors
     this.savedTileConfig = {}
@@ -67,6 +68,8 @@ export class DashboardTile extends React.Component {
       'tableFilters',
       'axisSorts',
       'networkColumnConfig',
+      'columnOrder',
+      'frozenColumns',
     ]
 
     const tile = props.tile
@@ -129,6 +132,8 @@ export class DashboardTile extends React.Component {
       orders: PropTypes.array,
       axisSorts: PropTypes.array,
       networkColumnConfig: PropTypes.any,
+      columnOrder: PropTypes.arrayOf(PropTypes.string),
+      frozenColumns: PropTypes.arrayOf(PropTypes.string),
       chartControls: PropTypes.object,
       legendFilterConfig: PropTypes.any,
       queryResponse: PropTypes.shape({}),
@@ -254,6 +259,14 @@ export class DashboardTile extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // OptionsToolbar remounts on every view<->edit toggle and reads this at construction time, so keep it live.
+    if (this.state.responseRef?._isMounted) {
+      this.wasFilteringBeforeRemount = !!this.state.responseRef.isFilteringTable()
+    }
+    if (this.state.secondResponseRef?._isMounted) {
+      this.wasBottomFilteringBeforeRemount = !!this.state.secondResponseRef.isFilteringTable()
+    }
+
     // If query or title change from props (due to undo for example), update state
     if (this.props.tile?.title !== prevProps.tile?.title) {
       this.setState({ title: this.props.tile?.title })
@@ -273,12 +286,32 @@ export class DashboardTile extends React.Component {
     if (this.props.tile?.projectId !== prevProps.tile?.projectId && this.isQueryValid(this.props.tile?.query)) {
       this.processTile({ query: this.props.tile.query })
     }
+    if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
+      this.setState({ localRTFilterResponse: null })
+    }
+    if (
+      !prevProps.isEditing &&
+      this.props.isEditing &&
+      (this.state.localRTFilterResponse || this.state.viewModeFiltersDiffer)
+    ) {
+      // View-mode RT edits or header filters changed the displayed data — refetch base data for edit mode
+      if (this.state.viewModeFiltersDiffer) this._forceRemountOnNextResponse = true
+      this.setState({ localRTFilterResponse: null, viewModeFiltersDiffer: false })
+      this.processTile()?.catch?.(() => {}) // errors already surface via tile state; just avoid an unhandled rejection
+    }
+
     const prevQR = prevProps.tile?.queryResponse
     const nextQR = this.props.tile?.queryResponse
     const prevQRId = prevQR?.data?.data?.query_id
     const nextQRId = nextQR?.data?.data?.query_id
-    if (nextQR && !this.state.isTopExecuting && (prevQR === null || (prevQR && prevQRId !== nextQRId))) {
-      this.wasFilteringBeforeRemount = this.state.responseRef?.isFilteringTable() || false
+    // Self-reported query_id changes (onColumnChange) must not remount, or in-memory column state (frozen/drag-order) is lost
+    const isSelfColumnChange = !!nextQRId && nextQRId === this._columnChangeQueryId
+    if (
+      nextQR &&
+      nextQR !== prevQR &&
+      !this.state.isTopExecuting &&
+      (prevQR === null || (prevQR && prevQRId !== nextQRId && !isSelfColumnChange))
+    ) {
       this.setState({ queryResponseVersion: this.state.queryResponseVersion + 1 })
     }
 
@@ -353,12 +386,19 @@ export class DashboardTile extends React.Component {
     }
 
     clearTimeout(this.setParamsForTileTimeout)
-    this.setParamsForTileTimeout = setTimeout(() => {
+    const flush = () => {
       if (!this._isMounted) return
       this.props.setParamsForTile(this.paramsToSet, this.props.tile.i, _cloneDeep(this.callbackArray))
       this.paramsToSet = {}
       this.callbackArray = []
-    }, this.debounceTime)
+    }
+
+    // queryId must reach the parent immediately so an in-flight dashboard save doesn't ship a stale value.
+    if ('queryId' in params) {
+      flush()
+    } else {
+      this.setParamsForTileTimeout = setTimeout(flush, this.debounceTime)
+    }
   }
 
   getFilteredProps = (props) => {
@@ -441,10 +481,14 @@ export class DashboardTile extends React.Component {
 
   setTopExecuted = () => {
     if (this._isMounted) {
-      this.setState({
+      // Applied here (once the refetch settles) since componentDidUpdate's isTopExecuting-gated branch never fires for it.
+      const shouldForceRemount = this._forceRemountOnNextResponse
+      this._forceRemountOnNextResponse = false
+      this.setState((prevState) => ({
         isTopExecuting: false,
         isTopExecuted: true,
-      })
+        queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
+      }))
     }
   }
 
@@ -472,11 +516,41 @@ export class DashboardTile extends React.Component {
   shouldShowDirtyBadge = () => {
     if (!this.props.isEditing || this.props.isFailed) return false
     if (!this.props.isDirty) return false
+    if (this.props.tile?.splitView) return false // split view uses per-pane banners
     const { tile } = this.props
     if (tile?.queryId) return true
     if (tile?.queryResponse?.data?.data?.replacements) return true
     if (tile?.queryResponse?.data?.data?.items) return true
     return false
+  }
+
+  // Returns 'dirty', 'failed', or null for a split-view pane (isTopHalf=true → top query).
+  getPaneBannerType = (isTopHalf) => {
+    if (!this.props.isEditing) return null
+    const { tile } = this.props
+    if (!tile?.splitView) return null
+
+    const response = isTopHalf ? tile?.queryResponse : tile?.secondQueryResponse
+
+    if (this.props.isFailed && this.hasError(response)) return 'failed'
+
+    if (!this.props.isDirty) return null
+
+    if (response?.data?.data?.replacements) return 'dirty'
+    if (response?.data?.data?.items) return 'dirty'
+
+    if (!isTopHalf && !!tile.secondQuery && !tile.secondQueryId) return 'dirty'
+
+    // Top fallback: if isDirty has no attributable bottom reason, show on top
+    if (isTopHalf) {
+      const bottomHasOwnReason =
+        !!tile?.secondQueryResponse?.data?.data?.replacements ||
+        !!tile?.secondQueryResponse?.data?.data?.items ||
+        (!!tile.secondQuery && !tile.secondQueryId)
+      if (!bottomHasOwnReason) return 'dirty'
+    }
+
+    return null
   }
 
   // Return true only for query translation errors (29.9.502) that warrant a force-retry
@@ -551,6 +625,8 @@ export class DashboardTile extends React.Component {
         tableFilters: tile.tableFilters,
         axisSorts: tile.axisSorts,
         networkColumnConfig: tile.networkColumnConfig,
+        columnOrder: tile.columnOrder,
+        frozenColumns: tile.frozenColumns,
       }
     }
   }
@@ -624,6 +700,8 @@ export class DashboardTile extends React.Component {
               dataConfig: undefined,
               axisSorts: undefined,
               networkColumnConfig: undefined,
+              columnOrder: undefined,
+              frozenColumns: undefined,
             }
           } else {
             this.savedTileConfig = {
@@ -636,6 +714,8 @@ export class DashboardTile extends React.Component {
                 currentTile.tableFilters != null ? currentTile.tableFilters : this.savedTileConfig.tableFilters,
               axisSorts: currentTile.axisSorts || this.savedTileConfig.axisSorts,
               networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
+              columnOrder: currentTile.columnOrder || this.savedTileConfig.columnOrder,
+              frozenColumns: currentTile.frozenColumns || this.savedTileConfig.frozenColumns,
             }
           }
         }
@@ -796,6 +876,8 @@ export class DashboardTile extends React.Component {
       paramsToSet.filters = undefined
       paramsToSet.orders = undefined
       paramsToSet.displayOverrides = undefined
+      paramsToSet.columnOrder = undefined
+      paramsToSet.frozenColumns = undefined
     } else if (isReset) {
       // tableFilters already set to [] above; set the remaining reset fields here.
       paramsToSet.orders = []
@@ -803,6 +885,8 @@ export class DashboardTile extends React.Component {
       paramsToSet.displayOverrides = []
       paramsToSet.filters = []
       paramsToSet.dataConfig = undefined
+      paramsToSet.columnOrder = []
+      paramsToSet.frozenColumns = []
     }
 
     this.debouncedSetParamsForTile(paramsToSet)
@@ -860,8 +944,11 @@ export class DashboardTile extends React.Component {
         return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
       })
       .then((queryResponse) => {
+        // Read queryId from the fresh response since this.props.tile.queryId is stale until the debounce lands.
+        const freshQueryId = queryResponse?.data?.data?.query_id
         return {
           ...this.props.tile,
+          ...(freshQueryId ? { queryId: freshQueryId } : {}),
           queryResponse,
           defaultSelectedSuggestion: undefined,
         }
@@ -1036,6 +1123,8 @@ export class DashboardTile extends React.Component {
   onLegendFilterChange = (legendFilterConfig) => this.debouncedSetParamsForTile({ legendFilterConfig })
   onAxisSortChange = (axisSorts) => this.debouncedSetParamsForTile({ axisSorts })
   onNewQueryId = (queryId) => queryId && this.debouncedSetParamsForTile({ queryId })
+  onColumnOrderChange = (columnOrder) => this.debouncedSetParamsForTile({ columnOrder })
+  onFrozenColumnsChange = (frozenColumns) => this.debouncedSetParamsForTile({ frozenColumns })
 
   // Chart controls (including pivoted/raw data source) should apply immediately so the axis selectors
   // and chart data source update without waiting for the debounce timer.
@@ -1044,6 +1133,14 @@ export class DashboardTile extends React.Component {
   }
 
   onTableParamsChange = (params, formattedParams) => {
+    if (!this.props.isEditing) {
+      // Track whether view-mode header filters narrowed the rows below the tile's base filter (see componentDidUpdate).
+      const viewModeFiltersDiffer = !_isEqual(formattedParams?.filters || [], this.props.tile?.tableFilters || [])
+      if (viewModeFiltersDiffer !== this.state.viewModeFiltersDiffer) {
+        this.setState({ viewModeFiltersDiffer })
+      }
+      return
+    }
     this.debouncedSetParamsForTile({
       tableFilters: formattedParams.filters,
       orders: formattedParams.sorters,
@@ -1052,6 +1149,8 @@ export class DashboardTile extends React.Component {
 
   onColumnChange = (displayOverrides, columns, columnSelects, queryResponse, dataConfig, filters) => {
     if (!this.props.isEditing) return
+    // Mark this query_id as self-reported so componentDidUpdate skips the remount bump (isSelfColumnChange)
+    this._columnChangeQueryId = queryResponse?.data?.data?.query_id
     this.debouncedSetParamsForTile({
       columns,
       columnSelects,
@@ -1469,6 +1568,7 @@ export class DashboardTile extends React.Component {
     })
 
   renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps }) => {
+    const { hideOnError, ...toolbarProps } = optionsToolbarProps
     return (
       <div className='dashboard-tile-toolbars-container'>
         <div className='dashboard-tile-toolbars-left-container'>
@@ -1482,7 +1582,7 @@ export class DashboardTile extends React.Component {
           )}
         </div>
         <div className='dashboard-tile-toolbars-right-container'>
-          {!optionsToolbarProps.hideOnError && (
+          {!hideOnError && (
             <OptionsToolbar
               authentication={this.getTileAuthentication()}
               autoQLConfig={this.getTileAutoQLConfig()}
@@ -1504,7 +1604,7 @@ export class DashboardTile extends React.Component {
               isEditing={this.props.isEditing}
               source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
               scope={this.props.scope}
-              {...optionsToolbarProps}
+              {...toolbarProps}
             />
           )}
         </div>
@@ -1680,6 +1780,10 @@ export class DashboardTile extends React.Component {
         onLegendFilterChange: this.onLegendFilterChange,
         initialAxisSorts: this.normalizeAxisSorts(this.props.tile?.axisSorts),
         onAxisSortChange: this.onAxisSortChange,
+        initialColumnOrder: this.props.tile?.columnOrder,
+        onColumnOrderChange: this.onColumnOrderChange,
+        initialFrozenColumns: this.props.tile?.frozenColumns,
+        onFrozenColumnsChange: this.onFrozenColumnsChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
         initialFormattedTableParams: {
@@ -1687,6 +1791,7 @@ export class DashboardTile extends React.Component {
           sorters: this.props.tile?.orders,
           sessionFilters: this.props.tile?.filters || [],
         },
+        lockedFilters: this.props.tile?.tableFilters ?? [],
         enableChartControls: true,
         initialChartControls: this.props.tile?.chartControls || {
           showAverageLine: false,
@@ -1707,6 +1812,7 @@ export class DashboardTile extends React.Component {
         ref: (r) => (this.optionsToolbarRef = r),
         responseRef: this.state.responseRef,
         key: `dashboard-tile-options-toolbar-${this.FIRST_QUERY_RESPONSE_KEY}${this.props.isEditing ? '-editing' : ''}`,
+        initialIsFiltering: this.wasFilteringBeforeRemount,
         onRefreshClick: () => this.props.executeSingleTile(this.props.tile.i),
         onResetClick: () => this.props.resetTile?.(this.props.tile.i),
         showRefreshInEdit:
@@ -1791,7 +1897,7 @@ export class DashboardTile extends React.Component {
         <div
           ref={(r) => (this.ref = r)}
           className={`${this.props.className}${this.shouldShowDirtyBadge() ? ' dirty' : ''}${
-            this.props.isEditing && this.props.isFailed ? ' failed' : ''
+            this.props.isEditing && this.props.isFailed && !this.props.tile?.splitView ? ' failed' : ''
           }`}
           style={{ ...this.props.style }}
           data-grid={this.props.tile}
@@ -1818,7 +1924,7 @@ export class DashboardTile extends React.Component {
               !
             </div>
           )}
-          {this.props.isEditing && this.props.isFailed && (
+          {this.props.isEditing && this.props.isFailed && !this.props.tile?.splitView && (
             <div
               className='react-autoql-dashboard-tile-failed-badge'
               data-tooltip-content='This query has failed'

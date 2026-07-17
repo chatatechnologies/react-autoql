@@ -55,6 +55,31 @@ describe('Dashboard undo after reset', () => {
 
     wrapper.unmount()
   })
+
+  it('stays undoable and does not fire onSaveCallback after a reset while editing', async () => {
+    const onSaveCallback = jest.fn().mockResolvedValue(undefined)
+    const onChange = jest.fn()
+    const tile = makeTile()
+    const wrapper = mount(
+      <Dashboard tiles={[tile]} onChange={onChange} isEditing={true} onSaveCallback={onSaveCallback} />,
+    )
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    await instance.resetTile('tile-1')
+
+    // Reset must not save or leave the user stuck — they should still be able to undo it.
+    expect(onSaveCallback).not.toHaveBeenCalled()
+    expect(instance.canUndo()).toBe(true)
+
+    instance.undo()
+
+    const restoredTiles = onChange.mock.calls[onChange.mock.calls.length - 1][0]
+    expect(restoredTiles[0].tableFilters).toEqual(tile.tableFilters)
+    expect(restoredTiles[0].filters).toEqual(tile.filters)
+    expect(onSaveCallback).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
 })
 
 describe('Dashboard addTileStateToLog during reset', () => {
@@ -307,7 +332,7 @@ describe('addTileStateToLog clears reset flags immediately', () => {
 })
 
 describe('onSaveCallback is called after resetTile completes', () => {
-  it('passes onSaveCallback into debouncedOnChange after reset', async () => {
+  it('does not pass onSaveCallback into debouncedOnChange while editing', async () => {
     const onSaveCallback = jest.fn().mockResolvedValue(undefined)
     const tile = makeTile({ query: '' }) // no query → runSingleTile resolves immediately
     const wrapper = mount(
@@ -316,6 +341,25 @@ describe('onSaveCallback is called after resetTile completes', () => {
     const instance = wrapper.find('DashboardWithoutTheme').instance()
 
     // Spy before calling resetTile; mock prevents debounce timer from running
+    const debouncedSpy = jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
+
+    await instance.resetTile('tile-1')
+
+    // While editing, resetTile must not trigger a save or exit edit mode —
+    // the user should be able to undo or explicitly save afterward.
+    expect(debouncedSpy).toHaveBeenCalledWith(expect.anything(), false, [])
+
+    wrapper.unmount()
+  })
+
+  it('passes onSaveCallback into debouncedOnChange when not editing', async () => {
+    const onSaveCallback = jest.fn().mockResolvedValue(undefined)
+    const tile = makeTile({ query: '' })
+    const wrapper = mount(
+      <Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={false} onSaveCallback={onSaveCallback} />,
+    )
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
     const debouncedSpy = jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
 
     await instance.resetTile('tile-1')
@@ -405,6 +449,56 @@ describe('resetTile guard flags', () => {
     instance.resetTile('tile-1')
 
     expect(instance.pendingResetUndoTiles).toBeUndefined()
+
+    wrapper.unmount()
+  })
+})
+
+describe('resetTile merges the freshly-executed tile queryId into pendingResetTiles', () => {
+  it('carries processTile-resolved queryId (not just queryResponse) into pendingResetTiles', async () => {
+    const tile = makeTile({ query: 'SELECT 1', queryId: 'q_old' })
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    const freshResponse = { data: { data: { query_id: 'q_new' }, reference_id: '1.1.200' } }
+    // Simulate the mounted DashboardTile's ref registering itself, since the DashboardTile
+    // mock in this suite renders null and never calls the tileRef callback.
+    instance.tileRefs['tile-1'] = {
+      processTile: jest.fn().mockResolvedValue({ ...tile, queryId: 'q_new', queryResponse: freshResponse }),
+    }
+
+    jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
+
+    await instance.resetTile('tile-1')
+
+    const mergedTile = instance.pendingResetTiles?.find((t) => t.i === 'tile-1')
+    expect(mergedTile).toBeDefined()
+    expect(mergedTile.queryId).toBe('q_new')
+    expect(mergedTile.queryResponse).toEqual(freshResponse)
+
+    wrapper.unmount()
+  })
+
+  it('leaves queryId untouched when the resolved tile does not include one', async () => {
+    const tile = makeTile({ query: 'SELECT 1', queryId: 'q_old' })
+    const wrapper = mount(<Dashboard tiles={[tile]} onChange={jest.fn()} isEditing={true} />)
+    const instance = wrapper.find('DashboardWithoutTheme').instance()
+
+    const freshResponse = { data: { data: {}, reference_id: '1.1.200' } }
+    instance.tileRefs['tile-1'] = {
+      processTile: jest.fn().mockResolvedValue({ ...tile, queryId: undefined, queryResponse: freshResponse }),
+    }
+
+    jest.spyOn(instance, 'debouncedOnChange').mockReturnValue(Promise.resolve())
+
+    await instance.resetTile('tile-1')
+
+    const mergedTile = instance.pendingResetTiles?.find((t) => t.i === 'tile-1')
+    expect(mergedTile).toBeDefined()
+    // resetTile itself does not clear queryId — an undefined queryId on the resolved
+    // tile must not overwrite the queryId already carried on pendingResetTiles.
+    expect(mergedTile.queryId).toBe('q_old')
+    expect(mergedTile.queryResponse).toEqual(freshResponse)
 
     wrapper.unmount()
   })
