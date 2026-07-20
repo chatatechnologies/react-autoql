@@ -482,8 +482,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with empty response
       const result = instance.ajaxResponseFunc({}, null)
 
-      // Should return empty object and not force update
-      expect(result).toEqual({})
+      // Should return an empty Tabulator-shaped page and not force update
+      expect(result).toEqual({ data: [], last_page: instance.totalPages })
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -496,8 +496,8 @@ describe('ChataTable', () => {
       // Call ajaxResponseFunc with undefined response
       const result = instance.ajaxResponseFunc({}, undefined)
 
-      // Should return empty object and not force update
-      expect(result).toEqual({})
+      // Should return an empty Tabulator-shaped page and not force update
+      expect(result).toEqual({ data: [], last_page: instance.totalPages })
       expect(mockForceUpdate).not.toHaveBeenCalled()
     })
 
@@ -1046,106 +1046,6 @@ describe('ChataTable filter/badge initialization', () => {
   })
 })
 
-describe('disableBaseFilterInputs', () => {
-  function setupWithDOM(filters) {
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    // Build DOM elements matching the selectors used by disableBaseFilterInputs
-    const container = document.createElement('div')
-    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
-
-    filters.forEach((filter) => {
-      const col = document.createElement('div')
-      col.className = 'tabulator-col'
-      col.setAttribute('tabulator-field', filter.field)
-
-      const content = document.createElement('div')
-      content.className = 'tabulator-col-content'
-      const input = document.createElement('input')
-      content.appendChild(input)
-      col.appendChild(content)
-      container.appendChild(col)
-
-      const clearBtn = document.createElement('div')
-      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
-      document.body.appendChild(clearBtn)
-    })
-
-    document.body.appendChild(container)
-
-    return { wrapper, instance, container }
-  }
-
-  afterEach(() => {
-    // Clean up DOM nodes
-    document.body.innerHTML = ''
-  })
-
-  test('disables header input and adds disabled class for each base filter with a value', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.disableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    expect(input.disabled).toBe(true)
-    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(true)
-  })
-
-  test('makes clear button non-interactive for each base filter', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance } = setupWithDOM(filters)
-
-    instance.disableBaseFilterInputs()
-
-    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
-    expect(clearBtn.style.pointerEvents).toBe('none')
-    expect(clearBtn.style.opacity).toBe('0.3')
-  })
-
-  test('skips filters with no value', () => {
-    const filters = [{ field: '1', type: '=', value: '' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.disableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    expect(input.disabled).toBe(false)
-  })
-
-  test('does nothing when isDashboardEditing=true', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: true })
-    const instance = wrapper.instance()
-
-    const spy = jest.spyOn(document, 'querySelector')
-    instance.disableBaseFilterInputs()
-
-    // Should return immediately without querying DOM
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
-  })
-
-  test('does nothing when baseFilters is empty', () => {
-    const wrapper = setup({ isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    const spy = jest.spyOn(document, 'querySelector')
-    instance.disableBaseFilterInputs()
-
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
-  })
-
-  test('handles missing DOM nodes gracefully (no throw)', () => {
-    const filters = [{ field: '99', type: '=', value: 'missing' }]
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-    expect(() => instance.disableBaseFilterInputs()).not.toThrow()
-  })
-})
-
 describe('toggleIsFiltering callback behavior', () => {
   function makeFullRef() {
     return {
@@ -1339,13 +1239,23 @@ describe('Dashboard edit-mode filtering', () => {
 
     test('fe_req.filters in response does NOT force REMOTE in view mode', () => {
       const response = {
-        data: { data: { rows: [], count_rows: 10, query_id: 'q1', fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] } } },
+        data: {
+          data: {
+            rows: [],
+            count_rows: 10,
+            query_id: 'q1',
+            fe_req: { filters: [{ name: 'status', operator: '=', value: 'active' }] },
+          },
+        },
       }
       expect(setup({ response }).instance().isLocal).toBe(true)
     })
 
     test('initialTableParams.filter does NOT force REMOTE in view mode', () => {
-      const wrapper = setup({ response: smallResponse, initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] } })
+      const wrapper = setup({
+        response: smallResponse,
+        initialTableParams: { filter: [{ field: '1', type: '=', value: 'x' }] },
+      })
       expect(wrapper.instance().isLocal).toBe(true)
     })
   })
@@ -1438,14 +1348,20 @@ describe('Dashboard edit-mode filtering', () => {
 
     test('uses client-side path when neither isEditing nor isDashboardEditing', () => {
       const mockPropsQueryFn = jest.fn()
-      const wrapper = setup({ isEditing: false, isDashboardEditing: false, queryFn: mockPropsQueryFn, response: smallResponse, useInfiniteScroll: false })
+      const wrapper = setup({
+        isEditing: false,
+        isDashboardEditing: false,
+        queryFn: mockPropsQueryFn,
+        response: smallResponse,
+        useInfiniteScroll: false,
+      })
       wrapper.instance().queryFn({ tableFilters: [] })
       expect(mockPropsQueryFn).not.toHaveBeenCalled()
     })
   })
 
   describe('isDashboardEditing change handler', () => {
-    function makeEditingRef({ clearHeaderFilter = jest.fn() } = {}) {
+    function makeEditingRef({ clearHeaderFilter = jest.fn(), clearSort = jest.fn() } = {}) {
       const tabulator = {
         getColumns: jest.fn(() => [
           {
@@ -1457,6 +1373,7 @@ describe('Dashboard edit-mode filtering', () => {
         setHeaderFilterValue: jest.fn(),
         getHeaderFilters: jest.fn(() => []),
         clearHeaderFilter,
+        clearSort,
         blockRedraw: jest.fn(),
         restoreRedraw: jest.fn(),
       }
@@ -1503,8 +1420,8 @@ describe('Dashboard edit-mode filtering', () => {
       expect(badgeSpy).toHaveBeenCalled()
     })
 
-    // Issue 1: tableParams.filter not wiped when filter row is closed
-    test('does not reset tableParams.filter to baseFilters when isFiltering is false', () => {
+    // Entering edit mode always resets tableParams.filter to baseFilters (regardless of isFiltering)
+    test('resets tableParams.filter to baseFilters when entering edit mode (even when isFiltering is false)', () => {
       const sessionFilters = [{ field: '1', type: '=', value: 'online' }]
       const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: [] } })
       const instance = wrapper.instance()
@@ -1521,8 +1438,8 @@ describe('Dashboard edit-mode filtering', () => {
 
       wrapper.setProps({ isDashboardEditing: true })
 
-      // tableParams.filter should remain unchanged (session filters preserved)
-      expect(instance.tableParams.filter).toEqual(sessionFilters)
+      // Edit mode always resets to baseFilters (empty here) — view-mode filters are discarded
+      expect(instance.tableParams.filter).toEqual([])
     })
 
     // Issue 2: _setFiltersTime stamped before clearHeaderFilter to guard AJAX
@@ -1553,7 +1470,7 @@ describe('Dashboard edit-mode filtering', () => {
       expect(clearHeaderFilterMock).toHaveBeenCalled()
     })
 
-    test('does not call clearHeaderFilter when filter row is closed', () => {
+    test('calls clearHeaderFilter when entering edit mode (even when filter row is closed)', () => {
       const clearHeaderFilterMock = jest.fn()
       const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
       const instance = wrapper.instance()
@@ -1564,97 +1481,58 @@ describe('Dashboard edit-mode filtering', () => {
 
       wrapper.setProps({ isDashboardEditing: true })
 
-      expect(clearHeaderFilterMock).not.toHaveBeenCalled()
+      expect(clearHeaderFilterMock).toHaveBeenCalled()
+    })
+
+    test('calls clearSort when entering edit mode', () => {
+      const clearSortMock = jest.fn()
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: filters } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef({ clearSort: clearSortMock })
+      instance._isMounted = true
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(clearSortMock).toHaveBeenCalled()
+    })
+
+    test('resets tableParams to baseSort when entering edit mode', () => {
+      const sort = [{ field: '1', dir: 'asc' }]
+      const wrapper = setup({ isDashboardEditing: false, initialTableParams: { filter: [], sort } })
+      const instance = wrapper.instance()
+      instance.ref = makeEditingRef()
+      instance._isMounted = true
+      instance.tableParams.sort = [{ field: '1', dir: 'desc' }] // simulate view-mode sort change
+      jest.spyOn(instance, 'setFilterBadgeClasses').mockImplementation(() => {})
+      jest.spyOn(instance, 'setSorters').mockImplementation(() => {})
+      wrapper.setState({ tabulatorMounted: true, isFiltering: false })
+
+      wrapper.setProps({ isDashboardEditing: true })
+
+      expect(instance.tableParams.sort).toEqual(sort)
     })
   })
 })
 
-describe('enableBaseFilterInputs', () => {
-  function setupWithDOM(filters) {
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
+describe('lockedFilters as baseFilters', () => {
+  const locked = [{ field: '1', type: '=', value: 'locked-val' }]
+  const initial = [{ field: '1', type: '=', value: 'initial-val' }]
 
-    const container = document.createElement('div')
-    container.id = `react-autoql-table-container-${instance.TABLE_ID}`
-
-    filters.forEach((filter) => {
-      const col = document.createElement('div')
-      col.className = 'tabulator-col'
-      col.setAttribute('tabulator-field', filter.field)
-
-      const content = document.createElement('div')
-      content.className = 'tabulator-col-content'
-      const input = document.createElement('input')
-      input.disabled = true
-      input.classList.add('react-autoql-base-filter-disabled')
-      content.appendChild(input)
-      col.appendChild(content)
-      container.appendChild(col)
-
-      const clearBtn = document.createElement('div')
-      clearBtn.dataset.clearBtn = `${instance.TABLE_ID}-${filter.field}`
-      clearBtn.style.pointerEvents = 'none'
-      clearBtn.style.opacity = '0.3'
-      document.body.appendChild(clearBtn)
-    })
-
-    document.body.appendChild(container)
-    return { wrapper, instance, container }
-  }
-
-  afterEach(() => {
-    document.body.innerHTML = ''
+  test('lockedFilters takes precedence over initialTableParams.filter for baseFilters', () => {
+    const wrapper = setup({ lockedFilters: locked, initialTableParams: { filter: initial } })
+    expect(wrapper.instance().baseFilters).toEqual(locked)
   })
 
-  test('re-enables header input and removes disabled class', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.enableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    expect(input.disabled).toBe(false)
-    expect(input.classList.contains('react-autoql-base-filter-disabled')).toBe(false)
+  test('falls back to initialTableParams.filter when lockedFilters is undefined', () => {
+    const wrapper = setup({ lockedFilters: undefined, initialTableParams: { filter: initial } })
+    expect(wrapper.instance().baseFilters).toEqual(initial)
   })
 
-  test('restores clear button interactivity', () => {
-    const filters = [{ field: '1', type: '=', value: 'online' }]
-    const { instance } = setupWithDOM(filters)
-
-    instance.enableBaseFilterInputs()
-
-    const clearBtn = document.querySelector(`[data-clear-btn="${instance.TABLE_ID}-1"]`)
-    expect(clearBtn.style.pointerEvents).toBe('')
-    expect(clearBtn.style.opacity).toBe('')
-  })
-
-  test('skips filters with no value', () => {
-    const filters = [{ field: '1', type: '=', value: '' }]
-    const { instance, container } = setupWithDOM(filters)
-
-    instance.enableBaseFilterInputs()
-
-    const input = container.querySelector('.tabulator-col[tabulator-field="1"] input')
-    // Input was never disabled (no value), still not disabled after enable call
-    expect(input.disabled).toBe(true) // DOM was set disabled in setupWithDOM, but enableBaseFilterInputs skips it
-  })
-
-  test('does nothing when baseFilters is empty', () => {
-    const wrapper = setup({ isDashboardEditing: false })
-    const instance = wrapper.instance()
-
-    const spy = jest.spyOn(document, 'querySelector')
-    instance.enableBaseFilterInputs()
-
-    expect(spy).not.toHaveBeenCalled()
-    spy.mockRestore()
-  })
-
-  test('handles missing DOM nodes gracefully (no throw)', () => {
-    const filters = [{ field: '99', type: '=', value: 'missing' }]
-    const wrapper = setup({ initialTableParams: { filter: filters }, isDashboardEditing: false })
-    const instance = wrapper.instance()
-    expect(() => instance.enableBaseFilterInputs()).not.toThrow()
+  test('falls back to empty array when both lockedFilters and initialTableParams.filter are absent', () => {
+    const wrapper = setup({ lockedFilters: undefined, initialTableParams: {} })
+    expect(wrapper.instance().baseFilters).toEqual([])
   })
 })
 
@@ -1732,5 +1610,71 @@ describe('onDataFiltered: showQueryInterpretation guard', () => {
 
     expect(spy).not.toHaveBeenCalled()
     spy.mockRestore()
+  })
+})
+
+describe('clientSortAndFilterData with reordered columns', () => {
+  // props.columns is display-ordered (e.g. from a saved columnOrder), while each column's
+  // `.index` still points at its position in the underlying data rows. filterDataByColumn/
+  // sortDataByColumn resolve column *type* by array position, so clientSortAndFilterData must
+  // hand them a data-ordered column list rather than props.columns directly.
+  const nameCol = { id: '1', field: '1', display_name: 'Name', type: 'STRING', index: 0 }
+  const amountCol = { id: '2', field: '2', display_name: 'Amount', type: 'QUANTITY', index: 1 }
+  const categoryCol = { id: '3', field: '3', display_name: 'Category', type: 'STRING', index: 2 }
+
+  // Display order swaps Amount and Name, so array position no longer matches `.index`.
+  const reorderedColumns = [amountCol, nameCol, categoryCol]
+
+  const reorderedResponse = {
+    data: {
+      data: {
+        rows: [
+          ['Item9', 9, 'X'],
+          ['Item100', 100, 'Y'],
+          ['Item20', 20, 'Z'],
+        ],
+        count_rows: 3,
+        query_id: 'test-query-reorder',
+      },
+    },
+  }
+
+  test('sorts a numeric column numerically, not lexicographically, when columns are reordered for display', () => {
+    const wrapper = setup({ columns: reorderedColumns, response: reorderedResponse })
+    const instance = wrapper.instance()
+
+    const result = instance.clientSortAndFilterData({ orders: [{ id: '2', sort: 'ASC' }] })
+
+    // Numeric ascending: 9, 20, 100. A lexicographic sort (bug) would yield 100, 20, 9.
+    expect(result.data.data.rows.map((row) => row[1])).toEqual([9, 20, 100])
+  })
+
+  test('filters a numeric column using numeric equality, not the display-position column type', () => {
+    const wrapper = setup({
+      columns: reorderedColumns,
+      response: {
+        data: {
+          data: {
+            rows: [
+              ['Widget', 20.5, 'X'],
+              ['Gadget', 9, 'Y'],
+              ['Gizmo', 100, 'Z'],
+            ],
+            count_rows: 3,
+            query_id: 'test-query-reorder-filter',
+          },
+        },
+      },
+    })
+    const instance = wrapper.instance()
+
+    // '20.50' only numerically equals 20.5 (isNumericEqual). Resolving the Amount column's type
+    // by array position instead of by id would find the STRING `nameCol` at that slot, fall back
+    // to a plain string-equality check, and filter out the matching row entirely.
+    const result = instance.clientSortAndFilterData({
+      tableFilters: [{ id: '2', value: '20.50', operator: 'equals' }],
+    })
+
+    expect(result.data.data.rows).toEqual([['Widget', 20.5, 'X']])
   })
 })
