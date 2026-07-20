@@ -433,6 +433,27 @@ describe('ChataChart observe lifecycle', () => {
     expect(inst._observedNode).toBeNull()
   })
 
+  test('replaces observer when called a second time with a different node', () => {
+    const inst = new ChataChart({})
+    inst._isMounted = true
+
+    const nodeA = { getBoundingClientRect: () => ({ width: 100, height: 100 }) }
+    const nodeB = { getBoundingClientRect: () => ({ width: 200, height: 200 }) }
+
+    inst.chartContainerRef = nodeA
+    inst.attachResizeObserver()
+    expect(observeContainer).toHaveBeenCalledTimes(1)
+    const cleanupA = inst.cleanupObserve
+
+    inst.chartContainerRef = nodeB
+    inst.attachResizeObserver()
+
+    expect(observeContainer).toHaveBeenCalledTimes(2)
+    expect(observeContainer).toHaveBeenLastCalledWith(nodeB, expect.any(Function), { debounceMs: 0 })
+    expect(cleanupA.mock.calls.length).toBeGreaterThan(0)
+    expect(inst._observedNode).toBe(nodeB)
+  })
+
   test('multiple instances each get observed and cleaned up independently', () => {
     const instA = new ChataChart({})
     const instB = new ChataChart({})
@@ -465,5 +486,72 @@ describe('ChataChart observe lifecycle', () => {
 
     instB.componentWillUnmount()
     expect(wrapB.mock.calls.length).toBeGreaterThan(initialCallsB)
+  })
+})
+
+describe('ResizeObserver error suppression', () => {
+  let addSpy
+  let removeSpy
+
+  beforeEach(() => {
+    addSpy = jest.spyOn(window, 'addEventListener')
+    removeSpy = jest.spyOn(window, 'removeEventListener')
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('registers error listener on mount', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
+    expect(addSpy).toHaveBeenCalledWith('error', inst._suppressResizeObserverError)
+    inst.componentWillUnmount()
+  })
+
+  test('removes its own error listener on unmount', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
+    inst.componentWillUnmount()
+    expect(removeSpy).toHaveBeenCalledWith('error', inst._suppressResizeObserverError)
+  })
+
+  test('each instance has its own handler reference so unmounting one does not affect others', () => {
+    const instA = setup({ ...listSampleProps, type: 'bar' }).instance()
+    const instB = setup({ ...listSampleProps, type: 'bar' }).instance()
+    instA.componentDidMount()
+    instB.componentDidMount()
+    expect(instA._suppressResizeObserverError).not.toBe(instB._suppressResizeObserverError)
+    instA.componentWillUnmount()
+    expect(removeSpy).toHaveBeenCalledWith('error', instA._suppressResizeObserverError)
+    expect(removeSpy).not.toHaveBeenCalledWith('error', instB._suppressResizeObserverError)
+    instB.componentWillUnmount()
+  })
+
+  test('stops propagation for ResizeObserver loop completed message', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
+    const fakeEvent = { message: 'ResizeObserver loop completed with undelivered notifications.', stopImmediatePropagation: jest.fn() }
+    inst._suppressResizeObserverError(fakeEvent)
+    expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
+    inst.componentWillUnmount()
+  })
+
+  test('stops propagation for ResizeObserver loop limit exceeded message', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
+    const fakeEvent = { message: 'ResizeObserver loop limit exceeded', stopImmediatePropagation: jest.fn() }
+    inst._suppressResizeObserverError(fakeEvent)
+    expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
+    inst.componentWillUnmount()
+  })
+
+  test('does not stop propagation for unrelated errors', () => {
+    const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
+    inst.componentDidMount()
+    const fakeEvent = { message: 'SomeOtherError', stopImmediatePropagation: jest.fn() }
+    inst._suppressResizeObserverError(fakeEvent)
+    expect(fakeEvent.stopImmediatePropagation).not.toHaveBeenCalled()
+    inst.componentWillUnmount()
   })
 })
