@@ -1232,7 +1232,7 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.isValidConfig(this.state.dataConfig) ? this.state.dataConfig : undefined}
           onTableConfigChange={this.updateDataConfig}
-          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          onNoneOfTheseClick={() => this.props.onNoneOfTheseClick(this.props.queryMessageID)}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
