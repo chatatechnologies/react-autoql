@@ -179,3 +179,69 @@ describe('Suggestion query response flow', () => {
     })
   })
 })
+
+describe('"None of these" message group deletion', () => {
+  let messengerComponent
+  let chatContentInstance
+
+  const originalFetch = globalThis.fetch
+  beforeEach(() => {
+    globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    jest.useFakeTimers()
+    messengerComponent = mount(<DataMessenger />)
+    const chatContent = findByTestAttr(messengerComponent, 'data-messenger-chat-content')
+    chatContentInstance = chatContent.instance()
+  })
+
+  afterEach(() => {
+    try {
+      if (messengerComponent && typeof messengerComponent.unmount === 'function') {
+        messengerComponent.unmount()
+      }
+    } catch (e) {
+      // swallow unmount errors in CI environment
+    }
+    jest.useRealTimers()
+    globalThis.fetch = originalFetch
+  })
+
+  test('"None of these" request and feedback response share the suggestion message queryMessageID', () => {
+    chatContentInstance.addResponseMessage({
+      response: responseTestCases[5],
+      query: 'test query',
+      queryMessageID: 'thread-1',
+    })
+
+    chatContentInstance.onNoneOfTheseClick('thread-1')
+    jest.advanceTimersByTime(1000)
+
+    const messages = chatContentInstance.state.messages
+    const suggestionMessage = messages.find((m) => m.queryMessageID === 'thread-1' && m.response)
+    const noneOfTheseRequest = messages.find((m) => m.content === 'None of these')
+    const feedbackResponse = messages.find((m) => m.isResponse && !m.response && m.queryMessageID === 'thread-1')
+
+    expect(suggestionMessage).toBeDefined()
+    expect(noneOfTheseRequest?.queryMessageID).toBe('thread-1')
+    expect(feedbackResponse).toBeDefined()
+  })
+
+  test('deleting the suggestion message cascades to remove the "None of these" request and feedback response', () => {
+    chatContentInstance.addResponseMessage({
+      response: responseTestCases[5],
+      query: 'test query',
+      queryMessageID: 'thread-2',
+    })
+
+    chatContentInstance.onNoneOfTheseClick('thread-2')
+    jest.advanceTimersByTime(1000)
+
+    const messagesBefore = chatContentInstance.state.messages
+    const suggestionMessage = messagesBefore.find((m) => m.queryMessageID === 'thread-2' && m.response)
+    expect(messagesBefore.filter((m) => m.queryMessageID === 'thread-2').length).toBe(3)
+
+    chatContentInstance.deleteMessage(suggestionMessage.id)
+
+    const messagesAfter = chatContentInstance.state.messages
+    expect(messagesAfter.filter((m) => m.queryMessageID === 'thread-2').length).toBe(0)
+  })
+})
