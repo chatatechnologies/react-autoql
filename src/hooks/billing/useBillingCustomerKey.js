@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
-import { getBillingApiUrl, getBillingRequestConfig, getHttpStatus, hasBillingAuthentication } from './billingApi'
+import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
 export const useBillingCustomerKey = ({ authentication = {} } = {}) => {
   const [data, setData] = useState(null)
@@ -19,7 +18,7 @@ export const useBillingCustomerKey = ({ authentication = {} } = {}) => {
       setState('loading')
 
       try {
-        const response = await axios.get(
+        const response = await fetch(
           getBillingApiUrl(authentication, 'billing/customer-keys'),
           getBillingRequestConfig(authentication),
         )
@@ -28,7 +27,24 @@ export const useBillingCustomerKey = ({ authentication = {} } = {}) => {
           return
         }
 
-        const responseData = response?.data?.data ?? null
+        if (response.status === 404) {
+          setData(null)
+          setState('missing_customer')
+          return
+        }
+
+        if (!response.ok) {
+          setData(null)
+          setState('error')
+          return
+        }
+
+        const json = await response.json()
+        if (!isActive) {
+          return
+        }
+
+        const responseData = json?.data ?? null
         if (!responseData?.billing_customer_key) {
           setData(null)
           setState('missing_customer')
@@ -37,13 +53,13 @@ export const useBillingCustomerKey = ({ authentication = {} } = {}) => {
 
         setData(responseData)
         setState('success')
-      } catch (error) {
+      } catch {
         if (!isActive) {
           return
         }
 
         setData(null)
-        setState(getHttpStatus(error) === 404 ? 'missing_customer' : 'error')
+        setState('error')
       }
     }
 

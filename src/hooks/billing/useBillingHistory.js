@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import { getDefaultBillingHistoryRange } from '../../utils/billingFormatting'
-import {
-  getBillingApiUrlWithParams,
-  getBillingRequestConfig,
-  getHttpStatus,
-  hasBillingAuthentication,
-} from './billingApi'
+import { getBillingApiUrlWithParams, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
 export const useBillingHistory = ({ authentication = {}, billingCustomerKey, from, to } = {}) => {
   const [items, setItems] = useState([])
@@ -28,7 +22,7 @@ export const useBillingHistory = ({ authentication = {}, billingCustomerKey, fro
       setState('loading')
 
       try {
-        const response = await axios.get(
+        const response = await fetch(
           getBillingApiUrlWithParams(
             authentication,
             `billing-usage/${encodeURIComponent(billingCustomerKey)}/history`,
@@ -41,7 +35,24 @@ export const useBillingHistory = ({ authentication = {}, billingCustomerKey, fro
           return
         }
 
-        const responseItems = response?.data?.data?.items
+        if (response.status >= 500) {
+          setItems([])
+          setState('unavailable')
+          return
+        }
+
+        if (!response.ok) {
+          setItems([])
+          setState('error')
+          return
+        }
+
+        const json = await response.json()
+        if (!isActive) {
+          return
+        }
+
+        const responseItems = json?.data?.items
         if (!Array.isArray(responseItems)) {
           setItems([])
           setState('error')
@@ -50,14 +61,13 @@ export const useBillingHistory = ({ authentication = {}, billingCustomerKey, fro
 
         setItems(responseItems)
         setState('success')
-      } catch (error) {
+      } catch {
         if (!isActive) {
           return
         }
 
-        const status = getHttpStatus(error)
         setItems([])
-        setState(!status || status >= 500 ? 'unavailable' : 'error')
+        setState('unavailable')
       }
     }
 

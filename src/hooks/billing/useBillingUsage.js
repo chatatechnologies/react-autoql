@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
-import { getBillingApiUrl, getBillingRequestConfig, getHttpStatus, hasBillingAuthentication } from './billingApi'
+import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
 export const useBillingUsage = ({ authentication = {}, billingCustomerKey, refreshKey = 0 } = {}) => {
   const [data, setData] = useState(null)
@@ -19,7 +18,7 @@ export const useBillingUsage = ({ authentication = {}, billingCustomerKey, refre
       setState('loading')
 
       try {
-        const response = await axios.get(
+        const response = await fetch(
           getBillingApiUrl(authentication, `billing-usage/${encodeURIComponent(billingCustomerKey)}/current-period`),
           getBillingRequestConfig(authentication),
         )
@@ -28,7 +27,30 @@ export const useBillingUsage = ({ authentication = {}, billingCustomerKey, refre
           return
         }
 
-        const responseData = response?.data?.data ?? null
+        if (response.status === 404) {
+          setData(null)
+          setState('missing_customer')
+          return
+        }
+
+        if (response.status >= 500) {
+          setData(null)
+          setState('unavailable')
+          return
+        }
+
+        if (!response.ok) {
+          setData(null)
+          setState('error')
+          return
+        }
+
+        const json = await response.json()
+        if (!isActive) {
+          return
+        }
+
+        const responseData = json?.data ?? null
         if (!responseData) {
           setData(null)
           setState('error')
@@ -37,20 +59,13 @@ export const useBillingUsage = ({ authentication = {}, billingCustomerKey, refre
 
         setData(responseData)
         setState('success')
-      } catch (error) {
+      } catch {
         if (!isActive) {
           return
         }
 
-        const status = getHttpStatus(error)
         setData(null)
-        if (status === 404) {
-          setState('missing_customer')
-        } else if (!status || status >= 500) {
-          setState('unavailable')
-        } else {
-          setState('error')
-        }
+        setState('unavailable')
       }
     }
 

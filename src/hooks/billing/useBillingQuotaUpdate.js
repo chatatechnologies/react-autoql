@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import axios from 'axios'
 import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
 export const useBillingQuotaUpdate = ({ authentication = {}, billingCustomerKey } = {}) => {
@@ -28,19 +27,25 @@ export const useBillingQuotaUpdate = ({ authentication = {}, billingCustomerKey 
     setIsSaving(true)
     try {
       const config = getBillingRequestConfig(authentication)
-      const response = await axios.put(
+      const response = await fetch(
         getBillingApiUrl(authentication, `billing-quotas/${encodeURIComponent(billingCustomerKey)}`),
-        { monthly_quota_micros: monthlyQuotaMicros },
         {
           ...config,
+          method: 'PUT',
           headers: {
             ...config.headers,
             'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ monthly_quota_micros: monthlyQuotaMicros }),
         },
       )
 
-      const responseData = response?.data?.data
+      if (!response.ok) {
+        throw new Error('Failed to update billing quota')
+      }
+
+      const json = await response.json()
+      const responseData = json?.data
       if (!responseData) {
         throw new Error('Billing quota update returned no data')
       }

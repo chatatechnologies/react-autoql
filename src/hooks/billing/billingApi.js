@@ -18,5 +18,3 @@ export const getBillingApiUrlWithParams = (authentication, path, params) => {
 
   return `${authentication.domain}/autoql/api/v1/${path}?${query}`
 }
-
-export const getHttpStatus = (error) => error?.response?.status

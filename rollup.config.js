@@ -69,31 +69,6 @@ const common = {
   external: makeExternalPredicate(external),
 }
 
-const billingCommon = {
-  input: 'src/billing.js',
-  plugins: [
-    replace({
-      preventAssignment: true,
-      values: {
-        'process.env.NODE_ENV': JSON.stringify(development ? 'development' : 'production'),
-        'process.env.REGEXP_GUARD_MAX_LEN': JSON.stringify(''),
-        'process.env': JSON.stringify({}),
-      },
-    }),
-    resolve({
-      mainFields: ['main', 'module'],
-    }),
-    babel({
-      exclude: 'node_modules/**',
-      babelHelpers: 'bundled',
-    }),
-    commonjs({ transformMixedEsModules: true }),
-    !development && terser(),
-    gzipPlugin(),
-  ],
-  external: makeExternalPredicate(external),
-}
-
 const outputs = []
 
 outputs.push({
@@ -108,27 +83,7 @@ if (!development) {
   })
 }
 
-const billingOutputs = [
-  {
-    file: `${dist}/billing.esm.js`,
-    format: 'esm',
-  },
-]
-
-if (!development) {
-  billingOutputs.push({
-    file: `${dist}/billing.cjs.js`,
-    format: 'cjs',
-  })
-}
-
-export default [
-  ...outputs.map((output) => ({
-    ...common,
-    output,
-  })),
-  ...billingOutputs.map((output) => ({
-    ...billingCommon,
-    output,
-  })),
-]
+export default outputs.map((output) => ({
+  ...common,
+  output,
+}))
