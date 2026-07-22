@@ -102,3 +102,32 @@ export default class App extends Component {
   }
 }
 ```
+
+## Billing hooks
+
+Authenticated applications can compose their own billing UI with the package's billing hooks:
+
+```jsx
+import { useBillingCustomerKey, useBillingHistory, useBillingQuotaUpdate, useBillingUsage } from 'react-autoql'
+
+const { billingCustomerKey } = useBillingCustomerKey({ authentication })
+const { data: usage, state: usageState } = useBillingUsage({
+  authentication,
+  billingCustomerKey,
+})
+const { items: history } = useBillingHistory({ authentication, billingCustomerKey })
+const { updateQuota, isSaving } = useBillingQuotaUpdate({
+  authentication,
+  billingCustomerKey,
+})
+```
+
+The current-period usage response includes gross `usage_to_date_micros` plus
+`free_allowance_micros`, `allowance_applied_to_date_micros`,
+`allowance_remaining_micros`, and `estimated_billable_usage_micros`. These are integer micros.
+The estimated billable value uses the current allowance configuration; final invoicing uses the
+allowance snapshotted by Billing Service. Allowance is an invoice credit and remains separate from
+the gross-usage quota, remaining quota, and quota status.
+
+The package root also includes billing period/currency formatting helpers and opt-in billing customer
+key storage helpers. The storage helpers are not used automatically by the hooks.
