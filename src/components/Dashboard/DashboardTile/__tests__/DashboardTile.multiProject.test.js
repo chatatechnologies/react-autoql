@@ -484,6 +484,45 @@ describe('DashboardTile renderProjectBadge', () => {
 
     wrapper.unmount()
   })
+
+  it('falls back to tile.projectId + projectSelectList when there is no queryResponse yet (loading/failed tile)', () => {
+    const projectSelectList = [{ projectId: '2', displayName: 'Proj B' }]
+    const tile = makeTile({ projectId: '2', queryResponse: null })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        projectSelectList={projectSelectList}
+        autoQLConfig={{ projectId: '1' }}
+        tooltipID='tt-1'
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const badge = instance.renderProjectBadge()
+    expect(badge.props.children).toBe('Proj B')
+    expect(badge.props['data-tooltip-content']).toBe('Project: Proj B')
+
+    wrapper.unmount()
+  })
+
+  it('does not use the projectSelectList fallback when the tile project matches the dashboard default', () => {
+    const projectSelectList = [{ projectId: '1', displayName: 'Proj A' }]
+    const tile = makeTile({ projectId: '1', queryResponse: null })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        projectSelectList={projectSelectList}
+        autoQLConfig={{ projectId: '1' }}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.renderProjectBadge()).toBeNull()
+
+    wrapper.unmount()
+  })
 })
 
 describe('DashboardTile componentDidUpdate projectId re-run', () => {

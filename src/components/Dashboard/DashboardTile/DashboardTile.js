@@ -1186,7 +1186,14 @@ export class DashboardTile extends React.Component {
       return null
     }
 
-    const project = this.getTileProject(this.props.tile?.queryResponse)
+    const tileProjectId = this.props.tile?.projectId
+    const projectFromList =
+      tileProjectId != null
+        ? this.props.projectSelectList?.find((p) => `${p.projectId}` === `${tileProjectId}`)
+        : undefined
+    const project = projectFromList
+      ? { id: projectFromList.projectId, name: projectFromList.displayName }
+      : this.getTileProject(this.props.tile?.queryResponse)
     if (!project?.name) {
       return null
     }
