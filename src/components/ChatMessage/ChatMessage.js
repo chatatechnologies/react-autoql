@@ -143,6 +143,7 @@ export class ChatMessage extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     quotaStatus: PropTypes.string,
+    billingExecutionType: PropTypes.oneOf(['STRIPE', 'EXPORT']),
     onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
@@ -185,6 +186,7 @@ export class ChatMessage extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     quotaStatus: undefined,
+    billingExecutionType: undefined,
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
   }
@@ -1197,6 +1199,7 @@ export class ChatMessage extends React.Component {
                   focusError={focusError}
                   billingGateState={this.state.billingGateState}
                   onIncreaseQuota={this.props.onQuotaExceeded}
+                  billingExecutionType={this.props.billingExecutionType}
                   isAnalyzeDisabled={isDisabled}
                   isAnalyzeLoading={isGenerating}
                   inputDisabled={isGenerating}
@@ -1488,10 +1491,17 @@ export class ChatMessage extends React.Component {
 }
 
 export default React.forwardRef(({ ...props }, ref) => {
-  const { quotaStatus } = useMagicWandBillingGate({
+  const { quotaStatus, billingExecutionType } = useMagicWandBillingGate({
     authentication: props.authentication,
     enabled: !!props.enableBillingGate,
   })
 
-  return <ChatMessage {...props} quotaStatus={quotaStatus} ref={ref} />
+  return (
+    <ChatMessage
+      {...props}
+      quotaStatus={quotaStatus}
+      billingExecutionType={billingExecutionType}
+      ref={ref}
+    />
+  )
 })

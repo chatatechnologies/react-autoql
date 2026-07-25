@@ -97,6 +97,7 @@ export class OptionsToolbar extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     quotaStatus: PropTypes.string,
+    billingExecutionType: PropTypes.oneOf(['STRIPE', 'EXPORT']),
     onQuotaExceeded: PropTypes.func,
     showResetQueryOption: PropTypes.bool,
     hideReportProblem: PropTypes.bool,
@@ -134,6 +135,7 @@ export class OptionsToolbar extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     quotaStatus: undefined,
+    billingExecutionType: undefined,
     onQuotaExceeded: undefined,
     showResetQueryOption: false,
     source: undefined,
@@ -858,6 +860,7 @@ export class OptionsToolbar extends React.Component {
           focusError={this.state.summaryFocusError}
           billingGateState={this.state.billingGateState}
           onIncreaseQuota={this.props.onQuotaExceeded}
+          billingExecutionType={this.props.billingExecutionType}
           isAnalyzeDisabled={hasNoData}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -948,6 +951,7 @@ export class OptionsToolbar extends React.Component {
         initialFocusPrompt={this.state.summaryFocusPrompt}
         enableBillingGate={this.props.enableBillingGate}
         quotaStatus={this.props.quotaStatus}
+        billingExecutionType={this.props.billingExecutionType}
         onQuotaExceeded={this.props.onQuotaExceeded}
       />
     )
@@ -1164,10 +1168,17 @@ export class OptionsToolbar extends React.Component {
 }
 
 export default React.forwardRef(({ ...props }, ref) => {
-  const { quotaStatus } = useMagicWandBillingGate({
+  const { quotaStatus, billingExecutionType } = useMagicWandBillingGate({
     authentication: props.authentication,
     enabled: !!props.enableBillingGate,
   })
 
-  return <OptionsToolbar {...props} quotaStatus={quotaStatus} ref={ref} />
+  return (
+    <OptionsToolbar
+      {...props}
+      quotaStatus={quotaStatus}
+      billingExecutionType={billingExecutionType}
+      ref={ref}
+    />
+  )
 })

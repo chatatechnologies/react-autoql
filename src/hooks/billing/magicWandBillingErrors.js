@@ -4,8 +4,8 @@ const BILLING_USAGE_UNAVAILABLE = 'BILLING_USAGE_UNAVAILABLE'
 
 export const MAGIC_WAND_BILLING_GATE_MESSAGES = {
   over_quota:
-    'Your most recent MagicWand usage put this account at or over its monthly quota. You can increase your monthly quota, or wait until your next billing period, when usage resets.',
-  unavailable: "We couldn't verify your MagicWand usage right now. You can still try again.",
+    'Your most recent Auto Analyze usage put this account at or over its monthly quota. You can increase your monthly quota, or wait until your next billing period, when usage resets.',
+  unavailable: "We couldn't verify your Auto Analyze usage right now. You can still try again.",
 }
 
 // Query Controller's BillingUsageGate has no discriminating code for this state today

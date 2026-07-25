@@ -18,8 +18,12 @@ const buildFetchResponse = (status, data) =>
   })
 
 const Harness = ({ enabled }) => {
-  const { quotaStatus } = useMagicWandBillingGate({ authentication, enabled })
-  return <div data-test='result'>{quotaStatus ?? 'undefined'}</div>
+  const { quotaStatus, billingExecutionType } = useMagicWandBillingGate({ authentication, enabled })
+  return (
+    <div data-test='result'>
+      {quotaStatus ?? 'undefined'}|{billingExecutionType ?? 'undefined'}
+    </div>
+  )
 }
 
 Harness.propTypes = {
@@ -81,5 +85,33 @@ describe('useMagicWandBillingGate', () => {
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
     expect(screen.getByTestId('result')).toHaveTextContent('undefined')
+  })
+
+  it('surfaces the resolved billing execution type once the customer key resolves', async () => {
+    global.fetch
+      .mockImplementationOnce(() =>
+        buildFetchResponse(200, { billing_customer_key: 'bck_acme_ABCDEFGH', billing_execution_type: 'EXPORT' }),
+      )
+      .mockImplementationOnce(() => buildFetchResponse(200, { quota_status: 'under_quota' }))
+
+    render(<Harness enabled={true} />)
+
+    await waitFor(() => expect(screen.getByTestId('result')).toHaveTextContent('under_quota|EXPORT'))
+  })
+
+  it('never surfaces billing execution type when disabled', async () => {
+    render(<Harness enabled={false} />)
+
+    expect(screen.getByTestId('result')).toHaveTextContent('undefined|undefined')
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  it('stays undefined for billing execution type when no customer key resolves', async () => {
+    global.fetch.mockImplementationOnce(() => buildFetchResponse(404))
+
+    render(<Harness enabled={true} />)
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
+    expect(screen.getByTestId('result')).toHaveTextContent('undefined|undefined')
   })
 })

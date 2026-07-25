@@ -111,4 +111,17 @@ describe('billing gate (enableBillingGate)', () => {
     expect(instance.state.billingGateState).toBeNull()
     expect(instance.state.focusError).toBe(ceilingReachedError.message)
   })
+
+  test('passes billingExecutionType through to the notice when a gate state is shown', () => {
+    const wrapper = setup({ enableBillingGate: true, billingExecutionType: 'STRIPE' })
+    const instance = wrapper.instance()
+    instance.setState({ billingGateState: 'unavailable' })
+
+    const content = instance.renderContent()
+    const notice = content.props.children.find(
+      (child) => child && child.type && child.type.name === 'MagicWandBillingGateNotice',
+    )
+
+    expect(notice.props.billingExecutionType).toBe('STRIPE')
+  })
 })

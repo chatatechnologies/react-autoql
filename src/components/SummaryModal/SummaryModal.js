@@ -49,6 +49,7 @@ export default class SummaryModal extends React.Component {
     initialFocusPrompt: PropTypes.string, // Focus prompt passed from popover
     enableBillingGate: PropTypes.bool,
     quotaStatus: PropTypes.string,
+    billingExecutionType: PropTypes.oneOf(['STRIPE', 'EXPORT']),
     onQuotaExceeded: PropTypes.func,
   }
 
@@ -65,6 +66,7 @@ export default class SummaryModal extends React.Component {
     initialFocusPrompt: '',
     enableBillingGate: false,
     quotaStatus: undefined,
+    billingExecutionType: undefined,
     onQuotaExceeded: undefined,
   }
 
@@ -266,7 +268,11 @@ export default class SummaryModal extends React.Component {
         <div className='summary-modal-empty'>
           <Icon type='magic-wand' size='large' />
           <h3>Auto Analyze</h3>
-          <MagicWandBillingGateNotice state={this.state.billingGateState} onIncreaseQuota={this.props.onQuotaExceeded} />
+          <MagicWandBillingGateNotice
+            state={this.state.billingGateState}
+            onIncreaseQuota={this.props.onQuotaExceeded}
+            billingExecutionType={this.props.billingExecutionType}
+          />
         </div>
       )
     }

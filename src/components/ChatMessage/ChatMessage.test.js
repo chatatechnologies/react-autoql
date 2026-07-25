@@ -198,4 +198,19 @@ describe('billing gate (enableBillingGate)', () => {
       )
     })
   })
+
+  test('passes billingExecutionType through to the get-quote popover content', () => {
+    const wrapper = setup({
+      enableBillingGate: true,
+      enableMagicWand: true,
+      billingExecutionType: 'STRIPE',
+    })
+    const instance = wrapper.instance()
+
+    const footer = instance.renderSummaryFooter()
+    const button = footer.props.children[0].props.children
+    const popoverContentElement = button.props.splitButton.popoverContent({ closePopover: () => {} })
+
+    expect(popoverContentElement.props.billingExecutionType).toBe('STRIPE')
+  })
 })

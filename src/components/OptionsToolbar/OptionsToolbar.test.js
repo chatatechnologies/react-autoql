@@ -1064,4 +1064,23 @@ describe('billing gate (enableBillingGate)', () => {
     expect(instance.state.summaryFocusError).toBe(ceilingReachedError.message)
     queryOutputComponent.unmount()
   })
+
+  test('passes billingExecutionType through to the summary modal and the get-quote popover content', () => {
+    const { wrapper, queryOutputComponent } = setup(
+      { enableBillingGate: true, quotaStatus: 'under_quota', billingExecutionType: 'STRIPE' },
+      { initialDisplayType: 'table' },
+    )
+    const instance = wrapper.instance()
+
+    const summaryModalElement = instance.renderSummaryModal()
+    expect(summaryModalElement.props.billingExecutionType).toBe('STRIPE')
+
+    const popoverContentElement = instance.renderSummaryPopoverContent()
+    const focusPromptElement = popoverContentElement.props.children.find(
+      (child) => child && child.type && child.type.name === 'FocusPromptPopoverContent',
+    )
+    expect(focusPromptElement.props.billingExecutionType).toBe('STRIPE')
+
+    queryOutputComponent.unmount()
+  })
 })
