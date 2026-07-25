@@ -16,9 +16,12 @@ export interface BillingCustomerScope {
   scope_id?: string
 }
 
+export type BillingExecutionType = 'STRIPE' | 'EXPORT'
+
 export interface BillingCustomerKeyResponse {
   billing_customer_key: string
   scope?: BillingCustomerScope | null
+  billing_execution_type?: BillingExecutionType
 }
 
 export interface BillingCurrentUsage {
@@ -203,6 +206,8 @@ export interface DashboardProps {
   enableCyclicalDates?: boolean
   enableMagicWand?: boolean
   showMagicWandQuoteButton?: boolean
+  enableBillingGate?: boolean
+  onQuotaExceeded?: () => void
   enableCustomColumns?: boolean
   preferRegularTableInitialDisplayType?: boolean
   source?: string | string[]
@@ -251,6 +256,8 @@ export interface DataMessengerProps {
   disableColumnSelectionForDataExplorer?: boolean
   enableMagicWand?: boolean
   showMagicWandQuoteButton?: boolean
+  enableBillingGate?: boolean
+  onQuotaExceeded?: () => void
   enableCyclicalDates?: boolean
   projectSelectList?: Array<{ projectId: string; displayName: string }>
   selectedProjectId?: string

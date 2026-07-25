@@ -93,6 +93,8 @@ class NotificationFeed extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
   }
 
   static defaultProps = {
@@ -116,6 +118,8 @@ class NotificationFeed extends React.Component {
     showSelectNotificationsButton: true,
     enableCyclicalDates: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -853,6 +857,8 @@ class NotificationFeed extends React.Component {
                           enableCustomColumns={this.props.enableCustomColumns}
                           enableMagicWand={this.props.enableMagicWand}
                           showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                          enableBillingGate={this.props.enableBillingGate}
+                          onQuotaExceeded={this.props.onQuotaExceeded}
                         />
                       </div>
                     )

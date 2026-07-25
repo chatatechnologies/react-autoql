@@ -146,6 +146,8 @@ class DashboardWithoutTheme extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
   }
@@ -185,6 +187,8 @@ class DashboardWithoutTheme extends React.Component {
     enableSlicers: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     enableResetQuery: false,
   }
@@ -1409,6 +1413,8 @@ class DashboardWithoutTheme extends React.Component {
             enableCyclicalDates={this.props.enableCyclicalDates}
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            enableBillingGate={this.props.enableBillingGate}
+            onQuotaExceeded={this.props.onQuotaExceeded}
             enableFollowOnQuery={this.props.enableFollowOnQuery}
             showResetQueryOption={this.props.enableResetQuery}
           />
@@ -1505,6 +1511,8 @@ class DashboardWithoutTheme extends React.Component {
             enableCyclicalDates={this.props.enableCyclicalDates}
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            enableBillingGate={this.props.enableBillingGate}
+            onQuotaExceeded={this.props.onQuotaExceeded}
           />
           <Tooltip tooltipId={this.TOOLTIP_ID} />
           <Tooltip tooltipId={this.CHART_TOOLTIP_ID} className='react-autoql-chart-tooltip' delayShow={0} />

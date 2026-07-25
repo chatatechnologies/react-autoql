@@ -35,6 +35,7 @@ import DataAlertModal from '../Notifications/DataAlertModal/DataAlertModal'
 import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
+import { useMagicWandBillingGate, getMagicWandBillingErrorState } from '../../hooks/billing'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -63,6 +64,7 @@ export class OptionsToolbar extends React.Component {
       isResetQueryConfirmVisible: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
+      billingGateState: null,
       quoteResult: null,
       isFetchingQuote: false,
       previousDisplayType: null, // Track display type before switching to table for filtering
@@ -93,6 +95,9 @@ export class OptionsToolbar extends React.Component {
     onResetClick: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    quotaStatus: PropTypes.string,
+    onQuotaExceeded: PropTypes.func,
     showResetQueryOption: PropTypes.bool,
     hideReportProblem: PropTypes.bool,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
@@ -127,6 +132,9 @@ export class OptionsToolbar extends React.Component {
     onResetClick: undefined,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    quotaStatus: undefined,
+    onQuotaExceeded: undefined,
     showResetQueryOption: false,
     source: undefined,
     scope: undefined,
@@ -725,6 +733,7 @@ export class OptionsToolbar extends React.Component {
       isSummaryModalVisible: true,
       summaryFocusPrompt: focusPrompt,
       summaryFocusError: null,
+      billingGateState: null,
     })
   }
 
@@ -733,11 +742,12 @@ export class OptionsToolbar extends React.Component {
       isSummaryModalVisible: false,
       summaryFocusPrompt: '',
       summaryFocusError: null,
+      billingGateState: null,
     })
   }
 
   handleSummaryFocusPromptChange = (e) => {
-    this.setState({ summaryFocusPrompt: e.target.value, summaryFocusError: null, quoteResult: null })
+    this.setState({ summaryFocusPrompt: e.target.value, summaryFocusError: null, quoteResult: null, billingGateState: null })
   }
 
   handleSummaryGetQuote = async () => {
@@ -748,7 +758,12 @@ export class OptionsToolbar extends React.Component {
 
     if (!filteredRows?.length || !currentColumns?.length || !queryData) return
 
-    this.setState({ isFetchingQuote: true, summaryFocusError: null, quoteResult: null })
+    if (this.props.enableBillingGate && this.props.quotaStatus === 'at_or_over_quota') {
+      this.setState({ summaryFocusError: null, quoteResult: null, billingGateState: 'over_quota' })
+      return
+    }
+
+    this.setState({ isFetchingQuote: true, summaryFocusError: null, quoteResult: null, billingGateState: null })
 
     const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
     if (!auth.apiKey || !auth.domain) {
@@ -792,12 +807,17 @@ export class OptionsToolbar extends React.Component {
         this.setState({ summaryFocusError: 'Unable to get quote. Please try again.' })
       }
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.data?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to get quote. Please try again.'
-      this.setState({ summaryFocusError: errorMessage })
+      const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
+      if (gateState) {
+        this.setState({ billingGateState: gateState })
+      } else {
+        const errorMessage =
+          error?.response?.data?.data?.message ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Unable to get quote. Please try again.'
+        this.setState({ summaryFocusError: errorMessage })
+      }
     } finally {
       this.setState({ isFetchingQuote: false })
     }
@@ -836,6 +856,8 @@ export class OptionsToolbar extends React.Component {
           quoteResult={this.state.quoteResult}
           isFetchingQuote={this.state.isFetchingQuote}
           focusError={this.state.summaryFocusError}
+          billingGateState={this.state.billingGateState}
+          onIncreaseQuota={this.props.onQuotaExceeded}
           isAnalyzeDisabled={hasNoData}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -924,6 +946,9 @@ export class OptionsToolbar extends React.Component {
         onErrorCallback={this.props.onErrorCallback}
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         initialFocusPrompt={this.state.summaryFocusPrompt}
+        enableBillingGate={this.props.enableBillingGate}
+        quotaStatus={this.props.quotaStatus}
+        onQuotaExceeded={this.props.onQuotaExceeded}
       />
     )
   }
@@ -1138,4 +1163,11 @@ export class OptionsToolbar extends React.Component {
   }
 }
 
-export default React.forwardRef(({ ...props }, ref) => <OptionsToolbar {...props} ref={ref} />)
+export default React.forwardRef(({ ...props }, ref) => {
+  const { quotaStatus } = useMagicWandBillingGate({
+    authentication: props.authentication,
+    enabled: !!props.enableBillingGate,
+  })
+
+  return <OptionsToolbar {...props} quotaStatus={quotaStatus} ref={ref} />
+})

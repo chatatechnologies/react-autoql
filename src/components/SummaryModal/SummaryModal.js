@@ -12,6 +12,8 @@ import SummaryFooter from '../ChatMessage/SummaryFooter'
 import SummaryContent from '../SummaryContent/SummaryContent'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
+import { MagicWandBillingGateNotice } from '../MagicWandBillingGate'
+import { getMagicWandBillingErrorState } from '../../hooks/billing'
 
 import { authenticationType, autoQLConfigType } from '../../props/types'
 
@@ -29,6 +31,7 @@ export default class SummaryModal extends React.Component {
       isGenerating: false,
       focusPromptUsed: '',
       focusError: null,
+      billingGateState: null,
       queryId: null,
     }
   }
@@ -44,6 +47,9 @@ export default class SummaryModal extends React.Component {
     onErrorCallback: PropTypes.func,
     tooltipID: PropTypes.string,
     initialFocusPrompt: PropTypes.string, // Focus prompt passed from popover
+    enableBillingGate: PropTypes.bool,
+    quotaStatus: PropTypes.string,
+    onQuotaExceeded: PropTypes.func,
   }
 
   static defaultProps = {
@@ -57,6 +63,9 @@ export default class SummaryModal extends React.Component {
     onErrorCallback: () => {},
     tooltipID: undefined,
     initialFocusPrompt: '',
+    enableBillingGate: false,
+    quotaStatus: undefined,
+    onQuotaExceeded: undefined,
   }
 
   componentDidMount = () => {
@@ -72,6 +81,7 @@ export default class SummaryModal extends React.Component {
         isGenerating: false,
         focusPromptUsed: focusPrompt,
         focusError: null,
+        billingGateState: null,
         queryId: this.props.queryResponse?.data?.data?.query_id || null,
       })
 
@@ -102,7 +112,12 @@ export default class SummaryModal extends React.Component {
     // Use provided focus prompt or fall back to prop
     const promptToUse = focusPrompt || this.props.initialFocusPrompt || ''
 
-    this.setState({ isGenerating: true, focusError: null, focusPromptUsed: promptToUse })
+    if (this.props.enableBillingGate && this.props.quotaStatus === 'at_or_over_quota') {
+      this.setState({ focusError: null, billingGateState: 'over_quota', focusPromptUsed: promptToUse })
+      return
+    }
+
+    this.setState({ isGenerating: true, focusError: null, billingGateState: null, focusPromptUsed: promptToUse })
 
     try {
       // Get filtered data from QueryOutput's tableData (already filtered)
@@ -141,14 +156,19 @@ export default class SummaryModal extends React.Component {
         this.props.onErrorCallback?.(displayMessage)
       }
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.data?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to generate summary. Please try again.'
+      const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
+      if (gateState) {
+        this.setState({ billingGateState: gateState })
+      } else {
+        const errorMessage =
+          error?.response?.data?.data?.message ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to generate summary. Please try again.'
 
-      this.setState({ focusError: errorMessage })
-      this.props.onErrorCallback?.(errorMessage)
+        this.setState({ focusError: errorMessage })
+        this.props.onErrorCallback?.(errorMessage)
+      }
     } finally {
       if (this._isMounted) {
         this.setState({ isGenerating: false })
@@ -237,6 +257,17 @@ export default class SummaryModal extends React.Component {
             </div>
           </div>
         </CustomScrollbars>
+      )
+    }
+
+    // Show the proactive/reactive billing gate notice in place of the generic error
+    if (this.state.billingGateState) {
+      return (
+        <div className='summary-modal-empty'>
+          <Icon type='magic-wand' size='large' />
+          <h3>Auto Analyze</h3>
+          <MagicWandBillingGateNotice state={this.state.billingGateState} onIncreaseQuota={this.props.onQuotaExceeded} />
+        </div>
       )
     }
 

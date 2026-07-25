@@ -1,10 +1,17 @@
 import React from 'react'
 import { shallow, mount } from 'enzyme'
+import { fetchLLMSummaryQuote } from 'autoql-fe-utils'
 import { findByTestAttr } from '../../../test/testUtils'
+import { testAuthentication } from '../../../test/testData'
 import { QueryOutput } from '../QueryOutput/QueryOutput'
 import { OptionsToolbar } from './OptionsToolbar'
 import { Tooltip } from '../Tooltip'
 import responseTestCases from '../../../test/responseTestCases'
+
+jest.mock('autoql-fe-utils', () => ({
+  ...jest.requireActual('autoql-fe-utils'),
+  fetchLLMSummaryQuote: jest.fn(),
+}))
 
 const defaultProps = OptionsToolbar.defaultProps
 
@@ -964,5 +971,97 @@ describe('initialIsFiltering prop', () => {
   test('falls back to responseRef.isFilteringTable() when initialIsFiltering is not provided', () => {
     const { wrapper } = setup()
     expect(wrapper.instance().state.isFiltering).toBe(false)
+  })
+})
+
+describe('billing gate (enableBillingGate)', () => {
+  const ceilingReachedError = {
+    reference_id: '1.1.993',
+    message: 'MagicWand monthly usage quota has been reached. Raise the quota to continue.',
+    data: { code: 'BILLING_USAGE_CEILING_REACHED', outcome: 'BLOCK_CEILING_EXCEEDED' },
+  }
+  const unavailableError = {
+    reference_id: '1.1.993',
+    message: 'Unable to verify current MagicWand billing usage. Please retry.',
+    data: { code: 'BILLING_USAGE_UNAVAILABLE', outcome: 'BILLING_USAGE_UNAVAILABLE' },
+  }
+
+  beforeEach(() => {
+    fetchLLMSummaryQuote.mockReset()
+  })
+
+  test('proactively blocks the quote call when quotaStatus is at_or_over_quota', async () => {
+    const { wrapper, queryOutputComponent } = setup(
+      { enableBillingGate: true, quotaStatus: 'at_or_over_quota', authentication: testAuthentication },
+      { initialDisplayType: 'table' },
+    )
+    const instance = wrapper.instance()
+
+    await instance.handleSummaryGetQuote()
+
+    expect(fetchLLMSummaryQuote).not.toHaveBeenCalled()
+    expect(instance.state.billingGateState).toBe('over_quota')
+    queryOutputComponent.unmount()
+  })
+
+  test('does not block when quotaStatus is unknown/loading/error', async () => {
+    fetchLLMSummaryQuote.mockResolvedValue({ data: { data: { wandable: true, cost: 1 } } })
+    const { wrapper, queryOutputComponent } = setup(
+      { enableBillingGate: true, quotaStatus: undefined, authentication: testAuthentication },
+      { initialDisplayType: 'table' },
+    )
+    const instance = wrapper.instance()
+
+    await instance.handleSummaryGetQuote()
+
+    expect(fetchLLMSummaryQuote).toHaveBeenCalledTimes(1)
+    expect(instance.state.billingGateState).toBeNull()
+    queryOutputComponent.unmount()
+  })
+
+  test('reactive: a ceiling-reached error after a fired call renders the over_quota state', async () => {
+    fetchLLMSummaryQuote.mockRejectedValue(ceilingReachedError)
+    const { wrapper, queryOutputComponent } = setup(
+      { enableBillingGate: true, quotaStatus: 'under_quota', authentication: testAuthentication },
+      { initialDisplayType: 'table' },
+    )
+    const instance = wrapper.instance()
+
+    await instance.handleSummaryGetQuote()
+
+    expect(instance.state.billingGateState).toBe('over_quota')
+    expect(instance.state.summaryFocusError).toBeNull()
+    queryOutputComponent.unmount()
+  })
+
+  test('reactive: an unavailable error never claims over-quota and does not block future attempts', async () => {
+    fetchLLMSummaryQuote.mockRejectedValue(unavailableError)
+    const { wrapper, queryOutputComponent } = setup(
+      { enableBillingGate: true, quotaStatus: 'under_quota', authentication: testAuthentication },
+      { initialDisplayType: 'table' },
+    )
+    const instance = wrapper.instance()
+
+    await instance.handleSummaryGetQuote()
+
+    expect(instance.state.billingGateState).toBe('unavailable')
+    queryOutputComponent.unmount()
+  })
+
+  test('with enableBillingGate false/omitted: no proactive block, no hook-driven gating, and a ceiling-reached response falls back to the existing generic message unchanged', async () => {
+    fetchLLMSummaryQuote.mockRejectedValue(ceilingReachedError)
+    const { wrapper, queryOutputComponent } = setup(
+      { enableBillingGate: false, quotaStatus: 'at_or_over_quota', authentication: testAuthentication },
+      { initialDisplayType: 'table' },
+    )
+    const instance = wrapper.instance()
+
+    await instance.handleSummaryGetQuote()
+
+    // Not proactively blocked even though quotaStatus looks over-quota, because the gate is off.
+    expect(fetchLLMSummaryQuote).toHaveBeenCalledTimes(1)
+    expect(instance.state.billingGateState).toBeNull()
+    expect(instance.state.summaryFocusError).toBe(ceilingReachedError.message)
+    queryOutputComponent.unmount()
   })
 })
