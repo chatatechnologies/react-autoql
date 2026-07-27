@@ -20,6 +20,7 @@ import {
   updateManagementDataAlert,
   autoQLConfigDefault,
   getAllDataAlertsLabels,
+  getAllDataAlertsLabelsByProject,
   assignLabelToManagementDataAlert,
 } from 'autoql-fe-utils'
 
@@ -75,6 +76,7 @@ class DataAlertModal extends React.Component {
     autoQLConfig: autoQLConfigType,
     enableAlphaAlertSettings: PropTypes.bool,
     onDelete: PropTypes.func,
+    isManagementPortal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -94,6 +96,7 @@ class DataAlertModal extends React.Component {
     dataFormatting: dataFormattingDefault,
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
+    isManagementPortal: false,
   }
 
   componentDidMount = () => {
@@ -133,8 +136,9 @@ class DataAlertModal extends React.Component {
   }
 
   getLabels = () => {
-    if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
-      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
+    if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey) {
+      const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
+      getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
@@ -142,6 +146,7 @@ class DataAlertModal extends React.Component {
           console.error('error fetching data alert categories', error)
           this.setState({ categories: [], fetchedCategories: true })
         })
+    }
   }
 
   showConditionsStep = () => {

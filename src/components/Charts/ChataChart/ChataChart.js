@@ -59,6 +59,16 @@ import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPro
 
 import './ChataChart.scss'
 
+const _suppressResizeObserverError = (e) => {
+  if (
+    e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
+    e.message === 'ResizeObserver loop limit exceeded'
+  ) {
+    e.stopImmediatePropagation()
+    return false
+  }
+}
+
 export default class ChataChart extends React.Component {
   constructor(props) {
     super(props)
@@ -183,6 +193,9 @@ export default class ChataChart extends React.Component {
 
   componentDidMount = () => {
     this._isMounted = true
+    // Each instance gets its own reference so unmounting one chart doesn't remove others' handlers.
+    this._suppressResizeObserverError = (e) => _suppressResizeObserverError(e)
+    window.addEventListener('error', this._suppressResizeObserverError)
     if (!this.props.isResizing && !this.props.hidden) {
       // The first render is to determine the chart size based on its parent container
       this.firstRender = false
@@ -353,6 +366,7 @@ export default class ChataChart extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    window.removeEventListener('error', this._suppressResizeObserverError)
     clearTimeout(this.adjustVerticalPositionTimeout)
     this.stopThrottledRefresh()
     if (this.cleanupObserve) {
@@ -864,7 +878,12 @@ export default class ChataChart extends React.Component {
       outerWidth: this.outerWidth,
     }
 
-    if (this.props.hidden || this.props.isAnimating || this.firstRender) {
+    if (
+      this.props.hidden ||
+      this.props.isAnimating ||
+      this.firstRender ||
+      this.isContainerCollapsed()
+    ) {
       return defaultDimensions
     }
 
@@ -1533,6 +1552,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}
@@ -1562,6 +1582,7 @@ export default class ChataChart extends React.Component {
                         dataFormatting={this.props.dataFormatting}
                         chartTooltipID={this.props.chartTooltipID}
                         chartType={this.getChartTypeString()}
+                        colorScale={this.getColorScales()?.colorScale}
                       />
                     </g>
                   )}

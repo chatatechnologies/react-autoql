@@ -10,6 +10,7 @@ import {
   createManagementDataAlert,
   autoQLConfigDefault,
   getAllDataAlertsLabels,
+  getAllDataAlertsLabelsByProject,
   assignLabelToManagementDataAlert,
   previewManagementDataAlert,
   previewDataAlert,
@@ -63,6 +64,7 @@ class CustomFilteredAlertModal extends React.Component {
     autoQLConfig: autoQLConfigType,
     enableAlphaAlertSettings: PropTypes.bool,
     isPreviewMode: PropTypes.bool,
+    isManagementPortal: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -81,6 +83,7 @@ class CustomFilteredAlertModal extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
     isPreviewMode: false,
+    isManagementPortal: false,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -114,8 +117,9 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   getLabels = () => {
-    if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey)
-      getAllDataAlertsLabels({ ...getAuthentication(this.props.authentication) })
+    if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey) {
+      const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
+      getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
@@ -123,6 +127,7 @@ class CustomFilteredAlertModal extends React.Component {
           console.error('error fetching data alert categories', error)
           this.setState({ categories: [], fetchedCategories: true })
         })
+    }
   }
 
   getFilters = (props = this.props) => {

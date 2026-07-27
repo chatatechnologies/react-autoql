@@ -64,6 +64,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: PropTypes.func,
     onDataProcessed: PropTypes.func,
     onScrollVertical: PropTypes.func,
+    onColumnMoved: PropTypes.func,
     pivot: PropTypes.bool,
     scope: PropTypes.string,
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool]),
@@ -83,6 +84,7 @@ export default class TableWrapper extends React.Component {
     onDataFiltered: () => {},
     onDataProcessed: () => {},
     onScrollVertical: () => {},
+    onColumnMoved: () => {},
     pivot: false,
     scope: undefined,
     height: undefined,
@@ -271,6 +273,7 @@ export default class TableWrapper extends React.Component {
     })
 
     this.attachTabulatorEventHandlers(this.tabulator)
+    this.silenceProgressiveLoadNextPageRejections(this.tabulator)
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
@@ -279,10 +282,14 @@ export default class TableWrapper extends React.Component {
         try {
           await this.tabulator.replaceData()
 
-          setTimeout(() => {
-            // After table is built, sometimes the resize handles do not show. If we redraw the table they show up
-            this.tabulator.redraw()
-          }, 500)
+          // Two rAF frames ensure react-grid-layout has applied final tile dimensions before fitColumns runs.
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              if (this._isMounted && this.tabulator) {
+                this.tabulator.redraw(true)
+              }
+            })
+          })
         } catch (error) {
           console.error(error)
         }
@@ -290,6 +297,15 @@ export default class TableWrapper extends React.Component {
 
       this.props.onTableBuilt()
     })
+  }
+
+  // Tabulator's progressive-load nextPage() runs in an un-awaited setTimeout that rejects uncatchably if a reload changes pagination first
+  silenceProgressiveLoadNextPageRejections = (tabulator) => {
+    const pageModule = tabulator?.modules?.page
+    if (!pageModule || pageModule.__nextPagePatched) return
+    const originalNextPage = pageModule.nextPage.bind(pageModule)
+    pageModule.nextPage = (...args) => originalNextPage(...args)?.catch?.(() => {})
+    pageModule.__nextPagePatched = true
   }
 
   // Temporarily block Tabulator redraws; callers must call `restoreRedraw()` (use try/finally).
@@ -327,8 +343,11 @@ export default class TableWrapper extends React.Component {
 
   attachTabulatorEventHandlers = (tabulator) => {
     tabulator.on('renderComplete', () => {
-      tabulator.modules.layout.autoResize = false
-      tabulator.modules.layout.columnAutoResize = false
+      // Leave autoResize enabled when clientWidth === 0 so tabulator reflows once the container reaches its final size.
+      if (!this.tableRef || this.tableRef.clientWidth > 0) {
+        tabulator.modules.layout.autoResize = false
+        tabulator.modules.layout.columnAutoResize = false
+      }
     })
     tabulator.on('dataLoadError', this.props.onDataLoadError)
     tabulator.on('dataProcessed', this.props.onDataProcessed)
@@ -338,6 +357,7 @@ export default class TableWrapper extends React.Component {
     tabulator.on('dataFiltering', this.props.onDataFiltering)
     tabulator.on('dataFiltered', this.props.onDataFiltered)
     tabulator.on('scrollVertical', this.props.onScrollVertical)
+    tabulator.on('columnMoved', this.props.onColumnMoved)
   }
 
   recreateTabulatorForPivot = (data) => {
@@ -364,6 +384,7 @@ export default class TableWrapper extends React.Component {
     })
 
     this.attachTabulatorEventHandlers(this.tabulator)
+    this.silenceProgressiveLoadNextPageRejections(this.tabulator)
 
     // Mark initialized and notify parent
     this.isInitialized = true
@@ -382,10 +403,12 @@ export default class TableWrapper extends React.Component {
     if (this.props.hidden) {
       // This allows current tasks to finish first
       // Makes it seems much more responsive
-      return setTimeout(() => {
-        this.restoreRedraw()
-        return this.tabulator?.setData(data)
-      }, 0)
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          this.restoreRedraw()
+          resolve(this.tabulator?.setData(data))
+        }, 0)
+      })
     }
 
     this.restoreRedraw()

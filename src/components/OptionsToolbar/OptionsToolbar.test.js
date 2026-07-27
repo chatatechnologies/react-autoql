@@ -669,6 +669,79 @@ describe('exportCSV with filters', () => {
   })
 })
 
+describe('filter badge (isFiltered)', () => {
+  const buildResponseRef = (overrides = {}) => ({
+    state: { displayType: 'table', customColumnSelects: [] },
+    queryResponse: responseTestCases[8],
+    getColumns: () => (responseTestCases[8].data?.data?.columns || []).map((c) => ({ ...c })),
+    isFilteringTable: () => false,
+    formattedTableParams: { filters: [], sorters: [] },
+    getTabulatorHeaderFilters: () => [],
+    getCombinedFilters: () => [],
+    copyTableToClipboard: () => {},
+    toggleTableFilter: () => {},
+    changeDisplayType: () => {},
+    saveChartAsPNG: () => {},
+    tableData: responseTestCases[8].data?.data?.rows || [],
+    tableConfig: {},
+    pivotTableRef: { _isMounted: false },
+    props: {},
+    ...overrides,
+  })
+
+  test('filter badge is hidden when no formattedTableParams filters and no drilldownFilters', () => {
+    const responseRef = buildResponseRef({
+      formattedTableParams: { filters: [], sorters: [] },
+      props: { drilldownFilters: undefined },
+    })
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const filterBtn = wrapper.find('[data-test="react-autoql-filter-button"]')
+    expect(filterBtn.exists()).toBe(true)
+    // Icon showBadge prop should be false
+    const icon = filterBtn.find('Icon')
+    expect(icon.prop('showBadge')).toBe(false)
+  })
+
+  test('filter badge shows when formattedTableParams has filters', () => {
+    const responseRef = buildResponseRef({
+      formattedTableParams: {
+        filters: [{ name: 'sale_type', value: 'Online', operator: '=' }],
+        sorters: [],
+      },
+      props: { drilldownFilters: undefined },
+    })
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const icon = wrapper.find('[data-test="react-autoql-filter-button"]').find('Icon')
+    expect(icon.prop('showBadge')).toBe(true)
+  })
+
+  test('filter badge shows when drilldownFilters has filters (API drilldown case)', () => {
+    const responseRef = buildResponseRef({
+      formattedTableParams: { filters: [], sorters: [] },
+      props: {
+        drilldownFilters: [
+          { name: 'public.all_sales_fact.sale_date', value: '2009-10-01', operator: '=' },
+          { name: 'public.all_sales_fact.sale_type', value: 'In Store', operator: '=' },
+        ],
+      },
+    })
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const icon = wrapper.find('[data-test="react-autoql-filter-button"]').find('Icon')
+    expect(icon.prop('showBadge')).toBe(true)
+  })
+
+  test('filter badge is hidden for original tile — drilldownFilters not on original tile QueryOutput', () => {
+    // Original tile's QueryOutput receives no drilldownFilters prop
+    const responseRef = buildResponseRef({
+      formattedTableParams: { filters: [], sorters: [] },
+      props: {}, // no drilldownFilters key at all
+    })
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const icon = wrapper.find('[data-test="react-autoql-filter-button"]').find('Icon')
+    expect(icon.prop('showBadge')).toBe(false)
+  })
+})
+
 function makeResponseRef({ displayType, display_type, filters = [], customResponse = null }) {
   return {
     state: { displayType, customResponse },
@@ -875,5 +948,21 @@ describe('toolbar state for error and feedback response types', () => {
     instance.props.responseRef.formattedTableParams = { filters: [{ field: 'col1', value: 'x' }] }
     const rendered = instance.renderFilterBtn()
     expect(rendered.props.tooltip).toBe('Edit table filters')
+  })
+})
+describe('initialIsFiltering prop', () => {
+  test('initialIsFiltering=true takes precedence over responseRef.isFilteringTable()', () => {
+    const { wrapper } = setup({ initialIsFiltering: true })
+    expect(wrapper.instance().state.isFiltering).toBe(true)
+  })
+
+  test('initialIsFiltering=false takes precedence over responseRef.isFilteringTable()', () => {
+    const { wrapper } = setup({ initialIsFiltering: false })
+    expect(wrapper.instance().state.isFiltering).toBe(false)
+  })
+
+  test('falls back to responseRef.isFilteringTable() when initialIsFiltering is not provided', () => {
+    const { wrapper } = setup()
+    expect(wrapper.instance().state.isFiltering).toBe(false)
   })
 })

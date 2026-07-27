@@ -30,6 +30,32 @@ import 'react-splitter-layout/lib/index.css'
 
 const ReactGridLayout = WidthProvider(RGL)
 
+export const isResponseFailed = (response) => {
+  if (!response) return false
+  if (response?.data?.data?.items) return true
+  const referenceId = String(response?.data?.reference_id || '')
+  const refId = Number(referenceId.split('.')[2])
+  return !(refId >= 200 && refId < 300)
+}
+
+export const isTileFailed = (tile) => {
+  if (isResponseFailed(tile.queryResponse)) return true
+  if (tile.secondQuery && isResponseFailed(tile.secondQueryResponse)) return true
+  return false
+}
+
+export const isTileDirty = (tile, savedTile, baseline = {}) => {
+  if (!savedTile) return false
+  if (
+    tile.queryResponse?.data?.data?.replacements ||
+    tile.queryResponse?.data?.data?.items ||
+    tile.secondQueryResponse?.data?.data?.replacements ||
+    tile.secondQueryResponse?.data?.data?.items
+  )
+    return true
+  return savedTile.query ? tile.query !== savedTile.query && tile.queryId === baseline.queryId : false
+}
+
 class DashboardWithoutTheme extends React.Component {
   constructor(props) {
     super(props)
@@ -51,6 +77,7 @@ class DashboardWithoutTheme extends React.Component {
     this.isDiscardingResetChanges = false
     this.discardResetTileId = null
     this.baselineQueryIds = new Map()
+    this.isDragging = false
 
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
@@ -196,6 +223,23 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    // Dashboard identity changed - clear previous dashboard's tile state so it can't leak into this one.
+    if (this.props.dashboardId !== prevProps.dashboardId) {
+      clearTimeout(this.onChangeTimer)
+      this.onChangeTiles = null
+      this.tileLog = [this.cloneTilesForLog(this.props.tiles)]
+      this.currentLogIndex = 0
+      this.baselineQueryIds = new Map((this.props.tiles || []).map((t) => [t.key, { queryId: t.queryId }]))
+      this.isResettingTile = false
+      this.resettingTileId = null
+      this.pendingResetTiles = null
+      this.isDiscardingResetChanges = false
+      this.discardResetTileId = null
+      if (this.state.uneditedDashboardTiles) {
+        this.setState({ uneditedDashboardTiles: null })
+      }
+    }
+
     // Update slicers if initialSlicers prop changes, but preserve state slicers when entering edit mode
     const currentSlicers = this.getSlicersArrayFromProps(this.props)
     const prevSlicers = this.getSlicersArrayFromProps(prevProps)
@@ -352,30 +396,14 @@ class DashboardWithoutTheme extends React.Component {
     const current = this.getMostRecentTiles()
     return new Set(
       (current || [])
-        .filter((tile) => {
-          const saved = savedByKey.get(tile.key)
-          if (!saved) return false
-          if (tile.queryResponse?.data?.data?.replacements || tile.queryResponse?.data?.data?.items) return true
-          const baseline = this.baselineQueryIds.get(tile.key) || {}
-          const topDirty = saved.query
-            ? tile.query !== saved.query && tile.queryId === baseline.queryId
-            : false
-          return topDirty
-        })
+        .filter((tile) => isTileDirty(tile, savedByKey.get(tile.key), this.baselineQueryIds.get(tile.key)))
         .map((tile) => tile.key),
     )
   }
 
   getFailedTiles = () => {
     const tiles = this.getMostRecentTiles() || []
-    const failedTiles = tiles.filter((tile) => {
-      if (tile.queryResponse?.data?.data?.items) return true
-      if (!tile.queryResponse) return false
-      const referenceId = String(tile.queryResponse?.data?.reference_id || '')
-      const refId = Number(referenceId.split('.')[2])
-      return !(refId >= 200 && refId < 300)
-    })
-    return new Set(failedTiles.map((tile) => tile.key))
+    return new Set(tiles.filter(isTileFailed).map((tile) => tile.key))
   }
 
   subscribeToCallback = (callbackArray) => {
@@ -644,7 +672,7 @@ class DashboardWithoutTheme extends React.Component {
   }
 
   setIsDragging = (isDragging) => {
-    if (this._isMounted && isDragging !== this.state.isDragging && this.isDragging !== isDragging) {
+    if (this._isMounted && this.isDragging !== isDragging) {
       this.isDragging = isDragging
       this.setState({ isDragging })
     }
@@ -803,12 +831,15 @@ class DashboardWithoutTheme extends React.Component {
 
       if (content?.queryResponse) {
         const refId = Number(String(content.queryResponse?.data?.reference_id || '').split('.')[2])
-        const isErrorResponse = content.queryResponse?.data?.data?.items || (content.queryResponse?.data?.reference_id && !(refId >= 200 && refId < 300))
+        const isErrorResponse =
+          content.queryResponse?.data?.data?.items ||
+          (content.queryResponse?.data?.reference_id && !(refId >= 200 && refId < 300))
+        const queryId = content.queryResponse?.data?.data?.query_id
         if (this.props.isEditing && !content.queryId && !isErrorResponse) {
           const { queryResponse: _queryResponse, ...contentWithoutResponse } = content
-          tile = { ...tile, ...contentWithoutResponse }
+          tile = { ...tile, ...contentWithoutResponse, queryId }
         } else {
-          tile = { ...tile, ...content }
+          tile = { ...tile, ...content, queryId }
         }
       }
 
@@ -1167,6 +1198,7 @@ class DashboardWithoutTheme extends React.Component {
                     ...(processedTile.queryResponse !== undefined
                       ? { queryResponse: processedTile.queryResponse }
                       : {}),
+                    ...(processedTile.queryId !== undefined ? { queryId: processedTile.queryId } : {}),
                   }
                   this.pendingResetTiles = pending
                 }
@@ -1175,7 +1207,7 @@ class DashboardWithoutTheme extends React.Component {
               }
             }
 
-            const callbacks = this.props.onSaveCallback ? [this.props.onSaveCallback] : []
+            const callbacks = !this.props.isEditing && this.props.onSaveCallback ? [this.props.onSaveCallback] : []
             return this.debouncedOnChange(this.getMostRecentTiles(), false, callbacks)
           } catch (err) {
             console.error(err)

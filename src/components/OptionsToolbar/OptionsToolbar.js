@@ -53,7 +53,11 @@ export class OptionsToolbar extends React.Component {
       // isSettingColumnVisibility: false,
       reportProblemMessage: undefined,
       isCSVDownloading: false,
-      isFiltering: !!props.responseRef?.isFilteringTable(),
+      // Prefer initialIsFiltering when provided — responseRef may be mid-unmount, making isFilteringTable() unreliable here.
+      isFiltering:
+        typeof props.initialIsFiltering === 'boolean'
+          ? props.initialIsFiltering
+          : !!props.responseRef?.isFilteringTable(),
       isSummaryModalVisible: false,
       isSummaryPopoverOpen: false,
       isResetQueryConfirmVisible: false,
@@ -95,6 +99,7 @@ export class OptionsToolbar extends React.Component {
     scope: PropTypes.string,
     enableFollowOnQuery: PropTypes.bool,
     onOpenFollowOnModal: PropTypes.func,
+    initialIsFiltering: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -620,10 +625,13 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
+  hasActiveFilters = (responseRef) =>
+    !!(responseRef?.formattedTableParams?.filters?.length || responseRef?.props?.drilldownFilters?.length)
+
   renderFilterBtn = () => {
     const responseData = this.props.responseRef?.queryResponse?.data?.data
     const isDataResponse = responseData?.display_type === 'data'
-    const isFiltered = isDataResponse && !!this.props.responseRef?.formattedTableParams?.filters?.length
+    const isFiltered = isDataResponse && this.hasActiveFilters(this.props.responseRef)
     const displayType = this.props.responseRef?.state?.displayType
     const isTable = displayType === 'table'
 
@@ -1024,7 +1032,8 @@ export class OptionsToolbar extends React.Component {
       const allColumnsHidden = areAllColumnsHidden(columns)
       const someColumnsHidden = areSomeColumnsHidden(columns)
       const numRows = response?.data?.data?.rows?.length
-      const isFiltered = !!props.responseRef?.formattedTableParams?.filters?.length
+      const hasData = numRows > 0
+      const isFiltered = this.hasActiveFilters(props.responseRef)
       const hasMoreThanOneRow = (numRows > 1 && !isFiltered) || !!isFiltered
       const autoQLConfig = getAutoQLConfig(props.autoQLConfig)
 
@@ -1050,10 +1059,14 @@ export class OptionsToolbar extends React.Component {
         //   (displayType === 'table' || displayType === 'single-value' || (displayType === 'text' && allColumnsHidden)),
         showHiddenColsBadge: false, // !isMarkdownOnly && someColumnsHidden,
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
-        showSaveAsCSVButton: !isMarkdownOnly && isDataResponse && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+        showSaveAsCSVButton:
+          !isMarkdownOnly && isDataResponse && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton:
-          !isMarkdownOnly && !props.hideReportProblem && autoQLConfig.enableReportProblem && !!response?.data?.data?.query_id,
+          !isMarkdownOnly &&
+          !props.hideReportProblem &&
+          autoQLConfig.enableReportProblem &&
+          !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           !isMarkdownOnly &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
@@ -1065,8 +1078,7 @@ export class OptionsToolbar extends React.Component {
           queryResponse: response,
           isMarkdownOnly,
         }),
-        showFollowOnQueryButton:
-          !isMarkdownOnly && shouldShowQueryActionButton(props.enableFollowOnQuery, response),
+        showFollowOnQueryButton: !isMarkdownOnly && shouldShowQueryActionButton(props.enableFollowOnQuery, response),
       }
 
       // Hide reset button when there's no query text or display type is single-value.
@@ -1119,9 +1131,7 @@ export class OptionsToolbar extends React.Component {
         {shouldShowButton.showCreateNotificationIcon && this.renderDataAlertModal()}
         {shouldShowButton.showSQLButton && this.renderSQLModal()}
         {this.props.enableMagicWand && shouldShowButton.showMagicWandButton && this.renderSummaryModal()}
-        {this.props.isEditing &&
-          this.props.showResetQueryOption &&
-          this.renderResetQueryConfirmModal()}
+        {this.props.isEditing && this.props.showResetQueryOption && this.renderResetQueryConfirmModal()}
         {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} delayShow={800} />}
       </ErrorBoundary>
     )
