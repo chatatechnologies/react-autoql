@@ -113,9 +113,43 @@ export declare function useBillingUsage(args: UseBillingUsageArgs): UseBillingUs
 export declare function useBillingHistory(args: UseBillingHistoryArgs): UseBillingHistoryResult
 export declare function useBillingQuotaUpdate(args: UseBillingQuotaUpdateArgs): UseBillingQuotaUpdateResult
 
-export declare function formatMicrosAsCurrency(micros?: number | null, emptyLabel?: string): string
+export type MagicWandBillingGateState = 'over_quota' | 'unavailable' | null
+
+export interface UseMagicWandBillingGateArgs {
+  authentication?: Authentication
+  enabled?: boolean
+}
+
+export interface UseMagicWandBillingGateResult {
+  quotaStatus?: BillingQuotaStatus
+  billingExecutionType?: BillingExecutionType
+}
+
+export declare function useMagicWandBillingGate(
+  args?: UseMagicWandBillingGateArgs,
+): UseMagicWandBillingGateResult
+
+export declare function getMagicWandBillingErrorState(error: any): MagicWandBillingGateState
+
+export declare const MAGIC_WAND_BILLING_GATE_MESSAGES: {
+  over_quota: string
+  over_quota_summary: string
+  unavailable: string
+}
+
+// Broadcasts to every mounted useMagicWandBillingGate instance that billing usage may have
+// changed (e.g. call this after a quota-increase flow completes) so proactive blocking clears
+// without waiting for a remount.
+export declare function refreshBillingUsage(): void
+
+export declare function formatMicrosAsCurrency(
+  micros?: number | null,
+  emptyLabel?: string,
+  currency?: string,
+  locale?: string,
+): string
 export declare function microsFromCurrencyInput(value: string): number | null
-export declare function currencyInputFromMicros(micros?: number | null): string
+export declare function currencyInputFromMicros(micros?: number | null, currency?: string): string
 export declare function formatBillingPeriod(period?: string | null): string
 export declare function getDefaultBillingHistoryRange(): { from: string; to: string }
 

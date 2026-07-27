@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
+import { dedupeBillingRequest, getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
-export const useBillingUsage = ({ authentication = {}, billingCustomerKey, refreshKey = 0 } = {}) => {
+export const useBillingUsage = (options = {}) => {
+  const authentication = options.authentication ?? {}
+  const { billingCustomerKey, refreshKey = 0 } = options
   const [data, setData] = useState(null)
   const [state, setState] = useState('idle')
 
@@ -18,39 +20,43 @@ export const useBillingUsage = ({ authentication = {}, billingCustomerKey, refre
       setState('loading')
 
       try {
-        const response = await fetch(
-          getBillingApiUrl(authentication, `billing-usage/${encodeURIComponent(billingCustomerKey)}/current-period`),
-          getBillingRequestConfig(authentication),
-        )
+        const cacheKey = `usage:${authentication.domain}:${authentication.apiKey}:${authentication.token}:${billingCustomerKey}:${refreshKey}`
+        const { status, ok, data: responseData } = await dedupeBillingRequest(cacheKey, async () => {
+          const response = await fetch(
+            getBillingApiUrl(authentication, `billing-usage/${encodeURIComponent(billingCustomerKey)}/current-period`),
+            getBillingRequestConfig(authentication),
+          )
+
+          if (response.status === 404 || response.status >= 500 || !response.ok) {
+            return { status: response.status, ok: response.ok, data: null }
+          }
+
+          const json = await response.json()
+          return { status: response.status, ok: response.ok, data: json?.data ?? null }
+        })
 
         if (!isActive) {
           return
         }
 
-        if (response.status === 404) {
+        if (status === 404) {
           setData(null)
           setState('missing_customer')
           return
         }
 
-        if (response.status >= 500) {
+        if (status >= 500) {
           setData(null)
           setState('unavailable')
           return
         }
 
-        if (!response.ok) {
+        if (!ok) {
           setData(null)
           setState('error')
           return
         }
 
-        const json = await response.json()
-        if (!isActive) {
-          return
-        }
-
-        const responseData = json?.data ?? null
         if (!responseData) {
           setData(null)
           setState('error')

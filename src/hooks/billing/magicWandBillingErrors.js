@@ -2,9 +2,11 @@ const BILLING_USAGE_CEILING_REACHED = 'BILLING_USAGE_CEILING_REACHED'
 const BLOCK_CEILING_EXCEEDED = 'BLOCK_CEILING_EXCEEDED'
 const BILLING_USAGE_UNAVAILABLE = 'BILLING_USAGE_UNAVAILABLE'
 
+const OVER_QUOTA_SUMMARY = 'Your most recent Auto Analyze usage put this account at or over its monthly quota.'
+
 export const MAGIC_WAND_BILLING_GATE_MESSAGES = {
-  over_quota:
-    'Your most recent Auto Analyze usage put this account at or over its monthly quota. You can increase your monthly quota, or wait until your next billing period, when usage resets.',
+  over_quota: `${OVER_QUOTA_SUMMARY} You can increase your monthly quota, or wait until your next billing period, when usage resets.`,
+  over_quota_summary: OVER_QUOTA_SUMMARY,
   unavailable: "We couldn't verify your Auto Analyze usage right now. You can still try again.",
 }
 

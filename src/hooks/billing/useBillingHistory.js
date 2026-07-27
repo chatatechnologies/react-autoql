@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { getDefaultBillingHistoryRange } from '../../utils/billingFormatting'
 import { getBillingApiUrlWithParams, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
-export const useBillingHistory = ({ authentication = {}, billingCustomerKey, from, to } = {}) => {
+export const useBillingHistory = (options = {}) => {
+  const authentication = options.authentication ?? {}
+  const { billingCustomerKey, from, to } = options
   const [items, setItems] = useState([])
   const [state, setState] = useState('idle')
 

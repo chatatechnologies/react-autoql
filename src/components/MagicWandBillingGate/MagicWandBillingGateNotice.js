@@ -10,7 +10,7 @@ export const MagicWandBillingGateNotice = ({ state, onIncreaseQuota, billingExec
     return (
       <div className='magic-wand-billing-gate-notice magic-wand-billing-gate-notice-over-quota'>
         <p className='magic-wand-billing-gate-notice-message'>
-          Your most recent Auto Analyze usage put this account at or over its monthly quota.
+          {MAGIC_WAND_BILLING_GATE_MESSAGES.over_quota_summary}
         </p>
         <div className='magic-wand-billing-gate-notice-actions'>
           {onIncreaseQuota && (

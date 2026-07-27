@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
+import { dedupeBillingRequest, getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 
-export const useBillingCustomerKey = ({ authentication = {} } = {}) => {
+export const useBillingCustomerKey = (options = {}) => {
+  const authentication = options.authentication ?? {}
   const [data, setData] = useState(null)
   const [state, setState] = useState('idle')
 
@@ -18,33 +19,37 @@ export const useBillingCustomerKey = ({ authentication = {} } = {}) => {
       setState('loading')
 
       try {
-        const response = await fetch(
-          getBillingApiUrl(authentication, 'billing/customer-keys'),
-          getBillingRequestConfig(authentication),
-        )
+        const cacheKey = `customer-key:${authentication.domain}:${authentication.apiKey}:${authentication.token}`
+        const { status, ok, data: responseData } = await dedupeBillingRequest(cacheKey, async () => {
+          const response = await fetch(
+            getBillingApiUrl(authentication, 'billing/customer-keys'),
+            getBillingRequestConfig(authentication),
+          )
+
+          if (response.status === 404 || !response.ok) {
+            return { status: response.status, ok: response.ok, data: null }
+          }
+
+          const json = await response.json()
+          return { status: response.status, ok: response.ok, data: json?.data ?? null }
+        })
 
         if (!isActive) {
           return
         }
 
-        if (response.status === 404) {
+        if (status === 404) {
           setData(null)
           setState('missing_customer')
           return
         }
 
-        if (!response.ok) {
+        if (!ok) {
           setData(null)
           setState('error')
           return
         }
 
-        const json = await response.json()
-        if (!isActive) {
-          return
-        }
-
-        const responseData = json?.data ?? null
         if (!responseData?.billing_customer_key) {
           setData(null)
           setState('missing_customer')

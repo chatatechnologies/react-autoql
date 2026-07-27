@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
+import { refreshBillingUsage } from './billingUsageRefreshBus'
 
 export const useBillingQuotaUpdate = ({ authentication = {}, billingCustomerKey } = {}) => {
   const [isSaving, setIsSaving] = useState(false)
@@ -49,6 +50,10 @@ export const useBillingQuotaUpdate = ({ authentication = {}, billingCustomerKey 
       if (!responseData) {
         throw new Error('Billing quota update returned no data')
       }
+
+      // A raised quota can immediately move an account off "at_or_over_quota" - let every
+      // mounted gate re-check rather than waiting for a remount.
+      refreshBillingUsage()
 
       return responseData
     } finally {

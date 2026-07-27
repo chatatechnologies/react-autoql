@@ -1,17 +1,32 @@
 const MICROS_PER_DOLLAR = 1000000
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2,
-})
+// BillingQuotaUpdateResponse carries a currency code per-account, so these accept an optional
+// currency/locale now (defaulting to the USD/en-US behavior this shipped with) rather than
+// locking the signature to USD and having to add the parameter as a breaking change later.
+const currencyFormatterCache = new Map()
 
-export const formatMicrosAsCurrency = (micros, emptyLabel = 'Not set') => {
+const getCurrencyFormatter = (currency, locale) => {
+  const cacheKey = `${locale}:${currency}`
+  if (!currencyFormatterCache.has(cacheKey)) {
+    currencyFormatterCache.set(
+      cacheKey,
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+      }),
+    )
+  }
+
+  return currencyFormatterCache.get(cacheKey)
+}
+
+export const formatMicrosAsCurrency = (micros, emptyLabel = 'Not set', currency = 'USD', locale = 'en-US') => {
   if (micros === null || micros === undefined) {
     return emptyLabel
   }
 
-  return currencyFormatter.format(micros / MICROS_PER_DOLLAR)
+  return getCurrencyFormatter(currency, locale).format(micros / MICROS_PER_DOLLAR)
 }
 
 export const microsFromCurrencyInput = (value) => {
@@ -28,12 +43,13 @@ export const microsFromCurrencyInput = (value) => {
   return Math.round(parsed * MICROS_PER_DOLLAR)
 }
 
-export const currencyInputFromMicros = (micros) => {
+export const currencyInputFromMicros = (micros, currency = 'USD') => {
   if (micros === null || micros === undefined) {
     return ''
   }
 
-  return (micros / MICROS_PER_DOLLAR).toFixed(2)
+  const fractionDigits = getCurrencyFormatter(currency, 'en-US').resolvedOptions().maximumFractionDigits
+  return (micros / MICROS_PER_DOLLAR).toFixed(fractionDigits)
 }
 
 export const formatBillingPeriod = (period) => {
