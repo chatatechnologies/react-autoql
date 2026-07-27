@@ -11,7 +11,7 @@ import {
 import { dataFormattingType } from '../../props/types'
 
 /** Threshold for dense bar/column layout (zero band padding, zero series gaps). */
-export const DENSE_CATEGORY_THRESHOLD = 100
+export const DENSE_CATEGORY_THRESHOLD = 300
 
 /** True when the category axis alone is crowded (many rows). */
 export const isDenseCategoryChart = (data) => Array.isArray(data) && data.length > DENSE_CATEGORY_THRESHOLD
