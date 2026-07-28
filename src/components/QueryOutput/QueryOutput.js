@@ -2186,11 +2186,38 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
+    // Sync the chart's axis sort with the table's sort last, so it isn't
+    // clobbered by generatePivotData's axisSorts reset above
+    this.syncChartSortWithTableSort()
+
     // Update filter badge in OptionsToolbar
     setTimeout(() => {
       if (!this._isMounted) return
       this.updateToolbars()
     }, 0)
+  }
+
+  // Keeps the chart's row order (and its axis sort popover selection) in sync with the table's own sort
+  syncChartSortWithTableSort = () => {
+    const sorter = this.tableParams?.sort?.[0]
+
+    if (!sorter) {
+      this.onAxisSortChange('x', this.tableConfig?.stringColumnIndex, null)
+      return
+    }
+
+    const columnIndex = this.resolveHeaderFilterColumnIndex(sorter.field, this.state.columns)
+    if (columnIndex === undefined) {
+      return
+    }
+
+    const dir = sorter.dir === 'desc' ? 'desc' : 'asc'
+
+    if (columnIndex === this.tableConfig?.stringColumnIndex) {
+      this.onAxisSortChange('x', columnIndex, `alpha-${dir}`)
+    } else if (this.tableConfig?.numberColumnIndices?.includes(columnIndex)) {
+      this.onAxisSortChange('y', columnIndex, `value-${dir}`)
+    }
   }
 
   onNewData = (response) => {
