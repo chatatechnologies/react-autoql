@@ -1,8 +1,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { useMagicWandBillingGate } from '../useMagicWandBillingGate'
+import { refreshBillingUsage } from '../billingUsageRefreshBus'
 
 const authentication = {
   token: 'token-123',
@@ -113,5 +114,46 @@ describe('useMagicWandBillingGate', () => {
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1))
     expect(screen.getByTestId('result')).toHaveTextContent('undefined|undefined')
+  })
+
+  it('collapses many simultaneously-mounted gates (e.g. a DM full of message bubbles) into one customer-key fetch and one usage fetch', async () => {
+    global.fetch
+      .mockImplementationOnce(() => buildFetchResponse(200, { billing_customer_key: 'bck_acme_ABCDEFGH' }))
+      .mockImplementationOnce(() => buildFetchResponse(200, { quota_status: 'under_quota' }))
+
+    render(
+      <>
+        <Harness enabled={true} />
+        <Harness enabled={true} />
+        <Harness enabled={true} />
+      </>,
+    )
+
+    await waitFor(() => {
+      const results = screen.getAllByTestId('result')
+      expect(results).toHaveLength(3)
+      results.forEach((result) => expect(result).toHaveTextContent('under_quota|undefined'))
+    })
+
+    expect(global.fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('refreshBillingUsage() clears a stale over-quota block on a still-mounted gate without remounting', async () => {
+    global.fetch
+      .mockImplementationOnce(() => buildFetchResponse(200, { billing_customer_key: 'bck_acme_ABCDEFGH' }))
+      .mockImplementationOnce(() => buildFetchResponse(200, { quota_status: 'at_or_over_quota' }))
+
+    render(<Harness enabled={true} />)
+
+    await waitFor(() => expect(screen.getByTestId('result')).toHaveTextContent('at_or_over_quota'))
+
+    global.fetch.mockImplementationOnce(() => buildFetchResponse(200, { quota_status: 'under_quota' }))
+
+    act(() => {
+      refreshBillingUsage()
+    })
+
+    await waitFor(() => expect(screen.getByTestId('result')).toHaveTextContent('under_quota'))
+    expect(global.fetch).toHaveBeenCalledTimes(3)
   })
 })

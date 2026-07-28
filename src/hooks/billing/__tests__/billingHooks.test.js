@@ -134,6 +134,47 @@ describe('billing hooks', () => {
       render(<CustomerKeyHarness />)
       await waitFor(() => expect(screen.getByTestId('result')).toHaveTextContent('missing_customer'))
     })
+
+    it('collapses concurrent mounts sharing the same authentication into a single fetch', async () => {
+      global.fetch.mockImplementationOnce(() =>
+        buildFetchResponse(200, { billing_customer_key: 'bck_acme_ABCDEFGH' }),
+      )
+
+      render(
+        <>
+          <CustomerKeyHarness />
+          <CustomerKeyHarness />
+          <CustomerKeyHarness />
+        </>,
+      )
+
+      await waitFor(() => {
+        const results = screen.getAllByTestId('result')
+        expect(results).toHaveLength(3)
+        results.forEach((result) => expect(result).toHaveTextContent('success|bck_acme_ABCDEFGH|'))
+      })
+
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('propagates a rejected shared request to every concurrent caller', async () => {
+      global.fetch.mockImplementationOnce(() => Promise.reject(new Error('Network failure')))
+
+      render(
+        <>
+          <CustomerKeyHarness />
+          <CustomerKeyHarness />
+        </>,
+      )
+
+      await waitFor(() => {
+        const results = screen.getAllByTestId('result')
+        expect(results).toHaveLength(2)
+        results.forEach((result) => expect(result).toHaveTextContent('error||'))
+      })
+
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('useBillingUsage', () => {
