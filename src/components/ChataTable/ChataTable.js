@@ -426,6 +426,12 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
+
+      if (this.tabulatorScrollEl) {
+        this.tabulatorScrollEl.removeEventListener('wheel', this.handleTableWheel)
+        this.tabulatorScrollEl = null
+      }
+
       // Remove any pivot header handlers we attached
       if (this.pivotHeaderElements) {
         this.pivotHeaderElements.forEach((el) => {
@@ -704,6 +710,28 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
+
+      const scrollEl = this.ref?.tabulator?.rowManager?.element
+      if (scrollEl) {
+        this.tabulatorScrollEl = scrollEl
+        this.tabulatorScrollEl.addEventListener('wheel', this.handleTableWheel, { passive: false })
+      }
+    }
+  }
+
+  // Prevent the browser's two-finger back/forward navigation gesture from firing
+  // when horizontal scroll momentum overscrolls past the table's edge
+  handleTableWheel = (e) => {
+    const el = this.tabulatorScrollEl
+    if (!el || !e.deltaX) {
+      return
+    }
+
+    const atLeftEdge = el.scrollLeft <= 0
+    const atRightEdge = el.scrollLeft >= el.scrollWidth - el.clientWidth
+
+    if ((atLeftEdge && e.deltaX < 0) || (atRightEdge && e.deltaX > 0)) {
+      e.preventDefault()
     }
   }
 
