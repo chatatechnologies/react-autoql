@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { getBillingApiUrl, getBillingRequestConfig, hasBillingAuthentication } from './billingApi'
 import { refreshBillingUsage } from './billingUsageRefreshBus'
 
-export const useBillingQuotaUpdate = ({ authentication = {}, billingCustomerKey } = {}) => {
+export const useBillingQuotaUpdate = (options = {}) => {
+  const authentication = options.authentication ?? {}
+  const { billingCustomerKey } = options
   const [isSaving, setIsSaving] = useState(false)
   const isMounted = useRef(true)
 

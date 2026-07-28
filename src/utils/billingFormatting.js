@@ -13,7 +13,6 @@ const getCurrencyFormatter = (currency, locale) => {
       new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
-        maximumFractionDigits: 2,
       }),
     )
   }
