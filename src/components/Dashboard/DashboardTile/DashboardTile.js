@@ -287,7 +287,7 @@ export class DashboardTile extends React.Component {
       !this.projectIdsEqual(this.props.tile?.projectId, prevProps.tile?.projectId) &&
       this.isQueryValid(this.props.tile?.query)
     ) {
-      this.processTile({ query: this.props.tile.query })
+      this.processTile({ query: this.props.tile.query })?.catch?.(() => {}) // errors already surface via tile state; just avoid an unhandled rejection
     }
     if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
       this.setState({ localRTFilterResponse: null })

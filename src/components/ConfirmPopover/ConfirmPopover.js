@@ -96,6 +96,7 @@ export default class ConfirmPopover extends React.Component {
           isOpen={this.state.isOpen}
           content={this.renderContent}
           className='react-autoql-confirm-popover'
+          // No parentElement: keeps the popover portaled out instead of clipped by drawer/fullscreen overflow.
           boundaryElement={this.props.popoverParentElement}
           positions={this.props.positions}
           padding={this.props.padding}
