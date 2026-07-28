@@ -48,9 +48,9 @@ export default class HistogramColumns extends Component {
     // Create vertical gradient for histogram bars (top to bottom) - matching column charts
     gradientDefs.push(
       <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor={color} stopOpacity="0.9" />
-        <stop offset="50%" stopColor={color} stopOpacity="0.7" />
-        <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+        <stop offset="0%" stopColor={color} stopOpacity="0.65" />
+        <stop offset="50%" stopColor={color} stopOpacity="0.55" />
+        <stop offset="100%" stopColor={color} stopOpacity="0.45" />
       </linearGradient>
     )
 
