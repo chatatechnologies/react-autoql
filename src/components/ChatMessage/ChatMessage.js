@@ -125,6 +125,7 @@ export default class ChatMessage extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
+    queryMessageID: PropTypes.string,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,

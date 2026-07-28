@@ -97,7 +97,7 @@ export interface DashboardProps {
   source?: string | string[]
   scope?: string
   offline?: boolean
-  projectSelectList?: Array<{ projectId: string; displayName: string }>
+  projectSelectList?: Array<{ projectId: string | number; displayName: string }>
   getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined
   showProjectIndicator?: boolean
   [key: string]: any

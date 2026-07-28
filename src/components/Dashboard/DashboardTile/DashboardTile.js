@@ -283,7 +283,10 @@ export class DashboardTile extends React.Component {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
     // Re-run the query if the tile's project changed (e.g. reassigned to a different project)
-    if (this.props.tile?.projectId !== prevProps.tile?.projectId && this.isQueryValid(this.props.tile?.query)) {
+    if (
+      !this.projectIdsEqual(this.props.tile?.projectId, prevProps.tile?.projectId) &&
+      this.isQueryValid(this.props.tile?.query)
+    ) {
       this.processTile({ query: this.props.tile.query })
     }
     if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
@@ -326,7 +329,7 @@ export class DashboardTile extends React.Component {
         !_isEqual(prevTile.orders, nextTile.orders) ||
         prevTile.pageSize !== nextTile.pageSize ||
         prevTile.query !== nextTile.query ||
-        prevTile.projectId !== nextTile.projectId
+        !this.projectIdsEqual(prevTile.projectId, nextTile.projectId)
 
       if (topChanged && this.topRequestData) {
         this.topRequestData = {
@@ -473,6 +476,20 @@ export class DashboardTile extends React.Component {
       },
     }
     return this.endTopQuery({ response })
+  }
+
+  // Wraps any query-firing call so it waits for this tile's per-project auth first (multi-project dashboards)
+  runWithTileAuthGuard = (fireQuery) => {
+    return this.waitForTileAuthentication().then((authReady) => {
+      // Component unmounted mid-wait — nothing left to update, don't fire the query or the error state.
+      if (!this._isMounted) {
+        return undefined
+      }
+      if (authReady === false) {
+        return this.handleUnavailableTileAuth()
+      }
+      return fireQuery()
+    })
   }
 
   isQueryValid = (query) => {
@@ -935,14 +952,9 @@ export class DashboardTile extends React.Component {
       this.setState({ isTopExecuting: true })
     }
 
-    return this.waitForTileAuthentication()
-      .then((authReady) => {
-        if (authReady === false) {
-          // Per-project token never arrived — don't fire a query that is guaranteed to 403.
-          return this.handleUnavailableTileAuth()
-        }
-        return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
-      })
+    return this.runWithTileAuthGuard(() =>
+      this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset }),
+    )
       .then((queryResponse) => {
         // Read queryId from the fresh response since this.props.tile.queryId is stale until the debounce lands.
         const freshQueryId = queryResponse?.data?.data?.query_id
@@ -1002,12 +1014,19 @@ export class DashboardTile extends React.Component {
     this.setState({ query })
 
     if (isButtonClick) {
-      this.processTileTop({
-        query,
-        userSelection,
-        skipQueryValidation: true,
-        source,
-      })
+      // Show the loading state while we wait for this tile's per-project token (if any) to resolve
+      if (this._isMounted) {
+        this.setState({ isTopExecuting: true })
+      }
+
+      this.runWithTileAuthGuard(() =>
+        this.processTileTop({
+          query,
+          userSelection,
+          skipQueryValidation: true,
+          source,
+        }),
+      )
     } else {
       this.debouncedSetParamsForTile({ defaultSelectedSuggestion: query })
     }
@@ -1168,6 +1187,22 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  // projectId can come from different sources (tile config, API response, select list) that don't always agree on string vs number
+  projectIdsEqual = (a, b) => {
+    const aIsNullish = a === null || a === undefined
+    const bIsNullish = b === null || b === undefined
+    if (aIsNullish || bIsNullish) {
+      return aIsNullish && bIsNullish
+    }
+    return `${a}` === `${b}`
+  }
+
+  // Resolves projectId to the exact value/type used in projectSelectList, so Select's internal === match works
+  resolveListProjectId = (projectId) => {
+    const match = this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, projectId))
+    return match ? match.projectId : projectId
+  }
+
   // Project the tile's query was executed against: flat project_id/project_name on response.data.data (AQLP-585)
   getTileProject = (response) => {
     const data = response?.data?.data
@@ -1189,7 +1224,7 @@ export class DashboardTile extends React.Component {
     const tileProjectId = this.props.tile?.projectId
     const projectFromList =
       tileProjectId != null
-        ? this.props.projectSelectList?.find((p) => `${p.projectId}` === `${tileProjectId}`)
+        ? this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, tileProjectId))
         : undefined
     const project = projectFromList
       ? { id: projectFromList.projectId, name: projectFromList.displayName }
@@ -1199,7 +1234,7 @@ export class DashboardTile extends React.Component {
     }
 
     const currentProjectId = getAutoQLConfig(this.props.autoQLConfig).projectId
-    if (currentProjectId != null && `${project.id}` === `${currentProjectId}`) {
+    if (this.projectIdsEqual(project.id, currentProjectId)) {
       return null
     }
 
@@ -1220,12 +1255,15 @@ export class DashboardTile extends React.Component {
 
   getSelectedProjectName = () => {
     const projectId = this.props.tile?.projectId
-    const match = this.props.projectSelectList?.find((project) => project.projectId === projectId)
+    const match = this.props.projectSelectList?.find((project) => this.projectIdsEqual(project.projectId, projectId))
     return match?.displayName || this.getTileProject(this.props.tile?.queryResponse)?.name
   }
 
   openProjectModal = () => {
-    this.setState({ isProjectModalOpen: true, pendingProjectId: this.props.tile?.projectId })
+    this.setState({
+      isProjectModalOpen: true,
+      pendingProjectId: this.resolveListProjectId(this.props.tile?.projectId),
+    })
   }
 
   closeProjectModal = () => {
@@ -1244,7 +1282,7 @@ export class DashboardTile extends React.Component {
       return false
     }
     const currentProjectId = getAutoQLConfig(this.props.autoQLConfig).projectId
-    return `${tileProjectId}` !== `${currentProjectId}`
+    return !this.projectIdsEqual(tileProjectId, currentProjectId)
   }
 
   // Icon-only button that opens a modal to deliberately change the tile's project (multi-project dashboards).
@@ -1285,7 +1323,8 @@ export class DashboardTile extends React.Component {
         width='400px'
         confirmText='Change Project'
         confirmDisabled={
-          this.state.pendingProjectId == null || this.state.pendingProjectId === this.props.tile?.projectId
+          this.state.pendingProjectId == null ||
+          this.projectIdsEqual(this.state.pendingProjectId, this.props.tile?.projectId)
         }
         onClose={this.closeProjectModal}
         onConfirm={this.confirmProjectChange}

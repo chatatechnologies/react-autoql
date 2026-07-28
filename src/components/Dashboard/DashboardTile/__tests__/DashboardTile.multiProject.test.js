@@ -3,6 +3,8 @@ import { mount } from 'enzyme'
 import { DashboardTile } from '../DashboardTile'
 import { QueryOutput } from '../../../QueryOutput'
 import { OptionsToolbar } from '../../../OptionsToolbar'
+import { Select } from '../../../Select'
+import { Modal } from '../../../Modal'
 import sampleResponses from '../../../../../test/responseTestCases'
 
 const makeTile = (overrides = {}) => ({
@@ -692,6 +694,218 @@ describe('DashboardTile componentDidUpdate topRequestData sync', () => {
     expect(instance.topRequestData).toBeNull()
 
     instance.processTile.mockRestore()
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile projectIdsEqual (string vs number coercion)', () => {
+  it('treats a numeric and string projectId representing the same project as equal', () => {
+    const wrapper = mount(<DashboardTile tile={makeTile()} setParamsForTile={() => {}} />)
+    const instance = wrapper.instance()
+
+    expect(instance.projectIdsEqual(2, '2')).toBe(true)
+    expect(instance.projectIdsEqual('2', 2)).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('treats two nullish projectIds as equal (no project set on either side)', () => {
+    const wrapper = mount(<DashboardTile tile={makeTile()} setParamsForTile={() => {}} />)
+    const instance = wrapper.instance()
+
+    expect(instance.projectIdsEqual(undefined, null)).toBe(true)
+    expect(instance.projectIdsEqual(undefined, undefined)).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('treats a set projectId vs a nullish one as different', () => {
+    const wrapper = mount(<DashboardTile tile={makeTile()} setParamsForTile={() => {}} />)
+    const instance = wrapper.instance()
+
+    expect(instance.projectIdsEqual('1', null)).toBe(false)
+    expect(instance.projectIdsEqual(null, '1')).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it('does NOT re-run the query on componentDidUpdate when projectId only changes type (2 -> "2")', () => {
+    const tile = makeTile({ projectId: 2 })
+    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} />)
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => Promise.resolve())
+
+    wrapper.setProps({ tile: { ...tile, projectId: '2' } })
+
+    expect(processTileSpy).not.toHaveBeenCalled()
+
+    processTileSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('does not treat a pure projectId type flip as a structural change to topRequestData', () => {
+    const tile = makeTile({ projectId: 2 })
+    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} />)
+    const instance = wrapper.instance()
+    jest.spyOn(instance, 'processTile').mockImplementation(() => Promise.resolve())
+
+    instance.topRequestData = { query: tile.query, tableFilters: [], filters: [], orders: [], projectId: 2 }
+
+    instance.componentDidUpdate({ ...wrapper.props(), tile: { ...tile, projectId: '2' } }, instance.state)
+
+    // topRequestData.projectId is left untouched (2, not overwritten with the string '2') because
+    // topChanged evaluates false — a pure type flip must not be treated as a structural request change.
+    expect(instance.topRequestData.projectId).toBe(2)
+
+    instance.processTile.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('getSelectedProjectName matches a list entry regardless of string/number projectId type', () => {
+    const projectSelectList = [{ projectId: 1, displayName: 'Project A' }]
+    const tile = makeTile({ projectId: '1' })
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.getSelectedProjectName()).toBe('Project A')
+
+    wrapper.unmount()
+  })
+
+  it('confirmDisabled treats a same-project type flip as a no-op change (Modal stays disabled)', () => {
+    const projectSelectList = [{ projectId: 1, displayName: 'Project A' }]
+    const tile = makeTile({ projectId: 1 })
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} isEditing />,
+    )
+    const instance = wrapper.instance()
+
+    // Same project id as the tile's, but as a string instead of a number.
+    instance.setState({ isProjectModalOpen: true, pendingProjectId: '1' })
+    wrapper.update()
+
+    expect(wrapper.find(Modal).prop('confirmDisabled')).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  it('openProjectModal normalizes pendingProjectId to the exact type/value used in projectSelectList', () => {
+    const projectSelectList = [{ projectId: 2, displayName: 'Project B' }]
+    const tile = makeTile({ projectId: '2' })
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} isEditing />,
+    )
+    const instance = wrapper.instance()
+
+    instance.openProjectModal()
+    wrapper.update()
+
+    // Normalized to the list's numeric 2, not the tile's raw string '2', so Select's internal
+    // strict === match against option.value actually highlights the current selection.
+    expect(instance.state.pendingProjectId).toBe(2)
+    expect(wrapper.find(Select).prop('value')).toBe(2)
+
+    wrapper.unmount()
+  })
+
+  it('resolveListProjectId returns the original value unchanged when no list entry matches', () => {
+    const projectSelectList = [{ projectId: 1, displayName: 'Project A' }]
+    const wrapper = mount(
+      <DashboardTile tile={makeTile()} setParamsForTile={() => {}} projectSelectList={projectSelectList} />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.resolveListProjectId('unknown-project')).toBe('unknown-project')
+    expect(instance.resolveListProjectId(undefined)).toBeUndefined()
+
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile runWithTileAuthGuard unmount race', () => {
+  it('does not fire the query or the auth-error fallback if the tile unmounts mid-wait', async () => {
+    jest.useFakeTimers()
+    const setParams = jest.fn()
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={setParams}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => undefined}
+      />,
+    )
+    const instance = wrapper.instance()
+    const processTileTopSpy = jest.spyOn(instance, 'processTileTop')
+    const handleUnavailableSpy = jest.spyOn(instance, 'handleUnavailableTileAuth')
+
+    const promise = instance.runWithTileAuthGuard(() => instance.processTileTop({ query: 'SELECT 1' }))
+
+    wrapper.unmount()
+    await jest.advanceTimersByTimeAsync(15000)
+    await promise
+    jest.useRealTimers()
+
+    expect(processTileTopSpy).not.toHaveBeenCalled()
+    expect(handleUnavailableSpy).not.toHaveBeenCalled()
+
+    processTileTopSpy.mockRestore()
+    handleUnavailableSpy.mockRestore()
+  })
+})
+
+describe('DashboardTile onSuggestionClick per-project auth guard', () => {
+  it('does not fire the query for a suggestion button click until the per-project token resolves', async () => {
+    jest.useFakeTimers()
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => undefined}
+      />,
+    )
+    const instance = wrapper.instance()
+    const processTileTopSpy = jest.spyOn(instance, 'processTileTop')
+
+    instance.onSuggestionClick({ query: 'SELECT 1', isButtonClick: true })
+
+    expect(processTileTopSpy).not.toHaveBeenCalled()
+
+    await jest.advanceTimersByTimeAsync(15000)
+    jest.useRealTimers()
+
+    expect(processTileTopSpy).not.toHaveBeenCalled()
+
+    processTileTopSpy.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('fires the query for a suggestion button click once the per-project token is available', async () => {
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => ({ token: 'tile-project-token' })}
+      />,
+    )
+    const instance = wrapper.instance()
+    const processTileTopSpy = jest.spyOn(instance, 'processTileTop').mockResolvedValue({ data: { data: {} } })
+
+    instance.onSuggestionClick({ query: 'SELECT 1', isButtonClick: true })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(processTileTopSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ query: 'SELECT 1', skipQueryValidation: true }),
+    )
+
+    processTileTopSpy.mockRestore()
     wrapper.unmount()
   })
 })

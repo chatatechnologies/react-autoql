@@ -1127,7 +1127,7 @@ export class DataMessenger extends React.Component {
       this.resizeAnimationFrame = undefined
     }
 
-    if (this.state.isResizing) {
+    if (this._isMounted && this.state.isResizing) {
       this.setState({
         isResizing: false,
       })
