@@ -4276,7 +4276,6 @@ export class QueryOutput extends React.Component {
     const usePivotData = this.usePivotDataForChart()
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
-      !this.potentiallySupportsDatePivot() &&
       this.state?.displayType !== DisplayTypes.NETWORK_GRAPH &&
       this.state?.displayType !== DisplayTypes.SANKEY
     const chartDataSource =
