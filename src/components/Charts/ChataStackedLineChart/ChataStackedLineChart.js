@@ -58,7 +58,6 @@ export default class ChataStackedLineChart extends Component {
           yScale={this.yScale}
           xCol={this.props.columns[this.props.stringColumnIndex]}
           yCol={yCol}
-          dateColumnsOnly
           yGridLines
         />
       </g>
