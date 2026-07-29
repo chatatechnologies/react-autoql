@@ -184,6 +184,8 @@ export class DashboardTile extends React.Component {
     getAuthenticationForProject: PropTypes.func,
     // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
     showProjectIndicator: PropTypes.bool,
+    // Whether this tile belongs to a project-based (PROJECT type) dashboard, as opposed to a CUSTOM dashboard
+    isProjectDashboard: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -227,6 +229,7 @@ export class DashboardTile extends React.Component {
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
     showProjectIndicator: true,
+    isProjectDashboard: false,
   }
 
   componentDidMount = () => {
@@ -812,7 +815,8 @@ export class DashboardTile extends React.Component {
       const resp = err?.response || err
 
       try {
-        if (this.isServerError(resp) && !requestData.force) {
+        // Only force-retry on custom dashboards. Project-based dashboards should never force a fresh (uncached) query.
+        if (this.isServerError(resp) && !requestData.force && !this.props.isProjectDashboard) {
           const retryData = { ...requestData, force: true }
 
           // Emit telemetry (prefer `onRetry`, fallback to `onErrorCallback`).

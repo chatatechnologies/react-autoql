@@ -159,6 +159,8 @@ class DashboardWithoutTheme extends React.Component {
     getAuthenticationForProject: PropTypes.func,
     // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
     showProjectIndicator: PropTypes.bool,
+    // Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard
+    isProjectDashboard: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -201,6 +203,7 @@ class DashboardWithoutTheme extends React.Component {
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
     showProjectIndicator: true,
+    isProjectDashboard: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -1430,6 +1433,7 @@ class DashboardWithoutTheme extends React.Component {
             projectSelectList={this.props.projectSelectList}
             getAuthenticationForProject={this.props.getAuthenticationForProject}
             showProjectIndicator={this.props.showProjectIndicator}
+            isProjectDashboard={this.props.isProjectDashboard}
           />
         ))}
       </ReactGridLayout>
