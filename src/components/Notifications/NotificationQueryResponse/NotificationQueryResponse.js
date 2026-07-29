@@ -33,6 +33,8 @@ export default class NotificationQueryResponse extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
   }
 
   static defaultProps = {
@@ -43,6 +45,8 @@ export default class NotificationQueryResponse extends React.Component {
     onSuccessCallback: () => {},
     onErrorCallback: () => {},
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -122,6 +126,8 @@ export default class NotificationQueryResponse extends React.Component {
             popoverAlign='end'
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+            enableBillingGate={this.props.enableBillingGate}
+            onQuotaExceeded={this.props.onQuotaExceeded}
           />
         </div>
       </div>

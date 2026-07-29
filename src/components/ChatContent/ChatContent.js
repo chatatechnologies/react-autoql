@@ -77,6 +77,8 @@ export default class ChatContent extends React.Component {
     executeQuery: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     enableLLMStyleEmptyState: PropTypes.bool,
     llmEmptyStateTitle: PropTypes.string,
@@ -95,6 +97,8 @@ export default class ChatContent extends React.Component {
     executeQuery: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     enableLLMStyleEmptyState: false,
     llmEmptyStateTitle: undefined,
@@ -881,6 +885,8 @@ export default class ChatContent extends React.Component {
                       preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                       enableMagicWand={this.props.enableMagicWand}
                       showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                      enableBillingGate={this.props.enableBillingGate}
+                      onQuotaExceeded={this.props.onQuotaExceeded}
                       enableFollowOnQuery={this.props.enableFollowOnQuery}
                     />
                   )

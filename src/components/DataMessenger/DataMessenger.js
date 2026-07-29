@@ -144,6 +144,8 @@ export class DataMessenger extends React.Component {
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     enableFollowOnQuery: PropTypes.bool,
 
@@ -216,6 +218,8 @@ export class DataMessenger extends React.Component {
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     setMobileActivePage: () => {},
     // Callbacks

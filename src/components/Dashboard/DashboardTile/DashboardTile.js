@@ -171,6 +171,8 @@ export class DashboardTile extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
     // List of projects the tile can be assigned to (multi-project dashboards). When omitted or empty, no picker is shown.
@@ -225,6 +227,8 @@ export class DashboardTile extends React.Component {
     dashboardSlicers: [],
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
@@ -1649,6 +1653,8 @@ export class DashboardTile extends React.Component {
               popoverAlign='end'
               enableMagicWand={this.props.enableMagicWand}
               showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+              enableBillingGate={this.props.enableBillingGate}
+              onQuotaExceeded={this.props.onQuotaExceeded}
               enableFollowOnQuery={this.props.enableFollowOnQuery}
               onOpenFollowOnModal={this.onOpenFollowOnModal}
               isEditing={this.props.isEditing}
