@@ -302,6 +302,45 @@ describe('DashboardTile processTile per-project auth guard', () => {
     processTileTopSpy.mockRestore()
     wrapper.unmount()
   })
+
+  it('gives each overlapping processTile call its own cancel token instead of racing on the latest this.axiosSource', async () => {
+    let authReady = false
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => (authReady ? { token: 'tile-project-token' } : undefined)}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const processQuerySpy = jest.spyOn(instance, 'processQuery').mockResolvedValue({ data: { data: {} } })
+
+    // Call A starts waiting on auth (not ready yet) and captures its own axiosSource.
+    const promiseA = instance.processTile({ query: 'SELECT A' })
+    const axiosSourceA = instance.axiosSource
+
+    // Call B fires before A's wait resolves: it cancels A's source and installs a new one.
+    const promiseB = instance.processTile({ query: 'SELECT B' })
+    const axiosSourceB = instance.axiosSource
+
+    expect(axiosSourceA).not.toBe(axiosSourceB)
+    expect(axiosSourceA.token.reason).toBeTruthy() // A's own source was cancelled by B, as expected
+
+    authReady = true
+    await Promise.all([promiseA.catch(() => {}), promiseB.catch(() => {})])
+
+    // Each call's outgoing request must use the token captured at its own start, not whichever
+    // source happens to be current (this.axiosSource) once its auth wait resolves.
+    expect(processQuerySpy).toHaveBeenCalledTimes(2)
+    expect(processQuerySpy.mock.calls[0][0].axiosSource).toBe(axiosSourceA)
+    expect(processQuerySpy.mock.calls[1][0].axiosSource).toBe(axiosSourceB)
+
+    processQuerySpy.mockRestore()
+    wrapper.unmount()
+  })
 })
 
 describe('DashboardTile getTileProject', () => {

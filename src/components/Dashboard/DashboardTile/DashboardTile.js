@@ -755,7 +755,15 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  processQuery = ({ query, userSelection, skipQueryValidation, source, isCachedRefresh, isReset = false }) => {
+  processQuery = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    isCachedRefresh,
+    isReset = false,
+    axiosSource = this.axiosSource,
+  }) => {
     if (this.isQueryValid(query)) {
       const pageSize = isChartType(this.props.tile.displayType)
         ? this.props.tile.pageSize ?? this.props.dataPageSize
@@ -787,7 +795,7 @@ export class DashboardTile extends React.Component {
         source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
-        cancelToken: this.axiosSource?.token,
+        cancelToken: axiosSource?.token,
         pageSize,
         query,
         force: false,
@@ -851,6 +859,7 @@ export class DashboardTile extends React.Component {
     pageSize,
     isCachedRefresh,
     isReset = false,
+    axiosSource,
   }) => {
     this.setState({ isTopExecuting: true, queryResponse: null })
     const queryChanged = this.props.tile.query !== query
@@ -923,6 +932,7 @@ export class DashboardTile extends React.Component {
       source,
       isCachedRefresh,
       isReset,
+      axiosSource,
     })
       .then((response) => {
         return this.endTopQuery({ response, isReset, queryChanged, isCachedRefresh })
@@ -951,7 +961,10 @@ export class DashboardTile extends React.Component {
 
   processTile = ({ query, skipQueryValidation, source, isCachedRefresh, isReset = false } = {}) => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.axiosSource = axios.CancelToken?.source()
+    // Captured now (before the auth wait below) so a request built after the wait resolves still
+    // uses its own, correctly-cancelled token instead of whatever this.axiosSource has since become.
+    const axiosSource = axios.CancelToken?.source()
+    this.axiosSource = axiosSource
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
 
@@ -961,7 +974,7 @@ export class DashboardTile extends React.Component {
     }
 
     return this.runWithTileAuthGuard(() =>
-      this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset }),
+      this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset, axiosSource }),
     )
       .then((queryResponse) => {
         // Read queryId from the fresh response since this.props.tile.queryId is stale until the debounce lands.
@@ -1205,9 +1218,16 @@ export class DashboardTile extends React.Component {
     return `${a}` === `${b}`
   }
 
+  findProjectInList = (projectId) => {
+    if (projectId == null) {
+      return undefined
+    }
+    return this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, projectId))
+  }
+
   // Resolves projectId to the exact value/type used in projectSelectList, so Select's internal === match works
   resolveListProjectId = (projectId) => {
-    const match = this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, projectId))
+    const match = this.findProjectInList(projectId)
     return match ? match.projectId : projectId
   }
 
@@ -1229,11 +1249,7 @@ export class DashboardTile extends React.Component {
       return null
     }
 
-    const tileProjectId = this.props.tile?.projectId
-    const projectFromList =
-      tileProjectId != null
-        ? this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, tileProjectId))
-        : undefined
+    const projectFromList = this.findProjectInList(this.props.tile?.projectId)
     const project = projectFromList
       ? { id: projectFromList.projectId, name: projectFromList.displayName }
       : this.getTileProject(this.props.tile?.queryResponse)
@@ -1262,8 +1278,7 @@ export class DashboardTile extends React.Component {
   }
 
   getSelectedProjectName = () => {
-    const projectId = this.props.tile?.projectId
-    const match = this.props.projectSelectList?.find((project) => this.projectIdsEqual(project.projectId, projectId))
+    const match = this.findProjectInList(this.props.tile?.projectId)
     return match?.displayName || this.getTileProject(this.props.tile?.queryResponse)?.name
   }
 
