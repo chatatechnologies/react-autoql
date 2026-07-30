@@ -105,9 +105,8 @@ export default class ChatContent extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
-    // Skip re-rendering (and re-creating the whole message list) on every resize tick.
-    // nextState === this.state means no local setState happened, so nothing relevant changed.
-    if (this.props.isResizing && nextProps.isResizing && nextState === this.state) {
+    // Skip re-render on resize ticks only when no other prop or state actually changed.
+    if (this.props.isResizing && nextProps.isResizing && _isEqual(nextProps, this.props) && nextState === this.state) {
       return false
     }
 

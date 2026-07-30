@@ -1039,22 +1039,22 @@ export class DataMessenger extends React.Component {
   }
 
   resizeDrawer = (e) => {
-    // Mouse button was released outside the document, so mouseup/mouseleave never fired.
-    // Detect it here and stop resizing so the listener doesn't run forever.
+    // buttons===0 means mouseup fired outside the document; stop resizing so the listener doesn't run forever.
     if (e.buttons === 0) {
       this.stopResizingDrawer()
       return
     }
 
+    this.latestResizePageX = e.pageX
+    this.latestResizePageY = e.pageY
+
     if (this.resizeAnimationFrame) {
       return
     }
 
-    const pageX = e.pageX
-    const pageY = e.pageY
     this.resizeAnimationFrame = window.requestAnimationFrame(() => {
       this.resizeAnimationFrame = undefined
-      this.performResizeDrawer(pageX, pageY)
+      this.performResizeDrawer(this.latestResizePageX, this.latestResizePageY)
     })
   }
 

@@ -732,8 +732,7 @@ export class QueryOutput extends React.Component {
         const dataConfig = {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
-          // Must carry columnOverrides through too - onColumnChange persists this dataConfig wholesale,
-          // so omitting it here silently drops any existing overrides (e.g. date precision) on save.
+          // Must carry columnOverrides too — persisted wholesale, so omitting it drops existing overrides on save.
           columnOverrides: this.state.columnOverrides,
         }
 

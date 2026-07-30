@@ -1293,9 +1293,7 @@ export class DashboardTile extends React.Component {
     return !this.projectIdsEqual(tileProjectId, currentProjectId)
   }
 
-  // Icon-only button that opens a modal to deliberately change the tile's project (multi-project dashboards).
-  // Shows a small dot badge when the tile's project differs from the dashboard default — the tooltip alone
-  // (revealed only on hover) is easy to miss.
+  // Opens a modal to change the tile's project; dot badge shows when it differs from the dashboard default.
   renderProjectButton = () => {
     if (!this.props.showProjectIndicator || !this.props.projectSelectList?.length) {
       return null
