@@ -104,15 +104,6 @@ export default class ChatContent extends React.Component {
     llmEmptyStateTitle: undefined,
   }
 
-  shouldComponentUpdate = (nextProps, nextState) => {
-    // Skip re-render on resize ticks only when no other prop or state actually changed.
-    if (this.props.isResizing && nextProps.isResizing && _isEqual(nextProps, this.props) && nextState === this.state) {
-      return false
-    }
-
-    return true
-  }
-
   componentDidMount = () => {
     this._isMounted = true
     if (!this.props.enableLLMStyleEmptyState && this.props.introMessages?.length) {
