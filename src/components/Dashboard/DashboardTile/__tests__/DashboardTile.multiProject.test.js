@@ -386,7 +386,23 @@ describe('DashboardTile renderProjectButton', () => {
     wrapper.unmount()
   })
 
-  it('renders the button when showProjectIndicator is true (default) and projectSelectList is populated', () => {
+  it('renders the button when showProjectIndicator is true (default) and projectSelectList has more than one project', () => {
+    const tile = makeTile()
+    const projectSelectList = [
+      { projectId: '1', displayName: 'Proj A' },
+      { projectId: '2', displayName: 'Proj B' },
+    ]
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.renderProjectButton()).not.toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('returns null when projectSelectList has only one project - nothing to switch to', () => {
     const tile = makeTile()
     const projectSelectList = [{ projectId: '1', displayName: 'Proj A' }]
     const wrapper = mount(
@@ -394,7 +410,8 @@ describe('DashboardTile renderProjectButton', () => {
     )
     const instance = wrapper.instance()
 
-    expect(instance.renderProjectButton()).not.toBeNull()
+    expect(instance.renderProjectButton()).toBeNull()
+    expect(instance.renderProjectModal()).toBeNull()
 
     wrapper.unmount()
   })
@@ -463,12 +480,43 @@ describe('DashboardTile hasNonDefaultProject / project button indicator', () => 
 })
 
 describe('DashboardTile renderProjectBadge', () => {
+  const twoProjectList = [
+    { projectId: '1', displayName: 'Default Project' },
+    { projectId: '2', displayName: 'Other Project' },
+  ]
+
   it('returns null when showProjectIndicator is false, even with a differing project_name', () => {
     const tile = makeTile({
       queryResponse: { data: { data: { project_id: '1', project_name: 'MyProject' } } },
     })
     const wrapper = mount(
-      <DashboardTile tile={tile} setParamsForTile={() => {}} tooltipID='tt-1' showProjectIndicator={false} />,
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        tooltipID='tt-1'
+        showProjectIndicator={false}
+        projectSelectList={twoProjectList}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    expect(instance.renderProjectBadge()).toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('returns null when only one project is available, even with a differing project_name', () => {
+    const tile = makeTile({
+      queryResponse: { data: { data: { project_id: '2', project_name: 'MyProject' } } },
+    })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        tooltipID='tt-1'
+        projectSelectList={[{ projectId: '1', displayName: 'Only Project' }]}
+        autoQLConfig={{ projectId: '1' }}
+      />,
     )
     const instance = wrapper.instance()
 
@@ -481,7 +529,14 @@ describe('DashboardTile renderProjectBadge', () => {
     const tile = makeTile({
       queryResponse: { data: { data: { project_id: '1', project_name: 'MyProject' } } },
     })
-    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} tooltipID='tt-1' />)
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        tooltipID='tt-1'
+        projectSelectList={twoProjectList}
+      />,
+    )
     const instance = wrapper.instance()
 
     const badge = instance.renderProjectBadge()
@@ -494,7 +549,9 @@ describe('DashboardTile renderProjectBadge', () => {
 
   it('returns null when there is no queryResponse project data', () => {
     const tile = makeTile({ queryResponse: null })
-    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} />)
+    const wrapper = mount(
+      <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={twoProjectList} />,
+    )
     const instance = wrapper.instance()
 
     expect(instance.renderProjectBadge()).toBeNull()
@@ -506,7 +563,14 @@ describe('DashboardTile renderProjectBadge', () => {
     const tile = makeTile({
       queryResponse: { data: { data: { project_id: '1', project_name: 'MyProject' } } },
     })
-    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} autoQLConfig={{ projectId: '1' }} />)
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        autoQLConfig={{ projectId: '1' }}
+        projectSelectList={twoProjectList}
+      />,
+    )
     const instance = wrapper.instance()
 
     expect(instance.renderProjectBadge()).toBeNull()
@@ -518,7 +582,14 @@ describe('DashboardTile renderProjectBadge', () => {
     const tile = makeTile({
       queryResponse: { data: { data: { project_id: '2', project_name: 'MyProject' } } },
     })
-    const wrapper = mount(<DashboardTile tile={tile} setParamsForTile={() => {}} autoQLConfig={{ projectId: '1' }} />)
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        autoQLConfig={{ projectId: '1' }}
+        projectSelectList={twoProjectList}
+      />,
+    )
     const instance = wrapper.instance()
 
     expect(instance.renderProjectBadge()).not.toBeNull()
@@ -527,7 +598,10 @@ describe('DashboardTile renderProjectBadge', () => {
   })
 
   it('falls back to tile.projectId + projectSelectList when there is no queryResponse yet (loading/failed tile)', () => {
-    const projectSelectList = [{ projectId: '2', displayName: 'Proj B' }]
+    const projectSelectList = [
+      { projectId: '1', displayName: 'Proj A' },
+      { projectId: '2', displayName: 'Proj B' },
+    ]
     const tile = makeTile({ projectId: '2', queryResponse: null })
     const wrapper = mount(
       <DashboardTile
@@ -548,7 +622,10 @@ describe('DashboardTile renderProjectBadge', () => {
   })
 
   it('does not use the projectSelectList fallback when the tile project matches the dashboard default', () => {
-    const projectSelectList = [{ projectId: '1', displayName: 'Proj A' }]
+    const projectSelectList = [
+      { projectId: '1', displayName: 'Proj A' },
+      { projectId: '2', displayName: 'Proj B' },
+    ]
     const tile = makeTile({ projectId: '1', queryResponse: null })
     const wrapper = mount(
       <DashboardTile
@@ -814,7 +891,10 @@ describe('DashboardTile projectIdsEqual (string vs number coercion)', () => {
   })
 
   it('confirmDisabled treats a same-project type flip as a no-op change (Modal stays disabled)', () => {
-    const projectSelectList = [{ projectId: 1, displayName: 'Project A' }]
+    const projectSelectList = [
+      { projectId: 1, displayName: 'Project A' },
+      { projectId: 2, displayName: 'Project B' },
+    ]
     const tile = makeTile({ projectId: 1 })
     const wrapper = mount(
       <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} isEditing />,
@@ -831,7 +911,10 @@ describe('DashboardTile projectIdsEqual (string vs number coercion)', () => {
   })
 
   it('openProjectModal normalizes pendingProjectId to the exact type/value used in projectSelectList', () => {
-    const projectSelectList = [{ projectId: 2, displayName: 'Project B' }]
+    const projectSelectList = [
+      { projectId: 1, displayName: 'Project A' },
+      { projectId: 2, displayName: 'Project B' },
+    ]
     const tile = makeTile({ projectId: '2' })
     const wrapper = mount(
       <DashboardTile tile={tile} setParamsForTile={() => {}} projectSelectList={projectSelectList} isEditing />,

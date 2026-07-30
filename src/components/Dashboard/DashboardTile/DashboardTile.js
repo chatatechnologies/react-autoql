@@ -1245,7 +1245,7 @@ export class DashboardTile extends React.Component {
   }
 
   renderProjectBadge = () => {
-    if (!this.props.showProjectIndicator) {
+    if (!this.props.showProjectIndicator || !(this.props.projectSelectList?.length > 1)) {
       return null
     }
 
@@ -1309,8 +1309,9 @@ export class DashboardTile extends React.Component {
   }
 
   // Opens a modal to change the tile's project; dot badge shows when it differs from the dashboard default.
+  // Hidden entirely when there's only one (or zero) projects available - nothing to switch to.
   renderProjectButton = () => {
-    if (!this.props.showProjectIndicator || !this.props.projectSelectList?.length) {
+    if (!this.props.showProjectIndicator || !(this.props.projectSelectList?.length > 1)) {
       return null
     }
 
@@ -1332,7 +1333,7 @@ export class DashboardTile extends React.Component {
   }
 
   renderProjectModal = () => {
-    if (!this.props.showProjectIndicator || !this.props.projectSelectList?.length) {
+    if (!this.props.showProjectIndicator || !(this.props.projectSelectList?.length > 1)) {
       return null
     }
 
