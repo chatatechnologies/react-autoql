@@ -1770,6 +1770,10 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
+        // Pin drilldowns to the tile's already-cached query id — a cached-refresh response can carry
+        // a different (fresh) query_id for what is logically the same cached query, and the backend
+        // 500s if that fresh id is used for drilldown.
+        queryId: this.props.tile?.queryId,
         initialTableConfigs: (() => {
           const dataConfig = this.props.tile?.dataConfig || {}
           // Extract columnOverrides from tile.columns if it exists (for date precision persistence)

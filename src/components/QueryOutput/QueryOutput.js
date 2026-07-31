@@ -125,7 +125,6 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
-    this.drilldownQueryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -300,6 +299,9 @@ export class QueryOutput extends React.Component {
         data: PropTypes.object,
       }),
     }),
+    // Tile's cached query id. Pins drilldowns to it so a background cached-refresh response (which
+    // can carry a different query_id for the same cached query) doesn't get used instead.
+    queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -567,8 +569,6 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
           }
-          this.drilldownQueryID = this.queryResponse?.data?.data?.query_id
-
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
           this.resetTableConfig(newColumns)
@@ -1276,7 +1276,6 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.drilldownQueryID =  nextQueryID || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -1763,7 +1762,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.queryID,
+              queryID: this.props.queryId || this.queryID,
               source: this.props.source,
               groupBys,
               pageSize,
