@@ -851,9 +851,7 @@ export class DashboardTile extends React.Component {
           return tryRequest(retryData)
         }
 
-        // A real 401 usually means this tile's per-project token expired mid-session (e.g. after a
-        // long idle tab where the proactive refresh timer hadn't caught up yet) - ask the host for
-        // a fresh token and retry once instead of surfacing a doomed auth error.
+        // A real 401 usually means this tile's token expired mid-session - ask the host for a fresh one and retry once.
         if (!authRetried && this.isAuthError(resp)) {
           return this.retryWithFreshAuth(requestData, queryFunction, err)
         }
