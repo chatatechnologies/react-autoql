@@ -184,6 +184,8 @@ export class DashboardTile extends React.Component {
     ),
     // Resolves an authentication object scoped to a given projectId (multi-project dashboards)
     getAuthenticationForProject: PropTypes.func,
+    // Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange
+    onTileAuthExpired: PropTypes.func,
     // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
     showProjectIndicator: PropTypes.bool,
     // Whether this tile belongs to a project-based (PROJECT type) dashboard, as opposed to a CUSTOM dashboard
@@ -232,6 +234,7 @@ export class DashboardTile extends React.Component {
     enableFollowOnQuery: false,
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
+    onTileAuthExpired: undefined,
     showProjectIndicator: true,
     isProjectDashboard: false,
   }
@@ -588,6 +591,10 @@ export class DashboardTile extends React.Component {
     return false
   }
 
+  isAuthError = (resp) => {
+    return resp?.status === 401 || resp?.response?.status === 401
+  }
+
   normalizeAxisSorts = (v) => {
     if (!v) return {}
     if (!Array.isArray(v)) return v
@@ -820,7 +827,7 @@ export class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  executeQueryWithForceRetry(requestData, queryFunction) {
+  executeQueryWithForceRetry(requestData, queryFunction, { authRetried = false } = {}) {
     const tryRequest = (data) => queryFunction(data)
 
     return tryRequest(requestData).catch((err) => {
@@ -843,11 +850,36 @@ export class DashboardTile extends React.Component {
           // Immediate retry using the original query function
           return tryRequest(retryData)
         }
+
+        // A real 401 usually means this tile's per-project token expired mid-session (e.g. after a
+        // long idle tab where the proactive refresh timer hadn't caught up yet) - ask the host for
+        // a fresh token and retry once instead of surfacing a doomed auth error.
+        if (!authRetried && this.isAuthError(resp)) {
+          return this.retryWithFreshAuth(requestData, queryFunction, err)
+        }
       } catch (e) {
         // detection error - fall through to rethrow original
       }
 
       return Promise.reject(err)
+    })
+  }
+
+  retryWithFreshAuth = (requestData, queryFunction, originalError) => {
+    const projectId = this.props.tile?.projectId
+    if (projectId == null || typeof this.props.onTileAuthExpired !== 'function') {
+      return Promise.reject(originalError)
+    }
+
+    this.props.onTileAuthExpired(projectId)
+
+    return this.waitForTileAuthentication().then((authReady) => {
+      if (!authReady || !this._isMounted) {
+        return Promise.reject(originalError)
+      }
+
+      const retryData = { ...requestData, ...getAuthentication(this.getTileAuthentication()) }
+      return this.executeQueryWithForceRetry(retryData, queryFunction, { authRetried: true })
     })
   }
 

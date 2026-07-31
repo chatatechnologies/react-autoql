@@ -250,6 +250,7 @@ export interface DashboardProps {
   offline?: boolean
   projectSelectList?: Array<{ projectId: string | number; displayName: string }>
   getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined
+  onTileAuthExpired?: (projectId: string | number) => void
   showProjectIndicator?: boolean
   [key: string]: any
 }

@@ -159,6 +159,8 @@ class DashboardWithoutTheme extends React.Component {
     ),
     // Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details.
     getAuthenticationForProject: PropTypes.func,
+    // Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange
+    onTileAuthExpired: PropTypes.func,
     // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
     showProjectIndicator: PropTypes.bool,
     // Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard
@@ -206,6 +208,7 @@ class DashboardWithoutTheme extends React.Component {
     enableResetQuery: false,
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
+    onTileAuthExpired: undefined,
     showProjectIndicator: true,
     isProjectDashboard: false,
   }
@@ -1438,6 +1441,7 @@ class DashboardWithoutTheme extends React.Component {
             showResetQueryOption={this.props.enableResetQuery}
             projectSelectList={this.props.projectSelectList}
             getAuthenticationForProject={this.props.getAuthenticationForProject}
+            onTileAuthExpired={this.props.onTileAuthExpired}
             showProjectIndicator={this.props.showProjectIndicator}
             isProjectDashboard={this.props.isProjectDashboard}
           />
