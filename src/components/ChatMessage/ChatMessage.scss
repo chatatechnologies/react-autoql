@@ -525,6 +525,12 @@
     }
   }
 
+  .follow-on-reply-btn-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   .follow-on-reply-btn-count {
     position: absolute;
     top: -8px;
