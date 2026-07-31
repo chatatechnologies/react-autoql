@@ -221,7 +221,7 @@ export class OptionsToolbar extends React.Component {
   }
 
   fetchCSVAndExport = () => {
-    const queryId = this.props.responseRef?.drilldownQueryID
+    const queryId = this.props.responseRef?.queryResponse?.data?.data?.query_id
     const query = this.props.responseRef?.queryResponse?.data?.data?.text
     const uniqueId = uuid()
 

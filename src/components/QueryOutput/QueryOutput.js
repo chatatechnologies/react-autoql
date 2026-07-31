@@ -125,8 +125,7 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
-    this.drilldownQueryID =
-      this.queryResponse?.data?.data?.drilldown_query_id || this.queryResponse?.data?.data?.query_id
+    this.drilldownQueryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -568,7 +567,7 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
           }
-          this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
+          this.drilldownQueryID = this.queryResponse?.data?.data?.query_id
 
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -1277,7 +1276,7 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.drilldownQueryID = response?.data?.data?.drilldown_query_id || this.queryID
+      this.drilldownQueryID =  nextQueryID || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -1764,7 +1763,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.drilldownQueryID,
+              queryID: this.queryID,
               source: this.props.source,
               groupBys,
               pageSize,
