@@ -980,7 +980,10 @@ export default class ChatMessage extends React.Component {
         tooltip={tooltip}
         tooltipID={this.props.tooltipID}
       >
-        <Icon type='reply' />
+        <span className='follow-on-reply-btn-content'>
+          <Icon type='reply' />
+          Ask a Follow-up
+        </span>
         {hasResults && !isOpen && (
           <span className='follow-on-reply-btn-count'>{this.state.followOnResults.length}</span>
         )}
