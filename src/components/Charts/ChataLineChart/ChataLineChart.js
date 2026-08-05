@@ -81,7 +81,6 @@ export default class ChataLineChart extends Component {
           yCol={yCol}
           toggleChartScale={this.toggleChartScale}
           legendShape='line'
-          dateColumnsOnly
           yGridLines
         />
       </g>
