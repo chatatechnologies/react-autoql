@@ -1,0 +1,37 @@
+.magic-wand-billing-gate-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+
+.magic-wand-billing-gate-notice-message {
+  margin: 0;
+  color: var(--react-autoql-text-color-primary);
+  line-height: 1.4;
+}
+
+.magic-wand-billing-gate-notice-over-quota {
+  border: 1.5px solid var(--react-autoql-error-color, #d32f2f);
+  background-color: var(--react-autoql-error-background-color, rgba(211, 47, 47, 0.1));
+}
+
+.magic-wand-billing-gate-notice-unavailable {
+  border: 1.5px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.15));
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+}
+
+.magic-wand-billing-gate-notice-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.magic-wand-billing-gate-notice-passive-action {
+  margin: 0;
+  color: var(--react-autoql-text-color-secondary, rgba(0, 0, 0, 0.6));
+}

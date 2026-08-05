@@ -52,6 +52,8 @@ export default class DrilldownModal extends React.Component {
     cancelQueriesOnUnmount: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     tooltipID: PropTypes.string,
     chartTooltipID: PropTypes.string,
   }
@@ -81,6 +83,8 @@ export default class DrilldownModal extends React.Component {
     onPNGDownloadFinish: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -160,6 +164,8 @@ export default class DrilldownModal extends React.Component {
         onPNGDownloadFinish={this.props.onPNGDownloadFinish}
         enableMagicWand={this.props.enableMagicWand}
         showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+        enableBillingGate={this.props.enableBillingGate}
+        onQuotaExceeded={this.props.onQuotaExceeded}
       />
     )
   }
