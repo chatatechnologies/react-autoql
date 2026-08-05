@@ -119,7 +119,6 @@
   &.left-padding {
     width: calc(100% - 40px);
   }
-
 }
 
 .react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container {
@@ -133,7 +132,6 @@
   z-index: 100 !important;
 }
 
-
 .react-autoql-dashboard-tile-inner-div {
   .react-autoql-table-add-column-btn {
     right: 0.9375rem;
@@ -145,7 +143,7 @@
     align-items: center;
 
     .single-value-response {
-      font-size: 2.25rem;
+      font-size: 3rem;
       font-weight: 600;
     }
   }
@@ -171,7 +169,6 @@
     padding-top: 0px;
     overflow: hidden;
     background: inherit;
-
   }
 
   .dashboard-tile-response-wrapper.editing {
@@ -185,7 +182,6 @@
       color: var(--react-autoql-accent-color);
     }
   }
-
 }
 
 /* Safetynet styles specific to dashboard tiles */
@@ -346,7 +342,6 @@
     color: var(--react-autoql-text-color-placeholder);
   }
 }
-
 
 .dashboard-tile-delete-button {
   opacity: 0;
@@ -763,11 +758,13 @@
 }
 
 .react-autoql-dashboard-tile.dirty .react-autoql-dashboard-tile-inner-div {
-  box-shadow: inset 0 3px 0 var(--react-autoql-warning-color, #ffa700), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
+  box-shadow: inset 0 3px 0 var(--react-autoql-warning-color, #ffa700), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
+    rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
 }
 
 .react-autoql-dashboard-tile.failed .react-autoql-dashboard-tile-inner-div {
-  box-shadow: inset 0 3px 0 var(--react-autoql-error-color, #ff0000), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
+  box-shadow: inset 0 3px 0 var(--react-autoql-error-color, #ff0000), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
+    rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
 }
 
 .react-autoql-dashboard-tile-dirty-badge,

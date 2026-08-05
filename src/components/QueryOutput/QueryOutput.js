@@ -2186,11 +2186,63 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
+    // Must run after generatePivotData (relies on both staying synchronous) so its axisSorts reset doesn't win.
+    this.syncChartSortWithTableSort()
+
     // Update filter badge in OptionsToolbar
     setTimeout(() => {
       if (!this._isMounted) return
       this.updateToolbars()
     }, 0)
+  }
+
+  // Keeps the chart's row order (and its axis sort popover selection) in sync with the table's own sort.
+  // Only calls onAxisSortChange when the resolved sort actually changed, to avoid needless updates.
+  syncChartSortWithTableSort = () => {
+    const sorter = this.tableParams?.sort?.[0]
+
+    if (!sorter) {
+      if (this.lastSyncedTableSort) {
+        const { axis, columnIndex } = this.lastSyncedTableSort
+        this.lastSyncedTableSort = undefined
+        this.onAxisSortChange(axis, columnIndex, null, { skipRemount: true })
+      }
+      return
+    }
+
+    const columnIndex = this.resolveHeaderFilterColumnIndex(sorter.field, this.state.columns)
+    if (columnIndex === undefined) {
+      return
+    }
+
+    const dir = sorter.dir === 'desc' ? 'desc' : 'asc'
+    const isHeatmapOrBubble =
+      this.state.displayType === DisplayTypes.HEATMAP || this.state.displayType === DisplayTypes.BUBBLE
+
+    let axis
+    let sortType
+    if (columnIndex === this.tableConfig?.stringColumnIndex) {
+      axis = 'x'
+      sortType = `alpha-${dir}`
+    } else if (!isHeatmapOrBubble && this.tableConfig?.numberColumnIndices?.includes(columnIndex)) {
+      // AxisSortPopover only offers a numeric "value" sort for non-heatmap/bubble charts
+      // (stringColumnOnly), so don't produce axis-sort state those charts' own UI can't reach.
+      axis = 'y'
+      sortType = `value-${dir}`
+    } else {
+      return
+    }
+
+    const isUnchanged =
+      this.lastSyncedTableSort?.axis === axis &&
+      this.lastSyncedTableSort?.columnIndex === columnIndex &&
+      this.lastSyncedTableSort?.sortType === sortType
+    if (isUnchanged) {
+      return
+    }
+
+    this.lastSyncedTableSort = { axis, columnIndex, sortType }
+    this.onAxisSortChange(axis, columnIndex, sortType, { skipRemount: true })
   }
 
   onNewData = (response) => {
@@ -2252,10 +2304,14 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onAxisSortChange = (axis, columnIndex, sortType) => {
+  onAxisSortChange = (axis, columnIndex, sortType, { skipRemount } = {}) => {
     // axis: 'x' or 'y'
     // columnIndex: the index of the column on the axis (for state tracking only)
     // sortType: 'alpha-asc', 'alpha-desc', 'value-asc', 'value-desc', or null
+    // skipRemount: true when called from syncChartSortWithTableSort while the chart isn't
+    // being interacted with directly - avoids force-remounting ChataChart (key={chartID})
+    // even while it's hidden behind the table view, which would wipe its local-only state
+    // (e.g. scale-toggle UI state) on every table sort.
 
     // Update axis sort state (ChataChart performs actual sorting)
     this.setState((prevState) => {
@@ -2280,7 +2336,7 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      return { axisSorts: newAxisSorts, chartID: uuid() }
+      return skipRemount ? { axisSorts: newAxisSorts } : { axisSorts: newAxisSorts, chartID: uuid() }
     })
   }
 
@@ -4276,7 +4332,6 @@ export class QueryOutput extends React.Component {
     const usePivotData = this.usePivotDataForChart()
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
-      !this.potentiallySupportsDatePivot() &&
       this.state?.displayType !== DisplayTypes.NETWORK_GRAPH &&
       this.state?.displayType !== DisplayTypes.SANKEY
     const chartDataSource =

@@ -1,7 +1,9 @@
 import React, { Component } from 'react'
 import { formatElement, getChartColorVars, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, getGradientOpacityStops } from '../../chartPropHelpers'
+
+const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('vertical')
 
 export default class HistogramColumns extends Component {
   static propTypes = chartElementPropTypes
@@ -48,9 +50,9 @@ export default class HistogramColumns extends Component {
     // Create vertical gradient for histogram bars (top to bottom) - matching column charts
     gradientDefs.push(
       <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor={color} stopOpacity="0.9" />
-        <stop offset="50%" stopColor={color} stopOpacity="0.7" />
-        <stop offset="100%" stopColor={color} stopOpacity="0.5" />
+        <stop offset="0%" stopColor={color} stopOpacity={OPACITY_1} />
+        <stop offset="50%" stopColor={color} stopOpacity={OPACITY_2} />
+        <stop offset="100%" stopColor={color} stopOpacity={OPACITY_3} />
       </linearGradient>
     )
 

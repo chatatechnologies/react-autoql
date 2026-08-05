@@ -16,6 +16,7 @@ import {
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
+import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 import './ChataSankeyDiagram.scss'
 
@@ -181,6 +182,9 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     ),
   )
   const [valueColumnIndex, setValueColumnIndex] = useState(() => {
+    if (persistedValueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) {
+      return persistedValueColumnIndex
+    }
     if (persistedValueColumnIndex >= 0 && isColumnNumberType(props.columns?.[persistedValueColumnIndex])) {
       return persistedValueColumnIndex
     }
@@ -257,6 +261,8 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   }, [categoricalColumnIndices, detectedSourceIndex, detectedTargetIndex, persistedPathColumnIndices])
 
   useEffect(() => {
+    if (valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) return
+
     const firstNumberColumnIndex = (props.columns || []).findIndex((col) => isColumnNumberType(col))
     if (
       firstNumberColumnIndex >= 0 &&
@@ -279,11 +285,13 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting,
     )
 
+    const countAsValue = valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL
+
     // Aggregate flows across adjacent path steps
     const flowMap = new Map()
 
     data.forEach((row) => {
-      const value = parseFloat(row[valueColumnIndex]) || 0
+      const value = countAsValue ? 1 : parseFloat(row[valueColumnIndex]) || 0
 
       if (value <= 0) return
 

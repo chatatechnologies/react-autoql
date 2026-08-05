@@ -39,12 +39,12 @@ export default class AxisSortPopover extends React.Component {
     // For heatmaps and bubble charts, only show string column sort options
     const sortOptions = this.props.stringColumnOnly
       ? [
-          { value: null, label: 'No sort (original)' },
+          { value: null, label: 'Match table order' },
           { value: 'alpha-asc', label: `Sort by ${columnDisplayName} (asc)` },
           { value: 'alpha-desc', label: `Sort by ${columnDisplayName} (desc)` },
         ]
       : [
-          { value: null, label: 'No sort (original)' },
+          { value: null, label: 'Match table order' },
           { value: 'alpha-asc', label: `Sort by ${columnDisplayName} (asc)` },
           { value: 'alpha-desc', label: `Sort by ${columnDisplayName} (desc)` },
           { value: 'value-asc', label: `Sort by ${valueColumnDisplayName} (asc)` },
