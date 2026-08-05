@@ -443,13 +443,18 @@ export class DashboardTile extends React.Component {
     return this.props.authentication
   }
 
-  // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives within the wait window
-  waitForTileAuthentication = () => {
+  // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives within the wait window.
+  // staleToken: if passed, a token matching it doesn't count as ready - used after onTileAuthExpired to wait for an actual refresh
+  // instead of resolving immediately on the same cached (invalid) token.
+  waitForTileAuthentication = (staleToken) => {
     const projectId = this.props.tile?.projectId
     if (projectId == null || !this.props.getAuthenticationForProject) {
       return Promise.resolve(true)
     }
-    if (this.props.getAuthenticationForProject(projectId)) {
+
+    const isFreshAuth = (auth) => !!auth && (staleToken === undefined || auth.token !== staleToken)
+
+    if (isFreshAuth(this.props.getAuthenticationForProject(projectId))) {
       return Promise.resolve(true)
     }
 
@@ -463,7 +468,7 @@ export class DashboardTile extends React.Component {
           resolve(true)
           return
         }
-        if (this.props.getAuthenticationForProject?.(projectId)) {
+        if (isFreshAuth(this.props.getAuthenticationForProject?.(projectId))) {
           resolve(true)
           return
         }
@@ -869,9 +874,10 @@ export class DashboardTile extends React.Component {
       return Promise.reject(originalError)
     }
 
+    const staleToken = this.props.getAuthenticationForProject?.(projectId)?.token
     this.props.onTileAuthExpired(projectId)
 
-    return this.waitForTileAuthentication().then((authReady) => {
+    return this.waitForTileAuthentication(staleToken).then((authReady) => {
       if (!authReady || !this._isMounted) {
         return Promise.reject(originalError)
       }
@@ -1274,8 +1280,13 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  // Whether there's a project picker to show at all - hidden when the indicator is disabled or there's nothing to switch to.
+  shouldShowProjectPicker = () => {
+    return this.props.showProjectIndicator && this.props.projectSelectList?.length > 1
+  }
+
   renderProjectBadge = () => {
-    if (!this.props.showProjectIndicator || !(this.props.projectSelectList?.length > 1)) {
+    if (!this.shouldShowProjectPicker()) {
       return null
     }
 
@@ -1339,9 +1350,8 @@ export class DashboardTile extends React.Component {
   }
 
   // Opens a modal to change the tile's project; dot badge shows when it differs from the dashboard default.
-  // Hidden entirely when there's only one (or zero) projects available - nothing to switch to.
   renderProjectButton = () => {
-    if (!this.props.showProjectIndicator || !(this.props.projectSelectList?.length > 1)) {
+    if (!this.shouldShowProjectPicker()) {
       return null
     }
 
@@ -1363,7 +1373,7 @@ export class DashboardTile extends React.Component {
   }
 
   renderProjectModal = () => {
-    if (!this.props.showProjectIndicator || !(this.props.projectSelectList?.length > 1)) {
+    if (!this.shouldShowProjectPicker()) {
       return null
     }
 
