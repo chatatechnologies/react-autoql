@@ -23,6 +23,9 @@ export const BAR_GRADIENT_OPACITY_STOPS = [0.45, 0.55, 0.65]
 export const getGradientOpacityStops = (direction) =>
   direction === 'vertical' ? [...BAR_GRADIENT_OPACITY_STOPS].reverse() : BAR_GRADIENT_OPACITY_STOPS
 
+/** Persisted in Sankey's `sankeyValueColumnIndex` to weight flows by row count (not a column value). */
+export const SANKEY_VALUE_COUNT_SENTINEL = -1
+
 /** True when the category axis alone is crowded (many rows). */
 export const isDenseCategoryChart = (data) => Array.isArray(data) && data.length > DENSE_CATEGORY_THRESHOLD
 

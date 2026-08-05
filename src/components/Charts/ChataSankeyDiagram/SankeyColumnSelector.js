@@ -4,9 +4,7 @@ import { Icon } from '../../Icon'
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Select } from '../../Select'
-
-/** Must match `SANKEY_VALUE_COUNT_SENTINEL` in ChataSankeyDiagram — weight flows by row count. */
-const SANKEY_VALUE_COUNT_SENTINEL = -1
+import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 const SankeyColumnSelector = ({
   columns,

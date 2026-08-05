@@ -16,14 +16,12 @@ import {
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
+import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 import './ChataSankeyDiagram.scss'
 
 const MAX_FLOWS = 100 // Maximum number of flows to display
 const MAX_PATH_COLUMNS = 6
-
-/** Persisted in `sankeyValueColumnIndex` to weight flows by row count (not a column value). */
-export const SANKEY_VALUE_COUNT_SENTINEL = -1
 
 const escapeHtml = (value = '') => {
   return `${value}`
