@@ -22,6 +22,9 @@ import './ChataSankeyDiagram.scss'
 const MAX_FLOWS = 100 // Maximum number of flows to display
 const MAX_PATH_COLUMNS = 6
 
+/** Persisted in `sankeyValueColumnIndex` to weight flows by row count (not a column value). */
+export const SANKEY_VALUE_COUNT_SENTINEL = -1
+
 const escapeHtml = (value = '') => {
   return `${value}`
     .replace(/&/g, '&amp;')
@@ -181,6 +184,9 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     ),
   )
   const [valueColumnIndex, setValueColumnIndex] = useState(() => {
+    if (persistedValueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) {
+      return persistedValueColumnIndex
+    }
     if (persistedValueColumnIndex >= 0 && isColumnNumberType(props.columns?.[persistedValueColumnIndex])) {
       return persistedValueColumnIndex
     }
@@ -257,6 +263,8 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   }, [categoricalColumnIndices, detectedSourceIndex, detectedTargetIndex, persistedPathColumnIndices])
 
   useEffect(() => {
+    if (valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) return
+
     const firstNumberColumnIndex = (props.columns || []).findIndex((col) => isColumnNumberType(col))
     if (
       firstNumberColumnIndex >= 0 &&
@@ -279,11 +287,13 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting,
     )
 
+    const countAsValue = valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL
+
     // Aggregate flows across adjacent path steps
     const flowMap = new Map()
 
     data.forEach((row) => {
-      const value = parseFloat(row[valueColumnIndex]) || 0
+      const value = countAsValue ? 1 : parseFloat(row[valueColumnIndex]) || 0
 
       if (value <= 0) return
 

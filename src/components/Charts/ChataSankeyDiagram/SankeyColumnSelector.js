@@ -5,6 +5,9 @@ import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Select } from '../../Select'
 
+/** Must match `SANKEY_VALUE_COUNT_SENTINEL` in ChataSankeyDiagram — weight flows by row count. */
+const SANKEY_VALUE_COUNT_SENTINEL = -1
+
 const SankeyColumnSelector = ({
   columns,
   selectedIndex,
@@ -60,12 +63,15 @@ const SankeyColumnSelector = ({
     .map((index) => columns?.[index]?.display_name || columns?.[index]?.name)
     .filter(Boolean)
 
+  const isCountSelected = type === 'value' && selectedIndex === SANKEY_VALUE_COUNT_SENTINEL
   const selectedColumn = columns[selectedIndex]
   const tooltipHtml =
     type === 'path'
       ? selectedPathNames.length
         ? `<strong>Path Columns:</strong><br/>${selectedPathNames.join(' → ')}`
         : 'Select path columns'
+      : isCountSelected
+      ? `<strong>${getLabel()} Column:</strong><br/><em>(Count)</em>`
       : selectedColumn
       ? `<strong>${getLabel()} Column:</strong><br/>${selectedColumn.display_name || selectedColumn.name}`
       : `Select ${getLabel()} Column`
@@ -215,28 +221,48 @@ const SankeyColumnSelector = ({
   }
 
   const renderValueDropdownContent = () => {
-    if (!filteredColumns.length) {
-      return <div className='sankey-column-dropdown-empty'>No {type} columns available</div>
+    if (type !== 'value') {
+      if (!filteredColumns.length) {
+        return <div className='sankey-column-dropdown-empty'>No {type} columns available</div>
+      }
+      return filteredColumns.map((col) => renderColumnDropdownItem(col))
     }
 
-    return filteredColumns.map((col, index) => {
-      const colIndex = columns.indexOf(col)
-      const isSelected = colIndex === selectedIndex
-
-      return (
+    return (
+      <>
         <div
-          key={`${type}-col-${colIndex}`}
-          className={`sankey-column-dropdown-item ${isSelected ? 'sankey-column-dropdown-item-selected' : ''}`}
+          key='value-col-count'
+          className={`sankey-column-dropdown-item ${isCountSelected ? 'sankey-column-dropdown-item-selected' : ''}`}
           onClick={() => {
-            onSelect(colIndex)
+            onSelect(SANKEY_VALUE_COUNT_SENTINEL)
             setShowDropdown(false)
           }}
         >
-          {isSelected && <Icon type='check' className='sankey-column-dropdown-item-check' />}
-          <span>{col.display_name || col.name}</span>
+          {isCountSelected && <Icon type='check' className='sankey-column-dropdown-item-check' />}
+          <span>Count</span>
         </div>
-      )
-    })
+        {filteredColumns.map((col) => renderColumnDropdownItem(col))}
+      </>
+    )
+  }
+
+  const renderColumnDropdownItem = (col) => {
+    const colIndex = columns.indexOf(col)
+    const isSelected = colIndex === selectedIndex
+
+    return (
+      <div
+        key={`${type}-col-${colIndex}`}
+        className={`sankey-column-dropdown-item ${isSelected ? 'sankey-column-dropdown-item-selected' : ''}`}
+        onClick={() => {
+          onSelect(colIndex)
+          setShowDropdown(false)
+        }}
+      >
+        {isSelected && <Icon type='check' className='sankey-column-dropdown-item-check' />}
+        <span>{col.display_name || col.name}</span>
+      </div>
+    )
   }
 
   return (

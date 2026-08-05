@@ -711,6 +711,11 @@ export default class ChataTable extends React.Component {
         this.scrollToRight()
       }
 
+      if (this.tabulatorScrollEl) {
+        this.tabulatorScrollEl.removeEventListener('wheel', this.handleTableWheel)
+        this.tabulatorScrollEl = null
+      }
+
       const scrollEl = this.ref?.tabulator?.rowManager?.element
       if (scrollEl) {
         this.tabulatorScrollEl = scrollEl
@@ -720,10 +725,12 @@ export default class ChataTable extends React.Component {
   }
 
   // Prevent the browser's two-finger back/forward navigation gesture from firing
-  // when horizontal scroll momentum overscrolls past the table's edge
+  // when horizontal scroll momentum overscrolls past the table's edge. Paired with
+  // `overscroll-behavior-x: contain` in ChataTable.scss - that alone doesn't fully
+  // cover Safari's trackpad swipe-navigation gesture, so both are needed, not redundant.
   handleTableWheel = (e) => {
     const el = this.tabulatorScrollEl
-    if (!el || !e.deltaX) {
+    if (!el || !e.deltaX || !el.clientWidth) {
       return
     }
 

@@ -748,6 +748,7 @@ export default class Axis extends Component {
         numberColumnIndices2={this.props.numberColumnIndices2}
         stringColumnIndices={this.props.stringColumnIndices}
         stringColumnIndex={this.props.stringColumnIndex}
+        columnOverrides={this.props.columnOverrides}
         dateColumnsOnly={this.props.dateColumnsOnly}
         isAggregated={this.props.isAggregated}
         tooltipID={this.props.tooltipID}

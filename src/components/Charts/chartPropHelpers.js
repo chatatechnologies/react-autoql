@@ -13,6 +13,16 @@ import { dataFormattingType } from '../../props/types'
 /** Threshold for dense bar/column layout (zero band padding, zero series gaps). */
 export const DENSE_CATEGORY_THRESHOLD = 300
 
+/** Opacity stops (low to high) for the 3-stop bar/column fill gradient. */
+export const BAR_GRADIENT_OPACITY_STOPS = [0.45, 0.55, 0.65]
+
+/**
+ * Builds the three <stop> opacity values for a bar/column gradient in the given direction.
+ * Bars (horizontal) go light-to-dark left-to-right; columns/histograms (vertical) go dark-to-light top-to-bottom.
+ */
+export const getGradientOpacityStops = (direction) =>
+  direction === 'vertical' ? [...BAR_GRADIENT_OPACITY_STOPS].reverse() : BAR_GRADIENT_OPACITY_STOPS
+
 /** True when the category axis alone is crowded (many rows). */
 export const isDenseCategoryChart = (data) => Array.isArray(data) && data.length > DENSE_CATEGORY_THRESHOLD
 

@@ -2186,8 +2186,12 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
-    // Sync the chart's axis sort with the table's sort last, so it isn't
-    // clobbered by generatePivotData's axisSorts reset above
+    // Sync the chart's axis sort with the table's sort last, so it isn't clobbered by
+    // generatePivotData's axisSorts reset above. Safe only because both calls are
+    // synchronous (no await in between) - if either generatePivotData or its callees
+    // (generateDatePivotData/generatePivotTableData) ever become async, this ordering
+    // guarantee breaks and syncChartSortWithTableSort's setState could run before
+    // generatePivotData's, letting the reset win instead.
     this.syncChartSortWithTableSort()
 
     // Update filter badge in OptionsToolbar
@@ -2197,12 +2201,18 @@ export class QueryOutput extends React.Component {
     }, 0)
   }
 
-  // Keeps the chart's row order (and its axis sort popover selection) in sync with the table's own sort
+  // Keeps the chart's row order (and its axis sort popover selection) in sync with the table's own sort.
+  // Only calls onAxisSortChange when the resolved sort actually changed since the last sync - otherwise
+  // a filter-only or page-only table params change would clobber a chart-only axis sort and force an
+  // unnecessary chart remount (onAxisSortChange bumps chartID) on every table interaction.
   syncChartSortWithTableSort = () => {
     const sorter = this.tableParams?.sort?.[0]
 
     if (!sorter) {
-      this.onAxisSortChange('x', this.tableConfig?.stringColumnIndex, null)
+      if (this.lastSyncedTableSortKey) {
+        this.lastSyncedTableSortKey = undefined
+        this.onAxisSortChange('x', this.tableConfig?.stringColumnIndex, null)
+      }
       return
     }
 
@@ -2213,11 +2223,25 @@ export class QueryOutput extends React.Component {
 
     const dir = sorter.dir === 'desc' ? 'desc' : 'asc'
 
+    let axis
+    let sortType
     if (columnIndex === this.tableConfig?.stringColumnIndex) {
-      this.onAxisSortChange('x', columnIndex, `alpha-${dir}`)
+      axis = 'x'
+      sortType = `alpha-${dir}`
     } else if (this.tableConfig?.numberColumnIndices?.includes(columnIndex)) {
-      this.onAxisSortChange('y', columnIndex, `value-${dir}`)
+      axis = 'y'
+      sortType = `value-${dir}`
+    } else {
+      return
     }
+
+    const syncKey = `${axis}-${columnIndex}-${sortType}`
+    if (this.lastSyncedTableSortKey === syncKey) {
+      return
+    }
+
+    this.lastSyncedTableSortKey = syncKey
+    this.onAxisSortChange(axis, columnIndex, sortType)
   }
 
   onNewData = (response) => {
