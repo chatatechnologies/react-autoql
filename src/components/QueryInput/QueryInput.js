@@ -910,7 +910,6 @@ class QueryInput extends React.Component {
       onKeyPress: this.onKeyPress,
       onKeyDown: this.onKeyDown,
       value: this.state.inputValue,
-      onFocus: this.moveCaretAtEnd,
       onBlur: () => this.setState({ suggestions: [] }),
       onClick: this.showQueryHistorySuggestions,
       spellCheck: false,
