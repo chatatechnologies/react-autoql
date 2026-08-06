@@ -196,7 +196,7 @@ export class DataMessenger extends React.Component {
     enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
-    inputPlaceholder: 'Type your queries here',
+    inputPlaceholder: 'Start a new query...',
     dataPageSize: undefined,
     notificationCount: undefined,
     defaultOpen: false,

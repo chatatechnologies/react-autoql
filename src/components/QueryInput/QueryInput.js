@@ -124,7 +124,7 @@ class QueryInput extends React.Component {
     clearQueryOnSubmit: true,
     enableQuerySuggestions: true,
     enableQueryInputTopics: true,
-    placeholder: 'Type your queries here',
+    placeholder: 'Start a new query...',
     dataPageSize: undefined,
     shouldRender: true,
     onSubmit: () => {},

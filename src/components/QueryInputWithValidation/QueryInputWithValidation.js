@@ -56,7 +56,7 @@ export default class QueryValidationMessage extends React.Component {
     message: undefined,
     onSuggestionClick: () => {},
     onQueryValidationSelectOption: () => {},
-    placeholder: 'Type your queries here',
+    placeholder: 'Start a new query...',
     showChataIcon: false,
     showLoadingDots: false,
     submitQuery: () => {},
