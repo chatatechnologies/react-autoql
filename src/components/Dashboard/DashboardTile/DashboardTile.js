@@ -67,6 +67,7 @@ export class DashboardTile extends React.Component {
       'networkColumnConfig',
       'columnOrder',
       'frozenColumns',
+      'columnVisibility',
     ]
 
     const tile = props.tile
@@ -538,6 +539,7 @@ export class DashboardTile extends React.Component {
         networkColumnConfig: tile.networkColumnConfig,
         columnOrder: tile.columnOrder,
         frozenColumns: tile.frozenColumns,
+        columnVisibility: tile.columnVisibility,
       }
     }
   }
@@ -613,6 +615,7 @@ export class DashboardTile extends React.Component {
               networkColumnConfig: undefined,
               columnOrder: undefined,
               frozenColumns: undefined,
+              columnVisibility: undefined,
             }
           } else {
             this.savedTileConfig = {
@@ -627,6 +630,7 @@ export class DashboardTile extends React.Component {
               networkColumnConfig: currentTile.networkColumnConfig || this.savedTileConfig.networkColumnConfig,
               columnOrder: currentTile.columnOrder || this.savedTileConfig.columnOrder,
               frozenColumns: currentTile.frozenColumns || this.savedTileConfig.frozenColumns,
+              columnVisibility: currentTile.columnVisibility ?? this.savedTileConfig.columnVisibility,
             }
           }
         }
@@ -1050,6 +1054,12 @@ export class DashboardTile extends React.Component {
     if (!this.props.isEditing) return
     // Mark this query_id as self-reported so componentDidUpdate skips the remount bump (isSelfColumnChange)
     this._columnChangeQueryId = queryResponse?.data?.data?.query_id
+    const columnVisibility = {}
+    columns?.forEach((col) => {
+      if (col.name && col.is_visible !== undefined) {
+        columnVisibility[col.name] = col.is_visible
+      }
+    })
     this.debouncedSetParamsForTile({
       columns,
       columnSelects,
@@ -1058,6 +1068,7 @@ export class DashboardTile extends React.Component {
       dataConfig,
       displayOverrides,
       filters,
+      columnVisibility,
     })
   }
 
@@ -1518,6 +1529,7 @@ export class DashboardTile extends React.Component {
           return {
             ...restDataConfig,
             columnOverrides,
+            columnVisibility: this.props.tile?.columnVisibility,
             ...(!pivotConfigIsEmpty && pivotTableConfig !== undefined ? { pivotTableConfig } : {}),
             ...(!pivotConfigIsEmpty && tableConfig !== undefined ? { tableConfig } : {}),
           }

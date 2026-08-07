@@ -62,7 +62,6 @@ import {
   isDataLimited,
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
-  setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
   isDrilldown,
@@ -110,6 +109,8 @@ export class QueryOutput extends React.Component {
 
     // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
+    // Client-side column visibility map: { [columnName]: boolean }, set once at construction
+    this.initialColumnVisibility = props.initialTableConfigs?.columnVisibility || {}
     // WeakMap to track contextmenu handlers per cell element — prevents duplicate listeners on re-render
     this.cellContextMenuHandlers = new WeakMap()
     // Circuit breaker: counts consecutive config-correction attempts since last new query response.
@@ -1316,6 +1317,14 @@ export class QueryOutput extends React.Component {
 
   updateColumns = (columns, feReq, availableSelects) => {
     if (columns && this._isMounted) {
+      // Sync the live visibility map so formatColumnsForTable doesn't clobber explicit is_visible/visible changes
+      columns.forEach((col) => {
+        const visibility = col.is_visible ?? col.visible
+        if (col.name && visibility !== undefined) {
+          this.initialColumnVisibility[col.name] = visibility
+        }
+      })
+
       const newColumns = this.formatColumnsForTable(columns, feReq?.additional_selects)
 
       const visibleColumnsChanged = !_isEqual(
@@ -3024,9 +3033,12 @@ export class QueryOutput extends React.Component {
 
       newCol.mutateLink = 'Custom'
 
-      // Visibility flag: this can be changed through the column visibility editor modal
-      newCol.visible = col.is_visible
-      newCol.download = col.is_visible
+      // Visibility flag: driven by client-side columnVisibility map; defaults to true (API is_visible is deprecated)
+      const visOverride = this.initialColumnVisibility?.[col.name]
+      const isVisible = visOverride !== undefined ? visOverride : true
+      newCol.visible = isVisible
+      newCol.download = isVisible
+      newCol.is_visible = isVisible
 
       // Preserve frozen state across rebuilds, matched by name; falls back to initialFrozenColumns pre-mount.
       const prevCol = this.state?.columns?.find((c) => c.name === col.name)
@@ -4022,30 +4034,10 @@ export class QueryOutput extends React.Component {
   }
 
   _handleHiddenColumn = (column) => {
-    this.setState({ isAddingColumn: true })
-    this.tableRef?.setPageLoading(true)
-
-    const newColumns = this.state.columns.map((col) => {
-      if (col.name === column.name) {
-        return {
-          ...col,
-          is_visible: true,
-        }
-      }
-
-      return col
-    })
-
-    setColumnVisibility({ ...this.props.authentication, columns: newColumns })
-      .then(() => this.updateColumns(newColumns))
-      .catch((error) => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-      })
-      .finally(() => {
-        this.tableRef?.setPageLoading(false)
-        this.setState({ isAddingColumn: false })
-      })
+    const newColumns = this.state.columns.map((col) =>
+      col.name === column.name ? { ...col, is_visible: true, visible: true } : col,
+    )
+    this.updateColumns(newColumns)
   }
 
   _handleAddColumnForTable = (column, sqlFn) => {
