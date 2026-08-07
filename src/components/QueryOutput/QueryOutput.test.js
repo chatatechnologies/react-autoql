@@ -42,7 +42,7 @@ describe('supported display types', () => {
     queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
     const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} queryFn={() => {}} />)
     const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
-    expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar'])
+    expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar', 'line'])
     queryOutput.unmount()
   })
 })

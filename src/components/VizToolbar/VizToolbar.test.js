@@ -57,7 +57,7 @@ describe('renders correctly', () => {
       },
     })
     const toolbarButtons = findByTestAttr(wrapper, 'viz-toolbar-button')
-    expect(toolbarButtons.length).toBe(4)
+    expect(toolbarButtons.length).toBe(5)
   })
 })
 
