@@ -978,6 +978,99 @@ describe('DashboardTile runWithTileAuthGuard unmount race', () => {
   })
 })
 
+describe('DashboardTile runWithTileAuthGuard late-auth self-healing retry', () => {
+  it('fires the query once auth arrives after the 15s wait times out, replacing the stale error', async () => {
+    jest.useFakeTimers()
+    const setParams = jest.fn()
+    const tile = makeTile({ projectId: 'tile-project' })
+    let tokenReady = false
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={setParams}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => (tokenReady ? { token: 'tile-project-token' } : undefined)}
+      />,
+    )
+    const instance = wrapper.instance()
+    const fireQuery = jest.fn().mockResolvedValue('real-data')
+
+    const promise = instance.runWithTileAuthGuard(fireQuery)
+
+    // Times out at 15s with no token yet — the synthetic error fires, fireQuery does not.
+    await jest.advanceTimersByTimeAsync(15000)
+    await promise
+    expect(fireQuery).not.toHaveBeenCalled()
+
+    // Auth arrives late — the background watcher picks it up on its next 100ms poll.
+    tokenReady = true
+    await jest.advanceTimersByTimeAsync(100)
+    jest.useRealTimers()
+
+    expect(fireQuery).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+  })
+
+  it('does not fire fireQuery if the tile unmounts before late auth arrives', async () => {
+    jest.useFakeTimers()
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => undefined}
+      />,
+    )
+    const instance = wrapper.instance()
+    const fireQuery = jest.fn()
+
+    const promise = instance.runWithTileAuthGuard(fireQuery)
+
+    await jest.advanceTimersByTimeAsync(15000)
+    await promise
+
+    wrapper.unmount()
+    await jest.advanceTimersByTimeAsync(10000)
+    jest.useRealTimers()
+
+    expect(fireQuery).not.toHaveBeenCalled()
+  })
+
+  it('does not fire the query twice when a manual re-run happens while a late-auth watcher is pending', async () => {
+    jest.useFakeTimers()
+    const tile = makeTile({ projectId: 'tile-project' })
+    let tokenReady = false
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => (tokenReady ? { token: 'tile-project-token' } : undefined)}
+      />,
+    )
+    const instance = wrapper.instance()
+    const fireQuery = jest.fn().mockResolvedValue('real-data')
+
+    const firstPromise = instance.runWithTileAuthGuard(fireQuery)
+    await jest.advanceTimersByTimeAsync(15000)
+    await firstPromise
+    expect(fireQuery).not.toHaveBeenCalled()
+
+    // Manual re-run supersedes the pending late-auth watcher from the first attempt.
+    tokenReady = true
+    const secondPromise = instance.runWithTileAuthGuard(fireQuery)
+    await secondPromise
+    await jest.advanceTimersByTimeAsync(200)
+    jest.useRealTimers()
+
+    expect(fireQuery).toHaveBeenCalledTimes(1)
+
+    wrapper.unmount()
+  })
+})
+
 describe('DashboardTile onSuggestionClick per-project auth guard', () => {
   it('does not fire the query for a suggestion button click until the per-project token resolves', async () => {
     jest.useFakeTimers()

@@ -366,6 +366,7 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.setParamsForTileTimeout)
       clearTimeout(this.queryInputTimer)
       clearTimeout(this.titleInputTimer)
+      clearTimeout(this._lateAuthRetryTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
         this.cancelAllQueries()
@@ -493,15 +494,45 @@ export class DashboardTile extends React.Component {
     return this.endTopQuery({ response })
   }
 
+  // Keeps watching after a timed-out wait; once this tile's auth arrives late, replaces the
+  // stale synthetic error with real data instead of leaving the tile stuck until a manual refresh.
+  retryOnLateAuth = (fireQuery) => {
+    const projectId = this.props.tile?.projectId
+    if (projectId == null || !this.props.getAuthenticationForProject) {
+      return
+    }
+
+    clearTimeout(this._lateAuthRetryTimer)
+
+    const POLL_INTERVAL_MS = 100
+    const check = () => {
+      if (!this._isMounted) {
+        return
+      }
+      if (this.props.getAuthenticationForProject?.(projectId)) {
+        fireQuery()
+        return
+      }
+      this._lateAuthRetryTimer = setTimeout(check, POLL_INTERVAL_MS)
+    }
+    check()
+  }
+
   // Wraps any query-firing call so it waits for this tile's per-project auth first (multi-project dashboards)
   runWithTileAuthGuard = (fireQuery) => {
+    // A fresh guard call (e.g. a manual refresh) supersedes any still-pending late-auth watcher
+    // from a previous timed-out attempt, so the query never fires twice.
+    clearTimeout(this._lateAuthRetryTimer)
+
     return this.waitForTileAuthentication().then((authReady) => {
       // Component unmounted mid-wait — nothing left to update, don't fire the query or the error state.
       if (!this._isMounted) {
         return undefined
       }
       if (authReady === false) {
-        return this.handleUnavailableTileAuth()
+        const errorResult = this.handleUnavailableTileAuth()
+        this.retryOnLateAuth(fireQuery)
+        return errorResult
       }
       return fireQuery()
     })
