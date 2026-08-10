@@ -89,7 +89,8 @@ export default class SummaryModal extends React.Component {
 
       // Auto-generate summary when modal opens (with or without focus prompt)
       // Small delay to ensure state is set
-      setTimeout(() => {
+      clearTimeout(this.generateSummaryTimeout)
+      this.generateSummaryTimeout = setTimeout(() => {
         this.handleGenerateSummary(focusPrompt)
       }, 100)
     }
@@ -97,6 +98,7 @@ export default class SummaryModal extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    clearTimeout(this.generateSummaryTimeout)
   }
 
   handleGenerateSummary = async (focusPrompt = '') => {
@@ -146,21 +148,27 @@ export default class SummaryModal extends React.Component {
       const summary = response?.data?.data?.summary
 
       if (summary) {
-        this.setState({
-          summary,
-          focusPromptUsed: promptToUse.trim() || '',
-          queryId: queryResponse.data.data.query_id,
-        })
+        if (this._isMounted) {
+          this.setState({
+            summary,
+            focusPromptUsed: promptToUse.trim() || '',
+            queryId: queryResponse.data.data.query_id,
+          })
+        }
       } else {
         const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
         const displayMessage = errorMessage || 'Failed to generate summary. Please try again.'
-        this.setState({ focusError: displayMessage })
+        if (this._isMounted) {
+          this.setState({ focusError: displayMessage })
+        }
         this.props.onErrorCallback?.(displayMessage)
       }
     } catch (error) {
       const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
       if (gateState) {
-        this.setState({ billingGateState: gateState })
+        if (this._isMounted) {
+          this.setState({ billingGateState: gateState })
+        }
       } else {
         const errorMessage =
           error?.response?.data?.data?.message ||
@@ -168,7 +176,9 @@ export default class SummaryModal extends React.Component {
           error?.message ||
           'Failed to generate summary. Please try again.'
 
-        this.setState({ focusError: errorMessage })
+        if (this._isMounted) {
+          this.setState({ focusError: errorMessage })
+        }
         this.props.onErrorCallback?.(errorMessage)
       }
     } finally {

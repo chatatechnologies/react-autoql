@@ -167,6 +167,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
           title='Export Snapshot (.aqldash)'
           icon='download'
           disabled={!this.props.isDashboardFullyExecuted}
+          tooltip={!this.props.isDashboardFullyExecuted ? 'Remove the empty tile to see the export option' : undefined}
+          tooltipID={this.props.tooltipID}
           onClick={() => {
             this.props.onDownloadClick()
             this.setState({ isOptionsMenuOpen: false })
@@ -459,7 +461,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
           </p>
         </ConfirmModal>
         {this.renderRenameModal()}
-        <Tooltip tooltipId={this.props.tooltipID} />
+        <Tooltip tooltipId={this.props.tooltipID} positionStrategy='fixed' />
       </ErrorBoundary>
     )
   }

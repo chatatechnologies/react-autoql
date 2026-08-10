@@ -359,6 +359,10 @@ export class DashboardTile extends React.Component {
 
   componentWillUnmount = () => {
     try {
+      if (this.state.isTopExecuting) {
+        this.props.onExecutionStatusChange?.(false)
+      }
+
       this._isMounted = false
 
       clearTimeout(this.autoCompleteTimer)
@@ -542,19 +546,30 @@ export class DashboardTile extends React.Component {
     return !!query && !!query.trim()
   }
 
+  // Only path that should write `isTopExecuting` — guarantees the parent is always notified of the transition.
+  setTopExecutingState = (isTopExecuting, extraState = {}, callback) => {
+    if (!this._isMounted) return
+    this.setState(
+      (prevState) => ({
+        ...(typeof extraState === 'function' ? extraState(prevState) : extraState),
+        isTopExecuting,
+      }),
+      () => {
+        this.props.onExecutionStatusChange?.(isTopExecuting)
+        callback?.()
+      },
+    )
+  }
+
   setTopExecuted = () => {
     if (this._isMounted) {
       // Applied here (once the refetch settles) since componentDidUpdate's isTopExecuting-gated branch never fires for it.
       const shouldForceRemount = this._forceRemountOnNextResponse
       this._forceRemountOnNextResponse = false
-      this.setState(
-        (prevState) => ({
-          isTopExecuting: false,
-          isTopExecuted: true,
-          queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
-        }),
-        this.props.onExecutionStatusChange,
-      )
+      this.setTopExecutingState(false, (prevState) => ({
+        isTopExecuted: true,
+        queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
+      }))
     }
   }
 
@@ -931,7 +946,7 @@ export class DashboardTile extends React.Component {
     isReset = false,
     axiosSource,
   }) => {
-    this.setState({ isTopExecuting: true, queryResponse: null }, this.props.onExecutionStatusChange)
+    this.setTopExecutingState(true, { queryResponse: null })
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
 
@@ -1017,8 +1032,7 @@ export class DashboardTile extends React.Component {
   }
 
   clearTopQueryResponse = (newState = {}) => {
-    this.setState({
-      isTopExecuting: false,
+    this.setTopExecutingState(false, {
       isTopExecuted: false,
       userSelection: undefined,
       ...newState,
@@ -1040,7 +1054,7 @@ export class DashboardTile extends React.Component {
 
     // Show the loading state while we wait for this tile's per-project token (if any) to resolve
     if (this._isMounted) {
-      this.setState({ isTopExecuting: true }, this.props.onExecutionStatusChange)
+      this.setTopExecutingState(true)
     }
 
     return this.runWithTileAuthGuard(() =>
@@ -1107,7 +1121,7 @@ export class DashboardTile extends React.Component {
     if (isButtonClick) {
       // Show the loading state while we wait for this tile's per-project token (if any) to resolve
       if (this._isMounted) {
-        this.setState({ isTopExecuting: true }, this.props.onExecutionStatusChange)
+        this.setTopExecutingState(true)
       }
 
       this.runWithTileAuthGuard(() =>

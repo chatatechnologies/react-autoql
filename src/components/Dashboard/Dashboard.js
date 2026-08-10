@@ -99,6 +99,7 @@ class DashboardWithoutTheme extends React.Component {
       isResizingDrilldown: false,
       uneditedDashboardTiles: null,
       dashboardSlicers: getSlicersArray(),
+      executingTileKeys: new Set(),
     }
   }
 
@@ -1087,6 +1088,14 @@ class DashboardWithoutTheme extends React.Component {
     })
   }
 
+  onTileExecutionStatusChange = (tileKey, isExecuting) => {
+    this.setState((prevState) => {
+      const executingTileKeys = new Set(prevState.executingTileKeys)
+      isExecuting ? executingTileKeys.add(tileKey) : executingTileKeys.delete(tileKey)
+      return { executingTileKeys }
+    })
+  }
+
   setParamsForTile = (params, id, callbackArray) => {
     try {
       // Guard against stale debouncedSetParamsForTile callbacks from a reset that was subsequently undone.
@@ -1444,7 +1453,7 @@ class DashboardWithoutTheme extends React.Component {
             onTileAuthExpired={this.props.onTileAuthExpired}
             showProjectIndicator={this.props.showProjectIndicator}
             isProjectDashboard={this.props.isProjectDashboard}
-            onExecutionStatusChange={() => this.forceUpdate()}
+            onExecutionStatusChange={(isExecuting) => this.onTileExecutionStatusChange(tile.key, isExecuting)}
           />
         ))}
       </ReactGridLayout>
@@ -1456,11 +1465,7 @@ class DashboardWithoutTheme extends React.Component {
     const dirtyTileKeys = this.getDirtyTileKeys()
     const failedTileKeys = this.getFailedTiles()
 
-    // Check if any tile is currently executing
-    const isAnyTileExecuting = Object.keys(this.tileRefs).some((key) => {
-      const tileRef = this.tileRefs[key]
-      return tileRef?.state?.isTopExecuting
-    })
+    const isAnyTileExecuting = this.state.executingTileKeys.size > 0
 
     return (
       <ErrorBoundary>
