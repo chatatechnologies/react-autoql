@@ -547,11 +547,14 @@ export class DashboardTile extends React.Component {
       // Applied here (once the refetch settles) since componentDidUpdate's isTopExecuting-gated branch never fires for it.
       const shouldForceRemount = this._forceRemountOnNextResponse
       this._forceRemountOnNextResponse = false
-      this.setState((prevState) => ({
-        isTopExecuting: false,
-        isTopExecuted: true,
-        queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
-      }))
+      this.setState(
+        (prevState) => ({
+          isTopExecuting: false,
+          isTopExecuted: true,
+          queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
+        }),
+        this.props.onExecutionStatusChange,
+      )
     }
   }
 
@@ -928,7 +931,7 @@ export class DashboardTile extends React.Component {
     isReset = false,
     axiosSource,
   }) => {
-    this.setState({ isTopExecuting: true, queryResponse: null })
+    this.setState({ isTopExecuting: true, queryResponse: null }, this.props.onExecutionStatusChange)
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
 
@@ -1037,7 +1040,7 @@ export class DashboardTile extends React.Component {
 
     // Show the loading state while we wait for this tile's per-project token (if any) to resolve
     if (this._isMounted) {
-      this.setState({ isTopExecuting: true })
+      this.setState({ isTopExecuting: true }, this.props.onExecutionStatusChange)
     }
 
     return this.runWithTileAuthGuard(() =>
@@ -1104,7 +1107,7 @@ export class DashboardTile extends React.Component {
     if (isButtonClick) {
       // Show the loading state while we wait for this tile's per-project token (if any) to resolve
       if (this._isMounted) {
-        this.setState({ isTopExecuting: true })
+        this.setState({ isTopExecuting: true }, this.props.onExecutionStatusChange)
       }
 
       this.runWithTileAuthGuard(() =>

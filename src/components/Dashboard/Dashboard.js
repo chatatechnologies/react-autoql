@@ -1444,6 +1444,7 @@ class DashboardWithoutTheme extends React.Component {
             onTileAuthExpired={this.props.onTileAuthExpired}
             showProjectIndicator={this.props.showProjectIndicator}
             isProjectDashboard={this.props.isProjectDashboard}
+            onExecutionStatusChange={() => this.forceUpdate()}
           />
         ))}
       </ReactGridLayout>
