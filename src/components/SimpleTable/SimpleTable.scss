@@ -1,6 +1,7 @@
 .simple-table-outer-container {
   min-height: 68px;
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
   overflow: auto;
   position: relative;
   border: 1px solid var(--react-autoql-table-border-color, var(--react-autoql-border-color, rgba(0, 0, 0, 0.1)));
@@ -29,13 +30,11 @@
 }
 
 .simple-table-scroll-inner {
-  min-width: 100%;
   display: inline-block;
 }
 
 .simple-table {
   width: max-content;
-  min-width: 100%;
   border-collapse: collapse;
   table-layout: auto;
   color: var(--react-autoql-text-color-primary);
