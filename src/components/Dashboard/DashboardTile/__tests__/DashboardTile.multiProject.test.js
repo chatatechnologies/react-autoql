@@ -1069,6 +1069,101 @@ describe('DashboardTile runWithTileAuthGuard late-auth self-healing retry', () =
 
     wrapper.unmount()
   })
+
+  it('stops watching after one more wait window instead of polling forever', async () => {
+    jest.useFakeTimers()
+    const setTimeoutSpy = jest.spyOn(global, 'setTimeout')
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => undefined}
+      />,
+    )
+    const instance = wrapper.instance()
+    const fireQuery = jest.fn()
+
+    const promise = instance.runWithTileAuthGuard(fireQuery)
+    await jest.advanceTimersByTimeAsync(15000)
+    await promise
+
+    // Second window elapses with still no token — the watcher must give up here
+    await jest.advanceTimersByTimeAsync(15000)
+    const pollsAfterBothWindows = setTimeoutSpy.mock.calls.length
+
+    await jest.advanceTimersByTimeAsync(60000)
+    jest.useRealTimers()
+
+    expect(setTimeoutSpy.mock.calls.length).toBe(pollsAfterBothWindows)
+    expect(fireQuery).not.toHaveBeenCalled()
+
+    setTimeoutSpy.mockRestore()
+    wrapper.unmount()
+  })
+})
+
+describe('DashboardTile runWithTileAuthGuard execution status', () => {
+  it('reports the tile as executing before the auth wait, so the dashboard shows a loading state', async () => {
+    jest.useFakeTimers()
+    const onExecutionStatusChange = jest.fn()
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        getAuthenticationForProject={() => undefined}
+        onExecutionStatusChange={onExecutionStatusChange}
+      />,
+    )
+    const instance = wrapper.instance()
+
+    const promise = instance.runWithTileAuthGuard(jest.fn())
+
+    expect(instance.state.isTopExecuting).toBe(true)
+    expect(onExecutionStatusChange).toHaveBeenCalledWith(true)
+
+    await jest.advanceTimersByTimeAsync(15000)
+    await promise
+    await jest.advanceTimersByTimeAsync(15000)
+    jest.useRealTimers()
+
+    wrapper.unmount()
+  })
+
+  it('reports the tile as no longer executing when it unmounts mid-execution', () => {
+    const onExecutionStatusChange = jest.fn()
+    const wrapper = mount(
+      <DashboardTile
+        tile={makeTile()}
+        setParamsForTile={() => {}}
+        onExecutionStatusChange={onExecutionStatusChange}
+      />,
+    )
+    wrapper.instance().setState({ isTopExecuting: true })
+    onExecutionStatusChange.mockClear()
+
+    wrapper.unmount()
+
+    expect(onExecutionStatusChange).toHaveBeenCalledWith(false)
+  })
+
+  it('does not report on unmount when the tile was not executing', () => {
+    const onExecutionStatusChange = jest.fn()
+    const wrapper = mount(
+      <DashboardTile
+        tile={makeTile()}
+        setParamsForTile={() => {}}
+        onExecutionStatusChange={onExecutionStatusChange}
+      />,
+    )
+    onExecutionStatusChange.mockClear()
+
+    wrapper.unmount()
+
+    expect(onExecutionStatusChange).not.toHaveBeenCalled()
+  })
 })
 
 describe('DashboardTile onSuggestionClick per-project auth guard', () => {

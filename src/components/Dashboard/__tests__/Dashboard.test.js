@@ -1601,3 +1601,60 @@ describe('Dashboard.setIsDragging', () => {
     jest.useRealTimers()
   })
 })
+
+describe('Dashboard.onTileExecutionStatusChange', () => {
+  // Tiles report their own execution state instead of the Dashboard reading tileRefs during render
+  const isAnyTileExecuting = (wrapper) => wrapper.state('executingTileKeys').size > 0
+
+  test('starts with no tiles executing', () => {
+    const wrapper = setup()
+    expect(isAnyTileExecuting(wrapper)).toBe(false)
+  })
+
+  test('tracks tiles independently and only clears once the last one finishes', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('tile-2', true)
+    expect(isAnyTileExecuting(wrapper)).toBe(true)
+
+    instance.onTileExecutionStatusChange('tile-1', false)
+    expect(isAnyTileExecuting(wrapper)).toBe(true)
+
+    instance.onTileExecutionStatusChange('tile-2', false)
+    expect(isAnyTileExecuting(wrapper)).toBe(false)
+  })
+
+  test('is idempotent - repeated reports of the same state do not unbalance the set', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('tile-1', false)
+
+    expect(isAnyTileExecuting(wrapper)).toBe(false)
+  })
+
+  test('a false report for an unknown tile is a no-op', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('never-started', false)
+
+    expect(isAnyTileExecuting(wrapper)).toBe(true)
+  })
+
+  test('replaces the Set rather than mutating it, so React sees the state change', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const before = wrapper.state('executingTileKeys')
+    instance.onTileExecutionStatusChange('tile-1', true)
+
+    expect(wrapper.state('executingTileKeys')).not.toBe(before)
+    expect(before.size).toBe(0)
+  })
+})

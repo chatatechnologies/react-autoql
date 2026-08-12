@@ -101,6 +101,12 @@ export default class SummaryModal extends React.Component {
     clearTimeout(this.generateSummaryTimeout)
   }
 
+  safeSetState = (state) => {
+    if (this._isMounted) {
+      this.setState(state)
+    }
+  }
+
   handleGenerateSummary = async (focusPrompt = '') => {
     const queryResponse = this.props.queryResponse || this.props.responseRef?.queryResponse
     if (!queryResponse?.data?.data?.rows || !queryResponse?.data?.data?.columns) {
@@ -148,27 +154,21 @@ export default class SummaryModal extends React.Component {
       const summary = response?.data?.data?.summary
 
       if (summary) {
-        if (this._isMounted) {
-          this.setState({
-            summary,
-            focusPromptUsed: promptToUse.trim() || '',
-            queryId: queryResponse.data.data.query_id,
-          })
-        }
+        this.safeSetState({
+          summary,
+          focusPromptUsed: promptToUse.trim() || '',
+          queryId: queryResponse.data.data.query_id,
+        })
       } else {
         const errorMessage = response?.data?.data?.message || response?.data?.message || response?.message
         const displayMessage = errorMessage || 'Failed to generate summary. Please try again.'
-        if (this._isMounted) {
-          this.setState({ focusError: displayMessage })
-        }
+        this.safeSetState({ focusError: displayMessage })
         this.props.onErrorCallback?.(displayMessage)
       }
     } catch (error) {
       const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
       if (gateState) {
-        if (this._isMounted) {
-          this.setState({ billingGateState: gateState })
-        }
+        this.safeSetState({ billingGateState: gateState })
       } else {
         const errorMessage =
           error?.response?.data?.data?.message ||
@@ -176,15 +176,11 @@ export default class SummaryModal extends React.Component {
           error?.message ||
           'Failed to generate summary. Please try again.'
 
-        if (this._isMounted) {
-          this.setState({ focusError: errorMessage })
-        }
+        this.safeSetState({ focusError: errorMessage })
         this.props.onErrorCallback?.(errorMessage)
       }
     } finally {
-      if (this._isMounted) {
-        this.setState({ isGenerating: false })
-      }
+      this.safeSetState({ isGenerating: false })
     }
   }
 

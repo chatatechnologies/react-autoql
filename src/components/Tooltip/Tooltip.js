@@ -30,12 +30,9 @@ export function Tooltip(props = {}) {
     />
   )
 
-  // react-tooltip renders inline by default, which traps it inside whatever stacking
-  // context its parent creates (toolbars, drawers, etc). Anything rendered through a
-  // body-level portal - react-tiny-popover menus, modals - then paints on top of it
-  // regardless of z-index. Anchors are resolved globally via `data-tooltip-id`, so
-  // portalling to <body> is safe and fixes the stacking for every consumer at once.
-  // Theme CSS variables are set on documentElement, so styling is unaffected.
+  // Rendered inline, the tooltip is trapped in its parent's stacking context and painted over by
+  // body-level portals (popover menus, modals). Anchors resolve globally via `data-tooltip-id` and
+  // theme vars live on documentElement, so portalling to <body> is safe and fixes it everywhere.
   if (typeof document === 'undefined' || !document.body) {
     return tooltip
   }

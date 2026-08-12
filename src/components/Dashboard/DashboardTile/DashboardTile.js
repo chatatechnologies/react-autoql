@@ -191,6 +191,8 @@ export class DashboardTile extends React.Component {
     showProjectIndicator: PropTypes.bool,
     // Whether this tile belongs to a project-based (PROJECT type) dashboard, as opposed to a CUSTOM dashboard
     isProjectDashboard: PropTypes.bool,
+    // Notifies the dashboard whenever this tile starts/stops executing its top query
+    onExecutionStatusChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -238,6 +240,7 @@ export class DashboardTile extends React.Component {
     onTileAuthExpired: undefined,
     showProjectIndicator: true,
     isProjectDashboard: false,
+    onExecutionStatusChange: undefined,
   }
 
   componentDidMount = () => {
@@ -293,12 +296,12 @@ export class DashboardTile extends React.Component {
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
-    // Re-run the query if the tile's project changed (e.g. reassigned to a different project)
+    // Re-run the query if the tile was reassigned to a different project
     if (
       !this.projectIdsEqual(this.props.tile?.projectId, prevProps.tile?.projectId) &&
       this.isQueryValid(this.props.tile?.query)
     ) {
-      this.processTile({ query: this.props.tile.query })?.catch?.(() => {}) // errors already surface via tile state; just avoid an unhandled rejection
+      this.processTile({ query: this.props.tile.query })?.catch?.(() => {}) // errors already surface via tile state
     }
     if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
       this.setState({ localRTFilterResponse: null })
@@ -371,7 +374,6 @@ export class DashboardTile extends React.Component {
       clearTimeout(this.setParamsForTileTimeout)
       clearTimeout(this.queryInputTimer)
       clearTimeout(this.titleInputTimer)
-      clearTimeout(this._lateAuthRetryTimer)
 
       if (this.props.cancelQueriesOnUnmount) {
         this.cancelAllQueries()
@@ -449,9 +451,8 @@ export class DashboardTile extends React.Component {
     return this.props.authentication
   }
 
-  // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives within the wait window.
-  // staleToken: if passed, a token matching it doesn't count as ready - used after onTileAuthExpired to wait for an actual refresh
-  // instead of resolving immediately on the same cached (invalid) token.
+  // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives in time.
+  // staleToken: a token matching it doesn't count as ready - used after onTileAuthExpired so we wait for an actual refresh.
   waitForTileAuthentication = (staleToken) => {
     const projectId = this.props.tile?.projectId
     if (projectId == null || !this.props.getAuthenticationForProject) {
@@ -470,8 +471,7 @@ export class DashboardTile extends React.Component {
       const start = Date.now()
       const check = () => {
         if (!this._isMounted) {
-          // Unmounted mid-wait — resolve ready so the promise doesn't dangle
-          resolve(true)
+          resolve(true) // unmounted mid-wait - resolve so the promise doesn't dangle; callers re-check _isMounted
           return
         }
         if (isFreshAuth(this.props.getAuthenticationForProject?.(projectId))) {
@@ -499,47 +499,31 @@ export class DashboardTile extends React.Component {
     return this.endTopQuery({ response })
   }
 
-  // Keeps watching after a timed-out wait; once this tile's auth arrives late, replaces the
-  // stale synthetic error with real data instead of leaving the tile stuck until a manual refresh.
-  retryOnLateAuth = (fireQuery) => {
-    const projectId = this.props.tile?.projectId
-    if (projectId == null || !this.props.getAuthenticationForProject) {
-      return
-    }
-
-    clearTimeout(this._lateAuthRetryTimer)
-
-    const POLL_INTERVAL_MS = 100
-    const check = () => {
-      if (!this._isMounted) {
-        return
-      }
-      if (this.props.getAuthenticationForProject?.(projectId)) {
-        fireQuery()
-        return
-      }
-      this._lateAuthRetryTimer = setTimeout(check, POLL_INTERVAL_MS)
-    }
-    check()
-  }
-
   // Wraps any query-firing call so it waits for this tile's per-project auth first (multi-project dashboards)
   runWithTileAuthGuard = (fireQuery) => {
-    // A fresh guard call (e.g. a manual refresh) supersedes any still-pending late-auth watcher
-    // from a previous timed-out attempt, so the query never fires twice.
-    clearTimeout(this._lateAuthRetryTimer)
+    const attempt = (this._authGuardAttempt = (this._authGuardAttempt ?? 0) + 1)
+
+    // Show the loading state while we wait for this tile's per-project token (if any) to resolve
+    this.setTopExecutingState(true)
 
     return this.waitForTileAuthentication().then((authReady) => {
-      // Component unmounted mid-wait — nothing left to update, don't fire the query or the error state.
       if (!this._isMounted) {
         return undefined
       }
-      if (authReady === false) {
-        const errorResult = this.handleUnavailableTileAuth()
-        this.retryOnLateAuth(fireQuery)
-        return errorResult
+      if (authReady) {
+        return fireQuery()
       }
-      return fireQuery()
+
+      // Auth never arrived in time: surface the error now, but keep waiting one more window so a late
+      // token replaces it with real data instead of leaving the tile stuck until a manual refresh.
+      const errorResult = this.handleUnavailableTileAuth()
+      this.waitForTileAuthentication().then((lateAuthReady) => {
+        // A newer guard call (e.g. a manual refresh) supersedes this watcher, so the query never fires twice
+        if (lateAuthReady && this._isMounted && this._authGuardAttempt === attempt) {
+          fireQuery()
+        }
+      })
+      return errorResult
     })
   }
 
@@ -646,8 +630,9 @@ export class DashboardTile extends React.Component {
     return false
   }
 
+  // formatErrorResponse strips the status off a bare 401, leaving only the UNAUTHENTICATED_ERROR message
   isAuthError = (resp) => {
-    return resp?.status === 401 || resp?.response?.status === 401
+    return resp?.status === 401 || resp?.response?.status === 401 || resp?.data?.message === UNAUTHENTICATED_ERROR
   }
 
   normalizeAxisSorts = (v) => {
@@ -1049,17 +1034,12 @@ export class DashboardTile extends React.Component {
 
   processTile = ({ query, skipQueryValidation, source, isCachedRefresh, isReset = false } = {}) => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    // Captured now (before the auth wait below) so a request built after the wait resolves still
-    // uses its own, correctly-cancelled token instead of whatever this.axiosSource has since become.
+    // Captured now, before the auth wait, so a request built after the wait uses its own token
+    // instead of whatever this.axiosSource has since become.
     const axiosSource = axios.CancelToken?.source()
     this.axiosSource = axiosSource
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
-
-    // Show the loading state while we wait for this tile's per-project token (if any) to resolve
-    if (this._isMounted) {
-      this.setTopExecutingState(true)
-    }
 
     return this.runWithTileAuthGuard(() =>
       this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset, axiosSource }),
@@ -1123,11 +1103,6 @@ export class DashboardTile extends React.Component {
     this.setState({ query })
 
     if (isButtonClick) {
-      // Show the loading state while we wait for this tile's per-project token (if any) to resolve
-      if (this._isMounted) {
-        this.setTopExecutingState(true)
-      }
-
       this.runWithTileAuthGuard(() =>
         this.processTileTop({
           query,
@@ -1303,21 +1278,18 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  // projectId can come from different sources (tile config, API response, select list) that don't always agree on string vs number
+  // projectId can come from different sources (tile config, API response, select list) that don't agree on string vs number
   projectIdsEqual = (a, b) => {
-    const aIsNullish = a === null || a === undefined
-    const bIsNullish = b === null || b === undefined
-    if (aIsNullish || bIsNullish) {
-      return aIsNullish && bIsNullish
+    if (a == null || b == null) {
+      return a == null && b == null
     }
     return `${a}` === `${b}`
   }
 
   findProjectInList = (projectId) => {
-    if (projectId == null) {
-      return undefined
-    }
-    return this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, projectId))
+    return projectId == null
+      ? undefined
+      : this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, projectId))
   }
 
   // Resolves projectId to the exact value/type used in projectSelectList, so Select's internal === match works

@@ -252,6 +252,7 @@ export interface DashboardProps {
   getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined
   onTileAuthExpired?: (projectId: string | number) => void
   showProjectIndicator?: boolean
+  isProjectDashboard?: boolean
   [key: string]: any
 }
 

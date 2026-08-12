@@ -170,7 +170,11 @@ export class DashboardToolbarWithoutRef extends React.Component {
             title='Export Snapshot (.aqldash)'
             icon='download'
             disabled={!this.props.isDashboardFullyExecuted}
-            tooltip={!this.props.isDashboardFullyExecuted ? 'Remove the empty tile to see the export option' : undefined}
+            tooltip={
+              !this.props.isDashboardFullyExecuted
+                ? 'Please run or remove any empty or failed tiles to enable export'
+                : undefined
+            }
             tooltipID={this.props.tooltipID}
             onClick={() => {
               this.props.onDownloadClick()

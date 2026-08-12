@@ -300,8 +300,7 @@ export class QueryOutput extends React.Component {
         data: PropTypes.object,
       }),
     }),
-    // Tile's cached query id. Pins drilldowns to it so a background cached-refresh response (which
-    // can carry a different query_id for the same cached query) doesn't get used instead.
+    // Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query
     queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
@@ -398,6 +397,7 @@ export class QueryOutput extends React.Component {
     initialAggConfig: undefined,
 
     queryResponse: undefined,
+    queryId: undefined,
     initialDisplayType: null,
     onSuggestionClick: undefined,
     autoSelectQueryValidationSuggestion: true,
