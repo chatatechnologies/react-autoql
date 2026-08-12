@@ -1110,8 +1110,8 @@ export class DataMessenger extends React.Component {
     } else if (placement === 'top') {
       const offset = pageY - (this.state.startingResizePosition?.y ?? 0)
       let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
-      if (newHeight > this.maxHeight) {
-        newHeight = this.maxHeight
+      if (newHeight > maxHeight) {
+        newHeight = maxHeight
       }
       if (newHeight < this.minHeight) {
         newHeight = this.minHeight

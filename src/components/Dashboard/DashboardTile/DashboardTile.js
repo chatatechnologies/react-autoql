@@ -1103,12 +1103,19 @@ export class DashboardTile extends React.Component {
     this.setState({ query })
 
     if (isButtonClick) {
+      this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+      // Captured now, before the auth wait, so a request built after the wait uses its own token
+      // instead of whatever this.axiosSource has since become.
+      const axiosSource = axios.CancelToken?.source()
+      this.axiosSource = axiosSource
+
       this.runWithTileAuthGuard(() =>
         this.processTileTop({
           query,
           userSelection,
           skipQueryValidation: true,
           source,
+          axiosSource,
         }),
       )
     } else {

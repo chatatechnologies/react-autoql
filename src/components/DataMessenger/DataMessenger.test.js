@@ -245,3 +245,29 @@ describe('"None of these" message group deletion', () => {
     expect(messagesAfter.filter((m) => m.queryMessageID === 'thread-2').length).toBe(0)
   })
 })
+
+describe('performResizeDrawer clamps to the document max', () => {
+  const cases = [
+    { placement: 'top', dimension: 'height', page: { pageX: 0, pageY: 100000 } },
+    { placement: 'bottom', dimension: 'height', page: { pageX: 0, pageY: -100000 } },
+    { placement: 'right', dimension: 'width', page: { pageX: -100000, pageY: 0 } },
+    { placement: 'left', dimension: 'width', page: { pageX: 100000, pageY: 0 } },
+  ]
+
+  cases.forEach(({ placement, dimension, page }) => {
+    test(`${placement} placement does not exceed max${dimension === 'height' ? 'Height' : 'Width'}`, () => {
+      const wrapper = shallow(<DataMessenger {...defaultProps} placement={placement} />)
+      const instance = wrapper.instance()
+      const max = instance.getMaxWidthAndHeightFromDocument()[dimension === 'height' ? 'maxHeight' : 'maxWidth']
+
+      wrapper.setState({
+        startingResizePosition: { x: 0, y: 0, width: 500, height: 500 },
+      })
+
+      instance.performResizeDrawer(page.pageX, page.pageY)
+
+      expect(wrapper.state(dimension)).toBe(max)
+      wrapper.unmount()
+    })
+  })
+})

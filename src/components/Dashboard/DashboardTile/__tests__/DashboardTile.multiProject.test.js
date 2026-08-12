@@ -1218,4 +1218,41 @@ describe('DashboardTile onSuggestionClick per-project auth guard', () => {
     processTileTopSpy.mockRestore()
     wrapper.unmount()
   })
+
+  it('gives a suggestion button click its own cancel token instead of racing on the latest this.axiosSource', async () => {
+    jest.useFakeTimers()
+    let authReady = false
+    const tile = makeTile({ projectId: 'tile-project' })
+    const wrapper = mount(
+      <DashboardTile
+        tile={tile}
+        setParamsForTile={() => {}}
+        authentication={{ token: 'dashboard-token' }}
+        getAuthenticationForProject={() => (authReady ? { token: 'tile-project-token' } : undefined)}
+      />,
+    )
+    const instance = wrapper.instance()
+    const processQuerySpy = jest.spyOn(instance, 'processQuery').mockResolvedValue({ data: { data: {} } })
+
+    // The suggestion click starts waiting on auth, so it must capture its own axiosSource now.
+    instance.onSuggestionClick({ query: 'SELECT SUGGESTION', isButtonClick: true })
+    const suggestionSource = instance.axiosSource
+    expect(suggestionSource).toBeTruthy()
+
+    // A concurrent processTile reassigns this.axiosSource while the suggestion is still waiting on auth.
+    instance.processTile({ query: 'SELECT OTHER' }).catch(() => {})
+    expect(instance.axiosSource).not.toBe(suggestionSource)
+
+    authReady = true
+    await jest.advanceTimersByTimeAsync(200)
+    jest.useRealTimers()
+
+    // The suggestion query must use the token captured at click time, not whichever source is current now.
+    const suggestionCall = processQuerySpy.mock.calls.find((call) => call[0]?.query === 'SELECT SUGGESTION')
+    expect(suggestionCall).toBeDefined()
+    expect(suggestionCall[0].axiosSource).toBe(suggestionSource)
+
+    processQuerySpy.mockRestore()
+    wrapper.unmount()
+  })
 })
