@@ -196,7 +196,7 @@ export class DataMessenger extends React.Component {
     enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
-    inputPlaceholder: 'Start a new query...',
+    inputPlaceholder: undefined,
     dataPageSize: undefined,
     notificationCount: undefined,
     defaultOpen: false,
@@ -873,7 +873,7 @@ export class DataMessenger extends React.Component {
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
           introMessages={this.dataMessengerIntroMessages}
-          inputPlaceholder={this.props.inputPlaceholder}
+          inputPlaceholder={this.props.inputPlaceholder ?? lang.queryPrompt}
           autoChartAggregations={this.props.autoChartAggregations}
           executeQuery={(queryRequestParams) => {
             this.dataMessengerContentRef?.animateInputTextAndSubmit({

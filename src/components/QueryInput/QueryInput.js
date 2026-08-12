@@ -39,6 +39,7 @@ import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
+import { lang } from '../../js/Localization'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './QueryInput.scss'
@@ -124,7 +125,7 @@ class QueryInput extends React.Component {
     clearQueryOnSubmit: true,
     enableQuerySuggestions: true,
     enableQueryInputTopics: true,
-    placeholder: 'Start a new query...',
+    placeholder: undefined,
     dataPageSize: undefined,
     shouldRender: true,
     onSubmit: () => {},
@@ -904,7 +905,7 @@ class QueryInput extends React.Component {
       className: `${this.UNIQUE_ID} react-autoql-query-input react-autoql-chatbar-input${
         this.props.showChataIcon ? ' left-padding' : ''
       }`,
-      placeholder: this.props.placeholder,
+      placeholder: this.props.placeholder ?? lang.queryPrompt,
       disabled: this.props.isDisabled,
       onChange: this.onInputChange,
       onKeyPress: this.onKeyPress,
