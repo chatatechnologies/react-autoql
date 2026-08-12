@@ -10,6 +10,7 @@ import { runQueryValidation, setCaretPosition, authenticationDefault, getAuthent
 import { Select } from '../Select'
 import { Popover } from '../Popover'
 
+import { lang } from '../../js/Localization'
 import { authenticationType } from '../../props/types'
 
 import './QueryInputWithValidation.scss'
@@ -56,7 +57,7 @@ export default class QueryValidationMessage extends React.Component {
     message: undefined,
     onSuggestionClick: () => {},
     onQueryValidationSelectOption: () => {},
-    placeholder: 'Type your queries here',
+    placeholder: undefined,
     showChataIcon: false,
     showLoadingDots: false,
     submitQuery: () => {},
@@ -528,7 +529,7 @@ export default class QueryValidationMessage extends React.Component {
           disabled={this.props.isDisabled}
           onChange={this.onInputChange}
           onKeyDown={this.handleKeyDown}
-          data-placeholder={this.props.placeholder}
+          data-placeholder={this.props.placeholder ?? lang.queryPrompt}
           onFocus={(e) => {
             // this.moveCaretAtEnd(e)
           }}
