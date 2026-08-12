@@ -441,7 +441,7 @@ export default class SimpleTable extends Component {
 
   renderCell = (cell, column, colIndex) => {
     const formatted = formatElement({ element: cell, column, config: this.props.dataFormatting })
-    const textAlign = column?.hozAlign || undefined
+    const textAlign = column?.hozAlign || (isColumnNumberType(column) ? 'right' : 'center')
     return (
       <td key={colIndex} className='simple-table-cell' style={{ textAlign }}>
         {formatted}

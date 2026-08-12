@@ -10,6 +10,7 @@ import {
 } from '../chartPropHelpers'
 
 const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('horizontal')
+const MIN_BAR_SIZE = 1
 
 export default class Bars extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -102,6 +103,10 @@ export default class Bars extends PureComponent {
               width = 0
             }
 
+            if (value !== 0 && width > 0 && width < MIN_BAR_SIZE) {
+              width = MIN_BAR_SIZE
+            }
+
             if (width < 0.05) {
               return null
             }
@@ -129,7 +134,7 @@ export default class Bars extends PureComponent {
                 className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
                 data-test={`bar-${i}-${index}`}
                 y={finalBarYPosition}
-                x={value > 0 ? scaleZero(xScale) : xScale(value)}
+                x={value >= 0 ? scaleZero(xScale) : scaleZero(xScale) - width}
                 width={width}
                 height={barHeight}
                 rx={cornerRadius}

@@ -21,7 +21,6 @@ import {
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
   getDayJSObj,
-  setColumnVisibility,
   sortDataByColumn,
   filterDataByColumn,
   getAuthentication,
@@ -1573,6 +1572,18 @@ export default class ChataTable extends React.Component {
     this.props.onColumnFreezeChange(column.name, !this.isColumnFrozen(column))
   }
 
+  onHideColumnClick = (column) => {
+    this.setState({ contextMenuColumn: undefined })
+    const newColumns = this.props.columns.map((col) =>
+      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    )
+    this.props.updateColumns(
+      newColumns,
+      this.props.response?.data?.data?.fe_req,
+      this.props.response?.data?.data?.available_selects,
+    )
+  }
+
   onColumnMoved = (movedColumn, columns) => {
     // Match by field, not array index — props.columns may already be user-reordered
     const orderedNames = columns
@@ -1607,18 +1618,14 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    // TODO: re-enable when column visibility is re-added for dashboards (without API call)
-    // const newColumns = this.props.columns.map((col) =>
-    //   col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
-    // )
-    // this.props.updateColumns(
-    //   newColumns,
-    //   this.props.response?.data?.data?.fe_req,
-    //   this.props.response?.data?.data?.available_selects,
-    // )
-    // setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-    //   console.error(error)
-    // })
+    const newColumns = this.props.columns.map((col) =>
+      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    )
+    this.props.updateColumns(
+      newColumns,
+      this.props.response?.data?.data?.fe_req,
+      this.props.response?.data?.data?.available_selects,
+    )
   }
 
   updateColumn = (field, newParams) => {
@@ -1753,11 +1760,10 @@ export default class ChataTable extends React.Component {
               Edit Column
             </li>
           )}
-          {/* TODO: re-enable when column visibility is re-added for dashboards */}
-          {/* <li onClick={this.onRemoveColumnClick}>
-            <Icon type='close' />
-            Remove Column
-          </li> */}
+          <li onClick={() => this.onHideColumnClick(contextMenuColumn)}>
+            <Icon type='eye' />
+            Hide Column
+          </li>
         </ul>
       </div>
     )

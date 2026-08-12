@@ -9,7 +9,7 @@ export const lang = new LocalizedStrings({
     exploreQueries: 'Explore Queries',
     explorePrompt: 'to further explore the possibilities.',
     run: 'We run on AutoQL by Chata.ai',
-    queryPrompt: 'Type your queries here ',
+    queryPrompt: 'Start a new query...',
     seeMore: 'See more',
     dataMessengerOptions: 'Options menu',
     openFilterLocking: 'Manage Filters',
