@@ -109,8 +109,10 @@ export class QueryOutput extends React.Component {
 
     // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
-    // Client-side column visibility map: { [columnName]: boolean }, set once at construction
-    this.initialColumnVisibility = props.initialTableConfigs?.columnVisibility || {}
+    // Client-side column visibility map: { [columnName]: boolean }, set once at construction.
+    // Copied (not referenced) since this map is mutated in place in updateColumns, and the
+    // source object may be a frozen/shared dashboard tile config.
+    this.initialColumnVisibility = { ...(props.initialTableConfigs?.columnVisibility || {}) }
     // WeakMap to track contextmenu handlers per cell element — prevents duplicate listeners on re-render
     this.cellContextMenuHandlers = new WeakMap()
     // Circuit breaker: counts consecutive config-correction attempts since last new query response.
