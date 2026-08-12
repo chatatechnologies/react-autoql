@@ -1475,6 +1475,7 @@ class DashboardWithoutTheme extends React.Component {
               authentication={this.props.authentication}
               isEditing={this.props.isEditing}
               isEditable={this.props.isEditable}
+              isProjectDashboard={this.props.isProjectDashboard}
               tooltipID={this.TOOLTIP_ID}
               title={this.props.title}
               onEditClick={this.props.startEditingCallback}
