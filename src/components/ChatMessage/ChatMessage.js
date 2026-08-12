@@ -127,6 +127,7 @@ export class ChatMessage extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
+    queryMessageID: PropTypes.string,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,
@@ -1292,7 +1293,7 @@ export class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.isValidConfig(this.state.dataConfig) ? this.state.dataConfig : undefined}
           onTableConfigChange={this.updateDataConfig}
-          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          onNoneOfTheseClick={() => this.props.onNoneOfTheseClick(this.props.queryMessageID)}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}
           onRTValueLabelClick={this.props.onRTValueLabelClick}

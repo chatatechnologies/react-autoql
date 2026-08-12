@@ -128,8 +128,6 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
-    this.drilldownQueryID =
-      this.queryResponse?.data?.data?.drilldown_query_id || this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -304,6 +302,8 @@ export class QueryOutput extends React.Component {
         data: PropTypes.object,
       }),
     }),
+    // Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query
+    queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -399,6 +399,7 @@ export class QueryOutput extends React.Component {
     initialAggConfig: undefined,
 
     queryResponse: undefined,
+    queryId: undefined,
     initialDisplayType: null,
     onSuggestionClick: undefined,
     autoSelectQueryValidationSuggestion: true,
@@ -571,8 +572,6 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
           }
-          this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
-
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
           this.resetTableConfig(newColumns)
@@ -736,6 +735,8 @@ export class QueryOutput extends React.Component {
         const dataConfig = {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
+          // Must carry columnOverrides too — persisted wholesale, so omitting it drops existing overrides on save.
+          columnOverrides: this.state.columnOverrides,
         }
 
         this.props.onColumnChange(
@@ -1278,7 +1279,6 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.drilldownQueryID = response?.data?.data?.drilldown_query_id || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -1773,7 +1773,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.drilldownQueryID,
+              queryID: this.props.queryId || this.queryID,
               source: this.props.source,
               groupBys,
               pageSize,

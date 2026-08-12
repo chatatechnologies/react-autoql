@@ -47,6 +47,7 @@ export class AverageLine extends React.Component {
   }
 
   componentDidMount() {
+    this._isMounted = true
     this.updateTextBBox()
   }
 
@@ -62,13 +63,20 @@ export class AverageLine extends React.Component {
       prevProps.isVisible !== this.props.isVisible
     ) {
       // Use setTimeout to ensure DOM is updated before measuring
-      setTimeout(() => {
+      clearTimeout(this.bboxTimeout)
+      this.bboxTimeout = setTimeout(() => {
         this.updateTextBBox()
       }, 0)
     }
   }
 
+  componentWillUnmount() {
+    this._isMounted = false
+    clearTimeout(this.bboxTimeout)
+  }
+
   updateTextBBox = () => {
+    if (!this._isMounted) return
     if (this.textRef.current) {
       const bbox = safeGetBBox(this.textRef.current)
       if (bbox.width || bbox.height || bbox.x || bbox.y) {

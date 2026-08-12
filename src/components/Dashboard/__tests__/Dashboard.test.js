@@ -734,6 +734,42 @@ describe('Dashboard.addTile — DM response handling', () => {
     const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
     expect(addedTile.queryResponse).toEqual(itemsContent.queryResponse)
   })
+
+  test('defaults new tile projectId to autoQLConfig.projectId (multi-project dashboards)', () => {
+    const wrapper = setup({ isEditing: true, autoQLConfig: { projectId: 'proj-active' } })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile()
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.projectId).toBe('proj-active')
+  })
+
+  test('new tile projectId is undefined when autoQLConfig has no projectId', () => {
+    const wrapper = setup({ isEditing: true, autoQLConfig: {} })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile()
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.projectId).toBeFalsy()
+  })
+
+  test('explicit content.projectId overrides the autoQLConfig default', () => {
+    const wrapper = setup({ isEditing: true, autoQLConfig: { projectId: 'proj-active' } })
+    const instance = wrapper.instance()
+    instance.getMostRecentTiles = jest.fn(() => [])
+    instance.debouncedOnChange = jest.fn(() => Promise.resolve())
+
+    instance.addTile({ ...dmContent, projectId: 'proj-override' })
+
+    const addedTile = instance.debouncedOnChange.mock.calls[0][0][0]
+    expect(addedTile.projectId).toBe('proj-override')
+  })
 })
 
 // Edit-mode state matrix
@@ -1563,5 +1599,62 @@ describe('Dashboard.setIsDragging', () => {
     expect(wrapper.state('isDragging')).toBe(false)
 
     jest.useRealTimers()
+  })
+})
+
+describe('Dashboard.onTileExecutionStatusChange', () => {
+  // Tiles report their own execution state instead of the Dashboard reading tileRefs during render
+  const isAnyTileExecuting = (wrapper) => wrapper.state('executingTileKeys').size > 0
+
+  test('starts with no tiles executing', () => {
+    const wrapper = setup()
+    expect(isAnyTileExecuting(wrapper)).toBe(false)
+  })
+
+  test('tracks tiles independently and only clears once the last one finishes', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('tile-2', true)
+    expect(isAnyTileExecuting(wrapper)).toBe(true)
+
+    instance.onTileExecutionStatusChange('tile-1', false)
+    expect(isAnyTileExecuting(wrapper)).toBe(true)
+
+    instance.onTileExecutionStatusChange('tile-2', false)
+    expect(isAnyTileExecuting(wrapper)).toBe(false)
+  })
+
+  test('is idempotent - repeated reports of the same state do not unbalance the set', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('tile-1', false)
+
+    expect(isAnyTileExecuting(wrapper)).toBe(false)
+  })
+
+  test('a false report for an unknown tile is a no-op', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    instance.onTileExecutionStatusChange('tile-1', true)
+    instance.onTileExecutionStatusChange('never-started', false)
+
+    expect(isAnyTileExecuting(wrapper)).toBe(true)
+  })
+
+  test('replaces the Set rather than mutating it, so React sees the state change', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    const before = wrapper.state('executingTileKeys')
+    instance.onTileExecutionStatusChange('tile-1', true)
+
+    expect(wrapper.state('executingTileKeys')).not.toBe(before)
+    expect(before.size).toBe(0)
   })
 })

@@ -1495,6 +1495,41 @@ describe('DashboardTile localRTFilterResponse cleared on mode transitions', () =
   })
 })
 
+describe('DashboardTile re-runs query on projectId change', () => {
+  test('calls processTile with the current query when tile.projectId changes', () => {
+    const wrapper = setup({ tile: { ...sampleTile, projectId: 1 } })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => {})
+
+    wrapper.setProps({ tile: { ...sampleTile, projectId: 2 } })
+
+    expect(processTileSpy).toHaveBeenCalledWith({ query: sampleTile.query })
+    wrapper.unmount()
+  })
+
+  test('does not call processTile when projectId is unchanged', () => {
+    const wrapper = setup({ tile: { ...sampleTile, projectId: 1 } })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => {})
+
+    wrapper.setProps({ tile: { ...sampleTile, projectId: 1, title: 'updated title' } })
+
+    expect(processTileSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('does not call processTile on projectId change when query is invalid', () => {
+    const wrapper = setup({ tile: { ...sampleTile, query: '', projectId: 1 } })
+    const instance = wrapper.instance()
+    const processTileSpy = jest.spyOn(instance, 'processTile').mockImplementation(() => {})
+
+    wrapper.setProps({ tile: { ...sampleTile, query: '', projectId: 2 } })
+
+    expect(processTileSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('DashboardTile onColumnChange edit mode guard', () => {
   test('does NOT call setParamsForTile when not in edit mode', () => {
     jest.useFakeTimers()

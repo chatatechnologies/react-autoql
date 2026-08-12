@@ -417,6 +417,8 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       clearTimeout(this._debounceTimeout)
+      clearTimeout(this.filterCountRefreshTimeout)
+      clearTimeout(this.updateColumnTimeout)
 
       // Clear any pending filter check timeouts to prevent state updates after unmount
       if (this._filterCheckTimeout) {
@@ -1095,11 +1097,12 @@ export default class ChataTable extends React.Component {
       }
       // Force re-render to update filter count display after data is processed
       // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
-      if (this._isMounted) {
-        setTimeout(() => {
-          this.forceUpdate()
-        }, 0)
-      }
+      clearTimeout(this.filterCountRefreshTimeout)
+      this.filterCountRefreshTimeout = setTimeout(() => {
+        // Must re-check here, not before scheduling - the table can unmount within this tick
+        if (!this._isMounted) return
+        this.forceUpdate()
+      }, 0)
     } else {
       return { data: [], last_page: this.totalPages }
     }
@@ -1627,10 +1630,15 @@ export default class ChataTable extends React.Component {
 
   updateColumn = (field, newParams) => {
     this.ref?.updateColumn?.(field, newParams)?.then(() => {
+      if (!this._isMounted) return
+
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
-      setTimeout(() => {
+
+      clearTimeout(this.updateColumnTimeout)
+      this.updateColumnTimeout = setTimeout(() => {
+        if (!this._isMounted) return
         this.setHeaderInputEventListeners()
       }, 0)
     })
@@ -2004,6 +2012,7 @@ export default class ChataTable extends React.Component {
   }
 
   onScrollVertical = (top) => {
+    if (!this._isMounted) return
     this.setState({ scrollTop: top })
   }
 

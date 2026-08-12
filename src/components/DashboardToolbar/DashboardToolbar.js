@@ -46,6 +46,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     slicerSuggestion: PropTypes.string,
     enableSlicers: PropTypes.bool,
     isDashboardFullyExecuted: PropTypes.bool,
+    isProjectDashboard: PropTypes.bool,
     hasTiles: PropTypes.bool,
     hasDirtyTiles: PropTypes.bool,
     hasFailedTiles: PropTypes.bool,
@@ -76,6 +77,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
     value: null,
     slicerSuggestion: undefined,
     isDashboardFullyExecuted: false,
+    isProjectDashboard: false,
     hasTiles: false,
     hasDirtyTiles: false,
     hasFailedTiles: false,
@@ -163,15 +165,23 @@ export class DashboardToolbarWithoutRef extends React.Component {
             }}
           />
         )}
-        <MenuItem
-          title='Export Snapshot (.aqldash)'
-          icon='download'
-          disabled={!this.props.isDashboardFullyExecuted}
-          onClick={() => {
-            this.props.onDownloadClick()
-            this.setState({ isOptionsMenuOpen: false })
-          }}
-        />
+        {!this.props.isProjectDashboard && (
+          <MenuItem
+            title='Export Snapshot (.aqldash)'
+            icon='download'
+            disabled={!this.props.isDashboardFullyExecuted}
+            tooltip={
+              !this.props.isDashboardFullyExecuted
+                ? 'Please run or remove any empty or failed tiles to enable export'
+                : undefined
+            }
+            tooltipID={this.props.tooltipID}
+            onClick={() => {
+              this.props.onDownloadClick()
+              this.setState({ isOptionsMenuOpen: false })
+            }}
+          />
+        )}
         {this.props.isEditable && (
           <MenuItem
             title='Delete Dashboard'
@@ -332,7 +342,8 @@ export class DashboardToolbarWithoutRef extends React.Component {
               )}
               {!this.props.isEditing && (() => {
                 const hasAvailableOptions = !!(
-                  this.props.isEditable || this.props.isDashboardFullyExecuted
+                  this.props.isEditable ||
+                  (this.props.isDashboardFullyExecuted && !this.props.isProjectDashboard)
                 )
 
                 if (!hasAvailableOptions) return null
@@ -459,7 +470,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
           </p>
         </ConfirmModal>
         {this.renderRenameModal()}
-        <Tooltip tooltipId={this.props.tooltipID} />
+        <Tooltip tooltipId={this.props.tooltipID} positionStrategy='fixed' />
       </ErrorBoundary>
     )
   }

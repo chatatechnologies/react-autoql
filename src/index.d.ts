@@ -200,6 +200,7 @@ export interface DashboardTile {
   queryResponse?: any
   dataConfig?: any
   aggConfig?: any
+  projectId?: string | number
   [key: string]: any
 }
 
@@ -247,6 +248,11 @@ export interface DashboardProps {
   source?: string | string[]
   scope?: string
   offline?: boolean
+  projectSelectList?: Array<{ projectId: string | number; displayName: string }>
+  getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined
+  onTileAuthExpired?: (projectId: string | number) => void
+  showProjectIndicator?: boolean
+  isProjectDashboard?: boolean
   [key: string]: any
 }
 

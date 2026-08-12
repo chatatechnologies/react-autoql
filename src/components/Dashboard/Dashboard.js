@@ -99,6 +99,7 @@ class DashboardWithoutTheme extends React.Component {
       isResizingDrilldown: false,
       uneditedDashboardTiles: null,
       dashboardSlicers: getSlicersArray(),
+      executingTileKeys: new Set(),
     }
   }
 
@@ -150,6 +151,21 @@ class DashboardWithoutTheme extends React.Component {
     onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
+    // List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown.
+    projectSelectList: PropTypes.arrayOf(
+      PropTypes.shape({
+        projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        displayName: PropTypes.string.isRequired,
+      }),
+    ),
+    // Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details.
+    getAuthenticationForProject: PropTypes.func,
+    // Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange
+    onTileAuthExpired: PropTypes.func,
+    // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
+    showProjectIndicator: PropTypes.bool,
+    // Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard
+    isProjectDashboard: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -191,6 +207,11 @@ class DashboardWithoutTheme extends React.Component {
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     enableResetQuery: false,
+    projectSelectList: undefined,
+    getAuthenticationForProject: undefined,
+    onTileAuthExpired: undefined,
+    showProjectIndicator: true,
+    isProjectDashboard: false,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -831,6 +852,8 @@ class DashboardWithoutTheme extends React.Component {
         y: Number.MAX_VALUE,
         query: '',
         title: '',
+        // New tiles default to the dashboard's current project until explicitly reassigned (multi-project dashboards)
+        projectId: getAutoQLConfig(this.props.autoQLConfig).projectId,
       }
 
       if (content?.queryResponse) {
@@ -1062,6 +1085,14 @@ class DashboardWithoutTheme extends React.Component {
 
       reader.onerror = () => reject(new Error('Failed to read file'))
       reader.readAsArrayBuffer(file)
+    })
+  }
+
+  onTileExecutionStatusChange = (tileKey, isExecuting) => {
+    this.setState((prevState) => {
+      const executingTileKeys = new Set(prevState.executingTileKeys)
+      isExecuting ? executingTileKeys.add(tileKey) : executingTileKeys.delete(tileKey)
+      return { executingTileKeys }
     })
   }
 
@@ -1417,6 +1448,12 @@ class DashboardWithoutTheme extends React.Component {
             onQuotaExceeded={this.props.onQuotaExceeded}
             enableFollowOnQuery={this.props.enableFollowOnQuery}
             showResetQueryOption={this.props.enableResetQuery}
+            projectSelectList={this.props.projectSelectList}
+            getAuthenticationForProject={this.props.getAuthenticationForProject}
+            onTileAuthExpired={this.props.onTileAuthExpired}
+            showProjectIndicator={this.props.showProjectIndicator}
+            isProjectDashboard={this.props.isProjectDashboard}
+            onExecutionStatusChange={(isExecuting) => this.onTileExecutionStatusChange(tile.key, isExecuting)}
           />
         ))}
       </ReactGridLayout>
@@ -1428,11 +1465,7 @@ class DashboardWithoutTheme extends React.Component {
     const dirtyTileKeys = this.getDirtyTileKeys()
     const failedTileKeys = this.getFailedTiles()
 
-    // Check if any tile is currently executing
-    const isAnyTileExecuting = Object.keys(this.tileRefs).some((key) => {
-      const tileRef = this.tileRefs[key]
-      return tileRef?.state?.isTopExecuting
-    })
+    const isAnyTileExecuting = this.state.executingTileKeys.size > 0
 
     return (
       <ErrorBoundary>
@@ -1442,6 +1475,7 @@ class DashboardWithoutTheme extends React.Component {
               authentication={this.props.authentication}
               isEditing={this.props.isEditing}
               isEditable={this.props.isEditable}
+              isProjectDashboard={this.props.isProjectDashboard}
               tooltipID={this.TOOLTIP_ID}
               title={this.props.title}
               onEditClick={this.props.startEditingCallback}

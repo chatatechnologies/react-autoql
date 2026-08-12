@@ -496,8 +496,8 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  onNoneOfTheseClick = () => {
-    this.addRequestMessage('None of these')
+  onNoneOfTheseClick = (queryMessageID) => {
+    this.addRequestMessage('None of these', queryMessageID)
     this.setState({ isQueryRunning: true })
 
     clearTimeout(this.feedbackTimeout)
@@ -513,6 +513,7 @@ export default class ChatContent extends React.Component {
               To continue, try asking another query.
             </div>
           ),
+          queryMessageID,
         })
       }
     }, 1000)
@@ -823,6 +824,7 @@ export default class ChatContent extends React.Component {
                       queryId={message.queryId}
                       queryText={message.query}
                       originalQueryID={message.originalQueryID}
+                      queryMessageID={message.queryMessageID}
                       isDataMessengerOpen={this.props.isDataMessengerOpen}
                       isActive={this.state.activeMessageId === message.id}
                       addMessageToDM={this.addResponseMessage}

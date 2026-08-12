@@ -271,7 +271,6 @@ describe('processDrilldown — drilldown filter badge fix', () => {
 
       const instance = queryOutput.instance()
       instance.formattedTableParams = { filters: [], sorters: [] }
-      instance.drilldownQueryID = 'test-query-id'
 
       const groupBys = [
         { name: 'public.all_sales_fact.sale_date', value: '2009-10-01', operator: '=' },

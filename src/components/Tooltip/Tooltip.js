@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react'
+import React, { useMemo } from 'react'
+import ReactDOM from 'react-dom'
 import { uuidv4 } from 'autoql-fe-utils'
 import { isMobile } from 'react-device-detect'
 import { Tooltip as ReactTooltip } from 'react-tooltip'
@@ -6,21 +7,14 @@ import { Tooltip as ReactTooltip } from 'react-tooltip'
 import './Tooltip.scss'
 
 export function Tooltip(props = {}) {
+  // Keep the fallback id stable across renders so the tooltip doesn't lose its anchors
+  const defaultTooltipId = useMemo(() => `react-autoql-tooltip-default-id-${uuidv4()}`, [])
+
   if (isMobile) {
     return null
   }
 
-  const DEFAULT_TOOLTIP_ID = `react-autoql-tooltip-default-id-${uuidv4()}`
-
-  const setIsOpen = (isOpen) => isOpen
-
-  useEffect(() => {
-    return () => {
-      setIsOpen(false)
-    }
-  }, [])
-
-  return (
+  const tooltip = (
     <ReactTooltip
       place='top'
       effect='solid'
@@ -30,12 +24,20 @@ export function Tooltip(props = {}) {
         return content
       }}
       {...props}
-      id={props.tooltipId ?? DEFAULT_TOOLTIP_ID}
+      id={props.tooltipId ?? defaultTooltipId}
       className={`react-autoql-tooltip${props.className ? ` ${props.className}` : ''}`}
       border={props.border ? '1px solid var(--react-autoql-border-color)' : undefined}
-      setIsOpen={setIsOpen}
     />
   )
+
+  // Rendered inline, the tooltip is trapped in its parent's stacking context and painted over by
+  // body-level portals (popover menus, modals). Anchors resolve globally via `data-tooltip-id` and
+  // theme vars live on documentElement, so portalling to <body> is safe and fixes it everywhere.
+  if (typeof document === 'undefined' || !document.body) {
+    return tooltip
+  }
+
+  return ReactDOM.createPortal(tooltip, document.body)
 }
 
 export const triggerGlobalTooltipClose = () => {

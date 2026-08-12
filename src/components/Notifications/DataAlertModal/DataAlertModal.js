@@ -100,12 +100,19 @@ class DataAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.fetchCategoriesIfNeeded()
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+    clearTimeout(this.initializeFieldsTimeout)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (!this.props.isVisible && prevProps.isVisible) {
-      setTimeout(this.initializeFields, 500)
+      clearTimeout(this.initializeFieldsTimeout)
+      this.initializeFieldsTimeout = setTimeout(this.initializeFields, 500)
       this.props.onClosed()
     }
 
@@ -140,10 +147,12 @@ class DataAlertModal extends React.Component {
       const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
       getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
+          if (!this._isMounted) return
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
         .catch((error) => {
           console.error('error fetching data alert categories', error)
+          if (!this._isMounted) return
           this.setState({ categories: [], fetchedCategories: true })
         })
     }

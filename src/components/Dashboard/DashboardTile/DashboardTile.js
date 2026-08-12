@@ -12,6 +12,7 @@ import {
   isChartType,
   findNetworkColumns,
   REQUEST_CANCELLED_ERROR,
+  UNAUTHENTICATED_ERROR,
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
@@ -24,6 +25,8 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../../Icon'
+import { Modal } from '../../Modal'
+import { Select } from '../../Select'
 import { VizToolbar } from '../../VizToolbar'
 import { QueryOutput } from '../../QueryOutput'
 import { OptionsToolbar } from '../../OptionsToolbar'
@@ -101,6 +104,8 @@ export class DashboardTile extends React.Component {
       isFollowOnModalOpen: false,
       followOnResults: [],
       queryResponseVersion: 0,
+      isProjectModalOpen: false,
+      pendingProjectId: undefined,
     }
   }
 
@@ -135,6 +140,8 @@ export class DashboardTile extends React.Component {
       queryResponse: PropTypes.shape({}),
       defaultSelectedSuggestion: PropTypes.string,
       queryValidationSelections: PropTypes.any,
+      // Project this tile's query should run against (multi-project dashboards)
+      projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     }).isRequired,
     isEditing: PropTypes.bool,
     isDirty: PropTypes.bool,
@@ -169,6 +176,23 @@ export class DashboardTile extends React.Component {
     onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
+    // List of projects the tile can be assigned to (multi-project dashboards). When omitted or empty, no picker is shown.
+    projectSelectList: PropTypes.arrayOf(
+      PropTypes.shape({
+        projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        displayName: PropTypes.string.isRequired,
+      }),
+    ),
+    // Resolves an authentication object scoped to a given projectId (multi-project dashboards)
+    getAuthenticationForProject: PropTypes.func,
+    // Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange
+    onTileAuthExpired: PropTypes.func,
+    // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
+    showProjectIndicator: PropTypes.bool,
+    // Whether this tile belongs to a project-based (PROJECT type) dashboard, as opposed to a CUSTOM dashboard
+    isProjectDashboard: PropTypes.bool,
+    // Notifies the dashboard whenever this tile starts/stops executing its top query
+    onExecutionStatusChange: PropTypes.func,
   }
 
   static defaultProps = {
@@ -211,6 +235,12 @@ export class DashboardTile extends React.Component {
     enableBillingGate: false,
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
+    projectSelectList: undefined,
+    getAuthenticationForProject: undefined,
+    onTileAuthExpired: undefined,
+    showProjectIndicator: true,
+    isProjectDashboard: false,
+    onExecutionStatusChange: undefined,
   }
 
   componentDidMount = () => {
@@ -266,6 +296,13 @@ export class DashboardTile extends React.Component {
     ) {
       this.responseRef.changeDisplayType(this.props.tile.displayType)
     }
+    // Re-run the query if the tile was reassigned to a different project
+    if (
+      !this.projectIdsEqual(this.props.tile?.projectId, prevProps.tile?.projectId) &&
+      this.isQueryValid(this.props.tile?.query)
+    ) {
+      this.processTile({ query: this.props.tile.query })?.catch?.(() => {}) // errors already surface via tile state
+    }
     if (prevProps.isEditing && !this.props.isEditing && this.state.localRTFilterResponse) {
       this.setState({ localRTFilterResponse: null })
     }
@@ -305,7 +342,8 @@ export class DashboardTile extends React.Component {
         !_isEqual(prevTile.filters, nextTile.filters) ||
         !_isEqual(prevTile.orders, nextTile.orders) ||
         prevTile.pageSize !== nextTile.pageSize ||
-        prevTile.query !== nextTile.query
+        prevTile.query !== nextTile.query ||
+        !this.projectIdsEqual(prevTile.projectId, nextTile.projectId)
 
       if (topChanged && this.topRequestData) {
         this.topRequestData = {
@@ -315,6 +353,7 @@ export class DashboardTile extends React.Component {
           orders: nextTile.orders || [],
           pageSize: nextTile.pageSize,
           query: nextTile.query || this.topRequestData.query,
+          projectId: nextTile.projectId,
         }
       }
     } catch (e) {
@@ -324,6 +363,10 @@ export class DashboardTile extends React.Component {
 
   componentWillUnmount = () => {
     try {
+      if (this.state.isTopExecuting) {
+        this.props.onExecutionStatusChange?.(false)
+      }
+
       this._isMounted = false
 
       clearTimeout(this.autoCompleteTimer)
@@ -387,8 +430,120 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  // autoQLConfig scoped to this tile's own project, if it has one (multi-project dashboards)
+  getTileAutoQLConfig = () => {
+    const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
+    if (this.props.tile?.projectId == null) {
+      return autoQLConfig
+    }
+    return { ...autoQLConfig, projectId: this.props.tile.projectId }
+  }
+
+  // authentication scoped to this tile's own project, if it has one and a token is cached for it (multi-project dashboards)
+  getTileAuthentication = () => {
+    const projectId = this.props.tile?.projectId
+    if (projectId != null && this.props.getAuthenticationForProject) {
+      const tileAuthentication = this.props.getAuthenticationForProject(projectId)
+      if (tileAuthentication) {
+        return tileAuthentication
+      }
+    }
+    return this.props.authentication
+  }
+
+  // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives in time.
+  // staleToken: a token matching it doesn't count as ready - used after onTileAuthExpired so we wait for an actual refresh.
+  waitForTileAuthentication = (staleToken) => {
+    const projectId = this.props.tile?.projectId
+    if (projectId == null || !this.props.getAuthenticationForProject) {
+      return Promise.resolve(true)
+    }
+
+    const isFreshAuth = (auth) => !!auth && (staleToken === undefined || auth.token !== staleToken)
+
+    if (isFreshAuth(this.props.getAuthenticationForProject(projectId))) {
+      return Promise.resolve(true)
+    }
+
+    const POLL_INTERVAL_MS = 100
+    const MAX_WAIT_MS = 15000
+    return new Promise((resolve) => {
+      const start = Date.now()
+      const check = () => {
+        if (!this._isMounted) {
+          resolve(true) // unmounted mid-wait - resolve so the promise doesn't dangle; callers re-check _isMounted
+          return
+        }
+        if (isFreshAuth(this.props.getAuthenticationForProject?.(projectId))) {
+          resolve(true)
+          return
+        }
+        if (Date.now() - start >= MAX_WAIT_MS) {
+          resolve(false)
+          return
+        }
+        setTimeout(check, POLL_INTERVAL_MS)
+      }
+      check()
+    })
+  }
+
+  // Surface a clear auth error instead of firing a query that's guaranteed to 403
+  handleUnavailableTileAuth = () => {
+    const response = {
+      data: {
+        message: UNAUTHENTICATED_ERROR,
+        reference_id: '1.1.401',
+      },
+    }
+    return this.endTopQuery({ response })
+  }
+
+  // Wraps any query-firing call so it waits for this tile's per-project auth first (multi-project dashboards)
+  runWithTileAuthGuard = (fireQuery) => {
+    const attempt = (this._authGuardAttempt = (this._authGuardAttempt ?? 0) + 1)
+
+    // Show the loading state while we wait for this tile's per-project token (if any) to resolve
+    this.setTopExecutingState(true)
+
+    return this.waitForTileAuthentication().then((authReady) => {
+      if (!this._isMounted) {
+        return undefined
+      }
+      if (authReady) {
+        return fireQuery()
+      }
+
+      // Auth never arrived in time: surface the error now, but keep waiting one more window so a late
+      // token replaces it with real data instead of leaving the tile stuck until a manual refresh.
+      const errorResult = this.handleUnavailableTileAuth()
+      this.waitForTileAuthentication().then((lateAuthReady) => {
+        // A newer guard call (e.g. a manual refresh) supersedes this watcher, so the query never fires twice
+        if (lateAuthReady && this._isMounted && this._authGuardAttempt === attempt) {
+          fireQuery()
+        }
+      })
+      return errorResult
+    })
+  }
+
   isQueryValid = (query) => {
     return !!query && !!query.trim()
+  }
+
+  // Only path that should write `isTopExecuting` — guarantees the parent is always notified of the transition.
+  setTopExecutingState = (isTopExecuting, extraState = {}, callback) => {
+    if (!this._isMounted) return
+    this.setState(
+      (prevState) => ({
+        ...(typeof extraState === 'function' ? extraState(prevState) : extraState),
+        isTopExecuting,
+      }),
+      () => {
+        this.props.onExecutionStatusChange?.(isTopExecuting)
+        callback?.()
+      },
+    )
   }
 
   setTopExecuted = () => {
@@ -396,8 +551,7 @@ export class DashboardTile extends React.Component {
       // Applied here (once the refetch settles) since componentDidUpdate's isTopExecuting-gated branch never fires for it.
       const shouldForceRemount = this._forceRemountOnNextResponse
       this._forceRemountOnNextResponse = false
-      this.setState((prevState) => ({
-        isTopExecuting: false,
+      this.setTopExecutingState(false, (prevState) => ({
         isTopExecuted: true,
         queryResponseVersion: shouldForceRemount ? prevState.queryResponseVersion + 1 : prevState.queryResponseVersion,
       }))
@@ -474,6 +628,11 @@ export class DashboardTile extends React.Component {
       // treat unknown shapes as non-retryable
     }
     return false
+  }
+
+  // formatErrorResponse strips the status off a bare 401, leaving only the UNAUTHENTICATED_ERROR message
+  isAuthError = (resp) => {
+    return resp?.status === 401 || resp?.response?.status === 401 || resp?.data?.message === UNAUTHENTICATED_ERROR
   }
 
   normalizeAxisSorts = (v) => {
@@ -646,7 +805,15 @@ export class DashboardTile extends React.Component {
     }
   }
 
-  processQuery = ({ query, userSelection, skipQueryValidation, source, isCachedRefresh, isReset = false }) => {
+  processQuery = ({
+    query,
+    userSelection,
+    skipQueryValidation,
+    source,
+    isCachedRefresh,
+    isReset = false,
+    axiosSource = this.axiosSource,
+  }) => {
     if (this.isQueryValid(query)) {
       const pageSize = isChartType(this.props.tile.displayType)
         ? this.props.tile.pageSize ?? this.props.dataPageSize
@@ -664,8 +831,8 @@ export class DashboardTile extends React.Component {
       const currentFilter = isReset ? [] : this.props.tile.tableFilters
 
       const requestData = {
-        ...getAuthentication(this.props.authentication),
-        ...getAutoQLConfig(this.props.autoQLConfig),
+        ...getAuthentication(this.getTileAuthentication()),
+        ...this.getTileAutoQLConfig(),
         enableQueryValidation: !this.props.isEditing
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
@@ -678,7 +845,7 @@ export class DashboardTile extends React.Component {
         source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
         scope: 'dashboards',
         userSelection,
-        cancelToken: this.axiosSource?.token,
+        cancelToken: axiosSource?.token,
         pageSize,
         query,
         force: false,
@@ -703,14 +870,15 @@ export class DashboardTile extends React.Component {
     return Promise.reject()
   }
 
-  executeQueryWithForceRetry(requestData, queryFunction) {
+  executeQueryWithForceRetry(requestData, queryFunction, { authRetried = false } = {}) {
     const tryRequest = (data) => queryFunction(data)
 
     return tryRequest(requestData).catch((err) => {
       const resp = err?.response || err
 
       try {
-        if (this.isServerError(resp) && !requestData.force) {
+        // Only force-retry on custom dashboards. Project-based dashboards should never force a fresh (uncached) query.
+        if (this.isServerError(resp) && !requestData.force && !this.props.isProjectDashboard) {
           const retryData = { ...requestData, force: true }
 
           // Emit telemetry (prefer `onRetry`, fallback to `onErrorCallback`).
@@ -725,11 +893,35 @@ export class DashboardTile extends React.Component {
           // Immediate retry using the original query function
           return tryRequest(retryData)
         }
+
+        // A real 401 usually means this tile's token expired mid-session - ask the host for a fresh one and retry once.
+        if (!authRetried && this.isAuthError(resp)) {
+          return this.retryWithFreshAuth(requestData, queryFunction, err)
+        }
       } catch (e) {
         // detection error - fall through to rethrow original
       }
 
       return Promise.reject(err)
+    })
+  }
+
+  retryWithFreshAuth = (requestData, queryFunction, originalError) => {
+    const projectId = this.props.tile?.projectId
+    if (projectId == null || typeof this.props.onTileAuthExpired !== 'function') {
+      return Promise.reject(originalError)
+    }
+
+    const staleToken = this.props.getAuthenticationForProject?.(projectId)?.token
+    this.props.onTileAuthExpired(projectId)
+
+    return this.waitForTileAuthentication(staleToken).then((authReady) => {
+      if (!authReady || !this._isMounted) {
+        return Promise.reject(originalError)
+      }
+
+      const retryData = { ...requestData, ...getAuthentication(this.getTileAuthentication()) }
+      return this.executeQueryWithForceRetry(retryData, queryFunction, { authRetried: true })
     })
   }
 
@@ -741,8 +933,9 @@ export class DashboardTile extends React.Component {
     pageSize,
     isCachedRefresh,
     isReset = false,
+    axiosSource,
   }) => {
-    this.setState({ isTopExecuting: true, queryResponse: null })
+    this.setTopExecutingState(true, { queryResponse: null })
     const queryChanged = this.props.tile.query !== query
     const skipValidation = skipQueryValidation || (this.props.tile.skipQueryValidation && !queryChanged)
 
@@ -813,6 +1006,7 @@ export class DashboardTile extends React.Component {
       source,
       isCachedRefresh,
       isReset,
+      axiosSource,
     })
       .then((response) => {
         return this.endTopQuery({ response, isReset, queryChanged, isCachedRefresh })
@@ -827,8 +1021,7 @@ export class DashboardTile extends React.Component {
   }
 
   clearTopQueryResponse = (newState = {}) => {
-    this.setState({
-      isTopExecuting: false,
+    this.setTopExecutingState(false, {
       isTopExecuted: false,
       userSelection: undefined,
       ...newState,
@@ -841,11 +1034,16 @@ export class DashboardTile extends React.Component {
 
   processTile = ({ query, skipQueryValidation, source, isCachedRefresh, isReset = false } = {}) => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
-    this.axiosSource = axios.CancelToken?.source()
+    // Captured now, before the auth wait, so a request built after the wait uses its own token
+    // instead of whatever this.axiosSource has since become.
+    const axiosSource = axios.CancelToken?.source()
+    this.axiosSource = axiosSource
 
     const q1 = query || this.props.tile.defaultSelectedSuggestion || this.state.query
 
-    return this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset })
+    return this.runWithTileAuthGuard(() =>
+      this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset, axiosSource }),
+    )
       .then((queryResponse) => {
         // Read queryId from the fresh response since this.props.tile.queryId is stale until the debounce lands.
         const freshQueryId = queryResponse?.data?.data?.query_id
@@ -905,12 +1103,21 @@ export class DashboardTile extends React.Component {
     this.setState({ query })
 
     if (isButtonClick) {
-      this.processTileTop({
-        query,
-        userSelection,
-        skipQueryValidation: true,
-        source,
-      })
+      this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+      // Captured now, before the auth wait, so a request built after the wait uses its own token
+      // instead of whatever this.axiosSource has since become.
+      const axiosSource = axios.CancelToken?.source()
+      this.axiosSource = axiosSource
+
+      this.runWithTileAuthGuard(() =>
+        this.processTileTop({
+          query,
+          userSelection,
+          skipQueryValidation: true,
+          source,
+          axiosSource,
+        }),
+      )
     } else {
       this.debouncedSetParamsForTile({ defaultSelectedSuggestion: query })
     }
@@ -923,7 +1130,7 @@ export class DashboardTile extends React.Component {
     this.autoCompleteTimer = setTimeout(() => {
       fetchAutocomplete({
         suggestion: value,
-        ...getAuthentication(this.props.authentication),
+        ...getAuthentication(this.getTileAuthentication()),
       })
         .then((response) => {
           if (this._isMounted) {
@@ -1078,6 +1285,165 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  // projectId can come from different sources (tile config, API response, select list) that don't agree on string vs number
+  projectIdsEqual = (a, b) => {
+    if (a == null || b == null) {
+      return a == null && b == null
+    }
+    return `${a}` === `${b}`
+  }
+
+  findProjectInList = (projectId) => {
+    return projectId == null
+      ? undefined
+      : this.props.projectSelectList?.find((p) => this.projectIdsEqual(p.projectId, projectId))
+  }
+
+  // Resolves projectId to the exact value/type used in projectSelectList, so Select's internal === match works
+  resolveListProjectId = (projectId) => {
+    const match = this.findProjectInList(projectId)
+    return match ? match.projectId : projectId
+  }
+
+  // Project the tile's query was executed against: flat project_id/project_name on response.data.data (AQLP-585)
+  getTileProject = (response) => {
+    const data = response?.data?.data
+    if (!data?.project_id && !data?.project_name) {
+      return null
+    }
+
+    return {
+      id: data.project_id,
+      name: data.project_name,
+    }
+  }
+
+  // Whether there's a project picker to show at all - hidden when the indicator is disabled or there's nothing to switch to.
+  shouldShowProjectPicker = () => {
+    return this.props.showProjectIndicator && this.props.projectSelectList?.length > 1
+  }
+
+  renderProjectBadge = () => {
+    if (!this.shouldShowProjectPicker()) {
+      return null
+    }
+
+    const projectFromList = this.findProjectInList(this.props.tile?.projectId)
+    const project = projectFromList
+      ? { id: projectFromList.projectId, name: projectFromList.displayName }
+      : this.getTileProject(this.props.tile?.queryResponse)
+    if (!project?.name) {
+      return null
+    }
+
+    const currentProjectId = getAutoQLConfig(this.props.autoQLConfig).projectId
+    if (this.projectIdsEqual(project.id, currentProjectId)) {
+      return null
+    }
+
+    return (
+      <span
+        className='dashboard-tile-project-badge'
+        data-tooltip-content={`Project: ${project.name}`}
+        data-tooltip-id={this.props.tooltipID}
+      >
+        {project.name}
+      </span>
+    )
+  }
+
+  onProjectSelectChange = (projectId) => {
+    this.props.setParamsForTile({ projectId }, this.props.tile.i, [])
+  }
+
+  getSelectedProjectName = () => {
+    const match = this.findProjectInList(this.props.tile?.projectId)
+    return match?.displayName || this.getTileProject(this.props.tile?.queryResponse)?.name
+  }
+
+  openProjectModal = () => {
+    this.setState({
+      isProjectModalOpen: true,
+      pendingProjectId: this.resolveListProjectId(this.props.tile?.projectId),
+    })
+  }
+
+  closeProjectModal = () => {
+    this.setState({ isProjectModalOpen: false })
+  }
+
+  confirmProjectChange = () => {
+    this.onProjectSelectChange(this.state.pendingProjectId)
+    this.closeProjectModal()
+  }
+
+  // True when this tile's project differs from the dashboard's default project (edit mode indicator)
+  hasNonDefaultProject = () => {
+    const tileProjectId = this.props.tile?.projectId
+    if (tileProjectId == null) {
+      return false
+    }
+    const currentProjectId = getAutoQLConfig(this.props.autoQLConfig).projectId
+    return !this.projectIdsEqual(tileProjectId, currentProjectId)
+  }
+
+  // Opens a modal to change the tile's project; dot badge shows when it differs from the dashboard default.
+  renderProjectButton = () => {
+    if (!this.shouldShowProjectPicker()) {
+      return null
+    }
+
+    const projectName = this.getSelectedProjectName()
+
+    return (
+      <button
+        type='button'
+        className='dashboard-tile-project-button'
+        aria-label='Change project'
+        data-tooltip-content={projectName ? `Change project (current: ${projectName})` : 'Change project'}
+        data-tooltip-id={this.props.tooltipID}
+        onClick={this.openProjectModal}
+      >
+        <Icon type='database' />
+        {this.hasNonDefaultProject() && <span className='dashboard-tile-project-button-indicator' />}
+      </button>
+    )
+  }
+
+  renderProjectModal = () => {
+    if (!this.shouldShowProjectPicker()) {
+      return null
+    }
+
+    return (
+      <Modal
+        isVisible={this.state.isProjectModalOpen}
+        title='Change Project'
+        subtitle='Choose which project this tile should query.'
+        width='400px'
+        confirmText='Change Project'
+        confirmDisabled={
+          this.state.pendingProjectId == null ||
+          this.projectIdsEqual(this.state.pendingProjectId, this.props.tile?.projectId)
+        }
+        onClose={this.closeProjectModal}
+        onConfirm={this.confirmProjectChange}
+      >
+        <Select
+          fullWidth
+          placeholder='Select a project'
+          options={this.props.projectSelectList.map((project) => ({
+            value: project.projectId,
+            label: project.displayName,
+          }))}
+          value={this.state.pendingProjectId}
+          onChange={(projectId) => this.setState({ pendingProjectId: projectId })}
+          color='text'
+        />
+      </Modal>
+    )
+  }
+
   renderRTPopoverContent = (queryResponse) => {
     const response = queryResponse || this.props.tile?.queryResponse
     if (!response) return null
@@ -1221,7 +1587,7 @@ export class DashboardTile extends React.Component {
                   onMouseLeave={() => this.setState({ isRTHovered: false })}
                 >
                   <ReverseTranslation
-                    authentication={this.props.authentication}
+                    authentication={this.getTileAuthentication()}
                     queryResponse={this.props.tile.queryResponse}
                     tooltipID={this.props.tooltipID}
                     enableEditReverseTranslation={this.props.autoQLConfig?.enableEditReverseTranslation}
@@ -1251,7 +1617,10 @@ export class DashboardTile extends React.Component {
                 onBlur={() => this.setState({ isTitleInputFocused: false })}
               />
             </div>
+
+            {this.renderProjectButton()}
           </div>
+          {this.renderProjectModal()}
         </div>
       )
     }
@@ -1266,6 +1635,7 @@ export class DashboardTile extends React.Component {
         >
           {fullTitle}
         </span>
+        {this.renderProjectBadge()}
         <div className='dashboard-tile-title-divider'></div>
       </div>
     )
@@ -1360,8 +1730,8 @@ export class DashboardTile extends React.Component {
         <div className='dashboard-tile-toolbars-right-container'>
           {!hideOnError && (
             <OptionsToolbar
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
+              authentication={this.getTileAuthentication()}
+              autoQLConfig={this.getTileAutoQLConfig()}
               onErrorCallback={this.props.onErrorCallback}
               onSuccessAlert={this.props.onSuccessCallback}
               onCSVDownloadStart={this.onCSVDownloadStart}
@@ -1400,8 +1770,8 @@ export class DashboardTile extends React.Component {
 
     return (
       <QueryOutput
-        authentication={this.props.authentication}
-        autoQLConfig={this.props.autoQLConfig}
+        authentication={this.getTileAuthentication()}
+        autoQLConfig={this.getTileAutoQLConfig()}
         dataFormatting={this.props.dataFormatting}
         renderTooltips={false}
         autoSelectQueryValidationSuggestion={false}
@@ -1478,6 +1848,10 @@ export class DashboardTile extends React.Component {
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}`,
         initialDisplayType,
         queryResponse: this.props.tile?.queryResponse,
+        // Pin drilldowns to the tile's already-cached query id — a cached-refresh response can carry
+        // a different (fresh) query_id for what is logically the same cached query, and the backend
+        // 500s if that fresh id is used for drilldown.
+        queryId: this.props.tile?.queryId,
         initialTableConfigs: (() => {
           const dataConfig = this.props.tile?.dataConfig || {}
           // Extract columnOverrides from tile.columns if it exists (for date precision persistence)
@@ -1718,8 +2092,8 @@ export class DashboardTile extends React.Component {
             <FollowOnModal
               isVisible={this.state.isFollowOnModalOpen}
               onClose={() => this.setState({ isFollowOnModalOpen: false })}
-              authentication={this.props.authentication}
-              autoQLConfig={this.props.autoQLConfig}
+              authentication={this.getTileAuthentication()}
+              autoQLConfig={this.getTileAutoQLConfig()}
               dataFormatting={this.props.dataFormatting}
               responseRef={this.state.responseRef}
               queryResponse={this.props.tile?.queryResponse}
