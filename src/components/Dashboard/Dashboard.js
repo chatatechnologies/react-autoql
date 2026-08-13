@@ -211,7 +211,7 @@ class DashboardWithoutTheme extends React.Component {
     getAuthenticationForProject: undefined,
     onTileAuthExpired: undefined,
     showProjectIndicator: true,
-    isProjectDashboard: false,
+    isProjectDashboard: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {

@@ -239,7 +239,7 @@ export class DashboardTile extends React.Component {
     getAuthenticationForProject: undefined,
     onTileAuthExpired: undefined,
     showProjectIndicator: true,
-    isProjectDashboard: false,
+    isProjectDashboard: undefined,
     onExecutionStatusChange: undefined,
   }
 
@@ -805,6 +805,24 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  getDashboardSource = () => {
+    const { dashboardId, isProjectDashboard, isEditing } = this.props
+    if (!dashboardId) {
+      return 'dashboards.user'
+    }
+
+    const parts = ['dashboards']
+    if (isProjectDashboard !== undefined) {
+      parts.push(isProjectDashboard ? 'project' : 'custom')
+    }
+    parts.push(dashboardId)
+    if (isEditing) {
+      parts.push('edit')
+    }
+
+    return parts.join('.')
+  }
+
   processQuery = ({
     query,
     userSelection,
@@ -842,7 +860,7 @@ export class DashboardTile extends React.Component {
         filters: currentSessionFilters,
         orders: currentOrders,
         tableFilters: currentFilter,
-        source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
+        source: this.getDashboardSource(),
         scope: 'dashboards',
         userSelection,
         cancelToken: axiosSource?.token,
@@ -1750,7 +1768,7 @@ export class DashboardTile extends React.Component {
               enableFollowOnQuery={this.props.enableFollowOnQuery}
               onOpenFollowOnModal={this.onOpenFollowOnModal}
               isEditing={this.props.isEditing}
-              source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+              source={this.getDashboardSource()}
               scope={this.props.scope}
               {...toolbarProps}
             />
@@ -1788,7 +1806,7 @@ export class DashboardTile extends React.Component {
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
-        source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+        source={this.getDashboardSource()}
         scope='dashboards'
         autoHeight={false}
         height='100%'
