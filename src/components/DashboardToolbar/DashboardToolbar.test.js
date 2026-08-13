@@ -30,7 +30,7 @@ describe('DashboardToolbar export snapshot option', () => {
     const wrapper = setup({ isProjectDashboard: false, isEditable: true, isDashboardFullyExecuted: false })
     const item = exportItem(wrapper)
     expect(item.prop('disabled')).toBe(true)
-    expect(item.prop('tooltip')).toBe('Please run or remove any empty or failed tiles to enable export')
+    expect(item.prop('tooltip')).toBe('All tiles must complete successfully with data before you can export.')
     expect(item.prop('tooltipID')).toBe('toolbar-tooltip')
     wrapper.unmount()
   })
