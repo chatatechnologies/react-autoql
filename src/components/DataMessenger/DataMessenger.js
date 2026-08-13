@@ -144,6 +144,8 @@ export class DataMessenger extends React.Component {
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     enableFollowOnQuery: PropTypes.bool,
 
@@ -194,7 +196,7 @@ export class DataMessenger extends React.Component {
     enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
-    inputPlaceholder: 'Type your queries here',
+    inputPlaceholder: undefined,
     dataPageSize: undefined,
     notificationCount: undefined,
     defaultOpen: false,
@@ -216,6 +218,8 @@ export class DataMessenger extends React.Component {
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     setMobileActivePage: () => {},
     // Callbacks
@@ -287,6 +291,7 @@ export class DataMessenger extends React.Component {
     try {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
+      this.stopResizingDrawer()
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)
@@ -869,7 +874,7 @@ export class DataMessenger extends React.Component {
           onRTValueLabelClick={valueLabelClickFn}
           queryFilters={this.state.sessionFilters}
           introMessages={this.dataMessengerIntroMessages}
-          inputPlaceholder={this.props.inputPlaceholder}
+          inputPlaceholder={this.props.inputPlaceholder ?? lang.queryPrompt}
           autoChartAggregations={this.props.autoChartAggregations}
           executeQuery={(queryRequestParams) => {
             this.dataMessengerContentRef?.animateInputTextAndSubmit({
@@ -1034,11 +1039,31 @@ export class DataMessenger extends React.Component {
   }
 
   resizeDrawer = (e) => {
+    // buttons===0 means mouseup fired outside the document; stop resizing so the listener doesn't run forever.
+    if (e.buttons === 0) {
+      this.stopResizingDrawer()
+      return
+    }
+
+    this.latestResizePageX = e.pageX
+    this.latestResizePageY = e.pageY
+
+    if (this.resizeAnimationFrame) {
+      return
+    }
+
+    this.resizeAnimationFrame = window.requestAnimationFrame(() => {
+      this.resizeAnimationFrame = undefined
+      this.performResizeDrawer(this.latestResizePageX, this.latestResizePageY)
+    })
+  }
+
+  performResizeDrawer = (pageX, pageY) => {
     const { placement } = this.state
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
     if (placement === 'right') {
-      const offset = (this.state.startingResizePosition?.x ?? 0) - e.pageX
+      const offset = (this.state.startingResizePosition?.x ?? 0) - pageX
       let newWidth = (this.state.startingResizePosition?.width ?? 0) + offset
       if (newWidth > maxWidth) {
         newWidth = maxWidth
@@ -1053,7 +1078,7 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'left') {
-      const offset = e.pageX - (this.state.startingResizePosition?.x ?? 0)
+      const offset = pageX - (this.state.startingResizePosition?.x ?? 0)
       let newWidth = (this.state.startingResizePosition?.width ?? 0) + offset
       if (newWidth > maxWidth) {
         newWidth = maxWidth
@@ -1068,7 +1093,7 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'bottom') {
-      const offset = (this.state.startingResizePosition?.y ?? 0) - e.pageY
+      const offset = (this.state.startingResizePosition?.y ?? 0) - pageY
       let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
       if (newHeight > maxHeight) {
         newHeight = maxHeight
@@ -1083,10 +1108,10 @@ export class DataMessenger extends React.Component {
         })
       }
     } else if (placement === 'top') {
-      const offset = e.pageY - (this.state.startingResizePosition?.y ?? 0)
+      const offset = pageY - (this.state.startingResizePosition?.y ?? 0)
       let newHeight = (this.state.startingResizePosition?.height ?? 0) + offset
-      if (newHeight > this.maxHeight) {
-        newHeight = this.maxHeight
+      if (newHeight > maxHeight) {
+        newHeight = maxHeight
       }
       if (newHeight < this.minHeight) {
         newHeight = this.minHeight
@@ -1101,11 +1126,12 @@ export class DataMessenger extends React.Component {
   }
 
   stopResizingDrawer = () => {
-    if (this.state.placement === 'right' || this.state.placement === 'left') {
-      this.setState({
-        isResizing: false,
-      })
-    } else if (this.state.placement === 'top' || this.state.placement === 'bottom') {
+    if (this.resizeAnimationFrame) {
+      window.cancelAnimationFrame(this.resizeAnimationFrame)
+      this.resizeAnimationFrame = undefined
+    }
+
+    if (this._isMounted && this.state.isResizing) {
       this.setState({
         isResizing: false,
       })

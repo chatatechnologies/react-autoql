@@ -21,7 +21,6 @@ import {
   ColumnTypes,
   MAX_DATA_PAGE_SIZE,
   getDayJSObj,
-  setColumnVisibility,
   sortDataByColumn,
   filterDataByColumn,
   getAuthentication,
@@ -418,6 +417,8 @@ export default class ChataTable extends React.Component {
       clearTimeout(this.setDimensionsTimeout)
       clearTimeout(this.setStateTimeout)
       clearTimeout(this._debounceTimeout)
+      clearTimeout(this.filterCountRefreshTimeout)
+      clearTimeout(this.updateColumnTimeout)
 
       // Clear any pending filter check timeouts to prevent state updates after unmount
       if (this._filterCheckTimeout) {
@@ -426,6 +427,12 @@ export default class ChataTable extends React.Component {
       }
 
       this.cancelCurrentRequest()
+
+      if (this.tabulatorScrollEl) {
+        this.tabulatorScrollEl.removeEventListener('wheel', this.handleTableWheel)
+        this.tabulatorScrollEl = null
+      }
+
       // Remove any pivot header handlers we attached
       if (this.pivotHeaderElements) {
         this.pivotHeaderElements.forEach((el) => {
@@ -704,6 +711,35 @@ export default class ChataTable extends React.Component {
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
+
+      if (this.tabulatorScrollEl) {
+        this.tabulatorScrollEl.removeEventListener('wheel', this.handleTableWheel)
+        this.tabulatorScrollEl = null
+      }
+
+      const scrollEl = this.ref?.tabulator?.rowManager?.element
+      if (scrollEl) {
+        this.tabulatorScrollEl = scrollEl
+        this.tabulatorScrollEl.addEventListener('wheel', this.handleTableWheel, { passive: false })
+      }
+    }
+  }
+
+  // Prevent the browser's two-finger back/forward navigation gesture from firing
+  // when horizontal scroll momentum overscrolls past the table's edge. Paired with
+  // `overscroll-behavior-x: contain` in ChataTable.scss - that alone doesn't fully
+  // cover Safari's trackpad swipe-navigation gesture, so both are needed, not redundant.
+  handleTableWheel = (e) => {
+    const el = this.tabulatorScrollEl
+    if (!el || !e.deltaX || !el.clientWidth) {
+      return
+    }
+
+    const atLeftEdge = el.scrollLeft <= 0
+    const atRightEdge = el.scrollLeft >= el.scrollWidth - el.clientWidth
+
+    if ((atLeftEdge && e.deltaX < 0) || (atRightEdge && e.deltaX > 0)) {
+      e.preventDefault()
     }
   }
 
@@ -1061,11 +1097,12 @@ export default class ChataTable extends React.Component {
       }
       // Force re-render to update filter count display after data is processed
       // Note: this.filterCount is already set correctly in ajaxRequestFunc from the queryFn response
-      if (this._isMounted) {
-        setTimeout(() => {
-          this.forceUpdate()
-        }, 0)
-      }
+      clearTimeout(this.filterCountRefreshTimeout)
+      this.filterCountRefreshTimeout = setTimeout(() => {
+        // Must re-check here, not before scheduling - the table can unmount within this tick
+        if (!this._isMounted) return
+        this.forceUpdate()
+      }, 0)
     } else {
       return { data: [], last_page: this.totalPages }
     }
@@ -1535,6 +1572,18 @@ export default class ChataTable extends React.Component {
     this.props.onColumnFreezeChange(column.name, !this.isColumnFrozen(column))
   }
 
+  onHideColumnClick = (column) => {
+    this.setState({ contextMenuColumn: undefined })
+    const newColumns = this.props.columns.map((col) =>
+      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    )
+    this.props.updateColumns(
+      newColumns,
+      this.props.response?.data?.data?.fe_req,
+      this.props.response?.data?.data?.available_selects,
+    )
+  }
+
   onColumnMoved = (movedColumn, columns) => {
     // Match by field, not array index — props.columns may already be user-reordered
     const orderedNames = columns
@@ -1569,26 +1618,27 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    // TODO: re-enable when column visibility is re-added for dashboards (without API call)
-    // const newColumns = this.props.columns.map((col) =>
-    //   col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
-    // )
-    // this.props.updateColumns(
-    //   newColumns,
-    //   this.props.response?.data?.data?.fe_req,
-    //   this.props.response?.data?.data?.available_selects,
-    // )
-    // setColumnVisibility({ ...this.props.authentication, columns: newColumns }).catch((error) => {
-    //   console.error(error)
-    // })
+    const newColumns = this.props.columns.map((col) =>
+      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
+    )
+    this.props.updateColumns(
+      newColumns,
+      this.props.response?.data?.data?.fe_req,
+      this.props.response?.data?.data?.available_selects,
+    )
   }
 
   updateColumn = (field, newParams) => {
     this.ref?.updateColumn?.(field, newParams)?.then(() => {
+      if (!this._isMounted) return
+
       if (this.props.keepScrolledRight) {
         this.scrollToRight()
       }
-      setTimeout(() => {
+
+      clearTimeout(this.updateColumnTimeout)
+      this.updateColumnTimeout = setTimeout(() => {
+        if (!this._isMounted) return
         this.setHeaderInputEventListeners()
       }, 0)
     })
@@ -1710,11 +1760,10 @@ export default class ChataTable extends React.Component {
               Edit Column
             </li>
           )}
-          {/* TODO: re-enable when column visibility is re-added for dashboards */}
-          {/* <li onClick={this.onRemoveColumnClick}>
-            <Icon type='close' />
-            Remove Column
-          </li> */}
+          <li onClick={() => this.onHideColumnClick(contextMenuColumn)}>
+            <Icon type='eye' />
+            Hide Column
+          </li>
         </ul>
       </div>
     )
@@ -1963,6 +2012,7 @@ export default class ChataTable extends React.Component {
   }
 
   onScrollVertical = (top) => {
+    if (!this._isMounted) return
     this.setState({ scrollTop: top })
   }
 

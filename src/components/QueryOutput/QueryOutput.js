@@ -62,7 +62,6 @@ import {
   isDataLimited,
   MAX_CHART_ELEMENTS,
   formatAdditionalSelectColumn,
-  setColumnVisibility,
   ColumnTypes,
   isColumnIndexConfigValid,
   isDrilldown,
@@ -110,6 +109,10 @@ export class QueryOutput extends React.Component {
 
     // Ref to store latest column overrides for synchronous access in applyColumnOverrides
     this.latestColumnOverrides = props.initialTableConfigs?.columnOverrides || {}
+    // Client-side column visibility map: { [columnName]: boolean }, set once at construction.
+    // Copied (not referenced) since this map is mutated in place in updateColumns, and the
+    // source object may be a frozen/shared dashboard tile config.
+    this.initialColumnVisibility = { ...(props.initialTableConfigs?.columnVisibility || {}) }
     // WeakMap to track contextmenu handlers per cell element — prevents duplicate listeners on re-render
     this.cellContextMenuHandlers = new WeakMap()
     // Circuit breaker: counts consecutive config-correction attempts since last new query response.
@@ -125,8 +128,6 @@ export class QueryOutput extends React.Component {
     this.queryResponse = _cloneDeep(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
-    this.drilldownQueryID =
-      this.queryResponse?.data?.data?.drilldown_query_id || this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
     this.tableParams = {
       sort: props?.initialTableParams?.sort || [],
@@ -301,6 +302,8 @@ export class QueryOutput extends React.Component {
         data: PropTypes.object,
       }),
     }),
+    // Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query
+    queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     onQueryValidationSelectOption: PropTypes.func,
@@ -396,6 +399,7 @@ export class QueryOutput extends React.Component {
     initialAggConfig: undefined,
 
     queryResponse: undefined,
+    queryId: undefined,
     initialDisplayType: null,
     onSuggestionClick: undefined,
     autoSelectQueryValidationSuggestion: true,
@@ -568,8 +572,6 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
           }
-          this.drilldownQueryID = this.queryResponse?.data?.data?.drilldown_query_id || this.queryID
-
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
           this.resetTableConfig(newColumns)
@@ -733,6 +735,8 @@ export class QueryOutput extends React.Component {
         const dataConfig = {
           tableConfig: this.tableConfig,
           pivotTableConfig: this.pivotTableConfig,
+          // Must carry columnOverrides too — persisted wholesale, so omitting it drops existing overrides on save.
+          columnOverrides: this.state.columnOverrides,
         }
 
         this.props.onColumnChange(
@@ -1275,7 +1279,6 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.drilldownQueryID = response?.data?.data?.drilldown_query_id || this.queryID
       this.queryResponse = _cloneDeep(response)
       this.tableData = response?.data?.data?.rows || []
 
@@ -1316,6 +1319,14 @@ export class QueryOutput extends React.Component {
 
   updateColumns = (columns, feReq, availableSelects) => {
     if (columns && this._isMounted) {
+      // Sync the live visibility map so formatColumnsForTable doesn't clobber explicit is_visible/visible changes
+      columns.forEach((col) => {
+        const visibility = col.is_visible ?? col.visible
+        if (col.name && visibility !== undefined) {
+          this.initialColumnVisibility[col.name] = visibility
+        }
+      })
+
       const newColumns = this.formatColumnsForTable(columns, feReq?.additional_selects)
 
       const visibleColumnsChanged = !_isEqual(
@@ -1762,7 +1773,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.drilldownQueryID,
+              queryID: this.props.queryId || this.queryID,
               source: this.props.source,
               groupBys,
               pageSize,
@@ -2186,11 +2197,63 @@ export class QueryOutput extends React.Component {
       this.generatePivotData()
     }
 
+    // Must run after generatePivotData (relies on both staying synchronous) so its axisSorts reset doesn't win.
+    this.syncChartSortWithTableSort()
+
     // Update filter badge in OptionsToolbar
     setTimeout(() => {
       if (!this._isMounted) return
       this.updateToolbars()
     }, 0)
+  }
+
+  // Keeps the chart's row order (and its axis sort popover selection) in sync with the table's own sort.
+  // Only calls onAxisSortChange when the resolved sort actually changed, to avoid needless updates.
+  syncChartSortWithTableSort = () => {
+    const sorter = this.tableParams?.sort?.[0]
+
+    if (!sorter) {
+      if (this.lastSyncedTableSort) {
+        const { axis, columnIndex } = this.lastSyncedTableSort
+        this.lastSyncedTableSort = undefined
+        this.onAxisSortChange(axis, columnIndex, null, { skipRemount: true })
+      }
+      return
+    }
+
+    const columnIndex = this.resolveHeaderFilterColumnIndex(sorter.field, this.state.columns)
+    if (columnIndex === undefined) {
+      return
+    }
+
+    const dir = sorter.dir === 'desc' ? 'desc' : 'asc'
+    const isHeatmapOrBubble =
+      this.state.displayType === DisplayTypes.HEATMAP || this.state.displayType === DisplayTypes.BUBBLE
+
+    let axis
+    let sortType
+    if (columnIndex === this.tableConfig?.stringColumnIndex) {
+      axis = 'x'
+      sortType = `alpha-${dir}`
+    } else if (!isHeatmapOrBubble && this.tableConfig?.numberColumnIndices?.includes(columnIndex)) {
+      // AxisSortPopover only offers a numeric "value" sort for non-heatmap/bubble charts
+      // (stringColumnOnly), so don't produce axis-sort state those charts' own UI can't reach.
+      axis = 'y'
+      sortType = `value-${dir}`
+    } else {
+      return
+    }
+
+    const isUnchanged =
+      this.lastSyncedTableSort?.axis === axis &&
+      this.lastSyncedTableSort?.columnIndex === columnIndex &&
+      this.lastSyncedTableSort?.sortType === sortType
+    if (isUnchanged) {
+      return
+    }
+
+    this.lastSyncedTableSort = { axis, columnIndex, sortType }
+    this.onAxisSortChange(axis, columnIndex, sortType, { skipRemount: true })
   }
 
   onNewData = (response) => {
@@ -2252,10 +2315,14 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  onAxisSortChange = (axis, columnIndex, sortType) => {
+  onAxisSortChange = (axis, columnIndex, sortType, { skipRemount } = {}) => {
     // axis: 'x' or 'y'
     // columnIndex: the index of the column on the axis (for state tracking only)
     // sortType: 'alpha-asc', 'alpha-desc', 'value-asc', 'value-desc', or null
+    // skipRemount: true when called from syncChartSortWithTableSort while the chart isn't
+    // being interacted with directly - avoids force-remounting ChataChart (key={chartID})
+    // even while it's hidden behind the table view, which would wipe its local-only state
+    // (e.g. scale-toggle UI state) on every table sort.
 
     // Update axis sort state (ChataChart performs actual sorting)
     this.setState((prevState) => {
@@ -2280,7 +2347,7 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      return { axisSorts: newAxisSorts, chartID: uuid() }
+      return skipRemount ? { axisSorts: newAxisSorts } : { axisSorts: newAxisSorts, chartID: uuid() }
     })
   }
 
@@ -2968,9 +3035,12 @@ export class QueryOutput extends React.Component {
 
       newCol.mutateLink = 'Custom'
 
-      // Visibility flag: this can be changed through the column visibility editor modal
-      newCol.visible = col.is_visible
-      newCol.download = col.is_visible
+      // Visibility flag: driven by client-side columnVisibility map; defaults to true (API is_visible is deprecated)
+      const visOverride = this.initialColumnVisibility?.[col.name]
+      const isVisible = visOverride !== undefined ? visOverride : true
+      newCol.visible = isVisible
+      newCol.download = isVisible
+      newCol.is_visible = isVisible
 
       // Preserve frozen state across rebuilds, matched by name; falls back to initialFrozenColumns pre-mount.
       const prevCol = this.state?.columns?.find((c) => c.name === col.name)
@@ -3966,30 +4036,10 @@ export class QueryOutput extends React.Component {
   }
 
   _handleHiddenColumn = (column) => {
-    this.setState({ isAddingColumn: true })
-    this.tableRef?.setPageLoading(true)
-
-    const newColumns = this.state.columns.map((col) => {
-      if (col.name === column.name) {
-        return {
-          ...col,
-          is_visible: true,
-        }
-      }
-
-      return col
-    })
-
-    setColumnVisibility({ ...this.props.authentication, columns: newColumns })
-      .then(() => this.updateColumns(newColumns))
-      .catch((error) => {
-        console.error(error)
-        this.props.onErrorCallback(error)
-      })
-      .finally(() => {
-        this.tableRef?.setPageLoading(false)
-        this.setState({ isAddingColumn: false })
-      })
+    const newColumns = this.state.columns.map((col) =>
+      col.name === column.name ? { ...col, is_visible: true, visible: true } : col,
+    )
+    this.updateColumns(newColumns)
   }
 
   _handleAddColumnForTable = (column, sqlFn) => {
@@ -4276,7 +4326,6 @@ export class QueryOutput extends React.Component {
     const usePivotData = this.usePivotDataForChart()
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
-      !this.potentiallySupportsDatePivot() &&
       this.state?.displayType !== DisplayTypes.NETWORK_GRAPH &&
       this.state?.displayType !== DisplayTypes.SANKEY
     const chartDataSource =

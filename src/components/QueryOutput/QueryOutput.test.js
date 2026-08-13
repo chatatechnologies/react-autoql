@@ -42,29 +42,60 @@ describe('supported display types', () => {
     queryResponse.data.data.rows = [queryResponse.data.data.rows[0]]
     const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={queryResponse} queryFn={() => {}} />)
     const supportedDisplayTypes = queryOutput.instance().getCurrentSupportedDisplayTypes()
-    expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar'])
+    expect(supportedDisplayTypes).toEqual(['table', 'column', 'bar', 'line'])
     queryOutput.unmount()
   })
 })
 
 describe('test table edge cases', () => {
   describe('all columns initially hidden then visibility changed', () => {
+    // Visibility is client-side only - the API's is_visible is deprecated and always overridden on
+    // mount, so hidden columns must be expressed via initialTableConfigs.columnVisibility.
     const testCaseHiddenColumns = _cloneDeep(testCases[8])
-    testCaseHiddenColumns.data.data.columns = testCaseHiddenColumns.data.data.columns.map((column) => {
-      return {
-        ...column,
-        is_visible: false,
-      }
-    })
+    const allColumnsHiddenConfig = {
+      columnVisibility: testCaseHiddenColumns.data.data.columns.reduce(
+        (map, column) => ({ ...map, [column.name]: false }),
+        {},
+      ),
+    }
+
     test('columns hidden message shows when all columns are hidden', () => {
-      const queryOutput = mount(<QueryOutput queryResponse={testCaseHiddenColumns} initialDisplayType='text' />)
+      const queryOutput = mount(
+        <QueryOutput
+          queryResponse={testCaseHiddenColumns}
+          initialTableConfigs={allColumnsHiddenConfig}
+          initialDisplayType='text'
+        />,
+      )
 
       const hiddenColMessage = findByTestAttr(queryOutput, 'columns-hidden-message')
       expect(hiddenColMessage.exists()).toBe(true)
       queryOutput.unmount()
     })
+
+    test('response-level is_visible: false is ignored - only columnVisibility hides columns', () => {
+      const responseHiddenOnly = _cloneDeep(testCases[8])
+      responseHiddenOnly.data.data.columns = responseHiddenOnly.data.data.columns.map((column) => ({
+        ...column,
+        is_visible: false,
+      }))
+
+      const queryOutput = mount(<QueryOutput queryResponse={responseHiddenOnly} queryFn={() => {}} />)
+      const columns = queryOutput.find(QueryOutputWithoutTheme).instance().getColumns()
+
+      expect(columns.every((col) => col.is_visible)).toBe(true)
+      queryOutput.unmount()
+    })
+
     describe('display type is updated when column visibility is changed', () => {
-      const queryOutputVisible = mount(<QueryOutput queryResponse={testCaseHiddenColumns} queryFn={() => {}} />)
+      const queryOutputVisible = mount(
+        <QueryOutput
+          queryResponse={testCaseHiddenColumns}
+          initialTableConfigs={allColumnsHiddenConfig}
+          initialDisplayType='table'
+          queryFn={() => {}}
+        />,
+      )
 
       test('display type is text if all columns hidden', () => {
         const displayType = queryOutputVisible.find(QueryOutputWithoutTheme).instance().state.displayType
@@ -73,7 +104,10 @@ describe('test table edge cases', () => {
       })
 
       test('display type is table after columns are unhidden', () => {
-        const newColumns = _cloneDeep(testCases[8].data.data.columns)
+        const newColumns = _cloneDeep(testCases[8].data.data.columns).map((column) => ({
+          ...column,
+          is_visible: true,
+        }))
 
         queryOutputVisible.find(QueryOutputWithoutTheme).instance().updateColumns(newColumns)
 

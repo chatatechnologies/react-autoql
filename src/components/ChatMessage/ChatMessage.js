@@ -17,6 +17,7 @@ import {
   MAX_DATA_PAGE_SIZE,
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
+import { useMagicWandBillingGate, getMagicWandBillingErrorState, MAGIC_WAND_BILLING_GATE_MESSAGES } from '../../hooks/billing'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -38,7 +39,7 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './ChatMessage.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
 
-export default class ChatMessage extends React.Component {
+export class ChatMessage extends React.Component {
   // Static Set to track which message IDs have already animated
   // This persists across component mounts/unmounts (e.g., when DM closes/reopens)
   static animatedMessageIds = new Set()
@@ -88,6 +89,7 @@ export default class ChatMessage extends React.Component {
       isFocusingSummary: false,
       summaryResponseData, // Store response data for focusing summaries
       focusError: null, // Error message for focus summary
+      billingGateState: null,
       quoteResult: null, // { wandable, cost } when quote is fetched
       isFetchingQuote: false,
       isFollowOnThreadOpen: false,
@@ -125,6 +127,7 @@ export default class ChatMessage extends React.Component {
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
+    queryMessageID: PropTypes.string,
     autoChartAggregations: PropTypes.bool,
     onConditionClickCallback: PropTypes.func,
     addMessageToDM: PropTypes.func,
@@ -139,6 +142,10 @@ export default class ChatMessage extends React.Component {
     setGeneratingSummary: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    quotaStatus: PropTypes.string,
+    billingExecutionType: PropTypes.oneOf(['STRIPE', 'EXPORT']),
+    onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
     enableFollowOnQuery: PropTypes.bool,
@@ -178,6 +185,10 @@ export default class ChatMessage extends React.Component {
     onMessageResize: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    quotaStatus: undefined,
+    billingExecutionType: undefined,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
   }
 
@@ -545,8 +556,18 @@ export default class ChatMessage extends React.Component {
       return
     }
 
+    if (this.props.enableBillingGate && this.props.quotaStatus === 'at_or_over_quota') {
+      this.setState({ billingGateState: 'over_quota' })
+      this.props.addMessageToDM?.({
+        content: MAGIC_WAND_BILLING_GATE_MESSAGES.over_quota,
+        type: 'text',
+        isResponse: true,
+      })
+      return
+    }
+
     // Set loading state for this specific message
-    this.setState({ isGeneratingSummary: true, focusError: null })
+    this.setState({ isGeneratingSummary: true, focusError: null, billingGateState: null })
     // Also set loading state in parent ChatContent to show loading dots at bottom
     this.props.setGeneratingSummary?.(true)
 
@@ -620,22 +641,33 @@ export default class ChatMessage extends React.Component {
         })
       }
     } catch (error) {
-      // Handle API errors - check if error response has a message
-      const errorMessage =
-        error?.response?.data?.data?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to generate summary. Please try again.'
+      const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
 
-      // Set error state for dropdown display
-      this.setState({ focusError: errorMessage })
+      if (gateState) {
+        this.setState({ billingGateState: gateState })
+        this.props.addMessageToDM?.({
+          content: MAGIC_WAND_BILLING_GATE_MESSAGES[gateState],
+          type: 'text',
+          isResponse: true,
+        })
+      } else {
+        // Handle API errors - check if error response has a message
+        const errorMessage =
+          error?.response?.data?.data?.message ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to generate summary. Please try again.'
 
-      // Add error message as a new message bubble
-      this.props.addMessageToDM?.({
-        content: errorMessage,
-        type: 'text',
-        isResponse: true,
-      })
+        // Set error state for dropdown display
+        this.setState({ focusError: errorMessage })
+
+        // Add error message as a new message bubble
+        this.props.addMessageToDM?.({
+          content: errorMessage,
+          type: 'text',
+          isResponse: true,
+        })
+      }
     } finally {
       // Clear loading state for this specific message
       this.setState({ isGeneratingSummary: false })
@@ -645,7 +677,7 @@ export default class ChatMessage extends React.Component {
   }
 
   handleFocusPromptChange = (e) => {
-    this.setState({ focusPrompt: e.target.value, focusError: null, quoteResult: null })
+    this.setState({ focusPrompt: e.target.value, focusError: null, quoteResult: null, billingGateState: null })
   }
 
   handleFocusPromptKeyDown = (e) => {
@@ -663,7 +695,12 @@ export default class ChatMessage extends React.Component {
 
     if (!filteredRows || !currentColumns) return
 
-    this.setState({ isFetchingQuote: true, focusError: null, quoteResult: null })
+    if (this.props.enableBillingGate && this.props.quotaStatus === 'at_or_over_quota') {
+      this.setState({ focusError: null, quoteResult: null, billingGateState: 'over_quota' })
+      return
+    }
+
+    this.setState({ isFetchingQuote: true, focusError: null, quoteResult: null, billingGateState: null })
 
     const auth = getAuthentication(this.props.authentication, this.props.autoQLConfig)
     if (!auth.apiKey || !auth.domain) {
@@ -707,12 +744,17 @@ export default class ChatMessage extends React.Component {
         this.setState({ focusError: 'Unable to get quote. Please try again.' })
       }
     } catch (error) {
-      const errorMessage =
-        error?.response?.data?.data?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Unable to get quote. Please try again.'
-      this.setState({ focusError: errorMessage })
+      const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
+      if (gateState) {
+        this.setState({ billingGateState: gateState })
+      } else {
+        const errorMessage =
+          error?.response?.data?.data?.message ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Unable to get quote. Please try again.'
+        this.setState({ focusError: errorMessage })
+      }
     } finally {
       this.setState({ isFetchingQuote: false })
     }
@@ -748,8 +790,14 @@ export default class ChatMessage extends React.Component {
       return
     }
 
+    if (this.props.enableBillingGate && this.props.quotaStatus === 'at_or_over_quota') {
+      this.setState({ billingGateState: 'over_quota' })
+      this.props.onErrorCallback?.(MAGIC_WAND_BILLING_GATE_MESSAGES.over_quota)
+      return
+    }
+
     // Set loading state and clear any previous errors
-    this.setState({ isFocusingSummary: true, focusError: null })
+    this.setState({ isFocusingSummary: true, focusError: null, billingGateState: null })
     this.props.setGeneratingSummary?.(true)
 
     try {
@@ -795,15 +843,22 @@ export default class ChatMessage extends React.Component {
         this.props.onErrorCallback?.(displayMessage)
       }
     } catch (error) {
-      // Handle API errors
-      const errorMessage =
-        error?.response?.data?.data?.message ||
-        error?.response?.data?.message ||
-        error?.message ||
-        'Failed to focus summary. Please try again.'
+      const gateState = this.props.enableBillingGate ? getMagicWandBillingErrorState(error) : null
 
-      this.setState({ focusError: errorMessage })
-      this.props.onErrorCallback?.(errorMessage)
+      if (gateState) {
+        this.setState({ billingGateState: gateState })
+        this.props.onErrorCallback?.(MAGIC_WAND_BILLING_GATE_MESSAGES[gateState])
+      } else {
+        // Handle API errors
+        const errorMessage =
+          error?.response?.data?.data?.message ||
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to focus summary. Please try again.'
+
+        this.setState({ focusError: errorMessage })
+        this.props.onErrorCallback?.(errorMessage)
+      }
     } finally {
       // Clear loading state
       this.setState({ isFocusingSummary: false })
@@ -1146,6 +1201,9 @@ export default class ChatMessage extends React.Component {
                   quoteResult={this.state.quoteResult}
                   isFetchingQuote={this.state.isFetchingQuote}
                   focusError={focusError}
+                  billingGateState={this.state.billingGateState}
+                  onIncreaseQuota={this.props.onQuotaExceeded}
+                  billingExecutionType={this.props.billingExecutionType}
                   isAnalyzeDisabled={isDisabled}
                   isAnalyzeLoading={isGenerating}
                   inputDisabled={isGenerating}
@@ -1235,7 +1293,7 @@ export default class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.isValidConfig(this.state.dataConfig) ? this.state.dataConfig : undefined}
           onTableConfigChange={this.updateDataConfig}
-          onNoneOfTheseClick={this.props.onNoneOfTheseClick}
+          onNoneOfTheseClick={() => this.props.onNoneOfTheseClick(this.props.queryMessageID)}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}
           onRTValueLabelClick={this.props.onRTValueLabelClick}
@@ -1435,3 +1493,19 @@ export default class ChatMessage extends React.Component {
     )
   }
 }
+
+export default React.forwardRef(({ ...props }, ref) => {
+  const { quotaStatus, billingExecutionType } = useMagicWandBillingGate({
+    authentication: props.authentication,
+    enabled: !!props.enableBillingGate,
+  })
+
+  return (
+    <ChatMessage
+      {...props}
+      quotaStatus={quotaStatus}
+      billingExecutionType={billingExecutionType}
+      ref={ref}
+    />
+  )
+})

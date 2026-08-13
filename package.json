@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.31.0",
+  "version": "8.33.1",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -33,7 +33,7 @@
     "test:coverage": "npm test -- --coverage",
     "test:badges": "npm run test:coverage  && npx make-coverage-badge --output-path ./public/badge.svg",
     "test:staged": "cross-env NODE_OPTIONS= jest --findRelatedTests",
-    "build": "cross-env NODE_OPTIONS=--experimental-global-webcrypto rollup -c",
+    "build": "rollup -c",
     "lint": "eslint src/**/*.js",
     "lint:fix": "eslint --fix 'src/**/*.js'",
     "format": "prettier --write 'src/**/*.{js,css,md,json}' --config ./.prettierrc",
@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.11.27",
+    "autoql-fe-utils": "1.11.28",
     "axios": "^1.16.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",

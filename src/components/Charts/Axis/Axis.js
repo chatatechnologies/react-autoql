@@ -12,8 +12,6 @@ import {
   shouldLabelsRotate,
   DisplayTypes,
   ColumnTypes,
-  DateStringPrecisionTypes,
-  PrecisionTypes,
 } from 'autoql-fe-utils'
 
 import safeGetBBox from '../../../utils/safeGetBBox'
@@ -22,6 +20,7 @@ import { Legend } from '../Legend'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import AxisSortPopover from '../Axes/AxisSortPopover'
+import { dateBucketOptions } from '../Axes/dateBucketOptions'
 
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 
@@ -749,6 +748,7 @@ export default class Axis extends Component {
         numberColumnIndices2={this.props.numberColumnIndices2}
         stringColumnIndices={this.props.stringColumnIndices}
         stringColumnIndex={this.props.stringColumnIndex}
+        columnOverrides={this.props.columnOverrides}
         dateColumnsOnly={this.props.dateColumnsOnly}
         isAggregated={this.props.isAggregated}
         tooltipID={this.props.tooltipID}
@@ -786,27 +786,11 @@ export default class Axis extends Component {
   getPrecisionLabel = (override) => {
     if (!override) return null
 
-    const { type, precision } = override
+    const { precision } = override
 
-    // Map precision values to labels (matching StringAxisSelector dateBucketOptions)
-    const precisionLabelMap = {
-      [PrecisionTypes.YEAR]: 'Year',
-      [PrecisionTypes.QUARTER]: 'Quarter',
-      [PrecisionTypes.MONTH]: 'Month',
-      [PrecisionTypes.WEEK]: 'Week',
-      [PrecisionTypes.DAY]: 'Day',
-      [PrecisionTypes.DATE_HOUR]: 'Hour',
-      [PrecisionTypes.DATE_MINUTE]: 'Minute',
-      [PrecisionTypes.DATE_SECOND]: 'Second',
-      [DateStringPrecisionTypes.QUARTERONLY]: 'Quarter of Year',
-      [DateStringPrecisionTypes.MONTHONLY]: 'Month of Year',
-      [DateStringPrecisionTypes.WEEKONLY]: 'Week of Year',
-      [DateStringPrecisionTypes.DOM]: 'Day of Month',
-      [DateStringPrecisionTypes.DOW]: 'Day of Week',
-      [DateStringPrecisionTypes.HOUR]: 'Hour of Day',
-    }
-
-    return precisionLabelMap[precision] || null
+    // Single source of truth is dateBucketOptions (shared with StringAxisSelector)
+    const option = dateBucketOptions.find((o) => o.precision === precision)
+    return option?.label ?? null
   }
 
   renderAxisTitleText = () => {

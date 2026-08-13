@@ -18,6 +18,8 @@ export default class DrilldownTable extends React.Component {
     reportProblemCallback: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
   }
 
   static defaultProps = {
@@ -29,6 +31,8 @@ export default class DrilldownTable extends React.Component {
     reportProblemCallback: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -98,6 +102,8 @@ export default class DrilldownTable extends React.Component {
                 popoverAlign='end'
                 enableMagicWand={this.props.enableMagicWand}
                 showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                enableBillingGate={this.props.enableBillingGate}
+                onQuotaExceeded={this.props.onQuotaExceeded}
               />
             </div>
           </div>

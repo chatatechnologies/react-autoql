@@ -77,6 +77,8 @@ export default class ChatContent extends React.Component {
     executeQuery: PropTypes.func,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     enableLLMStyleEmptyState: PropTypes.bool,
     llmEmptyStateTitle: PropTypes.string,
@@ -95,6 +97,8 @@ export default class ChatContent extends React.Component {
     executeQuery: () => {},
     enableMagicWand: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
     enableLLMStyleEmptyState: false,
     llmEmptyStateTitle: undefined,
@@ -492,8 +496,8 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  onNoneOfTheseClick = () => {
-    this.addRequestMessage('None of these')
+  onNoneOfTheseClick = (queryMessageID) => {
+    this.addRequestMessage('None of these', queryMessageID)
     this.setState({ isQueryRunning: true })
 
     clearTimeout(this.feedbackTimeout)
@@ -509,6 +513,7 @@ export default class ChatContent extends React.Component {
               To continue, try asking another query.
             </div>
           ),
+          queryMessageID,
         })
       }
     }, 1000)
@@ -819,6 +824,7 @@ export default class ChatContent extends React.Component {
                       queryId={message.queryId}
                       queryText={message.query}
                       originalQueryID={message.originalQueryID}
+                      queryMessageID={message.queryMessageID}
                       isDataMessengerOpen={this.props.isDataMessengerOpen}
                       isActive={this.state.activeMessageId === message.id}
                       addMessageToDM={this.addResponseMessage}
@@ -869,6 +875,8 @@ export default class ChatContent extends React.Component {
                       preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
                       enableMagicWand={this.props.enableMagicWand}
                       showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                      enableBillingGate={this.props.enableBillingGate}
+                      onQuotaExceeded={this.props.onQuotaExceeded}
                       enableFollowOnQuery={this.props.enableFollowOnQuery}
                     />
                   )

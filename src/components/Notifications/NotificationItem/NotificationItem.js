@@ -78,6 +78,8 @@ export default class NotificationItem extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
+    enableBillingGate: PropTypes.bool,
+    onQuotaExceeded: PropTypes.func,
   }
 
   static defaultProps = {
@@ -93,6 +95,8 @@ export default class NotificationItem extends React.Component {
     enableMoreOptionsMenu: true,
     shouldRenderSummarySection: false,
     showMagicWandQuoteButton: false,
+    enableBillingGate: false,
+    onQuotaExceeded: undefined,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -547,6 +551,8 @@ export default class NotificationItem extends React.Component {
                     enableCustomColumns={this.props.enableCustomColumns}
                     enableMagicWand={this.props.enableMagicWand}
                     showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
+                    enableBillingGate={this.props.enableBillingGate}
+                    onQuotaExceeded={this.props.onQuotaExceeded}
                   />
                 )}
               </>

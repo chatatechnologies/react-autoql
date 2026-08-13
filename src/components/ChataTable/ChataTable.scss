@@ -569,6 +569,13 @@
       overflow: auto;
       background-color: inherit;
 
+      // Prevent horizontal scroll momentum from triggering the browser's
+      // two-finger back/forward navigation gesture at the scroll boundary.
+      // Doesn't fully cover Safari's trackpad swipe-navigation gesture, so this is
+      // paired with a JS wheel listener (ChataTable.js handleTableWheel) - both are
+      // needed, not redundant.
+      overscroll-behavior-x: contain;
+
       // Enable smooth scrolling on mobile devices
       -webkit-overflow-scrolling: touch;
 

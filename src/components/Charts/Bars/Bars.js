@@ -5,8 +5,12 @@ import {
   chartElementDefaultProps,
   chartElementPropTypes,
   createDateDrilldownFilter,
+  getGradientOpacityStops,
   isDenseChartLayout,
 } from '../chartPropHelpers'
+
+const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('horizontal')
+const MIN_BAR_SIZE = 1
 
 export default class Bars extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -76,9 +80,9 @@ export default class Bars extends PureComponent {
         // Create horizontal gradient for bars (left to right)
         gradientDefs.push(
           <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={color} stopOpacity="0.65" />
-            <stop offset="50%" stopColor={color} stopOpacity="0.75" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.85" />
+            <stop offset="0%" stopColor={color} stopOpacity={OPACITY_1} />
+            <stop offset="50%" stopColor={color} stopOpacity={OPACITY_2} />
+            <stop offset="100%" stopColor={color} stopOpacity={OPACITY_3} />
           </linearGradient>
         )
         
@@ -97,6 +101,10 @@ export default class Bars extends PureComponent {
             let width = Math.abs(xScale.getValue(value) - scaleZero(xScale))
             if (isNaN(width)) {
               width = 0
+            }
+
+            if (value !== 0 && width > 0 && width < MIN_BAR_SIZE) {
+              width = MIN_BAR_SIZE
             }
 
             if (width < 0.05) {
@@ -126,7 +134,7 @@ export default class Bars extends PureComponent {
                 className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
                 data-test={`bar-${i}-${index}`}
                 y={finalBarYPosition}
-                x={value > 0 ? scaleZero(xScale) : xScale(value)}
+                x={value >= 0 ? scaleZero(xScale) : scaleZero(xScale) - width}
                 width={width}
                 height={barHeight}
                 rx={cornerRadius}

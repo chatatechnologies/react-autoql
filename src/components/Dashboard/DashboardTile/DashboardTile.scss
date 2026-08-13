@@ -119,7 +119,6 @@
   &.left-padding {
     width: calc(100% - 40px);
   }
-
 }
 
 .react-autoql-dashboard-tile:hover .dashboard-tile-toolbars-container {
@@ -133,7 +132,6 @@
   z-index: 100 !important;
 }
 
-
 .react-autoql-dashboard-tile-inner-div {
   .react-autoql-table-add-column-btn {
     right: 0.9375rem;
@@ -145,7 +143,7 @@
     align-items: center;
 
     .single-value-response {
-      font-size: 2.25rem;
+      font-size: 3rem;
       font-weight: 600;
     }
   }
@@ -171,7 +169,6 @@
     padding-top: 0px;
     overflow: hidden;
     background: inherit;
-
   }
 
   .dashboard-tile-response-wrapper.editing {
@@ -185,7 +182,6 @@
       color: var(--react-autoql-accent-color);
     }
   }
-
 }
 
 /* Safetynet styles specific to dashboard tiles */
@@ -347,7 +343,6 @@
   }
 }
 
-
 .dashboard-tile-delete-button {
   opacity: 0;
   position: absolute;
@@ -404,6 +399,62 @@
 .dashboard-tile-title-divider {
   // Divider removed - using spacing instead for cleaner modern look
   display: none;
+}
+
+// Label identifying which project a tile's query was executed against
+.dashboard-tile-project-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.0625rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.55));
+  background: var(--react-autoql-background-color-primary, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
+}
+
+// Icon-only button that opens the "change project" modal for a tile (multi-project dashboards)
+.dashboard-tile-project-button {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1875rem;
+  height: 2.1875rem;
+  margin-left: 0.5rem;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--react-autoql-text-color-placeholder, rgba(0, 0, 0, 0.55));
+  background: var(--react-autoql-background-color-primary, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.08));
+
+  &:hover {
+    color: var(--react-autoql-text-color-primary);
+    background: var(--react-autoql-background-color-primary-hover, rgba(0, 0, 0, 0.08));
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-icon {
+    font-size: 1rem;
+  }
+}
+
+// Dot badge on the project button indicating this tile's project differs from the dashboard default
+.dashboard-tile-project-button-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--react-autoql-accent-color, #26a7e9);
+  border: 1px solid var(--react-autoql-background-color-secondary, #fff);
 }
 
 /* Input box styling for edit mode */
@@ -707,11 +758,13 @@
 }
 
 .react-autoql-dashboard-tile.dirty .react-autoql-dashboard-tile-inner-div {
-  box-shadow: inset 0 3px 0 var(--react-autoql-warning-color, #ffa700), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
+  box-shadow: inset 0 3px 0 var(--react-autoql-warning-color, #ffa700), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
+    rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
 }
 
 .react-autoql-dashboard-tile.failed .react-autoql-dashboard-tile-inner-div {
-  box-shadow: inset 0 3px 0 var(--react-autoql-error-color, #ff0000), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
+  box-shadow: inset 0 3px 0 var(--react-autoql-error-color, #ff0000), rgba(0, 0, 0, 0.1) 0px 4px 6px -1px,
+    rgba(0, 0, 0, 0.06) 0px 2px 4px -1px !important;
 }
 
 .react-autoql-dashboard-tile-dirty-badge,

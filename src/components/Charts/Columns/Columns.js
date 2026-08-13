@@ -5,8 +5,12 @@ import {
   chartElementDefaultProps,
   chartElementPropTypes,
   createDateDrilldownFilter,
+  getGradientOpacityStops,
   isDenseChartLayout,
 } from '../chartPropHelpers'
+
+const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('vertical')
+const MIN_BAR_SIZE = 1
 
 export default class Columns extends PureComponent {
   static propTypes = chartElementPropTypes
@@ -60,9 +64,9 @@ export default class Columns extends PureComponent {
         // Create vertical gradient for columns (top to bottom)
         gradientDefs.push(
           <linearGradient key={gradientId} id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={color} stopOpacity="0.85" />
-            <stop offset="50%" stopColor={color} stopOpacity="0.75" />
-            <stop offset="100%" stopColor={color} stopOpacity="0.65" />
+            <stop offset="0%" stopColor={color} stopOpacity={OPACITY_1} />
+            <stop offset="50%" stopColor={color} stopOpacity={OPACITY_2} />
+            <stop offset="100%" stopColor={color} stopOpacity={OPACITY_3} />
           </linearGradient>
         )
         
@@ -78,17 +82,20 @@ export default class Columns extends PureComponent {
               return null
             }
 
-            let y = value < 0 ? scaleZero(yScale) : yScale.getValue(value)
             let height = Math.abs(yScale.getValue(value) - scaleZero(yScale))
-
-            if (isNaN(height) || isNaN(value)) {
-              y = scaleZero(yScale)
+            if (isNaN(height)) {
               height = 0
+            }
+
+            if (value !== 0 && height > 0 && height < MIN_BAR_SIZE) {
+              height = MIN_BAR_SIZE
             }
 
             if (height < 0.05) {
               return null
             }
+
+            const y = value < 0 ? scaleZero(yScale) : scaleZero(yScale) - height
 
             const x0 = xScale.getValue(d[stringColumnIndex])
             const dX = visibleIndex * (this.barWidth + seriesGap)

@@ -2,11 +2,12 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { isMobile } from 'react-device-detect'
-import { ColumnTypes, DateStringPrecisionTypes, PrecisionTypes, isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
+import { ColumnTypes, PrecisionTypes, isColumnDateType, isColumnStringType } from 'autoql-fe-utils'
 
 import { Popover } from '../../Popover'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { Icon } from '../../Icon'
+import { dateBucketOptions } from './dateBucketOptions'
 
 export default class StringAxisSelector extends React.Component {
   constructor(props) {
@@ -24,26 +25,8 @@ export default class StringAxisSelector extends React.Component {
     this.dateBucketScrollbarRef = null // Ref for the scrollbar container
     this.scrolledToActiveColumn = null // Track which column we've scrolled to
 
-    // Define the cyclical bucket options for date columns
-    this.dateBucketOptions = [
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.YEAR, label: 'Year' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.QUARTER, label: 'Quarter' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.MONTH, label: 'Month' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.WEEK, label: 'Week' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.DAY, label: 'Day' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_HOUR, label: 'Hour' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_MINUTE, label: 'Minute' },
-      { type: ColumnTypes.DATE, precision: PrecisionTypes.DATE_SECOND, label: 'Second' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.QUARTERONLY, label: 'Quarter of Year' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.MONTHONLY, label: 'Month of Year' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.WEEKONLY, label: 'Week of Year' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOM, label: 'Day of Month' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.DOW, label: 'Day of Week' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.HOUR, label: 'Hour of Day' },
-      { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.MINUTE, label: 'Minute of Hour' },
-      // Disable for now because it's too granular and not useful for most use cases
-      // { type: ColumnTypes.DATE_STRING, precision: DateStringPrecisionTypes.SECOND, label: 'Second of Minute' },
-    ]
+    // Cyclical/chronological bucket options for date columns (shared with Axis.js)
+    this.dateBucketOptions = dateBucketOptions
   }
 
   getAllStringColumnIndices = () => {
@@ -399,6 +382,15 @@ export default class StringAxisSelector extends React.Component {
     // Only show active state if this is the currently selected column
     const isSelectedColumn = colIndex === selectedColumnIndex
 
+    // Determine whether the column's current bucket falls under Chronological or Cyclical,
+    // so we can highlight whichever one it belongs to
+    const column = this.props.columns[colIndex]
+    const columnOverrides = this.props.columnOverrides || {}
+    const override = columnOverrides[colIndex]
+    const currentType = override?.type || column?.type
+    const isChronologicalActive = isSelectedColumn && currentType === ColumnTypes.DATE
+    const isCyclicalActive = isSelectedColumn && currentType === ColumnTypes.DATE_STRING
+
     return (
       <Popover
         id={`string-axis-selector-${this.COMPONENT_KEY}`}
@@ -488,7 +480,7 @@ export default class StringAxisSelector extends React.Component {
                       (() => {
                         const chronologicalLi = (
                           <li
-                            className='string-select-list-item date-column'
+                            className={`string-select-list-item date-column ${isChronologicalActive ? 'active' : ''}`}
                             key={`${colIndex}-chronological`}
                             data-menu-item='chronological'
                             onClick={(e) => {
@@ -550,7 +542,7 @@ export default class StringAxisSelector extends React.Component {
                       (() => {
                         const cyclicalLi = (
                           <li
-                            className='string-select-list-item date-column'
+                            className={`string-select-list-item date-column ${isCyclicalActive ? 'active' : ''}`}
                             key={`${colIndex}-cyclical`}
                             data-menu-item='cyclical'
                             onClick={(e) => {

@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { Button } from '../Button'
 import { Input } from '../Input'
+import { MagicWandBillingGateNotice } from '../MagicWandBillingGate'
 
 const DEFAULT_NOT_WANDABLE_MESSAGE =
   "This result can't be analyzed with AI for this dataset. Try a different query or focus topic."
@@ -23,6 +24,9 @@ export default function FocusPromptPopoverContent({
   quoteResult,
   isFetchingQuote,
   focusError,
+  billingGateState,
+  onIncreaseQuota,
+  billingExecutionType,
   isAnalyzeDisabled,
   isAnalyzeLoading,
   onKeyDown,
@@ -63,7 +67,15 @@ export default function FocusPromptPopoverContent({
             {notWandableMessage}
           </div>
         ))}
-      {focusError && <div className='focus-prompt-popover-error'>{focusError}</div>}
+      {billingGateState ? (
+        <MagicWandBillingGateNotice
+          state={billingGateState}
+          onIncreaseQuota={onIncreaseQuota}
+          billingExecutionType={billingExecutionType}
+        />
+      ) : (
+        focusError && <div className='focus-prompt-popover-error'>{focusError}</div>
+      )}
       <div className='focus-prompt-popover-actions'>
         {showQuoteButton && (
           <Button
@@ -103,6 +115,9 @@ FocusPromptPopoverContent.propTypes = {
   }),
   isFetchingQuote: PropTypes.bool,
   focusError: PropTypes.string,
+  billingGateState: PropTypes.oneOf(['over_quota', 'unavailable']),
+  onIncreaseQuota: PropTypes.func,
+  billingExecutionType: PropTypes.oneOf(['STRIPE', 'EXPORT']),
   isAnalyzeDisabled: PropTypes.bool,
   isAnalyzeLoading: PropTypes.bool,
   onKeyDown: PropTypes.func,
@@ -117,6 +132,9 @@ FocusPromptPopoverContent.defaultProps = {
   quoteResult: null,
   isFetchingQuote: false,
   focusError: null,
+  billingGateState: undefined,
+  onIncreaseQuota: undefined,
+  billingExecutionType: undefined,
   isAnalyzeDisabled: false,
   isAnalyzeLoading: false,
   onKeyDown: undefined,

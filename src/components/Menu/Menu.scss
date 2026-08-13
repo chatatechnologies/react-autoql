@@ -15,14 +15,13 @@
     padding: 0.625rem 1.25rem;
     cursor: pointer;
 
-    &:hover,
+    &:hover:not(.react-autoql-menu-item-disabled),
     &.active {
       background: var(--react-autoql-hover-color);
     }
 
     &.react-autoql-menu-item-disabled {
       opacity: 0.4;
-      pointer-events: none;
       cursor: default;
     }
 
