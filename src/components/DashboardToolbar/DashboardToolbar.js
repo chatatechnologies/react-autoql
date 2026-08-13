@@ -172,7 +172,7 @@ export class DashboardToolbarWithoutRef extends React.Component {
             disabled={!this.props.isDashboardFullyExecuted}
             tooltip={
               !this.props.isDashboardFullyExecuted
-                ? 'Please run or remove any empty or failed tiles to enable export'
+                ? 'All tiles must complete successfully with data before you can export.'
                 : undefined
             }
             tooltipID={this.props.tooltipID}
