@@ -23,6 +23,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { buildDashboardSource } from './dashboardSource'
 
 import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
@@ -211,7 +212,6 @@ class DashboardWithoutTheme extends React.Component {
     getAuthenticationForProject: undefined,
     onTileAuthExpired: undefined,
     showProjectIndicator: true,
-    isProjectDashboard: undefined,
   }
 
   static getDerivedStateFromProps(nextProps, prevState) {
@@ -1541,7 +1541,11 @@ class DashboardWithoutTheme extends React.Component {
             onCSVDownloadProgress={this.props.onCSVDownloadProgress}
             onCSVDownloadFinish={this.props.onCSVDownloadFinish}
             onPNGDownloadFinish={this.props.onPNGDownloadFinish}
-            source={this.SOURCE}
+            source={buildDashboardSource({
+              dashboardId: this.props.dashboardId,
+              isProjectDashboard: this.props.isProjectDashboard,
+              isEditing: this.props.isEditing,
+            })}
             enableCyclicalDates={this.props.enableCyclicalDates}
             enableMagicWand={this.props.enableMagicWand}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}

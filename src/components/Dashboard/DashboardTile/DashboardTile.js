@@ -37,6 +37,7 @@ import { Popover } from '../../Popover'
 import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import { buildDashboardSource } from '../dashboardSource'
 
 import './DashboardTile.scss'
 
@@ -239,7 +240,6 @@ export class DashboardTile extends React.Component {
     getAuthenticationForProject: undefined,
     onTileAuthExpired: undefined,
     showProjectIndicator: true,
-    isProjectDashboard: undefined,
     onExecutionStatusChange: undefined,
   }
 
@@ -807,20 +807,7 @@ export class DashboardTile extends React.Component {
 
   getDashboardSource = () => {
     const { dashboardId, isProjectDashboard, isEditing } = this.props
-    if (!dashboardId) {
-      return 'dashboards.user'
-    }
-
-    const parts = ['dashboards']
-    if (isProjectDashboard !== undefined) {
-      parts.push(isProjectDashboard ? 'project' : 'custom')
-    }
-    parts.push(dashboardId)
-    if (isEditing) {
-      parts.push('edit')
-    }
-
-    return parts.join('.')
+    return buildDashboardSource({ dashboardId, isProjectDashboard, isEditing })
   }
 
   processQuery = ({
