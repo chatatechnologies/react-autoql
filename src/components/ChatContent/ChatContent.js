@@ -765,6 +765,12 @@ export default class ChatContent extends React.Component {
   // ---- Filter lock (self-managed, used with showFilterLockButton) ----
   // Mirrors DataMessenger's filter-lock wiring so ChatContent can render its
   // own lock control when embedded outside the DataMessenger drawer.
+  // ⚠️ KEEP IN SYNC with the same trio in DataMessenger.js (openFilterLockMenu /
+  // closeFilterLockMenu / onFilterChange / onRTValueLabelClick): the semantics
+  // are intentionally identical, so a fix to open/close/change behaviour in one
+  // file needs the same fix in the other. Not extracted into a shared module
+  // because both are class components and DataMessenger's copy is on the
+  // hot path for the drawer — see PR #1404 discussion.
   openFilterLockMenu = () => {
     if (!this.state.isFilterLockMenuOpen) {
       this.setState({ isFilterLockMenuOpen: true })
@@ -775,6 +781,19 @@ export default class ChatContent extends React.Component {
     if (this.state.isFilterLockMenuOpen) {
       this.setState({ isFilterLockMenuOpen: false })
     }
+  }
+
+  // Clicking a value label in a response inserts it as a locked filter, the
+  // same affordance DataMessenger provides (it passes its own handler down as
+  // onRTValueLabelClick). Standalone ChatContent has no such parent, so when it
+  // owns the lock UI it wires its own popover ref here — otherwise the feature
+  // is silently missing outside DataMessenger. Only used when
+  // showFilterLockButton is set; the consumer's callback still fires.
+  onRTValueLabelClick = (text) => {
+    this.props.onRTValueLabelClick?.(text)
+    this.setState({ isFilterLockMenuOpen: true }, () => {
+      this.filterLockRef?.insertFilter(text)
+    })
   }
 
   onFilterChange = (allFilters) => {
@@ -800,7 +819,11 @@ export default class ChatContent extends React.Component {
         // offsetWidth (meant for the narrow DataMessenger drawer). Full-page
         // ChatContent would make the menu full-width — omit it so the popover
         // uses its natural min-width instead.
-        tooltipID={this.TOOLTIP_ID}
+        // Match the other tooltip consumers in this render: when a consumer
+        // passes its own tooltipID we do NOT mount our <Tooltip> (see render),
+        // so hardcoding TOOLTIP_ID here would aim the popover's tooltips at an
+        // unmounted target and they'd silently never show.
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
         // Toolbar sits just above the bottom composer — open the menu upward,
         // into the thread area, away from the input.
         positions={['top', 'bottom', 'left', 'right']}
@@ -942,7 +965,9 @@ export default class ChatContent extends React.Component {
                       enableDynamicCharting={this.props.enableDynamicCharting}
                       onNoneOfTheseClick={this.onNoneOfTheseClick}
                       autoChartAggregations={this.props.autoChartAggregations}
-                      onRTValueLabelClick={this.props.onRTValueLabelClick}
+                      onRTValueLabelClick={
+                        this.props.showFilterLockButton ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
+                      }
                       appliedFilters={message.appliedFilters}
                       disableMaxHeight={this.props.disableMaxMessageHeight}
                       queryRequestData={message.queryRequestData}
