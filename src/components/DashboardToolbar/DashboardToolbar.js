@@ -77,7 +77,6 @@ export class DashboardToolbarWithoutRef extends React.Component {
     value: null,
     slicerSuggestion: undefined,
     isDashboardFullyExecuted: false,
-    isProjectDashboard: false,
     hasTiles: false,
     hasDirtyTiles: false,
     hasFailedTiles: false,
