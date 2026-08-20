@@ -1670,6 +1670,9 @@ export class QueryOutput extends React.Component {
     const sessionFilters = [...baseFilters]
     let response
 
+    const isAddingColumn = args?.newColumns !== undefined
+    const sourceQuery = this.props.queryId || this.queryID
+
     if (isDrilldown(this.queryResponse)) {
       try {
         response = await runDrilldown({
@@ -1688,6 +1691,7 @@ export class QueryOutput extends React.Component {
           cancelToken: this.axiosSource.token,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
+          ...(isAddingColumn && { sourceQuery }),
           ...args,
           tableFilters: allFilters,
         })
@@ -1712,6 +1716,7 @@ export class QueryOutput extends React.Component {
           cancelToken: this.axiosSource.token,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
+          ...(isAddingColumn && { sourceQuery }),
           ...args,
           tableFilters: allFilters,
         })
