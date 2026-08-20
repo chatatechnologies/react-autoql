@@ -48,6 +48,7 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
+import { getPinnableQueryId } from '../../../utils/dataAlertQueryId'
 import { CustomList } from '../CustomList'
 import './RuleSimple.scss'
 import ConditionPreview from './ConditionPreview'
@@ -685,6 +686,34 @@ export default class RuleSimple extends React.Component {
     }
   }
 
+  /**
+   * Resolves the `query_id` to pin to a QUERY term, or undefined when none can be pinned.
+   *
+   * The id is only used when its response actually corresponds to the text being submitted,
+   * so editing the query text drops the pin rather than silently alerting on the old query.
+   */
+  getTermQueryId = (termIndex) => {
+    const isFirstTerm = termIndex === 0
+    const currentText = isFirstTerm ? this.state.inputValue : this.state.secondInputValue
+    const response = isFirstTerm ? this.state.firstQueryResult : this.state.secondQueryResult
+
+    if (response?.data?.data?.text === currentText) {
+      const queryId = getPinnableQueryId(response)
+      if (queryId) {
+        return queryId
+      }
+    }
+
+    // When editing an existing alert the builder re-runs its queries at a page size of 2, so
+    // those ids cannot be pinned. Carry the stored id forward while the text is unchanged.
+    const storedTerm = this.state.storedInitialData?.[termIndex]
+    if (storedTerm?.query_id && storedTerm.term_value === currentText) {
+      return storedTerm.query_id
+    }
+
+    return undefined
+  }
+
   getJSON = () => {
     let firstQueryJoinColumns = []
     let secondQueryJoinColumns = []
@@ -721,12 +750,14 @@ export default class RuleSimple extends React.Component {
     const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns?.map(
       (index) => this.state.firstQueryResult?.data?.data?.columns[index]?.name,
     )[0]
+    const firstTermQueryId = this.getTermQueryId(0)
     const expression = [
       {
         id: this.TERM_ID_1,
         condition: this.state.selectedOperator,
         term_type: QUERY_TERM_TYPE,
         term_value: this.state.inputValue,
+        ...(firstTermQueryId ? { query_id: firstTermQueryId } : {}),
         ...(this.state.secondTermType === SELF_COMPARISONS_TYPE
           ? {
               self_compare_columns: [firstQuerySelectedNumberColumnName, this.state.columnSelectValue],
@@ -802,6 +833,11 @@ export default class RuleSimple extends React.Component {
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
         secondTerm.session_filter_locks = lockedFilters
         secondTerm.user_selection = this.props.initialData?.[1]?.user_selection ?? userSelection
+
+        const secondTermQueryId = this.getTermQueryId(1)
+        if (secondTermQueryId) {
+          secondTerm.query_id = secondTermQueryId
+        }
       }
       secondTerm.compare_column = secondQuerySelectedNumberColumnName
       if (this.state.secondTermType !== SELF_COMPARISONS_TYPE) {
