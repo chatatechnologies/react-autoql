@@ -3,8 +3,8 @@ import { shallow } from 'enzyme'
 
 import RuleSimple from '../RuleSimple'
 
-// Matches BUILDER_QUERY_PAGE_SIZE / the Logic Engine's evaluation page size.
-const BUILDER_PAGE_SIZE = 10000
+// The builder now runs its queries at the same full page size as a normal query.
+const BUILDER_PAGE_SIZE = 50000
 const DATA_MESSENGER_PAGE_SIZE = 50000
 
 const buildQueryResponse = ({ text, queryId, pageSize = DATA_MESSENGER_PAGE_SIZE, rows }) => ({

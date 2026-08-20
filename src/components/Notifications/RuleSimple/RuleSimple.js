@@ -16,6 +16,7 @@ import {
   QUERY_TERM_TYPE,
   isNumber,
   isListQuery,
+  DEFAULT_DATA_PAGE_SIZE,
   isSingleValueResponse,
   constructRTArray,
   getTimeFrameTextFromChunk,
@@ -54,10 +55,10 @@ import './RuleSimple.scss'
 import ConditionPreview from './ConditionPreview'
 const SELF_COMPARISONS_TYPE = 'selfComparisons'
 
-// The Logic Engine evaluates alerts at this page size. Running the builder's own queries at
-// the same size keeps the SQL stored against their query_id from carrying a smaller page
-// limit than evaluation needs. See utils/dataAlertQueryId.
-const BUILDER_QUERY_PAGE_SIZE = 10000
+// The builder's own queries run at the normal full page size, so the SQL stored against their
+// query_id never carries a page limit smaller than evaluation needs -- with headroom if the
+// Logic Engine's evaluation page size ever rises. See utils/dataAlertQueryId.
+const BUILDER_QUERY_PAGE_SIZE = DEFAULT_DATA_PAGE_SIZE
 
 // Only the first handful of rows is ever shown (the field selection grids) or read
 // (ConditionPreview), so responses are trimmed to this before being kept in state.
