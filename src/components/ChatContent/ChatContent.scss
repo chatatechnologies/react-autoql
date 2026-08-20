@@ -248,3 +248,77 @@
     font-size: 1rem;
   }
 }
+
+// Filter-lock toolbar (only rendered when `showFilterLockButton` — ChatContent
+// embedded outside DataMessenger). A small pill above the composer input.
+.react-autoql-chat-filter-lock-toolbar {
+  display: flex;
+  align-items: center;
+  // Left/right 20px lines the pill's edge up with the input bar below it.
+  // Measured chain (both start from .chat-bar-container, which has NO padding
+  // of its own): the input picks up 10px from .react-autoql-bar-container's
+  // padding + 10px from .react-autoql-chatbar-input's own margin. That
+  // bar-container is a child of the input wrapper, NOT an ancestor of this
+  // toolbar, so the toolbar has to supply the whole 20px itself.
+  // Bottom 6px keeps a gap above the input.
+  padding: 0 20px 6px;
+  // Sit BELOW the upward "Recent queries" autocomplete (z-index 2) so that when
+  // it opens, the opaque dropdown covers this pill rather than the pill poking
+  // through the suggestions. The pill reappears once the dropdown closes.
+  position: relative;
+  z-index: 1;
+
+  .react-autoql-chat-filter-lock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid var(--react-autoql-border-color);
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+
+    &:hover {
+      border-color: var(--react-autoql-accent-color);
+      color: var(--react-autoql-accent-color);
+    }
+
+    .react-autoql-filter-lock-icon-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .react-autoql-filter-lock-icon-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--react-autoql-accent-color);
+    }
+
+    .react-autoql-chat-filter-lock-label {
+      line-height: 1;
+    }
+  }
+}
+
+// Down caret on the filter-lock button (flips when the menu is open).
+.react-autoql-chat-filter-lock-btn {
+  .react-autoql-chat-filter-lock-caret {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    transition: transform 0.2s ease;
+  }
+
+  &.is-open .react-autoql-chat-filter-lock-caret {
+    transform: rotate(180deg);
+  }
+}
