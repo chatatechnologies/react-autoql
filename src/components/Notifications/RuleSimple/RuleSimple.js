@@ -54,6 +54,15 @@ import './RuleSimple.scss'
 import ConditionPreview from './ConditionPreview'
 const SELF_COMPARISONS_TYPE = 'selfComparisons'
 
+// The Logic Engine evaluates alerts at this page size. Running the builder's own queries at
+// the same size keeps the SQL stored against their query_id from carrying a smaller page
+// limit than evaluation needs. See utils/dataAlertQueryId.
+const BUILDER_QUERY_PAGE_SIZE = 10000
+
+// Only the first handful of rows is ever shown (the field selection grids) or read
+// (ConditionPreview), so responses are trimmed to this before being kept in state.
+const PREVIEW_ROW_LIMIT = 20
+
 const CONDITION_TYPE_LABELS = {
   EXISTS: (
     <span>
@@ -618,6 +627,21 @@ export default class RuleSimple extends React.Component {
       !this.isValidSecondQueryResponse()
     )
   }
+  trimResponseRows = (response) => {
+    const rows = response?.data?.data?.rows
+    if (!Array.isArray(rows) || rows.length <= PREVIEW_ROW_LIMIT) {
+      return response
+    }
+
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        data: { ...response.data.data, rows: rows.slice(0, PREVIEW_ROW_LIMIT) },
+      },
+    }
+  }
+
   getQuery = () => {
     try {
       this.setState({ isLoadingFirstQuery: true, isLoadingSecondQuery: true })
@@ -628,7 +652,7 @@ export default class RuleSimple extends React.Component {
             ...getAuthentication(this.props.authentication),
             ...getAutoQLConfig(this.props.autoQLConfig),
             source: 'data_alert_first_query',
-            pageSize: 2,
+            pageSize: BUILDER_QUERY_PAGE_SIZE,
             allowSuggestions: false,
             newColumns: this.props.initialData?.[0]?.additional_selects,
           })
@@ -639,13 +663,15 @@ export default class RuleSimple extends React.Component {
             ...getAuthentication(this.props.authentication),
             ...getAutoQLConfig(this.props.autoQLConfig),
             source: 'data_alert_second_query',
-            pageSize: 2,
+            pageSize: BUILDER_QUERY_PAGE_SIZE,
             allowSuggestions: false,
           })
         : Promise.resolve(null)
 
       Promise.all([fetchFirstQuery, fetchSecondQuery])
-        .then(([firstResponse, secondResponse]) => {
+        .then(([rawFirstResponse, rawSecondResponse]) => {
+          const firstResponse = this.trimResponseRows(rawFirstResponse)
+          const secondResponse = this.trimResponseRows(rawSecondResponse)
           const firstQueryCompareColumnIndex = this.getCompareColumnIndex(
             firstResponse,
             this.state.storedInitialData,
@@ -1059,7 +1085,8 @@ export default class RuleSimple extends React.Component {
     )
   }
 
-  onValidationResponse = (response) => {
+  onValidationResponse = (rawResponse) => {
+    const response = this.trimResponseRows(rawResponse)
     let error
     let isInvalid = false
     const isSecondQueryListQuery = isListQuery(response.data?.data?.columns) && !isSingleValueResponse(response)
@@ -1102,7 +1129,7 @@ export default class RuleSimple extends React.Component {
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
       source: 'data_alert_validation',
-      pageSize: 2, // No need to fetch more than 2 rows to determine validity
+      pageSize: BUILDER_QUERY_PAGE_SIZE,
       cancelToken: this.axiosSource.token,
       allowSuggestions: false,
     })
@@ -1599,7 +1626,7 @@ export default class RuleSimple extends React.Component {
         radio={true}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
-        rowLimit={20}
+        rowLimit={PREVIEW_ROW_LIMIT}
       />
     )
   }
@@ -1628,7 +1655,7 @@ export default class RuleSimple extends React.Component {
         radio={true}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
-        rowLimit={20}
+        rowLimit={PREVIEW_ROW_LIMIT}
       />
     )
   }
@@ -1667,7 +1694,7 @@ export default class RuleSimple extends React.Component {
         radio={false}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
-        rowLimit={20}
+        rowLimit={PREVIEW_ROW_LIMIT}
         disableCheckboxes={true}
       />
     )
