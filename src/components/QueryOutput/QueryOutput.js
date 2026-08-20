@@ -1567,6 +1567,18 @@ export class QueryOutput extends React.Component {
       columnIndex = this.state.columns?.findIndex((col) => col.is_visible)
     }
 
+    const value = this.queryResponse.data.data.rows[0]?.[columnIndex]
+
+    if (value === undefined || value === null) {
+      return (
+        <div className='single-value-response-flex-container'>
+          <div className='single-value-response-container'>
+            <span className='single-value-response'>No data found</span>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
@@ -1584,7 +1596,7 @@ export class QueryOutput extends React.Component {
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[0]?.[columnIndex] ?? 0,
+              element: value,
               column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
