@@ -24,6 +24,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { buildDashboardSource } from './dashboardSource'
+import { isSm } from '../../js/breakpoints'
 
 import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
@@ -101,6 +102,7 @@ class DashboardWithoutTheme extends React.Component {
       uneditedDashboardTiles: null,
       dashboardSlicers: getSlicersArray(),
       executingTileKeys: new Set(),
+      isSmallScreen: isSm(),
     }
   }
 
@@ -494,6 +496,11 @@ class DashboardWithoutTheme extends React.Component {
     const hasWidthChanged = e.target.innerWidth !== this.currentWindowWidth
     if (!hasWidthChanged) {
       return
+    }
+
+    const isSmallScreen = isSm()
+    if (isSmallScreen !== this.state.isSmallScreen) {
+      this.setState({ isSmallScreen })
     }
 
     if (this._isMounted) {
@@ -1341,7 +1348,8 @@ class DashboardWithoutTheme extends React.Component {
 
   renderTiles = (dirtyTileKeys, failedTileKeys) => {
     const tiles = this.getMostRecentTiles()
-    const tileLayout = tiles.map((tile) => {
+    const isSmallScreen = this.state.isSmallScreen
+    let tileLayout = tiles.map((tile) => {
       return {
         ...tile,
         i: tile.key,
@@ -1352,6 +1360,19 @@ class DashboardWithoutTheme extends React.Component {
       }
     })
 
+    if (isSmallScreen) {
+      // Stack tiles into a single full-width column, preserving their
+      // original visual order and fixed row height
+      let nextY = 0
+      tileLayout = [...tileLayout]
+        .sort((a, b) => a.y - b.y || a.x - b.x)
+        .map((tile) => {
+          const stackedTile = { ...tile, x: 0, y: nextY, w: 12, minW: 12, maxW: 12 }
+          nextY += tile.h
+          return stackedTile
+        })
+    }
+
     let dataPageSize = this.props.dataPageSize
     if (!dataPageSize) {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
@@ -1361,7 +1382,9 @@ class DashboardWithoutTheme extends React.Component {
       <ReactGridLayout
         ref={(r) => (this.rglRef = r)}
         onLayoutChange={(layout) => {
-          this.updateTileLayout(layout)
+          if (!isSmallScreen) {
+            this.updateTileLayout(layout)
+          }
           this.setState({ layout })
         }}
         onDrag={this.onDrag}
@@ -1372,8 +1395,8 @@ class DashboardWithoutTheme extends React.Component {
         className='react-autoql-dashboard'
         rowHeight={60}
         cols={12}
-        isDraggable={this.props.isEditing}
-        isResizable={this.props.isEditing}
+        isDraggable={this.props.isEditing && !isSmallScreen}
+        isResizable={this.props.isEditing && !isSmallScreen}
         draggableHandle='.react-autoql-dashboard-tile-drag-handle'
         layout={tileLayout}
         margin={[20, 20]}
@@ -1403,7 +1426,7 @@ class DashboardWithoutTheme extends React.Component {
               i: tile.key,
               maxH: 10,
               minH: 2,
-              minW: 3,
+              minW: isSmallScreen ? 12 : 3,
             }}
             dashboardSlicers={this.props.enableSlicers ? this.state.dashboardSlicers.map((s) => s.data) : []}
             displayType={tile.displayType}

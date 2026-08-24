@@ -4787,8 +4787,9 @@ export class QueryOutput extends React.Component {
           style={containerStyle}
           className={`react-autoql-response-content-container
         ${isTableType(this.state.displayType) ? 'table' : ''}
-        ${isChartType(this.state.displayType) ? 'chart' : ''} 
+        ${isChartType(this.state.displayType) ? 'chart' : ''}
         ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
+        ${this.state.displayType === 'single-value' ? 'single-value' : ''}
         ${this.shouldEnableResize ? 'resizable' : ''}
         ${this.state.isResizing ? 'resizing' : ''}`}
         >
