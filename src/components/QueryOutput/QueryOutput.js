@@ -1567,6 +1567,18 @@ export class QueryOutput extends React.Component {
       columnIndex = this.state.columns?.findIndex((col) => col.is_visible)
     }
 
+    const value = this.queryResponse.data.data.rows[0]?.[columnIndex]
+
+    if (value === undefined || value === null) {
+      return (
+        <div className='single-value-response-flex-container'>
+          <div className='single-value-response-container'>
+            <span className='single-value-response'>No data found</span>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className='single-value-response-flex-container'>
         <div className='single-value-response-container'>
@@ -1584,7 +1596,7 @@ export class QueryOutput extends React.Component {
               </span>
             )}
             {formatElement({
-              element: this.queryResponse.data.data.rows[0]?.[columnIndex] ?? 0,
+              element: value,
               column,
               config: getDataFormatting(this.props.dataFormatting),
             })}
@@ -1658,6 +1670,8 @@ export class QueryOutput extends React.Component {
     const sessionFilters = [...baseFilters]
     let response
 
+    const sourceQuery = this.props.queryId || this.queryID
+
     if (isDrilldown(this.queryResponse)) {
       try {
         response = await runDrilldown({
@@ -1676,6 +1690,7 @@ export class QueryOutput extends React.Component {
           cancelToken: this.axiosSource.token,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
+          sourceQuery,
           ...args,
           tableFilters: allFilters,
         })
@@ -1700,6 +1715,7 @@ export class QueryOutput extends React.Component {
           cancelToken: this.axiosSource.token,
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
+          sourceQuery,
           ...args,
           tableFilters: allFilters,
         })

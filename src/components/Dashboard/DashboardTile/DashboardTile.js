@@ -37,6 +37,7 @@ import { Popover } from '../../Popover'
 import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import { buildDashboardSource } from '../dashboardSource'
 
 import './DashboardTile.scss'
 
@@ -239,7 +240,6 @@ export class DashboardTile extends React.Component {
     getAuthenticationForProject: undefined,
     onTileAuthExpired: undefined,
     showProjectIndicator: true,
-    isProjectDashboard: false,
     onExecutionStatusChange: undefined,
   }
 
@@ -805,6 +805,11 @@ export class DashboardTile extends React.Component {
     }
   }
 
+  getDashboardSource = () => {
+    const { dashboardId, isProjectDashboard, isEditing } = this.props
+    return buildDashboardSource({ dashboardId, isProjectDashboard, isEditing })
+  }
+
   processQuery = ({
     query,
     userSelection,
@@ -842,13 +847,14 @@ export class DashboardTile extends React.Component {
         filters: currentSessionFilters,
         orders: currentOrders,
         tableFilters: currentFilter,
-        source: this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user',
+        source: this.getDashboardSource(),
         scope: 'dashboards',
         userSelection,
         cancelToken: axiosSource?.token,
         pageSize,
         query,
         force: false,
+        sourceQuery: this.props.tile.queryId,
       }
 
       // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
@@ -1750,7 +1756,7 @@ export class DashboardTile extends React.Component {
               enableFollowOnQuery={this.props.enableFollowOnQuery}
               onOpenFollowOnModal={this.onOpenFollowOnModal}
               isEditing={this.props.isEditing}
-              source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+              source={this.getDashboardSource()}
               scope={this.props.scope}
               {...toolbarProps}
             />
@@ -1788,7 +1794,7 @@ export class DashboardTile extends React.Component {
         shouldRender={!this.props.isDragging}
         allowColumnAddition={this.props.isEditing}
         enableTableContextMenu={this.props.isEditing}
-        source={this.props.dashboardId ? `dashboards.${this.props.dashboardId}` : 'dashboards.user'}
+        source={this.getDashboardSource()}
         scope='dashboards'
         autoHeight={false}
         height='100%'

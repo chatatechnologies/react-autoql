@@ -31,6 +31,7 @@ import { Tooltip } from '../../Tooltip'
 import { StepsHoz } from '../../StepsHoz'
 import { ScheduleBuilder } from '../ScheduleBuilder'
 import { ConditionBuilder } from '../ConditionBuilder'
+import { getPinnableQueryId } from '../../../utils/dataAlertQueryId'
 import { MultilineButton } from '../../MultilineButton'
 import { CustomScrollbars } from '../../CustomScrollbars'
 import { CollapsableSection } from '../../Card'
@@ -267,12 +268,14 @@ class DataAlertModal extends React.Component {
           expressionJSON = currentDataAlert.expression
         } else {
           const query = queryResponse?.data?.data?.text
+          const queryId = getPinnableQueryId(queryResponse)
           expressionJSON = [
             {
               id: uuid(),
               term_type: QUERY_TERM_TYPE,
               condition: EXISTS_TYPE,
               term_value: query,
+              ...(queryId ? { query_id: queryId } : {}),
               user_selection: queryResponse?.data?.data?.fe_req?.disambiguation,
               additional_selects: queryResponse?.data?.data?.fe_req?.additional_selects || [],
               display_overrides: queryResponse?.data?.data?.fe_req?.display_overrides || [],

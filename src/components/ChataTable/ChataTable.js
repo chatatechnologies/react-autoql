@@ -594,6 +594,7 @@ export default class ChataTable extends React.Component {
         tableFilters: sanitizedFilters,
         source: 'data_messenger',
         allowSuggestions: false,
+        sourceQuery: this.props.response?.data?.data?.query_id,
       }).then((response) => {
         this.props.onUpdateFilterResponse(response)
       })
