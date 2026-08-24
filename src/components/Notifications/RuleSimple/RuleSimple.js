@@ -50,6 +50,7 @@ import { ReverseTranslation } from '../../ReverseTranslation'
 import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
 import { getPinnableQueryId } from '../../../utils/dataAlertQueryId'
+import { formatNumberTermValue, isPartialNumberInput, parseFormattedNumber } from '../../../utils/numberTermValue'
 import { CustomList } from '../CustomList'
 import './RuleSimple.scss'
 import ConditionPreview from './ConditionPreview'
@@ -813,11 +814,10 @@ export default class RuleSimple extends React.Component {
     if (this.allowOperators() && this.state.selectedOperator !== EXISTS_TYPE) {
       const { secondInputValue } = this.state
       let secondTermValue = secondInputValue
-      const percentageWithMissingFractionRegex = /^\d+\.%$/
-      if (percentageWithMissingFractionRegex.test(secondInputValue)) {
-        // If secondInputValue ends with a dot, slice off the '%' at the end, add '0%',
-        // Example: 40.% will become 40.0%
-        secondTermValue = secondInputValue.slice(0, -1) + '0%'
+      if (this.state.secondTermType === NUMBER_TERM_TYPE) {
+        // Thresholds are typed with whatever formatting reads best ("$5,000,000"), so only the
+        // number itself is sent along. A trailing % is kept -- it's part of the condition.
+        secondTermValue = formatNumberTermValue(secondInputValue)
       }
 
       const secondTerm = {
@@ -832,7 +832,7 @@ export default class RuleSimple extends React.Component {
         let value = this.state.secondTermMultiplicationFactorValue
 
         if (operation === 'multiply-percent-higher' || operation === 'multiply-percent-lower') {
-          let numberValue = parseInt(value ?? 0)
+          let numberValue = parseFormattedNumber(value ?? 0)
           if (!isNaN(numberValue) && numberValue > 0) {
             if (operation === 'multiply-percent-higher') {
               value = `${100 + numberValue}%`
@@ -1171,9 +1171,10 @@ export default class RuleSimple extends React.Component {
       newState.secondQueryValidating = false
     }
     if (this.state.secondTermType === NUMBER_TERM_TYPE) {
-      // Allow incremental typing of numbers (ints, decimals, commas) with optional trailing % (e.g. 1, 1.0, .5, 1,000, 100%)
-      const numberRegex = /^-?(?:\d+([.,]\d*)?|\.\d+)%?$/
-      if (numberRegex.test(secondInputValue) || secondInputValue === '') {
+      // Numbers can be typed as they're read -- thousands separators, currency symbols and
+      // spaces are all allowed, and a trailing % still means "percent of the compared value".
+      // The formatting is stripped in getJSON (e.g. .5, 1,000, $5,000,000, 100%)
+      if (isPartialNumberInput(secondInputValue)) {
         this.setState(newState)
       }
     } else {
