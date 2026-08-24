@@ -1,17 +1,16 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { DATA_ALERT_OPERATORS } from 'autoql-fe-utils'
+import { parseFormattedNumber } from '../../../utils/numberTermValue'
 
 const parseNumber = (v) => {
   if (v === undefined || v === null) return Number.NaN
   if (typeof v === 'number') return v
-  const str = String(v).replaceAll(/[,\s]/g, '')
-  if (str.endsWith('%')) {
-    const p = Number.parseFloat(str.slice(0, -1))
-    return Number.isNaN(p) ? Number.NaN : p / 100
-  }
-  const n = Number.parseFloat(str)
-  return Number.isNaN(n) ? Number.NaN : n
+  // Values reach here with whatever formatting they were typed or rendered with
+  // ("$5,000,000"), so they're parsed the same way the builder sends them along.
+  const n = parseFormattedNumber(v)
+  if (Number.isNaN(n)) return Number.NaN
+  return String(v).trim().endsWith('%') ? n / 100 : n
 }
 
 const ConditionPreview = ({

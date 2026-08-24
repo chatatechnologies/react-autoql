@@ -20,6 +20,7 @@ import { lang } from '../../js/Localization'
 import { Icon } from '../Icon'
 import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
+import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -50,6 +51,12 @@ export default class ChatContent extends React.Component {
       isInputDisabled: false,
       isGeneratingSummary: false,
       isAtBottom: true,
+      // Filter lock (only used when showFilterLockButton is set — renders the
+      // lock control in a toolbar above the composer). lockedFilters/hasFilters
+      // are populated by onFilterChange once FilterLockPopover fetches on mount.
+      isFilterLockMenuOpen: false,
+      lockedFilters: [],
+      hasFilters: false,
     }
   }
 
@@ -63,6 +70,15 @@ export default class ChatContent extends React.Component {
     enableDynamicCharting: PropTypes.bool.isRequired,
     autoChartAggregations: PropTypes.bool.isRequired,
     enableFilterLocking: PropTypes.bool.isRequired,
+    // When true, ChatContent renders its OWN filter-lock control (a toolbar
+    // above the composer) and manages the locked filters internally, feeding
+    // them to its QueryInput. Use this when ChatContent is embedded outside
+    // DataMessenger (which renders its own header lock). Default false so
+    // DataMessenger is unaffected.
+    showFilterLockButton: PropTypes.bool,
+    // Label for the filter-lock toolbar button (e.g. the filter category the
+    // data uses, like "Household"). Defaults to a generic "Filters".
+    filterLockButtonLabel: PropTypes.string,
     onErrorCallback: PropTypes.func.isRequired,
     onSuccessAlert: PropTypes.func.isRequired,
     onRTValueLabelClick: PropTypes.func,
@@ -82,6 +98,10 @@ export default class ChatContent extends React.Component {
     enableFollowOnQuery: PropTypes.bool,
     enableLLMStyleEmptyState: PropTypes.bool,
     llmEmptyStateTitle: PropTypes.string,
+    // When false, the LLM empty state renders WITHOUT its title/logo row (the
+    // rest of the empty-state layout — and the `.llm-empty-state` class hosts
+    // rely on — stays intact). Default true.
+    showLLMEmptyStateTitle: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -102,6 +122,9 @@ export default class ChatContent extends React.Component {
     enableFollowOnQuery: false,
     enableLLMStyleEmptyState: false,
     llmEmptyStateTitle: undefined,
+    showLLMEmptyStateTitle: true,
+    showFilterLockButton: false,
+    filterLockButtonLabel: undefined,
   }
 
   componentDidMount = () => {
@@ -739,6 +762,93 @@ export default class ChatContent extends React.Component {
     return this.state.isQueryRunning || this.state.isDrilldownRunning || this.state.isGeneratingSummary
   }
 
+  // ---- Filter lock (self-managed, used with showFilterLockButton) ----
+  // Mirrors DataMessenger's filter-lock wiring so ChatContent can render its
+  // own lock control when embedded outside the DataMessenger drawer.
+  // ⚠️ KEEP IN SYNC with the same trio in DataMessenger.js (openFilterLockMenu /
+  // closeFilterLockMenu / onFilterChange / onRTValueLabelClick): the semantics
+  // are intentionally identical, so a fix to open/close/change behaviour in one
+  // file needs the same fix in the other. Not extracted into a shared module
+  // because both are class components and DataMessenger's copy is on the
+  // hot path for the drawer — see PR #1404 discussion.
+  openFilterLockMenu = () => {
+    if (!this.state.isFilterLockMenuOpen) {
+      this.setState({ isFilterLockMenuOpen: true })
+    }
+  }
+
+  closeFilterLockMenu = () => {
+    if (this.state.isFilterLockMenuOpen) {
+      this.setState({ isFilterLockMenuOpen: false })
+    }
+  }
+
+  // Clicking a value label in a response inserts it as a locked filter, the
+  // same affordance DataMessenger provides (it passes its own handler down as
+  // onRTValueLabelClick). Standalone ChatContent has no such parent, so when it
+  // owns the lock UI it wires its own popover ref here — otherwise the feature
+  // is silently missing outside DataMessenger. Only used when
+  // showFilterLockButton is set; the consumer's callback still fires.
+  onRTValueLabelClick = (text) => {
+    this.props.onRTValueLabelClick?.(text)
+    this.setState({ isFilterLockMenuOpen: true }, () => {
+      this.filterLockRef?.insertFilter(text)
+    })
+  }
+
+  onFilterChange = (allFilters) => {
+    // FilterLockPopover emits the full lock list (session + persistent) on mount
+    // and on edits. BOTH kinds scope the current query's results — the persist
+    // flag only governs lifetime (persistent locks are saved server-side and
+    // refetched next session; session locks last only this session), not whether
+    // a lock applies now. So forward every lock to QueryInput's queryFilters.
+    const lockedFilters = allFilters ?? []
+    this.setState({ lockedFilters, hasFilters: !!lockedFilters.length })
+  }
+
+  renderFilterLockPopover = () => {
+    return (
+      <FilterLockPopover
+        ref={(r) => (this.filterLockRef = r)}
+        authentication={this.props.authentication}
+        isOpen={this.state.isFilterLockMenuOpen}
+        onChange={this.onFilterChange}
+        onClose={this.closeFilterLockMenu}
+        parentElement={this.chatContentRef}
+        // No boundaryElement: it drives the popover width off the boundary's
+        // offsetWidth (meant for the narrow DataMessenger drawer). Full-page
+        // ChatContent would make the menu full-width — omit it so the popover
+        // uses its natural min-width instead.
+        // Match the other tooltip consumers in this render: when a consumer
+        // passes its own tooltipID we do NOT mount our <Tooltip> (see render),
+        // so hardcoding TOOLTIP_ID here would aim the popover's tooltips at an
+        // unmounted target and they'd silently never show.
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        // Toolbar sits just above the bottom composer — open the menu upward,
+        // into the thread area, away from the input.
+        positions={['top', 'bottom', 'left', 'right']}
+        align='start'
+        // No pointer arrow, and sit flush above the pill (padding 0) so the menu
+        // covers the empty-state logo/title band instead of leaving them peeking
+        // out below it.
+        showArrow={false}
+        padding={0}
+      >
+        <button
+          className={`react-autoql-chat-filter-lock-btn${this.state.isFilterLockMenuOpen ? ' is-open' : ''}`}
+          onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
+        >
+          <span className='react-autoql-filter-lock-icon-container'>
+            <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+            {this.state.hasFilters ? <div className='react-autoql-filter-lock-icon-badge' /> : null}
+          </span>
+          <span className='react-autoql-chat-filter-lock-label'>{this.props.filterLockButtonLabel ?? 'Filters'}</span>
+          <Icon type='caret-down' className='react-autoql-chat-filter-lock-caret' />
+        </button>
+      </FilterLockPopover>
+    )
+  }
+
   setGeneratingSummary = (isGenerating) => {
     if (this._isMounted) {
       this.setState({ isGeneratingSummary: isGenerating })
@@ -855,7 +965,9 @@ export default class ChatContent extends React.Component {
                       enableDynamicCharting={this.props.enableDynamicCharting}
                       onNoneOfTheseClick={this.onNoneOfTheseClick}
                       autoChartAggregations={this.props.autoChartAggregations}
-                      onRTValueLabelClick={this.props.onRTValueLabelClick}
+                      onRTValueLabelClick={
+                        this.props.showFilterLockButton ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
+                      }
                       appliedFilters={message.appliedFilters}
                       disableMaxHeight={this.props.disableMaxMessageHeight}
                       queryRequestData={message.queryRequestData}
@@ -905,11 +1017,14 @@ export default class ChatContent extends React.Component {
             style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
             className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
           >
-            {isLLMEmptyState && (
+            {isLLMEmptyState && this.props.showLLMEmptyStateTitle && (
               <div className='llm-empty-state-title'>
                 <Icon type='react-autoql-logo' />
                 {lang.llmEmptyStateTitle}
               </div>
+            )}
+            {this.props.showFilterLockButton && (
+              <div className='react-autoql-chat-filter-lock-toolbar'>{this.renderFilterLockPopover()}</div>
             )}
             <QueryInput
               ref={(r) => (this.queryInputRef = r)}
@@ -929,7 +1044,7 @@ export default class ChatContent extends React.Component {
               hideInput={this.props.hideInput}
               source={this.props.source}
               scope={this.props.scope}
-              queryFilters={this.props.queryFilters}
+              queryFilters={this.props.showFilterLockButton ? this.state.lockedFilters : this.props.queryFilters}
               sessionId={this.props.sessionId}
               dataPageSize={this.props.dataPageSize}
               isResizing={this.props.isResizing}

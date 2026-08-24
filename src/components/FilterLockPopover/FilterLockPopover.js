@@ -21,6 +21,8 @@ export class FilterLockPopover extends React.Component {
     align: PropTypes.string,
     onClose: PropTypes.func,
     onChange: PropTypes.func,
+    showArrow: PropTypes.bool,
+    padding: PropTypes.number,
   }
 
   static defaultProps = {
@@ -31,6 +33,9 @@ export class FilterLockPopover extends React.Component {
     align: 'center',
     onClose: () => {},
     onChange: () => {},
+    // Default true preserves the DataMessenger header lock's arrow; ChatContent
+    // opts out with showArrow={false}.
+    showArrow: true,
   }
 
   state = {
@@ -150,7 +155,8 @@ export class FilterLockPopover extends React.Component {
         boundaryElement={this.props.boundaryElement}
         content={this.renderContent()}
         boundaryInset={10}
-        showArrow
+        showArrow={this.props.showArrow}
+        padding={this.props.padding}
         containerStyle={containerStyle}
       >
         {this.props.children || <div style={{ display: 'none' }} />}

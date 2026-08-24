@@ -16,6 +16,7 @@ import {
   QUERY_TERM_TYPE,
   isNumber,
   isListQuery,
+  DEFAULT_DATA_PAGE_SIZE,
   isSingleValueResponse,
   constructRTArray,
   getTimeFrameTextFromChunk,
@@ -48,10 +49,21 @@ import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { SelectableTable } from '../../SelectableTable/'
 import { authenticationType, dataFormattingType } from '../../../props/types'
+import { getPinnableQueryId } from '../../../utils/dataAlertQueryId'
+import { formatNumberTermValue, isPartialNumberInput, parseFormattedNumber } from '../../../utils/numberTermValue'
 import { CustomList } from '../CustomList'
 import './RuleSimple.scss'
 import ConditionPreview from './ConditionPreview'
 const SELF_COMPARISONS_TYPE = 'selfComparisons'
+
+// The builder's own queries run at the normal full page size, so the SQL stored against their
+// query_id never carries a page limit smaller than evaluation needs -- with headroom if the
+// Logic Engine's evaluation page size ever rises. See utils/dataAlertQueryId.
+const BUILDER_QUERY_PAGE_SIZE = DEFAULT_DATA_PAGE_SIZE
+
+// Only the first handful of rows is ever shown (the field selection grids) or read
+// (ConditionPreview), so responses are trimmed to this before being kept in state.
+const PREVIEW_ROW_LIMIT = 20
 
 const CONDITION_TYPE_LABELS = {
   EXISTS: (
@@ -617,6 +629,21 @@ export default class RuleSimple extends React.Component {
       !this.isValidSecondQueryResponse()
     )
   }
+  trimResponseRows = (response) => {
+    const rows = response?.data?.data?.rows
+    if (!Array.isArray(rows) || rows.length <= PREVIEW_ROW_LIMIT) {
+      return response
+    }
+
+    return {
+      ...response,
+      data: {
+        ...response.data,
+        data: { ...response.data.data, rows: rows.slice(0, PREVIEW_ROW_LIMIT) },
+      },
+    }
+  }
+
   getQuery = () => {
     try {
       this.setState({ isLoadingFirstQuery: true, isLoadingSecondQuery: true })
@@ -627,7 +654,7 @@ export default class RuleSimple extends React.Component {
             ...getAuthentication(this.props.authentication),
             ...getAutoQLConfig(this.props.autoQLConfig),
             source: 'data_alert_first_query',
-            pageSize: 2,
+            pageSize: BUILDER_QUERY_PAGE_SIZE,
             allowSuggestions: false,
             newColumns: this.props.initialData?.[0]?.additional_selects,
           })
@@ -638,13 +665,15 @@ export default class RuleSimple extends React.Component {
             ...getAuthentication(this.props.authentication),
             ...getAutoQLConfig(this.props.autoQLConfig),
             source: 'data_alert_second_query',
-            pageSize: 2,
+            pageSize: BUILDER_QUERY_PAGE_SIZE,
             allowSuggestions: false,
           })
         : Promise.resolve(null)
 
       Promise.all([fetchFirstQuery, fetchSecondQuery])
-        .then(([firstResponse, secondResponse]) => {
+        .then(([rawFirstResponse, rawSecondResponse]) => {
+          const firstResponse = this.trimResponseRows(rawFirstResponse)
+          const secondResponse = this.trimResponseRows(rawSecondResponse)
           const firstQueryCompareColumnIndex = this.getCompareColumnIndex(
             firstResponse,
             this.state.storedInitialData,
@@ -685,6 +714,34 @@ export default class RuleSimple extends React.Component {
     }
   }
 
+  /**
+   * Resolves the `query_id` to pin to a QUERY term, or undefined when none can be pinned.
+   *
+   * The id is only used when its response actually corresponds to the text being submitted,
+   * so editing the query text drops the pin rather than silently alerting on the old query.
+   */
+  getTermQueryId = (termIndex) => {
+    const isFirstTerm = termIndex === 0
+    const currentText = isFirstTerm ? this.state.inputValue : this.state.secondInputValue
+    const response = isFirstTerm ? this.state.firstQueryResult : this.state.secondQueryResult
+
+    if (response?.data?.data?.text === currentText) {
+      const queryId = getPinnableQueryId(response)
+      if (queryId) {
+        return queryId
+      }
+    }
+
+    // When editing an existing alert the builder re-runs its queries at a page size of 2, so
+    // those ids cannot be pinned. Carry the stored id forward while the text is unchanged.
+    const storedTerm = this.state.storedInitialData?.[termIndex]
+    if (storedTerm?.query_id && storedTerm.term_value === currentText) {
+      return storedTerm.query_id
+    }
+
+    return undefined
+  }
+
   getJSON = () => {
     let firstQueryJoinColumns = []
     let secondQueryJoinColumns = []
@@ -721,12 +778,14 @@ export default class RuleSimple extends React.Component {
     const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns?.map(
       (index) => this.state.firstQueryResult?.data?.data?.columns[index]?.name,
     )[0]
+    const firstTermQueryId = this.getTermQueryId(0)
     const expression = [
       {
         id: this.TERM_ID_1,
         condition: this.state.selectedOperator,
         term_type: QUERY_TERM_TYPE,
         term_value: this.state.inputValue,
+        ...(firstTermQueryId ? { query_id: firstTermQueryId } : {}),
         ...(this.state.secondTermType === SELF_COMPARISONS_TYPE
           ? {
               self_compare_columns: [firstQuerySelectedNumberColumnName, this.state.columnSelectValue],
@@ -755,11 +814,10 @@ export default class RuleSimple extends React.Component {
     if (this.allowOperators() && this.state.selectedOperator !== EXISTS_TYPE) {
       const { secondInputValue } = this.state
       let secondTermValue = secondInputValue
-      const percentageWithMissingFractionRegex = /^\d+\.%$/
-      if (percentageWithMissingFractionRegex.test(secondInputValue)) {
-        // If secondInputValue ends with a dot, slice off the '%' at the end, add '0%',
-        // Example: 40.% will become 40.0%
-        secondTermValue = secondInputValue.slice(0, -1) + '0%'
+      if (this.state.secondTermType === NUMBER_TERM_TYPE) {
+        // Thresholds are typed with whatever formatting reads best ("$5,000,000"), so only the
+        // number itself is sent along. A trailing % is kept -- it's part of the condition.
+        secondTermValue = formatNumberTermValue(secondInputValue)
       }
 
       const secondTerm = {
@@ -774,7 +832,7 @@ export default class RuleSimple extends React.Component {
         let value = this.state.secondTermMultiplicationFactorValue
 
         if (operation === 'multiply-percent-higher' || operation === 'multiply-percent-lower') {
-          let numberValue = parseInt(value ?? 0)
+          let numberValue = parseFormattedNumber(value ?? 0)
           if (!isNaN(numberValue) && numberValue > 0) {
             if (operation === 'multiply-percent-higher') {
               value = `${100 + numberValue}%`
@@ -802,6 +860,11 @@ export default class RuleSimple extends React.Component {
       if (this.state.secondTermType === QUERY_TERM_TYPE) {
         secondTerm.session_filter_locks = lockedFilters
         secondTerm.user_selection = this.props.initialData?.[1]?.user_selection ?? userSelection
+
+        const secondTermQueryId = this.getTermQueryId(1)
+        if (secondTermQueryId) {
+          secondTerm.query_id = secondTermQueryId
+        }
       }
       secondTerm.compare_column = secondQuerySelectedNumberColumnName
       if (this.state.secondTermType !== SELF_COMPARISONS_TYPE) {
@@ -1023,7 +1086,8 @@ export default class RuleSimple extends React.Component {
     )
   }
 
-  onValidationResponse = (response) => {
+  onValidationResponse = (rawResponse) => {
+    const response = this.trimResponseRows(rawResponse)
     let error
     let isInvalid = false
     const isSecondQueryListQuery = isListQuery(response.data?.data?.columns) && !isSingleValueResponse(response)
@@ -1066,7 +1130,7 @@ export default class RuleSimple extends React.Component {
       ...getAuthentication(this.props.authentication),
       ...getAutoQLConfig(this.props.autoQLConfig),
       source: 'data_alert_validation',
-      pageSize: 2, // No need to fetch more than 2 rows to determine validity
+      pageSize: BUILDER_QUERY_PAGE_SIZE,
       cancelToken: this.axiosSource.token,
       allowSuggestions: false,
     })
@@ -1107,9 +1171,10 @@ export default class RuleSimple extends React.Component {
       newState.secondQueryValidating = false
     }
     if (this.state.secondTermType === NUMBER_TERM_TYPE) {
-      // Allow incremental typing of numbers (ints, decimals, commas) with optional trailing % (e.g. 1, 1.0, .5, 1,000, 100%)
-      const numberRegex = /^-?(?:\d+([.,]\d*)?|\.\d+)%?$/
-      if (numberRegex.test(secondInputValue) || secondInputValue === '') {
+      // Numbers can be typed as they're read -- thousands separators, currency symbols and
+      // spaces are all allowed, and a trailing % still means "percent of the compared value".
+      // The formatting is stripped in getJSON (e.g. .5, 1,000, $5,000,000, 100%)
+      if (isPartialNumberInput(secondInputValue)) {
         this.setState(newState)
       }
     } else {
@@ -1563,7 +1628,7 @@ export default class RuleSimple extends React.Component {
         radio={true}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
-        rowLimit={20}
+        rowLimit={PREVIEW_ROW_LIMIT}
       />
     )
   }
@@ -1592,7 +1657,7 @@ export default class RuleSimple extends React.Component {
         radio={true}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
-        rowLimit={20}
+        rowLimit={PREVIEW_ROW_LIMIT}
       />
     )
   }
@@ -1631,7 +1696,7 @@ export default class RuleSimple extends React.Component {
         radio={false}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
-        rowLimit={20}
+        rowLimit={PREVIEW_ROW_LIMIT}
         disableCheckboxes={true}
       />
     )
