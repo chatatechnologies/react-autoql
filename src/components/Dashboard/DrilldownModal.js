@@ -264,7 +264,7 @@ export default class DrilldownModal extends React.Component {
                           }}
                           isAnimating={this.props.isAnimating}
                           isResizing={this.state.isResizingDrilldown || !this.props.isOpen}
-                          showQueryInterpretation={this.props.showQueryInterpretation}
+                          showQueryInterpretation={false}
                           reverseTranslationPlacement='top'
                           allowDisplayTypeChange={false}
                           source={this.props.source}

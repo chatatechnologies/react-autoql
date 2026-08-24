@@ -854,6 +854,7 @@ export class DashboardTile extends React.Component {
         pageSize,
         query,
         force: false,
+        sourceQuery: this.props.tile.queryId,
       }
 
       // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.

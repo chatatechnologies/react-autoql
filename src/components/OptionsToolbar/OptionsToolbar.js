@@ -5,7 +5,6 @@ import { format } from 'sql-formatter'
 import _cloneDeep from 'lodash.clonedeep'
 import { isMobile } from 'react-device-detect'
 import {
-  setColumnVisibility,
   exportCSV,
   isTableType,
   areAllColumnsHidden,
@@ -24,7 +23,6 @@ import {
 import { Icon } from '../Icon'
 import { Modal } from '../Modal'
 import { Button } from '../Button'
-import { Input } from '../Input'
 import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
 import { ReportProblemModal } from '../ReportProblemModal'
