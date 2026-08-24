@@ -1593,42 +1593,6 @@ export default class ChataTable extends React.Component {
     this.props.onColumnOrderChange(orderedNames)
   }
 
-  onRemoveColumnClick = async () => {
-    const column = _cloneDeep(this.state.contextMenuColumn)
-    this.setState({ contextMenuColumn: undefined })
-
-    const currentAdditionalSelectColumns = this.props.response?.data?.data?.fe_req?.additional_selects ?? []
-    const newAdditionalSelectColumns = currentAdditionalSelectColumns.filter((select) => {
-      return select?.columns?.[0]?.replace(/ /g, '') !== column?.name?.replace(/ /g, '')
-    })
-
-    if (currentAdditionalSelectColumns.length !== newAdditionalSelectColumns.length) {
-      this.setPageLoading(true)
-      try {
-        const response = await this.queryFn({ newColumns: newAdditionalSelectColumns })
-        if (response?.data?.data?.rows) {
-          this.props.updateColumnsAndData(response)
-        } else {
-          console.error('Column deletion failed: no rows returned')
-        }
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.setPageLoading(false)
-      }
-      return
-    }
-
-    const newColumns = this.props.columns.map((col) =>
-      col.name === column.name ? { ...col, visible: false, is_visible: false } : col,
-    )
-    this.props.updateColumns(
-      newColumns,
-      this.props.response?.data?.data?.fe_req,
-      this.props.response?.data?.data?.available_selects,
-    )
-  }
-
   updateColumn = (field, newParams) => {
     this.ref?.updateColumn?.(field, newParams)?.then(() => {
       if (!this._isMounted) return
