@@ -33,6 +33,14 @@ import { fuzzyMatch } from './fuzzyMatch'
 
 import 'react-toastify/dist/ReactToastify.css'
 
+/**
+ * Ceiling on how many injected matches are rendered at once. The dropdown is
+ * not virtualised and an empty query matches everything, so this bounds both
+ * the DOM and the work per keystroke. Integrators pass whatever their backend
+ * returns, so the ceiling is enforced here rather than assumed.
+ */
+const MAX_RENDERED_SUGGESTIONS = 100
+
 export default class FilterLockPopover extends React.Component {
   constructor(props) {
     super(props)
@@ -61,10 +69,29 @@ export default class FilterLockPopover extends React.Component {
      * Values this user may filter on, supplied by the integrator. When set,
      * it REPLACES the value-label autocomplete: the popover shows the whole
      * list up front, searches it locally (fuzzy), and never calls out per
-     * keystroke. Bare strings — the picked one is resolved to a real filter
-     * on pick. Leave undefined for the default autocomplete behaviour.
+     * keystroke. Leave undefined for the default autocomplete behaviour.
+     *
+     * Entries are `'Smith Family'` or `{ value, show_message }`. A picked
+     * value carries no filter metadata, so it is resolved through the
+     * value-label autocomplete on pick — and a bare string that matches more
+     * than one kind of filter is REJECTED rather than bound to whichever the
+     * API returned first. Supply `show_message` for any value whose display
+     * text is not unique across categories; it also gets shown in the list,
+     * so the user can see which one they are picking.
+     *
+     * Referential stability is preferred: the list is compared by content, but
+     * an inline array literal pays that comparison on every parent render.
+     * Hold it in state or a memo.
+     *
+     * At most `MAX_RENDERED_SUGGESTIONS` matches are rendered; the heading
+     * says so when the rest are cut.
      */
-    suggestionList: PropTypes.arrayOf(PropTypes.string),
+    suggestionList: PropTypes.arrayOf(
+      PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.shape({ value: PropTypes.string.isRequired, show_message: PropTypes.string }),
+      ]),
+    ),
     /** Section heading over an unfiltered `suggestionList`. */
     suggestionListTitle: PropTypes.string,
   }
@@ -124,7 +151,7 @@ export default class FilterLockPopover extends React.Component {
     if (this.hasSuggestionList()) {
       if (this.props.isOpen && !prevProps.isOpen) {
         this.fetchSuggestions({ value: '' })
-      } else if (this.props.isOpen && this.props.suggestionList !== prevProps.suggestionList) {
+      } else if (this.props.isOpen && !this.sameSuggestionList(this.props.suggestionList, prevProps.suggestionList)) {
         this.fetchSuggestions({ value: this.state.inputValue })
       }
 
@@ -230,6 +257,32 @@ export default class FilterLockPopover extends React.Component {
   hasSuggestionList = () => Array.isArray(this.props.suggestionList)
 
   /**
+   * Compare two injected lists by content, so an integrator handing us a fresh
+   * array literal each render does not churn the suggestions state. The
+   * identity check stays as the fast path for callers that do hold a stable
+   * reference.
+   */
+  sameSuggestionList = (a, b) => {
+    if (a === b) {
+      return true
+    }
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) {
+      return false
+    }
+
+    return a.every((entry, i) => {
+      const other = b[i]
+      if (entry === other) {
+        return true
+      }
+      if (typeof entry === 'string' || typeof other === 'string') {
+        return false
+      }
+      return entry?.value === other?.value && entry?.show_message === other?.show_message
+    })
+  }
+
+  /**
    * Turn an injected value (a bare string) into a real filter.
    *
    * `setFilters` needs `key` (canonical), `canonical_key` (column_name) and
@@ -238,26 +291,54 @@ export default class FilterLockPopover extends React.Component {
    * for one value, instead of one per keystroke.
    *
    * Exact match only, on `keyword` or `format_txt`. Locking a value the user
-   * did not choose is worse than not locking at all.
+   * did not choose is worse than not locking at all — which is also why an
+   * AMBIGUOUS value is rejected: the same display text can exist under two
+   * categories, and picking whichever the API returned first would silently
+   * bind the lock to the wrong `canonical_key`. `showMessage` (from an object
+   * entry) narrows the matches first, so an integrator who knows the category
+   * can still lock a value whose text is not unique.
    */
-  resolveSuggestion = (value) => {
+  resolveSuggestion = (value, showMessage) => {
     return fetchVLAutocomplete({
       ...getAuthentication(this.props.authentication),
       suggestion: value,
     }).then((response) => {
       const matches = response?.data?.data?.matches ?? []
       const target = `${value}`.trim().toLowerCase()
-      const match = matches.find(
+      let exact = matches.filter(
         (m) =>
           `${m?.keyword ?? ''}`.trim().toLowerCase() === target ||
           `${m?.format_txt ?? ''}`.trim().toLowerCase() === target,
       )
 
-      if (!match) {
-        return Promise.reject(new Error(`No filterable value found for "${value}"`))
+      if (showMessage) {
+        const scoped = exact.filter((m) => m?.show_message === showMessage)
+        if (scoped.length) {
+          exact = scoped
+        }
       }
 
-      return this.createNewFilterFromSuggestion(match)
+      if (!exact.length) {
+        const error = new Error(`No filterable value found for "${value}"`)
+        error.code = 'NOT_FOUND'
+        return Promise.reject(error)
+      }
+
+      // Only a match that would build a DIFFERENT lock counts as ambiguous —
+      // duplicates that resolve to the same filter are harmless.
+      const distinct = new Set(
+        exact.map((m) => `${m?.canonical ?? ''}|${m?.column_name ?? ''}|${m?.show_message ?? ''}`),
+      )
+      if (distinct.size > 1) {
+        const categories = [...new Set(exact.map((m) => m?.show_message).filter(Boolean))]
+        const error = new Error(
+          `"${value}" matches more than one filter${categories.length ? ` (${categories.join(', ')})` : ''}`,
+        )
+        error.code = 'AMBIGUOUS'
+        return Promise.reject(error)
+      }
+
+      return this.createNewFilterFromSuggestion(exact[0])
     })
   }
 
@@ -266,12 +347,18 @@ export default class FilterLockPopover extends React.Component {
     // already decided which values this user may filter on, so the search is
     // local and no request goes out until something is picked.
     if (this.hasSuggestionList()) {
-      const suggestions = fuzzyMatch(this.props.suggestionList, value).map((result) => ({
-        name: { keyword: result.name, ranges: result.ranges, unresolved: true },
+      const ranked = fuzzyMatch(this.props.suggestionList, value)
+      const suggestions = ranked.slice(0, MAX_RENDERED_SUGGESTIONS).map((result) => ({
+        name: {
+          keyword: result.name,
+          show_message: result.show_message,
+          ranges: result.ranges,
+          unresolved: true,
+        },
       }))
 
       if (this._isMounted) {
-        this.setState({ suggestions, isLoadingAutocomplete: false })
+        this.setState({ suggestions, suggestionTotal: ranked.length, isLoadingAutocomplete: false })
       }
       return
     }
@@ -411,7 +498,7 @@ export default class FilterLockPopover extends React.Component {
     // only becomes visible now (the placeholder had no key to compare on).
     if (newFilter.unresolved) {
       this.showSavingIndicator()
-      return this.resolveSuggestion(newFilter.value)
+      return this.resolveSuggestion(newFilter.value, newFilter.show_message)
         .then((resolved) => {
           const existing = this.findFilter(resolved)
           if (existing) {
@@ -424,7 +511,11 @@ export default class FilterLockPopover extends React.Component {
         .catch((error) => {
           console.error('FilterLockPopover - setFilter - Error resolving suggestion:', error)
           this.setState({ isSaving: false })
-          toast.error(`"${newFilter.value}" can't be used as a filter right now.`)
+          toast.error(
+            error?.code === 'AMBIGUOUS'
+              ? `"${newFilter.value}" matches more than one kind of filter, so it can't be locked automatically.`
+              : `"${newFilter.value}" can't be used as a filter right now.`,
+          )
           return Promise.reject()
         })
     }
@@ -490,7 +581,7 @@ export default class FilterLockPopover extends React.Component {
     // cannot be turned into a filter without a round trip — hand back a
     // placeholder for setFilter to resolve.
     if (name?.unresolved) {
-      return { value: name.keyword, unresolved: true }
+      return { value: name.keyword, show_message: name.show_message, unresolved: true }
     }
 
     const selectedFilter = this.createNewFilterFromSuggestion(name)
@@ -676,14 +767,21 @@ export default class FilterLockPopover extends React.Component {
     // An injected value has no category to show yet — that only exists once it
     // has been resolved, which happens on pick.
     if (name?.unresolved) {
+      // The category only exists when the integrator supplied it. Showing it
+      // is what lets a user tell two same-named values apart — without it,
+      // an ambiguous pick is refused rather than guessed at.
+      const category = name.show_message
       return (
         <ul
           className='filter-lock-suggestion-item'
           data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
           data-tooltip-delay-show={800}
-          data-tooltip-html={name.keyword}
+          data-tooltip-html={category ? `${name.keyword} <em>(${category})</em>` : name.keyword}
         >
-          <span>{this.renderHighlightedValue(name.keyword, name.ranges)}</span>
+          <span>
+            {this.renderHighlightedValue(name.keyword, name.ranges)}
+            {category ? <em> ({category})</em> : null}
+          </span>
         </ul>
       )
     }
@@ -729,12 +827,19 @@ export default class FilterLockPopover extends React.Component {
   }
 
   getSuggestionsTitle = () => {
-    // An unfiltered injected list is not "related to" anything yet.
-    if (this.hasSuggestionList() && !this.state.inputValue) {
-      return this.props.suggestionListTitle ?? 'All values'
+    if (!this.hasSuggestionList()) {
+      return `Related to "${this.state.inputValue}"`
     }
 
-    return `Related to "${this.state.inputValue}"`
+    // An unfiltered injected list is not "related to" anything yet.
+    const base = this.state.inputValue
+      ? `Related to "${this.state.inputValue}"`
+      : (this.props.suggestionListTitle ?? 'All values')
+
+    // Never let a cut list look complete.
+    const shown = this.state.suggestions?.length ?? 0
+    const total = this.state.suggestionTotal ?? shown
+    return total > shown ? `${base} — first ${shown} of ${total}` : base
   }
 
   /**
@@ -771,7 +876,7 @@ export default class FilterLockPopover extends React.Component {
       })
     } else if (noSuggestions) {
       sections.push({
-        title: `Related to "${this.state.inputValue}"`,
+        title: this.getSuggestionsTitle(),
         suggestions: [{ name: '' }],
         emptyState: true,
       })

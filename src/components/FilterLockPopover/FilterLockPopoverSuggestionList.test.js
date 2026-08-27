@@ -198,6 +198,127 @@ describe('resolving a picked value', () => {
   })
 })
 
+describe('ambiguous values', () => {
+  const advisorMatch = {
+    keyword: 'Smith Family',
+    format_txt: 'Smith Family',
+    show_message: 'Advisor',
+    canonical: 'advisor',
+    column_name: 'advisor_name',
+  }
+
+  test('refuses to lock a value that matches two kinds of filter', async () => {
+    fetchVLAutocomplete.mockResolvedValue({ data: { data: { matches: [vlMatch, advisorMatch] } } })
+    const wrapper = setup()
+
+    await expect(wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })).rejects.toBeUndefined()
+    expect(setFilters).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('locks duplicates that would build the same filter', async () => {
+    // Same canonical/column/category twice — nothing for the user to choose
+    // between, so this is not ambiguous.
+    fetchVLAutocomplete.mockResolvedValue({ data: { data: { matches: [vlMatch, { ...vlMatch }] } } })
+    const wrapper = setup()
+
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+    expect(setFilters.mock.calls[0][0].filters).toEqual([resolvedFilter])
+    wrapper.unmount()
+  })
+
+  test('a show_message on the entry picks the right one', async () => {
+    fetchVLAutocomplete.mockResolvedValue({ data: { data: { matches: [advisorMatch, vlMatch] } } })
+    const wrapper = setup({ suggestionList: [{ value: 'Smith Family', show_message: 'Household' }] })
+
+    await wrapper.instance().setFilter({ value: 'Smith Family', show_message: 'Household', unresolved: true })
+
+    expect(setFilters).toHaveBeenCalledTimes(1)
+    expect(setFilters.mock.calls[0][0].filters[0].canonical_key).toBe('household_name')
+    wrapper.unmount()
+  })
+
+  test('carries the category from the entry into the picked placeholder', () => {
+    const wrapper = setup({ suggestionList: [{ value: 'Smith Family', show_message: 'Household' }] })
+    const [suggestion] = wrapper.state('suggestions')
+
+    expect(suggestion.name.show_message).toBe('Household')
+    expect(wrapper.instance().getSuggestionValue(suggestion)).toEqual({
+      value: 'Smith Family',
+      show_message: 'Household',
+      unresolved: true,
+    })
+    wrapper.unmount()
+  })
+})
+
+describe('bounding what gets rendered', () => {
+  const many = Array.from({ length: 150 }, (_, i) => `Household ${String(i).padStart(3, '0')}`)
+
+  test('renders at most 100 matches', () => {
+    const wrapper = setup({ suggestionList: many })
+    expect(wrapper.state('suggestions')).toHaveLength(100)
+    expect(wrapper.state('suggestionTotal')).toBe(150)
+    wrapper.unmount()
+  })
+
+  test('says so in the heading rather than looking complete', () => {
+    const wrapper = setup({ suggestionList: many, suggestionListTitle: 'Households' })
+    expect(wrapper.instance().getSuggestionsTitle()).toBe('Households — first 100 of 150')
+    wrapper.unmount()
+  })
+
+  test('leaves the heading alone when nothing was cut', () => {
+    const wrapper = setup({ suggestionListTitle: 'Households' })
+    expect(wrapper.instance().getSuggestionsTitle()).toBe('Households')
+    wrapper.unmount()
+  })
+})
+
+describe('headings', () => {
+  test('the empty state uses the same heading, not Related to ""', () => {
+    const wrapper = setup()
+    wrapper.instance().fetchSuggestions({ value: 'zzzz' })
+    const [section] = wrapper.instance().getSuggestions()
+
+    expect(section.emptyState).toBe(true)
+    expect(section.title).toBe('All values')
+    wrapper.unmount()
+  })
+
+  test('falls back to the search phrasing once something is typed', () => {
+    const wrapper = setup()
+    wrapper.setState({ inputValue: 'smi' })
+    expect(wrapper.instance().getSuggestionsTitle()).toBe('Related to "smi"')
+    wrapper.unmount()
+  })
+})
+
+describe('list identity', () => {
+  test('an equal array literal is not treated as a new list', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+
+    expect(instance.sameSuggestionList(['a', 'b'], ['a', 'b'])).toBe(true)
+    expect(instance.sameSuggestionList([{ value: 'a', show_message: 'H' }], [{ value: 'a', show_message: 'H' }])).toBe(
+      true,
+    )
+    expect(instance.sameSuggestionList(['a', 'b'], ['a', 'c'])).toBe(false)
+    expect(instance.sameSuggestionList(['a'], ['a', 'b'])).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('does not re-run the search when an equal list is passed again', () => {
+    const wrapper = setup()
+    const spy = jest.spyOn(wrapper.instance(), 'fetchSuggestions')
+
+    wrapper.setProps({ suggestionList: [...suggestionList] })
+
+    expect(spy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('without suggestionList', () => {
   test('still uses the value-label autocomplete', () => {
     const wrapper = mount(<FilterLockPopoverContent authentication={sampleAuth} isOpen />)

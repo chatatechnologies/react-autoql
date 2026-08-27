@@ -5,6 +5,10 @@
  * Hand-written rather than a new dependency: the injected list is a few hundred
  * values at most, and the ranking below is the ranking this picker needs.
  *
+ * Entries are either a bare string or `{ value, show_message }`. The category
+ * is carried through untouched so a pick can be disambiguated later — it plays
+ * no part in matching or ranking.
+ *
  * Ranking, highest first:
  *   1. exact match (case-insensitive)
  *   2. prefix match on the whole string
@@ -32,6 +36,24 @@ const toRanges = (indices) => {
     }
   })
   return ranges
+}
+
+/**
+ * `string | { value, show_message }` -> `{ value, show_message }`, or null for
+ * anything unusable. Exported so the popover normalises entries the same way.
+ */
+export const normalizeSuggestionEntry = (entry) => {
+  if (typeof entry === 'string') {
+    const value = entry.trim()
+    return value ? { value, show_message: undefined } : null
+  }
+
+  if (entry && typeof entry === 'object' && typeof entry.value === 'string') {
+    const value = entry.value.trim()
+    return value ? { value, show_message: entry.show_message } : null
+  }
+
+  return null
 }
 
 /**
@@ -84,20 +106,28 @@ export const fuzzyScore = (name, query) => {
 }
 
 /**
- * Rank `names` against `query`. Non-strings and blanks are dropped. An empty
- * query returns EVERY name sorted alphabetically — that is what makes the
- * popover show the full injected list before the user types anything.
+ * Rank `entries` against `query`. Unusable entries are dropped. An empty query
+ * returns EVERY entry sorted alphabetically — that is what makes the popover
+ * show the full injected list before the user types anything.
+ *
+ * Results are `{ name, show_message, score, ranges }`. The caller is expected
+ * to cap what it renders; this returns the whole ranked set.
  */
-export const fuzzyMatch = (names, query) => {
-  const list = Array.isArray(names) ? names.filter((n) => typeof n === 'string' && n.trim()) : []
+export const fuzzyMatch = (entries, query) => {
+  const list = (Array.isArray(entries) ? entries : []).map(normalizeSuggestionEntry).filter(Boolean)
   const q = `${query ?? ''}`.trim()
 
   if (!q) {
-    return [...list].sort((a, b) => a.localeCompare(b)).map((name) => ({ name, score: 0, ranges: [] }))
+    return [...list]
+      .sort((a, b) => a.value.localeCompare(b.value))
+      .map((entry) => ({ name: entry.value, show_message: entry.show_message, score: 0, ranges: [] }))
   }
 
   return list
-    .map((name) => fuzzyScore(name, q))
-    .filter((result) => result !== null)
+    .map((entry) => {
+      const result = fuzzyScore(entry.value, q)
+      return result && { ...result, show_message: entry.show_message }
+    })
+    .filter(Boolean)
     .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
 }
