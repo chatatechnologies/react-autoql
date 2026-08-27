@@ -29,6 +29,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import { lang } from '../../js/Localization'
 import { authenticationType } from '../../props/types'
+import { fuzzyMatch } from './fuzzyMatch'
 
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -55,6 +56,17 @@ export default class FilterLockPopover extends React.Component {
     onClose: PropTypes.func,
     onChange: PropTypes.func,
     insertedFilter: PropTypes.string,
+    tooltipID: PropTypes.string,
+    /**
+     * Values this user may filter on, supplied by the integrator. When set,
+     * it REPLACES the value-label autocomplete: the popover shows the whole
+     * list up front, searches it locally (fuzzy), and never calls out per
+     * keystroke. Bare strings — the picked one is resolved to a real filter
+     * on pick. Leave undefined for the default autocomplete behaviour.
+     */
+    suggestionList: PropTypes.arrayOf(PropTypes.string),
+    /** Section heading over an unfiltered `suggestionList`. */
+    suggestionListTitle: PropTypes.string,
   }
 
   static defaultProps = {
@@ -64,6 +76,8 @@ export default class FilterLockPopover extends React.Component {
     isOpen: false,
     onClose: () => {},
     onChange: () => {},
+    suggestionList: undefined,
+    suggestionListTitle: undefined,
   }
 
   componentDidMount = () => {
@@ -75,6 +89,10 @@ export default class FilterLockPopover extends React.Component {
 
     if (this.props.isOpen && this.props.insertedFilter) {
       this.insertFilter(this.props.insertedFilter)
+    }
+
+    if (this.props.isOpen && this.hasSuggestionList()) {
+      this.fetchSuggestions({ value: '' })
     }
   }
 
@@ -97,6 +115,25 @@ export default class FilterLockPopover extends React.Component {
       (this.props.insertedFilter && !prevProps.insertedFilter)
     ) {
       this.insertFilter(this.props.insertedFilter)
+    }
+
+    // Prime the list on open so it is ready the instant the user focuses the
+    // search box. Focusing is what actually drops it down, and doing that for
+    // the user is unwanted — the popover should open quiet. Also re-run the
+    // search if the list arrives late (integrators usually fetch it async).
+    if (this.hasSuggestionList()) {
+      if (this.props.isOpen && !prevProps.isOpen) {
+        this.fetchSuggestions({ value: '' })
+      } else if (this.props.isOpen && this.props.suggestionList !== prevProps.suggestionList) {
+        this.fetchSuggestions({ value: this.state.inputValue })
+      }
+
+      // Locking a filter resets the input. Re-run the local search so the list
+      // doesn't keep the previous query's matches — and its highlighting —
+      // sitting under an empty search box the next time it opens.
+      if (!this.state.inputValue && prevState.inputValue) {
+        this.fetchSuggestions({ value: '' })
+      }
     }
   }
 
@@ -190,7 +227,55 @@ export default class FilterLockPopover extends React.Component {
     return Math.ceil((timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000)
   }
 
+  hasSuggestionList = () => Array.isArray(this.props.suggestionList)
+
+  /**
+   * Turn an injected value (a bare string) into a real filter.
+   *
+   * `setFilters` needs `key` (canonical), `canonical_key` (column_name) and
+   * `show_message`, and an injected list carries none of them — so the PICKED
+   * value is resolved through the value-label autocomplete here: one request
+   * for one value, instead of one per keystroke.
+   *
+   * Exact match only, on `keyword` or `format_txt`. Locking a value the user
+   * did not choose is worse than not locking at all.
+   */
+  resolveSuggestion = (value) => {
+    return fetchVLAutocomplete({
+      ...getAuthentication(this.props.authentication),
+      suggestion: value,
+    }).then((response) => {
+      const matches = response?.data?.data?.matches ?? []
+      const target = `${value}`.trim().toLowerCase()
+      const match = matches.find(
+        (m) =>
+          `${m?.keyword ?? ''}`.trim().toLowerCase() === target ||
+          `${m?.format_txt ?? ''}`.trim().toLowerCase() === target,
+      )
+
+      if (!match) {
+        return Promise.reject(new Error(`No filterable value found for "${value}"`))
+      }
+
+      return this.createNewFilterFromSuggestion(match)
+    })
+  }
+
   fetchSuggestions = ({ value }) => {
+    // An injected list replaces the autocomplete entirely: the integrator has
+    // already decided which values this user may filter on, so the search is
+    // local and no request goes out until something is picked.
+    if (this.hasSuggestionList()) {
+      const suggestions = fuzzyMatch(this.props.suggestionList, value).map((result) => ({
+        name: { keyword: result.name, ranges: result.ranges, unresolved: true },
+      }))
+
+      if (this._isMounted) {
+        this.setState({ suggestions, isLoadingAutocomplete: false })
+      }
+      return
+    }
+
     // If already fetching autocomplete, cancel it
     if (this.axiosSource) {
       this.axiosSource.cancel(REQUEST_CANCELLED_ERROR)
@@ -254,6 +339,14 @@ export default class FilterLockPopover extends React.Component {
   }
 
   onSuggestionsClearRequested = () => {
+    // react-autosuggest clears on every pick. Refilling here would shut the
+    // dropdown and immediately reopen it — it reads as the list flickering on
+    // each click. An injected list is static, so leave it: emptying the input
+    // still re-runs the local search through onSuggestionsFetchRequested.
+    if (this.hasSuggestionList()) {
+      return
+    }
+
     this.setState({
       suggestions: [],
     })
@@ -313,6 +406,29 @@ export default class FilterLockPopover extends React.Component {
       return
     }
 
+    // Injected pick — resolve it to a real filter first, then fall through the
+    // normal path. The resolved value can duplicate an existing lock, which
+    // only becomes visible now (the placeholder had no key to compare on).
+    if (newFilter.unresolved) {
+      this.showSavingIndicator()
+      return this.resolveSuggestion(newFilter.value)
+        .then((resolved) => {
+          const existing = this.findFilter(resolved)
+          if (existing) {
+            this.setState({ inputValue: '', isSaving: false })
+            this.handleHighlightFilterRow(this.getKey(existing))
+            return Promise.resolve()
+          }
+          return this.setFilter(resolved)
+        })
+        .catch((error) => {
+          console.error('FilterLockPopover - setFilter - Error resolving suggestion:', error)
+          this.setState({ isSaving: false })
+          toast.error(`"${newFilter.value}" can't be used as a filter right now.`)
+          return Promise.reject()
+        })
+    }
+
     const auth = this.props.authentication ?? {}
 
     this.showSavingIndicator()
@@ -369,6 +485,14 @@ export default class FilterLockPopover extends React.Component {
 
   getSuggestionValue = (sugg) => {
     const name = sugg.name
+
+    // react-autosuggest needs a value synchronously, and an injected value
+    // cannot be turned into a filter without a round trip — hand back a
+    // placeholder for setFilter to resolve.
+    if (name?.unresolved) {
+      return { value: name.keyword, unresolved: true }
+    }
+
     const selectedFilter = this.createNewFilterFromSuggestion(name)
     return selectedFilter
   }
@@ -526,7 +650,44 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  /** Bold the fuzzy-matched characters of an injected value. */
+  renderHighlightedValue = (value, ranges) => {
+    if (!ranges?.length) {
+      return value
+    }
+
+    const parts = []
+    let at = 0
+    ranges.forEach(([start, end], i) => {
+      if (start > at) {
+        parts.push(value.slice(at, start))
+      }
+      parts.push(<strong key={i}>{value.slice(start, end)}</strong>)
+      at = end
+    })
+    if (at < value.length) {
+      parts.push(value.slice(at))
+    }
+
+    return parts
+  }
+
   renderSuggestion = ({ name }) => {
+    // An injected value has no category to show yet — that only exists once it
+    // has been resolved, which happens on pick.
+    if (name?.unresolved) {
+      return (
+        <ul
+          className='filter-lock-suggestion-item'
+          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+          data-tooltip-delay-show={800}
+          data-tooltip-html={name.keyword}
+        >
+          <span>{this.renderHighlightedValue(name.keyword, name.ranges)}</span>
+        </ul>
+      )
+    }
+
     const displayName = name.format_txt ?? name.keyword
 
     if (!displayName) {
@@ -567,6 +728,36 @@ export default class FilterLockPopover extends React.Component {
     )
   }
 
+  getSuggestionsTitle = () => {
+    // An unfiltered injected list is not "related to" anything yet.
+    if (this.hasSuggestionList() && !this.state.inputValue) {
+      return this.props.suggestionListTitle ?? 'All values'
+    }
+
+    return `Related to "${this.state.inputValue}"`
+  }
+
+  /**
+   * The default only renders suggestions once the input is non-empty. With an
+   * injected list the full list IS the picker, so it shows on an empty input
+   * too — with ONE exception.
+   *
+   * ⚠️ `suggestions-updated` is react-autosuggest's auto-reveal path: it
+   * reopens a collapsed dropdown whenever the suggestions array changes
+   * identity, and `getSuggestions()` returns a fresh array on EVERY render.
+   * Answering true there means picking a value closes the list and the very
+   * next render reopens it — a visible flicker on every click. (The default
+   * path never hits this: picking clears the input, and an empty input is
+   * already false for it.)
+   */
+  shouldRenderSuggestions = (value, reason) => {
+    if (!this.hasSuggestionList()) {
+      return `${value ?? ''}`.trim().length > 0
+    }
+
+    return reason !== 'suggestions-updated'
+  }
+
   getSuggestions = () => {
     const sections = []
     const doneLoading = !this.state.isLoadingAutocomplete
@@ -575,7 +766,7 @@ export default class FilterLockPopover extends React.Component {
 
     if (hasSuggestions) {
       sections.push({
-        title: `Related to "${this.state.inputValue}"`,
+        title: this.getSuggestionsTitle(),
         suggestions: this.state.suggestions,
       })
     } else if (noSuggestions) {
@@ -614,6 +805,7 @@ export default class FilterLockPopover extends React.Component {
           getSuggestionValue={this.getSuggestionValue}
           onSuggestionsFetchRequested={this.onSuggestionsFetchRequested}
           onSuggestionsClearRequested={this.onSuggestionsClearRequested}
+          shouldRenderSuggestions={this.shouldRenderSuggestions}
           renderSuggestionsContainer={this.renderSuggestionsContainer}
           getSectionSuggestions={(section) => section.suggestions}
           renderSectionTitle={this.renderSectionTitle}
