@@ -555,3 +555,81 @@ describe('ResizeObserver error suppression', () => {
     inst.componentWillUnmount()
   })
 })
+
+describe('throttled refresh loop lifecycle', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => {
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  })
+
+  const setupResizing = () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar', isResizing: true, hidden: false })
+    const inst = wrapper.instance()
+    inst._isMounted = true
+    jest.spyOn(inst, 'adjustChartPosition').mockImplementation(() => {})
+    return { wrapper, inst }
+  }
+
+  test('runs while actively resizing and visible', () => {
+    const { inst } = setupResizing()
+    inst.startThrottledRefresh()
+
+    expect(inst.throttleTimeout).not.toBeNull()
+    const callsAfterStart = inst.adjustChartPosition.mock.calls.length
+    jest.advanceTimersByTime(inst.throttleDelay * 3)
+    expect(inst.adjustChartPosition.mock.calls.length).toBeGreaterThan(callsAfterStart)
+  })
+
+  test('terminates itself once resizing ends, even if stop is never called', () => {
+    // This is the leak: stop is edge-triggered from componentDidUpdate and can be missed entirely.
+    const { wrapper, inst } = setupResizing()
+    inst.startThrottledRefresh()
+    expect(inst.throttleTimeout).not.toBeNull()
+
+    wrapper.setProps({ isResizing: false })
+    jest.advanceTimersByTime(inst.throttleDelay * 2)
+
+    expect(inst.throttleTimeout).toBeNull()
+    const callsAfterStop = inst.adjustChartPosition.mock.calls.length
+    jest.advanceTimersByTime(inst.throttleDelay * 10)
+    expect(inst.adjustChartPosition.mock.calls.length).toBe(callsAfterStop)
+  })
+
+  test('terminates itself when the chart becomes hidden mid-resize', () => {
+    // A hidden chart is blocked by shouldComponentUpdate, so componentDidUpdate never fires again
+    // and the isResizing true->false edge is lost forever.
+    const { wrapper, inst } = setupResizing()
+    inst.startThrottledRefresh()
+
+    wrapper.setProps({ hidden: true })
+    jest.advanceTimersByTime(inst.throttleDelay * 2)
+
+    expect(inst.throttleTimeout).toBeNull()
+    const callsAfterHide = inst.adjustChartPosition.mock.calls.length
+    jest.advanceTimersByTime(inst.throttleDelay * 10)
+    expect(inst.adjustChartPosition.mock.calls.length).toBe(callsAfterHide)
+  })
+
+  test('does not start a second concurrent loop', () => {
+    const { inst } = setupResizing()
+    inst.startThrottledRefresh()
+    const firstTimeout = inst.throttleTimeout
+
+    inst.startThrottledRefresh()
+    expect(inst.throttleTimeout).toBe(firstTimeout)
+
+    // A single loop means a single adjust per throttle window, not two.
+    inst.adjustChartPosition.mockClear()
+    jest.advanceTimersByTime(inst.throttleDelay)
+    expect(inst.adjustChartPosition.mock.calls.length).toBeLessThanOrEqual(1)
+  })
+
+  test('does not start when already hidden', () => {
+    const wrapper = setup({ ...listSampleProps, type: 'bar', isResizing: true, hidden: true })
+    const inst = wrapper.instance()
+    inst._isMounted = true
+    inst.startThrottledRefresh()
+    expect(inst.throttleTimeout).toBeNull()
+  })
+})
