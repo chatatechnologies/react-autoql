@@ -37,48 +37,97 @@ describe('resize listener lifecycle', () => {
   let removed
   let addSpy
   let removeSpy
+  let winAddSpy
+  let winRemoveSpy
 
   beforeEach(() => {
     added = []
     removed = []
+    // Record which listeners are registered without suppressing them, so the assertions are about
+    // real DOM registration rather than about the mock having been called.
+    const realAdd = document.addEventListener.bind(document)
+    const realRemove = document.removeEventListener.bind(document)
     addSpy = jest.spyOn(document, 'addEventListener').mockImplementation((type, fn, opts) => {
       added.push(type)
-      return Document.prototype.addEventListener.wrappedMethod?.call(document, type, fn, opts)
+      return realAdd(type, fn, opts)
     })
-    removeSpy = jest.spyOn(document, 'removeEventListener').mockImplementation((type) => {
+    removeSpy = jest.spyOn(document, 'removeEventListener').mockImplementation((type, fn, opts) => {
       removed.push(type)
+      return realRemove(type, fn, opts)
+    })
+
+    const realWinAdd = window.addEventListener.bind(window)
+    const realWinRemove = window.removeEventListener.bind(window)
+    winAddSpy = jest.spyOn(window, 'addEventListener').mockImplementation((type, fn, opts) => {
+      added.push(`window:${type}`)
+      return realWinAdd(type, fn, opts)
+    })
+    winRemoveSpy = jest.spyOn(window, 'removeEventListener').mockImplementation((type, fn, opts) => {
+      removed.push(`window:${type}`)
+      return realWinRemove(type, fn, opts)
     })
   })
 
   afterEach(() => {
     addSpy.mockRestore()
     removeSpy.mockRestore()
+    winAddSpy.mockRestore()
+    winRemoveSpy.mockRestore()
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
   })
 
-  test('registers a mouseleave fallback when a resize starts', () => {
-    // Without this, releasing the button outside the viewport never delivers mouseup and
-    // isResizing stays stuck true, which keeps ChataChart's refresh loop running.
+  test('registers the drag listeners and the offscreen-release fallback', () => {
     const wrapper = mountQueryOutput()
     wrapper.instance().handleResizeStart({ preventDefault: () => {}, clientY: 100 })
 
     expect(added).toContain('mousemove')
     expect(added).toContain('mouseup')
-    expect(added).toContain('mouseleave')
+    expect(added).toContain('window:blur')
+
+    // mouseleave would cancel the resize whenever the pointer crosses the viewport edge, which
+    // happens routinely when overshooting while dragging the handle downwards.
+    expect(added).not.toContain('mouseleave')
 
     wrapper.unmount()
   })
 
-  test('mouseleave clears isResizing just like mouseup', () => {
+  test('a move with no button held ends a resize that was released offscreen', () => {
+    // The browser never delivers the mouseup for a release outside the viewport, so isResizing
+    // would otherwise stay stuck true and keep ChataChart's refresh loop running.
     const wrapper = mountQueryOutput()
     const inst = wrapper.instance()
 
     inst.handleResizeStart({ preventDefault: () => {}, clientY: 100 })
     expect(inst.state.isResizing).toBe(true)
 
-    // handleMouseUp is the handler registered for mouseleave
-    inst.handleMouseUp()
+    inst.handleMouseMove({ clientY: 400, buttons: 0 })
+    expect(inst.state.isResizing).toBe(false)
+    expect(document.body.style.cursor).toBe('')
+
+    wrapper.unmount()
+  })
+
+  test('a move with the button still held keeps resizing across the viewport edge', () => {
+    const wrapper = mountQueryOutput()
+    const inst = wrapper.instance()
+
+    inst.handleResizeStart({ preventDefault: () => {}, clientY: 100 })
+    inst.handleMouseMove({ clientY: 400, buttons: 1 })
+
+    expect(inst.state.isResizing).toBe(true)
+
+    wrapper.unmount()
+  })
+
+  test('window blur ends a resize released offscreen that never comes back', () => {
+    const wrapper = mountQueryOutput()
+    const inst = wrapper.instance()
+
+    inst.handleResizeStart({ preventDefault: () => {}, clientY: 100 })
+    expect(inst.state.isResizing).toBe(true)
+
+    window.dispatchEvent(new Event('blur'))
     expect(inst.state.isResizing).toBe(false)
 
     wrapper.unmount()
@@ -122,7 +171,7 @@ describe('resize listener lifecycle', () => {
 
     expect(removed).toContain('mousemove')
     expect(removed).toContain('mouseup')
-    expect(removed).toContain('mouseleave')
+    expect(removed).toContain('window:blur')
     expect(document.body.style.cursor).toBe('')
   })
 })

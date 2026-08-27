@@ -814,21 +814,27 @@ export class QueryOutput extends React.Component {
   handleWindowResize = () => {
     this.updateMaxConstraints()
   }
-  // Listener add/remove are paired here so the two sets can't drift apart. `mouseleave` on the
-  // document is the safety net for releasing the button outside the viewport: the browser never
-  // delivers that `mouseup`, so without it `isResizing` stays stuck true indefinitely. A stuck
-  // isResizing keeps ChataChart's throttled refresh loop running and makes ChataTable/ChatMessage
-  // short-circuit their renders. This mirrors DataMessenger's drawer resize handle.
+  // Listener add/remove are paired here so the two sets can't drift apart.
+  //
+  // A drag that ends outside the viewport never delivers `mouseup`, which leaves `isResizing`
+  // stuck true — that keeps ChataChart's throttled refresh loop running and makes
+  // ChataTable/ChatMessage short-circuit their renders. Two listeners cover that:
+  //   - `mousemove` checks `e.buttons`, so a release that happened offscreen ends the resize the
+  //     moment the pointer comes back.
+  //   - `blur` ends it when the user releases offscreen and never returns (clicks another window).
+  // Deliberately not `mouseleave`: it fires whenever the pointer crosses the viewport edge, so it
+  // would cancel a resize the moment the user overshoots the window — which they routinely do when
+  // dragging a handle to the bottom of the screen.
   addResizeListeners = () => {
     document.addEventListener('mousemove', this.handleMouseMove)
     document.addEventListener('mouseup', this.handleMouseUp)
-    document.addEventListener('mouseleave', this.handleMouseUp)
+    window.addEventListener('blur', this.handleMouseUp)
   }
 
   removeResizeListeners = () => {
     document.removeEventListener('mousemove', this.handleMouseMove)
     document.removeEventListener('mouseup', this.handleMouseUp)
-    document.removeEventListener('mouseleave', this.handleMouseUp)
+    window.removeEventListener('blur', this.handleMouseUp)
   }
 
   clearResizeCursorStyles = () => {
@@ -861,6 +867,14 @@ export class QueryOutput extends React.Component {
 
   handleMouseMove = (e) => {
     if (!this.state.isResizing || !this.props.enableResizing) return
+
+    // The button was released while the pointer was outside the viewport, so the `mouseup` never
+    // arrived. This is the first move since it came back — end the resize instead of jumping the
+    // handle to a pointer that is no longer dragging.
+    if (e.buttons === 0) {
+      this.handleMouseUp()
+      return
+    }
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
     const isChart = isChartType(this.state.displayType)
@@ -1115,6 +1129,10 @@ export class QueryOutput extends React.Component {
     return this.state?.visiblePivotRows ? this.state?.visiblePivotRows?.length : this.pivotTableData?.length
   }
 
+  hasFiltersApplied = () => {
+    return this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
+  }
+
   // A single value query with no data can come back as rows: [], [[]] or [[null]]
   hasNoSingleValueData = (response) => {
     const rows = response?.data?.data?.rows
@@ -1129,18 +1147,34 @@ export class QueryOutput extends React.Component {
     return rows.length === 1 && (!rows[0]?.length || rows[0].every((value) => value === null || value === undefined))
   }
 
-  // isSingleValueResponse only considers empty datasets to be single value responses for a
-  // specific reference ID. Any single column response with no data should render as a single
-  // value ("No data found") instead of an empty table
+  // A single value query is an aggregation that resolves to one number, so the response carries
+  // exactly one numerical column. Deliberately strict:
+  //   - `columns.length === 1`, not "one visible column". A multi-column response the user has
+  //     narrowed to a single visible column is still a table, and collapsing it to a single value
+  //     would strip the column headers and filter UI they were using.
+  //   - number type only. A one-column list query ("show me customer names") is not a single value
+  //     query and must keep rendering as a table when it comes back empty.
+  isSingleValueQuery = (columns) => {
+    return columns?.length === 1 && isColumnNumberType(columns[0])
+  }
+
+  // isSingleValueResponse already handles rows: [[]] and rows: [[null]] — those come back as one
+  // row and one column, so they are single value responses by its own definition. The only gap is
+  // rows: [], which it accepts solely for reference ID 1.1.211 and otherwise leaves as an empty
+  // one column table. Close that gap for any reference ID so an empty single value query renders
+  // "No data found" rather than a one column table with no rows.
   isSingleValueOrEmptyResponse = (response = this.queryResponse ?? this.props.queryResponse) => {
     if (isSingleValueResponse(response)) {
       return true
     }
 
-    const columns = response?.data?.data?.columns
-    const hasOneColumn = columns?.length === 1 || columns?.filter((col) => col?.is_visible)?.length === 1
+    // Never collapse a filtered result. The user filtered the data down themselves, and replacing
+    // the table with "No data found" would strip the filter UI they need to undo it.
+    if (this.hasFiltersApplied()) {
+      return false
+    }
 
-    return !!hasOneColumn && this.hasNoSingleValueData(response)
+    return this.isSingleValueQuery(response?.data?.data?.columns) && this.hasNoSingleValueData(response)
   }
 
   getUpdatedDefaultDisplayType = (preferredDisplayType) => {
@@ -1170,11 +1204,6 @@ export class QueryOutput extends React.Component {
     // Don't validate against error responses as they don't have valid data
     if (this.hasError(props.queryResponse)) {
       return displayType || defaultDisplayType
-    }
-
-    // Single column responses with no data can only be rendered as a single value
-    if (this.isSingleValueOrEmptyResponse(props.queryResponse)) {
-      return 'single-value'
     }
 
     // If prop is not provided, use default display type
@@ -1350,7 +1379,7 @@ export class QueryOutput extends React.Component {
       // If data is a single value, change display type to table
       // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
       let displayType = this.state.displayType
-      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
+      const hasFilters = this.hasFiltersApplied()
       if (this.state.displayType === 'single-value' && !this.isSingleValueOrEmptyResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
       } else if (
@@ -2937,10 +2966,6 @@ export class QueryOutput extends React.Component {
   }
 
   getPotentialDisplayTypes = () => {
-    if (this.isSingleValueOrEmptyResponse()) {
-      return ['single-value']
-    }
-
     return getSupportedDisplayTypes({
       response: this.queryResponse,
       columns: this.getColumns(),
@@ -2952,10 +2977,6 @@ export class QueryOutput extends React.Component {
   }
 
   isCurrentDisplayTypeValid = () => {
-    if (this.isSingleValueOrEmptyResponse()) {
-      return this.state.displayType === 'single-value'
-    }
-
     return isDisplayTypeValid(
       this.queryResponse,
       this.state.displayType,
@@ -2967,10 +2988,6 @@ export class QueryOutput extends React.Component {
   }
 
   getCurrentSupportedDisplayTypes = (newColumns) => {
-    if (this.isSingleValueOrEmptyResponse()) {
-      return ['single-value']
-    }
-
     return getSupportedDisplayTypes({
       response: this.queryResponse,
       columns: newColumns ?? this.getColumns(),
