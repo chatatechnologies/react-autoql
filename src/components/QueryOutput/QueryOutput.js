@@ -198,6 +198,11 @@ export class QueryOutput extends React.Component {
       this.formattedTableParams = { filters: [], sorters: [] }
     }
 
+    // Filters that arrived with the query itself — fe_req, a drilldown, or a saved tile config —
+    // captured once the seeding above has finished. These are not the user narrowing a table down,
+    // so anything matching this baseline must not count as "the user applied a filter".
+    this.captureQueryFilterBaseline()
+
     this.formattedLockedFilters = this.formatLockedFilters(props.lockedFilters, columns)
 
     this.DEFAULT_TABLE_PAGE_SIZE = 100
@@ -571,6 +576,7 @@ export class QueryOutput extends React.Component {
           this.queryID = this.queryResponse?.data?.data?.query_id
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
+            this.captureQueryFilterBaseline()
           }
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -1133,6 +1139,19 @@ export class QueryOutput extends React.Component {
     return this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
   }
 
+  captureQueryFilterBaseline = () => {
+    this.queryFilterBaseline = _cloneDeep(this.tableParams?.filter ?? [])
+  }
+
+  // Distinct from hasFiltersApplied(), which is true for any filter at all — including the ones a
+  // query carries in its own fe_req (drilldowns, locked filters, filters baked into the question).
+  // Only a deviation from that baseline means the *user* narrowed the data down, and only that
+  // should stop a table from collapsing into a single value, since only then is there filter UI to
+  // strand them without.
+  hasUserAppliedFilters = () => {
+    return !_isEqual(this.tableParams?.filter ?? [], this.queryFilterBaseline ?? [])
+  }
+
   // A single value query with no data can come back as rows: [], [[]] or [[null]]
   hasNoSingleValueData = (response) => {
     const rows = response?.data?.data?.rows
@@ -1168,9 +1187,9 @@ export class QueryOutput extends React.Component {
       return true
     }
 
-    // Never collapse a filtered result. The user filtered the data down themselves, and replacing
-    // the table with "No data found" would strip the filter UI they need to undo it.
-    if (this.hasFiltersApplied()) {
+    // Never collapse a result the user filtered down themselves — replacing the table with
+    // "No data found" would strip the filter UI they need to undo it.
+    if (this.hasUserAppliedFilters()) {
       return false
     }
 
@@ -1359,7 +1378,8 @@ export class QueryOutput extends React.Component {
       this.pivotTableID = uuid()
       this.isOriginalData = false
       const nextQueryID = response?.data?.data?.query_id
-      if (nextQueryID && nextQueryID !== this.queryID) {
+      const isDifferentQuery = !!nextQueryID && nextQueryID !== this.queryID
+      if (isDifferentQuery) {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
@@ -1371,6 +1391,12 @@ export class QueryOutput extends React.Component {
       const customColumnSelects = this.getUpdatedCustomColumnSelects(additionalSelects, newColumns)
 
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
+
+      // A different query is a different question, so whatever filters it carries are its own
+      // baseline rather than the user having narrowed the previous result down.
+      if (isDifferentQuery) {
+        this.captureQueryFilterBaseline()
+      }
 
       this.resetTableConfig(newColumns)
 
@@ -4700,7 +4726,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderResponse = () => {
-    const { displayType } = this.state
+    let { displayType } = this.state
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
     }
@@ -4750,19 +4776,28 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
-      } else if (this.isSingleValueOrEmptyResponse(this.queryResponse) && displayType === 'single-value') {
+      } else if (displayType === 'single-value') {
         // Only render single-value if displayType is explicitly set to 'single-value'
         // This prevents showing single-value when filters reduce data to 1 row
-        return this.renderSingleValueResponse()
+        if (this.isSingleValueOrEmptyResponse(this.queryResponse)) {
+          return this.renderSingleValueResponse()
+        }
+
+        // The display type can lag behind the data — new rows arrive via onNewData without a
+        // display type recalculation, or the user filters a single value query down. 'single-value'
+        // is neither a table nor a chart type, so without this it falls into the branch below and
+        // renders "display type not recognized: single-value", a developer string, to the user.
+        displayType = DisplayTypes.TABLE
       } else if (!isTableType(displayType) && !isChartType(displayType)) {
         console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
         return this.renderMessage(`display type not recognized: ${this.state.displayType}`)
       }
     }
 
-    const displayTypeIsChart = isChartType(this.state.displayType)
-    const displayTypeIsTable = isTableType(this.state.displayType)
-    const displayTypeIsPivotTable = this.state.displayType === 'pivot_table'
+    // Use the local displayType, not state — it carries the single-value fallback above.
+    const displayTypeIsChart = isChartType(displayType)
+    const displayTypeIsTable = isTableType(displayType)
+    const displayTypeIsPivotTable = displayType === 'pivot_table'
     const allowsDisplayTypeChange = this.props.allowDisplayTypeChange
 
     const supportsCharts = this.currentlySupportsCharts()
