@@ -759,6 +759,13 @@ export class DataMessenger extends React.Component {
     return this.state.activePage === page && this.isOpen()
   }
 
+  // Whether the page occupies layout, independent of whether the drawer is open. The closed drawer is
+  // hidden by its own transform/opacity, so the active page can stay laid out with real dimensions -
+  // that is what lets Tabulator keep its measurements instead of remounting on every open.
+  isActivePage = (page) => {
+    return this.state.activePage === page
+  }
+
   renderFilterLockPopover = () => {
     this.filterLockingDrawerHeaderButtonClass = classNames({
       'react-autoql-drawer-header-btn filter-locking': true,
@@ -865,6 +872,7 @@ export class DataMessenger extends React.Component {
           {...this.props}
           data-test='data-messenger-chat-content'
           shouldRender={this.shouldRenderPage('data-messenger')}
+          isActivePage={this.isActivePage('data-messenger')}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dataMessengerContentRef = r)}
           authentication={this.props.authentication}
@@ -908,6 +916,7 @@ export class DataMessenger extends React.Component {
         <ChatContent
           {...this.props}
           shouldRender={this.shouldRenderPage('dpr')}
+          isActivePage={this.isActivePage('dpr')}
           key={this.state.dataMessengerId}
           ref={(r) => (this.dprMessengerContentRef = r)}
           authentication={{
