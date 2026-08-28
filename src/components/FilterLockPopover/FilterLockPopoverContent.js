@@ -311,11 +311,14 @@ export default class FilterLockPopover extends React.Component {
           `${m?.format_txt ?? ''}`.trim().toLowerCase() === target,
       )
 
+      // An explicit hint NARROWS or FAILS — never widens. Falling back to the
+      // unscoped set when nothing matches would let an entry tagged one
+      // category lock a filter from another. Normalised on both sides, like
+      // the value comparison above, so a difference in case or padding drops
+      // into the not-found reject rather than quietly skipping the hint.
       if (showMessage) {
-        const scoped = exact.filter((m) => m?.show_message === showMessage)
-        if (scoped.length) {
-          exact = scoped
-        }
+        const wanted = `${showMessage}`.trim().toLowerCase()
+        exact = exact.filter((m) => `${m?.show_message ?? ''}`.trim().toLowerCase() === wanted)
       }
 
       if (!exact.length) {
@@ -326,13 +329,20 @@ export default class FilterLockPopover extends React.Component {
 
       // Only a match that would build a DIFFERENT lock counts as ambiguous —
       // duplicates that resolve to the same filter are harmless.
+      //
+      // `keyword` is in the key because it becomes the lock's `value`: two
+      // entities sharing display text differ only there, which is precisely
+      // the case worth refusing. `format_txt` is left out — it is display
+      // text, so matches differing only in it filter identically.
       const distinct = new Set(
-        exact.map((m) => `${m?.canonical ?? ''}|${m?.column_name ?? ''}|${m?.show_message ?? ''}`),
+        exact.map(
+          (m) => `${m?.keyword ?? ''}|${m?.canonical ?? ''}|${m?.column_name ?? ''}|${m?.show_message ?? ''}`,
+        ),
       )
       if (distinct.size > 1) {
         const categories = [...new Set(exact.map((m) => m?.show_message).filter(Boolean))]
         const error = new Error(
-          `"${value}" matches more than one filter${categories.length ? ` (${categories.join(', ')})` : ''}`,
+          `"${value}" matches more than one filter${categories.length > 1 ? ` (${categories.join(', ')})` : ''}`,
         )
         error.code = 'AMBIGUOUS'
         return Promise.reject(error)

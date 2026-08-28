@@ -238,6 +238,64 @@ describe('ambiguous values', () => {
     wrapper.unmount()
   })
 
+  test('refuses two entities that share display text under one category', async () => {
+    // Both match on format_txt; same canonical/column/category, different
+    // keyword — so they build different locks and there is nothing to pick
+    // between them.
+    fetchVLAutocomplete.mockResolvedValue({
+      data: {
+        data: {
+          matches: [
+            { ...vlMatch, keyword: 'SMITH_01' },
+            { ...vlMatch, keyword: 'SMITH_02' },
+          ],
+        },
+      },
+    })
+    const wrapper = setup()
+
+    await expect(wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })).rejects.toBeUndefined()
+    expect(setFilters).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('still locks when matches differ only in display text', async () => {
+    // format_txt does not change what the filter does, so this is not
+    // ambiguous.
+    fetchVLAutocomplete.mockResolvedValue({
+      data: { data: { matches: [vlMatch, { ...vlMatch, format_txt: 'Smith Family (2024)' }] } },
+    })
+    const wrapper = setup()
+
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+    expect(setFilters).toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+
+  test('a hint that matches nothing fails rather than falling back', async () => {
+    // Only the Advisor match comes back for an entry tagged Household — the
+    // hint must not widen to it.
+    fetchVLAutocomplete.mockResolvedValue({ data: { data: { matches: [advisorMatch] } } })
+    const wrapper = setup({ suggestionList: [{ value: 'Smith Family', show_message: 'Household' }] })
+
+    await expect(
+      wrapper.instance().setFilter({ value: 'Smith Family', show_message: 'Household', unresolved: true }),
+    ).rejects.toBeUndefined()
+    expect(setFilters).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('the hint comparison ignores case and padding', async () => {
+    fetchVLAutocomplete.mockResolvedValue({ data: { data: { matches: [advisorMatch, vlMatch] } } })
+    const wrapper = setup({ suggestionList: [{ value: 'Smith Family', show_message: ' household ' }] })
+
+    await wrapper.instance().setFilter({ value: 'Smith Family', show_message: ' household ', unresolved: true })
+
+    expect(setFilters).toHaveBeenCalledTimes(1)
+    expect(setFilters.mock.calls[0][0].filters[0].canonical_key).toBe('household_name')
+    wrapper.unmount()
+  })
+
   test('carries the category from the entry into the picked placeholder', () => {
     const wrapper = setup({ suggestionList: [{ value: 'Smith Family', show_message: 'Household' }] })
     const [suggestion] = wrapper.state('suggestions')
