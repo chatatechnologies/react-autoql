@@ -174,4 +174,83 @@ describe('resize listener lifecycle', () => {
     expect(removed).toContain('window:blur')
     expect(document.body.style.cursor).toBe('')
   })
+
+  test('leaves the body cursor alone on a mouseup that is not a resize', () => {
+    // handleMouseUp is reachable outside a drag (window blur, and any host that calls it), and the
+    // body cursor may belong to another drag library or a global busy cursor in the host app.
+    const wrapper = mountQueryOutput()
+
+    document.body.style.cursor = 'ew-resize'
+    wrapper.instance().handleMouseUp()
+
+    expect(document.body.style.cursor).toBe('ew-resize')
+
+    document.body.style.cursor = ''
+    wrapper.unmount()
+  })
+
+  describe('the rendered drag handle', () => {
+    // The handle's onMouseDown used to duplicate handleResizeStart inline — with a different
+    // coordinate (pageY vs clientY), no cursor, and an extra `mouseleave` listener that the paired
+    // teardown never removed. These assert that the shipped path is the one under test above.
+    const mountResizableChart = () => {
+      const wrapper = mountQueryOutput()
+      wrapper.instance().setState({ displayType: 'bar' })
+      wrapper.update()
+      return wrapper
+    }
+
+    test('renders a handle and starts the resize through handleResizeStart', () => {
+      const wrapper = mountResizableChart()
+      const inst = wrapper.instance()
+      const handle = wrapper.find('.react-autoql-query-output-resize-handle')
+
+      expect(handle.length).toBe(1)
+
+      handle.at(0).simulate('mousedown', { clientY: 100 })
+
+      // The cursor is handleResizeStart's tell — the old inline handler never set it. clientY (not
+      // pageY) is what handleMouseMove diffs against, so the start coordinate must come from it too.
+      expect(inst.state.isResizing).toBe(true)
+      expect(document.body.style.cursor).toBe('ns-resize')
+      expect(inst.state.resizeStartY).toBe(100)
+
+      inst.handleMouseUp()
+      wrapper.unmount()
+    })
+
+    test('registers no mouseleave listener, and removes everything it added', () => {
+      const wrapper = mountResizableChart()
+      const inst = wrapper.instance()
+
+      added = []
+      removed = []
+      wrapper.find('.react-autoql-query-output-resize-handle').at(0).simulate('mousedown', { clientY: 100 })
+
+      // mouseleave fires whenever the pointer crosses the viewport edge, which happens routinely
+      // while dragging a handle downwards — and the teardown no longer removes it.
+      expect(added).not.toContain('mouseleave')
+      expect(added).toContain('mousemove')
+      expect(added).toContain('mouseup')
+      expect(added).toContain('window:blur')
+
+      inst.handleMouseUp()
+      added.forEach((type) => expect(removed).toContain(type))
+
+      wrapper.unmount()
+    })
+
+    test('does not keep document drag listeners registered outside a drag', () => {
+      added = []
+      const wrapper = mountResizableChart()
+
+      // Becoming resizable must not register document-level drag handlers — those belong to an
+      // in-progress drag only. Only the window resize listener is always-on.
+      expect(added).not.toContain('mousemove')
+      expect(added).not.toContain('mouseup')
+      expect(added).toContain('window:resize')
+
+      wrapper.unmount()
+    })
+  })
 })

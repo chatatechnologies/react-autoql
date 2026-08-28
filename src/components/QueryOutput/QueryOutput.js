@@ -201,7 +201,7 @@ export class QueryOutput extends React.Component {
     // Filters that arrived with the query itself — fe_req, a drilldown, or a saved tile config —
     // captured once the seeding above has finished. These are not the user narrowing a table down,
     // so anything matching this baseline must not count as "the user applied a filter".
-    this.captureQueryFilterBaseline()
+    this.captureQueryFilterBaseline(columns)
 
     this.formattedLockedFilters = this.formatLockedFilters(props.lockedFilters, columns)
 
@@ -500,8 +500,9 @@ export class QueryOutput extends React.Component {
       this.updateToolbars()
       this.props.onMount()
       if (this.shouldEnableResize) {
-        document.addEventListener('mousemove', this.handleMouseMove)
-        document.addEventListener('mouseup', this.handleMouseUp)
+        // Only the window resize listener belongs here. The drag listeners are registered by
+        // handleResizeStart and torn down by handleMouseUp, so registering them up front would
+        // leave a document-level mousemove handler live for the life of every resizable chart.
         window.addEventListener('resize', this.handleWindowResize)
         this.updateMaxConstraints()
       }
@@ -617,14 +618,12 @@ export class QueryOutput extends React.Component {
           this.shouldEnableResize = shouldEnableResize
 
           if (shouldEnableResize) {
-            document.addEventListener('mousemove', this.handleMouseMove)
-            document.addEventListener('mouseup', this.handleMouseUp)
             window.addEventListener('resize', this.handleWindowResize)
             this.updateMaxConstraints()
           } else {
-            document.removeEventListener('mousemove', this.handleMouseMove)
-            document.removeEventListener('mouseup', this.handleMouseUp)
             window.removeEventListener('resize', this.handleWindowResize)
+            // A resize in progress cannot continue once resizing is disabled.
+            this.handleMouseUp()
           }
 
           this.setState({ isResizable: shouldEnableResize })
@@ -869,6 +868,9 @@ export class QueryOutput extends React.Component {
 
     document.body.style.cursor = 'ns-resize'
     document.body.style.userSelect = 'none'
+    document.body.style.webkitUserSelect = 'none'
+    document.body.style.mozUserSelect = 'none'
+    document.body.style.msUserSelect = 'none'
   }
 
   handleMouseMove = (e) => {
@@ -901,11 +903,17 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
-      this.setState({ isResizing: false }, () => {
-        this.refreshLayout()
-      })
+    // Only a resize we started has anything to clean up. Without this guard every unrelated mouseup
+    // (or window blur) would reset the body cursor and userSelect, which in a host app may belong to
+    // someone else entirely — another drag library, a global busy cursor, DataMessenger's own drawer
+    // resize. componentWillUnmount clears them directly, so nothing is lost.
+    if (!this.state.isResizing) {
+      return
     }
+
+    this.setState({ isResizing: false }, () => {
+      this.refreshLayout()
+    })
 
     this.removeResizeListeners()
 
@@ -1139,8 +1147,25 @@ export class QueryOutput extends React.Component {
     return this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
   }
 
-  captureQueryFilterBaseline = () => {
-    this.queryFilterBaseline = _cloneDeep(this.tableParams?.filter ?? [])
+  // Compares filters by column *name*, not by tabulator `field`. `field` is the stringified column
+  // index (see formatColumnsForTable) and updateFilters() rewrites it on every column rebuild, so
+  // adding a custom column or changing additional_selects shifts the indices under an unchanged set
+  // of filters. Comparing the raw objects would then report a user filter where there is none.
+  // Order is normalized away too — the same filters in a different order are the same filters.
+  getFilterSignature = (filters, columns = this.state?.columns) => {
+    return (filters ?? [])
+      .map((filter) => {
+        const column = columns?.find((col) => col?.field === filter?.field || col?.id === filter?.field)
+        // Fall back to the raw field when the column can't be resolved, so an unresolvable filter
+        // still registers as a filter rather than silently collapsing to a shared empty key.
+        const key = column?.name ?? filter?.field
+        return `${key}|${filter?.type ?? ''}|${JSON.stringify(filter?.value ?? null)}`
+      })
+      .sort()
+  }
+
+  captureQueryFilterBaseline = (columns = this.state?.columns) => {
+    this.queryFilterBaseline = this.getFilterSignature(this.tableParams?.filter, columns)
   }
 
   // Distinct from hasFiltersApplied(), which is true for any filter at all — including the ones a
@@ -1149,7 +1174,7 @@ export class QueryOutput extends React.Component {
   // should stop a table from collapsing into a single value, since only then is there filter UI to
   // strand them without.
   hasUserAppliedFilters = () => {
-    return !_isEqual(this.tableParams?.filter ?? [], this.queryFilterBaseline ?? [])
+    return !_isEqual(this.getFilterSignature(this.tableParams?.filter), this.queryFilterBaseline ?? [])
   }
 
   // A single value query with no data can come back as rows: [], [[]] or [[null]]
@@ -1393,9 +1418,10 @@ export class QueryOutput extends React.Component {
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
 
       // A different query is a different question, so whatever filters it carries are its own
-      // baseline rather than the user having narrowed the previous result down.
+      // baseline rather than the user having narrowed the previous result down. Capture against
+      // newColumns — updateFilters() has just remapped the filter fields onto them.
       if (isDifferentQuery) {
-        this.captureQueryFilterBaseline()
+        this.captureQueryFilterBaseline(newColumns)
       }
 
       this.resetTableConfig(newColumns)
@@ -1460,7 +1486,7 @@ export class QueryOutput extends React.Component {
       // Determine appropriate display type based on column visibility
       let displayType = this.state.displayType
       const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
-      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
+      const hasFilters = this.hasFiltersApplied()
 
       if (this.isSingleValueOrEmptyResponse(this.queryResponse) && !hasFilters) {
         // Single visible column AND single row (or no data) → single-value display
@@ -4312,7 +4338,10 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  renderTable = () => {
+  // displayType is passed in rather than read from state because renderResponse resolves a fallback
+  // (single-value -> table) that state has not caught up with yet. Reading state here would mount
+  // the table with hidden: true and render nothing at all.
+  renderTable = (displayType = this.state.displayType) => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
@@ -4361,7 +4390,7 @@ export class QueryOutput extends React.Component {
           isDrilldown={isDrilldown(this.queryResponse)}
           isQueryOutputMounted={this._isMounted}
           popoverParentElement={this.props.popoverParentElement}
-          hidden={this.state.displayType !== 'table'}
+          hidden={displayType !== 'table'}
           supportsDrilldowns={
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
@@ -4390,12 +4419,12 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  renderPivotTable = () => {
+  renderPivotTable = (displayType = this.state.displayType) => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
-    if (this.state.displayType === 'pivot_table' && !this.pivotTableData) {
+    if (displayType === 'pivot_table' && !this.pivotTableData) {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
@@ -4413,7 +4442,7 @@ export class QueryOutput extends React.Component {
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
-          hidden={this.state.displayType !== 'pivot_table'}
+          hidden={displayType !== 'pivot_table'}
           useInfiniteScroll={this.props.useInfiniteScroll}
           supportsDrilldowns={true}
           source={this.props.source}
@@ -4441,19 +4470,19 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  renderChart = () => {
+  renderChart = (displayType = this.state.displayType) => {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing for chart')
       // If the chart would be hidden (e.g., table view), avoid rendering the error message
-      if (!isChartType(this.state.displayType)) return null
+      if (!isChartType(displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
     const usePivotData = this.usePivotDataForChart()
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
-      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH &&
-      this.state?.displayType !== DisplayTypes.SANKEY
+      displayType !== DisplayTypes.NETWORK_GRAPH &&
+      displayType !== DisplayTypes.SANKEY
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
@@ -4509,7 +4538,6 @@ export class QueryOutput extends React.Component {
 
     // For heatmaps and bubble charts, always include all numeric pivot columns so we render
     // a full matrix of cells instead of just the first pivot column.
-    const displayType = this.state.displayType
     const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
     if (usePivotData && isHeatmapOrBubble && this.pivotTableConfig?.allNumberColumnIndices?.length) {
       tableConfig.numberColumnIndices = this.pivotTableConfig.allNumberColumnIndices
@@ -4537,7 +4565,7 @@ export class QueryOutput extends React.Component {
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
       // Don't show the error message under a table when charts are hidden
-      if (!isChartType(this.state.displayType)) return null
+      if (!isChartType(displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
@@ -4560,10 +4588,13 @@ export class QueryOutput extends React.Component {
           tableConfig={tableConfig}
           originalColumns={originalColumns}
           data={data}
-          hidden={!isChartType(this.state.displayType)}
+          hidden={!isChartType(displayType)}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           ref={(ref) => (this.chartRef = ref)}
+          // Intentionally state, not the resolved displayType: the resolved value only differs on the
+          // single-value fallback path, where the chart is hidden anyway, and the chart type it would
+          // report there ('table') is no more meaningful to ChataChart than the state value.
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
@@ -4806,7 +4837,7 @@ export class QueryOutput extends React.Component {
 
     const columns = usePivotData ? this.pivotTableColumns : this.getColumns()
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
-    const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
+    const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
@@ -4814,9 +4845,9 @@ export class QueryOutput extends React.Component {
 
     return (
       <>
-        {shouldRenderTable && this.renderTable()}
-        {shouldRenderChart && this.renderChart()}
-        {shouldRenderPivotTable && this.renderPivotTable()}
+        {shouldRenderTable && this.renderTable(displayType)}
+        {shouldRenderChart && this.renderChart(displayType)}
+        {shouldRenderPivotTable && this.renderPivotTable(displayType)}
       </>
     )
   }
@@ -4878,30 +4909,7 @@ export class QueryOutput extends React.Component {
     return this.renderReverseTranslation()
   }
   renderResizeHandle = () => {
-    const self = this
-    return (
-      <div
-        className='react-autoql-query-output-resize-handle bottom'
-        onMouseDown={(e) => {
-          e.preventDefault()
-
-          this.setState({
-            isResizing: true,
-            resizeStartY: e.pageY,
-            resizeStartHeight: this.responseContainerRef?.getBoundingClientRect()?.height || this.minHeight,
-          })
-
-          document.body.style.userSelect = 'none'
-          document.body.style.webkitUserSelect = 'none'
-          document.body.style.mozUserSelect = 'none'
-          document.body.style.msUserSelect = 'none'
-
-          document.addEventListener('mousemove', self.handleMouseMove)
-          document.addEventListener('mouseup', self.handleMouseUp)
-          document.addEventListener('mouseleave', self.handleMouseUp)
-        }}
-      />
-    )
+    return <div className='react-autoql-query-output-resize-handle bottom' onMouseDown={this.handleResizeStart} />
   }
 
   render = () => {

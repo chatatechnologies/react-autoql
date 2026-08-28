@@ -44,9 +44,7 @@ describe('single value response with no data', () => {
     const columns = [buildColumn('sale__line_item___sum', 'Total Sales', true, type)]
 
     test.each(emptyRowCases)('renders "No data found" for %s', (_label, rows) => {
-      const wrapper = mount(
-        <QueryOutputWithoutTheme queryResponse={buildResponse(rows, columns)} queryFn={() => {}} />,
-      )
+      const wrapper = mount(<QueryOutputWithoutTheme queryResponse={buildResponse(rows, columns)} queryFn={() => {}} />)
 
       expect(wrapper.text()).toContain('No data found')
 
@@ -98,7 +96,6 @@ describe('single value response with no data', () => {
 
       wrapper.unmount()
     })
-
   })
 
   test('renders the value when there is data', () => {
@@ -174,6 +171,16 @@ describe('display type never degrades into a debug message', () => {
     expect(wrapper.text()).not.toContain('display type not recognized')
   }
 
+  // Absence of the debug string is not enough: the fallback used to mount ChataTable with
+  // hidden: true (visibility: hidden; height: 0), so nothing rendered at all and every
+  // "not.toContain" assertion passed on an empty region.
+  const expectVisibleTable = (wrapper) => {
+    const tables = wrapper.find('ChataTable')
+    expect(tables.length).toBeGreaterThan(0)
+    expect(tables.at(0).props().hidden).toBe(false)
+    expect(wrapper.find('.react-autoql-table-hidden').length).toBe(0)
+  }
+
   test('empty single value query carrying its own fe_req filters', () => {
     // fe_req filters come from the query itself (a drilldown, a locked filter, a filter in the
     // question). They are not the user narrowing a table down, so they must not block the
@@ -212,6 +219,7 @@ describe('display type never degrades into a debug message', () => {
     wrapper.update()
 
     expectNoDebugMessage(wrapper)
+    expectVisibleTable(wrapper)
 
     wrapper.unmount()
   })
@@ -229,6 +237,40 @@ describe('display type never degrades into a debug message', () => {
 
     expectNoDebugMessage(wrapper)
     expect(wrapper.text()).not.toContain('No data found')
+    // The point of keeping the table is the filter UI it carries, so it has to be visible.
+    expectVisibleTable(wrapper)
+
+    wrapper.unmount()
+  })
+
+  test('a filter whose column index shifts is still recognized as the query own baseline', () => {
+    // updateFilters() rewrites filter[i].field on every column rebuild, and field is the stringified
+    // column index — so comparing raw filter objects reported a user filter whenever indices moved.
+    const columns = [buildColumn('sale__line_item___sum', 'Total Sales'), buildColumn('sale__customer', 'Customer')]
+    const wrapper = mount(
+      <QueryOutputWithoutTheme queryResponse={buildResponse([[1000, 'Acme']], columns)} queryFn={() => {}} />,
+    )
+    const inst = wrapper.instance()
+
+    // A filter carried by the query, keyed on the column at index 1.
+    inst.tableParams = { ...inst.tableParams, filter: [{ field: '1', type: 'like', value: 'Acme' }] }
+    inst.captureQueryFilterBaseline()
+    expect(inst.hasUserAppliedFilters()).toBe(false)
+
+    // Same filter, same column, new index after a column rebuild (a custom column added up front
+    // shifts every field, which is exactly what formatColumnsForTable + updateFilters do).
+    const shifted = [buildColumn('custom_col', 'Custom'), ...inst.state.columns].map((col, i) => ({
+      ...col,
+      field: `${i}`,
+      index: i,
+    }))
+    inst.setState({ columns: shifted })
+    inst.tableParams = { ...inst.tableParams, filter: [{ field: '2', type: 'like', value: 'Acme' }] }
+    expect(inst.hasUserAppliedFilters()).toBe(false)
+
+    // A genuinely different filter on the same column still counts as user applied.
+    inst.tableParams = { ...inst.tableParams, filter: [{ field: '2', type: 'like', value: 'Globex' }] }
+    expect(inst.hasUserAppliedFilters()).toBe(true)
 
     wrapper.unmount()
   })

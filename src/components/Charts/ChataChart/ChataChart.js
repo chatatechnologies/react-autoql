@@ -441,11 +441,7 @@ export default class ChataChart extends React.Component {
       this.throttleTimeout = setTimeout(loop, this.throttleDelay)
     }
 
-    if (!this.shouldContinueThrottledRefresh()) {
-      return
-    }
-
-    loop() // start the loop
+    loop() // start the loop — loop() itself bails and stops if the conditions no longer hold
   }
 
   stopThrottledRefresh = () => {

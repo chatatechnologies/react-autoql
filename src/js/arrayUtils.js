@@ -7,8 +7,12 @@
  * 10k values and ~1.3s at 20k, versus ~1ms and ~5ms here).
  *
  * Semantics match `filter(onlyUnique)` — first occurrence wins and input order is kept —
- * except that Set uses SameValueZero, so repeated NaN values collapse to one instead of
- * being retained individually. That is the desired behaviour at every call site.
+ * with one exception: NaN, and it diverges the opposite way to what you might expect.
+ * `indexOf(NaN)` is always -1, so `filter(onlyUnique)` dropped *every* NaN; Set uses
+ * SameValueZero, so NaN equals itself and exactly one is kept. Only reachable when a
+ * column actually contains NaN, where keeping one is the more honest result: histogram
+ * bucketing counts it as the distinct value it is, and pivot headers surface it instead
+ * of silently dropping the row's label.
  */
 export const uniqueValues = (array) => {
   if (!Array.isArray(array)) {
@@ -27,9 +31,4 @@ export const uniqueValueCount = (array) => {
   }
 
   return new Set(array).size
-}
-
-export default {
-  uniqueValues,
-  uniqueValueCount,
 }
