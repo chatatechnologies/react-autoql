@@ -86,6 +86,10 @@ class CustomFilteredAlertModal extends React.Component {
     isManagementPortal: false,
   }
 
+  componentDidMount = () => {
+    this.fetchCategoriesIfNeeded()
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (
       this.state.customFilters !== prevState.customFilters ||
@@ -111,7 +115,18 @@ class CustomFilteredAlertModal extends React.Component {
     if (this.props.isVisible && !prevProps.isVisible) {
       this.initializeFields()
     }
-    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
+
+    this.fetchCategoriesIfNeeded()
+  }
+
+  fetchCategoriesIfNeeded = () => {
+    // This modal is mounted alongside every query result, so only fetch the
+    // labels once it is actually opened
+    if (!this.props.isVisible) {
+      return
+    }
+
+    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories && !this.isFetchingCategories) {
       this.getLabels()
     }
   }
@@ -119,12 +134,15 @@ class CustomFilteredAlertModal extends React.Component {
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey) {
       const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
+      this.isFetchingCategories = true
       getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
+          this.isFetchingCategories = false
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
         .catch((error) => {
           console.error('error fetching data alert categories', error)
+          this.isFetchingCategories = false
           this.setState({ categories: [], fetchedCategories: true })
         })
     }

@@ -89,6 +89,10 @@ export default class ChatContent extends React.Component {
     source: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
     scope: PropTypes.string,
     shouldRender: PropTypes.bool,
+    // Whether this page occupies layout. Separate from shouldRender, which gates re-renders: a closed
+    // DM keeps its active page laid out (so Tabulator keeps its measurements) while updates stay off.
+    // Defaults to shouldRender when not provided.
+    isActivePage: PropTypes.bool,
     hideChatBarAfterInitialResponse: PropTypes.bool,
     executeQuery: PropTypes.func,
     enableMagicWand: PropTypes.bool,
@@ -113,6 +117,7 @@ export default class ChatContent extends React.Component {
     scope: undefined,
     onRTValueLabelClick: undefined,
     shouldRender: true,
+    isActivePage: undefined,
     hideChatBarAfterInitialResponse: false,
     executeQuery: () => {},
     enableMagicWand: false,
@@ -855,14 +860,18 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  isLaidOut = () => {
+    return this.props.isActivePage ?? this.props.shouldRender
+  }
+
   shouldHideQueryInputComponent = () => {
-    const { hideChatBarAfterInitialResponse, shouldRender } = this.props
+    const { hideChatBarAfterInitialResponse } = this.props
     const { messages } = this.state
 
     if (hideChatBarAfterInitialResponse && messages.length > 0) {
       return true
     }
-    return !shouldRender
+    return !this.isLaidOut()
   }
   onMessageResize = (messageId) => {
     if (!this.messengerScrollComponent) {
@@ -886,8 +895,9 @@ export default class ChatContent extends React.Component {
     let queryInputDisplay
 
     const hideQueryInput = this.shouldHideQueryInputComponent()
+    const isLaidOut = this.isLaidOut()
 
-    if (!this.props.shouldRender) {
+    if (!isLaidOut) {
       chatMessageVisibility = 'hidden'
       chatMessageOpacity = '0'
       chatMessageDisplay = 'none'
@@ -903,7 +913,7 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-wrapper ${this.props.shouldRender ? '' : 'react-autoql-content-hidden'} ${
+          className={`chat-content-wrapper ${isLaidOut ? '' : 'react-autoql-content-hidden'} ${
             isLLMEmptyState ? 'llm-empty-state' : ''
           }`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity, display: chatMessageDisplay }}
@@ -972,7 +982,7 @@ export default class ChatContent extends React.Component {
                       disableMaxHeight={this.props.disableMaxMessageHeight}
                       queryRequestData={message.queryRequestData}
                       popoverParentElement={this.chatContentRef}
-                      isVisibleInDOM={this.props.shouldRender}
+                      isVisibleInDOM={isLaidOut}
                       dataPageSize={this.props.dataPageSize}
                       shouldRender={this.props.shouldRender}
                       source={this.props.source}

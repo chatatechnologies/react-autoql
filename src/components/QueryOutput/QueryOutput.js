@@ -585,19 +585,15 @@ export class QueryOutput extends React.Component {
           this.generateAllData()
           this.setState({ columns: newColumns })
         } else if (!this.tableData && this.shouldGenerateTableData()) {
+          // generateAllData only mutates instance vars, so a render has to be forced to pick it up
           this.generateAllData()
+          shouldForceUpdate = true
         }
 
-        // Tabulator and charts initialize inside display:none when shouldRender=false,
-        // producing wrong dimensions. Force remount so they measure the visible container.
-        if (isChartType(this.state.displayType)) {
-          newState.chartID = uuid()
-        } else {
-          this.wasFiltering = !!this.tableRef?.state.isFiltering
-          this.tableID = uuid()
-          this.pivotTableID = uuid()
-          newState._tableRemountKey = uuid()
-        }
+        // Deliberately no remount of the table/chart here. The DM keeps its active page laid out while
+        // closed, so Tabulator and the charts measured a real container on mount and their dimensions
+        // are still valid. Remounting would reset table height and scroll position - the reason
+        // reopening the DM used to jump.
       }
 
       // Keep local chartControls in sync if consumer updates initialChartControls prop
