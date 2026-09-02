@@ -112,6 +112,9 @@ export class ChatMessage extends React.Component {
     dataFormatting: dataFormattingType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
+    // Forwarded from ChatContent. Left undefined by direct consumers, which
+    // keeps the delete button on — only an explicit false removes it.
+    enableMessageDelete: PropTypes.bool,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
@@ -1389,7 +1392,7 @@ export class ChatMessage extends React.Component {
             onPNGDownloadFinish={this.onPNGDownloadFinish}
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
-            enableDeleteBtn={!this.props.isIntroMessage}
+            enableDeleteBtn={!this.props.isIntroMessage && this.props.enableMessageDelete !== false}
             enableFilterBtn={!isDataPreview && !this.props.isIntroMessage}
             enableCopyBtn={!isDataPreview && !this.props.isIntroMessage}
             isMarkdownMessage={isMarkdownMessage}

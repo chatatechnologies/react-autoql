@@ -116,6 +116,32 @@ describe('customOptions gating', () => {
   })
 })
 
+// The delete button is the toolbar's only destructive control, and OptionsToolbar's
+// `enableDeleteBtn` was hardcoded here — integrators whose chat is a durable record had no
+// way to remove it. ChatContent forwards `enableMessageDelete`; only an explicit false
+// turns it off, so direct consumers of ChatMessage keep the button.
+describe('delete button gating', () => {
+  const enableDeleteBtnFor = (props) =>
+    setup(props).instance().renderRightToolbar().props.children.props.enableDeleteBtn
+
+  test('is on by default, when no preference is forwarded', () => {
+    expect(enableDeleteBtnFor()).toBe(true)
+  })
+
+  test('is off when enableMessageDelete is false', () => {
+    expect(enableDeleteBtnFor({ enableMessageDelete: false })).toBe(false)
+  })
+
+  test('is on when enableMessageDelete is true', () => {
+    expect(enableDeleteBtnFor({ enableMessageDelete: true })).toBe(true)
+  })
+
+  // Pre-existing gate: the intro message is never deletable, whatever the integrator asks for.
+  test('stays off for the intro message even when delete is enabled', () => {
+    expect(enableDeleteBtnFor({ isIntroMessage: true, enableMessageDelete: true })).toBe(false)
+  })
+})
+
 describe('billing gate (enableBillingGate)', () => {
   const ceilingReachedError = {
     reference_id: '1.1.993',

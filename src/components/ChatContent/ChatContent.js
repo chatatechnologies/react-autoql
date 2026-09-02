@@ -106,6 +106,11 @@ export default class ChatContent extends React.Component {
     // rest of the empty-state layout — and the `.llm-empty-state` class hosts
     // rely on — stays intact). Default true.
     showLLMEmptyStateTitle: PropTypes.bool,
+    // When false, no message offers the "Delete data response" button. For
+    // integrators whose chat is a durable record rather than a scratchpad —
+    // removing an answer from the thread is meaningless there, and the button
+    // is the only destructive control in the toolbar. Default true.
+    enableMessageDelete: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -130,6 +135,7 @@ export default class ChatContent extends React.Component {
     showLLMEmptyStateTitle: true,
     showFilterLockButton: false,
     filterLockButtonLabel: undefined,
+    enableMessageDelete: true,
   }
 
   componentDidMount = () => {
@@ -969,6 +975,7 @@ export default class ChatContent extends React.Component {
                       enableCyclicalDates={this.props.enableCyclicalDates}
                       onSuccessAlert={this.props.onSuccessAlert}
                       deleteMessageCallback={this.deleteMessage}
+                      enableMessageDelete={this.props.enableMessageDelete}
                       createDataAlertCallback={this.props.createDataAlertCallback}
                       scrollContainerRef={this.messengerScrollComponent}
                       isResizing={this.props.isResizing}
