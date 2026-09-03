@@ -136,9 +136,16 @@ class DataAlertModal extends React.Component {
   }
 
   fetchCategoriesIfNeeded = () => {
-    const { autoQLConfig, currentDataAlert } = this.props
+    const { autoQLConfig, currentDataAlert, isVisible } = this.props
+
+    // This modal is mounted for every query result (eg. each dashboard tile), so
+    // only fetch the labels once it is actually opened
+    if (!isVisible) {
+      return
+    }
+
     const projectId = autoQLConfig?.projectId || currentDataAlert?.projects?.[0]?.id || currentDataAlert?.project?.id
-    if (projectId && !this.state.fetchedCategories) {
+    if (projectId && !this.state.fetchedCategories && !this.isFetchingCategories) {
       this.getLabels()
     }
   }
@@ -146,13 +153,16 @@ class DataAlertModal extends React.Component {
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey) {
       const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
+      this.isFetchingCategories = true
       getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
+          this.isFetchingCategories = false
           if (!this._isMounted) return
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
         .catch((error) => {
           console.error('error fetching data alert categories', error)
+          this.isFetchingCategories = false
           if (!this._isMounted) return
           this.setState({ categories: [], fetchedCategories: true })
         })

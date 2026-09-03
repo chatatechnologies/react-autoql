@@ -71,6 +71,77 @@ describe('renders correctly', () => {
   })
 })
 
+// A dataless response (service error, failed validation, "Did you mean") arrives as an
+// ordinary response message. Every built-in toolbar item already gates itself off those,
+// so an unguarded custom option was the only thing left in the More menu — the menu opened
+// on an error offering nothing but "Add to Dashboard...".
+describe('customOptions gating', () => {
+  const customToolbarOptions = [{ name: 'Add to Dashboard...', icon: 'dashboard', callback: jest.fn() }]
+
+  const customOptionsFor = (props) => {
+    const instance = setup({ customToolbarOptions, ...props }).instance()
+    return instance.renderRightToolbar().props.children.props.customOptions
+  }
+
+  test('are passed through for a normal data answer', () => {
+    expect(customOptionsFor()).toEqual(customToolbarOptions)
+  })
+
+  test('are withheld for the 1.1.555 internal service error', () => {
+    const response = {
+      data: {
+        data: {},
+        message: 'Internal Service Error: Our system is experiencing an unexpected error.',
+        reference_id: '1.1.555',
+      },
+    }
+
+    expect(customOptionsFor({ response, type: undefined })).toEqual([])
+  })
+
+  test('are withheld for a "Did you mean" suggestion list', () => {
+    const response = { data: { reference_id: '1.1.211', data: { items: ['total revenue'] } } }
+
+    expect(customOptionsFor({ response, type: undefined })).toEqual([])
+  })
+
+  // Pre-existing gates, kept covered so the rewrite into `showCustomOptions` stays honest.
+  test('are withheld for the intro message, a data preview, and a content-only message', () => {
+    expect(customOptionsFor({ isIntroMessage: true })).toEqual([])
+
+    const preview = { data: { reference_id: '1.1.210', data: { isDataPreview: true, columns: [], rows: [] } } }
+    expect(customOptionsFor({ response: preview })).toEqual([])
+
+    expect(customOptionsFor({ content: 'Thank you for your feedback!', response: undefined })).toEqual([])
+  })
+})
+
+// The delete button is the toolbar's only destructive control, and OptionsToolbar's
+// `enableDeleteBtn` was hardcoded here — integrators whose chat is a durable record had no
+// way to remove it. ChatContent forwards `enableMessageDelete`; only an explicit false
+// turns it off, so direct consumers of ChatMessage keep the button.
+describe('delete button gating', () => {
+  const enableDeleteBtnFor = (props) =>
+    setup(props).instance().renderRightToolbar().props.children.props.enableDeleteBtn
+
+  test('is on by default, when no preference is forwarded', () => {
+    expect(enableDeleteBtnFor()).toBe(true)
+  })
+
+  test('is off when enableMessageDelete is false', () => {
+    expect(enableDeleteBtnFor({ enableMessageDelete: false })).toBe(false)
+  })
+
+  test('is on when enableMessageDelete is true', () => {
+    expect(enableDeleteBtnFor({ enableMessageDelete: true })).toBe(true)
+  })
+
+  // Pre-existing gate: the intro message is never deletable, whatever the integrator asks for.
+  test('stays off for the intro message even when delete is enabled', () => {
+    expect(enableDeleteBtnFor({ isIntroMessage: true, enableMessageDelete: true })).toBe(false)
+  })
+})
+
 describe('billing gate (enableBillingGate)', () => {
   const ceilingReachedError = {
     reference_id: '1.1.993',

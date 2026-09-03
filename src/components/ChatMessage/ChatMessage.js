@@ -18,6 +18,7 @@ import {
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 import { useMagicWandBillingGate, getMagicWandBillingErrorState, MAGIC_WAND_BILLING_GATE_MESSAGES } from '../../hooks/billing'
+import { isDatalessResponse } from '../../js/responseUtils'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -111,6 +112,9 @@ export class ChatMessage extends React.Component {
     dataFormatting: dataFormattingType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
+    // Forwarded from ChatContent. Left undefined by direct consumers, which
+    // keeps the delete button on — only an explicit false removes it.
+    enableMessageDelete: PropTypes.bool,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
@@ -1357,6 +1361,20 @@ export class ChatMessage extends React.Component {
         }
       : this.props.autoQLConfig
 
+    // Custom options (the webapp's "Add to Dashboard...", for one) act on the
+    // answer's data, so they're only offered on messages that have some: not
+    // the intro message, not a data preview, not a content-only message, and
+    // not a response that came back without data — a service error, a failed
+    // validation, or a "Did you mean" suggestion list. Those all arrive as
+    // regular response messages, and every other toolbar item already gates
+    // itself off them, so the More menu used to open on an error showing
+    // nothing but the custom option.
+    const showCustomOptions =
+      !isDataPreview &&
+      !this.props.isIntroMessage &&
+      !(this.props.content && !this.props.response) &&
+      !isDatalessResponse(this.props.response)
+
     return (
       <div className='chat-message-toolbar chat-message-toolbar-right'>
         {this.props.isResponse || isMarkdownMessage ? (
@@ -1374,7 +1392,7 @@ export class ChatMessage extends React.Component {
             onPNGDownloadFinish={this.onPNGDownloadFinish}
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
-            enableDeleteBtn={!this.props.isIntroMessage}
+            enableDeleteBtn={!this.props.isIntroMessage && this.props.enableMessageDelete !== false}
             enableFilterBtn={!isDataPreview && !this.props.isIntroMessage}
             enableCopyBtn={!isDataPreview && !this.props.isIntroMessage}
             isMarkdownMessage={isMarkdownMessage}
@@ -1384,7 +1402,7 @@ export class ChatMessage extends React.Component {
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.isIntroMessage ? undefined : this.props.createDataAlertCallback}
-            customOptions={isDataPreview || this.props.isIntroMessage || (this.props.content && !this.props.response) ? [] : this.props.customToolbarOptions}
+            customOptions={showCustomOptions ? this.props.customToolbarOptions : []}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}

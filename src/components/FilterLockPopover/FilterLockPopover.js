@@ -23,6 +23,14 @@ export class FilterLockPopover extends React.Component {
     onChange: PropTypes.func,
     showArrow: PropTypes.bool,
     padding: PropTypes.number,
+    /**
+     * Values this user may filter on. When set, it REPLACES the value-label
+     * autocomplete: the popover lists all of them and searches locally. See
+     * FilterLockPopoverContent for the full contract.
+     */
+    suggestionList: PropTypes.arrayOf(PropTypes.string),
+    /** Section heading over an unfiltered `suggestionList`. */
+    suggestionListTitle: PropTypes.string,
   }
 
   static defaultProps = {
@@ -135,6 +143,8 @@ export class FilterLockPopover extends React.Component {
         insertedFilter={this.state.insertedFilter}
         initialFilters={this.state.initialFilters}
         isFetchingFilters={this.state.isFetchingFilters}
+        suggestionList={this.props.suggestionList}
+        suggestionListTitle={this.props.suggestionListTitle}
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
       />
     )
