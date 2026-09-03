@@ -2882,10 +2882,14 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex &&
         this.tableConfig.numberColumnIndices.length > 1
       ) {
-        this.tableConfig.numberColumnIndex = allNumberColumnIndices?.find(
-          (index) => !this.tableConfig.stringColumnIndices?.includes(index),
-        )
-        this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+        const replacementIndex =
+          allNumberColumnIndices?.find((index) => !this.tableConfig.stringColumnIndices?.includes(index)) ??
+          allNumberColumnIndices?.find((index) => index !== this.tableConfig.stringColumnIndex)
+
+        if (replacementIndex >= 0) {
+          this.tableConfig.numberColumnIndex = replacementIndex
+          this.tableConfig.numberColumnIndices = [replacementIndex]
+        }
       }
 
       if (
@@ -3292,12 +3296,16 @@ export class QueryOutput extends React.Component {
       if (aggConfig?.[col?.name]) {
         aggType = aggConfig[col.name]
       }
-      if (isListQuery(columns)) {
-        if (isColumnNumberType(col)) {
+      if (isColumnNumberType(col)) {
+        if (isListQuery(columns)) {
           newCol.aggType = aggType || AggTypes.SUM
-        } else {
-          newCol.aggType = aggType || AggTypes.COUNT
         }
+      } else {
+        // A non-numeric column can only ever be aggregated by counting - summing labels yields 0 for
+        // every group, which draws an empty chart. List queries already tagged these COUNT; the same
+        // holds whenever a groupable column ends up on the number axis, e.g. once the only number
+        // column is hidden.
+        newCol.aggType = aggType || AggTypes.COUNT
       }
 
       // Check if a date range is available
