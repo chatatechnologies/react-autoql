@@ -94,6 +94,18 @@ export default class FilterLockPopover extends React.Component {
     ),
     /** Section heading over an unfiltered `suggestionList`. */
     suggestionListTitle: PropTypes.string,
+    /**
+     * Whether a newly added filter is PERSISTED — kept in the filter-locking
+     * API and re-applied on the user's next visit — or scoped to this session.
+     * It is the initial state of the row's "Persist" toggle; the user can still
+     * flip either way afterwards.
+     *
+     * Default true, which is the long-standing behaviour. Pass false where a
+     * lock is meant to be a scratch scope rather than a standing preference:
+     * a persisted lock is fetched back on mount and silently narrows every
+     * later query, which is surprising if the user only meant "just this once".
+     */
+    persistNewFilters: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -105,6 +117,7 @@ export default class FilterLockPopover extends React.Component {
     onChange: () => {},
     suggestionList: undefined,
     suggestionListTitle: undefined,
+    persistNewFilters: true,
   }
 
   componentDidMount = () => {
@@ -465,6 +478,13 @@ export default class FilterLockPopover extends React.Component {
       canonical_key: suggestion.column_name,
     }
 
+    // Stamped only when session scope was asked for. An absent field already
+    // means "persisted" everywhere it is read, and leaving it absent keeps the
+    // default path's request body to the filter-locking API byte-identical.
+    if (!this.props.persistNewFilters) {
+      newFilter.isSession = true
+    }
+
     return newFilter
   }
 
@@ -528,6 +548,22 @@ export default class FilterLockPopover extends React.Component {
           )
           return Promise.reject()
         })
+    }
+
+    // A session-scoped lock lives only in this component's state — not writing
+    // it to the filter-locking API is precisely what makes it session-scoped.
+    // setFilterTypes has always skipped these for the same reason.
+    if (newFilter.isSession) {
+      const existing = this.findFilter(newFilter)
+      const newFilters = existing
+        ? this.state.filters.map((filter) =>
+            this.getKey(filter) === this.getKey(newFilter) ? newFilter : filter,
+          )
+        : [...this.state.filters, newFilter]
+
+      this.setState({ filters: newFilters, inputValue: '', isSaving: false })
+      this.props.onChange(newFilters)
+      return Promise.resolve()
     }
 
     const auth = this.props.authentication ?? {}

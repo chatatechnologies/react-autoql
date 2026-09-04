@@ -198,6 +198,74 @@ describe('resolving a picked value', () => {
   })
 })
 
+describe('persistNewFilters', () => {
+  test('defaults to persisting, and sends no isSession to the API', async () => {
+    const wrapper = setup()
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+
+    // Byte-identical to the pre-prop payload: the field is absent, not false.
+    expect(setFilters.mock.calls[0][0].filters).toEqual([resolvedFilter])
+    expect('isSession' in setFilters.mock.calls[0][0].filters[0]).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('when false, locks the filter without calling the API', async () => {
+    const onChange = jest.fn()
+    const wrapper = setup({ persistNewFilters: false, onChange })
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+
+    // Resolving the pick still needs the autocomplete; persisting it does not.
+    expect(fetchVLAutocomplete).toHaveBeenCalledTimes(1)
+    expect(setFilters).not.toHaveBeenCalled()
+    expect(wrapper.state('filters')).toEqual([{ ...resolvedFilter, isSession: true }])
+    expect(onChange).toHaveBeenLastCalledWith([{ ...resolvedFilter, isSession: true }])
+    wrapper.unmount()
+  })
+
+  test('when false, the row renders with Persist off', async () => {
+    const wrapper = setup({ persistNewFilters: false })
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+    wrapper.update()
+
+    // The toggle renders `checked={!filter.isSession}`.
+    const toggle = wrapper.find('[data-test="react-autoql-filter-lock-persist-toggle"]').first()
+    expect(toggle.prop('checked')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('the user can still persist a session filter afterwards', async () => {
+    const wrapper = setup({ persistNewFilters: false })
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+
+    const [sessionFilter] = wrapper.state('filters')
+    await wrapper.instance().handlePersistToggle(sessionFilter)
+
+    // Turning Persist on is what writes it — the prop only sets the start state.
+    expect(setFilters).toHaveBeenCalledTimes(1)
+    expect(setFilters.mock.calls[0][0].filters[0].isSession).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('does not re-add a household already locked for the session', async () => {
+    const wrapper = setup({ persistNewFilters: false })
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+    await wrapper.instance().setFilter({ value: 'Smith Family', unresolved: true })
+
+    expect(wrapper.state('filters')).toHaveLength(1)
+    expect(setFilters).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('leaves filters fetched on mount persisted', async () => {
+    // initialFilters come from the server's own lock list, so they are
+    // persisted by definition — the prop must not restyle them as session.
+    const wrapper = setup({ persistNewFilters: false, initialFilters: [resolvedFilter] })
+    expect(wrapper.state('filters')).toEqual([resolvedFilter])
+    expect(wrapper.state('filters')[0].isSession).toBeUndefined()
+    wrapper.unmount()
+  })
+})
+
 describe('ambiguous values', () => {
   const advisorMatch = {
     keyword: 'Smith Family',
