@@ -1,13 +1,16 @@
 import React, { PureComponent } from 'react'
-import { getThemeValue, createSVGPath, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
+import { getThemeValue, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import { createSVGPath } from './lineFns'
 
 export default class Line extends PureComponent {
   constructor(props) {
     super(props)
 
-    this.PATH_SMOOTHING = 0.2
+    // Curviness of the line, as a fraction of the gap between points. 1/3 is
+    // the max a cubic can curve without swinging past its data points
+    this.PATH_SMOOTHING = 1 / 3
 
     this.state = {
       activeKey: this.props.activeChartElementKey,
