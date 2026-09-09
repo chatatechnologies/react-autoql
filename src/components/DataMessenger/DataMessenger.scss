@@ -113,6 +113,15 @@
     padding-top: 60px;
   }
 
+  // Same page geometry as .chat-content-wrapper: fill the drawer below the header.
+  // Transparent so the drawer's glass background shows through.
+  .react-autoql-agent-messenger {
+    position: absolute;
+    inset: 0;
+    padding-top: 60px;
+    background-color: transparent;
+  }
+
   .chat-header-container {
     display: flex;
     justify-content: space-between;

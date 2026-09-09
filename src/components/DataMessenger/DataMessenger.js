@@ -22,6 +22,7 @@ import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { ChatContent } from '../ChatContent'
+import { AgentMessenger } from '../AgentMessenger'
 import { Tooltip } from '../Tooltip'
 import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
@@ -130,6 +131,17 @@ export class DataMessenger extends React.Component {
     resizable: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     enableDPRTab: PropTypes.bool,
+    // Session-based agent page. defaultTab accepts 'agent' when this is enabled, and
+    // openDataMessenger('agent') deep-links to it (including on mobile, where the tab
+    // rail isn't rendered).
+    enableAgentTab: PropTypes.bool,
+    agentInputPlaceholder: PropTypes.string,
+    agentSuggestions: PropTypes.arrayOf(PropTypes.string),
+    agentModels: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, label: PropTypes.string })),
+    agentModelsEndpoint: PropTypes.string,
+    agentDefaultModelId: PropTypes.string,
+    // Development only: renders captured session payloads instead of calling the API.
+    agentMockResponses: PropTypes.bool,
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
     defaultOpen: PropTypes.bool,
@@ -214,6 +226,13 @@ export class DataMessenger extends React.Component {
     enableQueryQuickStartTopics: true,
     enableQueryInputTopics: true,
     enableDPRTab: false,
+    enableAgentTab: false,
+    agentInputPlaceholder: undefined,
+    agentSuggestions: undefined,
+    agentModels: undefined,
+    agentModelsEndpoint: undefined,
+    agentDefaultModelId: undefined,
+    agentMockResponses: false,
     mobileActivePage: 'data-messenger',
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
@@ -549,7 +568,8 @@ export class DataMessenger extends React.Component {
       !this.props.enableExploreQueriesTab &&
       !this.props.enableNotificationsTab &&
       !this.props.enableDPRTab &&
-      !this.props.enableDataExplorerTab
+      !this.props.enableDataExplorerTab &&
+      !this.props.enableAgentTab
     ) {
       return null
     }
@@ -622,6 +642,17 @@ export class DataMessenger extends React.Component {
                     }}
                   />
                 </div>
+              </div>
+            )}
+            {this.props.enableAgentTab && (
+              <div
+                className={`react-autoql-dm-tab${page === 'agent' ? ' active' : ''} react-autoql-agent`}
+                data-test='data-messenger-agent-tab'
+                onClick={() => this.setState({ activePage: 'agent' })}
+                data-tooltip-content={lang.agent}
+                data-tooltip-id={this.TOOLTIP_ID}
+              >
+                <Icon type='sparkles' size={22} />
               </div>
             )}
             {this.props.enableDPRTab && (
@@ -723,6 +754,10 @@ export class DataMessenger extends React.Component {
       }
       case 'dpr': {
         title = lang.education
+        break
+      }
+      case 'agent': {
+        title = lang.agent
         break
       }
     }
@@ -857,7 +892,37 @@ export class DataMessenger extends React.Component {
         {this.renderDataExplorerContent()}
         {this.renderNotificationsContent()}
         {this.renderDPRContent()}
+        {this.renderAgentContent()}
       </>
+    )
+  }
+
+  renderAgentContent = () => {
+    if (!this.props.enableAgentTab) {
+      return null
+    }
+
+    return (
+      <ErrorBoundary>
+        <AgentMessenger
+          data-test='data-messenger-agent-content'
+          key={this.state.dataMessengerId}
+          shouldRender={this.shouldRenderPage('agent')}
+          isActivePage={this.isActivePage('agent')}
+          authentication={this.props.authentication}
+          dataFormatting={this.props.dataFormatting}
+          isResizing={this.state.isResizing || this.state.isWindowResizing}
+          placeholder={this.props.agentInputPlaceholder}
+          suggestions={this.props.agentSuggestions}
+          models={this.props.agentModels}
+          modelsEndpoint={this.props.agentModelsEndpoint}
+          defaultModelId={this.props.agentDefaultModelId}
+          enableMockResponses={this.props.agentMockResponses}
+          enableVoiceRecord={this.props.enableVoiceRecord}
+          tooltipID={this.TOOLTIP_ID}
+          onErrorCallback={this.props.onErrorCallback}
+        />
+      </ErrorBoundary>
     )
   }
 

@@ -271,3 +271,34 @@ describe('performResizeDrawer clamps to the document max', () => {
     })
   })
 })
+
+describe('agent tab', () => {
+  // shallow() (no dive) gives the DataMessenger instance; dive() renders its
+  // ErrorBoundary's output, which is where the markup lives.
+  const setupAgent = (props = {}) => shallow(<DataMessenger {...defaultProps} {...props} />)
+
+  test('is absent by default', () => {
+    expect(findByTestAttr(setupAgent().dive(), 'data-messenger-agent-tab').exists()).toBe(false)
+  })
+
+  test('renders in the tab rail when enableAgentTab is set', () => {
+    expect(findByTestAttr(setupAgent({ enableAgentTab: true }).dive(), 'data-messenger-agent-tab').exists()).toBe(true)
+  })
+
+  test('switches the active page when clicked', () => {
+    const wrapper = setupAgent({ enableAgentTab: true })
+    findByTestAttr(wrapper.dive(), 'data-messenger-agent-tab').props().onClick()
+    expect(wrapper.instance().state.activePage).toBe('agent')
+  })
+
+  test('shows the agent title once the page is active', () => {
+    const wrapper = setupAgent({ enableAgentTab: true })
+    wrapper.instance().setState({ activePage: 'agent' })
+    expect(wrapper.dive().find('.header-title').text()).toBe('Agent')
+  })
+
+  test('renders the agent page only when the tab is enabled', () => {
+    expect(setupAgent().instance().renderAgentContent()).toBeNull()
+    expect(setupAgent({ enableAgentTab: true }).instance().renderAgentContent()).not.toBeNull()
+  })
+})

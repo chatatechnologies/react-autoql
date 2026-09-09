@@ -1,0 +1,105 @@
+// Spacing carries the grouping: 32px when the speaker changes, 24px between two
+// turns from the same side, nothing before the first.
+.react-autoql-agent-message {
+  display: flex;
+  min-width: 0;
+  margin-top: 2rem;
+  // Longer and gentler than the original 0.16s, which read as a snap rather than a
+  // movement. transform/opacity only, so it stays off the layout path.
+  animation: react-autoql-agent-message-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &.follows-same-role {
+    margin-top: 1.5rem;
+  }
+
+  &.is-first {
+    margin-top: 0;
+  }
+
+  &.is-user {
+    justify-content: flex-end;
+  }
+
+  &.is-agent {
+    align-items: flex-start;
+    gap: 0.625rem;
+  }
+}
+
+// Rounded like the library's own chat bubbles (ChatMessage uses 25px), with a small
+// tail corner. Deliberately not accent-filled: the drawer header directly above is
+// accent, and two saturated blocks in one column fight each other.
+.react-autoql-agent-user-bubble {
+  max-width: 85%;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--am-border);
+  border-radius: 20px 20px 6px 20px;
+  background-color: var(--am-b2);
+  color: var(--am-t1);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// Carries the product mark rather than being a bare colour blob: it is the only
+// thing identifying a block as the agent's, so it should read as an avatar. The
+// gradient runs accent-2 -> accent, which is a blue ramp in light and blue-to-navy
+// in dark; the mark sits on top in the accent foreground colour.
+.react-autoql-agent-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--am-accent-2), var(--am-accent));
+  color: var(--react-autoql-text-color-accent, #fff);
+  box-shadow: 0 1px 3px var(--am-shadow);
+
+  .react-autoql-icon {
+    font-size: 0.875rem;
+    // The bubbles mark reads slightly high in its own box.
+    margin-top: 1px;
+  }
+}
+
+// The rule is the grouping device - every item in one answer hangs off it.
+.react-autoql-agent-message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--am-border);
+}
+
+.react-autoql-agent-model-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--am-t2);
+}
+
+.react-autoql-agent-item {
+  min-width: 0;
+}
+
+@keyframes react-autoql-agent-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-autoql-agent-message {
+    animation: none;
+  }
+}
