@@ -40,6 +40,9 @@ const THREAD_WHEEL_IDLE_MS = 250
 // Scrollers nested inside a message that would otherwise capture the wheel.
 const NESTED_SCROLLER_SELECTOR = '.tabulator-tableholder, .react-autoql-custom-scrollbars'
 
+// Px per line, for browsers that report wheel deltas in lines rather than pixels.
+const WHEEL_LINE_HEIGHT = 16
+
 export default class ChatContent extends React.Component {
   constructor(props) {
     super(props)
