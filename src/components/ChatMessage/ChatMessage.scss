@@ -29,10 +29,12 @@
       .chat-message-bubble {
         background-color: var(--react-autoql-accent-color);
         color: var(--react-autoql-text-color-accent);
+        border-bottom-right-radius: 8px;
 
         // Glassmorphism overlay for request bubbles
         &::before {
           background-color: var(--react-autoql-accent-color);
+          border-bottom-right-radius: 8px;
         }
       }
     }
@@ -41,7 +43,7 @@
   &.response {
     // Only animate on first mount (when message is newly created)
     &.animate-on-mount {
-      animation: scale-up-bl 0.5s ease;
+      animation: scale-up-tl 0.5s ease;
     }
 
     &.pwa {
@@ -56,16 +58,24 @@
       .chat-message-bubble {
         background-color: var(--react-autoql-background-color-secondary);
         color: var(--react-autoql-text-color-primary);
+        border-bottom-left-radius: 8px;
 
         // Glassmorphism overlay for response bubbles
         &::before {
           background-color: var(--react-autoql-background-color-secondary);
+          border-bottom-left-radius: 8px;
         }
       }
 
       .chat-message-bubble:not(.text) {
         min-width: 125px;
       }
+    }
+
+    // The per-block reveal replaces the whole-bubble scale-up for prose --
+    // running both at once reads as two competing animations.
+    &.prose-response.animate-on-mount {
+      animation: none;
     }
   }
 
@@ -644,14 +654,41 @@
   }
 }
 
-@keyframes scale-up-bl {
+// Responses grow downward from their top-left corner, so a tall visualization
+// expands into the space below it instead of shoving itself up the pane.
+@keyframes scale-up-tl {
   0% {
     transform: scale(0.5);
-    transform-origin: 0% 100%;
+    transform-origin: 0% 0%;
   }
   100% {
     transform: scale(1);
-    transform-origin: 0% 100%;
+    transform-origin: 0% 0%;
+  }
+}
+
+// Staggered prose reveal. --reveal-index and --reveal-stagger are set per block in
+// ChatMessage.applyStaggeredReveal, which shrinks the stagger as block count grows
+// so a long response never takes longer to finish appearing than a short one.
+.chat-message-reveal-block {
+  animation: chat-message-block-reveal 260ms ease both;
+  animation-delay: calc(var(--reveal-index, 0) * var(--reveal-stagger, 40ms));
+}
+
+@keyframes chat-message-block-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-message-reveal-block {
+    animation: none;
   }
 }
 

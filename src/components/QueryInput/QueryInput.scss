@@ -32,18 +32,20 @@
 }
 
 .react-autoql-chatbar-input {
-  padding: 10px;
-  padding-left: 20px;
-  padding-right: 50px; /* Make room for microphone button */
+  padding: 8px;
+  padding-left: 16px;
+  padding-right: 44px; /* Make room for microphone button */
   margin: 0px 10px 0 10px;
-  height: 42px;
+  height: 36px;
   width: calc(100% - 20px);
   transition: border-radius 0.3s ease, margin-left 0.3s ease, border-left-color 0.2s ease, width 0.3s ease,
     box-shadow 0.3s ease, border-color 0.2s ease, padding-left 0.3s ease;
   white-space: nowrap;
   box-sizing: border-box;
-  border-radius: 24px;
-  font-size: 1rem;
+  border-radius: 18px;
+  // Matches the 0.875rem the chat thread uses, so typed text is the same size as
+  // the message it becomes.
+  font-size: 0.875rem;
   font-family: inherit;
   letter-spacing: 0.04em;
   outline: none !important;
@@ -68,7 +70,7 @@
     inset: 0;
     background-color: var(--react-autoql-background-color-secondary);
     opacity: 0.9;
-    border-radius: 24px;
+    border-radius: 18px;
     pointer-events: none;
     z-index: -1;
   }
@@ -81,8 +83,18 @@
     }
   }
 }
+
+// iOS Safari auto-zooms the page when a focused input's text is under 16px, and
+// never zooms back out. Touch devices keep the old 1rem to avoid that; the size
+// mismatch with the thread is the lesser problem there.
+@media (hover: none) and (pointer: coarse) {
+  .react-autoql-chatbar-input {
+    font-size: 1rem;
+  }
+}
+
 .react-autoql-chatbar-input.left-padding {
-  padding-left: 54px;
+  padding-left: 48px;
 }
 .react-autoql-chatbar-input:disabled {
   background: rgba(0, 0, 0, 0.03);
@@ -121,7 +133,7 @@
 }
 .react-autoql-bar-container .react-autosuggest__suggestions-container--open {
   position: absolute;
-  top: 45px;
+  top: 39px;
   bottom: unset;
   margin: 10px;
   padding-top: 5px;
@@ -144,11 +156,11 @@
 
 .react-autoql-bar-container.autosuggest-top .react-autosuggest__suggestions-container--open {
   top: unset;
-  bottom: 45px;
+  bottom: 39px;
 }
 
 .react-autoql-bar-container.autosuggest-bottom .react-autosuggest__suggestions-container--open {
-  top: 45px;
+  top: 39px;
   bottom: unset;
 }
 
@@ -205,9 +217,9 @@
   align-items: center;
   left: 0;
   top: 0;
-  width: 46px;
+  width: 40px;
   height: 100%;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   color: #28a8e0; // For chata logo
 }
 
@@ -802,11 +814,12 @@
   }
 }
 
-/* Send button */
+/* Send button — a flat accent disc beside the input. The press feedback is a
+   darkening wash rather than a scale-up, so the disc keeps its footprint. */
 .react-autoql-input-send-button {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
   border: none;
   background-color: var(--react-autoql-accent-color);
   color: var(--react-autoql-text-color-accent);
@@ -816,16 +829,16 @@
   justify-content: center;
   margin: 0px 2px;
   flex-shrink: 0;
-  transition: all 0.2s ease;
-  font-size: 1.25rem;
+  box-shadow: none;
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+  font-size: 1.0625rem;
 
   &:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0px 0px 4px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.08);
   }
 
   &:active:not(:disabled) {
-    transform: scale(0.95);
+    box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.16);
   }
 
   &:disabled {
@@ -835,8 +848,7 @@
   }
 
   svg {
-    width: 20px;
-    height: 20px;
-    margin-left: -2px;
+    width: 16px;
+    height: 16px;
   }
 }
