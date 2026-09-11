@@ -44,6 +44,7 @@ class DataAlertsTabbed extends React.Component {
 
   state = {
     isEditModalVisible: false,
+    startInEditMode: false,
     isCustomFilteredAlertModalVisible: false,
     activeDataAlert: undefined,
     activeTab: TAB_MY_ALERTS,
@@ -105,11 +106,12 @@ class DataAlertsTabbed extends React.Component {
       isEditModalVisible: false,
       isDeleteDialogOpen: false,
       dataAlertDeleteId: undefined,
+      startInEditMode: false,
     })
   }
 
-  openEditModal = (activeDataAlert, step) => {
-    this.setState({ activeDataAlert, isEditModalVisible: true })
+  openEditModal = (activeDataAlert, step, { startInEditMode = false } = {}) => {
+    this.setState({ activeDataAlert, isEditModalVisible: true, startInEditMode })
     if (step === 'schedule') {
       setTimeout(() => {
         this.editModalRef?.setStep(this.editModalRef?.FREQUENCY_STEP)
@@ -140,6 +142,7 @@ class DataAlertsTabbed extends React.Component {
           onClose={() => this.setState({ isEditModalVisible: false })}
           currentDataAlert={this.state.activeDataAlert}
           onSave={this.onDataAlertSave}
+          startInEditMode={this.state.startInEditMode}
           editView
         />
         <CustomFilteredAlertModal
@@ -191,9 +194,7 @@ class DataAlertsTabbed extends React.Component {
               onClick={() => this.setState({ activeTab: TAB_MY_ALERTS })}
             >
               My Alerts
-              {customAlertsList.length > 0 && (
-                <span className='data-alerts-tab-count'>{customAlertsList.length}</span>
-              )}
+              {customAlertsList.length > 0 && <span className='data-alerts-tab-count'>{customAlertsList.length}</span>}
             </button>
             <button
               className={`data-alerts-tab${activeTab === TAB_ORG_ALERTS ? ' active' : ''}`}

@@ -1,0 +1,173 @@
+.react-autoql-data-alert-details {
+  color: var(--react-autoql-text-color-primary);
+  font-size: 0.9375rem;
+  // padding lives on the content, not the scroll container, so PerfectScrollbar
+  // measures a container that is exactly as wide as its content
+  padding: 16px 20px 18px;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  // ---- state, first thing you see ----------------------------------------
+  .react-autoql-data-alert-details-status-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .react-autoql-data-alert-details-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    padding: 5px 10px;
+    border-radius: 11px;
+    border: 1px solid var(--react-autoql-border-color);
+    color: var(--react-autoql-text-color-secondary);
+
+    .react-autoql-icon {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .react-autoql-data-alert-details-bead {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+
+  .react-autoql-data-alert-details-pill-active {
+    color: var(--react-autoql-success-color);
+    border-color: var(--react-autoql-success-color);
+  }
+
+  .react-autoql-data-alert-details-pill-triggered,
+  .react-autoql-data-alert-details-pill-type {
+    color: var(--react-autoql-accent-color);
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-data-alert-details-pill-error {
+    color: var(--react-autoql-danger-color);
+    border-color: var(--react-autoql-danger-color);
+  }
+
+  // ---- sections ----------------------------------------------------------
+  .react-autoql-data-alert-details-section + .react-autoql-data-alert-details-section {
+    margin-top: 22px;
+  }
+
+  .react-autoql-data-alert-details-section-title {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--react-autoql-text-color-secondary);
+    margin-bottom: 9px;
+  }
+
+  // ---- the rule: query and its condition read as one object ---------------
+  .react-autoql-data-alert-details-rule {
+    border: 1px solid var(--react-autoql-border-color);
+    border-left: 3px solid var(--react-autoql-accent-color);
+    border-radius: 0 4px 4px 0;
+    overflow: hidden;
+  }
+
+  .react-autoql-data-alert-details-query {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    padding: 11px 14px;
+    background: var(--react-autoql-background-color-primary);
+    line-height: 1.45;
+
+    .react-autoql-icon {
+      color: var(--react-autoql-accent-color);
+      flex: none;
+      position: relative;
+      top: 2px;
+    }
+  }
+
+  .react-autoql-data-alert-details-query-empty {
+    .react-autoql-icon {
+      color: var(--react-autoql-warning-color);
+    }
+  }
+
+  .react-autoql-data-alert-details-condition {
+    padding: 11px 14px;
+    border-top: 1px solid var(--react-autoql-border-color);
+    line-height: 1.55;
+    color: var(--react-autoql-text-color-secondary);
+    overflow-wrap: anywhere;
+
+    strong {
+      color: var(--react-autoql-text-color-primary);
+      font-weight: 500;
+    }
+  }
+
+  .react-autoql-data-alert-details-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 14px 11px;
+    background: var(--react-autoql-background-color-primary);
+  }
+
+  .react-autoql-data-alert-details-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--react-autoql-border-color);
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-secondary);
+
+    .react-autoql-icon {
+      color: var(--react-autoql-accent-color);
+    }
+
+    strong {
+      color: var(--react-autoql-text-color-primary);
+      font-weight: 500;
+    }
+  }
+
+  // ---- label / value pairs ------------------------------------------------
+  .react-autoql-data-alert-details-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px 20px;
+  }
+
+  .react-autoql-data-alert-details-field-label {
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--react-autoql-text-color-secondary);
+    margin-bottom: 3px;
+  }
+
+  .react-autoql-data-alert-details-field-value {
+    font-size: 0.875rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .react-autoql-data-alert-details-field-note {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--react-autoql-text-color-secondary);
+    margin-top: 1px;
+  }
+}
