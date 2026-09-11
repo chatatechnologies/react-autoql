@@ -87,7 +87,89 @@ class CustomFilteredAlertModal extends React.Component {
   }
 
   componentDidMount = () => {
+    this._isMounted = true
     this.fetchCategoriesIfNeeded()
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+  getBaseDataAlertId = () => {
+    const { currentDataAlert } = this.props
+    const hasProject = !!currentDataAlert?.project?.id || !!currentDataAlert?.projects?.[0]?.id
+    return currentDataAlert?.id && hasProject ? currentDataAlert.id : undefined
+  }
+
+  /**
+   * Evaluates the base Data Alert to produce the preview rows. That is a real query run, so
+   * nothing triggers it but the user asking to see the preview - not opening the modal, not
+   * closing it, and not selecting filters, which are served by the autocomplete endpoint.
+   * The result is cached on the instance so reopening the same alert restores it for free.
+   */
+  loadBasePreview = ({ force = false } = {}) => {
+    const dataAlertId = this.getBaseDataAlertId()
+    if (!dataAlertId || this.isLoadingBasePreview) {
+      return
+    }
+
+    const cached = this.cachedBasePreview
+    if (!force && cached?.id === dataAlertId) {
+      this.setState({
+        baseDataAlertColumns: cached.columns,
+        baseDataAlertQueryResponse: cached.queryResponse,
+        isLoadingBaseDataAlertQueryResponse: false,
+        basePreviewError: false,
+      })
+      return
+    }
+
+    this.isLoadingBasePreview = true
+    this.setState({ isLoadingBaseDataAlertQueryResponse: true, basePreviewError: false })
+
+    const projectId = this.props.currentDataAlert?.projects?.[0]?.id
+    const previewRequest = this.props.autoQLConfig?.projectId
+      ? previewManagementDataAlert({
+          dataAlertId,
+          ...getAuthentication(this.props.authentication),
+          projectId,
+        })
+      : previewDataAlert({
+          dataAlertId,
+          ...getAuthentication(this.props.authentication),
+        })
+
+    previewRequest
+      .then((response) => {
+        const columns = response?.data?.data?.query_result?.data?.columns
+        const queryResponse = { data: response?.data?.data?.query_result }
+
+        this.isLoadingBasePreview = false
+        this.cachedBasePreview = { id: dataAlertId, columns, queryResponse }
+
+        if (!this._isMounted) return
+        this.setState({
+          baseDataAlertColumns: columns,
+          baseDataAlertQueryResponse: queryResponse,
+          isLoadingBaseDataAlertQueryResponse: false,
+          basePreviewError: false,
+        })
+      })
+      .catch((error) => {
+        this.isLoadingBasePreview = false
+        console.error('Error getting data alert preview:', error)
+        this.props.onErrorCallback(error?.message || 'Please try again or contact support if the issue persists')
+        if (!this._isMounted) return
+        this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+      })
+  }
+
+  showBasePreview = () => {
+    this.loadBasePreview()
+  }
+
+  refreshBasePreview = () => {
+    this.loadBasePreview({ force: true })
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -199,7 +281,8 @@ class CustomFilteredAlertModal extends React.Component {
       fetchedCategories: false,
       baseDataAlertColumns: [],
       baseDataAlertQueryResponse: {},
-      isLoadingBaseDataAlertQueryResponse: true,
+      isLoadingBaseDataAlertQueryResponse: false,
+      basePreviewError: false,
       customFilters: [],
       termValue: {},
       isEditingDataAlert: this.props.currentDataAlert?.expression?.[1]?.term_type === 'DATA',
@@ -207,53 +290,6 @@ class CustomFilteredAlertModal extends React.Component {
 
     if (props.currentDataAlert) {
       const { currentDataAlert } = props
-      if (
-        (currentDataAlert?.id && currentDataAlert?.project?.id) ||
-        (currentDataAlert?.id && currentDataAlert?.projects?.[0]?.id)
-      ) {
-        const dataAlertId = currentDataAlert.id
-        const projectId = currentDataAlert.projects?.[0]?.id
-        if (this.props?.autoQLConfig?.projectId) {
-          previewManagementDataAlert({
-            dataAlertId: dataAlertId,
-            ...getAuthentication(this.props.authentication),
-            projectId: projectId,
-          })
-            .then((response) => {
-              this.setState({
-                baseDataAlertColumns: response?.data?.data?.query_result?.data?.columns,
-                baseDataAlertQueryResponse: { data: response?.data?.data?.query_result },
-                isLoadingBaseDataAlertQueryResponse: false,
-              })
-            })
-            .catch((error) => {
-              const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
-              const errorMessage = `${errorDetail}`
-              this.props.onErrorCallback(errorMessage)
-              console.error('Error getting data alert preview:', error)
-              this.setState({ isLoadingBaseDataAlertQueryResponse: false })
-            })
-        } else {
-          previewDataAlert({
-            dataAlertId: dataAlertId,
-            ...getAuthentication(this.props.authentication),
-          })
-            .then((response) => {
-              this.setState({
-                baseDataAlertColumns: response?.data?.data?.query_result?.data?.columns,
-                baseDataAlertQueryResponse: { data: response?.data?.data?.query_result },
-                isLoadingBaseDataAlertQueryResponse: false,
-              })
-            })
-            .catch((error) => {
-              const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
-              const errorMessage = ` ${errorDetail}`
-              this.props.onErrorCallback(errorMessage)
-              console.error('Error getting data alert preview:', error)
-              this.setState({ isLoadingBaseDataAlertQueryResponse: false })
-            })
-        }
-      }
       if (state.isEditingDataAlert) {
         state.titleInput = currentDataAlert.title
         state.messageInput = currentDataAlert.message
@@ -536,6 +572,10 @@ class CustomFilteredAlertModal extends React.Component {
               baseDataAlertColumns={this.state.baseDataAlertColumns}
               baseDataAlertQueryResponse={this.state.baseDataAlertQueryResponse}
               isLoadingBaseDataAlertQueryResponse={this.state.isLoadingBaseDataAlertQueryResponse}
+              basePreviewError={this.state.basePreviewError}
+              hasBasePreview={!!this.state.baseDataAlertQueryResponse?.data}
+              onShowBasePreview={this.showBasePreview}
+              onRefreshBasePreview={this.refreshBasePreview}
               onCustomFiltersChange={this.updateCustomFilters}
               customFilters={this.state.customFilters}
               isPreviewMode={this.props.isPreviewMode}
