@@ -111,7 +111,8 @@ class DataAlertsTabbed extends React.Component {
   }
 
   openEditModal = (activeDataAlert, step, { startInEditMode = false } = {}) => {
-    this.setState({ activeDataAlert, isEditModalVisible: true, startInEditMode })
+    // Deep-linking to a step is a request to change that step, so skip the read-only view
+    this.setState({ activeDataAlert, isEditModalVisible: true, startInEditMode: startInEditMode || !!step })
     if (step === 'schedule') {
       setTimeout(() => {
         this.editModalRef?.setStep(this.editModalRef?.FREQUENCY_STEP)

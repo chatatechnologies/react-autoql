@@ -141,13 +141,23 @@ class CustomFilteredAlertModal extends React.Component {
 
     previewRequest
       .then((response) => {
-        const columns = response?.data?.data?.query_result?.data?.columns
-        const queryResponse = { data: response?.data?.data?.query_result }
-
         this.isLoadingBasePreview = false
+
+        const queryResult = response?.data?.data?.query_result
+        if (!queryResult) {
+          // Caching this would leave hasBasePreview false forever: Show Preview would keep
+          // short-circuiting on the cache and the refresh control would never appear.
+          if (!this._isMounted || this.getBaseDataAlertId() !== dataAlertId) return
+          this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+          return
+        }
+
+        const columns = queryResult?.data?.columns
+        const queryResponse = { data: queryResult }
         this.cachedBasePreview = { id: dataAlertId, columns, queryResponse }
 
-        if (!this._isMounted) return
+        // The modal can be closed and reopened on a different alert while this is in flight
+        if (!this._isMounted || this.getBaseDataAlertId() !== dataAlertId) return
         this.setState({
           baseDataAlertColumns: columns,
           baseDataAlertQueryResponse: queryResponse,
@@ -159,7 +169,7 @@ class CustomFilteredAlertModal extends React.Component {
         this.isLoadingBasePreview = false
         console.error('Error getting data alert preview:', error)
         this.props.onErrorCallback(error?.message || 'Please try again or contact support if the issue persists')
-        if (!this._isMounted) return
+        if (!this._isMounted || this.getBaseDataAlertId() !== dataAlertId) return
         this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
       })
   }
@@ -177,10 +187,23 @@ class CustomFilteredAlertModal extends React.Component {
       this.state.customFilters !== prevState.customFilters ||
       this.state.baseDataAlertColumns !== prevState.baseDataAlertColumns
     ) {
-      const filteredColumns = this.state.baseDataAlertColumns.filter((col) =>
-        this.state.customFilters.some((filter) => filter.column_name === col.name),
-      )
-      const rows = this.state.customFilters.map((filter) => [filter.value])
+      const { customFilters, baseDataAlertColumns } = this.state
+
+      const knownColumns =
+        baseDataAlertColumns?.filter((col) => customFilters.some((filter) => filter.column_name === col.name)) ?? []
+
+      // The preview is optional now, so its columns may never arrive. The filters carry the two
+      // fields the expression is read back with (transformTermValueToFilters wants name and
+      // display_name), so synthesize from them rather than saving columns: [] - which silently
+      // reopens the alert with no filters at all.
+      const filteredColumns = knownColumns.length
+        ? knownColumns
+        : [...new Set(customFilters.map((filter) => filter.column_name))].map((name) => ({
+            name,
+            display_name: customFilters.find((filter) => filter.column_name === name)?.show_message ?? name,
+          }))
+
+      const rows = customFilters.map((filter) => [filter.value])
       this.setState({
         termValue: {
           columns: filteredColumns,
@@ -281,7 +304,7 @@ class CustomFilteredAlertModal extends React.Component {
       fetchedCategories: false,
       baseDataAlertColumns: [],
       baseDataAlertQueryResponse: {},
-      isLoadingBaseDataAlertQueryResponse: false,
+      isLoadingBaseDataAlertQueryResponse: !!this.isLoadingBasePreview,
       basePreviewError: false,
       customFilters: [],
       termValue: {},

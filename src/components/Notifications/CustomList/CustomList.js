@@ -45,7 +45,6 @@ export default class CustomList extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    baseDataAlertColumns: PropTypes.array,
     onCustomFiltersChange: PropTypes.func,
     customFilters: PropTypes.array,
     storedInitialData: PropTypes.array,
@@ -54,7 +53,6 @@ export default class CustomList extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    baseDataAlertColumns: [],
     onCustomFiltersChange: () => {},
     customFilters: [],
     storedInitialData: [],

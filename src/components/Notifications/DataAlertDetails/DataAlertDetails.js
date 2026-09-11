@@ -278,11 +278,14 @@ export default class DataAlertDetails extends React.Component {
       return formatNextScheduleDate(currentDataAlert?.schedules, true)
     }
 
-    if (currentDataAlert?.reset_date) {
-      return formatResetDate(currentDataAlert)
+    // Mirrors DataAlertRow.renderNextCheck: a past reset date means the next check is simply the
+    // next evaluation, not the date that has already gone by.
+    if (!currentDataAlert?.reset_date || !resetDateIsFuture(currentDataAlert)) {
+      const frequency = currentDataAlert?.evaluation_frequency ?? DEFAULT_EVALUATION_FREQUENCY
+      return `< ${frequency}m`
     }
 
-    return null
+    return formatResetDate(currentDataAlert)
   }
 
   renderNextCheckNote = () => {

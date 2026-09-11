@@ -2085,7 +2085,6 @@ export default class RuleSimple extends React.Component {
           <CustomList
             authentication={this.props.authentication}
             initialFilters={this.state.initialFilters}
-            baseDataAlertColumns={this.props.baseDataAlertColumns}
             onCustomFiltersChange={this.props.onCustomFiltersChange}
             customFilters={this.props.customFilters}
             storedInitialData={this.state.storedInitialData}
