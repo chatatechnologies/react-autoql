@@ -421,3 +421,42 @@
   color: var(--react-autoql-text-color-placeholder);
   margin-top: 2px;
 }
+
+.rule-simple-preview-grid {
+  .rule-simple-preview-grid-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-height: 22px;
+    margin-bottom: 4px;
+  }
+
+  .rule-simple-preview-refresh-btn {
+    cursor: pointer;
+    color: var(--react-autoql-text-color-secondary);
+    padding: 2px;
+    border-radius: 3px;
+
+    &:hover {
+      color: var(--react-autoql-accent-color);
+    }
+  }
+}
+
+.rule-simple-preview-grid-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 16px;
+  border: 1px dashed var(--react-autoql-border-color);
+  border-radius: 4px;
+  text-align: center;
+
+  span {
+    font-size: 0.875rem;
+    color: var(--react-autoql-text-color-secondary);
+    max-width: 46ch;
+  }
+}

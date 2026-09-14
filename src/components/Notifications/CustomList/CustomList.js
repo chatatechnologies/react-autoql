@@ -45,7 +45,6 @@ export default class CustomList extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
-    baseDataAlertColumns: PropTypes.array,
     onCustomFiltersChange: PropTypes.func,
     customFilters: PropTypes.array,
     storedInitialData: PropTypes.array,
@@ -54,7 +53,6 @@ export default class CustomList extends React.Component {
 
   static defaultProps = {
     authentication: authenticationDefault,
-    baseDataAlertColumns: [],
     onCustomFiltersChange: () => {},
     customFilters: [],
     storedInitialData: [],
@@ -143,12 +141,14 @@ export default class CustomList extends React.Component {
         const sortingArray = []
         let suggestionsMatchArray = []
         this.autoCompleteArray = []
-        suggestionsMatchArray = body.matches.filter((suggestion) =>
-          this.props.baseDataAlertColumns.some(
-            () =>
-              this.state.filters.length === 0 ||
-              this.state.filters.some((filter) => filter.column_name === suggestion.column_name),
-          ),
+        // NOTE: this used to be wrapped in `baseDataAlertColumns.some(() => ...)`, whose callback
+        // ignored the column it was passed. That made it a test for "baseDataAlertColumns is not
+        // empty", so no suggestion could appear until the base alert's preview query had run.
+        // The condition itself is unchanged.
+        suggestionsMatchArray = body.matches.filter(
+          (suggestion) =>
+            this.state.filters.length === 0 ||
+            this.state.filters.some((filter) => filter.column_name === suggestion.column_name),
         )
 
         for (let i = 0; i < suggestionsMatchArray.length; i++) {

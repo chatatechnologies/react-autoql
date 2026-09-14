@@ -159,6 +159,14 @@
   .react-autoql-modal-header-subtitle {
     font-size: 0.875rem;
   }
+
+  .react-autoql-modal-header-action {
+    display: flex;
+    align-items: center;
+    flex: none;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
 }
 .react-autoql-modal-footer {
   position: relative;
