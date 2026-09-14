@@ -43,7 +43,6 @@ export class DataMessenger extends React.Component {
 
     this.COMPONENT_KEY = uuid()
     this.HEADER_THICKNESS = 70
-    this.TAB_THICKNESS = 45
     this.SOURCE = mergeSources(props.source, 'data_messenger')
     this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
@@ -317,9 +316,11 @@ export class DataMessenger extends React.Component {
     this.notificationListRef?.refreshNotifications('dm')
   }
 
+  // The drawer used to leave a sliver of the page uncovered for the old side
+  // tabs. Those are gone, so maximizing now takes the full viewport.
   getMaxWidthAndHeightFromDocument = () => {
-    const maxWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0) - this.TAB_THICKNESS
-    const maxHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0) - this.TAB_THICKNESS
+    const maxWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+    const maxHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
     return { maxWidth, maxHeight }
   }
 
@@ -390,18 +391,28 @@ export class DataMessenger extends React.Component {
     this.setState({ activePage: 'notifications' })
   }
 
+  // `isSizeMaximum` is the source of truth for maximized state - comparing the
+  // stored width against the viewport breaks as soon as the window is resized.
+  // Restoring returns to whatever size the drawer had before maximizing, and
+  // falls back to the configured width/height if there's nothing to go back to.
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
-    this.setState(
-      {
-        width: isFullScreen ? this.props.width : maxWidth,
-        height: isFullScreen ? this.props.height : maxHeight,
-        isSizeMaximum: isFullScreen ? false : true,
-        isResizing: true,
-      },
-      () => {
-        this.setState({ isResizing: false })
-      },
-    )
+    const nextState = isFullScreen
+      ? {
+          width: this.state.preMaximizeWidth ?? this.props.width,
+          height: this.state.preMaximizeHeight ?? this.props.height,
+          isSizeMaximum: false,
+        }
+      : {
+          preMaximizeWidth: this.state.width,
+          preMaximizeHeight: this.state.height,
+          width: maxWidth,
+          height: maxHeight,
+          isSizeMaximum: true,
+        }
+
+    this.setState({ ...nextState, isResizing: true }, () => {
+      this.setState({ isResizing: false })
+    })
   }
 
   getHandleProp = () => {
@@ -435,7 +446,7 @@ export class DataMessenger extends React.Component {
 
     const { maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
-    if (this.state.height > maxHeight) {
+    if (this.state.isSizeMaximum || this.state.height > maxHeight) {
       return maxHeight
     }
 
@@ -449,7 +460,7 @@ export class DataMessenger extends React.Component {
 
     const { maxWidth } = this.getMaxWidthAndHeightFromDocument()
 
-    if (this.state.width > maxWidth) {
+    if (this.state.isSizeMaximum || this.state.width > maxWidth) {
       return maxWidth
     }
 
@@ -779,7 +790,7 @@ export class DataMessenger extends React.Component {
       return null
     }
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
-    const isFullScreen = this.state.width === maxWidth
+    const isFullScreen = this.state.isSizeMaximum
     return (
       <>
         <div className={`react-autoql-header-left-container ${isMobile ? 'mobile-hidden' : ''}`}>
@@ -1142,8 +1153,8 @@ export class DataMessenger extends React.Component {
               startingResizePosition: {
                 x: e.pageX,
                 y: e.pageY,
-                width: this.state.width,
-                height: this.state.height,
+                width: this.getDrawerWidth(),
+                height: this.getDrawerHeight(),
               },
             })
             document.addEventListener('mousemove', self.resizeDrawer)
@@ -1162,7 +1173,7 @@ export class DataMessenger extends React.Component {
   renderMaximizeHandle = () => {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
-    if (this.state.width === maxWidth || !this.state.isVisible) {
+    if (this.state.isSizeMaximum || !this.state.isVisible) {
       return null
     }
 
