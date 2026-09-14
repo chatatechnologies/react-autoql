@@ -391,15 +391,51 @@ export class DataMessenger extends React.Component {
     this.setState({ activePage: 'notifications' })
   }
 
-  // `isSizeMaximum` is the source of truth for maximized state - comparing the
-  // stored width against the viewport breaks as soon as the window is resized.
-  // Restoring returns to whatever size the drawer had before maximizing, and
-  // falls back to the configured width/height if there's nothing to go back to.
+  // The drawer can end up filling the viewport without having been maximized -
+  // shrinking the window below the drawer's size makes `getDrawerWidth/Height`
+  // clamp it to the edge. That reads as maximized to the user, so the controls
+  // have to treat it as maximized too.
+  isEffectivelyMaximized = () => {
+    if (this.state.isSizeMaximum) {
+      return true
+    }
+
+    const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
+    const placement = this.state.placement
+
+    if (placement === 'top' || placement === 'bottom') {
+      return this.state.height >= maxHeight
+    }
+
+    return this.state.width >= maxWidth
+  }
+
+  // Restoring goes back to the size the drawer had before maximizing, falling
+  // back to the configured width/height. Either one can still be as large as
+  // the viewport (a shrunken window, or a configured size bigger than the
+  // screen), so the result is clamped down to leave the drawer visibly smaller
+  // than the window - otherwise "restore" would appear to do nothing.
+  getRestoreSize = (preMaximizeSize, propSize, maxSize, minSize) => {
+    const size = preMaximizeSize ?? propSize
+
+    // Non-numeric sizes ('80vw', '500px') can't be compared to the viewport, so
+    // they're passed through untouched
+    if (!Number(size) || size < maxSize) {
+      return size
+    }
+
+    return Math.max(Math.min(Math.round(maxSize * 0.75), maxSize - 50), Math.min(minSize, maxSize))
+  }
+
+  // `isSizeMaximum` is the source of truth for the maximized state - comparing
+  // the stored width against the viewport breaks as soon as the window is
+  // resized - but the drawer can also be pinned to the viewport edge without it
+  // (see `isEffectivelyMaximized`), which restores the same way.
   toggleFullScreen = (isFullScreen, maxWidth, maxHeight) => {
     const nextState = isFullScreen
       ? {
-          width: this.state.preMaximizeWidth ?? this.props.width,
-          height: this.state.preMaximizeHeight ?? this.props.height,
+          width: this.getRestoreSize(this.state.preMaximizeWidth, this.props.width, maxWidth, this.minWidth),
+          height: this.getRestoreSize(this.state.preMaximizeHeight, this.props.height, maxHeight, this.minHeight),
           isSizeMaximum: false,
         }
       : {
@@ -790,7 +826,7 @@ export class DataMessenger extends React.Component {
       return null
     }
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
-    const isFullScreen = this.state.isSizeMaximum
+    const isFullScreen = this.isEffectivelyMaximized()
     return (
       <>
         <div className={`react-autoql-header-left-container ${isMobile ? 'mobile-hidden' : ''}`}>
@@ -1173,7 +1209,7 @@ export class DataMessenger extends React.Component {
   renderMaximizeHandle = () => {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
-    if (this.state.isSizeMaximum || !this.state.isVisible) {
+    if (this.isEffectivelyMaximized() || !this.state.isVisible) {
       return null
     }
 
