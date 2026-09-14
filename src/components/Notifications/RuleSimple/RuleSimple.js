@@ -778,9 +778,13 @@ export default class RuleSimple extends React.Component {
       this.state.storedInitialData?.[0]?.additional_selects ||
       []
     const displayOverrides = this.props.queryResponse?.data?.data?.fe_req?.display_overrides || []
-    const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns?.map(
-      (index) => this.state.firstQueryResult?.data?.data?.columns[index]?.name,
-    )[0]
+    // Until the first query resolves there are no columns to read a name from. Falling back to the
+    // saved compare_column keeps a save that happens mid-load from writing an expression without
+    // one - which produces an alert that looks saved but cannot evaluate.
+    const firstQuerySelectedNumberColumnName =
+      this.state.firstQuerySelectedColumns?.map(
+        (index) => this.state.firstQueryResult?.data?.data?.columns?.[index]?.name,
+      )[0] ?? this.state.storedInitialData?.[0]?.compare_column
     const firstTermQueryId = this.getTermQueryId(0)
     const expression = [
       {
