@@ -1722,18 +1722,27 @@ export default class RuleSimple extends React.Component {
 
     // Showing the preview means running the alert's query, so it waits to be asked for
     if (!this.props.hasBasePreview) {
+      // Without a resolvable alert id there is nothing to preview, so say so rather than
+      // leaving an enabled button that does nothing when clicked
+      const canShowPreview = !!this.props.onShowBasePreview
+
       return (
         <div className='rule-simple-preview-grid-placeholder'>
           <span>Selecting filters doesn't require this preview - load it if you want to see the data.</span>
-          <Button
-            type='default'
-            icon='table'
-            onClick={this.props.onShowBasePreview}
-            disabled={!this.props.onShowBasePreview}
-            tooltipID={this.props.tooltipID}
+          <span
+            data-tooltip-id={this.props.tooltipID}
+            data-tooltip-content={canShowPreview ? undefined : 'A preview is not available for this Data Alert'}
           >
-            Show Preview
-          </Button>
+            <Button
+              type='default'
+              icon='table'
+              onClick={this.props.onShowBasePreview}
+              disabled={!canShowPreview}
+              tooltipID={this.props.tooltipID}
+            >
+              Show Preview
+            </Button>
+          </span>
         </div>
       )
     }

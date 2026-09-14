@@ -14,6 +14,7 @@ import {
   assignLabelToManagementDataAlert,
   previewManagementDataAlert,
   previewDataAlert,
+  isSingleValueResponse,
   createDataAlert,
   updateDataAlert,
   updateManagementDataAlert,
@@ -109,8 +110,12 @@ class CustomFilteredAlertModal extends React.Component {
    */
   loadBasePreview = ({ force = false } = {}) => {
     const dataAlertId = this.getBaseDataAlertId()
-    if (!dataAlertId || this.isLoadingBasePreview) {
-      return
+    if (!dataAlertId) {
+      return Promise.resolve(null)
+    }
+
+    if (this.isLoadingBasePreview) {
+      return this.basePreviewPromise ?? Promise.resolve(null)
     }
 
     const cached = this.cachedBasePreview
@@ -121,7 +126,7 @@ class CustomFilteredAlertModal extends React.Component {
         isLoadingBaseDataAlertQueryResponse: false,
         basePreviewError: false,
       })
-      return
+      return Promise.resolve(cached.queryResponse)
     }
 
     this.isLoadingBasePreview = true
@@ -139,7 +144,9 @@ class CustomFilteredAlertModal extends React.Component {
           ...getAuthentication(this.props.authentication),
         })
 
-    previewRequest
+    // Resolves with the query response so callers - notably the save-time validation - can
+    // inspect it, and with null when there is nothing usable to inspect.
+    this.basePreviewPromise = previewRequest
       .then((response) => {
         this.isLoadingBasePreview = false
 
@@ -147,9 +154,10 @@ class CustomFilteredAlertModal extends React.Component {
         if (!queryResult) {
           // Caching this would leave hasBasePreview false forever: Show Preview would keep
           // short-circuiting on the cache and the refresh control would never appear.
-          if (!this._isMounted || this.getBaseDataAlertId() !== dataAlertId) return
-          this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
-          return
+          if (this._isMounted && this.getBaseDataAlertId() === dataAlertId) {
+            this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+          }
+          return null
         }
 
         const columns = queryResult?.data?.columns
@@ -157,21 +165,29 @@ class CustomFilteredAlertModal extends React.Component {
         this.cachedBasePreview = { id: dataAlertId, columns, queryResponse }
 
         // The modal can be closed and reopened on a different alert while this is in flight
-        if (!this._isMounted || this.getBaseDataAlertId() !== dataAlertId) return
-        this.setState({
-          baseDataAlertColumns: columns,
-          baseDataAlertQueryResponse: queryResponse,
-          isLoadingBaseDataAlertQueryResponse: false,
-          basePreviewError: false,
-        })
+        if (this._isMounted && this.getBaseDataAlertId() === dataAlertId) {
+          this.setState({
+            baseDataAlertColumns: columns,
+            baseDataAlertQueryResponse: queryResponse,
+            isLoadingBaseDataAlertQueryResponse: false,
+            basePreviewError: false,
+          })
+        }
+
+        return queryResponse
       })
       .catch((error) => {
         this.isLoadingBasePreview = false
         console.error('Error getting data alert preview:', error)
         this.props.onErrorCallback(error?.message || 'Please try again or contact support if the issue persists')
-        if (!this._isMounted || this.getBaseDataAlertId() !== dataAlertId) return
-        this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+        if (this._isMounted && this.getBaseDataAlertId() === dataAlertId) {
+          this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+        }
+
+        return null
       })
+
+    return this.basePreviewPromise
   }
 
   showBasePreview = () => {
@@ -420,10 +436,54 @@ class CustomFilteredAlertModal extends React.Component {
     })
   }
 
-  onDataAlertSave = () => {
+  /**
+   * A single-value base query has nothing to filter on, so custom filters against it produce an
+   * alert that cannot work. The preview is the only thing that can tell us - the composite stores
+   * the base alert as a reference (term_type DATA_ALERT, term_value = its id), not its columns -
+   * so the check happens here, once, on a deliberate action, rather than on every open.
+   *
+   * A preview we simply could not fetch does not block the save: failing to check is not the same
+   * as having checked and found a problem.
+   */
+  isBaseQuerySingleValue = async () => {
+    if (!this.state.customFilters?.length) {
+      return false
+    }
+
+    try {
+      const loaded = this.state.baseDataAlertQueryResponse?.data
+        ? this.state.baseDataAlertQueryResponse
+        : await this.loadBasePreview()
+
+      if (!loaded?.data) {
+        return false
+      }
+
+      return isSingleValueResponse(loaded)
+    } catch (error) {
+      // Never let the check itself strand the Save button
+      console.error('Error validating base Data Alert query:', error)
+      return false
+    }
+  }
+
+  onDataAlertSave = async () => {
     this.setState({
       isSavingDataAlert: true,
     })
+
+    if (await this.isBaseQuerySingleValue()) {
+      // Loading the preview also disables the custom list and surfaces the inline warning
+      this.props.onErrorCallback('This Data Alert returns a single value, so custom filters cannot be applied to it.')
+      if (this._isMounted) {
+        this.setState({ isSavingDataAlert: false })
+      }
+      return
+    }
+
+    if (!this._isMounted) {
+      return
+    }
 
     const newDataAlert = this.getDataAlertData()
     const requestParams = {
@@ -597,7 +657,7 @@ class CustomFilteredAlertModal extends React.Component {
               isLoadingBaseDataAlertQueryResponse={this.state.isLoadingBaseDataAlertQueryResponse}
               basePreviewError={this.state.basePreviewError}
               hasBasePreview={!!this.state.baseDataAlertQueryResponse?.data}
-              onShowBasePreview={this.showBasePreview}
+              onShowBasePreview={this.getBaseDataAlertId() ? this.showBasePreview : undefined}
               onRefreshBasePreview={this.refreshBasePreview}
               onCustomFiltersChange={this.updateCustomFilters}
               customFilters={this.state.customFilters}
