@@ -93,15 +93,19 @@ export default class DataAlertRow extends React.Component {
     this.props.onDeleteClick()
   }
 
-  onEditClick = (e, step) => {
+  onEditClick = (e, step, options) => {
     e.stopPropagation()
     const { dataAlert } = this.props
     if (dataAlert.type !== CUSTOM_TYPE) return
     if (dataAlert?.project?.id === 'composite') {
       this.props.openCustomFilteredAlertModal(this.getDataAlertObj())
     } else {
-      this.props.openEditModal(this.getDataAlertObj(), step)
+      this.props.openEditModal(this.getDataAlertObj(), step, options)
     }
+  }
+
+  onSettingsClick = (e) => {
+    this.onEditClick(e, undefined, { startInEditMode: true })
   }
 
   onCustomFilteredAlertClick = (e) => {
@@ -268,9 +272,9 @@ export default class DataAlertRow extends React.Component {
           <span
             className='data-alert-action-btn'
             data-tooltip-id={this.props.tooltipID}
-            data-tooltip-content='Open Data Alert settings'
+            data-tooltip-content='Edit Data Alert settings'
           >
-            <Icon type='settings' onClick={this.onEditClick} />
+            <Icon type='settings' onClick={this.onSettingsClick} />
           </span>
         )}
         {isCustom && (

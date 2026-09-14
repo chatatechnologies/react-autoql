@@ -5,10 +5,10 @@ import {
   getTooltipContent,
   formatElement,
   getThemeValue,
-  createSVGPath,
 } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import { createSVGPath } from '../Line/lineFns'
 
 // Module-level helpers (pure, no dependencies on instance)
 const hexToRgb = (hex) => {
@@ -345,12 +345,12 @@ export default class StackedLines extends PureComponent {
         const gradientId = gradientIds.get(colIndex)
 
         // Build smooth line path for the top edge
-        const linePathD = createSVGPath(currentPolygonVertices, 0.2)
+        const linePathD = createSVGPath(currentPolygonVertices, 1 / 3)
         if (linePathD) {
           // Area fill: same smooth top edge + smooth bottom edge (reversed prev layer)
           // Replace the leading "M" with "L" so we line-to the start of the reversed bottom edge
           const reversedPrevVertices = [...prevPolygonVertices].reverse()
-          const reversedPrevPathD = createSVGPath(reversedPrevVertices, 0.2)
+          const reversedPrevPathD = createSVGPath(reversedPrevVertices, 1 / 3)
           const smoothBottomEdge = reversedPrevPathD ? reversedPrevPathD.replace(/^M/, 'L') : ''
           const smoothAreaPathD = `${linePathD} ${smoothBottomEdge} Z`
 
