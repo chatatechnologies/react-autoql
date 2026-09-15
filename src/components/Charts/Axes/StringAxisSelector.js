@@ -39,9 +39,11 @@ export default class StringAxisSelector extends React.Component {
       const isOnNumberAxis = this.props.numberColumnIndices?.includes(col.index)
       const isOnSecondNumberAxis = this.props.hasSecondAxis && this.props.numberColumnIndices2?.includes(col.index)
 
-      // If using pivot data (isAggregated), only include groupable string columns
+      // If using pivot data (isAggregated), include every groupable column. Any groupby can be
+      // the pivot row axis regardless of its type — restricting to string types would drop
+      // numeric groupbys (year, quarter, ID) and leave nothing to switch to.
       if (this.props.isAggregated) {
-        if (col.groupable && isColumnStringType(col)) {
+        if (col.groupable) {
           columnIndices.push(i)
         }
       } else {

@@ -637,7 +637,7 @@ export default class ChataPieChart extends React.Component {
           numberColumnIndex={this.props.numberColumnIndex}
           numberColumnIndices={this.props.numberColumnIndices}
           numberColumnIndices2={this.props.numberColumnIndices2}
-          isAggregation={this.props.isAggregation}
+          isAggregated={this.props.isAggregated}
           tooltipID={this.props.tooltipID}
           columns={this.props.columns}
           scale={this.legendScale}

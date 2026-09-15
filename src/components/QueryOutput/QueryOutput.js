@@ -2613,12 +2613,13 @@ export class QueryOutput extends React.Component {
   getPivotRowSelectorOptions = () => {
     const cols = this.getColumns() || []
     if (!this.tableConfig) return []
+    // Matches the chart axis selectors: every groupable column is a valid pivot row axis
+    // regardless of its type (a numeric groupby like year or quarter counts), and the column
+    // currently on the pivot column axis stays in the list so picking it swaps the two axes.
     return cols
       .filter(
         (c) =>
-          c.is_visible !== false &&
-          !this.tableConfig.numberColumnIndices?.includes(c.index) &&
-          (isColumnStringType(c) || c.custom),
+          c.is_visible !== false && !this.tableConfig.numberColumnIndices?.includes(c.index) && (c.groupable || c.custom),
       )
       .map((c) => ({ value: c.index, label: c.display_name || c.name }))
   }

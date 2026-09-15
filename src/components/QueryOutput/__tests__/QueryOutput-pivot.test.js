@@ -244,5 +244,41 @@ describe('QueryOutput pivot suite', () => {
       expect(flat2).toContain(400)
       expect(flat2).not.toContain(300)
     })
+
+    describe('getPivotRowSelectorOptions', () => {
+      const makeInstance = (columns) => {
+        const instance = new QueryOutput({})
+        instance.getColumns = () => columns
+        instance.tableConfig = { stringColumnIndex: 1, legendColumnIndex: 0, numberColumnIndex: 2, numberColumnIndices: [2] }
+        return instance
+      }
+
+      const columns = [
+        { name: 'year', display_name: 'Year', index: 0, is_visible: true, groupable: true, type: ColumnTypes.QUANTITY },
+        { name: 'product', display_name: 'Product', index: 1, is_visible: true, groupable: true, type: ColumnTypes.STRING },
+        { name: 'sales', display_name: 'Sales', index: 2, is_visible: true, groupable: false, type: ColumnTypes.DOLLAR_AMT },
+        { name: 'note', display_name: 'Note', index: 3, is_visible: true, groupable: false, type: ColumnTypes.STRING },
+      ]
+
+      it('offers every groupable column regardless of type', () => {
+        const options = makeInstance(columns).getPivotRowSelectorOptions()
+        // Year is a numeric groupby - it is still a valid pivot row axis
+        expect(options).toEqual([
+          { value: 0, label: 'Year' },
+          { value: 1, label: 'Product' },
+        ])
+      })
+
+      it('keeps the column currently on the pivot column axis so it can be swapped', () => {
+        const options = makeInstance(columns).getPivotRowSelectorOptions()
+        expect(options.map((o) => o.value)).toContain(0)
+      })
+
+      it('excludes number columns and non-groupable string columns', () => {
+        const options = makeInstance(columns).getPivotRowSelectorOptions()
+        expect(options.map((o) => o.value)).not.toContain(2)
+        expect(options.map((o) => o.value)).not.toContain(3)
+      })
+    })
   })
 })
