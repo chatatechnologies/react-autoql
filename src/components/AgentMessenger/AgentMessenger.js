@@ -17,11 +17,12 @@ import { ThreadStatuses } from './threadsReducer'
 
 import './AgentMessenger.scss'
 
-// Below this much room per tab, titles truncate to nothing useful and the dropdown
-// is the better control.
-const MIN_TAB_WIDTH = 124
-// The + button, its padding, and breathing room at the end of the strip.
-const TOOLBAR_CHROME_WIDTH = 72
+// An inactive chip is 148px wide plus the 4px gap; below that the strip can't lay
+// its tabs out at all and the dropdown is the better control.
+const MIN_TAB_WIDTH = 152
+// The + button, the track's padding and margins, and the extra 40px the active chip
+// takes over an inactive one.
+const TOOLBAR_CHROME_WIDTH = 116
 
 /**
  * Session-based messenger. Each thread owns a server session: the first message
@@ -232,7 +233,10 @@ const AgentMessenger = ({
           isResizing ? ' is-resizing' : ''
         }`}
       >
-        <div className='react-autoql-agent-toolbar'>
+        {/* With tabs showing, the toolbar itself is the Data Messenger session
+            track - a rounded strip the chips sit on. Collapsed it is a plain row
+            holding the pill, so the track styling only applies in tab mode. */}
+        <div className={`react-autoql-agent-toolbar${showTabs ? ' has-tabs' : ''}`}>
           {showTabs ? (
             <div className='react-autoql-agent-tabs' role='tablist'>
               {threads.map((thread) => (
@@ -251,8 +255,9 @@ const AgentMessenger = ({
                     }
                   }}
                 >
-                  {/* Titles are ellipsised at 13rem, so the full text has to be
-                      reachable somewhere - react-tooltip reads it off the anchor. */}
+                  <span className='react-autoql-agent-tab-dot' aria-hidden='true' />
+                  {/* Titles are ellipsised, so the full text has to be reachable
+                      somewhere - react-tooltip reads it off the anchor. */}
                   <span
                     className='react-autoql-agent-tab-title'
                     data-tooltip-content={thread.title}
@@ -260,16 +265,23 @@ const AgentMessenger = ({
                   >
                     {thread.title}
                   </span>
-                  <button
-                    className='react-autoql-agent-tab-close'
-                    aria-label={`Close ${thread.title}`}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onCloseThread(thread.id)
-                    }}
-                  >
-                    <Icon type='close' />
-                  </button>
+                  {/* Closing the last thread resets it rather than leaving the page
+                      with nothing - so on an empty one there would be nothing to
+                      reset, and the click would look like it did nothing. */}
+                  {(threads.length > 1 || !!thread.messages.length) && (
+                    <button
+                      className='react-autoql-agent-tab-close'
+                      aria-label={`Close ${thread.title}`}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onCloseThread(thread.id)
+                      }}
+                      data-tooltip-content='Close thread'
+                      data-tooltip-id={tooltipIdRef.current}
+                    >
+                      <Icon type='close' />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -296,7 +308,7 @@ const AgentMessenger = ({
           <div className='react-autoql-agent-toolbar-right'>
             {!showTabs && <span className='react-autoql-agent-thread-count'>{threads.length}</span>}
             <button
-              className='react-autoql-agent-icon-btn'
+              className={`react-autoql-agent-icon-btn${showTabs ? ' react-autoql-agent-tab-new' : ''}`}
               onClick={onNewThread}
               disabled={threads.length >= maxThreads}
               aria-label='New thread'
@@ -339,16 +351,20 @@ const AgentMessenger = ({
                     >
                       {thread.title}
                     </span>
-                    <button
-                      className='react-autoql-agent-menu-row-close'
-                      aria-label={`Close ${thread.title}`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onCloseThread(thread.id)
-                      }}
-                    >
-                      <Icon type='close' />
-                    </button>
+                    {/* Same rule as the tabs: nothing to close on the last thread
+                        while it's still empty. */}
+                    {(threads.length > 1 || !!thread.messages.length) && (
+                      <button
+                        className='react-autoql-agent-menu-row-close'
+                        aria-label={`Close ${thread.title}`}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onCloseThread(thread.id)
+                        }}
+                      >
+                        <Icon type='close' />
+                      </button>
+                    )}
                   </div>
                 ))}
                 <div className='react-autoql-agent-menu-divider' />

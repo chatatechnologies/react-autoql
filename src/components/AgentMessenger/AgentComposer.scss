@@ -15,7 +15,9 @@
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
-  padding: 0.4375rem 0.4375rem 0.4375rem 0.875rem;
+  // Extra room on the left so the text starts clear of the pill's curve; the right
+  // stays tight because the send button fills it.
+  padding: 0.4375rem 0.4375rem 0.4375rem 1.125rem;
   border: 1px solid var(--am-border);
   border-radius: var(--am-radius-pill);
   background-color: var(--am-b2);
@@ -27,9 +29,11 @@
     border-color: var(--am-t2);
   }
 
+  // The accent border does most of the work; the ring is a hint behind it, not a
+  // halo - kept identical to QueryInput's so both inputs focus the same way.
   &.is-focused {
     border-color: var(--am-accent);
-    box-shadow: 0 0 0 3px var(--am-glow);
+    box-shadow: 0 0 0 2px var(--am-focus-ring);
   }
 
   &.is-sending {

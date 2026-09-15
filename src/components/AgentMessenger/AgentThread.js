@@ -239,9 +239,11 @@ const AgentThread = ({
                   dataFormatting={dataFormatting}
                   tableMaxHeight={tableMaxHeight}
                   enableTypewriter={enableTypewriter && !skipAnimations}
-                  // Surface the model only when it changed mid-thread, so the
-                  // transcript stays honest without labelling every message.
-                  showModelLabel={!previous || previous.role !== 'agent' || previous.llmModel !== message.llmModel}
+                  // Off for now: the model is hardcoded on the backend, so labelling
+                  // a response with it tells the reader nothing. Flip this back to
+                  // "changed since the previous agent message" when it's selectable
+                  // again.
+                  showModelLabel={false}
                   modelLabel={getModelLabel ? getModelLabel(message.llmModel) : message.llmModel}
                   revealedItemIds={thread.revealedItemIds}
                   onItemRevealed={onItemSettled}
@@ -254,7 +256,7 @@ const AgentThread = ({
           {isSending && (
             <div className='react-autoql-agent-thinking'>
               <div className='react-autoql-agent-avatar'>
-                <Icon type='react-autoql-bubbles-outlined' />
+                <Icon type='react-autoql-logo' />
               </div>
               <div className='react-autoql-agent-thinking-dots'>
                 <span />

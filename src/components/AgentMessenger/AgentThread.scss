@@ -25,10 +25,12 @@
   background-color: var(--am-b1);
 }
 
+// 1.25rem matches .chat-message-and-rt-container in ChatMessage.scss, so a message
+// here sits the same distance from the drawer edge as one in the regular messenger.
 .react-autoql-agent-thread-content {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 1.25rem;
   min-height: 100%;
   min-width: 0;
   box-sizing: border-box;

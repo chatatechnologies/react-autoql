@@ -153,6 +153,10 @@ export default class ChatContent extends React.Component {
     // Internal. How a session tab reports the tab_display_name from a query
     // response back to its host.
     onSessionTitleChange: PropTypes.func,
+    // Internal. How a session tab tells its host it now has (or no longer has)
+    // messages of its own, which decides whether its close button shows when it
+    // is the only tab.
+    onSessionContentChange: PropTypes.func,
     // A tooltip instance owned by the host to register against, so an embedded
     // ChatContent doesn't stand up a second one. Falls back to its own.
     tooltipID: PropTypes.string,
@@ -219,6 +223,17 @@ export default class ChatContent extends React.Component {
 
     if (!_isEqual(this.props.authentication, prevProps.authentication)) {
       this.fetchAllSubjects()
+    }
+
+    // Tell the session host when this tab stops (or goes back to) being empty, so
+    // it can show or hide the close button on a lone tab.
+    if (this.props.onSessionContentChange && prevState.messages !== this.state.messages) {
+      const hadContent = this.hasNonIntroMessages(prevState.messages)
+      const hasContent = this.hasNonIntroMessages(this.state.messages)
+
+      if (hadContent !== hasContent) {
+        this.props.onSessionContentChange(hasContent)
+      }
     }
 
     // Check if a new message was added (user request or system response) and scroll to it
@@ -340,15 +355,21 @@ export default class ChatContent extends React.Component {
       (state) => {
         const { sessions, activeSessionId } = state
 
-        // The tab bar hides the close button on the last remaining session, so
-        // there is always something left to fall back to here.
         const closingIndex = sessions.findIndex((session) => session.id === sessionId)
-        if (sessions.length < 2 || closingIndex === -1) {
+        if (closingIndex === -1) {
           return null
         }
 
         const remainingSessions = sessions.filter((session) => session.id !== sessionId)
         delete this.sessionRefs[sessionId]
+
+        // Closing the last tab starts a fresh one rather than leaving the page with
+        // nothing, the same way the Data Agent's threads behave. The new id remounts
+        // the thread, so its messages and session go with it.
+        if (!remainingSessions.length) {
+          const session = this.createSessionObject(remainingSessions)
+          return { sessions: [session], activeSessionId: session.id }
+        }
 
         let newActiveSessionId = activeSessionId
         if (sessionId === activeSessionId) {
@@ -381,6 +402,22 @@ export default class ChatContent extends React.Component {
 
       return {
         sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, title, isTitled: true } : s)),
+      }
+    })
+  }
+
+  // Whether the session has anything in it beyond the intro message. Closing the
+  // last tab resets it, so on an empty one there is nothing to reset and the tab
+  // bar hides the close button rather than offering a no-op.
+  setSessionHasContent = (sessionId, hasContent) => {
+    this.setState((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId)
+      if (!session || !!session.hasContent === hasContent) {
+        return null
+      }
+
+      return {
+        sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, hasContent } : s)),
       }
     })
   }
@@ -837,6 +874,10 @@ export default class ChatContent extends React.Component {
     this.setState({ messages: newMessages })
   }
 
+  hasNonIntroMessages = (messages) => {
+    return !!messages?.some((message) => !message.isIntroMessage)
+  }
+
   getIntroMessages = (contentList) => {
     return contentList.map((content) =>
       this.createMessage({
@@ -1199,7 +1240,10 @@ export default class ChatContent extends React.Component {
                 <span className='react-autoql-chat-session-tab-title' title={session.title}>
                   {session.title}
                 </span>
-                {sessions.length > 1 && (
+                {/* Stays on the last tab, which closing resets rather than removes -
+                    but not while that tab is still empty, where the reset would
+                    look like the click did nothing. */}
+                {(sessions.length > 1 || session.hasContent) && (
                   <span
                     className='react-autoql-chat-session-tab-close'
                     role='button'
@@ -1262,6 +1306,7 @@ export default class ChatContent extends React.Component {
                   enableSessions={false}
                   querySessionId={session.id}
                   onSessionTitleChange={(title) => this.setSessionTitle(session.id, title)}
+                  onSessionContentChange={(hasContent) => this.setSessionHasContent(session.id, hasContent)}
                   shouldRender={this.props.shouldRender && isActiveSession}
                   isActivePage={isLaidOut && isActiveSession}
                 />

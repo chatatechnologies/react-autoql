@@ -61,7 +61,8 @@
   color: #5d5d5d;
   position: relative;
   isolation: isolate;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+    0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
 
   // Semi-transparent overlay for glass effect
   &::before {
@@ -82,6 +83,24 @@
       opacity: 0.95;
     }
   }
+
+  // Same focus treatment as the Data Agent composer: an accent border inside a soft
+  // accent ring. The native outline is suppressed above, so without this there was
+  // nothing at all marking the focused input. configureTheme publishes the accent's
+  // channels separately, which is how the ring tints with a theme override.
+  // :not(:disabled) so this outweighs the hover rule further down, which is what an
+  // input being both hovered and focused would otherwise land on.
+  &:not(:disabled):focus {
+    border-color: var(--react-autoql-accent-color);
+    box-shadow: 0 0 0 2px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0.1
+        ),
+      0 1px 2px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04));
+  }
 }
 
 // iOS Safari auto-zooms the page when a focused input's text is under 16px, and
@@ -99,15 +118,18 @@
 .react-autoql-chatbar-input:disabled {
   background: rgba(0, 0, 0, 0.03);
 }
+// Hover is a hint that the input is live, not an event in itself - the accent border
+// is enough, and the soft resting shadow stays put. The composer hovers the same way.
 .react-autoql-chatbar-input:not(:disabled):hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08),
-    0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   border-color: var(--react-autoql-accent-color, rgba(38, 167, 233, 0.3));
 }
 
+// The theme's placeholder colour, the same one the Data Agent composer uses. It was
+// a hardcoded #999 !important here, which ignored the theme and left the two inputs
+// looking different from each other.
 .react-autoql-chatbar-input::placeholder {
-  /* Default color outside of data messenger */
-  color: #999 !important;
+  color: var(--react-autoql-text-color-placeholder, #999);
+  opacity: 1;
 }
 
 /* autosuggest */

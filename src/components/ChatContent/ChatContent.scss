@@ -33,6 +33,8 @@
     min-height: 0;
     position: relative;
   }
+
+
 }
 
 // Sessions read as a segmented control: the whole strip is one sunken, rounded
@@ -42,17 +44,37 @@
   // Neutral washes rather than --react-autoql-hover-color, which is tuned for
   // menu rows and reads far too heavy here. Grey at these alphas darkens a
   // light theme and lightens a dark one, so one value covers both.
-  --react-autoql-session-tab-track: rgba(128, 134, 142, 0.1);
-  --react-autoql-session-tab-hover: rgba(128, 134, 142, 0.16);
+  --react-autoql-session-tab-track: rgba(128, 134, 142, 0.08);
+  --react-autoql-session-tab-hover: rgba(128, 134, 142, 0.12);
   --react-autoql-session-tab-close-hover: rgba(128, 134, 142, 0.22);
+  // The one accent-tinted thing in the strip, so the eye lands on it. configureTheme
+  // publishes the accent's channels separately, which is how SelectableTable tints.
+  --react-autoql-session-tab-new: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.12
+  );
+  --react-autoql-session-tab-new-hover: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.22
+  );
 
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 4px;
-  margin: 0 12px;
-  padding: 4px;
-  border-radius: 12px;
+  // A flat groove in the flow above the threads, not a floating glass panel. The
+  // drawer's other surfaces all sit behind a 0.9-0.95 overlay, so they read as
+  // solid; a genuinely transparent, blurred strip was the only thing here behaving
+  // differently, which is what made it look out of place. The 1.25rem inset is
+  // .chat-message-and-rt-container's, so the track's edges line up with the message
+  // bubbles below it.
+  margin: 0.25rem 1.25rem 0.5rem;
+  padding: 6px;
+  border-radius: 23px;
   background-color: var(--react-autoql-session-tab-track);
 
   .react-autoql-chat-session-tab-list {
@@ -82,14 +104,18 @@
     // characters before it ellipsises as it did at the old 12.5px.
     width: 148px;
     height: 34px;
-    padding: 0 6px 0 10px;
+    padding: 0 6px 0 14px;
     box-sizing: border-box;
-    border-radius: 8px;
+    // Fully rounded, like the message bubbles and the query input below it - the
+    // page speaks in pills, so a squared-off tab read as a different kit.
+    border-radius: 17px;
     background-color: transparent;
     color: var(--react-autoql-text-color-placeholder);
     font-size: 0.875rem; // Matches the chat thread
     font-weight: 500;
-    letter-spacing: -0.004em;
+    // The header title's tracking. It was -0.004em, tighter than anything around
+    // it, which is part of why the strip read as a separate piece of design.
+    letter-spacing: -0.008em;
     cursor: pointer;
     // Width is in here so selecting a tab eases it wider instead of snapping.
     transition: width 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
@@ -105,10 +131,16 @@
     // session read as selected; there is no accent rule or connecting flare.
     &.active {
       width: 188px;
-      background-color: var(--react-autoql-background-color-primary);
+      // Same material as a message bubble: the theme's surface colour, a hairline
+      // border and the same soft ambient shadow, so the selected tab and the
+      // thread below it read as one system.
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      padding: 0 5px 0 13px; // Absorbs the border, so the label doesn't shift.
       color: var(--react-autoql-text-color-primary);
       font-weight: 600;
-      box-shadow: 0 1px 2px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.12));
+      box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+        0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
 
       .react-autoql-chat-session-tab-dot {
         background-color: var(--react-autoql-accent-color);
@@ -144,7 +176,7 @@
       flex: none;
       width: 18px;
       height: 18px;
-      border-radius: 5px;
+      border-radius: 50%;
       opacity: 0.6;
       transition: opacity 0.2s ease, background-color 0.2s ease;
 
@@ -161,6 +193,11 @@
     }
   }
 
+  // Pinned to the right rather than trailing the last tab: the strip scrolls at a
+  // fixed tab width, so a "+" inside it would scroll out of reach exactly when
+  // there are the most sessions. Since it can't borrow the tabs' position for its
+  // meaning, it carries an accent glyph on a faint accent wash - circular, like the
+  // icon buttons in the header above it.
   .react-autoql-chat-session-tab-new {
     display: flex;
     align-items: center;
@@ -168,20 +205,22 @@
     flex: none;
     width: 30px;
     height: 30px;
+    margin-left: 8px;
     border: none;
-    border-radius: 8px;
-    background-color: transparent;
-    color: var(--react-autoql-text-color-placeholder);
+    border-radius: 50%;
+    background-color: var(--react-autoql-session-tab-new);
+    color: var(--react-autoql-accent-color);
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 
     &:hover {
-      color: var(--react-autoql-accent-color);
-      background-color: var(--react-autoql-session-tab-hover);
+      background-color: var(--react-autoql-session-tab-new-hover);
     }
 
     .react-autoql-icon {
-      font-size: 0.9375rem;
+      font-size: 1.0625rem;
+      // The plus reads lighter than the tab labels beside it at the same size.
+      stroke-width: 2.5;
     }
   }
 }
@@ -343,18 +382,67 @@
     }
   }
 
-  // The base .response-loading is a 64px box with its dots absolutely positioned
-  // at top: 27px -- far too tall inline, and height: auto would collapse it since
-  // every dot is absolute. Shrink the box and re-centre the dots inside it.
+  // The agent page's thinking dots, reused here so both messengers wait the same
+  // way: three dots bouncing in place. The base .response-loading is a 64px box
+  // with four absolutely positioned dots that slide across it, so everything about
+  // that layout gets undone -- static dots in a flex row, and the fourth hidden.
   .response-loading {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     position: relative;
     transform: none;
+    width: auto;
     height: 26px;
     margin: 0;
 
-    div {
-      top: 8px;
+    // Every dot is addressed through :nth-child, matching the specificity of
+    // LoadingDots.scss's own :nth-child rules - a plain `div` selector ties with
+    // them and loses on source order, which left the first dot still sliding.
+    div:nth-child(n) {
+      position: static;
+      top: auto;
+      left: auto;
+      width: 5px;
+      height: 5px;
+      background: var(--react-autoql-text-color-placeholder);
+      animation: chat-content-thinking-dot 1.2s ease-in-out infinite;
+      animation-delay: 0s;
     }
+
+    div {
+      &:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      &:nth-child(4) {
+        display: none;
+      }
+    }
+  }
+}
+
+@keyframes chat-content-thinking-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-content-thinking-indicator .response-loading div {
+    animation: none;
   }
 }
 

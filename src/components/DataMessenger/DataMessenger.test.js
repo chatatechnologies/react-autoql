@@ -294,7 +294,7 @@ describe('agent tab', () => {
   test('shows the agent title once the page is active', () => {
     const wrapper = setupAgent({ enableAgentTab: true })
     wrapper.instance().setState({ activePage: 'agent' })
-    expect(wrapper.dive().find('.header-title').text()).toBe('Agent')
+    expect(wrapper.dive().find('.header-title').text()).toBe('Data Agent')
   })
 
   test('renders the agent page only when the tab is enabled', () => {

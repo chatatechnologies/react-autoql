@@ -69,7 +69,7 @@ const AgentMessage = ({
   return (
     <div className={`react-autoql-agent-message is-agent${spacingClass}`} id={`agent-message-${message.id}`}>
       <div className='react-autoql-agent-avatar'>
-        <Icon type='react-autoql-bubbles-outlined' />
+        <Icon type='react-autoql-logo' />
       </div>
       <div className='react-autoql-agent-message-body'>
         {showModelLabel && !!modelLabel && <div className='react-autoql-agent-model-label'>{modelLabel}</div>}

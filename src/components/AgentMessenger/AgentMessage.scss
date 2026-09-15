@@ -31,7 +31,8 @@
 // accent, and two saturated blocks in one column fight each other.
 .react-autoql-agent-user-bubble {
   max-width: 85%;
-  padding: 0.5rem 0.875rem;
+  // Same interior padding as .chat-message-bubble in ChatMessage.scss.
+  padding: 0.8125rem 1.25rem;
   border: 1px solid var(--am-border);
   border-radius: 20px 20px 6px 20px;
   background-color: var(--am-b2);
@@ -42,10 +43,8 @@
   word-break: break-word;
 }
 
-// Carries the product mark rather than being a bare colour blob: it is the only
-// thing identifying a block as the agent's, so it should read as an avatar. The
-// gradient runs accent-2 -> accent, which is a blue ramp in light and blue-to-navy
-// in dark; the mark sits on top in the accent foreground colour.
+// The same mark the Data Messenger's thinking indicator uses: the product logo in
+// an outlined circle, accent on a secondary background, rather than a gradient blob.
 .react-autoql-agent-avatar {
   display: flex;
   align-items: center;
@@ -53,15 +52,15 @@
   flex: 0 0 1.75rem;
   width: 1.75rem;
   height: 1.75rem;
+  box-sizing: border-box;
+  border: 1px solid var(--am-border);
   border-radius: 50%;
-  background: linear-gradient(140deg, var(--am-accent-2), var(--am-accent));
-  color: var(--react-autoql-text-color-accent, #fff);
-  box-shadow: 0 1px 3px var(--am-shadow);
+  background-color: var(--am-b2);
+  color: var(--am-accent);
 
   .react-autoql-icon {
+    display: flex;
     font-size: 0.875rem;
-    // The bubbles mark reads slightly high in its own box.
-    margin-top: 1px;
   }
 }
 

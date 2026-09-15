@@ -1,16 +1,79 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
+import { parseJwt } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import SpeechToTextButtonBrowser from '../SpeechToTextButton/SpeechToTextButtonBrowser'
 import { authenticationType } from '../../props/types'
 
-import ModelSelect from './ModelSelect'
-
+// ModelSelect is still in the tree, just not rendered - see the composer toolbar
+// below.
 import './AgentComposer.scss'
 
 const MAX_HEIGHT_PX = 120
+// Same depth QueryInput keeps for the regular messenger.
+const MAX_HISTORY = 5
+
+// Its own store rather than QueryInput's 'query-history-*': the two pages take
+// different kinds of question, and mixing them makes both histories worse.
+const HISTORY_KEY = 'agent-query-history'
+
+// Scoped to the user and project when the token says who they are, as QueryInput
+// does; an unparseable or absent token falls back to one shared store rather than
+// dropping the history altogether.
+const getHistoryID = (authentication) => {
+  if (!authentication?.token) {
+    return HISTORY_KEY
+  }
+
+  try {
+    const tokenInfo = parseJwt(authentication.token)
+
+    if (!tokenInfo?.user_id && !tokenInfo?.project_id) {
+      return HISTORY_KEY
+    }
+
+    return `${HISTORY_KEY}-${tokenInfo.user_id}-${tokenInfo.project_id}`
+  } catch (error) {
+    return HISTORY_KEY
+  }
+}
+
+const getHistory = (authentication) => {
+  try {
+    const id = getHistoryID(authentication)
+    const historyStr = id ? localStorage.getItem(id) : undefined
+
+    if (!historyStr) {
+      return []
+    }
+
+    const history = JSON.parse(historyStr)
+
+    return Array.isArray(history) ? history : []
+  } catch (error) {
+    console.error(error)
+    return []
+  }
+}
+
+const addToHistory = (authentication, message) => {
+  try {
+    const id = getHistoryID(authentication)
+
+    if (!id) {
+      return
+    }
+
+    // Newest first, and a repeat of an older message moves up rather than
+    // appearing twice.
+    const history = [message, ...getHistory(authentication).filter((entry) => entry !== message)]
+    localStorage.setItem(id, JSON.stringify(history.slice(0, MAX_HISTORY)))
+  } catch (error) {
+    console.error(error)
+  }
+}
 
 /**
  * The composer. Deliberately not QueryInput: there's no autocomplete, validation or
@@ -23,13 +86,10 @@ const AgentComposer = forwardRef(
       placeholder,
       isSending,
       enableVoiceRecord,
-      models,
-      modelsStatus,
-      llmModel,
-      onModelChange,
+      // models, modelsStatus, llmModel, onModelChange and popoverParentElement are
+      // still accepted (see propTypes) but unused while the picker is off.
       onSubmit,
       onCancel,
-      popoverParentElement,
       tooltipID,
     },
     ref,
@@ -37,6 +97,30 @@ const AgentComposer = forwardRef(
     const [value, setValue] = useState('')
     const [isFocused, setIsFocused] = useState(false)
     const textareaRef = useRef(null)
+    // Where the arrow keys are in the stored history: -1 is the live draft.
+    const historyIndexRef = useRef(-1)
+
+    // A recalled message is only worth stepping past when the caret has nowhere
+    // left to go, so the arrows keep working inside a multi-line draft.
+    const isCaretOnFirstLine = () => {
+      const textarea = textareaRef.current
+
+      if (!textarea || textarea.selectionStart !== textarea.selectionEnd) {
+        return false
+      }
+
+      return !textarea.value.slice(0, textarea.selectionStart).includes('\n')
+    }
+
+    const isCaretOnLastLine = () => {
+      const textarea = textareaRef.current
+
+      if (!textarea || textarea.selectionStart !== textarea.selectionEnd) {
+        return false
+      }
+
+      return !textarea.value.slice(textarea.selectionEnd).includes('\n')
+    }
 
     const focus = useCallback(() => {
       textareaRef.current?.focus()
@@ -66,14 +150,54 @@ const AgentComposer = forwardRef(
         return
       }
 
+      addToHistory(authentication, text)
+      historyIndexRef.current = -1
       setValue('')
       onSubmit(text)
+    }
+
+    // Walk the recent messages with the arrow keys, as QueryInput does. -1 is the
+    // live (unsent) text; 0 is the most recent message.
+    const recallHistory = (direction) => {
+      const textarea = textareaRef.current
+      const history = getHistory(authentication)
+
+      if (!history.length) {
+        return false
+      }
+
+      const nextIndex = historyIndexRef.current + direction
+
+      if (nextIndex < -1 || nextIndex >= history.length) {
+        return false
+      }
+
+      historyIndexRef.current = nextIndex
+      setValue(nextIndex === -1 ? '' : history[nextIndex])
+
+      // The value change moves the caret to the start otherwise, which makes the
+      // recalled text awkward to edit.
+      window.requestAnimationFrame(() => {
+        const end = textarea?.value?.length ?? 0
+        textarea?.setSelectionRange(end, end)
+      })
+
+      return true
     }
 
     const onKeyDown = (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault()
         submit()
+        return
+      }
+
+      // Only when the caret can't go any further in that direction - inside a
+      // multi-line draft the arrows still move the caret.
+      if (event.key === 'ArrowUp' && isCaretOnFirstLine() && recallHistory(1)) {
+        event.preventDefault()
+      } else if (event.key === 'ArrowDown' && isCaretOnLastLine() && recallHistory(-1)) {
+        event.preventDefault()
       }
     }
 
@@ -92,7 +216,11 @@ const AgentComposer = forwardRef(
             rows={1}
             value={value}
             placeholder={placeholder}
-            onChange={(event) => setValue(event.target.value)}
+            onChange={(event) => {
+              // Typing over a recalled message makes it the draft again.
+              historyIndexRef.current = -1
+              setValue(event.target.value)
+            }}
             onKeyDown={onKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
@@ -130,18 +258,10 @@ const AgentComposer = forwardRef(
           )}
         </div>
 
-        <div className='react-autoql-agent-composer-toolbar'>
-          <ModelSelect
-            models={models}
-            status={modelsStatus}
-            value={llmModel}
-            onChange={onModelChange}
-            popoverParentElement={popoverParentElement}
-            tooltipID={tooltipID}
-            isDisabled={isSending}
-          />
-          <span className='react-autoql-agent-composer-hint'>{isSending ? 'Answering…' : '↵ to send'}</span>
-        </div>
+        {/* The toolbar row - model picker and the "↵ to send" hint - is turned off
+            for now; it was mostly empty space under the input. The model still
+            comes through on llmModel, so turning it back on is putting this row
+            back. */}
       </div>
     )
   },

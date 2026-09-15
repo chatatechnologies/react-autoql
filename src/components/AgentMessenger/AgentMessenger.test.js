@@ -240,11 +240,46 @@ describe('AgentMessenger', () => {
     })
   })
 
+  describe('message history', () => {
+    beforeEach(() => localStorage.clear())
+
+    it('recalls sent messages with the arrow keys, newest first', async () => {
+      axios.post.mockResolvedValue(CREATE_RESPONSE)
+
+      renderMessenger()
+      await sendMessage('First question')
+      await sendMessage('Second question')
+
+      const input = screen.getByRole('textbox')
+      expect(input.value).toBe('')
+
+      fireEvent.keyDown(input, { key: 'ArrowUp' })
+      expect(input.value).toBe('Second question')
+
+      fireEvent.keyDown(input, { key: 'ArrowUp' })
+      expect(input.value).toBe('First question')
+
+      // Past the oldest, the input holds where it is.
+      fireEvent.keyDown(input, { key: 'ArrowUp' })
+      expect(input.value).toBe('First question')
+
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      expect(input.value).toBe('Second question')
+
+      // Back past the newest is the empty draft again.
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      expect(input.value).toBe('')
+    })
+  })
+
   describe('model selection', () => {
-    it('always shows the picker, so the current model is visible', async () => {
+    // The picker is turned off for now - the model is still chosen and sent, it
+    // just isn't shown under the composer.
+    it('does not show the picker', async () => {
       renderMessenger()
 
-      await waitFor(() => expect(screen.getByText('GPT-4.1')).toBeInTheDocument())
+      await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument())
+      expect(screen.queryByText('GPT-4.1')).not.toBeInTheDocument()
     })
 
     it('sends the selected model with the request', async () => {

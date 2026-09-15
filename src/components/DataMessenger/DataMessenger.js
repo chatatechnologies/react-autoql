@@ -52,16 +52,25 @@ export class DataMessenger extends React.Component {
       props.introMessage ? (
         `${props.introMessage}`
       ) : (
-        <>
-          <span>Hi {props.userDisplayName || 'there'}! Let’s dive into your data.</span>
-          <br />
-          <br />
-          <span>Get started by asking a query below, or use </span>
-          <span className='intro-qi-link' onClick={this.openDataExplorer}>
-            <Icon type='data-search' /> {lang.dataExplorer}
+        // The Data Explorer pitch is a link to a page that only exists when the tab
+        // is on. Without it there's just one short sentence left to add, so it goes
+        // on the same line as the greeting rather than getting a paragraph break.
+        props.enableDataExplorerTab ? (
+          <>
+            <span>Hi {props.userDisplayName || 'there'}! Let’s dive into your data.</span>
+            <br />
+            <br />
+            <span>Get started by asking a query below, or use </span>
+            <span className='intro-qi-link' onClick={this.openDataExplorer}>
+              <Icon type='data-search' /> {lang.dataExplorer}
+            </span>
+            <span> to discover what data is available to you!</span>
+          </>
+        ) : (
+          <span>
+            Hi {props.userDisplayName || 'there'}! Let’s dive into your data. Get started by asking a query below!
           </span>
-          <span> to discover what data is available to you!</span>
-        </>
+        )
       ),
     ]
 
@@ -124,6 +133,10 @@ export class DataMessenger extends React.Component {
     title: PropTypes.string,
     maxMessages: PropTypes.number,
     introMessage: PropTypes.string,
+    // Data Explorer is the supported way to browse topics and sample queries.
+    enableDataExplorerTab: PropTypes.bool,
+    // Deprecated: superseded by Data Explorer. Off by default; only enable it for
+    // integrations that haven't migrated yet.
     enableExploreQueriesTab: PropTypes.bool,
     enableNotificationsTab: PropTypes.bool,
     resizable: PropTypes.bool,
@@ -208,6 +221,7 @@ export class DataMessenger extends React.Component {
     title: 'Data Messenger',
     maxMessages: 20,
     introMessage: '',
+    enableDataExplorerTab: false,
     enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
@@ -639,16 +653,6 @@ export class DataMessenger extends React.Component {
           >
             <Icon type='react-autoql-bubbles-outlined' />
           </button>
-          {this.props.enableExploreQueriesTab && (
-            <button
-              className={`${navBtnClass('explore-queries')} react-autoql-explore-queries`}
-              onClick={() => this.setState({ activePage: 'explore-queries' })}
-              data-tooltip-content={lang.exploreQueries}
-              data-tooltip-id={this.TOOLTIP_ID}
-            >
-              <Icon type='light-bulb' />
-            </button>
-          )}
           {this.props.enableDataExplorerTab && (
             <button
               className={`${navBtnClass('data-explorer')} react-autoql-data-explorer`}
@@ -657,6 +661,17 @@ export class DataMessenger extends React.Component {
               data-tooltip-id={this.TOOLTIP_ID}
             >
               <Icon type='data-search' />
+            </button>
+          )}
+          {/* Deprecated — Data Explorer replaces this page. */}
+          {this.props.enableExploreQueriesTab && (
+            <button
+              className={`${navBtnClass('explore-queries')} react-autoql-explore-queries`}
+              onClick={() => this.setState({ activePage: 'explore-queries' })}
+              data-tooltip-content={lang.exploreQueries}
+              data-tooltip-id={this.TOOLTIP_ID}
+            >
+              <Icon type='light-bulb' />
             </button>
           )}
           {enableNotifications && (
