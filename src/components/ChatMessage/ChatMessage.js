@@ -18,6 +18,7 @@ import {
 } from 'autoql-fe-utils'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 import { useMagicWandBillingGate, getMagicWandBillingErrorState, MAGIC_WAND_BILLING_GATE_MESSAGES } from '../../hooks/billing'
+import { isDatalessResponse } from '../../js/responseUtils'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -38,6 +39,12 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 
 import './ChatMessage.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
+
+// Staggered prose reveal: blocks start REVEAL_STAGGER_MAX_MS apart, but the gap
+// shrinks for longer messages so the last block always lands by REVEAL_TOTAL_MS.
+const REVEAL_STAGGER_MAX_MS = 40
+const REVEAL_TOTAL_MS = 600
+const REVEAL_DURATION_MS = 260
 
 export class ChatMessage extends React.Component {
   // Static Set to track which message IDs have already animated
@@ -111,6 +118,9 @@ export class ChatMessage extends React.Component {
     dataFormatting: dataFormattingType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
+    // Forwarded from ChatContent. Left undefined by direct consumers, which
+    // keeps the delete button on — only an explicit false removes it.
+    enableMessageDelete: PropTypes.bool,
     isActive: PropTypes.bool,
     type: PropTypes.string,
     text: PropTypes.string,
@@ -198,6 +208,71 @@ export class ChatMessage extends React.Component {
     // Wait until message bubble animation finishes to show query output content
     // The scroll will happen after animation completes (500ms) in clearIsAnimatingIn500ms
     this.setIsAnimating()
+
+    this.applyStaggeredReveal()
+  }
+
+  // Plain text + markdown responses. These render without bubble chrome and get
+  // the staggered per-block reveal; data responses keep their bubble.
+  isProseResponse = () => {
+    return (
+      this.props.isResponse &&
+      (this.props.type === 'text' || this.props.type === 'markdown' || this.props.type === 'md')
+    )
+  }
+
+  // Walk past single-child wrappers to find the node whose children are the
+  // actual content blocks (paragraphs, list items, headings).
+  getRevealBlockContainer = (root) => {
+    let node = root
+    while (node.children.length === 1 && node.children[0].children.length > 0) {
+      node = node.children[0]
+    }
+    return node
+  }
+
+  // Reveal prose a block at a time rather than all at once. The stagger shrinks as
+  // the message grows so a long answer never takes longer to appear than a short
+  // one -- total reveal is capped at REVEAL_TOTAL_MS regardless of block count.
+  applyStaggeredReveal = () => {
+    if (!this.isProseResponse() || !this.state.isAnimatingMessageBubble || this.hasRevealed) {
+      return
+    }
+
+    const root = this.markdownContentRef.current ?? this.messageBubbleRef
+    if (!root) {
+      return
+    }
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      return
+    }
+
+    const container = this.getRevealBlockContainer(root)
+    const blocks = Array.from(container.children)
+    if (!blocks.length) {
+      return
+    }
+
+    this.hasRevealed = true
+
+    const stagger = Math.min(REVEAL_STAGGER_MAX_MS, REVEAL_TOTAL_MS / blocks.length)
+    blocks.forEach((block, i) => {
+      block.style.setProperty('--reveal-index', i)
+      block.style.setProperty('--reveal-stagger', `${stagger}ms`)
+      block.classList.add('chat-message-reveal-block')
+    })
+
+    // Strip the animation once it's done -- a lingering transform would create a
+    // containing block and reposition any fixed-position menus inside the message.
+    clearTimeout(this.revealTimeout)
+    this.revealTimeout = setTimeout(() => {
+      blocks.forEach((block) => {
+        block.style.removeProperty('--reveal-index')
+        block.style.removeProperty('--reveal-stagger')
+        block.classList.remove('chat-message-reveal-block')
+      })
+    }, stagger * blocks.length + REVEAL_DURATION_MS + 50)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -246,12 +321,16 @@ export class ChatMessage extends React.Component {
         })
       }
     }
+
+    // Markdown content can land after mount -- applyStaggeredReveal no-ops once it's run
+    this.applyStaggeredReveal()
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.animationTimeout)
+    clearTimeout(this.revealTimeout)
   }
   toggleQueryOutputModal = () => {
     this.setState((prevState) => ({
@@ -1357,6 +1436,20 @@ export class ChatMessage extends React.Component {
         }
       : this.props.autoQLConfig
 
+    // Custom options (the webapp's "Add to Dashboard...", for one) act on the
+    // answer's data, so they're only offered on messages that have some: not
+    // the intro message, not a data preview, not a content-only message, and
+    // not a response that came back without data — a service error, a failed
+    // validation, or a "Did you mean" suggestion list. Those all arrive as
+    // regular response messages, and every other toolbar item already gates
+    // itself off them, so the More menu used to open on an error showing
+    // nothing but the custom option.
+    const showCustomOptions =
+      !isDataPreview &&
+      !this.props.isIntroMessage &&
+      !(this.props.content && !this.props.response) &&
+      !isDatalessResponse(this.props.response)
+
     return (
       <div className='chat-message-toolbar chat-message-toolbar-right'>
         {this.props.isResponse || isMarkdownMessage ? (
@@ -1374,7 +1467,7 @@ export class ChatMessage extends React.Component {
             onPNGDownloadFinish={this.onPNGDownloadFinish}
             onSuccessAlert={this.props.onSuccessAlert}
             onErrorCallback={this.props.onErrorCallback}
-            enableDeleteBtn={!this.props.isIntroMessage}
+            enableDeleteBtn={!this.props.isIntroMessage && this.props.enableMessageDelete !== false}
             enableFilterBtn={!isDataPreview && !this.props.isIntroMessage}
             enableCopyBtn={!isDataPreview && !this.props.isIntroMessage}
             isMarkdownMessage={isMarkdownMessage}
@@ -1384,7 +1477,7 @@ export class ChatMessage extends React.Component {
             deleteMessageCallback={this.onDeleteMessage}
             tooltipID={this.props.tooltipID}
             createDataAlertCallback={this.props.isIntroMessage ? undefined : this.props.createDataAlertCallback}
-            customOptions={isDataPreview || this.props.isIntroMessage || (this.props.content && !this.props.response) ? [] : this.props.customToolbarOptions}
+            customOptions={showCustomOptions ? this.props.customToolbarOptions : []}
             popoverAlign='end'
             onExpandClick={this.toggleQueryOutputModal}
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
@@ -1441,6 +1534,7 @@ export class ChatMessage extends React.Component {
 			${this.props.isResponse ? 'response' : 'request'}
 			${isMobile ? 'pwa' : ''}
 			${this.props.type === 'text' ? 'text' : ''}
+			${this.isProseResponse() ? 'prose-response' : ''}
 			${this.props.isActive ? 'active' : ''}
 			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
 			${shouldAnimate ? ' animate-on-mount' : ''}`}

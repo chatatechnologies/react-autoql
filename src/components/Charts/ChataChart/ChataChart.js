@@ -315,12 +315,22 @@ export default class ChataChart extends React.Component {
       }
     }
 
+    const chartTypeChanged = prevProps.type && this.props.type !== prevProps.type
+    const becameVisible = prevProps.hidden && !this.props.hidden
+
     if (
       this._isMounted &&
-      ((!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) ||
-        (prevProps.type && this.props.type !== prevProps.type))
+      ((!this.props.isDrilldownChartHidden && prevProps.isDrilldownChartHidden) || chartTypeChanged || becameVisible)
     ) {
-      this.setState({ chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
+      // Re-derive the processed data here, don't just reset the chart id. Updates are skipped
+      // entirely while the chart is hidden (see shouldComponentUpdate), so a chart sitting behind
+      // the table view has not processed anything that changed there — and by the time it comes
+      // back, prevProps already holds those changes, so dataStructureChanged() sees nothing.
+      // `type` is the display type too, so while the pivot table was showing, getData ran with
+      // type 'pivot_table' and cleared sortedNumberColumnIndicesForStacked; without recomputing it
+      // a stacked chart stacks and colours its series in raw column order instead of by total.
+      const newData = this.getData(this.props)
+      this.setState({ ...(newData ?? {}), chartID: uuid(), deltaX: 0, deltaY: 0, isLoading: true })
     }
 
     if (this.props.queryID !== prevProps.queryID || dataStructureChanged(this.props, prevProps)) {

@@ -96,7 +96,16 @@ class QueryInput extends React.Component {
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
     placeholder: PropTypes.string,
     clearQueryOnSubmit: PropTypes.bool,
+    // DPR session — sent as the AutoAE-Session-ID header by dprQuery. Unrelated
+    // to querySessionId below: different service, different transport.
     sessionId: PropTypes.string,
+    // Chat session this input belongs to. Sent to the query endpoint as the
+    // AutoQL-Session-ID header, and ONLY from here — the subqueries QueryOutput
+    // fires for sorting/filtering/added columns/drilldowns deliberately don't
+    // carry it, since a session tracks what the user actually asked for.
+    // Undefined unless the consumer enables sessions (see ChatContent's
+    // enableSessions), and undefined omits the header entirely.
+    querySessionId: PropTypes.string,
     dataPageSize: PropTypes.number,
     shouldRender: PropTypes.bool,
     enableQuerySuggestions: PropTypes.bool,
@@ -575,6 +584,7 @@ class QueryInput extends React.Component {
       filters: this.props.queryFilters,
       pageSize: this.props.dataPageSize,
       cancelToken: this.axiosSource.token,
+      sessionId: this.props.querySessionId,
     }
 
     if (query.trim()) {
@@ -983,7 +993,6 @@ class QueryInput extends React.Component {
     )
 
     const renderQuerySuggestions = () => {
-
       return (
         <div
           className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} ${

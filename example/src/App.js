@@ -114,6 +114,7 @@ export default class App extends Component {
     enableDrilldowns: true,
     enableExploreQueriesTab: false,
     enableDataExplorerTab: true,
+    enableSessions: false,
     enableNotificationsTab: true,
     enableNotifications: true,
     enableColumnVisibilityManager: true,
@@ -1086,6 +1087,7 @@ export default class App extends Component {
         {this.createBooleanRadioGroup('Enable Data Explorer Tab', 'enableDataExplorerTab', [true, false])}
         {this.createBooleanRadioGroup('Enable Notifications Tab', 'enableNotificationsTab', [true, false])}
         {this.createBooleanRadioGroup('Enable Speech to Text', 'enableVoiceRecord', [true, false])}
+        {this.createBooleanRadioGroup('Enable Sessions', 'enableSessions', [true, false])}
       </div>
     )
   }
@@ -1133,6 +1135,7 @@ export default class App extends Component {
         defaultTab={this.state.defaultTab}
         autoChartAggregations={this.state.autoChartAggregations}
         enableQueryQuickStartTopics={true}
+        enableSessions={this.state.enableSessions}
       />
     )
   }
