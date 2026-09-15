@@ -500,7 +500,9 @@ export class DataMessenger extends React.Component {
           {this.props.handleImage ? (
             <img src={this.props.handleImage} height='22px' width='22px' draggable='false' />
           ) : (
-            <Icon type='react-autoql-bubbles-outlined' size={26} />
+            // The product mark, matching the drawer's own header - the bubbles
+            // were a second, unrelated logo for the same thing.
+            <Icon type='react-autoql-logo' size={24} />
           )}
         </div>
       )
