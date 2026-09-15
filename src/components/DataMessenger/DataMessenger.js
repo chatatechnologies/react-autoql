@@ -731,9 +731,12 @@ export class DataMessenger extends React.Component {
 
   // Clearing the conversation is no longer a header action — ChatContent floats
   // its own "Clear conversation" button over the top of the thread it owns, so
-  // the control clears the session you are actually looking at.
+  // the control clears the session you are actually looking at. The filter lock
+  // moved out of the header too: it scopes the next query, so it belongs at the
+  // head of the input rather than beside the window controls (see
+  // renderDataMessengerContent).
   renderRightHeaderContent = () => {
-    return <>{getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking && this.renderFilterLockPopover()}</>
+    return null
   }
 
   projectSelectorHeader = () => {
@@ -838,9 +841,9 @@ export class DataMessenger extends React.Component {
 
   renderFilterLockPopover = () => {
     this.filterLockingDrawerHeaderButtonClass = classNames({
-      'react-autoql-drawer-header-btn filter-locking': true,
-      visible: this.state.activePage === 'data-messenger',
-      hidden: this.state.activePage !== 'data-messenger',
+      'react-autoql-input-filter-lock-btn': true,
+      'is-open': this.state.isFilterLockMenuOpen,
+      'has-filters': !!this.state.hasFilters,
       mobile: isMobile,
     })
     return (
@@ -853,8 +856,10 @@ export class DataMessenger extends React.Component {
         parentElement={this.messengerDrawerRef}
         boundaryElement={this.messengerDrawerRef}
         tooltipID={this.TOOLTIP_ID}
-        positions={['bottom', 'left', 'top', 'right']}
-        align='center'
+        // Anchored at the bottom of the panel now, so the menu opens upward into
+        // the thread rather than off the bottom edge.
+        positions={['top', 'right', 'left', 'bottom']}
+        align='start'
       >
         <button
           className={this.filterLockingDrawerHeaderButtonClass}
@@ -863,7 +868,7 @@ export class DataMessenger extends React.Component {
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
-            <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+            <Icon type='filter' />
             {this.state.hasFilters ? <div className='react-autoql-filter-lock-icon-badge' /> : null}
           </span>
         </button>
@@ -998,6 +1003,11 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
+          // The filter lock lives at the left end of the query input. With sessions
+          // on, ChatContent hands it to the visible tab only.
+          queryInputLeftContent={
+            getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking ? this.renderFilterLockPopover() : null
+          }
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.

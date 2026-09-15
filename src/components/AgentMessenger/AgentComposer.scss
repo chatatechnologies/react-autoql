@@ -15,9 +15,9 @@
   display: flex;
   align-items: flex-end;
   gap: 0.5rem;
-  // Extra room on the left so the text starts clear of the pill's curve; the right
-  // stays tight because the send button fills it.
-  padding: 0.4375rem 0.4375rem 0.4375rem 1.125rem;
+  // 1rem on the left matches .react-autoql-chatbar-input's own padding-left in the
+  // Data Messenger; the right stays tight because the send button fills it.
+  padding: 0.4375rem 0.4375rem 0.4375rem 1rem;
   border: 1px solid var(--am-border);
   border-radius: var(--am-radius-pill);
   background-color: var(--am-b2);
@@ -51,8 +51,11 @@
   color: var(--am-t1);
   font-family: inherit;
   box-sizing: border-box;
-  font-size: 0.9375rem;
-  line-height: 1.45;
+  // Same type as the Data Messenger's query input, so what you type looks like
+  // the message it becomes on either page.
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
   min-height: 1.875rem;
   max-height: 7.5rem;
   overflow-y: auto;

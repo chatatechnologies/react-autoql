@@ -367,6 +367,44 @@
   &.has-collapsed-icon .react-autoql-chatbar-input {
     padding-left: 3rem;
   }
+
+  // The left slot sits inside the pill, so the text has to start after it: 8px of
+  // air, the 24px control, then 10px before the text.
+  &.has-left-content .react-autoql-chatbar-input {
+    padding-left: 2.625rem;
+  }
+
+  // The filter lock widens into a pill when it holds filters (icon + badge), so the
+  // text has to start further in. :has() rather than a class, because the state
+  // belongs to the control the consumer passed in - QueryInput never sees it.
+  &.has-left-content:has(.react-autoql-input-filter-lock-btn.has-filters) .react-autoql-chatbar-input {
+    padding-left: 3.375rem;
+  }
+
+  // Both at once: the two icons sit side by side and the text clears both.
+  &.has-left-content.has-collapsed-icon {
+    .react-autoql-chatbar-input {
+      padding-left: 4.375rem;
+    }
+
+    .topics-collapsed-icon {
+      left: 2.875rem;
+    }
+  }
+}
+
+// Left end of the input pill, vertically centred in it. Absolute so it doesn't
+// change the input's own box - the input just pads its text out of the way.
+.react-autoql-input-left-content {
+  position: absolute;
+  // 10px of that is .react-autoql-chatbar-input's own margin, so the control sits
+  // 8px inside the pill - the same air the send button has on the other end.
+  left: 1.125rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 1;
 }
 
 .topics-collapsed-icon {

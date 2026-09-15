@@ -32,13 +32,15 @@
 .react-autoql-agent-user-bubble {
   max-width: 85%;
   // Same interior padding as .chat-message-bubble in ChatMessage.scss.
-  padding: 0.8125rem 1.25rem;
+  padding: 0.6875rem 1.0625rem;
   border: 1px solid var(--am-border);
   border-radius: 20px 20px 6px 20px;
   background-color: var(--am-b2);
   color: var(--am-t1);
-  font-size: 0.9375rem;
-  line-height: 1.45;
+  // Same type as .chat-message-bubble in ChatMessage.scss.
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
 }

@@ -153,6 +153,11 @@ export default class ChatContent extends React.Component {
     // Internal. How a session tab reports the tab_display_name from a query
     // response back to its host.
     onSessionTitleChange: PropTypes.func,
+    // Rendered at the left end of this thread's query input, inside the pill.
+    // The Data Messenger puts its filter lock button here. A session host hands it
+    // to the visible session only - it is one element with one ref, so mounting a
+    // copy in every tab would have them fighting over it.
+    queryInputLeftContent: PropTypes.node,
     // Internal. How a session tab tells its host it now has (or no longer has)
     // messages of its own, which decides whether its close button shows when it
     // is the only tab.
@@ -1172,7 +1177,7 @@ export default class ChatContent extends React.Component {
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
-            <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+            <Icon type='filter' />
             {this.state.hasFilters ? <div className='react-autoql-filter-lock-icon-badge' /> : null}
           </span>
           <span className='react-autoql-chat-filter-lock-label'>{this.props.filterLockButtonLabel ?? 'Filters'}</span>
@@ -1307,6 +1312,7 @@ export default class ChatContent extends React.Component {
                   querySessionId={session.id}
                   onSessionTitleChange={(title) => this.setSessionTitle(session.id, title)}
                   onSessionContentChange={(hasContent) => this.setSessionHasContent(session.id, hasContent)}
+                  queryInputLeftContent={isActiveSession ? this.props.queryInputLeftContent : null}
                   shouldRender={this.props.shouldRender && isActiveSession}
                   isActivePage={isLaidOut && isActiveSession}
                 />
@@ -1323,9 +1329,13 @@ export default class ChatContent extends React.Component {
   // action stays reachable however far down the conversation you are. Only
   // offered once there is something to clear — the intro messages don't count.
   renderClearConversationButton = () => {
-    const hasClearableMessages = this.state.messages?.some((message) => !message.isIntroMessage)
+    // With sessions on, closing the tab (or opening a new one) is how you start
+    // fresh, so this would be a second control for the same thing.
+    if (this.props.isSessionTab) {
+      return null
+    }
 
-    if (!hasClearableMessages) {
+    if (!this.hasNonIntroMessages(this.state.messages)) {
       return null
     }
 
@@ -1547,6 +1557,7 @@ export default class ChatContent extends React.Component {
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               executeQuery={this.props.executeQuery}
               enableQueryInputTopics={this.props.enableQueryInputTopics}
+              leftContent={this.props.queryInputLeftContent}
               disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
               isLLMEmptyState={isLLMEmptyState}
             />

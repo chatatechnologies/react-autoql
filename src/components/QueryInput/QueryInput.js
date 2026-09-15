@@ -92,6 +92,9 @@ class QueryInput extends React.Component {
     quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
     showLoadingDots: PropTypes.bool,
     showChataIcon: PropTypes.bool,
+    // Rendered at the left end of the input, inside the pill. For controls that
+    // scope the query (the filter lock) rather than compose it.
+    leftContent: PropTypes.node,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
     placeholder: PropTypes.string,
@@ -127,6 +130,7 @@ class QueryInput extends React.Component {
     className: null,
     showLoadingDots: true,
     showChataIcon: true,
+    leftContent: undefined,
     isBackButtonClicked: false,
     inputValue: undefined,
     source: null,
@@ -1048,7 +1052,7 @@ class QueryInput extends React.Component {
               <div
                 className={`react-autoql-chatbar-input-container${
                   showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''
-                }`}
+                }${this.props.leftContent ? ' has-left-content' : ''}`}
               >
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
@@ -1067,6 +1071,12 @@ class QueryInput extends React.Component {
                   />
                 ) : (
                   <input {...inputProps} />
+                )}
+                {/* Controls that scope the query rather than compose it (the filter
+                    lock) sit at the head of the input, where you'd read them before
+                    typing. */}
+                {this.props.leftContent && (
+                  <div className='react-autoql-input-left-content'>{this.props.leftContent}</div>
                 )}
                 {/* Lightning bolt icon inside input when topics are collapsed */}
                 {showTopics && (

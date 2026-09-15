@@ -375,6 +375,74 @@
   white-space: nowrap;
 }
 
+// The filter lock, at the head of the query input. It scopes the next query, so it
+// reads as part of asking a question rather than as window chrome. A disc with a
+// resting fill and a hairline, echoing the send button at the other end of the pill
+// - with no body at rest it read as decoration on the input rather than a control.
+.react-autoql-input-filter-lock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 24px in a 36px input: enough of a body to read as a control, with room left
+  // around it so the pill doesn't look packed. No border of its own - the input
+  // pill is already an outline, and a ring inside a ring inside the topic chips
+  // above is what made this corner look busy. The fill does the work instead.
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--react-autoql-dm-header-btn-hover);
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+
+  // The badge sits BESIDE the funnel here rather than on top of it - at 24px a dot
+  // pinned to the corner covered the icon it was meant to annotate. The button
+  // widens into a pill to make room, so both are legible.
+  .react-autoql-filter-lock-icon-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .react-autoql-filter-lock-icon-badge {
+    position: static;
+    width: 4px;
+    height: 4px;
+    border: none;
+    border-radius: 50%;
+    background: var(--react-autoql-warning-color);
+  }
+
+  &.has-filters {
+    width: auto;
+    padding: 0 6px;
+  }
+
+  // Open, or holding filters: the accent fill says the next query is scoped.
+  &.is-open,
+  &.has-filters {
+    background-color: rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.14
+    );
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+// Header buttons only. The in-input filter lock has its own block above: it was
+// listed here too, and this block's badge rule (one class deeper, and later in the
+// file) overrode it, which is why the dot kept sitting on top of the funnel.
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   &.hidden {
     display: none !important;
@@ -393,14 +461,16 @@
     .react-autoql-filter-lock-icon-badge {
       position: absolute;
       display: inline-block;
-      // Ringed in the header's own surface, which is no longer the accent colour.
-      border: 2px solid var(--react-autoql-background-color-primary);
+      // Ringed in the surface behind it - the input pill, or the header. Small
+      // enough to sit on the control rather than hang off it.
+      border: 1.5px solid var(--react-autoql-background-color-secondary);
+      box-sizing: content-box;
       background: var(--react-autoql-warning-color);
       border-radius: 50%;
-      height: 14px;
-      width: 14px;
-      right: -5px;
-      top: -4px;
+      height: 8px;
+      width: 8px;
+      right: -2px;
+      top: -1px;
     }
   }
 }

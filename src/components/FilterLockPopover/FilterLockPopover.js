@@ -48,9 +48,10 @@ export class FilterLockPopover extends React.Component {
     align: 'center',
     onClose: () => {},
     onChange: () => {},
-    // Default true preserves the DataMessenger header lock's arrow; ChatContent
-    // opts out with showArrow={false}.
-    showArrow: true,
+    // No arrow by default. The lock button lives at the head of the query input
+    // now rather than in the header, and the pointer never lined up with it from
+    // there - the menu reads fine as a plain panel.
+    showArrow: false,
     persistNewFilters: true,
   }
 

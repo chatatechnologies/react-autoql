@@ -7,8 +7,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  font-size: 0.9375rem;
-  line-height: 1.6;
+  // The Data Messenger's body scale, so a response reads the same on both pages.
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
   color: var(--am-t1);
   word-break: break-word;
 
