@@ -2616,12 +2616,22 @@ export class QueryOutput extends React.Component {
     // Matches the chart axis selectors: every groupable column is a valid pivot row axis
     // regardless of its type (a numeric groupby like year or quarter counts), and the column
     // currently on the pivot column axis stays in the list so picking it swaps the two axes.
+    //
+    // `value` must be the column's ARRAY POSITION, not its `index` property — that is the space
+    // tableConfig uses (stringColumnIndex/legendColumnIndex, row[sIdx]) and what the chart's
+    // selector passes to onChangeStringColumnIndex. The two only coincide while `index` matches
+    // position: transformQueryResponse stamps it on the response, but formatColumnsForTable
+    // rebuilds columns (custom columns, additional selects, visibility, drilldowns) without
+    // re-stamping it, so a stale or missing `index` here selects the wrong column - or undefined.
     return cols
+      .map((c, i) => ({ column: c, position: i }))
       .filter(
-        (c) =>
-          c.is_visible !== false && !this.tableConfig.numberColumnIndices?.includes(c.index) && (c.groupable || c.custom),
+        ({ column, position }) =>
+          column.is_visible !== false &&
+          !this.tableConfig.numberColumnIndices?.includes(position) &&
+          (column.groupable || column.custom),
       )
-      .map((c) => ({ value: c.index, label: c.display_name || c.name }))
+      .map(({ column, position }) => ({ value: position, label: column.display_name || column.name }))
   }
 
   onChangeLegendColumnIndex = (index) => {

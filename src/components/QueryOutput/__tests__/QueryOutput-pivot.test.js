@@ -279,6 +279,22 @@ describe('QueryOutput pivot suite', () => {
         expect(options.map((o) => o.value)).not.toContain(2)
         expect(options.map((o) => o.value)).not.toContain(3)
       })
+
+      it('uses array positions, not the column index property', () => {
+        // tableConfig indices are array positions. formatColumnsForTable does not re-stamp
+        // `index`, so it can be stale or missing - the option value must not depend on it.
+        const shifted = columns.map((c, i) => ({ ...c, index: i + 5 }))
+        const missing = columns.map(({ index, ...c }) => c)
+
+        expect(makeInstance(shifted).getPivotRowSelectorOptions()).toEqual([
+          { value: 0, label: 'Year' },
+          { value: 1, label: 'Product' },
+        ])
+        expect(makeInstance(missing).getPivotRowSelectorOptions()).toEqual([
+          { value: 0, label: 'Year' },
+          { value: 1, label: 'Product' },
+        ])
+      })
     })
   })
 })
