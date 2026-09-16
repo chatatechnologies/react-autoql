@@ -281,7 +281,7 @@ describe('AgentMessenger', () => {
       expect(screen.queryByText('GPT-4.1')).not.toBeInTheDocument()
     })
 
-    it('sends the selected model with the request', async () => {
+    it('does not send a model with the request', async () => {
       axios.post.mockResolvedValueOnce(CREATE_RESPONSE)
 
       renderMessenger({
@@ -294,7 +294,7 @@ describe('AgentMessenger', () => {
 
       await sendMessage('Which model is this?')
 
-      expect(axios.post.mock.calls[0][1].llm_model).toBe('gpt-5')
+      expect(axios.post.mock.calls[0][1]).not.toHaveProperty('llm_model')
     })
   })
 })
