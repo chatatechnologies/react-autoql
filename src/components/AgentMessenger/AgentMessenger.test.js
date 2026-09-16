@@ -66,7 +66,6 @@ describe('AgentMessenger', () => {
     expect(axios.post.mock.calls[0][0]).toContain('/autoql/api/v1/sessions')
     expect(axios.post.mock.calls[0][0]).not.toContain('/resume')
     expect(axios.post.mock.calls[0][1]).toEqual({
-      llm_model: 'gpt-4.1',
       user_inquiry: 'How did the Eagles do?',
     })
 

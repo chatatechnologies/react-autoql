@@ -226,7 +226,13 @@
   opacity: 0.6;
   transition: opacity 0.2s ease, background-color 0.2s ease;
 
+  // Flex + line-height:1, or an inherited line-height makes the glyph's box taller
+  // than the 18px circle and it sits low in it.
   .react-autoql-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     font-size: 0.625rem;
   }
 

@@ -21,8 +21,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  padding-top: 0;
+  // 2px here plus the input's own 10px margin is a 12px gutter, matching the Data
+  // Agent composer's padding. It was 10px, for 20px - noticeably narrower than the
+  // agent's input at the same drawer width.
+  padding: 0 2px 10px;
 }
 
 .react-autoql-input-row {
@@ -34,7 +36,8 @@
 .react-autoql-chatbar-input {
   padding: 8px;
   padding-left: 16px;
-  padding-right: 44px; /* Make room for microphone button */
+  /* Room for the send button inside the pill; .has-microphone adds the mic's */
+  padding-right: 38px;
   margin: 0px 10px 0 10px;
   height: 36px;
   width: calc(100% - 20px);
@@ -365,7 +368,7 @@
 
 .react-autoql-chatbar-input-container {
   &.has-collapsed-icon .react-autoql-chatbar-input {
-    padding-left: 3rem;
+    padding-left: 2.625rem;
   }
 
   // The left slot sits inside the pill, so the text has to start after it: 8px of
@@ -381,25 +384,47 @@
     padding-left: 3.375rem;
   }
 
-  // Both at once: the two icons sit side by side and the text clears both.
+  // Both at once: the two discs sit side by side (24px + 6px apart) and the text
+  // clears both.
   &.has-left-content.has-collapsed-icon {
     .react-autoql-chatbar-input {
-      padding-left: 4.375rem;
+      padding-left: 4.5rem;
     }
 
     .topics-collapsed-icon {
-      left: 2.875rem;
+      left: 3rem;
     }
   }
 }
 
 // Left end of the input pill, vertically centred in it. Absolute so it doesn't
 // change the input's own box - the input just pads its text out of the way.
+// Mic and send share the right end of the pill: the send button owns the corner and
+// the mic sits to its left, sized to match it, with the text clearing both.
+// The offsets count from the CONTAINER's edge, while the input sits 10px inside it
+// (its own margin) - hence 15px for a 5px inset, and so on.
+.react-autoql-chatbar-input-container.has-microphone {
+  .react-autoql-chatbar-input {
+    padding-right: 70px;
+  }
+
+  .input-microphone-button {
+    right: 47px;
+
+    .chat-voice-record-button {
+      width: 26px;
+      height: 26px;
+      margin: 0;
+      font-size: 0.9375rem;
+    }
+  }
+}
+
 .react-autoql-input-left-content {
   position: absolute;
-  // 10px of that is .react-autoql-chatbar-input's own margin, so the control sits
-  // 8px inside the pill - the same air the send button has on the other end.
-  left: 1.125rem;
+  // 18px = the input's own 10px margin + 8px inside the pill, the same air the send
+  // button has at the other end. getLeftControlGeometry's controlsStart mirrors it.
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -407,33 +432,41 @@
   z-index: 1;
 }
 
+// Same control as the filter lock at the other end of the pill: a 24px disc on a
+// neutral wash, accent on hover. It was a bare accent glyph at a different size,
+// which read as two unrelated kinds of button inside one input.
 .topics-collapsed-icon {
   position: absolute;
-  left: 1.5rem;
+  // `left` is set inline - it follows whatever sits before it in the pill.
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
   cursor: pointer;
-  color: var(--react-autoql-accent-color, #28a8e0);
-  font-size: 1.25rem;
-  background: none;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.9375rem;
+  background-color: var(--react-autoql-dm-header-btn-hover, rgba(128, 134, 142, 0.16));
   border: none;
-  padding: 0.25rem;
-  border-radius: 50%;
+  padding: 0;
+  border-radius: 999px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s ease, color 0.2s ease, background-color 0.2s ease;
   z-index: 1;
 
-  &.visible {
-    opacity: 0.75;
-    pointer-events: auto;
+  &:hover {
+    color: var(--react-autoql-accent-color);
   }
 
-  &:hover {
+  // Full opacity once shown - the wash and the placeholder-grey glyph already make
+  // it quiet, and fading it as well made it look disabled next to the filter lock.
+  &.visible {
     opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -802,8 +835,40 @@
       flex: 1;
     }
 
+    // This state's taller input sets its own padding-left at a specificity that
+    // outranks the .has-* rules above, and its input has no margin of its own - so
+    // the left-hand controls and the text that has to clear them are re-stated here
+    // against this state's own geometry. Without it the filter lock and the
+    // collapsed Quick Topics button land on top of each other and the placeholder.
+    .react-autoql-chatbar-input-container {
+      .react-autoql-input-left-content,
+      .topics-collapsed-icon {
+        left: 12px;
+      }
+
+      &.has-left-content .react-autoql-chatbar-input,
+      &.has-collapsed-icon .react-autoql-chatbar-input {
+        padding-left: 44px;
+      }
+
+      &.has-left-content:has(.react-autoql-input-filter-lock-btn.has-filters) .react-autoql-chatbar-input {
+        padding-left: 55px;
+      }
+
+      &.has-left-content.has-collapsed-icon {
+        .react-autoql-chatbar-input {
+          padding-left: 74px;
+        }
+
+        .topics-collapsed-icon {
+          left: 42px;
+        }
+      }
+    }
+
+    // Clear of the send disc, which now sits inside this input at right: 8px.
     .input-microphone-button {
-      right: 0;
+      right: 40px;
     }
 
     .chat-voice-record-button {
@@ -844,8 +909,10 @@
     }
   }
 
+  // Inside the pill now, so a right margin on the flex row means nothing - the LLM
+  // empty state's taller input just needs the disc a touch further in.
   .react-autoql-input-send-button {
-    margin-right: 8px;
+    right: 8px;
   }
 
   @media (max-width: 576px) {
@@ -874,11 +941,19 @@
   }
 }
 
-/* Send button — a flat accent disc beside the input. The press feedback is a
-   darkening wash rather than a scale-up, so the disc keeps its footprint. */
+/* Send button — a flat accent disc at the right end INSIDE the pill, the way the
+   Data Agent composer does it. The press feedback is a darkening wash rather than a
+   scale-up, so the disc keeps its footprint. */
 .react-autoql-input-send-button {
-  width: 36px;
-  height: 36px;
+  position: absolute;
+  // 10px of this is the input's own margin - at 5px the disc hung off the pill's
+  // right edge, in the container's padding.
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   border: none;
   background-color: var(--react-autoql-accent-color);
@@ -887,11 +962,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0px 2px;
+  padding: 0;
   flex-shrink: 0;
   box-shadow: none;
-  transition: box-shadow 0.2s ease, opacity 0.2s ease;
-  font-size: 1.0625rem;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  font-size: 0.875rem;
+
+  // Stop: a neutral disc with a square glyph, so it reads as "halt" rather than as
+  // another way to send.
+  &.is-stop {
+    background-color: var(--react-autoql-text-color-placeholder);
+    color: var(--react-autoql-background-color-secondary);
+
+    &:hover {
+      background-color: var(--react-autoql-text-color-primary);
+    }
+  }
 
   &:hover:not(:disabled) {
     box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.08);
@@ -908,7 +994,14 @@
   }
 
   svg {
-    width: 16px;
-    height: 16px;
+    width: 13px;
+    height: 13px;
   }
+}
+
+.react-autoql-input-stop-glyph {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: currentColor;
 }

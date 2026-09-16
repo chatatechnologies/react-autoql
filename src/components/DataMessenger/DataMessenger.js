@@ -107,6 +107,7 @@ export class DataMessenger extends React.Component {
       placement: this.getPlacementProp(props.placement),
       isOptionsDropdownOpen: false,
       isFilterLockMenuOpen: false,
+      lockedFilters: [],
       selectedValueLabel: undefined,
       isSizeMaximum: false,
     }
@@ -823,7 +824,45 @@ export class DataMessenger extends React.Component {
 
   onFilterChange = (allFilters) => {
     const sessionFilters = allFilters.filter((filter) => filter.isSession)
-    this.setState({ sessionFilters, hasFilters: !!allFilters?.length })
+    // The full list, not just the session ones: the button's tooltip summarises
+    // everything currently scoping a query.
+    this.setState({ sessionFilters, lockedFilters: allFilters ?? [], hasFilters: !!allFilters?.length })
+  }
+
+  // A plain-text summary of what the next query is scoped to, grouped by the
+  // category each value came from and split by include/exclude. Text rather than
+  // HTML so a filter value — which is user data — can never inject markup; the
+  // newlines render because the tooltip class sets white-space: pre-line.
+  getFilterSummary = () => {
+    const filters = this.state.lockedFilters ?? []
+
+    if (!filters.length) {
+      return undefined
+    }
+
+    const groups = []
+    filters.forEach((filter) => {
+      const category = filter.show_message || 'Filter'
+      const isExcluded = filter.filter_type === 'exclude'
+      let group = groups.find((g) => g.category === category && g.isExcluded === isExcluded)
+
+      if (!group) {
+        group = { category, isExcluded, values: [] }
+        groups.push(group)
+      }
+
+      group.values.push(filter.value)
+    })
+
+    const MAX_VALUES_PER_GROUP = 4
+    const lines = groups.map(({ category, isExcluded, values }) => {
+      const shown = values.slice(0, MAX_VALUES_PER_GROUP)
+      const remaining = values.length - shown.length
+      const suffix = remaining > 0 ? `, +${remaining} more` : ''
+      return `${category}${isExcluded ? ' (excluded)' : ''}: ${shown.join(', ')}${suffix}`
+    })
+
+    return [lang.filterSummaryTooltipTitle, ...lines].join('\n')
   }
 
   isOpen = () => {
@@ -848,6 +887,8 @@ export class DataMessenger extends React.Component {
       'has-filters': !!this.state.hasFilters,
       mobile: isMobile,
     })
+    const filterSummary = this.getFilterSummary()
+
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
@@ -865,7 +906,11 @@ export class DataMessenger extends React.Component {
       >
         <button
           className={this.filterLockingDrawerHeaderButtonClass}
-          data-tooltip-content={lang.openFilterLocking}
+          // With filters on, the tooltip says what they are and says it straight
+          // away — the badge alone tells you something is filtered but not what,
+          // and that is the thing you want to check before asking a question.
+          data-tooltip-content={filterSummary ?? lang.openFilterLocking}
+          data-tooltip-delay-show={filterSummary ? 0 : undefined}
           data-tooltip-id={this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >

@@ -20,14 +20,14 @@ describe('sessionService', () => {
   afterEach(() => jest.clearAllMocks())
 
   describe('createSession', () => {
-    it('posts { llm_model, user_inquiry } to the sessions endpoint with auth', async () => {
+    it('posts { user_inquiry } to the sessions endpoint with auth', async () => {
       axios.post.mockResolvedValueOnce(CREATE_RESPONSE)
 
       await createSession({ userInquiry: 'How did the Eagles do?', llmModel: 'gpt-4.1', authentication })
 
       const [url, body, config] = axios.post.mock.calls[0]
       expect(url).toBe('https://example.com/autoql/api/v1/sessions?key=test-key')
-      expect(body).toEqual({ llm_model: 'gpt-4.1', user_inquiry: 'How did the Eagles do?' })
+      expect(body).toEqual({ user_inquiry: 'How did the Eagles do?' })
       expect(config.headers.Authorization).toBe('Bearer test-token')
     })
 
@@ -63,14 +63,14 @@ describe('sessionService', () => {
   })
 
   describe('resumeSession', () => {
-    it('posts to the resume path for the given session', async () => {
+    it('posts to the resume path for the given session, without a model', async () => {
       axios.post.mockResolvedValueOnce(RESUME_RESPONSE)
 
       await resumeSession({ sessionId: 'abc-123', userInquiry: 'go on', llmModel: 'gpt-4.1', authentication })
 
       const [url, body] = axios.post.mock.calls[0]
       expect(url).toBe('https://example.com/autoql/api/v1/sessions/abc-123/resume?key=test-key')
-      expect(body).toEqual({ llm_model: 'gpt-4.1', user_inquiry: 'go on' })
+      expect(body).toEqual({ user_inquiry: 'go on' })
     })
 
     it('returns a null session id, since resume responses carry none', async () => {

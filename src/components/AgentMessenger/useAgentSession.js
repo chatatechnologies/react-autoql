@@ -100,7 +100,6 @@ export const useAgentSession = ({
 
         const params = {
           userInquiry: text,
-          llmModel: thread.llmModel,
           authentication,
           cancelToken: source?.token,
         }

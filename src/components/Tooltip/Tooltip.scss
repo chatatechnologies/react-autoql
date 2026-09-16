@@ -10,6 +10,10 @@
   z-index: 999999 !important; /* necessary to show up on top of rc drawer */
   max-width: 300px;
   word-break: break-word;
+  // Multi-line tooltip content (the filter lock's summary) arrives as plain text
+  // with newlines - react-tooltip 5.22 has no per-anchor class attribute to hang
+  // this off, and pre-line is a no-op for the single-line tooltips everywhere else.
+  white-space: pre-line;
 }
 
 .react-tooltip.interpretation-tooltip {

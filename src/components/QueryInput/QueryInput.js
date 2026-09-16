@@ -72,6 +72,7 @@ class QueryInput extends React.Component {
       selectedTopic: null,
       isExpanded: false,
       topicsCollapsed: false,
+      leftContentWidth: 0,
       selectedColumns: [],
       dataPreview: undefined,
       isDataPreviewLoading: false,
@@ -153,10 +154,60 @@ class QueryInput extends React.Component {
     this._isMounted = true
     document.addEventListener('keydown', this.onEscKeypress)
     document.addEventListener('mousedown', this.handleClickOutside)
+    this.observeLeftContent()
 
     // Fetch topics if enabled
     if (this.props.enableQueryInputTopics) {
       this.fetchTopics()
+    }
+  }
+
+  // The controls at the head of the pill (a consumer's leftContent — the Data
+  // Messenger's filter lock — and the collapsed Quick Topics button) are absolutely
+  // positioned, so the text has to be padded clear of them and each has to be
+  // offset past the one before it.
+  //
+  // Those numbers are computed here and applied inline rather than expressed in
+  // SCSS: the input's padding is set by several layout-specific ancestor rules (the
+  // LLM empty state's is four classes deep), so a class-based rule loses the cascade
+  // in exactly the layouts that need it most. leftContent's width is measured rather
+  // than assumed, because the filter lock widens when it holds filters.
+  observeLeftContent = () => {
+    const element = this.leftContentRef
+
+    if (!element) {
+      return
+    }
+
+    const measure = () => {
+      const width = element.offsetWidth ?? 0
+
+      if (this._isMounted && width !== this.state.leftContentWidth) {
+        this.setState({ leftContentWidth: width })
+      }
+    }
+
+    measure()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.leftContentObserver = new ResizeObserver(measure)
+      this.leftContentObserver.observe(element)
+    }
+  }
+
+  // Where the head-of-pill controls start, measured from the input CONTAINER's edge,
+  // and how far the input's own left edge is inside that container.
+  getLeftControlGeometry = () => {
+    const isEmptyState = !!this.props.isLLMEmptyState
+    return {
+      controlsStart: isEmptyState ? 12 : 18,
+      // .react-autoql-chatbar-input's own margin, which the empty state removes.
+      inputMargin: isEmptyState ? 0 : 10,
+      gap: 6,
+      // .topics-collapsed-icon's fixed size.
+      collapsedIconWidth: 24,
+      // Air between the last control and the first character.
+      textGap: 10,
     }
   }
 
@@ -184,6 +235,7 @@ class QueryInput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    this.leftContentObserver?.disconnect()
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
@@ -913,6 +965,33 @@ class QueryInput extends React.Component {
   }
 
   render = () => {
+    const isQueryRunning = this.state.isQueryRunning
+    const hasMicrophone = !isMobile && this.props.enableVoiceRecord
+
+    const showTopics =
+      this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
+    const showCollapsedIcon = showTopics && this.state.topicsCollapsed
+    const { controlsStart, inputMargin, gap, collapsedIconWidth, textGap } = this.getLeftControlGeometry()
+
+    // Widths of the controls at the head of the pill, in the order they sit.
+    const leftControlWidths = []
+    if (this.props.leftContent) {
+      leftControlWidths.push(this.state.leftContentWidth || collapsedIconWidth)
+    }
+    if (showCollapsedIcon) {
+      leftControlWidths.push(collapsedIconWidth)
+    }
+
+    const leftControlsWidth = leftControlWidths.reduce(
+      (total, width, index) => total + width + (index ? gap : 0),
+      0,
+    )
+    // The collapsed Quick Topics button follows anything before it.
+    const collapsedIconLeft = controlsStart + (this.props.leftContent ? leftControlWidths[0] + gap : 0)
+    const inputPaddingLeft = leftControlsWidth
+      ? controlsStart + leftControlsWidth + textGap - inputMargin
+      : undefined
+
     const inputProps = {
       ref: this.setInputRef,
       id: this.UNIQUE_ID,
@@ -930,11 +1009,11 @@ class QueryInput extends React.Component {
       spellCheck: false,
       autoFocus: true,
       autoComplete: 'one-time-code',
+      // Inline, so no layout-specific ancestor rule can outrank it.
+      style: inputPaddingLeft ? { paddingLeft: `${inputPaddingLeft}px` } : undefined,
     }
 
     const isTopicsBelow = this.props.isLLMEmptyState || this.props.quickTopicsPlacement === 'below'
-    const showTopics =
-      this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
 
     const toggleTopicsCollapsed = () =>
       this.setState((s) => ({
@@ -1051,8 +1130,8 @@ class QueryInput extends React.Component {
             <div className='react-autoql-input-row'>
               <div
                 className={`react-autoql-chatbar-input-container${
-                  showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''
-                }${this.props.leftContent ? ' has-left-content' : ''}`}
+                  showCollapsedIcon ? ' has-collapsed-icon' : ''
+                }${this.props.leftContent ? ' has-left-content' : ''}${hasMicrophone ? ' has-microphone' : ''}`}
               >
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
@@ -1076,12 +1155,15 @@ class QueryInput extends React.Component {
                     lock) sit at the head of the input, where you'd read them before
                     typing. */}
                 {this.props.leftContent && (
-                  <div className='react-autoql-input-left-content'>{this.props.leftContent}</div>
+                  <div className='react-autoql-input-left-content' ref={(r) => (this.leftContentRef = r)}>
+                    {this.props.leftContent}
+                  </div>
                 )}
                 {/* Lightning bolt icon inside input when topics are collapsed */}
                 {showTopics && (
                   <button
                     className={`topics-collapsed-icon${this.state.topicsCollapsed ? ' visible' : ''}`}
+                    style={{ left: `${collapsedIconLeft}px` }}
                     onClick={toggleTopicsCollapsed}
                     type='button'
                     data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
@@ -1092,7 +1174,7 @@ class QueryInput extends React.Component {
                   </button>
                 )}
                 {/* Microphone button inside input */}
-                {!isMobile && this.props.enableVoiceRecord && (
+                {hasMicrophone && (
                   <div className='input-microphone-button'>
                     <SpeechToTextButtonBrowser
                       onTranscriptStart={this.onTranscriptStart}
@@ -1103,26 +1185,38 @@ class QueryInput extends React.Component {
                     />
                   </div>
                 )}
+                {/* Send, inside the pill at the right end - the same place the Data
+                    Agent composer puts it. While a query is running it becomes a
+                    stop button, cancelling the request exactly as Escape does; a
+                    greyed-out button in that moment offered nothing. */}
+                <button
+                  className={`react-autoql-input-send-button${isQueryRunning ? ' is-stop' : ''}`}
+                  onClick={() => (isQueryRunning ? this.cancelQuery() : this.submitQuery())}
+                  // isDisabled is set by the consumer while a query runs, so the
+                  // stop state deliberately ignores it - that is the one moment the
+                  // button has something to do.
+                  disabled={!isQueryRunning && (!this.state.inputValue || this.props.isDisabled)}
+                  type='button'
+                  aria-label={isQueryRunning ? 'Stop query' : 'Send query'}
+                  data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                  data-tooltip-content={isQueryRunning ? 'Stop query' : undefined}
+                >
+                  {isQueryRunning ? <span className='react-autoql-input-stop-glyph' /> : <Icon type='send' />}
+                </button>
               </div>
               {this.props.showChataIcon && (
                 <div className='chat-bar-input-icon'>
                   <Icon type='react-autoql-bubbles-outlined' />
                 </div>
               )}
-              {this.props.showLoadingDots && this.state.isQueryRunning && (
+              {/* The stop button occupies this corner while a query runs and carries
+                  the same "working on it" meaning, so the dots would be both
+                  redundant and on top of it. */}
+              {this.props.showLoadingDots && isQueryRunning && this.props.hideInput && (
                 <div className='input-response-loading-container'>
                   <LoadingDots />
                 </div>
               )}
-              {/* Send button */}
-              <button
-                className='react-autoql-input-send-button'
-                onClick={() => this.submitQuery()}
-                disabled={!this.state.inputValue || this.props.isDisabled}
-                type='button'
-              >
-                <Icon type='send' />
-              </button>
             </div>
           </div>
 

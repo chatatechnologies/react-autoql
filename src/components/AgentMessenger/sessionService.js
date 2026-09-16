@@ -80,10 +80,11 @@ const normalizeSessionResponse = (response) => {
   }
 }
 
-export const createSession = ({ userInquiry, llmModel, authentication, cancelToken }) => {
+// llm_model is left out for now - the backend picks the model.
+export const createSession = ({ userInquiry, authentication, cancelToken }) => {
   const path = SESSIONS_ENDPOINT
   const url = getUrl({ authentication, path })
-  const body = { llm_model: llmModel, user_inquiry: userInquiry }
+  const body = { user_inquiry: userInquiry }
 
   return axios
     .post(url, body, getRequestConfig({ authentication, cancelToken }))
@@ -91,10 +92,10 @@ export const createSession = ({ userInquiry, llmModel, authentication, cancelTok
     .catch((error) => Promise.reject(normalizeError(error, { method: 'createSession', path, body })))
 }
 
-export const resumeSession = ({ sessionId, userInquiry, llmModel, authentication, cancelToken }) => {
+export const resumeSession = ({ sessionId, userInquiry, authentication, cancelToken }) => {
   const path = `${SESSIONS_ENDPOINT}/${sessionId}/resume`
   const url = getUrl({ authentication, path })
-  const body = { llm_model: llmModel, user_inquiry: userInquiry }
+  const body = { user_inquiry: userInquiry }
 
   return axios
     .post(url, body, getRequestConfig({ authentication, cancelToken }))

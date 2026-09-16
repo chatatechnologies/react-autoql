@@ -178,7 +178,13 @@
       opacity: 0.6;
       transition: opacity 0.2s ease, background-color 0.2s ease;
 
+      // Flex + line-height:1, or the drawer's inherited 22px line-height makes the
+      // glyph's box taller than the 18px circle and it sits low in it.
       .react-autoql-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
         font-size: 0.625rem;
       }
 
@@ -577,14 +583,14 @@
 .react-autoql-chat-filter-lock-toolbar {
   display: flex;
   align-items: center;
-  // Left/right 20px lines the pill's edge up with the input bar below it.
+  // Left/right 12px lines the pill's edge up with the input bar below it.
   // Measured chain (both start from .chat-bar-container, which has NO padding
-  // of its own): the input picks up 10px from .react-autoql-bar-container's
+  // of its own): the input picks up 2px from .react-autoql-bar-container's
   // padding + 10px from .react-autoql-chatbar-input's own margin. That
   // bar-container is a child of the input wrapper, NOT an ancestor of this
-  // toolbar, so the toolbar has to supply the whole 20px itself.
+  // toolbar, so the toolbar has to supply the whole 12px itself.
   // Bottom 6px keeps a gap above the input.
-  padding: 0 20px 6px;
+  padding: 0 12px 6px;
   // Sit BELOW the upward "Recent queries" autocomplete (z-index 2) so that when
   // it opens, the opaque dropdown covers this pill rather than the pill poking
   // through the suggestions. The pill reappears once the dropdown closes.
