@@ -1,4 +1,11 @@
-import { Actions, ModelsStatuses, ThreadStatuses, createInitialState, threadsReducer } from './threadsReducer'
+import {
+  Actions,
+  ModelsStatuses,
+  SESSION_ENDED_MESSAGE,
+  ThreadStatuses,
+  createInitialState,
+  threadsReducer,
+} from './threadsReducer'
 
 const send = (state, threadId, text, maxMessages = 200) =>
   threadsReducer(state, {
@@ -130,6 +137,64 @@ describe('threadsReducer', () => {
       const [message] = state.threads[threadId].messages
       expect(state.threads[threadId].status).toBe(ThreadStatuses.ERROR)
       expect(message.items[0]).toMatchObject({ type: 'error', data: { text: 'Oops' } })
+    })
+
+    it('speaks a conversational failure as agent text and leaves the thread idle', () => {
+      let state = createInitialState({})
+      const threadId = state.activeThreadId
+      const detail = 'Session has already completed and cannot accept further messages.'
+
+      state = threadsReducer(state, {
+        type: Actions.REQUEST_FAILED,
+        threadId,
+        error: detail,
+        isConversational: true,
+        maxMessages: 200,
+      })
+
+      const [message] = state.threads[threadId].messages
+      expect(state.threads[threadId].status).toBe(ThreadStatuses.IDLE)
+      expect(state.threads[threadId].error).toBeNull()
+      expect(message.role).toBe('agent')
+      expect(message.items[0]).toMatchObject({ type: 'text', data: { text: detail } })
+    })
+
+    it('follows an ended-session message with the offer of a new conversation', () => {
+      let state = createInitialState({})
+      const threadId = state.activeThreadId
+      const detail = 'Session has already completed and cannot accept further messages.'
+
+      state = threadsReducer(state, {
+        type: Actions.REQUEST_FAILED,
+        threadId,
+        error: detail,
+        isConversational: true,
+        isSessionExpired: true,
+        maxMessages: 200,
+      })
+
+      const [message] = state.threads[threadId].messages
+      expect(state.threads[threadId].status).toBe(ThreadStatuses.IDLE)
+      // A second item, so the offer appears once the sentence has finished typing.
+      expect(message.items.map((item) => item.type)).toEqual(['text', 'session_ended'])
+      expect(message.items[0].data.text).toBe(detail)
+    })
+
+    it('falls back to its own wording when an ended session carries no message', () => {
+      let state = createInitialState({})
+      const threadId = state.activeThreadId
+
+      state = threadsReducer(state, {
+        type: Actions.REQUEST_FAILED,
+        threadId,
+        error: '',
+        isSessionExpired: true,
+        maxMessages: 200,
+      })
+
+      const [message] = state.threads[threadId].messages
+      expect(message.items[0].data.text).toBe(SESSION_ENDED_MESSAGE)
+      expect(message.items[1].type).toBe('session_ended')
     })
 
     it('trims the oldest messages past maxMessagesPerThread', () => {

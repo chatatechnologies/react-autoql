@@ -49,6 +49,7 @@ const AgentMessenger = ({
   tableMaxHeight,
   enableTypewriter,
   enableMockResponses,
+  debug,
   tooltipID,
   onErrorCallback,
   onSessionCreated,
@@ -164,15 +165,32 @@ const AgentMessenger = ({
     [activeThread, markItemRevealed],
   )
 
+  const getLastUserText = useCallback((thread) => {
+    const lastUserMessage = [...(thread?.messages ?? [])].reverse().find((message) => message.role === 'user')
+    return lastUserMessage?.items?.[0]?.data?.text
+  }, [])
+
   // "Try again" on an error item re-sends the question that failed.
   const onRetry = useCallback(() => {
-    const lastUserMessage = [...(activeThread?.messages ?? [])].reverse().find((message) => message.role === 'user')
-    const text = lastUserMessage?.items?.[0]?.data?.text
+    const text = getLastUserText(activeThread)
 
     if (text) {
       onSubmit(text)
     }
-  }, [activeThread, onSubmit])
+  }, [activeThread, onSubmit, getLastUserText])
+
+  // Offered when a thread's session has ended. The question moves to a new thread as
+  // a draft rather than being sent: it's often a follow-up that only made sense
+  // against the old conversation, and the fresh session has none of that history - so
+  // the user gets to reword it before it goes. The dead thread is left intact behind
+  // them, which is what they'd be referring back to while they edit.
+  const onStartNewSession = useCallback(() => {
+    const text = getLastUserText(activeThread)
+
+    openThread()
+    composerRef.current?.setText(text ?? '')
+    setIsThreadMenuOpen(false)
+  }, [activeThread, openThread, getLastUserText])
 
   // Tabs while they fit, dropdown once they don't. Deciding from the container width
   // and a per-tab minimum keeps this a pure calculation - measuring rendered tabs
@@ -403,7 +421,12 @@ const AgentMessenger = ({
               onSuggestionClick={onSubmit}
               onItemRevealed={onItemRevealed}
               onRetry={onRetry}
+              // At the thread limit there's nowhere to send them, so the offer is
+              // withheld rather than rendered as a button that does nothing. The
+              // agent's message about the ended session still shows.
+              onStartNewSession={threads.length >= maxThreads ? undefined : onStartNewSession}
               getModelLabel={getModelLabel}
+              debug={debug}
             />
           ))}
         </div>
@@ -448,6 +471,9 @@ AgentMessenger.propTypes = {
   // Serves the captured session payloads instead of calling the API - the /sessions
   // endpoints aren't live yet. Development only; never leave it on in production.
   enableMockResponses: PropTypes.bool,
+  // Surfaces the session id at the top of each thread so it can be copied into a bug
+  // report. Nothing else is exposed by it.
+  debug: PropTypes.bool,
   tooltipID: PropTypes.string,
   onErrorCallback: PropTypes.func,
   onSessionCreated: PropTypes.func,
@@ -472,6 +498,8 @@ AgentMessenger.defaultProps = {
   tableMaxHeight: 400,
   enableTypewriter: true,
   enableMockResponses: false,
+  // TODO: flip back to false - on for now so the session id is copyable during testing.
+  debug: true,
   tooltipID: undefined,
   onErrorCallback: undefined,
   onSessionCreated: undefined,

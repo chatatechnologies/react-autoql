@@ -7,6 +7,7 @@ import { CustomScrollbars } from '../CustomScrollbars'
 import { dataFormattingType } from '../../props/types'
 
 import AgentMessage from './AgentMessage'
+import SessionDebugLine from './SessionDebugLine'
 import { ThreadStatuses } from './threadsReducer'
 
 import './AgentThread.scss'
@@ -31,7 +32,9 @@ const AgentThread = ({
   onSuggestionClick,
   onItemRevealed,
   onRetry,
+  onStartNewSession,
   getModelLabel,
+  debug,
 }) => {
   const scrollComponentRef = useRef(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
@@ -202,6 +205,7 @@ const AgentThread = ({
     <div className={`react-autoql-agent-thread${isActive ? '' : ' is-hidden'}`}>
       <CustomScrollbars ref={scrollComponentRef} className='react-autoql-agent-thread-scrollbars' suppressScrollX>
         <div className='react-autoql-agent-thread-content' onClick={skip}>
+          {debug && !!thread.sessionId && <SessionDebugLine sessionId={thread.sessionId} />}
           {isEmpty ? (
             <div className='react-autoql-agent-empty-state'>
               <Icon type='react-autoql-logo' className='react-autoql-agent-empty-state-logo' />
@@ -249,6 +253,7 @@ const AgentThread = ({
                   onItemRevealed={onItemSettled}
                   onItemProgress={followContent}
                   onRetry={onRetry}
+                  onStartNewSession={onStartNewSession}
                 />
               )
             })
@@ -287,6 +292,7 @@ AgentThread.propTypes = {
     messages: PropTypes.array,
     status: PropTypes.string,
     revealedItemIds: PropTypes.shape({}),
+    sessionId: PropTypes.string,
   }).isRequired,
   isActive: PropTypes.bool,
   dataFormatting: dataFormattingType,
@@ -298,7 +304,9 @@ AgentThread.propTypes = {
   onSuggestionClick: PropTypes.func,
   onItemRevealed: PropTypes.func,
   onRetry: PropTypes.func,
+  onStartNewSession: PropTypes.func,
   getModelLabel: PropTypes.func,
+  debug: PropTypes.bool,
 }
 
 AgentThread.defaultProps = {
@@ -312,7 +320,9 @@ AgentThread.defaultProps = {
   onSuggestionClick: () => {},
   onItemRevealed: undefined,
   onRetry: undefined,
+  onStartNewSession: undefined,
   getModelLabel: undefined,
+  debug: false,
 }
 
 export default AgentThread

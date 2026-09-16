@@ -147,11 +147,19 @@ export const useAgentSession = ({
 
           delete cancelSourcesRef.current[threadId]
 
-          onErrorCallback?.(error)
+          // A conversational reply - the ended session included - is shown in the
+          // transcript as the agent speaking, so firing onErrorCallback too would put
+          // the same sentence in the integrator's error toast right beside it.
+          if (!error?.isConversational && !error?.isSessionExpired) {
+            onErrorCallback?.(error)
+          }
+
           dispatch({
             type: Actions.REQUEST_FAILED,
             threadId,
             error: error?.message,
+            isConversational: error?.isConversational,
+            isSessionExpired: error?.isSessionExpired,
             maxMessages: maxMessagesPerThread,
           })
         })

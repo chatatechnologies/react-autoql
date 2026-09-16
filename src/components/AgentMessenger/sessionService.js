@@ -60,9 +60,24 @@ const normalizeError = (error, context = {}) => {
     return { message: UNAUTHENTICATED_ERROR, status }
   }
 
+  // The API puts a sentence written for the person reading it on `detail` ("Session
+  // has already completed…"). That reads as the agent talking, so it's flagged to be
+  // spoken as an agent message rather than boxed up as a failure. Other error shapes
+  // are internal text, and keep the error item. `detail` can also be a validation
+  // array, which is not something to say out loud - hence the string check.
+  const detail = typeof responseData?.detail === 'string' ? responseData.detail.trim() : ''
+
+  // 409 means the session the thread was resuming has closed. The caller recovers by
+  // starting a new one, so this is flagged separately from the message itself.
+  const isSessionExpired = status === 409
+
+  if (detail) {
+    return { message: detail, status, responseData, isConversational: true, isSessionExpired }
+  }
+
   const responseMessage = responseData?.message ?? responseData?.error
 
-  return { message: responseMessage || GENERAL_QUERY_ERROR, status, responseData }
+  return { message: responseMessage || GENERAL_QUERY_ERROR, status, responseData, isSessionExpired }
 }
 
 /**

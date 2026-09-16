@@ -4,6 +4,12 @@ import { FALLBACK_MODELS } from './sessionService'
 
 export const NEW_THREAD_TITLE = 'New thread'
 
+// Said by the agent when the thread's session has closed, if the server didn't send a
+// sentence of its own. The thread is a dead end at this point - every further message
+// gets the same 409 - so it names the way out rather than only the problem.
+export const SESSION_ENDED_MESSAGE =
+  "This conversation has ended, so I can't continue it here. You can pick up in a new one whenever you're ready."
+
 export const ThreadStatuses = {
   IDLE: 'idle',
   SENDING: 'sending',
@@ -220,11 +226,32 @@ export const threadsReducer = (state, action) => {
     case Actions.REQUEST_FAILED:
       return updateThread(state, action.threadId, (thread) => {
         const message = createMessage({ role: 'agent', llmModel: thread.llmModel })
-        message.items = withItemIds(message.id, [{ type: 'error', data: { text: action.error } }])
+        let items
+
+        if (action.isSessionExpired) {
+          // The session is gone and this thread can't be revived, so the agent says so
+          // and offers the only move left. The offer is its own item so it appears
+          // after the sentence has finished typing, the way a real reply would.
+          items = [
+            { type: 'text', data: { text: action.error || SESSION_ENDED_MESSAGE } },
+            { type: 'session_ended', data: {} },
+          ]
+        } else if (action.isConversational) {
+          // The server wrote a sentence meant for the user, so the agent says it as
+          // ordinary text - typed out like any other answer, no error box, no retry.
+          items = [{ type: 'text', data: { text: action.error } }]
+        } else {
+          items = [{ type: 'error', data: { text: action.error } }]
+        }
+
+        const isSpoken = action.isSessionExpired || action.isConversational
+        message.items = withItemIds(message.id, items)
 
         return {
-          status: ThreadStatuses.ERROR,
-          error: action.error,
+          // Spoken replies leave the thread idle: nothing is broken for the user to
+          // retry, they just read it and decide what to do next.
+          status: isSpoken ? ThreadStatuses.IDLE : ThreadStatuses.ERROR,
+          error: isSpoken ? null : action.error,
           messages: appendMessage(thread, message, action.maxMessages),
         }
       })

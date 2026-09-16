@@ -154,6 +154,8 @@ export class DataMessenger extends React.Component {
     agentDefaultModelId: PropTypes.string,
     // Development only: renders captured session payloads instead of calling the API.
     agentMockResponses: PropTypes.bool,
+    // Shows the session id above each thread so it can be copied into a bug report.
+    agentDebug: PropTypes.bool,
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
     defaultOpen: PropTypes.bool,
@@ -251,6 +253,8 @@ export class DataMessenger extends React.Component {
     agentModelsEndpoint: undefined,
     agentDefaultModelId: undefined,
     agentMockResponses: false,
+    // TODO: flip back to false - on for now so the session id is copyable during testing.
+    agentDebug: true,
     mobileActivePage: 'data-messenger',
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,
@@ -1002,6 +1006,7 @@ export class DataMessenger extends React.Component {
           modelsEndpoint={this.props.agentModelsEndpoint}
           defaultModelId={this.props.agentDefaultModelId}
           enableMockResponses={this.props.agentMockResponses}
+          debug={this.props.agentDebug}
           enableVoiceRecord={this.props.enableVoiceRecord}
           tooltipID={this.TOOLTIP_ID}
           onErrorCallback={this.props.onErrorCallback}

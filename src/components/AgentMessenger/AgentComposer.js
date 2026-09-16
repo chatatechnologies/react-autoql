@@ -126,7 +126,21 @@ const AgentComposer = forwardRef(
       textareaRef.current?.focus()
     }, [])
 
-    useImperativeHandle(ref, () => ({ focus }), [focus])
+    // setText puts a draft in without sending it - used when a thread's session has
+    // ended and the question moves to a new thread for the user to adjust and send.
+    const setText = useCallback((text) => {
+      historyIndexRef.current = -1
+      setValue(text ?? '')
+
+      // Caret at the end, so they can keep typing rather than land mid-draft.
+      window.requestAnimationFrame(() => {
+        const textarea = textareaRef.current
+        const end = textarea?.value?.length ?? 0
+        textarea?.setSelectionRange(end, end)
+      })
+    }, [])
+
+    useImperativeHandle(ref, () => ({ focus, setText }), [focus, setText])
 
     // Grow with the content up to MAX_HEIGHT_PX, then let the textarea scroll.
     const resize = useCallback(() => {

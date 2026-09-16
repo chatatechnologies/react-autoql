@@ -36,6 +36,72 @@
   box-sizing: border-box;
 }
 
+/* ---- Session id (debug only) ---- */
+
+// Deliberately quiet: it sits above the first message and scrolls away with the
+// transcript, so it is there when someone needs to quote a session and invisible
+// otherwise.
+.react-autoql-agent-session-debug {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+  min-width: 0;
+  color: var(--am-t2);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  opacity: 0.65;
+  transition: opacity var(--am-transition);
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.react-autoql-agent-session-debug-label {
+  flex: 0 0 auto;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.react-autoql-agent-session-debug-id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  user-select: all;
+}
+
+.react-autoql-agent-session-debug-copy {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--am-radius-menu);
+  background: none;
+  color: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition-property: color, background-color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+
+  &:hover {
+    color: var(--am-t1);
+    background-color: var(--am-hover);
+  }
+
+  &.is-copied {
+    color: var(--am-accent);
+  }
+}
+
 /* ---- Empty state ---- */
 
 .react-autoql-agent-empty-state {

@@ -30,6 +30,7 @@ const AgentMessage = ({
   onItemRevealed,
   onItemProgress,
   onRetry,
+  onStartNewSession,
 }) => {
   const isUser = message.role === 'user'
 
@@ -93,6 +94,7 @@ const AgentMessage = ({
                 maxHeight={tableMaxHeight}
                 onProgress={onItemProgress}
                 onRetry={onRetry}
+                onStartNewSession={onStartNewSession}
                 onRevealComplete={() => onRevealComplete(item.id)}
               />
             </div>
@@ -120,6 +122,7 @@ AgentMessage.propTypes = {
   onItemRevealed: PropTypes.func,
   onItemProgress: PropTypes.func,
   onRetry: PropTypes.func,
+  onStartNewSession: PropTypes.func,
 }
 
 AgentMessage.defaultProps = {
@@ -134,6 +137,7 @@ AgentMessage.defaultProps = {
   onItemRevealed: undefined,
   onItemProgress: undefined,
   onRetry: undefined,
+  onStartNewSession: undefined,
 }
 
 export default React.memo(AgentMessage)

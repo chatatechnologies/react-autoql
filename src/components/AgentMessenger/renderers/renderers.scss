@@ -296,6 +296,46 @@
   }
 }
 
+/* ---- Ended session ---- */
+
+/* Sits under the agent's message about the session ending, so it reads as the offer
+   that follows the sentence rather than as a control belonging to the chrome. */
+.react-autoql-agent-session-ended-item {
+  display: flex;
+  padding-top: 0.125rem;
+}
+
+.react-autoql-agent-session-ended-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--am-border);
+  border-radius: var(--am-radius-pill);
+  background-color: var(--am-b2);
+  color: var(--am-accent);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color var(--am-transition), border-color var(--am-transition);
+
+  &:hover {
+    background-color: var(--am-accent-wash);
+    border-color: var(--am-accent);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--am-focus-ring);
+  }
+
+  .react-autoql-icon {
+    font-size: 0.875rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .react-autoql-agent-table-item.animate-in {
     animation: none;

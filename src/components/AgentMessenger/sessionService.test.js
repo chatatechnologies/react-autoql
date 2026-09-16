@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { UNAUTHENTICATED_ERROR } from 'autoql-fe-utils'
+import { GENERAL_QUERY_ERROR, UNAUTHENTICATED_ERROR } from 'autoql-fe-utils'
 
 import {
   MOCK_CREATE_SESSION_RESPONSE as createSessionResponse,
@@ -59,6 +59,34 @@ describe('sessionService', () => {
         message: UNAUTHENTICATED_ERROR,
         status: 401,
       })
+    })
+
+    it('flags a `detail` message as conversational, so the agent can speak it', async () => {
+      const detail = 'Session has already completed and cannot accept further messages. Please start a new session.'
+      axios.post.mockRejectedValueOnce({ response: { status: 400, data: { detail } } })
+
+      await expect(createSession({ userInquiry: 'hi', authentication })).rejects.toMatchObject({
+        message: detail,
+        isConversational: true,
+      })
+    })
+
+    it('does not speak a `detail` that is a validation array', async () => {
+      axios.post.mockRejectedValueOnce({
+        response: { status: 422, data: { detail: [{ loc: ['body', 'user_inquiry'], msg: 'field required' }] } },
+      })
+
+      const error = await createSession({ userInquiry: 'hi', authentication }).catch((e) => e)
+      expect(error.message).toBe(GENERAL_QUERY_ERROR)
+      expect(error.isConversational).toBeFalsy()
+    })
+
+    it('does not speak a `detail` on an auth failure', async () => {
+      axios.post.mockRejectedValueOnce({ response: { status: 401, data: { detail: 'Not authenticated' } } })
+
+      const error = await createSession({ userInquiry: 'hi', authentication }).catch((e) => e)
+      expect(error.message).toBe(UNAUTHENTICATED_ERROR)
+      expect(error.isConversational).toBeFalsy()
     })
   })
 

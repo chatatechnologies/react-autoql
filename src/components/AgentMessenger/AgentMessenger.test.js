@@ -115,6 +115,73 @@ describe('AgentMessenger', () => {
     await waitFor(() => expect(screen.getByText('Server exploded')).toBeInTheDocument())
   })
 
+  it('speaks a `detail` message as the agent rather than boxing it as an error', async () => {
+    const detail = 'Session has already completed and cannot accept further messages.'
+    axios.post.mockRejectedValueOnce({ response: { status: 400, data: { detail } } })
+
+    const { container } = renderMessenger()
+    await sendMessage('Carry on')
+
+    await waitFor(() => expect(screen.getByText(detail)).toBeInTheDocument())
+    expect(container.querySelector('.react-autoql-agent-status-item.is-error')).toBeNull()
+    expect(container.querySelector('.react-autoql-agent-text-item')).toBeTruthy()
+  })
+
+  describe('when the session has ended', () => {
+    const SESSION_ENDED = 'Session has already completed and cannot accept further messages.'
+
+    // Establishes a session, then 409s the follow-up.
+    const reachEndedSession = async (props) => {
+      axios.post
+        .mockResolvedValueOnce(CREATE_RESPONSE)
+        .mockRejectedValueOnce({ response: { status: 409, data: { detail: SESSION_ENDED } } })
+
+      const rendered = renderMessenger(props)
+
+      await sendMessage('How did the Eagles do?')
+      await waitFor(() => expect(screen.getByText(CREATE_TEXT)).toBeInTheDocument())
+
+      await sendMessage('Compare it to last season')
+      await waitFor(() => expect(screen.getByText(SESSION_ENDED)).toBeInTheDocument())
+
+      return rendered
+    }
+
+    it('speaks the message and offers a new conversation, without retrying', async () => {
+      const onErrorCallback = jest.fn()
+      const { container } = await reachEndedSession({ onErrorCallback })
+
+      expect(container.querySelector('.react-autoql-agent-status-item.is-error')).toBeNull()
+      expect(screen.getByText('Start a new conversation')).toBeInTheDocument()
+
+      // Nothing is re-sent behind the user's back: the follow-up may not survive the
+      // move to a session with no history, so it's theirs to decide.
+      expect(axios.post).toHaveBeenCalledTimes(2)
+      expect(onErrorCallback).not.toHaveBeenCalled()
+    })
+
+    it('opens a new thread with the question waiting in the composer', async () => {
+      await reachEndedSession()
+
+      fireEvent.click(screen.getByText('Start a new conversation'))
+
+      expect(screen.getAllByRole('tab')).toHaveLength(2)
+      // Drafted, not sent - they get to reword it for a session with no history.
+      expect(screen.getByRole('textbox')).toHaveValue('Compare it to last season')
+      expect(axios.post).toHaveBeenCalledTimes(2)
+
+      // The dead thread is still there to refer back to while they edit.
+      expect(screen.getByText(SESSION_ENDED)).toBeInTheDocument()
+    })
+
+    it('withholds the offer when every thread slot is taken', async () => {
+      await reachEndedSession({ maxThreads: 1 })
+
+      expect(screen.getByText(SESSION_ENDED)).toBeInTheDocument()
+      expect(screen.queryByText('Start a new conversation')).not.toBeInTheDocument()
+    })
+  })
+
   describe('threads', () => {
     // jsdom reports a zero-width container, so the toolbar renders its horizontal
     // tab strip (the dropdown is the narrow-drawer fallback).
@@ -295,6 +362,43 @@ describe('AgentMessenger', () => {
       await sendMessage('Which model is this?')
 
       expect(axios.post.mock.calls[0][1]).not.toHaveProperty('llm_model')
+    })
+  })
+
+  describe('debug session id', () => {
+    const SESSION_ID = 'efe31e82-4e81-4b07-8d58-06fbc6557296'
+
+    it('stays hidden with debug off', async () => {
+      axios.post.mockResolvedValueOnce(CREATE_RESPONSE)
+
+      // Passed explicitly: the default is temporarily true while this is being tested.
+      renderMessenger({ debug: false })
+      await sendMessage('How did the Eagles do?')
+
+      await waitFor(() => expect(screen.getByText(CREATE_TEXT)).toBeInTheDocument())
+      expect(screen.queryByText(SESSION_ID)).not.toBeInTheDocument()
+    })
+
+    it('shows the session id once the session exists, and copies it', async () => {
+      const writeText = jest.fn().mockResolvedValue()
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+      axios.post.mockResolvedValueOnce(CREATE_RESPONSE)
+
+      renderMessenger({ debug: true })
+
+      // Nothing to show until the server has handed back a session.
+      expect(screen.queryByText(SESSION_ID)).not.toBeInTheDocument()
+
+      await sendMessage('How did the Eagles do?')
+      await waitFor(() => expect(screen.getByText(SESSION_ID)).toBeInTheDocument())
+
+      await act(async () => {
+        fireEvent.click(screen.getByLabelText('Copy session ID'))
+      })
+
+      expect(writeText).toHaveBeenCalledWith(SESSION_ID)
+      expect(screen.getByLabelText('Session ID copied')).toBeInTheDocument()
     })
   })
 })
