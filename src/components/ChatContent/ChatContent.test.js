@@ -151,6 +151,33 @@ describe('enableSessions', () => {
     expect(wrapper.state('activeSessionId')).toBe(activeSessionId)
   })
 
+  test('the close-all button only appears once there are several tabs', () => {
+    const wrapper = setup({ enableSessions: true })
+    expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(false)
+
+    wrapper.instance().addSession()
+    wrapper.update()
+    expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(true)
+  })
+
+  test('closing all tabs leaves one empty untitled tab', () => {
+    const wrapper = setup({ enableSessions: true })
+    wrapper.instance().addSession()
+    wrapper.instance().addSession()
+    wrapper.update()
+
+    const closedIds = wrapper.state('sessions').map((session) => session.id)
+    wrapper.instance().closeAllSessions()
+    wrapper.update()
+
+    const sessions = wrapper.state('sessions')
+    expect(sessions).toHaveLength(1)
+    // A new tab, not one of the ones that was open - its thread remounts with it.
+    expect(closedIds).not.toContain(sessions[0].id)
+    expect(sessions[0].title).toBe('Untitled 1')
+    expect(wrapper.state('activeSessionId')).toBe(sessions[0].id)
+  })
+
   test('a new tab takes the lowest untitled number no open tab is using', () => {
     const wrapper = setup({ enableSessions: true })
     wrapper.instance().addSession()

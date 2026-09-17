@@ -62,6 +62,7 @@ export const ModelsStatuses = {
 export const Actions = {
   THREAD_OPEN: 'THREAD_OPEN',
   THREAD_CLOSE: 'THREAD_CLOSE',
+  THREADS_CLOSE_ALL: 'THREADS_CLOSE_ALL',
   THREAD_ACTIVATE: 'THREAD_ACTIVATE',
   THREAD_MODEL_SET: 'THREAD_MODEL_SET',
   MESSAGE_SENDING: 'MESSAGE_SENDING',
@@ -225,6 +226,22 @@ export const threadsReducer = (state, action) => {
 
     case Actions.THREAD_CLOSE:
       return closeThread(state, action.threadId)
+
+    case Actions.THREADS_CLOSE_ALL: {
+      // The same end state closing them one at a time reaches, arrived at in one
+      // step: one empty thread, on the model the user was last working in.
+      const thread = createThread({ llmModel: state.threads[state.activeThreadId]?.llmModel })
+
+      return {
+        ...state,
+        threads: { [thread.id]: thread },
+        order: [thread.id],
+        activeThreadId: thread.id,
+        // Not flagged as just-opened: the whole strip collapsing to one tab is its
+        // own feedback, and the flash would be reading as something new arriving.
+        lastOpenedThreadId: null,
+      }
+    }
 
     case Actions.THREAD_ACTIVATE:
       return state.threads[action.threadId] ? { ...state, activeThreadId: action.threadId } : state

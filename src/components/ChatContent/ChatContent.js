@@ -15,6 +15,7 @@ import {
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
+import { scrollTabIntoView } from '../../js/scrollTabIntoView'
 
 // Components
 import { Icon } from '../Icon'
@@ -218,6 +219,15 @@ export default class ChatContent extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.isSessionHost()) {
+      // Reveal the selected tab: a session opened while the strip is already full
+      // would otherwise land off the right edge with nothing to say it exists.
+      if (
+        prevState.activeSessionId !== this.state.activeSessionId ||
+        prevState.sessions.length !== this.state.sessions.length
+      ) {
+        this.scrollActiveSessionTabIntoView()
+      }
+
       return
     }
 
@@ -291,6 +301,11 @@ export default class ChatContent extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+
+    if (this.cancelTabScroll) {
+      this.cancelTabScroll()
+    }
+
     clearTimeout(this.feedbackTimeout)
     clearTimeout(this.responseDelayTimeout)
     if (this.scrollTimeout) {
@@ -327,6 +342,21 @@ export default class ChatContent extends React.Component {
     // tab_display_name, setSessionTitle replaces it.
     const untitledNumber = this.getNextUntitledNumber(sessions)
     return { id: uuid(), untitledNumber, title: `Untitled ${untitledNumber}` }
+  }
+
+  scrollActiveSessionTabIntoView = () => {
+    const list = this.sessionTabListRef
+    const tab = list?.querySelector('.react-autoql-chat-session-tab.active')
+
+    if (!list || !tab) {
+      return
+    }
+
+    if (this.cancelTabScroll) {
+      this.cancelTabScroll()
+    }
+
+    this.cancelTabScroll = scrollTabIntoView(list, tab)
   }
 
   getActiveSessionRef = () => {
@@ -388,6 +418,21 @@ export default class ChatContent extends React.Component {
         !isMobile && this.getActiveSessionRef()?.focusInput()
       },
     )
+  }
+
+  // Every tab at once, replaced by one empty tab - the same end state as closing
+  // them one by one, without the tab bar reshuffling under the cursor each time.
+  // Confirmed before it runs: nothing here is recoverable.
+  closeAllSessions = () => {
+    this.sessionRefs = {}
+
+    // No updater form, unlike the closes above: this doesn't read the sessions it
+    // replaces, so there is nothing for a batched update to get stale.
+    const session = this.createSessionObject([])
+
+    this.setState({ sessions: [session], activeSessionId: session.id }, () => {
+      !isMobile && this.getActiveSessionRef()?.focusInput()
+    })
   }
 
   // First title wins, for the life of the tab. The backend derives the name
@@ -1091,8 +1136,7 @@ export default class ChatContent extends React.Component {
       // The watermark bar is painted over the foot of the scroll container, so
       // the last stretch of it isn't really visible.
       const bottomBar = this.chatContentRef?.querySelector('.chat-content-bottom-bar')
-      const visibleBottom =
-        container.getBoundingClientRect().bottom - (bottomBar?.getBoundingClientRect().height ?? 0)
+      const visibleBottom = container.getBoundingClientRect().bottom - (bottomBar?.getBoundingClientRect().height ?? 0)
 
       if (indicator.getBoundingClientRect().bottom > visibleBottom) {
         this.smoothScrollToBottom()
@@ -1222,7 +1266,7 @@ export default class ChatContent extends React.Component {
 
     return (
       <div className='react-autoql-chat-session-tabs'>
-        <div className='react-autoql-chat-session-tab-list' role='tablist'>
+        <div className='react-autoql-chat-session-tab-list' role='tablist' ref={(r) => (this.sessionTabListRef = r)}>
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId
 
@@ -1269,6 +1313,32 @@ export default class ChatContent extends React.Component {
             )
           })}
         </div>
+        {/* Only once there are several: with a single tab this is the close button
+            already on the tab itself, under a name that promises more. */}
+        {sessions.length > 1 && (
+          <ConfirmPopover
+            className='react-autoql-chat-session-close-all-wrapper'
+            popoverParentElement={this.chatSessionsRef}
+            title={`Close all ${sessions.length} chats?`}
+            text='Your conversations will be cleared and a new chat will be started.'
+            confirmText='Close all'
+            backText='Cancel'
+            danger
+            onConfirm={this.closeAllSessions}
+            positions={['bottom', 'left', 'top', 'right']}
+            align='end'
+            tooltipID={tooltipID}
+          >
+            <button
+              className='react-autoql-chat-session-tab-close-all'
+              aria-label='Close all chats'
+              data-tooltip-content='Close all chats'
+              data-tooltip-id={tooltipID}
+            >
+              <Icon type='close-circle' />
+            </button>
+          </ConfirmPopover>
+        )}
         <button
           className='react-autoql-chat-session-tab-new'
           onClick={this.addSession}

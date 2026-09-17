@@ -197,6 +197,12 @@ export const useAgentSession = ({
     [cancelThreadRequest],
   )
 
+  const closeAllThreads = useCallback(() => {
+    Object.values(cancelSourcesRef.current).forEach((source) => source?.cancel?.())
+    cancelSourcesRef.current = {}
+    dispatch({ type: Actions.THREADS_CLOSE_ALL })
+  }, [])
+
   const activateThread = useCallback((threadId) => dispatch({ type: Actions.THREAD_ACTIVATE, threadId }), [])
 
   const setThreadModel = useCallback(
@@ -270,6 +276,7 @@ export const useAgentSession = ({
     submit,
     openThread,
     closeThread,
+    closeAllThreads,
     activateThread,
     setThreadModel,
     cancelThreadRequest,

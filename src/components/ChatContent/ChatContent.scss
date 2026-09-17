@@ -197,6 +197,40 @@
     }
   }
 
+  // The click wrapper ConfirmPopover puts around its trigger - it would otherwise
+  // stretch and push the "+" off the strip.
+  .react-autoql-chat-session-close-all-wrapper {
+    flex: none;
+    display: flex;
+    margin-left: 8px;
+  }
+
+  // Neutral, beside the accent-washed "+": closing every tab is the destructive
+  // one of the pair, and the accent is spent on the action worth inviting.
+  .react-autoql-chat-session-tab-close-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-placeholder));
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background-color: var(--react-autoql-session-tab-close-hover);
+      color: var(--react-autoql-text-color-primary);
+    }
+
+    .react-autoql-icon {
+      font-size: 1.0625rem;
+    }
+  }
+
   // Pinned to the right rather than trailing the last tab: the strip scrolls at a
   // fixed tab width, so a "+" inside it would scroll out of reach exactly when
   // there are the most sessions. Since it can't borrow the tabs' position for its

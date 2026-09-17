@@ -127,6 +127,48 @@ describe('AgentMessenger', () => {
     expect(container.querySelector('.react-autoql-agent-text-item')).toBeTruthy()
   })
 
+  describe('closing every thread', () => {
+    const openThread = () => fireEvent.click(screen.getByLabelText('New thread'))
+
+    it('offers the button only once there is more than one thread', () => {
+      renderMessenger()
+      expect(screen.queryByLabelText('Close all threads')).toBeNull()
+
+      openThread()
+      expect(screen.getByLabelText('Close all threads')).toBeInTheDocument()
+    })
+
+    it('leaves a single empty thread once confirmed, and reports each one closed', async () => {
+      const onThreadClose = jest.fn()
+      axios.post.mockResolvedValueOnce(CREATE_RESPONSE)
+
+      renderMessenger({ onThreadClose })
+      await sendMessage('How did the Eagles do?')
+      await waitFor(() => expect(screen.getByText(CREATE_TEXT)).toBeInTheDocument())
+
+      openThread()
+      expect(screen.getAllByRole('tab')).toHaveLength(2)
+
+      fireEvent.click(screen.getByLabelText('Close all threads'))
+      fireEvent.click(screen.getByText('Close all'))
+
+      expect(screen.getAllByRole('tab')).toHaveLength(1)
+      expect(screen.getByText('New thread')).toBeInTheDocument()
+      expect(screen.queryByText(CREATE_TEXT)).toBeNull()
+      expect(onThreadClose).toHaveBeenCalledTimes(2)
+    })
+
+    it('keeps the threads when the confirmation is cancelled', () => {
+      renderMessenger()
+      openThread()
+
+      fireEvent.click(screen.getByLabelText('Close all threads'))
+      fireEvent.click(screen.getByText('Cancel'))
+
+      expect(screen.getAllByRole('tab')).toHaveLength(2)
+    })
+  })
+
   describe('session meta_data', () => {
     const completedResponse = (text = 'In short, they scored more.') => ({
       data: {

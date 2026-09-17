@@ -1,4 +1,12 @@
+// react-tiny-popover appends its container at `position: fixed; top: 0; left: 0` and
+// only writes the real transform inside the next animation frame, so every popover
+// paints at least one frame in the top-left corner of the screen before it lands.
+// Staying transparent for the first few frames hides that. Opacity only: the library
+// owns the container's transform, and a keyframed transform would override the inline
+// one it sets and leave the popover mispositioned for the whole animation.
+// No reduced-motion opt-out - this is a paint guard, not decoration.
 .react-tiny-popover-container {
+  animation: react-autoql-popover-appear 0.16s ease both;
   z-index: 99999;
   overflow: hidden !important;
   max-width: 95vw;
@@ -106,6 +114,17 @@
     .popover-container-content {
       border-radius: 0 !important;
     }
+  }
+}
+
+@keyframes react-autoql-popover-appear {
+  0%,
+  30% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
   }
 }
 

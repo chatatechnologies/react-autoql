@@ -75,37 +75,28 @@
   }
 }
 
-/* ---- Toolbar: thread pill + count + new ---- */
+/* ---- Toolbar: thread tabs + new ---- */
 
+// Exactly .react-autoql-chat-session-tabs in the Data Messenger: a flat groove in the
+// flow, inset to the transcript's own 1.25rem so a tab's edges line up with the
+// messages below it. No blur - everything else in the drawer reads as a solid
+// surface, so a transparent strip stood out as an odd one.
 .react-autoql-agent-toolbar {
   flex: 0 0 auto;
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0 0.75rem;
-  background-color: var(--am-b1);
-  border-bottom: 1px solid var(--am-border);
+  gap: 4px;
+  margin: 0.25rem 1.25rem 0.5rem;
+  padding: 6px;
+  border-radius: 23px;
+  background-color: var(--am-tab-track);
   position: relative;
   z-index: 12;
   min-width: 0;
-
-  // Tab mode, exactly as .react-autoql-chat-session-tabs in the Data Messenger: a
-  // flat groove in the flow, inset to the transcript's own 1.25rem so a tab's edges
-  // line up with the messages below it. No blur - everything else in the drawer
-  // reads as a solid surface, so a transparent strip stood out as an odd one.
-  &.has-tabs {
-    align-items: center;
-    gap: 4px;
-    margin: 0.25rem 1.25rem 0.5rem;
-    padding: 6px;
-    border-bottom: none;
-    border-radius: 23px;
-    background-color: var(--am-tab-track);
-  }
 }
 
-/* ---- Horizontal tabs (wide enough drawers) ---- */
+/* ---- Horizontal tabs ---- */
 
 // Chip tabs, matching the Data Messenger's session tabs: neutral washes rather than
 // --react-autoql-hover-color (tuned for menu rows, far too heavy here). Grey at these
@@ -285,66 +276,6 @@
   }
 }
 
-/* ---- Collapsed pill (narrow drawers) ---- */
-
-.react-autoql-agent-thread-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-width: 0;
-  max-width: 60%;
-  // The toolbar takes its height from the tabs' padding; when collapsed there are no
-  // tabs, so the trigger supplies the same vertical air itself.
-  align-self: center;
-  margin: 0.5rem 0;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--am-radius-menu);
-  border: 1px solid var(--am-border);
-  background-color: var(--am-b2);
-  color: var(--am-t1);
-  font-family: inherit;
-  cursor: pointer;
-  transition-property: color, border-color, background-color, opacity;
-  transition-duration: 0.2s;
-  transition-timing-function: ease;
-
-  &:hover {
-    background-color: var(--am-hover);
-  }
-
-  &.is-open {
-    border-color: var(--am-accent);
-    background-color: var(--am-hover);
-  }
-
-  // Same just-created feedback as a tab, for when the strip is collapsed.
-  &.is-new {
-    animation: react-autoql-agent-tab-flash 0.9s ease;
-  }
-}
-
-.react-autoql-agent-thread-pill-title {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.react-autoql-agent-thread-caret {
-  font-size: 0.625rem;
-  color: var(--am-t2);
-  flex: 0 0 auto;
-}
-
-.react-autoql-agent-thread-dot {
-  flex: 0 0 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--am-accent);
-}
-
 .react-autoql-agent-toolbar-right {
   display: flex;
   align-items: center;
@@ -353,11 +284,23 @@
   flex: 0 0 auto;
 }
 
-.react-autoql-agent-thread-count {
-  font-size: 0.75rem;
-  font-weight: 600;
+// Neutral beside the accent-washed "+": closing every thread is the destructive one
+// of the pair, and the accent is spent on the action worth inviting.
+.react-autoql-agent-icon-btn.is-close-all {
+  background-color: transparent;
   color: var(--am-t2);
-  padding-right: 0.25rem;
+
+  &:hover:not(:disabled) {
+    background-color: var(--am-tab-close-hover);
+    color: var(--am-t1);
+  }
+}
+
+// The click wrapper ConfirmPopover puts around its trigger: without this it lays out
+// as a block and the button loses its circle.
+.react-autoql-agent-close-all-wrapper {
+  display: flex;
+  flex: 0 0 auto;
 }
 
 .react-autoql-agent-icon-btn {
@@ -369,8 +312,6 @@
   border: none;
   // Circular icon buttons, as in the QueryInput chat bar.
   border-radius: 50%;
-  // Collapsed, there are no tabs to sit beside and the pill takes the eye, so the
-  // "+" gets the same accent wash it has in the strip.
   background-color: var(--am-accent-wash);
   color: var(--am-accent);
   font-size: 1rem;
@@ -390,108 +331,6 @@
   }
 }
 
-/* ---- Thread menu ---- */
-
-.react-autoql-agent-menu-scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 14;
-}
-
-.react-autoql-agent-thread-menu {
-  position: absolute;
-  top: 0.375rem;
-  left: 0.75rem;
-  width: 17rem;
-  max-width: calc(100% - 1.5rem);
-  padding: 0.375rem 0;
-  border: 1px solid var(--am-border);
-  border-radius: var(--am-radius-menu);
-  background-color: var(--am-b2);
-  box-shadow: 0 4px 16px var(--am-shadow);
-  z-index: 15;
-  animation: react-autoql-agent-pop 0.14s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.react-autoql-agent-menu-label {
-  padding: 0.375rem 1rem 0.5rem;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--am-t2);
-}
-
-// Full-bleed rows with a hover-color background, matching Menu.scss.
-.react-autoql-agent-menu-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  color: var(--am-t1);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:hover,
-  &.is-active {
-    background-color: var(--am-hover);
-  }
-
-  // Only the active thread gets a dot; the others keep the space so titles line up.
-  &:not(.is-active) .react-autoql-agent-thread-dot {
-    background-color: transparent;
-  }
-
-  &.is-new {
-    color: var(--am-accent);
-    font-weight: 600;
-  }
-}
-
-.react-autoql-agent-menu-row-title {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.react-autoql-agent-menu-row-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: var(--am-t2);
-  font-size: 0.8125rem;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
-
-  &:hover {
-    background-color: var(--am-b3);
-    color: var(--am-t1);
-  }
-
-  &:focus-visible {
-    opacity: 1;
-  }
-
-  .react-autoql-agent-menu-row:hover & {
-    opacity: 1;
-  }
-}
-
-.react-autoql-agent-menu-divider {
-  height: 1px;
-  margin: 0.375rem 0;
-  background-color: var(--am-border);
-}
-
 /* ---- Threads ---- */
 
 .react-autoql-agent-threads {
@@ -502,24 +341,9 @@
   display: flex;
 }
 
-@keyframes react-autoql-agent-pop {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .react-autoql-agent-thread-menu {
-    animation: none;
-  }
-
   .react-autoql-agent-messenger * {
+    animation: none !important;
     transition: none !important;
   }
 }

@@ -72,6 +72,26 @@ describe('threadsReducer', () => {
       expect(state.activeThreadId).toBe(first)
     })
 
+    it('closes every thread at once, leaving one empty thread on the same model', () => {
+      let state = createInitialState({})
+      state = threadsReducer(state, {
+        type: Actions.THREAD_MODEL_SET,
+        threadId: state.activeThreadId,
+        llmModel: 'gpt-5',
+      })
+      state = threadsReducer(state, { type: Actions.THREAD_OPEN, maxThreads: 8 })
+      state = threadsReducer(state, { type: Actions.THREAD_OPEN, maxThreads: 8 })
+
+      const closedIds = state.order
+      state = threadsReducer(state, { type: Actions.THREADS_CLOSE_ALL })
+
+      expect(state.order).toHaveLength(1)
+      expect(closedIds).not.toContain(state.order[0])
+      expect(state.activeThreadId).toBe(state.order[0])
+      expect(state.threads[state.order[0]].messages).toHaveLength(0)
+      expect(state.threads[state.order[0]].llmModel).toBe('gpt-5')
+    })
+
     it('replaces the final thread with a fresh one so the page is never blank', () => {
       let state = createInitialState({})
       const [only] = state.order
