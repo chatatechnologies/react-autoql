@@ -11,6 +11,10 @@
 // POST /autoql/api/v1/sessions - carries the new session_id plus one text item.
 export const MOCK_CREATE_SESSION_RESPONSE = {
   session_id: 'efe31e82-4e81-4b07-8d58-06fbc6557296',
+  meta_data: {
+    phase: 'planning',
+    session_status: 'inprogress',
+  },
   response_items: [
     {
       type: 'text',
@@ -24,6 +28,10 @@ export const MOCK_CREATE_SESSION_RESPONSE = {
 // POST /autoql/api/v1/sessions/{id}/resume - no session_id, and a 22-column table
 // followed by the commentary about it.
 export const MOCK_RESUME_SESSION_RESPONSE = {
+  meta_data: {
+    phase: 'data',
+    session_status: 'inprogress',
+  },
   response_items: [
     {
       type: 'table',
@@ -583,13 +591,44 @@ export const MOCK_RESUME_SESSION_RESPONSE = {
   ],
 }
 
+// The last turn of a session: the summary, and the status that closes the session
+// behind it. Served by mock mode from the third message on so the ended state is
+// reachable without a live backend.
+export const MOCK_SUMMARY_SESSION_RESPONSE = {
+  meta_data: {
+    phase: 'summary',
+    session_status: 'completed',
+  },
+  response_items: [
+    {
+      type: 'text',
+      data: {
+        text: '**In short:** the Eagles scored more and gave up less in 2026 than in 2025 — 28.4 points per game against 24.1, on 38 more yards a game, with turnovers down from 1.6 to 1.1 per game.\n\nThe gain is mostly on the ground: rushing yards per game rose 21%, which also carried third-down conversions from 38% to 45%. Passing was close to flat.',
+      },
+    },
+  ],
+}
+
+// Mock mode's third turn onwards. Two turns of back-and-forth is enough to see the
+// planning and data phases before the session closes on the summary.
+const SUMMARY_TURN_INDEX = 2
+
 // Normalized the same way sessionService does, so mock mode and the real request path
-// hand the reducer an identical shape.
-export const getMockSessionResponse = (isNewSession) => {
-  const payload = isNewSession ? MOCK_CREATE_SESSION_RESPONSE : MOCK_RESUME_SESSION_RESPONSE
+// hand the reducer an identical shape. `turnIndex` is how many agent turns this thread
+// has already had, which is what decides where in the phase sequence the mock is.
+export const getMockSessionResponse = (isNewSession, turnIndex = 0) => {
+  let payload = MOCK_RESUME_SESSION_RESPONSE
+
+  if (isNewSession) {
+    payload = MOCK_CREATE_SESSION_RESPONSE
+  } else if (turnIndex >= SUMMARY_TURN_INDEX) {
+    payload = MOCK_SUMMARY_SESSION_RESPONSE
+  }
 
   return {
     sessionId: payload.session_id ?? null,
     responseItems: payload.response_items,
+    phase: payload.meta_data?.phase ?? null,
+    sessionStatus: payload.meta_data?.session_status ?? null,
   }
 }

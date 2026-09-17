@@ -85,6 +85,9 @@ const AgentComposer = forwardRef(
       authentication,
       placeholder,
       isSending,
+      isSessionComplete,
+      endedMessage,
+      onStartNewSession,
       enableVoiceRecord,
       // models, modelsStatus, llmModel, onModelChange and popoverParentElement are
       // still accepted (see propTypes) but unused while the picker is off.
@@ -217,6 +220,30 @@ const AgentComposer = forwardRef(
 
     const canSend = !!value.trim()
 
+    // A closed session rejects anything sent to it, so the input is taken away rather
+    // than left to look usable - the point of reading session_status off the response
+    // is that the user learns the conversation is over before typing into it, not
+    // after. The offer of a new thread takes the input's place, so the way forward is
+    // where the question would have gone.
+    if (isSessionComplete) {
+      return (
+        <div className='react-autoql-agent-composer is-session-complete'>
+          <div className='react-autoql-agent-composer-ended'>
+            <div className='react-autoql-agent-composer-ended-text'>
+              <Icon type='info' />
+              <span>{endedMessage}</span>
+            </div>
+            {!!onStartNewSession && (
+              <button className='react-autoql-agent-composer-ended-btn' onClick={onStartNewSession}>
+                <Icon type='plus' />
+                <span>Start a new conversation</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className={`react-autoql-agent-composer${isSending ? ' is-sending' : ''}`}>
         <div
@@ -287,6 +314,9 @@ AgentComposer.propTypes = {
   authentication: authenticationType,
   placeholder: PropTypes.string,
   isSending: PropTypes.bool,
+  isSessionComplete: PropTypes.bool,
+  endedMessage: PropTypes.string,
+  onStartNewSession: PropTypes.func,
   enableVoiceRecord: PropTypes.bool,
   models: PropTypes.array,
   modelsStatus: PropTypes.string,
@@ -302,6 +332,9 @@ AgentComposer.defaultProps = {
   authentication: undefined,
   placeholder: 'Ask a question…',
   isSending: false,
+  isSessionComplete: false,
+  endedMessage: 'This conversation has ended. Start a new one to keep going.',
+  onStartNewSession: undefined,
   enableVoiceRecord: false,
   models: [],
   modelsStatus: undefined,

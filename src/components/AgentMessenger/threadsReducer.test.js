@@ -1,5 +1,6 @@
 import {
   Actions,
+  EndedReasons,
   ModelsStatuses,
   SESSION_ENDED_MESSAGE,
   ThreadStatuses,
@@ -159,7 +160,7 @@ describe('threadsReducer', () => {
       expect(message.items[0]).toMatchObject({ type: 'text', data: { text: detail } })
     })
 
-    it('follows an ended-session message with the offer of a new conversation', () => {
+    it('closes the thread when an ended-session message comes back', () => {
       let state = createInitialState({})
       const threadId = state.activeThreadId
       const detail = 'Session has already completed and cannot accept further messages.'
@@ -175,9 +176,12 @@ describe('threadsReducer', () => {
 
       const [message] = state.threads[threadId].messages
       expect(state.threads[threadId].status).toBe(ThreadStatuses.IDLE)
-      // A second item, so the offer appears once the sentence has finished typing.
-      expect(message.items.map((item) => item.type)).toEqual(['text', 'session_ended'])
+      expect(message.items.map((item) => item.type)).toEqual(['text'])
       expect(message.items[0].data.text).toBe(detail)
+      // The offer of a new conversation lives in the composer, which is what this
+      // flag turns on - the question this thread turned away is carried over.
+      expect(state.threads[threadId].isSessionComplete).toBe(true)
+      expect(state.threads[threadId].endedReason).toBe(EndedReasons.EXPIRED)
     })
 
     it('falls back to its own wording when an ended session carries no message', () => {
@@ -194,7 +198,68 @@ describe('threadsReducer', () => {
 
       const [message] = state.threads[threadId].messages
       expect(message.items[0].data.text).toBe(SESSION_ENDED_MESSAGE)
-      expect(message.items[1].type).toBe('session_ended')
+      expect(state.threads[threadId].isSessionComplete).toBe(true)
+    })
+
+    it('records the phase a response came back on, and keeps it when the next carries none', () => {
+      let state = createInitialState({})
+      const threadId = state.activeThreadId
+
+      state = threadsReducer(state, {
+        type: Actions.RESPONSE_RECEIVED,
+        threadId,
+        responseItems: [{ type: 'text', data: { text: 'which season?' } }],
+        phase: 'planning',
+        sessionStatus: 'inprogress',
+        maxMessages: 200,
+      })
+
+      expect(state.threads[threadId].phase).toBe('planning')
+      expect(state.threads[threadId].messages[0].phase).toBe('planning')
+      expect(state.threads[threadId].isSessionComplete).toBe(false)
+
+      state = threadsReducer(state, {
+        type: Actions.RESPONSE_RECEIVED,
+        threadId,
+        responseItems: [{ type: 'text', data: { text: 'here you go' } }],
+        maxMessages: 200,
+      })
+
+      expect(state.threads[threadId].phase).toBe('planning')
+      // The message itself is only ever labelled with what its own response carried.
+      expect(state.threads[threadId].messages[1].phase).toBeNull()
+    })
+
+    it('closes the thread when the response says the session is completed', () => {
+      let state = createInitialState({})
+      const threadId = state.activeThreadId
+
+      state = threadsReducer(state, {
+        type: Actions.RESPONSE_RECEIVED,
+        threadId,
+        responseItems: [{ type: 'text', data: { text: 'in short, they scored more' } }],
+        phase: 'summary',
+        sessionStatus: 'completed',
+        maxMessages: 200,
+      })
+
+      expect(state.threads[threadId].isSessionComplete).toBe(true)
+      expect(state.threads[threadId].endedReason).toBe(EndedReasons.COMPLETED)
+    })
+
+    it('leaves the thread open on a session status it does not recognize', () => {
+      let state = createInitialState({})
+      const threadId = state.activeThreadId
+
+      state = threadsReducer(state, {
+        type: Actions.RESPONSE_RECEIVED,
+        threadId,
+        responseItems: [],
+        sessionStatus: 'pending_review',
+        maxMessages: 200,
+      })
+
+      expect(state.threads[threadId].isSessionComplete).toBe(false)
     })
 
     it('trims the oldest messages past maxMessagesPerThread', () => {

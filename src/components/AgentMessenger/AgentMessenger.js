@@ -13,7 +13,7 @@ import { authenticationType, dataFormattingType } from '../../props/types'
 import AgentThread from './AgentThread'
 import AgentComposer from './AgentComposer'
 import { useAgentSession } from './useAgentSession'
-import { ThreadStatuses } from './threadsReducer'
+import { EndedReasons, ThreadStatuses } from './threadsReducer'
 
 import './AgentMessenger.scss'
 
@@ -48,11 +48,14 @@ const AgentMessenger = ({
   maxMessagesPerThread,
   tableMaxHeight,
   enableTypewriter,
+  showPhaseLabels,
+  sessionEndedMessage,
   enableMockResponses,
   debug,
   tooltipID,
   onErrorCallback,
   onSessionCreated,
+  onSessionStatusChange,
   onThreadClose,
   shouldRender,
   isActivePage,
@@ -88,6 +91,7 @@ const AgentMessenger = ({
     maxMessagesPerThread,
     enableMockResponses,
     onSessionCreated,
+    onSessionStatusChange,
     onErrorCallback,
   })
 
@@ -185,7 +189,10 @@ const AgentMessenger = ({
   // the user gets to reword it before it goes. The dead thread is left intact behind
   // them, which is what they'd be referring back to while they edit.
   const onStartNewSession = useCallback(() => {
-    const text = getLastUserText(activeThread)
+    // Only a question the old session turned away is worth carrying over. When the
+    // agent finished the job instead, the last question already has its answer above -
+    // re-drafting it would ask the new session to redo work the user just read.
+    const text = activeThread?.endedReason === EndedReasons.EXPIRED ? getLastUserText(activeThread) : ''
 
     openThread()
     composerRef.current?.setText(text ?? '')
@@ -415,6 +422,7 @@ const AgentMessenger = ({
               dataFormatting={dataFormatting}
               tableMaxHeight={tableMaxHeight}
               enableTypewriter={enableTypewriter}
+              showPhaseLabels={showPhaseLabels}
               emptyStateTitle={emptyStateTitle}
               emptyStateSubtitle={emptyStateSubtitle}
               suggestions={suggestions}
@@ -436,6 +444,11 @@ const AgentMessenger = ({
           authentication={authentication}
           placeholder={placeholder}
           isSending={isSending}
+          isSessionComplete={!!activeThread?.isSessionComplete}
+          endedMessage={sessionEndedMessage}
+          // At the thread limit there is nowhere to send them, so the offer is
+          // withheld rather than rendered as a button that does nothing.
+          onStartNewSession={threads.length >= maxThreads ? undefined : onStartNewSession}
           enableVoiceRecord={enableVoiceRecord}
           models={modelsState.list}
           modelsStatus={modelsState.status}
@@ -468,6 +481,10 @@ AgentMessenger.propTypes = {
   maxMessagesPerThread: PropTypes.number,
   tableMaxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   enableTypewriter: PropTypes.bool,
+  // Labels each agent response with the workflow step it came from (meta_data.phase).
+  showPhaseLabels: PropTypes.bool,
+  // What the composer says once meta_data.session_status closes the session.
+  sessionEndedMessage: PropTypes.string,
   // Serves the captured session payloads instead of calling the API - the /sessions
   // endpoints aren't live yet. Development only; never leave it on in production.
   enableMockResponses: PropTypes.bool,
@@ -477,6 +494,9 @@ AgentMessenger.propTypes = {
   tooltipID: PropTypes.string,
   onErrorCallback: PropTypes.func,
   onSessionCreated: PropTypes.func,
+  // Fired with { sessionId, phase, sessionStatus } whenever a response carries
+  // meta_data, so an integrator can follow the session without reading our state.
+  onSessionStatusChange: PropTypes.func,
   onThreadClose: PropTypes.func,
   shouldRender: PropTypes.bool,
   isActivePage: PropTypes.bool,
@@ -497,12 +517,15 @@ AgentMessenger.defaultProps = {
   maxMessagesPerThread: 200,
   tableMaxHeight: 400,
   enableTypewriter: true,
+  showPhaseLabels: true,
+  sessionEndedMessage: 'This conversation has ended. Start a new one to keep going.',
   enableMockResponses: false,
   // TODO: flip back to false - on for now so the session id is copyable during testing.
   debug: true,
   tooltipID: undefined,
   onErrorCallback: undefined,
   onSessionCreated: undefined,
+  onSessionStatusChange: undefined,
   onThreadClose: undefined,
   shouldRender: true,
   isActivePage: undefined,

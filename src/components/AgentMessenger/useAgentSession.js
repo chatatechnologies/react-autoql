@@ -43,6 +43,7 @@ export const useAgentSession = ({
   maxMessagesPerThread,
   enableMockResponses,
   onSessionCreated,
+  onSessionStatusChange,
   onErrorCallback,
 }) => {
   const [state, dispatch] = useReducer(threadsReducer, { defaultModelId }, createInitialState)
@@ -72,7 +73,10 @@ export const useAgentSession = ({
       const text = `${userInquiry ?? ''}`.trim()
       const thread = state.threads[threadId]
 
-      if (!text || !thread || thread.status === 'sending') {
+      // A completed session rejects everything sent to it, so the request is never
+      // made. The composer is locked in that state too - this is the backstop for a
+      // suggestion click or a retry that raced the lock.
+      if (!text || !thread || thread.status === 'sending' || thread.isSessionComplete) {
         return
       }
 
@@ -92,7 +96,8 @@ export const useAgentSession = ({
       if (enableMockResponses) {
         // No network at all: the /sessions endpoints aren't live yet, so the captured
         // payloads stand in - create for the thread's first message, resume after.
-        const mock = createMockRequest(getMockSessionResponse(!thread.sessionId), MOCK_LATENCY_MS)
+        const agentTurns = thread.messages.filter((message) => message.role === 'agent').length
+        const mock = createMockRequest(getMockSessionResponse(!thread.sessionId, agentTurns), MOCK_LATENCY_MS)
         source = mock
         request = mock.promise
       } else {
@@ -110,7 +115,7 @@ export const useAgentSession = ({
       cancelSourcesRef.current[threadId] = source
 
       request
-        .then(({ sessionId, responseItems }) => {
+        .then(({ sessionId, responseItems, phase, sessionStatus }) => {
           if (!mountedRef.current || cancelSourcesRef.current[threadId] !== source) {
             return
           }
@@ -126,8 +131,14 @@ export const useAgentSession = ({
             type: Actions.RESPONSE_RECEIVED,
             threadId,
             responseItems,
+            phase,
+            sessionStatus,
             maxMessages: maxMessagesPerThread,
           })
+
+          if (sessionStatus) {
+            onSessionStatusChange?.({ sessionId: sessionId ?? thread.sessionId, phase, sessionStatus })
+          }
         })
         .catch((error) => {
           if (!mountedRef.current) {
@@ -171,6 +182,7 @@ export const useAgentSession = ({
       enableMockResponses,
       cancelThreadRequest,
       onSessionCreated,
+      onSessionStatusChange,
       onErrorCallback,
     ],
   )

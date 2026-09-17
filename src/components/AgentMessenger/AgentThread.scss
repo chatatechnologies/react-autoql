@@ -175,6 +175,30 @@
   font-size: 0.9375rem;
 }
 
+/* ---- End of a completed session ---- */
+
+/* Closes the transcript off. The rules either side make it read as the end of the
+   conversation rather than as one more thing the agent said. */
+.react-autoql-agent-ended-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  color: var(--am-t2);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--am-border);
+  }
+}
+
 /* ---- Thinking indicator ---- */
 
 .react-autoql-agent-thinking {

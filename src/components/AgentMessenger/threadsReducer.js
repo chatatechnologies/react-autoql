@@ -10,6 +10,42 @@ export const NEW_THREAD_TITLE = 'New thread'
 export const SESSION_ENDED_MESSAGE =
   "This conversation has ended, so I can't continue it here. You can pick up in a new one whenever you're ready."
 
+// Shown in the transcript and the composer once a thread's session is closed, whether
+// the server said so up front (meta_data.session_status) or after the fact (409).
+export const SESSION_ENDED_NOTICE = 'This conversation has ended'
+
+// meta_data.session_status. Anything else is treated as still open - a status we don't
+// recognize must not lock a working thread.
+export const SessionStatuses = {
+  IN_PROGRESS: 'inprogress',
+  COMPLETED: 'completed',
+}
+
+// meta_data.phase - which step of the agent's workflow produced the response.
+export const SessionPhases = {
+  PLANNING: 'planning',
+  DATA: 'data',
+  SUMMARY: 'summary',
+}
+
+// What the phase is called in the UI. A phase with no entry here isn't labelled at
+// all, so a new one the backend adds shows nothing rather than a raw token.
+export const PHASE_LABELS = {
+  [SessionPhases.PLANNING]: 'Planning',
+  [SessionPhases.DATA]: 'Retrieving data',
+  [SessionPhases.SUMMARY]: 'Summary',
+}
+
+export const getPhaseLabel = (phase) => PHASE_LABELS[phase] ?? null
+
+// Why a thread stopped accepting messages. 'completed' means the agent finished the
+// job it was given; 'expired' means a message was turned away by a session that had
+// already closed - so that question never got an answer and is worth carrying over.
+export const EndedReasons = {
+  COMPLETED: 'completed',
+  EXPIRED: 'expired',
+}
+
 export const ThreadStatuses = {
   IDLE: 'idle',
   SENDING: 'sending',
@@ -72,6 +108,11 @@ export const createThread = ({ llmModel, title } = {}) => ({
   messages: [],
   status: ThreadStatuses.IDLE,
   error: null,
+  // The phase the last response came back on, and whether the session behind this
+  // thread is still accepting messages. A closed session takes the composer with it.
+  phase: null,
+  isSessionComplete: false,
+  endedReason: null,
   revealedItemIds: {},
 })
 
@@ -87,11 +128,15 @@ export const createInitialState = ({ defaultModelId } = {}) => {
   }
 }
 
-const createMessage = ({ role, items, llmModel }) => ({
+const createMessage = ({ role, items, llmModel, phase }) => ({
   id: uuid(),
   role,
   items: items ?? [],
   llmModel,
+  // Recorded on the message rather than only on the thread: the transcript labels
+  // each answer with the step that produced it, and that has to stay true for older
+  // messages after the session has moved on to the next phase.
+  phase: phase ?? null,
   createdAt: Date.now(),
 })
 
@@ -213,12 +258,22 @@ export const threadsReducer = (state, action) => {
 
     case Actions.RESPONSE_RECEIVED:
       return updateThread(state, action.threadId, (thread) => {
-        const message = createMessage({ role: 'agent', llmModel: thread.llmModel })
+        const message = createMessage({ role: 'agent', llmModel: thread.llmModel, phase: action.phase })
+        const isComplete = action.sessionStatus === SessionStatuses.COMPLETED
         message.items = withItemIds(message.id, action.responseItems)
 
         return {
           status: ThreadStatuses.IDLE,
           error: null,
+          // A response with no phase leaves the thread on the last one it knew, rather
+          // than blanking a label the reader has already seen.
+          phase: action.phase ?? thread.phase,
+          // The server tells us the session closed with the very response that closed
+          // it, so the composer can lock before the next question is typed instead of
+          // after it's been rejected. Only 'completed' locks: an unknown status leaves
+          // the thread usable.
+          isSessionComplete: thread.isSessionComplete || isComplete,
+          endedReason: thread.endedReason ?? (isComplete ? EndedReasons.COMPLETED : null),
           messages: appendMessage(thread, message, action.maxMessages),
         }
       })
@@ -230,12 +285,9 @@ export const threadsReducer = (state, action) => {
 
         if (action.isSessionExpired) {
           // The session is gone and this thread can't be revived, so the agent says so
-          // and offers the only move left. The offer is its own item so it appears
-          // after the sentence has finished typing, the way a real reply would.
-          items = [
-            { type: 'text', data: { text: action.error || SESSION_ENDED_MESSAGE } },
-            { type: 'session_ended', data: {} },
-          ]
+          // and the thread is marked complete below - which is what puts the way out
+          // in the composer, where it stays put instead of scrolling away.
+          items = [{ type: 'text', data: { text: action.error || SESSION_ENDED_MESSAGE } }]
         } else if (action.isConversational) {
           // The server wrote a sentence meant for the user, so the agent says it as
           // ordinary text - typed out like any other answer, no error box, no retry.
@@ -252,6 +304,8 @@ export const threadsReducer = (state, action) => {
           // retry, they just read it and decide what to do next.
           status: isSpoken ? ThreadStatuses.IDLE : ThreadStatuses.ERROR,
           error: isSpoken ? null : action.error,
+          isSessionComplete: thread.isSessionComplete || !!action.isSessionExpired,
+          endedReason: thread.endedReason ?? (action.isSessionExpired ? EndedReasons.EXPIRED : null),
           messages: appendMessage(thread, message, action.maxMessages),
         }
       })

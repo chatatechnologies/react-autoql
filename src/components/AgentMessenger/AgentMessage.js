@@ -6,6 +6,7 @@ import { Icon } from '../Icon'
 import { dataFormattingType } from '../../props/types'
 
 import { resolveRenderer } from './renderers'
+import { getPhaseLabel } from './threadsReducer'
 
 import './AgentMessage.scss'
 
@@ -24,6 +25,7 @@ const AgentMessage = ({
   dataFormatting,
   tableMaxHeight,
   enableTypewriter,
+  showPhaseLabel,
   showModelLabel,
   modelLabel,
   revealedItemIds,
@@ -56,6 +58,7 @@ const AgentMessage = ({
   )
 
   const spacingClass = isFirst ? ' is-first' : followsSameRole ? ' follows-same-role' : ''
+  const phaseLabel = showPhaseLabel ? getPhaseLabel(message.phase) : null
 
   if (isUser) {
     const text = message.items?.[0]?.data?.text ?? ''
@@ -73,6 +76,15 @@ const AgentMessage = ({
         <Icon type='react-autoql-logo' />
       </div>
       <div className='react-autoql-agent-message-body'>
+        {/* Which step of the agent's workflow this answer came from. It's the
+            difference between "it's asking me questions" and "it's stalling", and
+            between a partial data pull and the final word on the question. */}
+        {!!phaseLabel && (
+          <div className={`react-autoql-agent-phase-label is-${message.phase}`}>
+            <span className='react-autoql-agent-phase-dot' aria-hidden='true' />
+            <span>{phaseLabel}</span>
+          </div>
+        )}
         {showModelLabel && !!modelLabel && <div className='react-autoql-agent-model-label'>{modelLabel}</div>}
         {message.items.map((item, index) => {
           // Only render up to the first unrevealed item so reveals stay sequential.
@@ -110,12 +122,14 @@ AgentMessage.propTypes = {
     id: PropTypes.string,
     role: PropTypes.oneOf(['user', 'agent']),
     items: PropTypes.array,
+    phase: PropTypes.string,
   }).isRequired,
   isFirst: PropTypes.bool,
   followsSameRole: PropTypes.bool,
   dataFormatting: dataFormattingType,
   tableMaxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   enableTypewriter: PropTypes.bool,
+  showPhaseLabel: PropTypes.bool,
   showModelLabel: PropTypes.bool,
   modelLabel: PropTypes.string,
   revealedItemIds: PropTypes.shape({}),
@@ -131,6 +145,7 @@ AgentMessage.defaultProps = {
   dataFormatting: dataFormattingDefault,
   tableMaxHeight: 400,
   enableTypewriter: true,
+  showPhaseLabel: true,
   showModelLabel: false,
   modelLabel: undefined,
   revealedItemIds: {},

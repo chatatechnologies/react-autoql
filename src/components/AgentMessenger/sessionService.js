@@ -85,13 +85,22 @@ const normalizeError = (error, context = {}) => {
  * response_items only. Returning null (not undefined) for a missing session_id lets
  * the reducer tell "no id in this response" apart from "the id is gone", so a resume
  * never clears the session the thread already established.
+ *
+ * meta_data says where the agent got to (`phase`) and whether the session is still
+ * open (`session_status`). Both are lower-cased and trimmed here so a stray "Completed"
+ * doesn't leave the thread accepting messages the server will reject.
  */
 const normalizeSessionResponse = (response) => {
   const data = response?.data ?? {}
+  const metaData = data.meta_data ?? {}
+
+  const readToken = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '')
 
   return {
     sessionId: data.session_id ?? null,
     responseItems: Array.isArray(data.response_items) ? data.response_items : [],
+    phase: readToken(metaData.phase) || null,
+    sessionStatus: readToken(metaData.session_status) || null,
   }
 }
 

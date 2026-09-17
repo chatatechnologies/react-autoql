@@ -8,7 +8,7 @@ import { dataFormattingType } from '../../props/types'
 
 import AgentMessage from './AgentMessage'
 import SessionDebugLine from './SessionDebugLine'
-import { ThreadStatuses } from './threadsReducer'
+import { SESSION_ENDED_NOTICE, ThreadStatuses } from './threadsReducer'
 
 import './AgentThread.scss'
 
@@ -26,6 +26,7 @@ const AgentThread = ({
   dataFormatting,
   tableMaxHeight,
   enableTypewriter,
+  showPhaseLabels,
   emptyStateTitle,
   emptyStateSubtitle,
   suggestions,
@@ -243,6 +244,7 @@ const AgentThread = ({
                   dataFormatting={dataFormatting}
                   tableMaxHeight={tableMaxHeight}
                   enableTypewriter={enableTypewriter && !skipAnimations}
+                  showPhaseLabel={showPhaseLabels}
                   // Off for now: the model is hardcoded on the backend, so labelling
                   // a response with it tells the reader nothing. Flip this back to
                   // "changed since the previous agent message" when it's selectable
@@ -257,6 +259,13 @@ const AgentThread = ({
                 />
               )
             })
+          )}
+          {/* Closure for the transcript itself. The way out lives in the composer,
+              which stays put while this scrolls away with the rest of the history. */}
+          {thread.isSessionComplete && !isSending && (
+            <div className='react-autoql-agent-ended-divider'>
+              <span>{SESSION_ENDED_NOTICE}</span>
+            </div>
           )}
           {isSending && (
             <div className='react-autoql-agent-thinking'>
@@ -293,11 +302,13 @@ AgentThread.propTypes = {
     status: PropTypes.string,
     revealedItemIds: PropTypes.shape({}),
     sessionId: PropTypes.string,
+    isSessionComplete: PropTypes.bool,
   }).isRequired,
   isActive: PropTypes.bool,
   dataFormatting: dataFormattingType,
   tableMaxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   enableTypewriter: PropTypes.bool,
+  showPhaseLabels: PropTypes.bool,
   emptyStateTitle: PropTypes.string,
   emptyStateSubtitle: PropTypes.string,
   suggestions: PropTypes.arrayOf(PropTypes.string),
@@ -314,6 +325,7 @@ AgentThread.defaultProps = {
   dataFormatting: dataFormattingDefault,
   tableMaxHeight: 400,
   enableTypewriter: true,
+  showPhaseLabels: true,
   emptyStateTitle: 'What would you like to know?',
   emptyStateSubtitle: 'Ask about your data in plain language.',
   suggestions: [],

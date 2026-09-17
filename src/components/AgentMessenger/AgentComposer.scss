@@ -286,3 +286,76 @@
   line-height: 1.4;
   color: var(--am-t2);
 }
+
+/* ---- Ended session ---- */
+
+/* Takes the input's place once the session is closed, so the composer answers the
+   question "can I keep asking?" before anything is typed into it. */
+.react-autoql-agent-composer.is-session-complete {
+  gap: 0;
+}
+
+.react-autoql-agent-composer-ended {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  border: 1px solid var(--am-border);
+  // Same pill the input row uses, so the composer keeps its shape when it swaps.
+  border-radius: var(--am-radius-pill);
+  background-color: var(--am-b2);
+  min-width: 0;
+}
+
+.react-autoql-agent-composer-ended-text {
+  // A floor rather than min-width: 0, so that at the drawer's narrow end the button
+  // wraps to its own row instead of the sentence squeezing down to nothing. Wrapping
+  // is content-driven on purpose: the drawer can be 400px wide in a 2000px window,
+  // which no viewport media query can see.
+  flex: 1 1 14rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--am-t2);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+
+  .react-autoql-icon {
+    flex: 0 0 auto;
+    font-size: 0.9375rem;
+  }
+}
+
+.react-autoql-agent-composer-ended-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--am-border);
+  border-radius: var(--am-radius-pill);
+  background-color: var(--am-b1);
+  color: var(--am-accent);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color var(--am-transition), border-color var(--am-transition);
+
+  &:hover {
+    background-color: var(--am-accent-wash);
+    border-color: var(--am-accent);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--am-focus-ring);
+  }
+
+  .react-autoql-icon {
+    font-size: 0.875rem;
+  }
+}

@@ -77,6 +77,38 @@
   border-left: 1px solid var(--am-border);
 }
 
+/* Which step of the agent's workflow produced this answer (meta_data.phase). Quiet
+   by design - it sits above the answer as a caption, not as a status card. The dot
+   carries the colour so the label itself stays readable at this size. */
+.react-autoql-agent-phase-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.125rem;
+  color: var(--am-t2);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.react-autoql-agent-phase-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.6;
+
+  // The summary is the end of the line, so it is the only phase that earns the accent;
+  // the working phases stay in the caption's own grey.
+  .react-autoql-agent-phase-label.is-summary & {
+    background-color: var(--am-accent);
+    opacity: 1;
+  }
+}
+
 .react-autoql-agent-model-label {
   font-size: 0.75rem;
   font-weight: 600;

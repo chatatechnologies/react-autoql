@@ -52,6 +52,38 @@ describe('sessionService', () => {
       })
     })
 
+    it('reads the phase and session status out of meta_data', async () => {
+      axios.post.mockResolvedValueOnce({
+        data: {
+          session_id: 'abc-123',
+          meta_data: { phase: 'Summary', session_status: ' COMPLETED ' },
+          response_items: [],
+        },
+      })
+
+      const result = await createSession({ userInquiry: 'hi', authentication })
+
+      // Lower-cased and trimmed: a stray 'COMPLETED' must still close the session.
+      expect(result.phase).toBe('summary')
+      expect(result.sessionStatus).toBe('completed')
+    })
+
+    it('reports no phase or status when meta_data is absent or empty', async () => {
+      axios.post.mockResolvedValueOnce({ data: { session_id: 'abc-123', response_items: [] } })
+      await expect(createSession({ userInquiry: 'hi', authentication })).resolves.toMatchObject({
+        phase: null,
+        sessionStatus: null,
+      })
+
+      axios.post.mockResolvedValueOnce({
+        data: { session_id: 'abc-123', meta_data: { phase: '', session_status: '' }, response_items: [] },
+      })
+      await expect(createSession({ userInquiry: 'hi', authentication })).resolves.toMatchObject({
+        phase: null,
+        sessionStatus: null,
+      })
+    })
+
     it('maps a 401 to the unauthenticated error', async () => {
       axios.post.mockRejectedValueOnce({ response: { status: 401 } })
 

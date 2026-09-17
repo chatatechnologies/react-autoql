@@ -127,6 +127,78 @@ describe('AgentMessenger', () => {
     expect(container.querySelector('.react-autoql-agent-text-item')).toBeTruthy()
   })
 
+  describe('session meta_data', () => {
+    const completedResponse = (text = 'In short, they scored more.') => ({
+      data: {
+        session_id: 'abc-123',
+        meta_data: { phase: 'summary', session_status: 'completed' },
+        response_items: [{ type: 'text', data: { text } }],
+      },
+    })
+
+    it('labels a response with the phase it came back on', async () => {
+      axios.post.mockResolvedValueOnce({
+        data: {
+          session_id: 'abc-123',
+          meta_data: { phase: 'planning', session_status: 'inprogress' },
+          response_items: [{ type: 'text', data: { text: 'Which season?' } }],
+        },
+      })
+
+      renderMessenger()
+      await sendMessage('How did the Eagles do?')
+
+      await waitFor(() => expect(screen.getByText('Planning')).toBeInTheDocument())
+      // An open session leaves the composer alone.
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
+    })
+
+    it('takes the composer away and offers a new conversation once the session completes', async () => {
+      axios.post.mockResolvedValueOnce(completedResponse())
+
+      renderMessenger()
+      await sendMessage('How did the Eagles do?')
+
+      await waitFor(() => expect(screen.getByText('In short, they scored more.')).toBeInTheDocument())
+
+      // The point of reading session_status: they find out before typing, not after.
+      expect(screen.queryByRole('textbox')).toBeNull()
+      expect(screen.getByText('This conversation has ended. Start a new one to keep going.')).toBeInTheDocument()
+      expect(screen.getByText('Start a new conversation')).toBeInTheDocument()
+    })
+
+    it('opens an empty thread from a completed session, since the question was answered', async () => {
+      axios.post.mockResolvedValueOnce(completedResponse())
+
+      renderMessenger()
+      await sendMessage('How did the Eagles do?')
+      await waitFor(() => expect(screen.getByText('Start a new conversation')).toBeInTheDocument())
+
+      fireEvent.click(screen.getByText('Start a new conversation'))
+
+      expect(screen.getAllByRole('tab')).toHaveLength(2)
+      // Nothing carried over - unlike an expired session, this question got its answer.
+      expect(screen.getByRole('textbox')).toHaveValue('')
+      expect(axios.post).toHaveBeenCalledTimes(1)
+    })
+
+    it('leaves the composer alone on a session status it does not recognize', async () => {
+      axios.post.mockResolvedValueOnce({
+        data: {
+          session_id: 'abc-123',
+          meta_data: { phase: 'data', session_status: 'paused_for_review' },
+          response_items: [{ type: 'text', data: { text: 'Here are the games.' } }],
+        },
+      })
+
+      renderMessenger()
+      await sendMessage('Show me the games')
+
+      await waitFor(() => expect(screen.getByText('Here are the games.')).toBeInTheDocument())
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
+    })
+  })
+
   describe('when the session has ended', () => {
     const SESSION_ENDED = 'Session has already completed and cannot accept further messages.'
 
