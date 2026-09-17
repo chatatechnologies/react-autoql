@@ -5,6 +5,24 @@
 .react-autoql-data-alert-creation-modal {
   height: calc(100vh - 90px);
 
+  &.react-autoql-data-alert-details-modal {
+    height: auto;
+    max-height: calc(100vh - 90px);
+
+    .react-autoql-modal-content {
+      height: auto;
+      max-height: calc(100vh - 90px);
+    }
+
+    .react-autoql-modal-body {
+      flex: 0 1 auto;
+    }
+
+    .data-alert-modal-settings-scroll-container {
+      overflow-x: hidden;
+    }
+  }
+
   .react-autoql-alert-type-btn-active {
     background-color: var(--react-autoql-accent-color);
   }

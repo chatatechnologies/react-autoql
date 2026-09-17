@@ -1,5 +1,6 @@
 import React from 'react'
 import { observeContainer } from '../measureObserver'
+import { uniqueValues } from '../../../js/arrayUtils'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import { isMobile } from 'react-device-detect'
@@ -7,7 +8,6 @@ import { isMobile } from 'react-device-detect'
 import {
   svgToPng,
   deepEqual,
-  onlyUnique,
   DisplayTypes,
   getThemeValue,
   aggregateData,
@@ -59,11 +59,26 @@ import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPro
 
 import './ChataChart.scss'
 
+let _hasWarnedAboutResizeObserverLoop = false
+
+// These two errors are the browser's only signal that a ResizeObserver feedback loop is running —
+// i.e. an observer callback is resizing the very element it observes. Previously they were swallowed
+// silently, which hid exactly that class of bug. We still stop propagation so that a browser quirk
+// doesn't reach consuming apps' error monitoring, but we warn once per page so the loop is
+// diagnosable instead of invisible.
 const _suppressResizeObserverError = (e) => {
   if (
     e.message === 'ResizeObserver loop completed with undelivered notifications.' ||
     e.message === 'ResizeObserver loop limit exceeded'
   ) {
+    if (!_hasWarnedAboutResizeObserverLoop) {
+      _hasWarnedAboutResizeObserverLoop = true
+      console.warn(
+        '[react-autoql] ResizeObserver loop detected. A resize handler is resizing the element it observes, ' +
+          'which can block the main thread. This warning is shown once per page load.',
+        e.message,
+      )
+    }
     e.stopImmediatePropagation()
     return false
   }
@@ -252,8 +267,10 @@ export default class ChataChart extends React.Component {
       this.startThrottledRefresh()
     }
 
-    if (!this.props.isResizing && prevProps.isResizing && !this.props.hidden) {
-      // Stop throttling loop
+    // Stop on any transition out of "actively resizing and visible". Deliberately not gated on
+    // !this.props.hidden — becoming hidden is itself a reason to stop, and gating on it was how the
+    // loop leaked. Guarded by throttleTimeout so this stays a no-op when no loop is running.
+    if (this.throttleTimeout && (!this.props.isResizing || this.props.hidden)) {
       this.stopThrottledRefresh()
     }
 
@@ -378,7 +395,24 @@ export default class ChataChart extends React.Component {
     }
   }
 
+  // The refresh loop is only meaningful while the chart is actively being resized and visible.
+  // It re-checks this every tick rather than relying solely on stopThrottledRefresh(), because the
+  // stop call is edge-triggered from componentDidUpdate and can be missed entirely — a chart that
+  // becomes hidden mid-resize stops re-rendering (see shouldComponentUpdate), so componentDidUpdate
+  // never fires again and the isResizing true->false edge is lost. Without this check the loop
+  // would re-arm forever and keep forcing reflows for the life of the component.
+  shouldContinueThrottledRefresh = () => {
+    return this._isMounted && this.props.isResizing && !this.props.hidden
+  }
+
   startThrottledRefresh = () => {
+    // Re-entry guard: without this, a second start orphans the previous timer chain. The old chain
+    // keeps rescheduling itself but stopThrottledRefresh() only ever clears the newest handle, so
+    // repeated resizes accumulate concurrent, unstoppable loops.
+    if (this.throttleTimeout) {
+      return
+    }
+
     const aggregated = !CHARTS_WITHOUT_AGGREGATED_DATA.includes(this.props.type)
     const dataReduced = this.state.dataReduced ?? this.state.data
     const stateData = this.props.type == DisplayTypes.PIE ? dataReduced : this.state.data
@@ -392,6 +426,11 @@ export default class ChataChart extends React.Component {
     }
 
     const loop = () => {
+      if (!this.shouldContinueThrottledRefresh()) {
+        this.stopThrottledRefresh()
+        return
+      }
+
       const now = Date.now()
 
       if (now - this.lastCall >= this.throttleDelay) {
@@ -402,7 +441,7 @@ export default class ChataChart extends React.Component {
       this.throttleTimeout = setTimeout(loop, this.throttleDelay)
     }
 
-    loop() // start the loop
+    loop() // start the loop — loop() itself bails and stops if the conditions no longer hold
   }
 
   stopThrottledRefresh = () => {
@@ -668,7 +707,7 @@ export default class ChataChart extends React.Component {
         // Data needs to be aggregated - aggregate first, then sort
         const indices1 = props.numberColumnIndices ?? []
         const indices2 = props.numberColumnIndices2 ?? []
-        const numberIndices = [...indices1, ...indices2].filter(onlyUnique)
+        const numberIndices = uniqueValues([...indices1, ...indices2])
 
         if (!numberIndices.length) {
           return

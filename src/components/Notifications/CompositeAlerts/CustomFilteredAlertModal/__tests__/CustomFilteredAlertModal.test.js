@@ -20,7 +20,7 @@ describe('CustomFilteredAlertModal label fetching', () => {
   })
 
   it('calls getAllDataAlertsLabelsByProject (not getAllDataAlertsLabels) when isManagementPortal is unset', () => {
-    const wrapper = mount(<CustomFilteredAlertModal authentication={authentication} autoQLConfig={{}} />)
+    const wrapper = mount(<CustomFilteredAlertModal authentication={authentication} autoQLConfig={{}} isVisible />)
     wrapper.setProps({ autoQLConfig: { projectId: 'p1' } })
 
     expect(getAllDataAlertsLabelsByProject).toHaveBeenCalledTimes(1)
@@ -29,7 +29,7 @@ describe('CustomFilteredAlertModal label fetching', () => {
 
   it('calls getAllDataAlertsLabels (not getAllDataAlertsLabelsByProject) when isManagementPortal is true', () => {
     const wrapper = mount(
-      <CustomFilteredAlertModal authentication={authentication} autoQLConfig={{}} isManagementPortal />,
+      <CustomFilteredAlertModal authentication={authentication} autoQLConfig={{}} isManagementPortal isVisible />,
     )
     wrapper.setProps({ autoQLConfig: { projectId: 'p1' } })
 
@@ -38,10 +38,22 @@ describe('CustomFilteredAlertModal label fetching', () => {
   })
 
   it('does not fetch labels when authentication is incomplete', () => {
-    const wrapper = mount(<CustomFilteredAlertModal autoQLConfig={{}} />)
+    const wrapper = mount(<CustomFilteredAlertModal autoQLConfig={{}} isVisible />)
     wrapper.setProps({ autoQLConfig: { projectId: 'p1' } })
 
     expect(getAllDataAlertsLabels).not.toHaveBeenCalled()
     expect(getAllDataAlertsLabelsByProject).not.toHaveBeenCalled()
+  })
+
+  it('does not fetch labels while the modal is closed, and fetches once when it opens', () => {
+    const wrapper = mount(
+      <CustomFilteredAlertModal authentication={authentication} autoQLConfig={{ projectId: 'p1' }} />,
+    )
+
+    expect(getAllDataAlertsLabelsByProject).not.toHaveBeenCalled()
+
+    wrapper.setProps({ isVisible: true })
+
+    expect(getAllDataAlertsLabelsByProject).toHaveBeenCalledTimes(1)
   })
 })

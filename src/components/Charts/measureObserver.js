@@ -22,6 +22,21 @@ export function observeContainer(container, cb, options = {}) {
   // ResizeObserver path (debounced)
   if (typeof ResizeObserver !== 'undefined') {
     let timer = null
+    // Last dimensions we reported. ResizeObserver fires for notifications that don't actually
+    // change the observed box, and consumers typically respond by measuring and calling setState —
+    // which resizes the container again and re-triggers the observer. Skipping unchanged sizes
+    // breaks that feedback loop. The polling fallback below has always done this; the
+    // ResizeObserver path did not, which is why only the RO path could loop.
+    let last = null
+
+    const reportIfChanged = (width, height) => {
+      if (last && last.width === width && last.height === height) {
+        return
+      }
+      last = { width, height }
+      cb({ width, height })
+    }
+
     const ro = new ResizeObserver((entries) => {
       // Batch entries into a single debounced callback
       if (timer) clearTimeout(timer)
@@ -31,7 +46,7 @@ export function observeContainer(container, cb, options = {}) {
           // Report bounding rects (or contentRect) for each target.
           for (const entry of entries) {
             const rect = entry.contentRect || safeRect(entry.target)
-            cb({ width: rect.width, height: rect.height })
+            reportIfChanged(rect.width, rect.height)
           }
         } catch (e) {
           // swallow observer callback errors
@@ -47,7 +62,8 @@ export function observeContainer(container, cb, options = {}) {
 
     // Fire initial measurement synchronously (best-effort)
     try {
-      cb(safeRect(container))
+      const rect = safeRect(container)
+      reportIfChanged(rect.width, rect.height)
     } catch (e) {
       // ignore
     }

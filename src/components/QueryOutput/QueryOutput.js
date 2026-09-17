@@ -8,6 +8,7 @@ import _cloneDeep from 'lodash.clonedeep'
 import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
+import { uniqueValues } from '../../js/arrayUtils'
 
 import {
   AggTypes,
@@ -18,7 +19,6 @@ import {
   getNumberColumnIndices,
   isDisplayTypeValid,
   getDefaultDisplayType,
-  onlyUnique,
   formatElement,
   getGroupBysFromPivotTable,
   getGroupBysFromTable,
@@ -197,6 +197,11 @@ export class QueryOutput extends React.Component {
     } catch (err) {
       this.formattedTableParams = { filters: [], sorters: [] }
     }
+
+    // Filters that arrived with the query itself — fe_req, a drilldown, or a saved tile config —
+    // captured once the seeding above has finished. These are not the user narrowing a table down,
+    // so anything matching this baseline must not count as "the user applied a filter".
+    this.captureQueryFilterBaseline(columns)
 
     this.formattedLockedFilters = this.formatLockedFilters(props.lockedFilters, columns)
 
@@ -495,8 +500,9 @@ export class QueryOutput extends React.Component {
       this.updateToolbars()
       this.props.onMount()
       if (this.shouldEnableResize) {
-        document.addEventListener('mousemove', this.handleMouseMove)
-        document.addEventListener('mouseup', this.handleMouseUp)
+        // Only the window resize listener belongs here. The drag listeners are registered by
+        // handleResizeStart and torn down by handleMouseUp, so registering them up front would
+        // leave a document-level mousemove handler live for the life of every resizable chart.
         window.addEventListener('resize', this.handleWindowResize)
         this.updateMaxConstraints()
       }
@@ -571,6 +577,7 @@ export class QueryOutput extends React.Component {
           this.queryID = this.queryResponse?.data?.data?.query_id
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
+            this.captureQueryFilterBaseline()
           }
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -578,19 +585,15 @@ export class QueryOutput extends React.Component {
           this.generateAllData()
           this.setState({ columns: newColumns })
         } else if (!this.tableData && this.shouldGenerateTableData()) {
+          // generateAllData only mutates instance vars, so a render has to be forced to pick it up
           this.generateAllData()
+          shouldForceUpdate = true
         }
 
-        // Tabulator and charts initialize inside display:none when shouldRender=false,
-        // producing wrong dimensions. Force remount so they measure the visible container.
-        if (isChartType(this.state.displayType)) {
-          newState.chartID = uuid()
-        } else {
-          this.wasFiltering = !!this.tableRef?.state.isFiltering
-          this.tableID = uuid()
-          this.pivotTableID = uuid()
-          newState._tableRemountKey = uuid()
-        }
+        // Deliberately no remount of the table/chart here. The DM keeps its active page laid out while
+        // closed, so Tabulator and the charts measured a real container on mount and their dimensions
+        // are still valid. Remounting would reset table height and scroll position - the reason
+        // reopening the DM used to jump.
       }
 
       // Keep local chartControls in sync if consumer updates initialChartControls prop
@@ -611,14 +614,12 @@ export class QueryOutput extends React.Component {
           this.shouldEnableResize = shouldEnableResize
 
           if (shouldEnableResize) {
-            document.addEventListener('mousemove', this.handleMouseMove)
-            document.addEventListener('mouseup', this.handleMouseUp)
             window.addEventListener('resize', this.handleWindowResize)
             this.updateMaxConstraints()
           } else {
-            document.removeEventListener('mousemove', this.handleMouseMove)
-            document.removeEventListener('mouseup', this.handleMouseUp)
             window.removeEventListener('resize', this.handleWindowResize)
+            // A resize in progress cannot continue once resizing is disabled.
+            this.handleMouseUp()
           }
 
           this.setState({ isResizable: shouldEnableResize })
@@ -790,11 +791,8 @@ export class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
-    document.removeEventListener('mousemove', this.handleMouseMove)
-    document.removeEventListener('mouseup', this.handleMouseUp)
-    document.removeEventListener('mouseleave', this.handleMouseUp)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
+    this.removeResizeListeners()
+    this.clearResizeCursorStyles()
     window.removeEventListener('resize', this.handleWindowResize)
     if (this.resizeTimeout) {
       clearTimeout(this.resizeTimeout)
@@ -817,6 +815,37 @@ export class QueryOutput extends React.Component {
   handleWindowResize = () => {
     this.updateMaxConstraints()
   }
+  // Listener add/remove are paired here so the two sets can't drift apart.
+  //
+  // A drag that ends outside the viewport never delivers `mouseup`, which leaves `isResizing`
+  // stuck true — that keeps ChataChart's throttled refresh loop running and makes
+  // ChataTable/ChatMessage short-circuit their renders. Two listeners cover that:
+  //   - `mousemove` checks `e.buttons`, so a release that happened offscreen ends the resize the
+  //     moment the pointer comes back.
+  //   - `blur` ends it when the user releases offscreen and never returns (clicks another window).
+  // Deliberately not `mouseleave`: it fires whenever the pointer crosses the viewport edge, so it
+  // would cancel a resize the moment the user overshoots the window — which they routinely do when
+  // dragging a handle to the bottom of the screen.
+  addResizeListeners = () => {
+    document.addEventListener('mousemove', this.handleMouseMove)
+    document.addEventListener('mouseup', this.handleMouseUp)
+    window.addEventListener('blur', this.handleMouseUp)
+  }
+
+  removeResizeListeners = () => {
+    document.removeEventListener('mousemove', this.handleMouseMove)
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    window.removeEventListener('blur', this.handleMouseUp)
+  }
+
+  clearResizeCursorStyles = () => {
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    document.body.style.webkitUserSelect = ''
+    document.body.style.mozUserSelect = ''
+    document.body.style.msUserSelect = ''
+  }
+
   handleResizeStart = (e) => {
     if (!this.props.enableResizing) return
 
@@ -831,15 +860,25 @@ export class QueryOutput extends React.Component {
       resizeStartHeight: rect?.height || this.minHeight,
     })
 
-    document.addEventListener('mousemove', this.handleMouseMove)
-    document.addEventListener('mouseup', this.handleMouseUp)
+    this.addResizeListeners()
 
     document.body.style.cursor = 'ns-resize'
     document.body.style.userSelect = 'none'
+    document.body.style.webkitUserSelect = 'none'
+    document.body.style.mozUserSelect = 'none'
+    document.body.style.msUserSelect = 'none'
   }
 
   handleMouseMove = (e) => {
     if (!this.state.isResizing || !this.props.enableResizing) return
+
+    // The button was released while the pointer was outside the viewport, so the `mouseup` never
+    // arrived. This is the first move since it came back — end the resize instead of jumping the
+    // handle to a pointer that is no longer dragging.
+    if (e.buttons === 0) {
+      this.handleMouseUp()
+      return
+    }
 
     const deltaY = (e.clientY - this.state.resizeStartY) * this.resizeMultiplier
     const isChart = isChartType(this.state.displayType)
@@ -860,20 +899,23 @@ export class QueryOutput extends React.Component {
     this.props.onResize({ height: newHeight })
   }
   handleMouseUp = () => {
-    if (this.state.isResizing) {
-      this.setState({ isResizing: false }, () => {
-        this.refreshLayout()
-      })
+    // Only a resize we started has anything to clean up. Without this guard every unrelated mouseup
+    // (or window blur) would reset the body cursor and userSelect, which in a host app may belong to
+    // someone else entirely — another drag library, a global busy cursor, DataMessenger's own drawer
+    // resize. componentWillUnmount clears them directly, so nothing is lost.
+    if (!this.state.isResizing) {
+      return
     }
 
-    document.removeEventListener('mousemove', this.handleMouseMove)
-    document.removeEventListener('mouseup', this.handleMouseUp)
-    document.removeEventListener('mouseleave', this.handleMouseUp)
+    this.setState({ isResizing: false }, () => {
+      this.refreshLayout()
+    })
 
-    document.body.style.userSelect = ''
-    document.body.style.webkitUserSelect = ''
-    document.body.style.mozUserSelect = ''
-    document.body.style.msUserSelect = ''
+    this.removeResizeListeners()
+
+    // Also resets `cursor`, which the previous inline cleanup left set to 'ns-resize' after every
+    // resize — only componentWillUnmount ever cleared it.
+    this.clearResizeCursorStyles()
   }
 
   refreshLayout = () => {
@@ -1097,7 +1139,89 @@ export class QueryOutput extends React.Component {
     return this.state?.visiblePivotRows ? this.state?.visiblePivotRows?.length : this.pivotTableData?.length
   }
 
+  hasFiltersApplied = () => {
+    return this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
+  }
+
+  // Compares filters by column *name*, not by tabulator `field`. `field` is the stringified column
+  // index (see formatColumnsForTable) and updateFilters() rewrites it on every column rebuild, so
+  // adding a custom column or changing additional_selects shifts the indices under an unchanged set
+  // of filters. Comparing the raw objects would then report a user filter where there is none.
+  // Order is normalized away too — the same filters in a different order are the same filters.
+  getFilterSignature = (filters, columns = this.state?.columns) => {
+    return (filters ?? [])
+      .map((filter) => {
+        const column = columns?.find((col) => col?.field === filter?.field || col?.id === filter?.field)
+        // Fall back to the raw field when the column can't be resolved, so an unresolvable filter
+        // still registers as a filter rather than silently collapsing to a shared empty key.
+        const key = column?.name ?? filter?.field
+        return `${key}|${filter?.type ?? ''}|${JSON.stringify(filter?.value ?? null)}`
+      })
+      .sort()
+  }
+
+  captureQueryFilterBaseline = (columns = this.state?.columns) => {
+    this.queryFilterBaseline = this.getFilterSignature(this.tableParams?.filter, columns)
+  }
+
+  // Distinct from hasFiltersApplied(), which is true for any filter at all — including the ones a
+  // query carries in its own fe_req (drilldowns, locked filters, filters baked into the question).
+  // Only a deviation from that baseline means the *user* narrowed the data down, and only that
+  // should stop a table from collapsing into a single value, since only then is there filter UI to
+  // strand them without.
+  hasUserAppliedFilters = () => {
+    return !_isEqual(this.getFilterSignature(this.tableParams?.filter), this.queryFilterBaseline ?? [])
+  }
+
+  // A single value query with no data can come back as rows: [], [[]] or [[null]]
+  hasNoSingleValueData = (response) => {
+    const rows = response?.data?.data?.rows
+    if (!rows) {
+      return false
+    }
+
+    if (!rows.length) {
+      return true
+    }
+
+    return rows.length === 1 && (!rows[0]?.length || rows[0].every((value) => value === null || value === undefined))
+  }
+
+  // A single value query is an aggregation that resolves to one number, so the response carries
+  // exactly one numerical column. Deliberately strict:
+  //   - `columns.length === 1`, not "one visible column". A multi-column response the user has
+  //     narrowed to a single visible column is still a table, and collapsing it to a single value
+  //     would strip the column headers and filter UI they were using.
+  //   - number type only. A one-column list query ("show me customer names") is not a single value
+  //     query and must keep rendering as a table when it comes back empty.
+  isSingleValueQuery = (columns) => {
+    return columns?.length === 1 && isColumnNumberType(columns[0])
+  }
+
+  // isSingleValueResponse already handles rows: [[]] and rows: [[null]] — those come back as one
+  // row and one column, so they are single value responses by its own definition. The only gap is
+  // rows: [], which it accepts solely for reference ID 1.1.211 and otherwise leaves as an empty
+  // one column table. Close that gap for any reference ID so an empty single value query renders
+  // "No data found" rather than a one column table with no rows.
+  isSingleValueOrEmptyResponse = (response = this.queryResponse ?? this.props.queryResponse) => {
+    if (isSingleValueResponse(response)) {
+      return true
+    }
+
+    // Never collapse a result the user filtered down themselves — replacing the table with
+    // "No data found" would strip the filter UI they need to undo it.
+    if (this.hasUserAppliedFilters()) {
+      return false
+    }
+
+    return this.isSingleValueQuery(response?.data?.data?.columns) && this.hasNoSingleValueData(response)
+  }
+
   getUpdatedDefaultDisplayType = (preferredDisplayType) => {
+    if (this.isSingleValueOrEmptyResponse()) {
+      return 'single-value'
+    }
+
     return getDefaultDisplayType(
       this.props.queryResponse,
       this.props.autoChartAggregations,
@@ -1275,7 +1399,8 @@ export class QueryOutput extends React.Component {
       this.pivotTableID = uuid()
       this.isOriginalData = false
       const nextQueryID = response?.data?.data?.query_id
-      if (nextQueryID && nextQueryID !== this.queryID) {
+      const isDifferentQuery = !!nextQueryID && nextQueryID !== this.queryID
+      if (isDifferentQuery) {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
@@ -1288,6 +1413,13 @@ export class QueryOutput extends React.Component {
 
       this.updateFilters(this.tableParams.filter, this.state.columns, newColumns)
 
+      // A different query is a different question, so whatever filters it carries are its own
+      // baseline rather than the user having narrowed the previous result down. Capture against
+      // newColumns — updateFilters() has just remapped the filter fields onto them.
+      if (isDifferentQuery) {
+        this.captureQueryFilterBaseline(newColumns)
+      }
+
       this.resetTableConfig(newColumns)
 
       const aggConfig = this.getAggConfig(newColumns)
@@ -1295,12 +1427,12 @@ export class QueryOutput extends React.Component {
       // If data is a single value, change display type to table
       // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
       let displayType = this.state.displayType
-      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
-      if (this.state.displayType === 'single-value' && !isSingleValueResponse(this.queryResponse)) {
+      const hasFilters = this.hasFiltersApplied()
+      if (this.state.displayType === 'single-value' && !this.isSingleValueOrEmptyResponse(this.queryResponse)) {
         displayType = DisplayTypes.TABLE
       } else if (
         this.state.displayType !== 'single-value' &&
-        isSingleValueResponse(this.queryResponse) &&
+        this.isSingleValueOrEmptyResponse(this.queryResponse) &&
         !hasFilters
       ) {
         displayType = 'single-value'
@@ -1350,9 +1482,9 @@ export class QueryOutput extends React.Component {
       // Determine appropriate display type based on column visibility
       let displayType = this.state.displayType
       const visibleColumns = newColumns?.filter((col) => col.is_visible) || []
-      const hasFilters = this.tableParams?.filter?.length > 0 || this.formattedTableParams?.filters?.length > 0
+      const hasFilters = this.hasFiltersApplied()
 
-      if (isSingleValueResponse(this.queryResponse) && !hasFilters) {
+      if (this.isSingleValueOrEmptyResponse(this.queryResponse) && !hasFilters) {
         // Single visible column AND single row (or no data) → single-value display
         // But don't switch to single-value if filters are applied (user filtered data down to 1 row)
         displayType = 'single-value'
@@ -3268,8 +3400,7 @@ export class QueryOutput extends React.Component {
         return Number(dayjs(d[dateColumnIndex]).format('YYYY'))
       })
 
-      const uniqueYears = [...allYears]
-        .filter(onlyUnique)
+      const uniqueYears = uniqueValues(allYears)
         .sort()
         .reduce((map, title, i) => {
           map[title] = i + 1
@@ -3527,15 +3658,13 @@ export class QueryOutput extends React.Component {
       // Build unique header lists, stripping out null/undefined/empty-string values
       // Use sortedData (not tableData) to extract unique column headers
       // This ensures headers are extracted from the correctly sorted/filtered data
-      let uniqueRowHeaders = sortedData
-        .map((d) => d[sIdx])
-        .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
-        .filter(onlyUnique)
+      let uniqueRowHeaders = uniqueValues(
+        sortedData.map((d) => d[sIdx]).filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== ''),
+      )
 
-      let uniqueColumnHeaders = sortedData
-        .map((d) => d[lIdx])
-        .filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== '')
-        .filter(onlyUnique)
+      let uniqueColumnHeaders = uniqueValues(
+        sortedData.map((d) => d[lIdx]).filter((v) => v !== null && v !== undefined && `${v}`.toString().trim() !== ''),
+      )
 
       // Guard: If after filtering we have no data, don't attempt to create pivot table
       // This prevents malformed column structures when filter results in 0 rows
@@ -4039,7 +4168,7 @@ export class QueryOutput extends React.Component {
 
     if (!column) {
       // For single-value responses, open modal directly since ChataTable is not rendered
-      if (isSingleValueResponse(this.queryResponse)) {
+      if (this.isSingleValueOrEmptyResponse(this.queryResponse)) {
         this.setState({ showCustomColumnModal: true, activeCustomColumn: undefined })
       } else {
         // For table responses, delegate to ChataTable
@@ -4121,16 +4250,19 @@ export class QueryOutput extends React.Component {
   }
 
   onColumnFreezeChange = (columnName, isFrozen) => {
-    this.setState((prevState) => {
-      const updatedColumns = prevState.columns?.map((col) =>
-        col.name === columnName ? { ...col, frozen: isFrozen } : col,
-      )
-      // Bump columnChangeCount so componentDidUpdate propagates this like every other column mutation.
-      return { columns: updatedColumns, columnChangeCount: prevState.columnChangeCount + 1 }
-    }, () => {
-      // Report the current frozen-name list up so the parent can persist it.
-      this.props.onFrozenColumnsChange?.(this.state.columns.filter((col) => col.frozen).map((col) => col.name))
-    })
+    this.setState(
+      (prevState) => {
+        const updatedColumns = prevState.columns?.map((col) =>
+          col.name === columnName ? { ...col, frozen: isFrozen } : col,
+        )
+        // Bump columnChangeCount so componentDidUpdate propagates this like every other column mutation.
+        return { columns: updatedColumns, columnChangeCount: prevState.columnChangeCount + 1 }
+      },
+      () => {
+        // Report the current frozen-name list up so the parent can persist it.
+        this.props.onFrozenColumnsChange?.(this.state.columns.filter((col) => col.frozen).map((col) => col.name))
+      },
+    )
   }
 
   onColumnOrderChange = (orderedNames) => {
@@ -4176,7 +4308,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
-    const isSingleValue = isSingleValueResponse(this.queryResponse)
+    const isSingleValue = this.isSingleValueOrEmptyResponse(this.queryResponse)
     const allColumnsHidden = areAllColumnsHidden(this.getColumns())
     const isDrilldownResponse = isDrilldown(this.queryResponse)
     // Allow button to show on drilldowns if allowCustomColumnsOnDrilldown is true
@@ -4202,7 +4334,10 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  renderTable = () => {
+  // displayType is passed in rather than read from state because renderResponse resolves a fallback
+  // (single-value -> table) that state has not caught up with yet. Reading state here would mount
+  // the table with hidden: true and render nothing at all.
+  renderTable = (displayType = this.state.displayType) => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
@@ -4251,7 +4386,7 @@ export class QueryOutput extends React.Component {
           isDrilldown={isDrilldown(this.queryResponse)}
           isQueryOutputMounted={this._isMounted}
           popoverParentElement={this.props.popoverParentElement}
-          hidden={this.state.displayType !== 'table'}
+          hidden={displayType !== 'table'}
           supportsDrilldowns={
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
@@ -4280,12 +4415,12 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  renderPivotTable = () => {
+  renderPivotTable = (displayType = this.state.displayType) => {
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
 
-    if (this.state.displayType === 'pivot_table' && !this.pivotTableData) {
+    if (displayType === 'pivot_table' && !this.pivotTableData) {
       return this.renderMessage('Error: There was no data supplied for this table')
     }
 
@@ -4303,7 +4438,7 @@ export class QueryOutput extends React.Component {
           onCellClick={this.onTableCellClick}
           isAnimating={this.props.isAnimating}
           isResizing={this.props.isResizing || this.state.isResizing}
-          hidden={this.state.displayType !== 'pivot_table'}
+          hidden={displayType !== 'pivot_table'}
           useInfiniteScroll={this.props.useInfiniteScroll}
           supportsDrilldowns={true}
           source={this.props.source}
@@ -4331,19 +4466,19 @@ export class QueryOutput extends React.Component {
     )
   }
 
-  renderChart = () => {
+  renderChart = (displayType = this.state.displayType) => {
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing for chart')
       // If the chart would be hidden (e.g., table view), avoid rendering the error message
-      if (!isChartType(this.state.displayType)) return null
+      if (!isChartType(displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
     const usePivotData = this.usePivotDataForChart()
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
-      this.state?.displayType !== DisplayTypes.NETWORK_GRAPH &&
-      this.state?.displayType !== DisplayTypes.SANKEY
+      displayType !== DisplayTypes.NETWORK_GRAPH &&
+      displayType !== DisplayTypes.SANKEY
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
@@ -4399,7 +4534,6 @@ export class QueryOutput extends React.Component {
 
     // For heatmaps and bubble charts, always include all numeric pivot columns so we render
     // a full matrix of cells instead of just the first pivot column.
-    const displayType = this.state.displayType
     const isHeatmapOrBubble = displayType === DisplayTypes.HEATMAP || displayType === DisplayTypes.BUBBLE
     if (usePivotData && isHeatmapOrBubble && this.pivotTableConfig?.allNumberColumnIndices?.length) {
       tableConfig.numberColumnIndices = this.pivotTableConfig.allNumberColumnIndices
@@ -4427,7 +4561,7 @@ export class QueryOutput extends React.Component {
     // If there's no data or no columns, don't mount the chart (avoids noisy errors from ChataChart)
     if (!Array.isArray(data) || data.length === 0 || !Array.isArray(columns) || columns.length === 0) {
       // Don't show the error message under a table when charts are hidden
-      if (!isChartType(this.state.displayType)) return null
+      if (!isChartType(displayType)) return null
       return this.renderMessage('Error: There was no data supplied for this chart')
     }
 
@@ -4450,10 +4584,13 @@ export class QueryOutput extends React.Component {
           tableConfig={tableConfig}
           originalColumns={originalColumns}
           data={data}
-          hidden={!isChartType(this.state.displayType)}
+          hidden={!isChartType(displayType)}
           authentication={this.props.authentication}
           autoQLConfig={this.props.autoQLConfig}
           ref={(ref) => (this.chartRef = ref)}
+          // Intentionally state, not the resolved displayType: the resolved value only differs on the
+          // single-value fallback path, where the chart is hidden anyway, and the chart type it would
+          // report there ('table') is no more meaningful to ChataChart than the state value.
           type={this.state.displayType}
           isDataAggregated={isChartDataAggregated}
           popoverParentElement={this.props.popoverParentElement}
@@ -4616,7 +4753,7 @@ export class QueryOutput extends React.Component {
   }
 
   renderResponse = () => {
-    const { displayType } = this.state
+    let { displayType } = this.state
     if (this.hasError(this.queryResponse)) {
       return this.renderError(this.queryResponse)
     }
@@ -4666,19 +4803,28 @@ export class QueryOutput extends React.Component {
         return this.renderHelpResponse()
       } else if (displayType === 'text') {
         return this.renderTextResponse()
-      } else if (isSingleValueResponse(this.queryResponse) && displayType === 'single-value') {
+      } else if (displayType === 'single-value') {
         // Only render single-value if displayType is explicitly set to 'single-value'
         // This prevents showing single-value when filters reduce data to 1 row
-        return this.renderSingleValueResponse()
+        if (this.isSingleValueOrEmptyResponse(this.queryResponse)) {
+          return this.renderSingleValueResponse()
+        }
+
+        // The display type can lag behind the data — new rows arrive via onNewData without a
+        // display type recalculation, or the user filters a single value query down. 'single-value'
+        // is neither a table nor a chart type, so without this it falls into the branch below and
+        // renders "display type not recognized: single-value", a developer string, to the user.
+        displayType = DisplayTypes.TABLE
       } else if (!isTableType(displayType) && !isChartType(displayType)) {
         console.warn(`display type not recognized: ${this.state.displayType} - rendering as plain text`)
         return this.renderMessage(`display type not recognized: ${this.state.displayType}`)
       }
     }
 
-    const displayTypeIsChart = isChartType(this.state.displayType)
-    const displayTypeIsTable = isTableType(this.state.displayType)
-    const displayTypeIsPivotTable = this.state.displayType === 'pivot_table'
+    // Use the local displayType, not state — it carries the single-value fallback above.
+    const displayTypeIsChart = isChartType(displayType)
+    const displayTypeIsTable = isTableType(displayType)
+    const displayTypeIsPivotTable = displayType === 'pivot_table'
     const allowsDisplayTypeChange = this.props.allowDisplayTypeChange
 
     const supportsCharts = this.currentlySupportsCharts()
@@ -4687,7 +4833,7 @@ export class QueryOutput extends React.Component {
 
     const columns = usePivotData ? this.pivotTableColumns : this.getColumns()
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
-    const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, this.state.displayType)
+    const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, displayType)
 
     const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
@@ -4695,9 +4841,9 @@ export class QueryOutput extends React.Component {
 
     return (
       <>
-        {shouldRenderTable && this.renderTable()}
-        {shouldRenderChart && this.renderChart()}
-        {shouldRenderPivotTable && this.renderPivotTable()}
+        {shouldRenderTable && this.renderTable(displayType)}
+        {shouldRenderChart && this.renderChart(displayType)}
+        {shouldRenderPivotTable && this.renderPivotTable(displayType)}
       </>
     )
   }
@@ -4759,30 +4905,7 @@ export class QueryOutput extends React.Component {
     return this.renderReverseTranslation()
   }
   renderResizeHandle = () => {
-    const self = this
-    return (
-      <div
-        className='react-autoql-query-output-resize-handle bottom'
-        onMouseDown={(e) => {
-          e.preventDefault()
-
-          this.setState({
-            isResizing: true,
-            resizeStartY: e.pageY,
-            resizeStartHeight: this.responseContainerRef?.getBoundingClientRect()?.height || this.minHeight,
-          })
-
-          document.body.style.userSelect = 'none'
-          document.body.style.webkitUserSelect = 'none'
-          document.body.style.mozUserSelect = 'none'
-          document.body.style.msUserSelect = 'none'
-
-          document.addEventListener('mousemove', self.handleMouseMove)
-          document.addEventListener('mouseup', self.handleMouseUp)
-          document.addEventListener('mouseleave', self.handleMouseUp)
-        }}
-      />
-    )
+    return <div className='react-autoql-query-output-resize-handle bottom' onMouseDown={this.handleResizeStart} />
   }
 
   render = () => {

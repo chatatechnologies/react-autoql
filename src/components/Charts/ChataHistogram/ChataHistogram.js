@@ -7,7 +7,6 @@ import {
   formatChartLabel,
   getBinLinearScale,
   getHistogramScale,
-  onlyUnique,
   deepEqual,
   roundDownToNearestMultiple,
   roundUpToNearestMultiple,
@@ -23,6 +22,7 @@ import { HistogramDistributions } from './HistogramDistributions'
 import { v4 as uuid } from 'uuid'
 import { chartDefaultProps, chartPropTypes } from '../chartPropHelpers.js'
 import { Columns } from '../Columns'
+import { uniqueValueCount } from '../../../js/arrayUtils'
 
 export default class ChataHistogram extends React.Component {
   constructor(props) {
@@ -184,7 +184,7 @@ export default class ChataHistogram extends React.Component {
         return
       }
 
-      const uniqueNumberValues = filteredData.map((d) => d[numberColumnIndex]).filter(onlyUnique).length
+      const uniqueNumberValues = uniqueValueCount(filteredData.map((d) => d[numberColumnIndex]))
       if (uniqueNumberValues < this.bucketConfig.maxBucketSize) {
         this.bucketConfig.maxNumBuckets = Math.max(uniqueNumberValues, (this.bucketConfig.minNumBuckets ?? 2) + 1)
       }

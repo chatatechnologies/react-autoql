@@ -14,6 +14,7 @@ import {
   assignLabelToManagementDataAlert,
   previewManagementDataAlert,
   previewDataAlert,
+  isSingleValueResponse,
   createDataAlert,
   updateDataAlert,
   updateManagementDataAlert,
@@ -86,15 +87,139 @@ class CustomFilteredAlertModal extends React.Component {
     isManagementPortal: false,
   }
 
+  componentDidMount = () => {
+    this._isMounted = true
+    this.fetchCategoriesIfNeeded()
+  }
+
+  componentWillUnmount = () => {
+    this._isMounted = false
+  }
+
+  getBaseDataAlertId = () => {
+    const { currentDataAlert } = this.props
+    const hasProject = !!currentDataAlert?.project?.id || !!currentDataAlert?.projects?.[0]?.id
+    return currentDataAlert?.id && hasProject ? currentDataAlert.id : undefined
+  }
+
+  /**
+   * Evaluates the base Data Alert to produce the preview rows. That is a real query run, so
+   * nothing triggers it but the user asking to see the preview - not opening the modal, not
+   * closing it, and not selecting filters, which are served by the autocomplete endpoint.
+   * The result is cached on the instance so reopening the same alert restores it for free.
+   */
+  loadBasePreview = ({ force = false } = {}) => {
+    const dataAlertId = this.getBaseDataAlertId()
+    if (!dataAlertId) {
+      return Promise.resolve(null)
+    }
+
+    if (this.isLoadingBasePreview) {
+      return this.basePreviewPromise ?? Promise.resolve(null)
+    }
+
+    const cached = this.cachedBasePreview
+    if (!force && cached?.id === dataAlertId) {
+      this.setState({
+        baseDataAlertColumns: cached.columns,
+        baseDataAlertQueryResponse: cached.queryResponse,
+        isLoadingBaseDataAlertQueryResponse: false,
+        basePreviewError: false,
+      })
+      return Promise.resolve(cached.queryResponse)
+    }
+
+    this.isLoadingBasePreview = true
+    this.setState({ isLoadingBaseDataAlertQueryResponse: true, basePreviewError: false })
+
+    const projectId = this.props.currentDataAlert?.projects?.[0]?.id
+    const previewRequest = this.props.autoQLConfig?.projectId
+      ? previewManagementDataAlert({
+          dataAlertId,
+          ...getAuthentication(this.props.authentication),
+          projectId,
+        })
+      : previewDataAlert({
+          dataAlertId,
+          ...getAuthentication(this.props.authentication),
+        })
+
+    // Resolves with the query response so callers - notably the save-time validation - can
+    // inspect it, and with null when there is nothing usable to inspect.
+    this.basePreviewPromise = previewRequest
+      .then((response) => {
+        this.isLoadingBasePreview = false
+
+        const queryResult = response?.data?.data?.query_result
+        if (!queryResult) {
+          // Caching this would leave hasBasePreview false forever: Show Preview would keep
+          // short-circuiting on the cache and the refresh control would never appear.
+          if (this._isMounted && this.getBaseDataAlertId() === dataAlertId) {
+            this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+          }
+          return null
+        }
+
+        const columns = queryResult?.data?.columns
+        const queryResponse = { data: queryResult }
+        this.cachedBasePreview = { id: dataAlertId, columns, queryResponse }
+
+        // The modal can be closed and reopened on a different alert while this is in flight
+        if (this._isMounted && this.getBaseDataAlertId() === dataAlertId) {
+          this.setState({
+            baseDataAlertColumns: columns,
+            baseDataAlertQueryResponse: queryResponse,
+            isLoadingBaseDataAlertQueryResponse: false,
+            basePreviewError: false,
+          })
+        }
+
+        return queryResponse
+      })
+      .catch((error) => {
+        this.isLoadingBasePreview = false
+        console.error('Error getting data alert preview:', error)
+        this.props.onErrorCallback(error?.message || 'Please try again or contact support if the issue persists')
+        if (this._isMounted && this.getBaseDataAlertId() === dataAlertId) {
+          this.setState({ isLoadingBaseDataAlertQueryResponse: false, basePreviewError: true })
+        }
+
+        return null
+      })
+
+    return this.basePreviewPromise
+  }
+
+  showBasePreview = () => {
+    this.loadBasePreview()
+  }
+
+  refreshBasePreview = () => {
+    this.loadBasePreview({ force: true })
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (
       this.state.customFilters !== prevState.customFilters ||
       this.state.baseDataAlertColumns !== prevState.baseDataAlertColumns
     ) {
-      const filteredColumns = this.state.baseDataAlertColumns.filter((col) =>
-        this.state.customFilters.some((filter) => filter.column_name === col.name),
-      )
-      const rows = this.state.customFilters.map((filter) => [filter.value])
+      const { customFilters, baseDataAlertColumns } = this.state
+
+      const knownColumns =
+        baseDataAlertColumns?.filter((col) => customFilters.some((filter) => filter.column_name === col.name)) ?? []
+
+      // The preview is optional now, so its columns may never arrive. The filters carry the two
+      // fields the expression is read back with (transformTermValueToFilters wants name and
+      // display_name), so synthesize from them rather than saving columns: [] - which silently
+      // reopens the alert with no filters at all.
+      const filteredColumns = knownColumns.length
+        ? knownColumns
+        : [...new Set(customFilters.map((filter) => filter.column_name))].map((name) => ({
+            name,
+            display_name: customFilters.find((filter) => filter.column_name === name)?.show_message ?? name,
+          }))
+
+      const rows = customFilters.map((filter) => [filter.value])
       this.setState({
         termValue: {
           columns: filteredColumns,
@@ -111,7 +236,18 @@ class CustomFilteredAlertModal extends React.Component {
     if (this.props.isVisible && !prevProps.isVisible) {
       this.initializeFields()
     }
-    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories) {
+
+    this.fetchCategoriesIfNeeded()
+  }
+
+  fetchCategoriesIfNeeded = () => {
+    // This modal is mounted alongside every query result, so only fetch the
+    // labels once it is actually opened
+    if (!this.props.isVisible) {
+      return
+    }
+
+    if (this.props?.autoQLConfig?.projectId && !this.state.fetchedCategories && !this.isFetchingCategories) {
       this.getLabels()
     }
   }
@@ -119,12 +255,15 @@ class CustomFilteredAlertModal extends React.Component {
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey) {
       const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
+      this.isFetchingCategories = true
       getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
+          this.isFetchingCategories = false
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
         .catch((error) => {
           console.error('error fetching data alert categories', error)
+          this.isFetchingCategories = false
           this.setState({ categories: [], fetchedCategories: true })
         })
     }
@@ -181,7 +320,8 @@ class CustomFilteredAlertModal extends React.Component {
       fetchedCategories: false,
       baseDataAlertColumns: [],
       baseDataAlertQueryResponse: {},
-      isLoadingBaseDataAlertQueryResponse: true,
+      isLoadingBaseDataAlertQueryResponse: !!this.isLoadingBasePreview,
+      basePreviewError: false,
       customFilters: [],
       termValue: {},
       isEditingDataAlert: this.props.currentDataAlert?.expression?.[1]?.term_type === 'DATA',
@@ -189,53 +329,6 @@ class CustomFilteredAlertModal extends React.Component {
 
     if (props.currentDataAlert) {
       const { currentDataAlert } = props
-      if (
-        (currentDataAlert?.id && currentDataAlert?.project?.id) ||
-        (currentDataAlert?.id && currentDataAlert?.projects?.[0]?.id)
-      ) {
-        const dataAlertId = currentDataAlert.id
-        const projectId = currentDataAlert.projects?.[0]?.id
-        if (this.props?.autoQLConfig?.projectId) {
-          previewManagementDataAlert({
-            dataAlertId: dataAlertId,
-            ...getAuthentication(this.props.authentication),
-            projectId: projectId,
-          })
-            .then((response) => {
-              this.setState({
-                baseDataAlertColumns: response?.data?.data?.query_result?.data?.columns,
-                baseDataAlertQueryResponse: { data: response?.data?.data?.query_result },
-                isLoadingBaseDataAlertQueryResponse: false,
-              })
-            })
-            .catch((error) => {
-              const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
-              const errorMessage = `${errorDetail}`
-              this.props.onErrorCallback(errorMessage)
-              console.error('Error getting data alert preview:', error)
-              this.setState({ isLoadingBaseDataAlertQueryResponse: false })
-            })
-        } else {
-          previewDataAlert({
-            dataAlertId: dataAlertId,
-            ...getAuthentication(this.props.authentication),
-          })
-            .then((response) => {
-              this.setState({
-                baseDataAlertColumns: response?.data?.data?.query_result?.data?.columns,
-                baseDataAlertQueryResponse: { data: response?.data?.data?.query_result },
-                isLoadingBaseDataAlertQueryResponse: false,
-              })
-            })
-            .catch((error) => {
-              const errorDetail = error?.message || 'Please try again or contact support if the issue persists'
-              const errorMessage = ` ${errorDetail}`
-              this.props.onErrorCallback(errorMessage)
-              console.error('Error getting data alert preview:', error)
-              this.setState({ isLoadingBaseDataAlertQueryResponse: false })
-            })
-        }
-      }
       if (state.isEditingDataAlert) {
         state.titleInput = currentDataAlert.title
         state.messageInput = currentDataAlert.message
@@ -343,10 +436,54 @@ class CustomFilteredAlertModal extends React.Component {
     })
   }
 
-  onDataAlertSave = () => {
+  /**
+   * A single-value base query has nothing to filter on, so custom filters against it produce an
+   * alert that cannot work. The preview is the only thing that can tell us - the composite stores
+   * the base alert as a reference (term_type DATA_ALERT, term_value = its id), not its columns -
+   * so the check happens here, once, on a deliberate action, rather than on every open.
+   *
+   * A preview we simply could not fetch does not block the save: failing to check is not the same
+   * as having checked and found a problem.
+   */
+  isBaseQuerySingleValue = async () => {
+    if (!this.state.customFilters?.length) {
+      return false
+    }
+
+    try {
+      const loaded = this.state.baseDataAlertQueryResponse?.data
+        ? this.state.baseDataAlertQueryResponse
+        : await this.loadBasePreview()
+
+      if (!loaded?.data) {
+        return false
+      }
+
+      return isSingleValueResponse(loaded)
+    } catch (error) {
+      // Never let the check itself strand the Save button
+      console.error('Error validating base Data Alert query:', error)
+      return false
+    }
+  }
+
+  onDataAlertSave = async () => {
     this.setState({
       isSavingDataAlert: true,
     })
+
+    if (await this.isBaseQuerySingleValue()) {
+      // Loading the preview also disables the custom list and surfaces the inline warning
+      this.props.onErrorCallback('This Data Alert returns a single value, so custom filters cannot be applied to it.')
+      if (this._isMounted) {
+        this.setState({ isSavingDataAlert: false })
+      }
+      return
+    }
+
+    if (!this._isMounted) {
+      return
+    }
 
     const newDataAlert = this.getDataAlertData()
     const requestParams = {
@@ -518,6 +655,10 @@ class CustomFilteredAlertModal extends React.Component {
               baseDataAlertColumns={this.state.baseDataAlertColumns}
               baseDataAlertQueryResponse={this.state.baseDataAlertQueryResponse}
               isLoadingBaseDataAlertQueryResponse={this.state.isLoadingBaseDataAlertQueryResponse}
+              basePreviewError={this.state.basePreviewError}
+              hasBasePreview={!!this.state.baseDataAlertQueryResponse?.data}
+              onShowBasePreview={this.getBaseDataAlertId() ? this.showBasePreview : undefined}
+              onRefreshBasePreview={this.refreshBasePreview}
               onCustomFiltersChange={this.updateCustomFilters}
               customFilters={this.state.customFilters}
               isPreviewMode={this.props.isPreviewMode}

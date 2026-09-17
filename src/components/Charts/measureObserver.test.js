@@ -126,4 +126,42 @@ describe('observeContainer with ResizeObserver', () => {
     expect(typeof cleanup).toBe('function')
     expect(() => cleanup()).not.toThrow()
   })
+
+  test('does not re-notify when the observed size is unchanged', async () => {
+    // Regression guard: the callback typically measures and setStates, which resizes the observed
+    // element and re-triggers the observer. Reporting unchanged sizes closes that feedback loop.
+    const el = document.createElement('div')
+    el.getBoundingClientRect = () => ({ width: 200, height: 100 })
+
+    let capturedRoCallback
+    class RecordingRO {
+      constructor(cb) {
+        capturedRoCallback = cb
+      }
+      observe() {}
+      disconnect() {}
+    }
+    global.ResizeObserver = RecordingRO
+
+    const calls = []
+    const cleanup = observeContainer(el, (rect) => calls.push(rect), { debounceMs: 0 })
+
+    // Initial synchronous measurement
+    expect(calls).toHaveLength(1)
+
+    // Three notifications reporting the exact same box should all be ignored
+    for (let i = 0; i < 3; i++) {
+      capturedRoCallback([{ target: el, contentRect: { width: 200, height: 100 } }])
+      await new Promise((r) => setTimeout(r, 5))
+    }
+    expect(calls).toHaveLength(1)
+
+    // A genuine size change must still be reported
+    capturedRoCallback([{ target: el, contentRect: { width: 200, height: 140 } }])
+    await new Promise((r) => setTimeout(r, 5))
+    expect(calls).toHaveLength(2)
+    expect(calls[1]).toMatchObject({ width: 200, height: 140 })
+
+    cleanup()
+  })
 })

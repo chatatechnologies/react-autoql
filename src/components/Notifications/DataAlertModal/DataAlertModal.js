@@ -37,6 +37,7 @@ import { CustomScrollbars } from '../../CustomScrollbars'
 import { CollapsableSection } from '../../Card'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { DataAlertDeleteDialog } from '../DataAlertDeleteDialog'
+import { DataAlertDetails } from '../DataAlertDetails'
 import AppearanceSection from '../DataAlertSettings/AppearanceSection/AppearanceSection'
 import DataAlertSettings from '../DataAlertSettings/DataAlertSettings'
 import AlphaAlertsSettings from '../DataAlertSettings/AlphaAlertsSettings'
@@ -78,6 +79,7 @@ class DataAlertModal extends React.Component {
     enableAlphaAlertSettings: PropTypes.bool,
     onDelete: PropTypes.func,
     isManagementPortal: PropTypes.bool,
+    startInEditMode: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -98,6 +100,7 @@ class DataAlertModal extends React.Component {
     autoQLConfig: autoQLConfigDefault,
     enableAlphaAlertSettings: false,
     isManagementPortal: false,
+    startInEditMode: false,
   }
 
   componentDidMount = () => {
@@ -136,9 +139,16 @@ class DataAlertModal extends React.Component {
   }
 
   fetchCategoriesIfNeeded = () => {
-    const { autoQLConfig, currentDataAlert } = this.props
+    const { autoQLConfig, currentDataAlert, isVisible } = this.props
+
+    // This modal is mounted for every query result (eg. each dashboard tile), so
+    // only fetch the labels once it is actually opened
+    if (!isVisible) {
+      return
+    }
+
     const projectId = autoQLConfig?.projectId || currentDataAlert?.projects?.[0]?.id || currentDataAlert?.project?.id
-    if (projectId && !this.state.fetchedCategories) {
+    if (projectId && !this.state.fetchedCategories && !this.isFetchingCategories) {
       this.getLabels()
     }
   }
@@ -146,13 +156,16 @@ class DataAlertModal extends React.Component {
   getLabels = () => {
     if (this.props.authentication?.token && this.props.authentication?.domain && this.props.authentication?.apiKey) {
       const getLabelsRequest = this.props.isManagementPortal ? getAllDataAlertsLabels : getAllDataAlertsLabelsByProject
+      this.isFetchingCategories = true
       getLabelsRequest({ ...getAuthentication(this.props.authentication) })
         .then((response) => {
+          this.isFetchingCategories = false
           if (!this._isMounted) return
           this.setState({ categories: response?.data?.data?.items, fetchedCategories: true })
         })
         .catch((error) => {
           console.error('error fetching data alert categories', error)
+          this.isFetchingCategories = false
           if (!this._isMounted) return
           this.setState({ categories: [], fetchedCategories: true })
         })
@@ -230,6 +243,7 @@ class DataAlertModal extends React.Component {
       categoryId: '',
       categories: null,
       fetchedCategories: false,
+      isEditing: !props.currentDataAlert?.id || !!props.startInEditMode,
     }
 
     if (props.currentDataAlert) {
@@ -547,7 +561,23 @@ class DataAlertModal extends React.Component {
     )
   }
 
+  renderCloseBtn = () => {
+    return (
+      <Button
+        tooltipID={this.TOOLTIP_ID}
+        onClick={(e) => {
+          e.stopPropagation()
+          this.props.onClose()
+        }}
+      >
+        Close
+      </Button>
+    )
+  }
+
   renderFooter = () => {
+    const isDetailsView = this.isDetailsView()
+
     return (
       <div className='data-alert-modal-footer-container'>
         {this.renderQuerySummary()}
@@ -556,9 +586,15 @@ class DataAlertModal extends React.Component {
             {this.props.currentDataAlert && this.props.allowDelete && this.renderDeleteBtn()}
           </div>
           <div className='modal-footer-button-container'>
-            {this.renderCancelBtn()}
-            {this.renderBackBtn()}
-            {this.renderNextBtn()}
+            {isDetailsView ? (
+              this.renderCloseBtn()
+            ) : (
+              <>
+                {this.renderCancelBtn()}
+                {this.renderBackBtn()}
+                {this.renderNextBtn()}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -744,12 +780,40 @@ class DataAlertModal extends React.Component {
     )
   }
 
+  isDetailsView = () => {
+    return !!this.props.currentDataAlert?.id && !this.state.isEditing
+  }
+
+  startEditing = () => {
+    this.setState({ isEditing: true })
+  }
+
+  renderEditBtn = () => {
+    if (!this.isDetailsView()) {
+      return null
+    }
+
+    return (
+      <Button icon='edit' onClick={this.startEditing} tooltipID={this.TOOLTIP_ID}>
+        Edit
+      </Button>
+    )
+  }
+
   renderContent = () => {
     if (!this.props.isVisible) {
       return null
     }
 
     const steps = this.getSteps()
+
+    if (this.isDetailsView()) {
+      return (
+        <CustomScrollbars className='data-alert-modal-settings-scroll-container' suppressScrollX>
+          <DataAlertDetails currentDataAlert={this.props.currentDataAlert} categories={this.state.categories || []} />
+        </CustomScrollbars>
+      )
+    }
 
     if (!!this.props.currentDataAlert?.id) {
       return (
@@ -813,6 +877,10 @@ class DataAlertModal extends React.Component {
   }
 
   getTitleIcon = () => {
+    if (this.isDetailsView()) {
+      return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='notification' />
+    }
+
     if (!_isEmpty(this.props.currentDataAlert)) {
       return <Icon key={`title-icon-${this.COMPONENT_KEY}`} type='settings' />
     }
@@ -820,21 +888,35 @@ class DataAlertModal extends React.Component {
     return <span key={`title-icon-${this.COMPONENT_KEY}`} />
   }
 
+  getTitle = () => {
+    if (this.isDetailsView()) {
+      return this.props.currentDataAlert?.title || 'Data Alert'
+    }
+
+    return !!this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'
+  }
+
   render = () => {
+    const isDetailsView = this.isDetailsView()
+
     return (
       <ErrorBoundary>
         <Modal
-          contentClassName='react-autoql-data-alert-creation-modal'
+          contentClassName={`react-autoql-data-alert-creation-modal${
+            isDetailsView ? ' react-autoql-data-alert-details-modal' : ''
+          }`}
           bodyClassName='react-autoql-data-alert-modal-body'
           overlayStyle={{ zIndex: '9998' }}
-          title={!!this.props.currentDataAlert?.id ? 'Edit Data Alert Settings' : 'Create Data Alert'}
+          title={this.getTitle()}
           titleIcon={this.getTitleIcon()}
+          headerAction={this.renderEditBtn()}
           ref={(r) => (this.modalRef = r)}
           isVisible={this.props.isVisible}
           onClose={this.props.onClose}
-          confirmOnClose={true}
+          confirmOnClose={!this.isDetailsView()}
           enableBodyScroll
-          width='1200px'
+          width={isDetailsView ? '720px' : '1200px'}
+          height={isDetailsView ? 'auto' : undefined}
           footer={this.renderFooter()}
           onOpened={this.props.onOpened}
           onClosed={this.props.onClosed}

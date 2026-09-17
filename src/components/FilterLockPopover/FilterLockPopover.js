@@ -23,6 +23,21 @@ export class FilterLockPopover extends React.Component {
     onChange: PropTypes.func,
     showArrow: PropTypes.bool,
     padding: PropTypes.number,
+    /**
+     * Values this user may filter on. When set, it REPLACES the value-label
+     * autocomplete: the popover lists all of them and searches locally. See
+     * FilterLockPopoverContent for the full contract.
+     */
+    suggestionList: PropTypes.arrayOf(PropTypes.string),
+    /** Section heading over an unfiltered `suggestionList`. */
+    suggestionListTitle: PropTypes.string,
+    /**
+     * Whether a newly added filter starts PERSISTED (kept in the filter-locking
+     * API and fetched back on the next mount) or scoped to this session. Sets
+     * the initial position of each row's "Persist" toggle. Default true — the
+     * long-standing behaviour. See FilterLockPopoverContent for the full note.
+     */
+    persistNewFilters: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -36,6 +51,7 @@ export class FilterLockPopover extends React.Component {
     // Default true preserves the DataMessenger header lock's arrow; ChatContent
     // opts out with showArrow={false}.
     showArrow: true,
+    persistNewFilters: true,
   }
 
   state = {
@@ -135,6 +151,9 @@ export class FilterLockPopover extends React.Component {
         insertedFilter={this.state.insertedFilter}
         initialFilters={this.state.initialFilters}
         isFetchingFilters={this.state.isFetchingFilters}
+        suggestionList={this.props.suggestionList}
+        suggestionListTitle={this.props.suggestionListTitle}
+        persistNewFilters={this.props.persistNewFilters}
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
       />
     )

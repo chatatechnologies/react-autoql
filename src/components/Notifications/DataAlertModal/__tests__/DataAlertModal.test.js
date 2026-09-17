@@ -20,23 +20,35 @@ describe('DataAlertModal label fetching', () => {
   })
 
   it('calls getAllDataAlertsLabelsByProject (not getAllDataAlertsLabels) when isManagementPortal is unset', () => {
-    mount(<DataAlertModal authentication={authentication} autoQLConfig={{ projectId: 'p1' }} />)
+    mount(<DataAlertModal authentication={authentication} autoQLConfig={{ projectId: 'p1' }} isVisible />)
 
     expect(getAllDataAlertsLabelsByProject).toHaveBeenCalledTimes(1)
     expect(getAllDataAlertsLabels).not.toHaveBeenCalled()
   })
 
   it('calls getAllDataAlertsLabels (not getAllDataAlertsLabelsByProject) when isManagementPortal is true', () => {
-    mount(<DataAlertModal authentication={authentication} autoQLConfig={{ projectId: 'p1' }} isManagementPortal />)
+    mount(
+      <DataAlertModal authentication={authentication} autoQLConfig={{ projectId: 'p1' }} isManagementPortal isVisible />,
+    )
 
     expect(getAllDataAlertsLabels).toHaveBeenCalledTimes(1)
     expect(getAllDataAlertsLabelsByProject).not.toHaveBeenCalled()
   })
 
   it('does not fetch labels when authentication is incomplete', () => {
-    mount(<DataAlertModal autoQLConfig={{ projectId: 'p1' }} />)
+    mount(<DataAlertModal autoQLConfig={{ projectId: 'p1' }} isVisible />)
 
     expect(getAllDataAlertsLabels).not.toHaveBeenCalled()
     expect(getAllDataAlertsLabelsByProject).not.toHaveBeenCalled()
+  })
+
+  it('does not fetch labels while the modal is closed, and fetches once when it opens', () => {
+    const wrapper = mount(<DataAlertModal authentication={authentication} autoQLConfig={{ projectId: 'p1' }} />)
+
+    expect(getAllDataAlertsLabelsByProject).not.toHaveBeenCalled()
+
+    wrapper.setProps({ isVisible: true })
+
+    expect(getAllDataAlertsLabelsByProject).toHaveBeenCalledTimes(1)
   })
 })

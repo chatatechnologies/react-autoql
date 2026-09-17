@@ -28,6 +28,7 @@ class Modal extends React.Component {
     confirmText: PropTypes.string,
     confirmDisabled: PropTypes.bool,
     footer: PropTypes.element,
+    headerAction: PropTypes.element,
     confirmOnClose: PropTypes.bool,
     shouldRender: PropTypes.bool,
     onOpened: PropTypes.func,
@@ -47,6 +48,7 @@ class Modal extends React.Component {
     confirmLoading: false,
     confirmText: undefined,
     footer: undefined,
+    headerAction: undefined,
     confirmDisabled: false,
     confirmOnClose: false,
     shouldRender: true,
@@ -145,6 +147,9 @@ class Modal extends React.Component {
                 </div>
                 <div className='react-autoql-modal-header-subtitle'>{this.props.subtitle}</div>
               </div>
+              {!!this.props.headerAction && (
+                <div className='react-autoql-modal-header-action'>{this.props.headerAction}</div>
+              )}
               <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
             </div>
             <div
@@ -168,7 +173,9 @@ class Modal extends React.Component {
               this.setState({ isConfirmCloseModalVisible: false })
             }}
           >
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to leave this page?</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>
+              Are you sure you want to leave this page?
+            </h3>
             <p style={{ fontSize: '0.9375rem', margin: 0 }}>All unsaved changes will be lost.</p>
           </ConfirmModal>
         )}
