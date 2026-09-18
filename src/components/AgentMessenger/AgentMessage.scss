@@ -63,6 +63,14 @@
   .react-autoql-icon {
     display: flex;
     font-size: 0.875rem;
+
+    // Same reason as the Data Messenger's thinking avatar: the logo SVG carries only
+    // a viewBox, and a flex container sizing itself from that SVG while the SVG sizes
+    // itself from the container is what collapses the mark to nothing.
+    svg {
+      width: 1em;
+      height: 1em;
+    }
   }
 }
 

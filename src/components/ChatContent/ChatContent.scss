@@ -417,6 +417,15 @@
     .react-autoql-icon {
       font-size: 0.875rem;
       display: flex;
+
+      // The logo is a viewBox-only SVG, so its size comes from the box around it.
+      // Stating it here rather than leaving the browser to resolve the SVG's
+      // default 100% against a flex container it is itself sizing - that circular
+      // case is the one browsers collapse to 0, which is how the mark went missing.
+      svg {
+        width: 1em;
+        height: 1em;
+      }
     }
   }
 

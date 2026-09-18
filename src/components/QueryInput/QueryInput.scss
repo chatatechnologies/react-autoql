@@ -109,9 +109,11 @@
 // iOS Safari auto-zooms the page when a focused input's text is under 16px, and
 // never zooms back out. Touch devices keep the old 1rem to avoid that; the size
 // mismatch with the thread is the lesser problem there.
+// 16px, not 1rem: the threshold Safari checks is the computed pixel size, and an app
+// that sets its own html font-size would put 1rem under it.
 @media (hover: none) and (pointer: coarse) {
   .react-autoql-chatbar-input {
-    font-size: 1rem;
+    font-size: 16px;
   }
 }
 
@@ -925,6 +927,12 @@
       .react-autoql-chatbar-input {
         height: 52px;
         font-size: 0.9375rem;
+
+        // This rule outranks the coarse-pointer floor above on specificity, so it has
+        // to restate it - 15px here is what made iOS zoom the page in on focus.
+        @media (hover: none) and (pointer: coarse) {
+          font-size: 16px;
+        }
       }
     }
 

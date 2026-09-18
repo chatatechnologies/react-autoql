@@ -17,6 +17,14 @@
   .react-autoql-toolbar-btn {
     color: var(--react-autoql-text-color-primary);
   }
+
+  // The touch toolbars sit next to each other under a response and their taller
+  // buttons outgrow a fixed 25px corner, so both go fully round on mobile. The viz
+  // toolbar matches this padding.
+  &.react-autoql-toolbar-mobile {
+    padding: 0.25rem 0.375rem;
+    border-radius: 999px;
+  }
 }
 
 .more-options-menu {
