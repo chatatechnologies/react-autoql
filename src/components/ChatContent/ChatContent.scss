@@ -251,8 +251,15 @@
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background-color: var(--react-autoql-session-tab-new-hover);
+    }
+
+    // At the tab ceiling. Left in place rather than hidden, so the row doesn't
+    // reflow on the eighth tab.
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
 
     .react-autoql-icon {
@@ -288,39 +295,6 @@
     background-color: var(--react-autoql-background-color-primary);
     &::before {
       opacity: 0.95;
-    }
-  }
-
-  // Pinned to the top-right of the thread rather than placed in the flow, so it
-  // stays on screen at any scroll position. It sits on a pill of the thread's
-  // own colour so the label never collides with the message underneath it.
-  .react-autoql-clear-conversation-container {
-    position: absolute;
-    top: 6px;
-    right: 18px;
-    z-index: 4;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .react-autoql-clear-conversation-btn {
-    border: none;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font: inherit;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.5;
-    white-space: nowrap;
-    cursor: pointer;
-    color: var(--react-autoql-text-color-placeholder);
-    background-color: var(--react-autoql-background-color-primary);
-    box-shadow: 0 1px 3px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.12));
-    transition: color 0.2s ease, box-shadow 0.2s ease;
-
-    &:hover {
-      color: var(--react-autoql-accent-color);
-      box-shadow: 0 2px 6px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.18));
     }
   }
 

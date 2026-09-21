@@ -49,12 +49,12 @@ describe('sessions disabled (default)', () => {
 })
 
 describe('enableSessions', () => {
-  test('starts with one Untitled session and a thread for it', () => {
+  test('starts with one New thread session and a thread for it', () => {
     const wrapper = setup({ enableSessions: true })
     const tabs = getTabs(wrapper)
 
     expect(tabs).toHaveLength(1)
-    expect(tabs.at(0).text()).toContain('Untitled 1')
+    expect(tabs.at(0).text()).toContain('New thread')
 
     const threads = getThreads(wrapper)
     expect(threads).toHaveLength(1)
@@ -95,8 +95,20 @@ describe('enableSessions', () => {
 
     const tabs = getTabs(wrapper)
     expect(tabs).toHaveLength(2)
-    expect(tabs.at(1).text()).toContain('Untitled 2')
+    expect(tabs.at(1).text()).toContain('New thread 2')
     expect(tabs.at(1).hasClass('active')).toBe(true)
+  })
+
+  test('stops at 8 tabs, the same ceiling the Data Agent puts on threads', () => {
+    const wrapper = setup({ enableSessions: true })
+
+    for (let i = 0; i < 10; i += 1) {
+      wrapper.instance().addSession()
+    }
+    wrapper.update()
+
+    expect(getTabs(wrapper)).toHaveLength(8)
+    expect(wrapper.find('.react-autoql-chat-session-tab-new').prop('disabled')).toBe(true)
   })
 
   test('clicking a tab activates it', () => {
@@ -160,7 +172,7 @@ describe('enableSessions', () => {
     expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(true)
   })
 
-  test('closing all tabs leaves one empty untitled tab', () => {
+  test('closing all tabs leaves one empty new thread tab', () => {
     const wrapper = setup({ enableSessions: true })
     wrapper.instance().addSession()
     wrapper.instance().addSession()
@@ -174,19 +186,19 @@ describe('enableSessions', () => {
     expect(sessions).toHaveLength(1)
     // A new tab, not one of the ones that was open - its thread remounts with it.
     expect(closedIds).not.toContain(sessions[0].id)
-    expect(sessions[0].title).toBe('Untitled 1')
+    expect(sessions[0].title).toBe('New thread')
     expect(wrapper.state('activeSessionId')).toBe(sessions[0].id)
   })
 
-  test('a new tab takes the lowest untitled number no open tab is using', () => {
+  test('a new tab takes the lowest new thread number no open tab is using', () => {
     const wrapper = setup({ enableSessions: true })
     wrapper.instance().addSession()
     wrapper.instance().addSession()
     wrapper.update()
     expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
-      expect.stringContaining('Untitled 1'),
-      expect.stringContaining('Untitled 2'),
-      expect.stringContaining('Untitled 3'),
+      expect.stringContaining('New thread'),
+      expect.stringContaining('New thread 2'),
+      expect.stringContaining('New thread 3'),
     ])
 
     // Close 2 and 3, then add one: it fills the 2 slot rather than becoming 4.
@@ -197,26 +209,50 @@ describe('enableSessions', () => {
     wrapper.update()
 
     expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
-      expect.stringContaining('Untitled 1'),
-      expect.stringContaining('Untitled 2'),
+      expect.stringContaining('New thread'),
+      expect.stringContaining('New thread 2'),
     ])
   })
 
-  test('a tab the backend named frees its untitled number', () => {
+  test('a tab the backend named frees its new thread number', () => {
     const wrapper = setup({ enableSessions: true })
     wrapper.instance().addSession()
     wrapper.update()
 
-    // Name "Untitled 2", so the number it was holding is up for grabs again.
+    // Name "New thread 2", so the number it was holding is up for grabs again.
     wrapper.instance().setSessionTitle(wrapper.state('sessions')[1].id, 'Sales by region')
     wrapper.instance().addSession()
     wrapper.update()
 
     expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
-      expect.stringContaining('Untitled 1'),
+      expect.stringContaining('New thread'),
       expect.stringContaining('Sales by region'),
-      expect.stringContaining('Untitled 2'),
+      expect.stringContaining('New thread 2'),
     ])
+  })
+
+  test('reports content changes for the tab on screen, so the header can offer Clear', () => {
+    const onContentChange = jest.fn()
+    const wrapper = setup({ enableSessions: true, onContentChange })
+
+    wrapper.instance().addSession()
+    wrapper.update()
+    const [firstSession, secondSession] = wrapper.state('sessions')
+
+    // The tab on screen is the new, empty one - filling the other one changes
+    // nothing the header can act on.
+    wrapper.instance().setSessionHasContent(firstSession.id, true)
+    wrapper.update()
+    expect(onContentChange).not.toHaveBeenCalledWith(true)
+
+    wrapper.instance().setSessionHasContent(secondSession.id, true)
+    wrapper.update()
+    expect(onContentChange).toHaveBeenLastCalledWith(true)
+
+    // Switching to a tab with nothing in it takes the action away again.
+    wrapper.instance().setSessionHasContent(secondSession.id, false)
+    wrapper.update()
+    expect(onContentChange).toHaveBeenLastCalledWith(false)
   })
 
   test('the first tab_display_name names the tab, later ones are ignored', () => {

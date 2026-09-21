@@ -500,10 +500,25 @@
     }
   }
 
-  // Always show scrollbars on mobile
+  // No rail on touch: the row is swiped, not dragged, so a permanent bar under the
+  // topics is just a line of clutter on the smallest screen. Scrolling itself is
+  // untouched - only the rail is hidden, and it keeps out of the way of taps.
   @media (hover: none) and (pointer: coarse) {
-    .ps__rail-x {
-      opacity: 0.5 !important;
+    .ps__rail-x,
+    .ps__rail-y {
+      display: none !important;
+    }
+
+    // Safari and Chrome draw their own overlay bar on the scroll container too.
+    &::-webkit-scrollbar,
+    .ps::-webkit-scrollbar {
+      display: none;
+    }
+
+    scrollbar-width: none;
+
+    .ps {
+      scrollbar-width: none;
     }
   }
 }

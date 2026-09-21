@@ -21,6 +21,7 @@ import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { ChatContent } from '../ChatContent'
+import { ConfirmPopover } from '../ConfirmPopover'
 import { AgentMessenger } from '../AgentMessenger'
 import { Tooltip } from '../Tooltip'
 import { Select } from '../Select'
@@ -47,6 +48,13 @@ export class DataMessenger extends React.Component {
     this.SOURCE = mergeSources(props.source, 'data_messenger')
     this.TOOLTIP_ID = `react-autoql-data-messenger-tooltip-${this.COMPONENT_KEY}`
     this.CHART_TOOLTIP_ID = `react-autoql-dm-chart-tooltip-${this.COMPONENT_KEY}`
+
+    // The header's clear-conversation trigger: a quiet text button, sized for a
+    // thumb on mobile.
+    this.popoverDeleteButtonClass = classNames({
+      mobile: isMobile,
+      'popover-delete-button': true,
+    })
 
     this.dataMessengerIntroMessages = [
       props.introMessage ? (
@@ -110,6 +118,10 @@ export class DataMessenger extends React.Component {
       lockedFilters: [],
       selectedValueLabel: undefined,
       isSizeMaximum: false,
+      // Whether the thread on screen has anything to clear. Reported by
+      // ChatContent (per visible session tab), and all the header's
+      // "Clear conversation" button goes on.
+      hasClearableMessages: { 'data-messenger': false, dpr: false },
     }
   }
 
@@ -736,14 +748,50 @@ export class DataMessenger extends React.Component {
     )
   }
 
-  // Clearing the conversation is no longer a header action — ChatContent floats
-  // its own "Clear conversation" button over the top of the thread it owns, so
-  // the control clears the session you are actually looking at. The filter lock
-  // moved out of the header too: it scopes the next query, so it belongs at the
-  // head of the input rather than beside the window controls (see
+  setHasClearableMessages = (page, hasContent) => {
+    this.setState((state) => {
+      if (state.hasClearableMessages[page] === hasContent) {
+        return null
+      }
+
+      return { hasClearableMessages: { ...state.hasClearableMessages, [page]: hasContent } }
+    })
+  }
+
+  // Clearing lives in the header rather than over the thread: it's always in the
+  // same place, it costs the conversation no room, and clearMessages below sends
+  // it to the page — and with sessions on, the tab — you're actually looking at.
+  // Only rendered once there is something to clear. The filter lock moved out of
+  // the header the other way: it scopes the next query, so it belongs at the head
+  // of the input rather than beside the window controls (see
   // renderDataMessengerContent).
   renderRightHeaderContent = () => {
-    return null
+    const { activePage } = this.state
+
+    if (!this.state.hasClearableMessages[activePage]) {
+      return null
+    }
+
+    return (
+      <ConfirmPopover
+        className='react-autoql-drawer-header-btn clear-all'
+        popoverParentElement={this.messengerDrawerRef}
+        title={lang.clearDataResponses}
+        onConfirm={this.clearMessages}
+        confirmText='Clear'
+        backText='Cancel'
+        positions={['bottom', 'left', 'top', 'right']}
+        align='end'
+      >
+        <button
+          data-tooltip-content={lang.clearQueriesTooltip}
+          data-tooltip-id={this.TOOLTIP_ID}
+          className={this.popoverDeleteButtonClass}
+        >
+          Clear conversation
+        </button>
+      </ConfirmPopover>
+    )
   }
 
   projectSelectorHeader = () => {
@@ -1064,6 +1112,7 @@ export class DataMessenger extends React.Component {
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
           enableSessions={this.props.enableSessions}
+          onContentChange={(hasContent) => this.setHasClearableMessages('data-messenger', hasContent)}
         />
       </ErrorBoundary>
     )
@@ -1108,6 +1157,7 @@ export class DataMessenger extends React.Component {
           createDataAlertCallback={this.closeDataMessenger}
           tooltipID={this.TOOLTIP_ID}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
+          onContentChange={(hasContent) => this.setHasClearableMessages('dpr', hasContent)}
         />
       </ErrorBoundary>
     )

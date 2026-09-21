@@ -16,6 +16,7 @@ import {
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
 import { scrollTabIntoView } from '../../js/scrollTabIntoView'
+import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
 
 // Components
 import { Icon } from '../Icon'
@@ -44,6 +45,10 @@ const NESTED_SCROLLER_SELECTOR = '.tabulator-tableholder, .react-autoql-custom-s
 // Px per line, for browsers that report wheel deltas in lines rather than pixels.
 const WHEEL_LINE_HEIGHT = 16
 
+// Same ceiling the Data Agent puts on threads: past this the tab bar is all scroll
+// and no context.
+const MAX_SESSIONS = 8
+
 export default class ChatContent extends React.Component {
   constructor(props) {
     super(props)
@@ -67,7 +72,7 @@ export default class ChatContent extends React.Component {
     // Not isSessionHost()/createSessionObject() — those are class properties, so
     // reading props directly here keeps this independent of field-init order.
     const isSessionHost = !!props.enableSessions && !props.isSessionTab
-    const initialSession = isSessionHost ? { id: uuid(), untitledNumber: 1, title: 'Untitled 1' } : null
+    const initialSession = isSessionHost ? { id: uuid(), title: NEW_THREAD_TITLE } : null
 
     this.state = {
       sessions: initialSession ? [initialSession] : [],
@@ -163,6 +168,10 @@ export default class ChatContent extends React.Component {
     // messages of its own, which decides whether its close button shows when it
     // is the only tab.
     onSessionContentChange: PropTypes.func,
+    // Called with whether there is a conversation to clear — for a session host,
+    // in whichever tab is on screen. The Data Messenger uses it to show its
+    // header's "Clear conversation" button only when it has something to do.
+    onContentChange: PropTypes.func,
     // A tooltip instance owned by the host to register against, so an embedded
     // ChatContent doesn't stand up a second one. Falls back to its own.
     tooltipID: PropTypes.string,
@@ -228,6 +237,8 @@ export default class ChatContent extends React.Component {
         this.scrollActiveSessionTabIntoView()
       }
 
+      this.notifyContentChange()
+
       return
     }
 
@@ -250,6 +261,8 @@ export default class ChatContent extends React.Component {
         this.props.onSessionContentChange(hasContent)
       }
     }
+
+    this.notifyContentChange()
 
     // Check if a new message was added (user request or system response) and scroll to it
     if (this.state.messages.length > prevState.messages.length) {
@@ -322,26 +335,12 @@ export default class ChatContent extends React.Component {
     return !!this.props.enableSessions && !this.props.isSessionTab
   }
 
-  // Lowest number no open tab is using, rather than a running count — close
-  // "Untitled 2" and "Untitled 3" and the next new tab is "Untitled 2" again.
-  // Tabs the backend has named don't hold their number, since nothing on screen
-  // shows it any more.
-  getNextUntitledNumber = (sessions) => {
-    const taken = new Set(sessions.filter((session) => !session.isTitled).map((session) => session.untitledNumber))
-
-    let number = 1
-    while (taken.has(number)) {
-      number += 1
-    }
-
-    return number
-  }
-
   createSessionObject = (sessions) => {
-    // Placeholder title. Once a query in the session comes back with a
-    // tab_display_name, setSessionTitle replaces it.
-    const untitledNumber = this.getNextUntitledNumber(sessions)
-    return { id: uuid(), untitledNumber, title: `Untitled ${untitledNumber}` }
+    // Placeholder title, numbered the way the Data Agent numbers threads: plain
+    // "New thread" unless that name is taken, then the lowest free suffix. Once a
+    // query in the session comes back with a tab_display_name, setSessionTitle
+    // replaces it.
+    return { id: uuid(), title: getUntitledTitle(sessions.map((session) => session.title)) }
   }
 
   scrollActiveSessionTabIntoView = () => {
@@ -368,6 +367,10 @@ export default class ChatContent extends React.Component {
   // the ones from the render it started in.
   addSession = () => {
     this.setState((state) => {
+      if (state.sessions.length >= MAX_SESSIONS) {
+        return null
+      }
+
       const session = this.createSessionObject(state.sessions)
       return { sessions: [...state.sessions, session], activeSessionId: session.id }
     })
@@ -829,6 +832,24 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // Whether there is a conversation to clear right now — for a host, in the tab
+  // that's on screen. Reported up so the drawer header can show its "Clear
+  // conversation" button only when it would do something.
+  notifyContentChange = () => {
+    if (!this.props.onContentChange) {
+      return
+    }
+
+    const hasContent = this.isSessionHost()
+      ? !!this.state.sessions.find((session) => session.id === this.state.activeSessionId)?.hasContent
+      : this.hasNonIntroMessages(this.state.messages)
+
+    if (hasContent !== this.lastReportedHasContent) {
+      this.lastReportedHasContent = hasContent
+      this.props.onContentChange(hasContent)
+    }
+  }
+
   clearMessages = () => {
     if (this.isSessionHost()) {
       this.getActiveSessionRef()?.clearMessages()
@@ -1021,7 +1042,7 @@ export default class ChatContent extends React.Component {
       this.setState({ isQueryRunning: false, isInputDisabled: false })
 
       // Names the session's tab off what was asked in it. Not returned by the
-      // backend yet — until it is, tabs keep their "Untitled N" placeholder.
+      // backend yet — until it is, tabs keep their "New thread" placeholder.
       // The host ignores everything after the first one it accepts.
       if (response?.data?.data?.tab_display_name) {
         this.props.onSessionTitleChange?.(response.data.data.tab_display_name)
@@ -1342,6 +1363,7 @@ export default class ChatContent extends React.Component {
         <button
           className='react-autoql-chat-session-tab-new'
           onClick={this.addSession}
+          disabled={sessions.length >= MAX_SESSIONS}
           aria-label='New chat'
           data-tooltip-content='New chat'
           data-tooltip-id={tooltipID}
@@ -1395,43 +1417,6 @@ export default class ChatContent extends React.Component {
     )
   }
 
-  // Floats over the top of the thread rather than scrolling with it, so the
-  // action stays reachable however far down the conversation you are. Only
-  // offered once there is something to clear — the intro messages don't count.
-  renderClearConversationButton = () => {
-    // With sessions on, closing the tab (or opening a new one) is how you start
-    // fresh, so this would be a second control for the same thing.
-    if (this.props.isSessionTab) {
-      return null
-    }
-
-    if (!this.hasNonIntroMessages(this.state.messages)) {
-      return null
-    }
-
-    return (
-      <div className='react-autoql-clear-conversation-container'>
-        <ConfirmPopover
-          popoverParentElement={this.chatContentRef}
-          title={lang.clearDataResponses}
-          onConfirm={this.clearMessages}
-          confirmText='Clear'
-          backText='Cancel'
-          positions={['bottom', 'left', 'top', 'right']}
-          align='end'
-        >
-          <button
-            className='react-autoql-clear-conversation-btn'
-            data-tooltip-content={lang.clearQueriesTooltip}
-            data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-          >
-            Clear conversation
-          </button>
-        </ConfirmPopover>
-      </div>
-    )
-  }
-
   render = () => {
     if (this.isSessionHost()) {
       return this.renderSessions()
@@ -1476,7 +1461,6 @@ export default class ChatContent extends React.Component {
               ${this.props.enableQueryInputTopics === false ? 'no-topics' : ''}
               ${isMobile ? 'mobile-padding' : ''}`}
           >
-            {this.renderClearConversationButton()}
             <CustomScrollbars
               ref={(r) => (this.messengerScrollComponent = r)}
               className='chat-content-scrollbars-container'
