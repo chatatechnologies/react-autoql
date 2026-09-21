@@ -758,16 +758,24 @@ export class DataMessenger extends React.Component {
   }
 
   // Clearing lives in the header rather than over the thread: it's always in the
-  // same place, it costs the conversation no room, and clearMessages below sends
-  // it to the page — and with sessions on, the tab — you're actually looking at.
-  // Only rendered once there is something to clear. The filter lock moved out of
-  // the header the other way: it scopes the next query, so it belongs at the head
-  // of the input rather than beside the window controls (see
+  // same place, it costs the conversation no room, and clearMessages sends it to
+  // the page you're actually looking at. Only rendered once there is something to
+  // clear, and only on a page where closing the thread is otherwise impossible:
+  // with sessions on, the chat's tab bar already closes a thread (and the Data
+  // Agent's always does), so a second way to do the same thing just crowds the
+  // header. The DPR tab never gets a tab bar (see renderDPRContent), so it keeps
+  // the button even with sessions enabled. The filter lock moved out of the
+  // header the other way: it scopes the next query, so it belongs at the head of
+  // the input rather than beside the window controls (see
   // renderDataMessengerContent).
   renderRightHeaderContent = () => {
     const { activePage } = this.state
 
     if (!this.state.hasClearableMessages[activePage]) {
+      return null
+    }
+
+    if (activePage === 'agent' || (activePage === 'data-messenger' && this.props.enableSessions)) {
       return null
     }
 
