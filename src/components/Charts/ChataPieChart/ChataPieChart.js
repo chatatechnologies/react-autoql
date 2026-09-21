@@ -21,6 +21,31 @@ import StringAxisSelector from '../Axes/StringAxisSelector'
 import { chartDefaultProps, chartPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 import 'd3-transition'
 
+/**
+ * Pull the label text out of a legend cell's datum.
+ *
+ * `getLegendScale` builds the ordinal scale's domain as
+ * `JSON.stringify(labelObject)`, so a d3 legend cell's datum is that JSON
+ * string rather than the label text. Everything else keys off the label text,
+ * so unwrap it here before the datum escapes the click handler.
+ */
+const getLabelStringFromDatum = (datum) => {
+  if (typeof datum !== 'string') {
+    return datum?.label ?? datum
+  }
+
+  try {
+    const parsed = JSON.parse(datum)
+    if (parsed?.label) {
+      return parsed.label
+    }
+  } catch (error) {
+    // Not a stringified label object - it is already the label text
+  }
+
+  return datum
+}
+
 // Simple legend state management using localStorage
 const LegendStateManager = {
   sessionKey: null,
@@ -469,17 +494,26 @@ export default class ChataPieChart extends React.Component {
       .title(title)
       .titleWidth(self.props.width / 2)
       .on('cellclick', function (event, d) {
-        const data = d || select(this).data()[0]
-        const dataIndex = self.state.legendLabels.findIndex((labelObj) => labelObj.label === data)
+        const datum = d || select(this).data()[0]
+
+        // The datum is the scale's domain value, which is a stringified label
+        // object - not the label text. Forwarding it raw meant the parent stored
+        // a JSON blob in `hiddenLegendLabels`, which `getControlledLegendLabels`
+        // then compared against `label.label` and never matched, so `hidden` was
+        // forced back to false and the toggle appeared to do nothing. The
+        // findIndex below was always -1 for the same reason.
+        const label = getLabelStringFromDatum(datum)
+
+        const dataIndex = self.state.legendLabels.findIndex((labelObj) => labelObj.label === label)
         const legendObjStr = JSON.stringify({
           dataIndex,
-          label: data,
+          label,
         })
 
         self.onLegendClick(legendObjStr)
 
         if (self.props.onLegendClick) {
-          self.props.onLegendClick({ label: data, columnIndex: self.props.stringColumnIndex })
+          self.props.onLegendClick({ label, columnIndex: self.props.stringColumnIndex })
         }
       })
 
@@ -492,6 +526,19 @@ export default class ChataPieChart extends React.Component {
       select(legendElement)
         .selectAll('.cell')
         .style('font-size', `${((this.props.fontSize - 2) / 16).toFixed(4)}rem`)
+
+      // Grey out hidden entries. Every other chart type gets this from the
+      // shared Legend, which sets `legend-cell-hidden`; this legend is built
+      // separately so it has to opt in, otherwise a hidden slice leaves its
+      // legend entry looking untouched.
+      select(legendElement)
+        .selectAll('.cell')
+        .each((cellDatum, cellIndex, cellNodes) => {
+          const cellNode = cellNodes[cellIndex]
+          const cellLabel = getLabelStringFromDatum(cellDatum ?? select(cellNode).data()[0])
+          const matchingLabel = self.state.legendLabels.find((labelObj) => labelObj.label === cellLabel)
+          select(cellNode).classed('legend-cell-hidden', !!matchingLabel?.hidden)
+        })
 
       this.applyTitleStyles(title, legendElement)
       this.applyColumnSelectorStyles(legendElement)
