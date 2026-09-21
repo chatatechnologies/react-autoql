@@ -144,24 +144,30 @@ const AgentMessenger = ({
         return
       }
 
-      if (!(event.metaKey || event.ctrlKey)) {
+      if (!event.altKey || event.metaKey || event.ctrlKey) {
         return
       }
 
-      if (event.key === 't') {
+      // Option/Alt puts a character in the composer and, on Windows, reaches for the
+      // menu bar, so both branches have to preventDefault even when nothing happens.
+      if (event.code === 'KeyT') {
         event.preventDefault()
         onNewThread()
-      } else if (event.key === 'w' && activeThread) {
+      } else if (event.code === 'KeyW') {
         event.preventDefault()
-        onCloseThread(activeThread.id)
+
+        if (activeThread) {
+          onCloseThread(activeThread.id)
+        }
       }
     },
     [isLaidOut, onNewThread, onCloseThread, activeThread],
   )
 
-  // Scoped to the panel rather than the window: Cmd/Ctrl+T and Cmd/Ctrl+W are
-  // ordinary browser shortcuts everywhere else in the host app, so they may only be
-  // taken over while focus is actually inside the messenger.
+  // Alt/Option rather than Cmd/Ctrl: the browser keeps Cmd/Ctrl+T and Cmd/Ctrl+W for
+  // its own tabs and ignores preventDefault on them, so Cmd+W would have closed the
+  // whole page along with the thread. Scoped to the panel as well, so the host app's
+  // own shortcuts are only shadowed while focus is inside the messenger.
   useEffect(() => {
     if (!containerElement) {
       return

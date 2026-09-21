@@ -9,12 +9,11 @@ import {
   UNAUTHENTICATED_ERROR,
   GENERAL_QUERY_ERROR,
   dataFormattingDefault,
-  getAuthentication,
-  fetchSubjectList,
 } from 'autoql-fe-utils'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
+import { fetchSubjectListCached } from '../../js/subjectListService'
 import { scrollTabIntoView } from '../../js/scrollTabIntoView'
 import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
 
@@ -399,7 +398,6 @@ export default class ChatContent extends React.Component {
         }
 
         const remainingSessions = sessions.filter((session) => session.id !== sessionId)
-        delete this.sessionRefs[sessionId]
 
         // Closing the last tab starts a fresh one rather than leaving the page with
         // nothing, the same way the Data Agent's threads behave. The new id remounts
@@ -476,7 +474,8 @@ export default class ChatContent extends React.Component {
   }
 
   fetchAllSubjects = () => {
-    fetchSubjectList({ ...getAuthentication(this.props.authentication) })
+    // Cached: with sessions on, one of these runs per tab with the same answer.
+    fetchSubjectListCached(this.props.authentication)
       .then((subjects) => {
         if (this._isMounted) {
           if (subjects?.length) {
@@ -1418,7 +1417,16 @@ export default class ChatContent extends React.Component {
                 <ChatContent
                   {...this.props}
                   key={session.id}
-                  ref={(r) => (this.sessionRefs[session.id] = r)}
+                  // React calls this with null as the tab unmounts, which is where a
+                  // closed session's ref is dropped - doing it from closeSession
+                  // instead would be undone by that detach.
+                  ref={(r) => {
+                    if (r) {
+                      this.sessionRefs[session.id] = r
+                    } else {
+                      delete this.sessionRefs[session.id]
+                    }
+                  }}
                   isSessionTab={true}
                   enableSessions={false}
                   querySessionId={session.id}

@@ -17,15 +17,18 @@ const MOCK_LATENCY_MS = 900
  */
 const createMockRequest = (value, delay) => {
   let timer = null
-  let cancelled = false
+  let rejectRequest = null
 
   return {
+    // Clearing the timer alone would leave the promise pending forever, so the thread
+    // would never leave "sending" - cancel has to settle it itself.
     cancel: () => {
-      cancelled = true
       clearTimeout(timer)
+      rejectRequest?.({ isCancelled: true })
     },
     promise: new Promise((resolve, reject) => {
-      timer = setTimeout(() => (cancelled ? reject({ isCancelled: true }) : resolve(value)), delay)
+      rejectRequest = reject
+      timer = setTimeout(() => resolve(value), delay)
     }),
   }
 }

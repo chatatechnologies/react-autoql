@@ -436,6 +436,21 @@ describe('AgentMessenger', () => {
       expect(document.querySelector('.react-autoql-agent-table-item')).toBeTruthy()
       expect(screen.getByText('17 rows · 22 cols')).toBeInTheDocument()
     })
+
+    it('returns the composer to the user when the mock request is stopped', async () => {
+      renderMessenger({ enableMockResponses: true })
+
+      await sendMessage('How did the Eagles do?')
+
+      await act(async () => {
+        fireEvent.click(screen.getByLabelText('Stop generating'))
+      })
+
+      // Stop has to settle the in-flight mock, not just drop its timer - otherwise the
+      // thread stays in "sending" and the composer never comes back.
+      await waitFor(() => expect(screen.getByLabelText('Send message')).toBeInTheDocument())
+      expect(screen.queryByLabelText('Stop generating')).not.toBeInTheDocument()
+    })
   })
 
   describe('message history', () => {

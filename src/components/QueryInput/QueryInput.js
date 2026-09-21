@@ -23,7 +23,6 @@ import {
   getAuthentication,
   getAutoQLConfig,
   parseJwt,
-  fetchSubjectList,
   fetchDataPreview,
   transformQueryResponse,
 } from 'autoql-fe-utils'
@@ -38,6 +37,7 @@ import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
+import { fetchSubjectListCached } from '../../js/subjectListService'
 import { lang } from '../../js/Localization'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -256,7 +256,8 @@ class QueryInput extends React.Component {
   }
 
   fetchTopics = () => {
-    fetchSubjectList({ ...this.props.authentication })
+    // Cached: every session tab mounts its own QueryInput, all asking for the same list.
+    fetchSubjectListCached(this.props.authentication)
       .then((subjects) => {
         if (this._isMounted && subjects?.length) {
           // Filter out aggregate seed subjects, similar to DataExplorer
@@ -569,10 +570,17 @@ class QueryInput extends React.Component {
         }, 100)
       })
       .catch((error) => {
-        if (error?.message !== REQUEST_CANCELLED_ERROR) {
-          console.error(error)
-          this.onResponse(error, queryText, id)
+        if (error?.message === REQUEST_CANCELLED_ERROR) {
+          // onResponse is what normally clears isQueryRunning, and a cancel skips it -
+          // without this the input stays stuck showing the stop button.
+          if (this._isMounted) {
+            this.setState({ isQueryRunning: false })
+          }
+          return
         }
+
+        console.error(error)
+        this.onResponse(error, queryText, id)
       })
   }
   submitDprQuery = (query, id) => {
@@ -604,6 +612,10 @@ class QueryInput extends React.Component {
 
   cancelQuery = () => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    // A data preview sets isQueryRunning just like a regular query, so the stop button
+    // has to reach its request too - otherwise the preview lands after the stop (or
+    // after the thread was cleared) and repopulates it.
+    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
