@@ -36,7 +36,9 @@ const getLabelStringFromDatum = (datum) => {
 
   try {
     const parsed = JSON.parse(datum)
-    if (parsed?.label) {
+    // Compare on type, not truthiness: an empty label is still a label, and
+    // falling through here would hand the raw JSON blob back to the caller.
+    if (typeof parsed?.label === 'string') {
       return parsed.label
     }
   } catch (error) {
@@ -391,6 +393,10 @@ export default class ChataPieChart extends React.Component {
     select(`#pie-chart-container-${this.CHART_ID}`).attr('transform', `translate(${xDelta},0)`)
   }
 
+  /**
+   * Toggle a legend entry. Returns whether the toggle was applied, so callers
+   * can tell a real change from one the last-visible-slice guard refused.
+   */
   onLegendClick = (legendObjStr) => {
     let legendObj
 
@@ -398,7 +404,7 @@ export default class ChataPieChart extends React.Component {
       legendObj = JSON.parse(legendObjStr)
     } catch (error) {
       console.error(error)
-      return
+      return false
     }
 
     let index = -1
@@ -421,7 +427,7 @@ export default class ChataPieChart extends React.Component {
       index = legendObj.dataIndex
       legendLabel = this.state.legendLabels[index]
     }
-    if (!legendLabel || index === -1) return
+    if (!legendLabel || index === -1) return false
     const onlyLabelVisible = this.state.legendLabels.every((label) => label.label === legendLabel.label || label.hidden)
     if (!onlyLabelVisible || legendLabel.hidden) {
       const newLegendLabels = this.state.legendLabels.map((label) => ({ ...label }))
@@ -437,7 +443,13 @@ export default class ChataPieChart extends React.Component {
         this.renderPie()
         this.storeHiddenLegendState()
       })
+
+      return true
     }
+
+    // Guard refused: this is the only visible slice and hiding it would empty
+    // the chart.
+    return false
   }
 
   renderLegendBorder = () => {
@@ -510,9 +522,13 @@ export default class ChataPieChart extends React.Component {
           label,
         })
 
-        self.onLegendClick(legendObjStr)
+        // Only tell the parent when the toggle actually applied. It keys
+        // `hiddenLegendLabels` off what it is told, and that flows back through
+        // `getControlledLegendLabels` — so forwarding a refused click would hide
+        // the last visible slice anyway and leave an empty chart.
+        const didToggle = self.onLegendClick(legendObjStr)
 
-        if (self.props.onLegendClick) {
+        if (didToggle && self.props.onLegendClick) {
           self.props.onLegendClick({ label, columnIndex: self.props.stringColumnIndex })
         }
       })
