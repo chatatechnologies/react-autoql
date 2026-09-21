@@ -265,8 +265,7 @@ export class DataMessenger extends React.Component {
     agentModelsEndpoint: undefined,
     agentDefaultModelId: undefined,
     agentMockResponses: false,
-    // TODO: flip back to false - on for now so the session id is copyable during testing.
-    agentDebug: true,
+    agentDebug: false,
     mobileActivePage: 'data-messenger',
     disableColumnSelectionForDataExplorer: false,
     enableMagicWand: false,

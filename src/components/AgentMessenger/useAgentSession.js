@@ -226,9 +226,17 @@ export const useAgentSession = ({
   const authRef = useRef(authentication)
   authRef.current = authentication
 
+  // Same reasoning for the models list: MODELS_LOADED always produces a new state
+  // object, so depending on the array identity would re-run this effect on every
+  // render for an integrator passing an inline literal.
+  const modelsKey = useMemo(() => (modelsProp?.length ? JSON.stringify(modelsProp) : ''), [modelsProp])
+
+  const modelsRef = useRef(modelsProp)
+  modelsRef.current = modelsProp
+
   useEffect(() => {
-    if (modelsProp?.length) {
-      dispatch({ type: Actions.MODELS_LOADED, models: modelsProp, defaultModelId })
+    if (modelsRef.current?.length) {
+      dispatch({ type: Actions.MODELS_LOADED, models: modelsRef.current, defaultModelId })
       return
     }
 
@@ -262,7 +270,7 @@ export const useAgentSession = ({
       })
 
     return () => source?.cancel?.()
-  }, [modelsProp, modelsEndpoint, defaultModelId, authKey, enableMockResponses])
+  }, [modelsKey, modelsEndpoint, defaultModelId, authKey, enableMockResponses])
 
   const activeThread = state.threads[state.activeThreadId]
 

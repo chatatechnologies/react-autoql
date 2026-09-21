@@ -231,6 +231,20 @@ class QueryInput extends React.Component {
     if (prevProps.isDisabled && !this.props.isDisabled) {
       this.focus()
     }
+
+    // leftContent can arrive after mount — a session tab that mounts in the
+    // background has none until it becomes the active tab — so the measurement has
+    // to be (re)started here as well, or the padding stays at the unmeasured default.
+    if (!!this.props.leftContent !== !!prevProps.leftContent) {
+      this.leftContentObserver?.disconnect()
+      this.leftContentObserver = undefined
+
+      if (this.props.leftContent) {
+        this.observeLeftContent()
+      } else if (this.state.leftContentWidth) {
+        this.setState({ leftContentWidth: 0 })
+      }
+    }
   }
 
   componentWillUnmount = () => {

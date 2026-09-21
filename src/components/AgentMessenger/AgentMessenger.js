@@ -155,10 +155,17 @@ const AgentMessenger = ({
     [isLaidOut, onNewThread, onCloseThread, activeThread],
   )
 
+  // Scoped to the panel rather than the window: Cmd/Ctrl+T and Cmd/Ctrl+W are
+  // ordinary browser shortcuts everywhere else in the host app, so they may only be
+  // taken over while focus is actually inside the messenger.
   useEffect(() => {
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onKeyDown])
+    if (!containerElement) {
+      return
+    }
+
+    containerElement.addEventListener('keydown', onKeyDown)
+    return () => containerElement.removeEventListener('keydown', onKeyDown)
+  }, [containerElement, onKeyDown])
 
   const onItemRevealed = useCallback(
     (itemId) => {
@@ -440,8 +447,7 @@ AgentMessenger.defaultProps = {
   showPhaseLabels: true,
   sessionEndedMessage: 'This conversation has ended. Start a new one to keep going.',
   enableMockResponses: false,
-  // TODO: flip back to false - on for now so the session id is copyable during testing.
-  debug: true,
+  debug: false,
   tooltipID: undefined,
   onErrorCallback: undefined,
   onSessionCreated: undefined,

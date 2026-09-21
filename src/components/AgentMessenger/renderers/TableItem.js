@@ -141,11 +141,22 @@ const TableItem = ({ data, dataFormatting, maxHeight, isRevealed, onRevealComple
       ...rows.map((row) => row.map(escapeCell).join(',')),
     ].join('\n')
 
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+
     const link = document.createElement('a')
-    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    link.href = url
     link.download = 'agent-response.csv'
+    link.style.display = 'none'
+
+    // In the document and revoked a tick later: revoking synchronously after click()
+    // can pull the URL out from under a download the browser hasn't started reading.
+    document.body.appendChild(link)
     link.click()
-    URL.revokeObjectURL(link.href)
+
+    setTimeout(() => {
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }, 0)
   }
 
   const canScrollX = scroll.scrollWidth > scroll.width + 1

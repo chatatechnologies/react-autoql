@@ -513,8 +513,16 @@ export default class ChatContent extends React.Component {
         this.checkIfAtBottom()
       }
       container.addEventListener('scroll', this.handleScroll)
-      // passive: false — handleThreadWheel needs to be able to preventDefault
-      container.addEventListener('wheel', this.handleThreadWheel, { passive: false })
+
+      // PerfectScrollbar binds its own wheel handler to the container and applies
+      // the delta itself, so a listener on the container would scroll on top of it
+      // (PS registers first at mount, and stopPropagation doesn't reach a listener
+      // on the same element). Capture on the ancestor runs before anything on the
+      // container, so stopPropagation below keeps the delta from being applied twice.
+      // passive: false — handleThreadWheel needs to be able to preventDefault.
+      this.wheelListenerTarget = container.parentElement ?? container
+      this.wheelListenerTarget.addEventListener('wheel', this.handleThreadWheel, { passive: false, capture: true })
+
       // Initial check
       this.checkIfAtBottom()
     }
@@ -524,7 +532,11 @@ export default class ChatContent extends React.Component {
     const container = this.messengerScrollComponent?.getContainer()
     if (container && this.handleScroll) {
       container.removeEventListener('scroll', this.handleScroll)
-      container.removeEventListener('wheel', this.handleThreadWheel)
+    }
+
+    if (this.wheelListenerTarget) {
+      this.wheelListenerTarget.removeEventListener('wheel', this.handleThreadWheel, { capture: true })
+      this.wheelListenerTarget = undefined
     }
   }
 
@@ -533,11 +545,17 @@ export default class ChatContent extends React.Component {
   // mid-flick. Once a scroll gesture is underway, keep it on the thread and let
   // the table have the wheel again only after the gesture has actually stopped.
   //
-  // Bubble phase is fine — the browser applies the scroll after dispatch, so
-  // preventDefault here still cancels the table's scroll.
+  // Runs in capture phase on the container's parent (see addScrollListener), so it
+  // sees the event before PerfectScrollbar and before the table, and the browser
+  // still applies the default scroll after dispatch — preventDefault here cancels it.
   handleThreadWheel = (e) => {
     const container = this.messengerScrollComponent?.getContainer()
     if (!container || !e.deltaY) {
+      return
+    }
+
+    // Capture on the parent also sees wheel events on the container's siblings.
+    if (e.target !== container && !container.contains(e.target)) {
       return
     }
 
@@ -575,6 +593,8 @@ export default class ChatContent extends React.Component {
     const scale = e.deltaMode === 1 ? WHEEL_LINE_HEIGHT : e.deltaMode === 2 ? container.clientHeight : 1
 
     e.preventDefault()
+    // We own this delta now — keep PerfectScrollbar and the table from applying it again.
+    e.stopPropagation()
     container.scrollTop += e.deltaY * scale
     this.lastThreadWheelTime = now
   }
@@ -1402,6 +1422,10 @@ export default class ChatContent extends React.Component {
                   isSessionTab={true}
                   enableSessions={false}
                   querySessionId={session.id}
+                  // Only the host reports content up to the drawer header, and it
+                  // reports the active tab's state. A tab inheriting this from the
+                  // spread would clobber that with its own, background or not.
+                  onContentChange={undefined}
                   onSessionTitleChange={(title) => this.setSessionTitle(session.id, title)}
                   onSessionContentChange={(hasContent) => this.setSessionHasContent(session.id, hasContent)}
                   queryInputLeftContent={isActiveSession ? this.props.queryInputLeftContent : null}
