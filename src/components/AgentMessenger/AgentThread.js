@@ -157,10 +157,13 @@ const AgentThread = ({
   // throttled follow path deliberately skipped.
   const onItemSettled = useCallback(
     (itemId) => {
-      onItemRevealed?.(itemId)
+      // The owning thread's id travels with the item: a response can finish
+      // revealing while the user is on another tab, and the reveal has to be
+      // recorded against this thread rather than whichever one is active.
+      onItemRevealed?.(thread.id, itemId)
       settleScroll()
     },
-    [onItemRevealed, settleScroll],
+    [onItemRevealed, settleScroll, thread.id],
   )
 
   const messageCount = thread.messages.length

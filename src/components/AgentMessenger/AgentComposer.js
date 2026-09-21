@@ -83,6 +83,7 @@ const AgentComposer = forwardRef(
   (
     {
       authentication,
+      threadId,
       placeholder,
       isSending,
       isSessionComplete,
@@ -102,6 +103,43 @@ const AgentComposer = forwardRef(
     const textareaRef = useRef(null)
     // Where the arrow keys are in the stored history: -1 is the live draft.
     const historyIndexRef = useRef(-1)
+
+    // One composer serves every thread, so the draft has to be parked per thread on
+    // the way out and restored on the way back in - otherwise unsent text follows
+    // the user across tabs.
+    const draftsRef = useRef({})
+    const lastThreadIdRef = useRef(threadId)
+    // Read inside the thread-switch effect, which must see the text as it stands at
+    // that moment rather than whatever it was when the effect was last created.
+    const valueRef = useRef(value)
+    valueRef.current = value
+    // Set by setText: a draft meant for the thread we are about to switch *to*, so
+    // it has to survive the restore below instead of being overwritten by it.
+    const pendingTextRef = useRef(null)
+
+    useEffect(() => {
+      const lastThreadId = lastThreadIdRef.current
+
+      if (lastThreadId === threadId) {
+        return
+      }
+
+      lastThreadIdRef.current = threadId
+      historyIndexRef.current = -1
+
+      if (pendingTextRef.current !== null) {
+        // The carried-over text is already in the input; the thread it came from
+        // keeps whatever draft it had rather than a copy of this one.
+        pendingTextRef.current = null
+        return
+      }
+
+      if (lastThreadId !== undefined) {
+        draftsRef.current[lastThreadId] = valueRef.current
+      }
+
+      setValue(draftsRef.current[threadId] ?? '')
+    }, [threadId])
 
     // A recalled message is only worth stepping past when the caret has nowhere
     // left to go, so the arrows keep working inside a multi-line draft.
@@ -133,6 +171,8 @@ const AgentComposer = forwardRef(
     // ended and the question moves to a new thread for the user to adjust and send.
     const setText = useCallback((text) => {
       historyIndexRef.current = -1
+      // Flagged as pending so the thread switch that follows leaves it alone.
+      pendingTextRef.current = text ?? ''
       setValue(text ?? '')
 
       // Caret at the end, so they can keep typing rather than land mid-draft.
@@ -143,7 +183,12 @@ const AgentComposer = forwardRef(
       })
     }, [])
 
-    useImperativeHandle(ref, () => ({ focus, setText }), [focus, setText])
+    // A closed thread is gone for good, so its parked draft goes with it.
+    const clearDraft = useCallback((id) => {
+      delete draftsRef.current[id]
+    }, [])
+
+    useImperativeHandle(ref, () => ({ focus, setText, clearDraft }), [focus, setText, clearDraft])
 
     // Grow with the content up to MAX_HEIGHT_PX, then let the textarea scroll.
     const resize = useCallback(() => {
@@ -312,6 +357,7 @@ AgentComposer.displayName = 'AgentComposer'
 
 AgentComposer.propTypes = {
   authentication: authenticationType,
+  threadId: PropTypes.string,
   placeholder: PropTypes.string,
   isSending: PropTypes.bool,
   isSessionComplete: PropTypes.bool,
@@ -330,6 +376,7 @@ AgentComposer.propTypes = {
 
 AgentComposer.defaultProps = {
   authentication: undefined,
+  threadId: undefined,
   placeholder: 'Ask a question…',
   isSending: false,
   isSessionComplete: false,

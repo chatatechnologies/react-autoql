@@ -127,6 +127,24 @@ describe('AgentMessenger', () => {
     expect(container.querySelector('.react-autoql-agent-text-item')).toBeTruthy()
   })
 
+  it('parks an unsent draft with the thread it was typed in', () => {
+    renderMessenger()
+
+    const input = () => screen.getByRole('textbox')
+    fireEvent.change(input(), { target: { value: 'half a question' } })
+
+    fireEvent.click(screen.getByLabelText('New thread'))
+    expect(input().value).toBe('')
+
+    fireEvent.change(input(), { target: { value: 'a different question' } })
+
+    fireEvent.click(screen.getAllByRole('tab')[0])
+    expect(input().value).toBe('half a question')
+
+    fireEvent.click(screen.getAllByRole('tab')[1])
+    expect(input().value).toBe('a different question')
+  })
+
   describe('closing every thread', () => {
     const openThread = () => fireEvent.click(screen.getByLabelText('New thread'))
 

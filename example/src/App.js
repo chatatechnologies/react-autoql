@@ -1167,7 +1167,6 @@ export default class App extends Component {
             this.setState({ response })
           }}
           showChataIcon
-          showLoadingDots
         />
         <Button
           onClick={() => {

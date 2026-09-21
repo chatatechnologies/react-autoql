@@ -30,7 +30,6 @@ import {
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
-import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
@@ -91,7 +90,6 @@ class QueryInput extends React.Component {
     className: PropTypes.string,
     autoCompletePlacement: PropTypes.string,
     quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
-    showLoadingDots: PropTypes.bool,
     showChataIcon: PropTypes.bool,
     // Rendered at the left end of the input, inside the pill. For controls that
     // scope the query (the filter lock) rather than compose it.
@@ -129,7 +127,6 @@ class QueryInput extends React.Component {
     autoCompletePlacement: 'above',
     quickTopicsPlacement: 'above',
     className: null,
-    showLoadingDots: true,
     showChataIcon: true,
     leftContent: undefined,
     isBackButtonClicked: false,
@@ -1223,14 +1220,9 @@ class QueryInput extends React.Component {
                   <Icon type='react-autoql-bubbles-outlined' />
                 </div>
               )}
-              {/* The stop button occupies this corner while a query runs and carries
-                  the same "working on it" meaning, so the dots would be both
-                  redundant and on top of it. */}
-              {this.props.showLoadingDots && isQueryRunning && this.props.hideInput && (
-                <div className='input-response-loading-container'>
-                  <LoadingDots />
-                </div>
-              )}
+              {/* No loading dots here: the stop button occupies this corner while a
+                  query runs and already carries the "working on it" meaning, so the
+                  dots would be both redundant and on top of it. */}
             </div>
           </div>
 

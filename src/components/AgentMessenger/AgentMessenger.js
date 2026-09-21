@@ -115,6 +115,7 @@ const AgentMessenger = ({
   const onCloseThread = useCallback(
     (threadId) => {
       closeThread(threadId)
+      composerRef.current?.clearDraft(threadId)
       onThreadClose?.(threadId)
     },
     [closeThread, onThreadClose],
@@ -127,7 +128,10 @@ const AgentMessenger = ({
     const closedIds = threads.map((thread) => thread.id)
 
     closeAllThreads()
-    closedIds.forEach((threadId) => onThreadClose?.(threadId))
+    closedIds.forEach((threadId) => {
+      composerRef.current?.clearDraft(threadId)
+      onThreadClose?.(threadId)
+    })
   }, [threads, closeAllThreads, onThreadClose])
 
   const onNewThread = useCallback(() => {
@@ -166,15 +170,6 @@ const AgentMessenger = ({
     containerElement.addEventListener('keydown', onKeyDown)
     return () => containerElement.removeEventListener('keydown', onKeyDown)
   }, [containerElement, onKeyDown])
-
-  const onItemRevealed = useCallback(
-    (itemId) => {
-      if (activeThread) {
-        markItemRevealed(activeThread.id, itemId)
-      }
-    },
-    [activeThread, markItemRevealed],
-  )
 
   const getLastUserText = useCallback((thread) => {
     const lastUserMessage = [...(thread?.messages ?? [])].reverse().find((message) => message.role === 'user')
@@ -354,7 +349,9 @@ const AgentMessenger = ({
               emptyStateSubtitle={emptyStateSubtitle}
               suggestions={suggestions}
               onSuggestionClick={onSubmit}
-              onItemRevealed={onItemRevealed}
+              // Called with the thread's own id, not the active one: an item can
+              // finish revealing while the user is looking at another tab.
+              onItemRevealed={markItemRevealed}
               onRetry={onRetry}
               // At the thread limit there's nowhere to send them, so the offer is
               // withheld rather than rendered as a button that does nothing. The
@@ -369,6 +366,9 @@ const AgentMessenger = ({
         <AgentComposer
           ref={composerRef}
           authentication={authentication}
+          // The composer keeps a draft per thread, so it has to know which one it
+          // is writing for.
+          threadId={activeThread?.id}
           placeholder={placeholder}
           isSending={isSending}
           isSessionComplete={!!activeThread?.isSessionComplete}

@@ -1620,10 +1620,8 @@ export default class ChatContent extends React.Component {
               enableVoiceRecord={this.props.enableVoiceRecord}
               autoCompletePlacement='above'
               showChataIcon={false}
-              showLoadingDots={false}
               placeholder={this.props.inputPlaceholder}
               onErrorCallback={this.props.onErrorCallback}
-              hideInput={this.props.hideInput}
               source={this.props.source}
               scope={this.props.scope}
               queryFilters={this.props.showFilterLockButton ? this.state.lockedFilters : this.props.queryFilters}
