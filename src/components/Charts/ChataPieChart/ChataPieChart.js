@@ -21,6 +21,33 @@ import StringAxisSelector from '../Axes/StringAxisSelector'
 import { chartDefaultProps, chartPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 import 'd3-transition'
 
+/**
+ * Pull the label text out of a legend cell's datum.
+ *
+ * `getLegendScale` builds the ordinal scale's domain as
+ * `JSON.stringify(labelObject)`, so a d3 legend cell's datum is that JSON
+ * string rather than the label text. Everything else keys off the label text,
+ * so unwrap it here before the datum escapes the click handler.
+ */
+const getLabelStringFromDatum = (datum) => {
+  if (typeof datum !== 'string') {
+    return datum?.label ?? datum
+  }
+
+  try {
+    const parsed = JSON.parse(datum)
+    // Compare on type, not truthiness: an empty label is still a label, and
+    // falling through here would hand the raw JSON blob back to the caller.
+    if (typeof parsed?.label === 'string') {
+      return parsed.label
+    }
+  } catch (error) {
+    // Not a stringified label object - it is already the label text
+  }
+
+  return datum
+}
+
 // Simple legend state management using localStorage
 const LegendStateManager = {
   sessionKey: null,
@@ -366,6 +393,10 @@ export default class ChataPieChart extends React.Component {
     select(`#pie-chart-container-${this.CHART_ID}`).attr('transform', `translate(${xDelta},0)`)
   }
 
+  /**
+   * Toggle a legend entry. Returns whether the toggle was applied, so callers
+   * can tell a real change from one the last-visible-slice guard refused.
+   */
   onLegendClick = (legendObjStr) => {
     let legendObj
 
@@ -373,7 +404,7 @@ export default class ChataPieChart extends React.Component {
       legendObj = JSON.parse(legendObjStr)
     } catch (error) {
       console.error(error)
-      return
+      return false
     }
 
     let index = -1
@@ -396,7 +427,7 @@ export default class ChataPieChart extends React.Component {
       index = legendObj.dataIndex
       legendLabel = this.state.legendLabels[index]
     }
-    if (!legendLabel || index === -1) return
+    if (!legendLabel || index === -1) return false
     const onlyLabelVisible = this.state.legendLabels.every((label) => label.label === legendLabel.label || label.hidden)
     if (!onlyLabelVisible || legendLabel.hidden) {
       const newLegendLabels = this.state.legendLabels.map((label) => ({ ...label }))
@@ -412,7 +443,13 @@ export default class ChataPieChart extends React.Component {
         this.renderPie()
         this.storeHiddenLegendState()
       })
+
+      return true
     }
+
+    // Guard refused: this is the only visible slice and hiding it would empty
+    // the chart.
+    return false
   }
 
   renderLegendBorder = () => {
@@ -469,17 +506,30 @@ export default class ChataPieChart extends React.Component {
       .title(title)
       .titleWidth(self.props.width / 2)
       .on('cellclick', function (event, d) {
-        const data = d || select(this).data()[0]
-        const dataIndex = self.state.legendLabels.findIndex((labelObj) => labelObj.label === data)
+        const datum = d || select(this).data()[0]
+
+        // The datum is the scale's domain value, which is a stringified label
+        // object - not the label text. Forwarding it raw meant the parent stored
+        // a JSON blob in `hiddenLegendLabels`, which `getControlledLegendLabels`
+        // then compared against `label.label` and never matched, so `hidden` was
+        // forced back to false and the toggle appeared to do nothing. The
+        // findIndex below was always -1 for the same reason.
+        const label = getLabelStringFromDatum(datum)
+
+        const dataIndex = self.state.legendLabels.findIndex((labelObj) => labelObj.label === label)
         const legendObjStr = JSON.stringify({
           dataIndex,
-          label: data,
+          label,
         })
 
-        self.onLegendClick(legendObjStr)
+        // Only tell the parent when the toggle actually applied. It keys
+        // `hiddenLegendLabels` off what it is told, and that flows back through
+        // `getControlledLegendLabels` — so forwarding a refused click would hide
+        // the last visible slice anyway and leave an empty chart.
+        const didToggle = self.onLegendClick(legendObjStr)
 
-        if (self.props.onLegendClick) {
-          self.props.onLegendClick({ label: data, columnIndex: self.props.stringColumnIndex })
+        if (didToggle && self.props.onLegendClick) {
+          self.props.onLegendClick({ label, columnIndex: self.props.stringColumnIndex })
         }
       })
 
@@ -492,6 +542,19 @@ export default class ChataPieChart extends React.Component {
       select(legendElement)
         .selectAll('.cell')
         .style('font-size', `${((this.props.fontSize - 2) / 16).toFixed(4)}rem`)
+
+      // Grey out hidden entries. Every other chart type gets this from the
+      // shared Legend, which sets `legend-cell-hidden`; this legend is built
+      // separately so it has to opt in, otherwise a hidden slice leaves its
+      // legend entry looking untouched.
+      select(legendElement)
+        .selectAll('.cell')
+        .each((cellDatum, cellIndex, cellNodes) => {
+          const cellNode = cellNodes[cellIndex]
+          const cellLabel = getLabelStringFromDatum(cellDatum ?? select(cellNode).data()[0])
+          const matchingLabel = self.state.legendLabels.find((labelObj) => labelObj.label === cellLabel)
+          select(cellNode).classed('legend-cell-hidden', !!matchingLabel?.hidden)
+        })
 
       this.applyTitleStyles(title, legendElement)
       this.applyColumnSelectorStyles(legendElement)
