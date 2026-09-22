@@ -115,6 +115,14 @@
   .react-autoql-chatbar-input {
     font-size: 16px;
   }
+
+  // Safari's zoom heuristic reads the input's own font-size, not the placeholder's,
+  // so the prompt can stay at the thread's 0.875rem while the text you type keeps
+  // the 16px that stops the page zooming. Without this the placeholder is the
+  // largest text on the screen in an empty chat.
+  .react-autoql-chatbar-input::placeholder {
+    font-size: 0.875rem;
+  }
 }
 
 .react-autoql-chatbar-input.left-padding {
@@ -413,6 +421,71 @@
       margin: 0;
       font-size: 0.9375rem;
     }
+  }
+}
+
+// The filter lock, at the head of the query input. It scopes the next query, so it
+// reads as part of asking a question rather than as window chrome. A disc with a
+// resting fill and a hairline, echoing the send button at the other end of the pill
+// - with no body at rest it read as decoration on the input rather than a control.
+.react-autoql-input-filter-lock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 24px in a 36px input: enough of a body to read as a control, with room left
+  // around it so the pill doesn't look packed. No border of its own - the input
+  // pill is already an outline, and a ring inside a ring inside the topic chips
+  // above is what made this corner look busy. The fill does the work instead.
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--react-autoql-dm-header-btn-hover, rgba(128, 134, 142, 0.16));
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+
+  // The badge sits BESIDE the funnel here rather than on top of it - at 24px a dot
+  // pinned to the corner covered the icon it was meant to annotate. The button
+  // widens into a pill to make room, so both are legible.
+  .react-autoql-filter-lock-icon-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .react-autoql-filter-lock-icon-badge {
+    position: static;
+    width: 4px;
+    height: 4px;
+    border: none;
+    border-radius: 50%;
+    background: var(--react-autoql-warning-color);
+  }
+
+  &.has-filters {
+    width: auto;
+    padding: 0 6px;
+  }
+
+  // Open, or holding filters: the accent fill says the next query is scoped.
+  &.is-open,
+  &.has-filters {
+    background-color: rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.14
+    );
+    color: var(--react-autoql-accent-color);
   }
 }
 
@@ -798,164 +871,6 @@
   align-items: center;
   justify-content: center;
   z-index: 2;
-}
-
-// LLM empty state — input + topics are one unified rounded container
-.react-autoql-query-input-wrapper.llm-empty-state {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  border: 1px solid var(--react-autoql-border-color);
-  border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
-
-  // Bar container rounds all corners by default (no topics below)
-  .react-autoql-bar-container {
-    padding: 0;
-    border: none;
-    border-radius: 20px;
-    box-shadow: none;
-    background-color: var(--react-autoql-background-color-secondary);
-
-    .react-autoql-input-row {
-      align-items: center;
-    }
-
-    .react-autoql-chatbar-input {
-      margin: 0;
-      width: 100%;
-      border: none;
-      box-shadow: none;
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      height: 60px;
-      padding-left: 20px;
-
-      &::before {
-        display: none;
-      }
-
-      &:hover {
-        box-shadow: none;
-        border-color: transparent;
-      }
-    }
-
-    .react-autosuggest__container {
-      flex: 1;
-    }
-
-    // This state's taller input sets its own padding-left at a specificity that
-    // outranks the .has-* rules above, and its input has no margin of its own - so
-    // the left-hand controls and the text that has to clear them are re-stated here
-    // against this state's own geometry. Without it the filter lock and the
-    // collapsed Quick Topics button land on top of each other and the placeholder.
-    .react-autoql-chatbar-input-container {
-      .react-autoql-input-left-content,
-      .topics-collapsed-icon {
-        left: 12px;
-      }
-
-      &.has-left-content .react-autoql-chatbar-input,
-      &.has-collapsed-icon .react-autoql-chatbar-input {
-        padding-left: 44px;
-      }
-
-      &.has-left-content:has(.react-autoql-input-filter-lock-btn.has-filters) .react-autoql-chatbar-input {
-        padding-left: 55px;
-      }
-
-      &.has-left-content.has-collapsed-icon {
-        .react-autoql-chatbar-input {
-          padding-left: 74px;
-        }
-
-        .topics-collapsed-icon {
-          left: 42px;
-        }
-      }
-    }
-
-    // Clear of the send disc, which now sits inside this input at right: 8px.
-    .input-microphone-button {
-      right: 40px;
-    }
-
-    .chat-voice-record-button {
-      margin: 0;
-    }
-
-    &.autosuggest-top .react-autosuggest__suggestions-container--open {
-      bottom: 54px;
-    }
-
-    &.autosuggest-bottom .react-autosuggest__suggestions-container--open {
-      top: 54px;
-    }
-  }
-
-  // When topics are present, flatten bar-container bottom corners and round topics bottom
-  &:has(.react-autoql-input-query-suggestions.placement-below) {
-    .react-autoql-bar-container {
-      border-radius: 20px 20px 0 0;
-    }
-  }
-
-  .react-autoql-input-query-suggestions.placement-below {
-    background-color: var(--react-autoql-background-color-secondary);
-    border-top: 1px solid var(--react-autoql-border-color);
-    border-bottom: none;
-    border-radius: 0 0 20px 20px;
-    box-shadow: none;
-    padding: 8px 12px;
-
-    .query-suggestions-collapse-btn {
-      pointer-events: none;
-      cursor: default;
-
-      .react-autoql-icon:first-child {
-        display: none;
-      }
-    }
-  }
-
-  // Inside the pill now, so a right margin on the flex row means nothing - the LLM
-  // empty state's taller input just needs the disc a touch further in.
-  .react-autoql-input-send-button {
-    right: 8px;
-  }
-
-  @media (max-width: 576px) {
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-
-    .react-autoql-bar-container {
-      border-radius: 16px;
-
-      .react-autoql-chatbar-input {
-        height: 52px;
-        font-size: 0.9375rem;
-
-        // This rule outranks the coarse-pointer floor above on specificity, so it has
-        // to restate it - 15px here is what made iOS zoom the page in on focus.
-        @media (hover: none) and (pointer: coarse) {
-          font-size: 16px;
-        }
-      }
-    }
-
-    &:has(.react-autoql-input-query-suggestions.placement-below) {
-      .react-autoql-bar-container {
-        border-radius: 16px 16px 0 0;
-      }
-    }
-
-    .react-autoql-input-query-suggestions.placement-below {
-      border-radius: 0 0 16px 16px;
-      padding: 4px 8px;
-    }
-  }
 }
 
 /* Send button — a flat accent disc at the right end INSIDE the pill, the way the

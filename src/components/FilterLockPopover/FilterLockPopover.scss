@@ -8,6 +8,12 @@
   // styles every arrowless popover through that exact selector (0,2,0) with a 4px
   // radius, a border and a shadow of its own, which outranks a bare
   // `.filter-lock-popover` - that rule was the sharp corner.
+  // The menu sizes itself off its boundary element so it stays inside a panel as
+  // narrow as the Data Messenger drawer. A full-page thread is the other extreme —
+  // that inline width would run the whole screen — so cap it here. max-width beats
+  // an inline width, which is why this works without !important.
+  max-width: 480px;
+
   &.react-tiny-popover-container:not(.popover-with-arrow-container) {
     display: flex;
     border: 1px solid var(--react-autoql-border-color);
@@ -42,16 +48,20 @@
     overflow: hidden;
   }
 
-  // Full-bleed on mobile, so corners and a shadow have nothing to sit against.
+  // Mobile is a sheet dropped from the top of the screen: it reaches the edges, so
+  // the sides and top get no corners, but it STOPS above the composer — and there it
+  // needs an edge of its own. Without one the panel and the page behind it are the
+  // same dark, and the sheet just seems to stop existing partway down.
   &.filter-lock-popover-mobile,
   &.filter-lock-popover-mobile.react-tiny-popover-container:not(.popover-with-arrow-container) {
     border: none;
-    border-radius: 0;
-    box-shadow: none;
+    border-bottom: 1px solid var(--react-autoql-border-color);
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 8px 24px -8px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.1));
 
     &.react-tiny-popover-container .popover-container-content,
     .filter-lock-menu-content {
-      border-radius: 0;
+      border-radius: 0 0 12px 12px;
     }
   }
 

@@ -19,7 +19,6 @@ import { ExploreQueries } from '../ExploreQueries'
 import { DataExplorer } from '../DataExplorer'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
-import { FilterLockPopover } from '../FilterLockPopover'
 import { ChatContent } from '../ChatContent'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { AgentMessenger } from '../AgentMessenger'
@@ -56,47 +55,29 @@ export class DataMessenger extends React.Component {
       'popover-delete-button': true,
     })
 
-    this.dataMessengerIntroMessages = [
-      props.introMessage ? (
-        `${props.introMessage}`
-      ) : (
-        // The Data Explorer pitch is a link to a page that only exists when the tab
-        // is on. Without it there's just one short sentence left to add, so it goes
-        // on the same line as the greeting rather than getting a paragraph break.
-        props.enableDataExplorerTab ? (
-          <>
-            <span>Hi {props.userDisplayName || 'there'}! Let’s dive into your data.</span>
-            <br />
-            <br />
-            <span>Get started by asking a query below, or use </span>
-            <span className='intro-qi-link' onClick={this.openDataExplorer}>
-              <Icon type='data-search' /> {lang.dataExplorer}
-            </span>
-            <span> to discover what data is available to you!</span>
-          </>
-        ) : (
-          <span>
-            Hi {props.userDisplayName || 'there'}! Let’s dive into your data. Get started by asking a query below!
-          </span>
-        )
-      ),
-    ]
+    // The one thing worth adding to the empty state beyond "ask a question": where to
+    // look when you don't know what there is to ask about. Only offered when the tab
+    // exists — Quick Topics stays out of it, since the input already shows them.
+    this.dataExplorerEmptyStateSubtitle = (
+      <span>
+        Ask about your data in plain language, or use{' '}
+        <span className='empty-state-de-link' onClick={this.openDataExplorer}>
+          <Icon type='data-search' /> {lang.dataExplorer}
+        </span>{' '}
+        to discover what's available to you.
+      </span>
+    )
 
-    this.dprMessengerIntroMessages = [
-      <>
-        <span>Ask questions, get answers.</span>
-        <br />
-        <br />
-        <span>
-          Get helpful information about trading and investing, simply by asking a question in your own words. Results
-          are returned from content on{' '}
-          <a href='https://www.investopedia.com/' target='_blank' rel='noopener noreferrer'>
-            Investopedia®
-          </a>
-          , including applicable reference links.
-        </span>
-      </>,
-    ]
+    this.dprEmptyStateSubtitle = (
+      <span>
+        Get helpful information about trading and investing, simply by asking a question in your own words. Results are
+        returned from content on{' '}
+        <a href='https://www.investopedia.com/' target='_blank' rel='noopener noreferrer'>
+          Investopedia®
+        </a>
+        , including applicable reference links.
+      </span>
+    )
 
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
@@ -114,8 +95,6 @@ export class DataMessenger extends React.Component {
       isWindowResizing: false,
       placement: this.getPlacementProp(props.placement),
       isOptionsDropdownOpen: false,
-      isFilterLockMenuOpen: false,
-      lockedFilters: [],
       selectedValueLabel: undefined,
       isSizeMaximum: false,
       // Whether the thread on screen has anything to clear. Reported by
@@ -145,7 +124,10 @@ export class DataMessenger extends React.Component {
     enableVoiceRecord: PropTypes.bool,
     title: PropTypes.string,
     maxMessages: PropTypes.number,
-    introMessage: PropTypes.string,
+    // Headline and supporting line for the centred message shown while the chat is
+    // empty. Forwarded to ChatContent, which falls back to its own defaults.
+    emptyStateTitle: PropTypes.node,
+    emptyStateSubtitle: PropTypes.node,
     // Data Explorer is the supported way to browse topics and sample queries.
     enableDataExplorerTab: PropTypes.bool,
     // Deprecated: superseded by Data Explorer. Off by default; only enable it for
@@ -235,7 +217,8 @@ export class DataMessenger extends React.Component {
     enableVoiceRecord: true,
     title: 'Data Messenger',
     maxMessages: 20,
-    introMessage: '',
+    emptyStateTitle: undefined,
+    emptyStateSubtitle: undefined,
     enableDataExplorerTab: false,
     enableExploreQueriesTab: false,
     enableNotificationsTab: false,
@@ -325,7 +308,6 @@ export class DataMessenger extends React.Component {
       }
 
       if (this.state.activePage !== prevState.activePage) {
-        nextState.isFilterLockMenuOpen = false
         nextState.selectedValueLabel = undefined
       }
 
@@ -430,6 +412,7 @@ export class DataMessenger extends React.Component {
       }
     })
   }
+
   openNotificationFeed = () => {
     if (isMobile) {
       this.props.setMobileActivePage('notification-feed')
@@ -574,8 +557,7 @@ export class DataMessenger extends React.Component {
   onDrawerChange = (isOpen) => {
     if (!isOpen) {
       this.setState({
-        isFilterLockMenuOpen: false,
-        selectedValueLabel: undefined,
+          selectedValueLabel: undefined,
         isVisible: false,
       })
     } else {
@@ -623,12 +605,6 @@ export class DataMessenger extends React.Component {
     } else {
       this.clearQueriesDropdown.style.display = 'block'
     }
-  }
-
-  onRTValueLabelClick = (text) => {
-    this.setState({ isFilterLockMenuOpen: true }, () => {
-      this.filterLockRef?.insertFilter(text)
-    })
   }
 
   clearMessages = () => {
@@ -865,65 +841,6 @@ export class DataMessenger extends React.Component {
     return <div className='header-title'>{title}</div>
   }
 
-  openFilterLockMenu = () => {
-    if (!this.state.isFilterLockMenuOpen) {
-      this.setState({
-        isFilterLockMenuOpen: true,
-      })
-    }
-  }
-
-  closeFilterLockMenu = () => {
-    if (this.state.isFilterLockMenuOpen) {
-      this.setState({
-        isFilterLockMenuOpen: false,
-      })
-    }
-  }
-
-  onFilterChange = (allFilters) => {
-    const sessionFilters = allFilters.filter((filter) => filter.isSession)
-    // The full list, not just the session ones: the button's tooltip summarises
-    // everything currently scoping a query.
-    this.setState({ sessionFilters, lockedFilters: allFilters ?? [], hasFilters: !!allFilters?.length })
-  }
-
-  // A plain-text summary of what the next query is scoped to, grouped by the
-  // category each value came from and split by include/exclude. Text rather than
-  // HTML so a filter value — which is user data — can never inject markup; the
-  // newlines render because the tooltip class sets white-space: pre-line.
-  getFilterSummary = () => {
-    const filters = this.state.lockedFilters ?? []
-
-    if (!filters.length) {
-      return undefined
-    }
-
-    const groups = []
-    filters.forEach((filter) => {
-      const category = filter.show_message || 'Filter'
-      const isExcluded = filter.filter_type === 'exclude'
-      let group = groups.find((g) => g.category === category && g.isExcluded === isExcluded)
-
-      if (!group) {
-        group = { category, isExcluded, values: [] }
-        groups.push(group)
-      }
-
-      group.values.push(filter.value)
-    })
-
-    const MAX_VALUES_PER_GROUP = 4
-    const lines = groups.map(({ category, isExcluded, values }) => {
-      const shown = values.slice(0, MAX_VALUES_PER_GROUP)
-      const remaining = values.length - shown.length
-      const suffix = remaining > 0 ? `, +${remaining} more` : ''
-      return `${category}${isExcluded ? ' (excluded)' : ''}: ${shown.join(', ')}${suffix}`
-    })
-
-    return [lang.filterSummaryTooltipTitle, ...lines].join('\n')
-  }
-
   isOpen = () => {
     return !!this.dmRef?.state?.open
   }
@@ -937,49 +854,6 @@ export class DataMessenger extends React.Component {
   // that is what lets Tabulator keep its measurements instead of remounting on every open.
   isActivePage = (page) => {
     return this.state.activePage === page
-  }
-
-  renderFilterLockPopover = () => {
-    this.filterLockingDrawerHeaderButtonClass = classNames({
-      'react-autoql-input-filter-lock-btn': true,
-      'is-open': this.state.isFilterLockMenuOpen,
-      'has-filters': !!this.state.hasFilters,
-      mobile: isMobile,
-    })
-    const filterSummary = this.getFilterSummary()
-
-    return (
-      <FilterLockPopover
-        ref={(r) => (this.filterLockRef = r)}
-        authentication={this.props.authentication}
-        isOpen={this.state.isFilterLockMenuOpen}
-        onChange={this.onFilterChange}
-        onClose={this.closeFilterLockMenu}
-        parentElement={this.messengerDrawerRef}
-        boundaryElement={this.messengerDrawerRef}
-        tooltipID={this.TOOLTIP_ID}
-        // Anchored at the bottom of the panel now, so the menu opens upward into
-        // the thread rather than off the bottom edge.
-        positions={['top', 'right', 'left', 'bottom']}
-        align='start'
-      >
-        <button
-          className={this.filterLockingDrawerHeaderButtonClass}
-          // With filters on, the tooltip says what they are and says it straight
-          // away — the badge alone tells you something is filtered but not what,
-          // and that is the thing you want to check before asking a question.
-          data-tooltip-content={filterSummary ?? lang.openFilterLocking}
-          data-tooltip-delay-show={filterSummary ? 0 : undefined}
-          data-tooltip-id={this.TOOLTIP_ID}
-          onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
-        >
-          <span className='react-autoql-filter-lock-icon-container'>
-            <Icon type='filter' />
-            {this.state.hasFilters ? <div className='react-autoql-filter-lock-icon-badge' /> : null}
-          </span>
-        </button>
-      </FilterLockPopover>
-    )
   }
 
   renderHeaderContent = () => {
@@ -1071,10 +945,6 @@ export class DataMessenger extends React.Component {
   }
 
   renderDataMessengerContent = () => {
-    const valueLabelClickFn = getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking
-      ? this.onRTValueLabelClick
-      : undefined
-
     return (
       <ErrorBoundary>
         <ChatContent
@@ -1088,9 +958,10 @@ export class DataMessenger extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={this.SOURCE}
-          onRTValueLabelClick={valueLabelClickFn}
-          queryFilters={this.state.sessionFilters}
-          introMessages={this.dataMessengerIntroMessages}
+          emptyStateSubtitle={
+            this.props.emptyStateSubtitle ??
+            (this.props.enableDataExplorerTab ? this.dataExplorerEmptyStateSubtitle : undefined)
+          }
           inputPlaceholder={this.props.inputPlaceholder ?? lang.queryPrompt}
           autoChartAggregations={this.props.autoChartAggregations}
           executeQuery={(queryRequestParams) => {
@@ -1110,11 +981,6 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
-          // The filter lock lives at the left end of the query input. With sessions
-          // on, ChatContent hands it to the visible tab only.
-          queryInputLeftContent={
-            getAutoQLConfig(this.props.autoQLConfig).enableFilterLocking ? this.renderFilterLockPopover() : null
-          }
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
@@ -1144,7 +1010,8 @@ export class DataMessenger extends React.Component {
           }}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={this.SOURCE}
-          introMessages={this.dprMessengerIntroMessages}
+          emptyStateTitle='Ask questions, get answers.'
+          emptyStateSubtitle={this.dprEmptyStateSubtitle}
           disableMaxMessageHeight={true}
           inputPlaceholder='Type your questions here'
           // Sessions are a Data Messenger chat feature — the DPR tab talks to a

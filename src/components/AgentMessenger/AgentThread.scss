@@ -111,7 +111,9 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 1rem 0;
+  // Optical centring, same as ChatContent's empty state: the logo makes the block
+  // top-heavy, so the geometric centre reads low. The bottom padding lifts it ~3rem.
+  padding: 1rem 0 7rem;
   text-align: center;
 }
 

@@ -115,7 +115,6 @@ class QueryInput extends React.Component {
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
     disableColumnSelection: PropTypes.bool,
-    isLLMEmptyState: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -144,7 +143,6 @@ class QueryInput extends React.Component {
     addResponseMessage: () => {},
     executeQuery: () => {},
     disableColumnSelection: false,
-    isLLMEmptyState: false,
   }
 
   componentDidMount = () => {
@@ -195,11 +193,10 @@ class QueryInput extends React.Component {
   // Where the head-of-pill controls start, measured from the input CONTAINER's edge,
   // and how far the input's own left edge is inside that container.
   getLeftControlGeometry = () => {
-    const isEmptyState = !!this.props.isLLMEmptyState
     return {
-      controlsStart: isEmptyState ? 12 : 18,
-      // .react-autoql-chatbar-input's own margin, which the empty state removes.
-      inputMargin: isEmptyState ? 0 : 10,
+      controlsStart: 18,
+      // .react-autoql-chatbar-input's own margin.
+      inputMargin: 10,
       gap: 6,
       // .topics-collapsed-icon's fixed size.
       collapsedIconWidth: 24,
@@ -1036,7 +1033,7 @@ class QueryInput extends React.Component {
       style: inputPaddingLeft ? { paddingLeft: `${inputPaddingLeft}px` } : undefined,
     }
 
-    const isTopicsBelow = this.props.isLLMEmptyState || this.props.quickTopicsPlacement === 'below'
+    const isTopicsBelow = this.props.quickTopicsPlacement === 'below'
 
     const toggleTopicsCollapsed = () =>
       this.setState((s) => ({
@@ -1143,9 +1140,7 @@ class QueryInput extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'} ${
-            this.props.isLLMEmptyState ? 'llm-empty-state' : ''
-          }`}
+          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'}`}
           ref={(ref) => (this.queryInputWrapperRef = ref)}
         >
           {/* Query Suggestions - Render ABOVE input when placement is 'above' */}

@@ -105,7 +105,7 @@ export default class App extends Component {
     showMask: true,
     shiftScreen: false,
     userDisplayName: 'Nikki',
-    introMessage: undefined,
+    emptyStateTitle: undefined,
     enableAutocomplete: true,
     enableQueryInterpretation: true,
     enableFilterLocking: true,
@@ -963,14 +963,13 @@ export default class App extends Component {
           }}
           value={this.state.userDisplayName}
         />
-        <h4>Intro Message</h4>
-        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
+        <h4>Empty State Title</h4>
         <Input
           type='text'
           onChange={(e) => {
-            this.setState({ introMessage: e.target.value })
+            this.setState({ emptyStateTitle: e.target.value })
           }}
-          value={this.state.introMessage}
+          value={this.state.emptyStateTitle}
         />
         <h4>Query Input Placeholder</h4>
         <Input
@@ -1114,7 +1113,7 @@ export default class App extends Component {
             : 'bottom'
         }
         userDisplayName={this.state.userDisplayName}
-        introMessage={this.state.introMessage}
+        emptyStateTitle={this.state.emptyStateTitle}
         showMask={this.state.showMask}
         shiftScreen={this.state.shiftScreen}
         enableVoiceRecord={this.state.enableVoiceRecord}

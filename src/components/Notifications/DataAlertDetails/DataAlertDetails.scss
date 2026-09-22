@@ -7,6 +7,10 @@
   max-width: 100%;
   overflow-x: hidden;
 
+  @media (max-width: 768px) {
+    padding: 12px 12px 16px;
+  }
+
   // ---- state, first thing you see ----------------------------------------
   .react-autoql-data-alert-details-status-strip {
     display: flex;

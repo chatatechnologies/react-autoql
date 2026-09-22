@@ -83,9 +83,8 @@ export default class ChatContent extends React.Component {
       isInputDisabled: false,
       isGeneratingSummary: false,
       isAtBottom: true,
-      // Filter lock (only used when showFilterLockButton is set — renders the
-      // lock control in a toolbar above the composer). lockedFilters/hasFilters
-      // are populated by onFilterChange once FilterLockPopover fetches on mount.
+      // Filter lock (see ownsFilterLock). lockedFilters/hasFilters are populated
+      // by onFilterChange once FilterLockPopover fetches on mount.
       isFilterLockMenuOpen: false,
       lockedFilters: [],
       hasFilters: false,
@@ -102,14 +101,12 @@ export default class ChatContent extends React.Component {
     enableDynamicCharting: PropTypes.bool.isRequired,
     autoChartAggregations: PropTypes.bool.isRequired,
     enableFilterLocking: PropTypes.bool.isRequired,
-    // When true, ChatContent renders its OWN filter-lock control (a toolbar
-    // above the composer) and manages the locked filters internally, feeding
-    // them to its QueryInput. Use this when ChatContent is embedded outside
-    // DataMessenger (which renders its own header lock). Default false so
-    // DataMessenger is unaffected.
+    // Forces the filter-lock control on when `autoQLConfig.enableFilterLocking`
+    // is not set. The lock normally follows that config flag — this is for a
+    // consumer that wants the control without it.
     showFilterLockButton: PropTypes.bool,
-    // Label for the filter-lock toolbar button (e.g. the filter category the
-    // data uses, like "Household"). Defaults to a generic "Filters".
+    // Tooltip for the filter-lock button (e.g. the filter category the data uses,
+    // like "Household"). Defaults to the generic "Manage Filters".
     filterLockButtonLabel: PropTypes.string,
     onErrorCallback: PropTypes.func.isRequired,
     onSuccessAlert: PropTypes.func.isRequired,
@@ -132,12 +129,10 @@ export default class ChatContent extends React.Component {
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
-    enableLLMStyleEmptyState: PropTypes.bool,
-    llmEmptyStateTitle: PropTypes.string,
-    // When false, the LLM empty state renders WITHOUT its title/logo row (the
-    // rest of the empty-state layout — and the `.llm-empty-state` class hosts
-    // rely on — stays intact). Default true.
-    showLLMEmptyStateTitle: PropTypes.bool,
+    // Headline and supporting line for the centred message shown while the
+    // thread has no messages. Fall back to the defaults in Localization.
+    emptyStateTitle: PropTypes.node,
+    emptyStateSubtitle: PropTypes.node,
     // When false, no message offers the "Delete data response" button. For
     // integrators whose chat is a durable record rather than a scratchpad —
     // removing an answer from the thread is meaningless there, and the button
@@ -158,11 +153,10 @@ export default class ChatContent extends React.Component {
     // Internal. How a session tab reports the tab_display_name from a query
     // response back to its host.
     onSessionTitleChange: PropTypes.func,
-    // Rendered at the left end of this thread's query input, inside the pill.
-    // The Data Messenger puts its filter lock button here. A session host hands it
-    // to the visible session only - it is one element with one ref, so mounting a
-    // copy in every tab would have them fighting over it.
-    queryInputLeftContent: PropTypes.node,
+    // Internal. The host's filter lock, handed to the visible session only: it is
+    // one element with one ref and one set of locked filters, so mounting a copy in
+    // every tab would have them fighting over it. Tabs never render their own.
+    filterLockElement: PropTypes.node,
     // Internal. How a session tab tells its host it now has (or no longer has)
     // messages of its own, which decides whether its close button shows when it
     // is the only tab.
@@ -193,9 +187,8 @@ export default class ChatContent extends React.Component {
     enableBillingGate: false,
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
-    enableLLMStyleEmptyState: false,
-    llmEmptyStateTitle: undefined,
-    showLLMEmptyStateTitle: true,
+    emptyStateTitle: undefined,
+    emptyStateSubtitle: undefined,
     showFilterLockButton: false,
     filterLockButtonLabel: undefined,
     enableMessageDelete: true,
@@ -210,10 +203,6 @@ export default class ChatContent extends React.Component {
     // A session host has no thread of its own — its children do the work.
     if (this.isSessionHost()) {
       return
-    }
-
-    if (!this.props.enableLLMStyleEmptyState && this.props.introMessages?.length) {
-      this.addIntroMessages(this.props.introMessages)
     }
 
     //disable input focus for mobile, as ios keyboard has bug
@@ -246,6 +235,12 @@ export default class ChatContent extends React.Component {
       this.focusInput()
     }
 
+    // The thread went off screen (the drawer closed, or another page took over)
+    // with the lock menu open — it would otherwise be waiting there on the way back.
+    if (!this.props.shouldRender && prevProps.shouldRender && this.state.isFilterLockMenuOpen) {
+      this.closeFilterLockMenu()
+    }
+
     if (!_isEqual(this.props.authentication, prevProps.authentication)) {
       this.fetchAllSubjects()
     }
@@ -253,8 +248,8 @@ export default class ChatContent extends React.Component {
     // Tell the session host when this tab stops (or goes back to) being empty, so
     // it can show or hide the close button on a lone tab.
     if (this.props.onSessionContentChange && prevState.messages !== this.state.messages) {
-      const hadContent = this.hasNonIntroMessages(prevState.messages)
-      const hasContent = this.hasNonIntroMessages(this.state.messages)
+      const hadContent = !!prevState.messages?.length
+      const hasContent = !!this.state.messages?.length
 
       if (hadContent !== hasContent) {
         this.props.onSessionContentChange(hasContent)
@@ -325,6 +320,37 @@ export default class ChatContent extends React.Component {
       this.scrollTimeout = null
     }
     this.removeScrollListener()
+    this.composerObserver?.disconnect()
+    this.composerObserver = undefined
+  }
+
+  // The composer's height, published so the mobile filter-lock sheet can stop just
+  // above it. That sheet is portalled to the body (react-tiny-popover drops
+  // parentElement on mobile), so it has no way to measure the input itself, and the
+  // height is not a constant: the Quick Topics row is optional and wraps.
+  setComposerRef = (element) => {
+    this.composerRef = element
+
+    this.composerObserver?.disconnect()
+    this.composerObserver = undefined
+
+    if (!element || typeof ResizeObserver === 'undefined') {
+      return
+    }
+
+    const publish = () => {
+      // Background session tabs measure the same composer as the visible one, so
+      // let whichever is on screen own the value rather than fighting over it.
+      if (!this._isMounted || this.props.shouldRender === false) {
+        return
+      }
+
+      document.documentElement.style.setProperty('--react-autoql-composer-height', `${element.offsetHeight}px`)
+    }
+
+    publish()
+    this.composerObserver = new ResizeObserver(publish)
+    this.composerObserver.observe(element)
   }
 
   // ---- Sessions ----
@@ -870,7 +896,7 @@ export default class ChatContent extends React.Component {
 
     const hasContent = this.isSessionHost()
       ? !!this.state.sessions.find((session) => session.id === this.state.activeSessionId)?.hasContent
-      : this.hasNonIntroMessages(this.state.messages)
+      : !!this.state.messages?.length
 
     if (hasContent !== this.lastReportedHasContent) {
       this.lastReportedHasContent = hasContent
@@ -887,7 +913,7 @@ export default class ChatContent extends React.Component {
     this.queryInputRef?.cancelQuery()
     if (this._isMounted) {
       this.setState({
-        messages: this.getIntroMessages(this.props.introMessages),
+        messages: [],
         isClearingAllMessages: true,
       })
     }
@@ -971,26 +997,6 @@ export default class ChatContent extends React.Component {
 
     const newMessages = messages.filter((message) => !messagesToDelete.includes(message.id))
     this.setState({ messages: newMessages })
-  }
-
-  hasNonIntroMessages = (messages) => {
-    return !!messages?.some((message) => !message.isIntroMessage)
-  }
-
-  getIntroMessages = (contentList) => {
-    return contentList.map((content) =>
-      this.createMessage({
-        isResponse: true,
-        content: content || '',
-        isIntroMessage: true,
-      }),
-    )
-  }
-
-  addIntroMessages = (contentList) => {
-    if (Array.isArray(contentList) && contentList.length) {
-      this.addMessages(this.getIntroMessages(contentList))
-    }
   }
 
   addMessage = (message) => {
@@ -1193,15 +1199,39 @@ export default class ChatContent extends React.Component {
     })
   }
 
-  // ---- Filter lock (self-managed, used with showFilterLockButton) ----
-  // Mirrors DataMessenger's filter-lock wiring so ChatContent can render its
-  // own lock control when embedded outside the DataMessenger drawer.
-  // ⚠️ KEEP IN SYNC with the same trio in DataMessenger.js (openFilterLockMenu /
-  // closeFilterLockMenu / onFilterChange / onRTValueLabelClick): the semantics
-  // are intentionally identical, so a fix to open/close/change behaviour in one
-  // file needs the same fix in the other. Not extracted into a shared module
-  // because both are class components and DataMessenger's copy is on the
-  // hot path for the drawer — see PR #1404 discussion.
+  // ---- Filter lock ----
+  // The thread owns the lock wherever it is rendered — standalone, or as the Data
+  // Messenger's chat page. It sits at the head of the query input, it scopes the
+  // queries this thread sends, and its locked filters feed this thread's
+  // QueryInput, so there is nothing about it a parent is better placed to hold.
+  //
+  // A session tab is the one exception: its host renders one lock for the whole
+  // strip and hands the element down, so the tabs share a single set of filters
+  // instead of each fetching and holding its own.
+  ownsFilterLock = () => {
+    if (this.props.isSessionTab) {
+      return false
+    }
+
+    return (
+      !!this.props.showFilterLockButton ||
+      !!this.props.autoQLConfig?.enableFilterLocking ||
+      // Some integrations set the flag at the top level rather than inside
+      // autoQLConfig — it is a declared prop here either way, so honour both.
+      !!this.props.enableFilterLocking
+    )
+  }
+
+  // The lock for this thread's query input: the host's when this is a tab, its own
+  // otherwise.
+  getFilterLockElement = () => {
+    if (this.props.isSessionTab) {
+      return this.props.filterLockElement ?? null
+    }
+
+    return this.ownsFilterLock() ? this.renderFilterLockPopover() : null
+  }
+
   openFilterLockMenu = () => {
     if (!this.state.isFilterLockMenuOpen) {
       this.setState({ isFilterLockMenuOpen: true })
@@ -1214,12 +1244,9 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  // Clicking a value label in a response inserts it as a locked filter, the
-  // same affordance DataMessenger provides (it passes its own handler down as
-  // onRTValueLabelClick). Standalone ChatContent has no such parent, so when it
-  // owns the lock UI it wires its own popover ref here — otherwise the feature
-  // is silently missing outside DataMessenger. Only used when
-  // showFilterLockButton is set; the consumer's callback still fires.
+  // Clicking a value label in a response inserts it as a locked filter. Only
+  // wired when this thread owns the lock; the consumer's callback still fires
+  // either way.
   onRTValueLabelClick = (text) => {
     this.props.onRTValueLabelClick?.(text)
     this.setState({ isFilterLockMenuOpen: true }, () => {
@@ -1237,7 +1264,45 @@ export default class ChatContent extends React.Component {
     this.setState({ lockedFilters, hasFilters: !!lockedFilters.length })
   }
 
+  // A plain-text summary of what the next query is scoped to, grouped by the
+  // category each value came from and split by include/exclude. Text rather than
+  // HTML so a filter value — which is user data — can never inject markup; the
+  // newlines render because the tooltip class sets white-space: pre-line.
+  getFilterSummary = () => {
+    const filters = this.state.lockedFilters ?? []
+
+    if (!filters.length) {
+      return undefined
+    }
+
+    const groups = []
+    filters.forEach((filter) => {
+      const category = filter.show_message || 'Filter'
+      const isExcluded = filter.filter_type === 'exclude'
+      let group = groups.find((g) => g.category === category && g.isExcluded === isExcluded)
+
+      if (!group) {
+        group = { category, isExcluded, values: [] }
+        groups.push(group)
+      }
+
+      group.values.push(filter.value)
+    })
+
+    const MAX_VALUES_PER_GROUP = 4
+    const lines = groups.map(({ category, isExcluded, values }) => {
+      const shown = values.slice(0, MAX_VALUES_PER_GROUP)
+      const remaining = values.length - shown.length
+      const suffix = remaining > 0 ? `, +${remaining} more` : ''
+      return `${category}${isExcluded ? ' (excluded)' : ''}: ${shown.join(', ')}${suffix}`
+    })
+
+    return [lang.filterSummaryTooltipTitle, ...lines].join('\n')
+  }
+
   renderFilterLockPopover = () => {
+    const filterSummary = this.getFilterSummary()
+
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
@@ -1246,10 +1311,10 @@ export default class ChatContent extends React.Component {
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
         parentElement={this.chatContentRef}
-        // No boundaryElement: it drives the popover width off the boundary's
-        // offsetWidth (meant for the narrow DataMessenger drawer). Full-page
-        // ChatContent would make the menu full-width — omit it so the popover
-        // uses its natural min-width instead.
+        // The menu takes its width from the boundary, which keeps it inside a panel
+        // as narrow as the Data Messenger drawer. On a full-page thread that would
+        // stretch it across the screen, so .filter-lock-popover caps it in CSS.
+        boundaryElement={this.chatContentRef}
         // Match the other tooltip consumers in this render: when a consumer
         // passes its own tooltipID we do NOT mount our <Tooltip> (see render),
         // so hardcoding TOOLTIP_ID here would aim the popover's tooltips at an
@@ -1265,16 +1330,26 @@ export default class ChatContent extends React.Component {
         showArrow={false}
         padding={0}
       >
+        {/* The same control the Data Messenger puts at the head of its input pill,
+            rather than a labelled pill on a row of its own above the composer: it
+            scopes the next query, so it belongs where you read it before typing —
+            and a standalone ChatContent on a phone has no room for an extra row. */}
         <button
-          className={`react-autoql-chat-filter-lock-btn${this.state.isFilterLockMenuOpen ? ' is-open' : ''}`}
+          className={`react-autoql-input-filter-lock-btn${this.state.isFilterLockMenuOpen ? ' is-open' : ''}${
+            this.state.hasFilters ? ' has-filters' : ''
+          }${isMobile ? ' mobile' : ''}`}
+          // With filters on, the tooltip says what they are and says it straight
+          // away — the badge alone tells you something is filtered but not what,
+          // and that is the thing you want to check before asking a question.
+          data-tooltip-content={filterSummary ?? this.props.filterLockButtonLabel ?? lang.openFilterLocking}
+          data-tooltip-delay-show={filterSummary ? 0 : undefined}
+          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
             <Icon type='filter' />
             {this.state.hasFilters ? <div className='react-autoql-filter-lock-icon-badge' /> : null}
           </span>
-          <span className='react-autoql-chat-filter-lock-label'>{this.props.filterLockButtonLabel ?? 'Filters'}</span>
-          <Icon type='caret-down' className='react-autoql-chat-filter-lock-caret' />
         </button>
       </FilterLockPopover>
     )
@@ -1445,7 +1520,11 @@ export default class ChatContent extends React.Component {
                   onContentChange={undefined}
                   onSessionTitleChange={(title) => this.setSessionTitle(session.id, title)}
                   onSessionContentChange={(hasContent) => this.setSessionHasContent(session.id, hasContent)}
-                  queryInputLeftContent={isActiveSession ? this.props.queryInputLeftContent : null}
+                  // One lock for the strip: the host holds the filters and the
+                  // element, and only the tab on screen mounts it.
+                  filterLockElement={isActiveSession && this.ownsFilterLock() ? this.renderFilterLockPopover() : null}
+                  queryFilters={this.ownsFilterLock() ? this.state.lockedFilters : this.props.queryFilters}
+                  onRTValueLabelClick={this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick}
                   shouldRender={this.props.shouldRender && isActiveSession}
                   isActivePage={isLaidOut && isActiveSession}
                 />
@@ -1464,7 +1543,7 @@ export default class ChatContent extends React.Component {
     }
 
     const { messages } = this.state
-    const isLLMEmptyState = this.props.enableLLMStyleEmptyState && messages.length === 0 && !this.isChataThinking()
+    const isEmpty = messages.length === 0 && !this.isChataThinking()
 
     let chatMessageVisibility
     let chatMessageOpacity
@@ -1492,9 +1571,7 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-wrapper ${isLaidOut ? '' : 'react-autoql-content-hidden'} ${
-            isLLMEmptyState ? 'llm-empty-state' : ''
-          }`}
+          className={`chat-content-wrapper ${isLaidOut ? '' : 'react-autoql-content-hidden'}`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity, display: chatMessageDisplay }}
         >
           <div
@@ -1514,7 +1591,6 @@ export default class ChatContent extends React.Component {
                       key={message.id}
                       id={message.id}
                       ref={(r) => (this.messageRefs[message.id] = r)}
-                      isIntroMessage={message.isIntroMessage}
                       authentication={this.props.authentication}
                       autoQLConfig={this.props.autoQLConfig}
                       isCSVProgressMessage={message.isCSVProgressMessage}
@@ -1557,7 +1633,7 @@ export default class ChatContent extends React.Component {
                       onNoneOfTheseClick={this.onNoneOfTheseClick}
                       autoChartAggregations={this.props.autoChartAggregations}
                       onRTValueLabelClick={
-                        this.props.showFilterLockButton ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
+                        this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
                       }
                       appliedFilters={message.appliedFilters}
                       disableMaxHeight={this.props.disableMaxMessageHeight}
@@ -1594,6 +1670,15 @@ export default class ChatContent extends React.Component {
                 )}
               </div>
             </CustomScrollbars>
+            {isEmpty && (
+              <div className='chat-content-empty-state'>
+                <Icon type='react-autoql-logo' className='chat-content-empty-state-logo' />
+                <h3 className='chat-content-empty-state-title'>{this.props.emptyStateTitle ?? lang.emptyStateTitle}</h3>
+                <p className='chat-content-empty-state-subtitle'>
+                  {this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}
+                </p>
+              </div>
+            )}
             {!this.state.isAtBottom && (
               <button
                 className='scroll-to-bottom-button'
@@ -1614,18 +1699,10 @@ export default class ChatContent extends React.Component {
             </div>
           </div>
           <div
+            ref={this.setComposerRef}
             style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
             className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
           >
-            {isLLMEmptyState && this.props.showLLMEmptyStateTitle && (
-              <div className='llm-empty-state-title'>
-                <Icon type='react-autoql-logo' />
-                {lang.llmEmptyStateTitle}
-              </div>
-            )}
-            {this.props.showFilterLockButton && (
-              <div className='react-autoql-chat-filter-lock-toolbar'>{this.renderFilterLockPopover()}</div>
-            )}
             <QueryInput
               ref={(r) => (this.queryInputRef = r)}
               className='chat-drawer-chat-bar'
@@ -1642,7 +1719,7 @@ export default class ChatContent extends React.Component {
               onErrorCallback={this.props.onErrorCallback}
               source={this.props.source}
               scope={this.props.scope}
-              queryFilters={this.props.showFilterLockButton ? this.state.lockedFilters : this.props.queryFilters}
+              queryFilters={this.ownsFilterLock() ? this.state.lockedFilters : this.props.queryFilters}
               sessionId={this.props.sessionId}
               querySessionId={this.props.querySessionId}
               dataPageSize={this.props.dataPageSize}
@@ -1651,9 +1728,11 @@ export default class ChatContent extends React.Component {
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               executeQuery={this.props.executeQuery}
               enableQueryInputTopics={this.props.enableQueryInputTopics}
-              leftContent={this.props.queryInputLeftContent}
+              // The filter lock sits at the head of the input pill. A consumer's own
+              // left content wins — the Data Messenger passes its lock down this way,
+              // and only one control fits there.
+              leftContent={this.getFilterLockElement()}
               disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
-              isLLMEmptyState={isLLMEmptyState}
             />
           </div>
         </div>
