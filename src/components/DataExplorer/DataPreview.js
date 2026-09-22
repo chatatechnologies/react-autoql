@@ -164,6 +164,10 @@ export default class DataPreview extends React.Component {
           // Fill the panel it was given rather than the component's own 400px
           // default — the preview pane is already a sized, scrollable box.
           maxHeight='100%'
+          // A total or an average over the handful of rows in a preview would read
+          // as a figure for the whole dataset.
+          showSummaryStats={false}
+          footer='End of Preview'
         />
       )
     }

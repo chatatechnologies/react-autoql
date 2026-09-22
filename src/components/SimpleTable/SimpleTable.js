@@ -52,6 +52,14 @@ export default class SimpleTable extends Component {
     rows: PropTypes.array,
     dataFormatting: dataFormattingType,
     maxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    // Whether a column header's tooltip carries aggregates over the loaded rows
+    // (total and average for a number column, earliest and latest for a date).
+    // Off for a table that only holds a sample of the data — a total over the first
+    // twenty rows is a number that looks like an answer and isn't one.
+    showSummaryStats: PropTypes.bool,
+    // Rendered in the scroll container after the last row, so it is what you reach
+    // at the end of a scroll. The data preview puts its "End of Preview" line here.
+    footer: PropTypes.node,
   }
 
   static defaultProps = {
@@ -59,6 +67,8 @@ export default class SimpleTable extends Component {
     rows: [],
     dataFormatting: dataFormattingDefault,
     maxHeight: 400,
+    showSummaryStats: true,
+    footer: undefined,
   }
 
   constructor(props) {
@@ -356,7 +366,7 @@ export default class SimpleTable extends Component {
     try {
       const { rows, columns, dataFormatting } = this.props
 
-      if (!(rows?.length > 1)) {
+      if (!this.props.showSummaryStats || !(rows?.length > 1)) {
         return {}
       }
 
@@ -907,6 +917,7 @@ export default class SimpleTable extends Component {
             {visibleRows.length > 0 ? this.renderRows(visibleRows) : null}
           </table>
         </div>
+        {!emptyMessage && !!this.props.footer && <div className='simple-table-footer'>{this.props.footer}</div>}
         {emptyMessage && (
           <div className='simple-table-empty'>
             {emptyMessage}

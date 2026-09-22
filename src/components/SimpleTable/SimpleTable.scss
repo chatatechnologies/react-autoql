@@ -267,6 +267,22 @@
 // Empty state — absolute overlay so it stays centered in the visible area
 // regardless of horizontal scroll position. z-index: 1 keeps it below the
 // sticky header (z-index: 2) so the header always renders on top.
+// Sits after the last row, inside the scroll container, so you reach it by scrolling
+// to the end. Sticky on the left so a wide table scrolling sideways doesn't carry the
+// line off the edge with it.
+.simple-table-footer {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  color: var(--react-autoql-text-color-secondary);
+  font-size: 0.78125rem;
+  font-style: italic;
+  pointer-events: none;
+}
+
 .simple-table-empty {
   position: absolute;
   top: 0;
