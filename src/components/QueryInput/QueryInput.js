@@ -1109,7 +1109,14 @@ class QueryInput extends React.Component {
 
           <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
             <div className='query-suggestions-buttons'>
-              <button className='query-suggestions-collapse-btn' onClick={toggleTopicsCollapsed} type='button'>
+              <button
+                className='query-suggestions-collapse-btn'
+                onClick={toggleTopicsCollapsed}
+                type='button'
+                data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                data-tooltip-content='Hide Quick Topics'
+                data-tooltip-place='top'
+              >
                 <Icon type='caret-down' />
                 <span className='query-suggestions-buttons-label'>
                   <Icon type='lightning' /> Quick Topics:{' '}
