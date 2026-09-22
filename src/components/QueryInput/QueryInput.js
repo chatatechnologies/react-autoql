@@ -1067,7 +1067,9 @@ class QueryInput extends React.Component {
                   authentication={this.props.authentication}
                   dataFormatting={this.props.dataFormatting}
                   subject={this.state.selectedTopic}
-                  disableColumnSelection={true}
+                  // Columns are picked through the FieldSelector in the header
+                  // above, so this preview is only ever a table.
+                  selectable={false}
                   shouldRender={this.props.shouldRender}
                   tooltipID={this.props.tooltipID}
                 />

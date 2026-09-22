@@ -7,10 +7,12 @@ import { dataFormattingDefault } from 'autoql-fe-utils'
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
 import { ConfirmPopover } from '../ConfirmPopover'
+import { ThreadSwitcher } from '../ThreadSwitcher'
 import { withTheme } from '../../theme'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { authenticationType, dataFormattingType } from '../../props/types'
 import { scrollTabIntoView } from '../../js/scrollTabIntoView'
+import { useIsScreenSize } from '../../hooks/useIsScreenSize'
 
 import AgentThread from './AgentThread'
 import AgentComposer from './AgentComposer'
@@ -26,8 +28,12 @@ import './AgentMessenger.scss'
  *
  * Threads show as a horizontal tab strip, exactly as the Data Messenger's sessions
  * do. Tabs keep their width at any drawer width and the strip scrolls horizontally
- * instead of collapsing into a dropdown - one control that behaves the same way
- * everywhere beats two that swap at a breakpoint.
+ * rather than collapsing - a narrow drawer on a desktop still has a pointer, hover
+ * and a scrollbar, which is all the strip needs.
+ *
+ * A phone has none of those, so below the sm breakpoint the strip is replaced by
+ * ThreadSwitcher, shared with the Data Messenger. That swap is on screen size, not
+ * drawer width, for the same reason.
  */
 const AgentMessenger = ({
   authentication,
@@ -60,6 +66,10 @@ const AgentMessenger = ({
   const tooltipIdRef = useRef(tooltipID ?? `react-autoql-agent-messenger-tooltip-${uuid()}`)
   const composerRef = useRef(null)
   const tabsRef = useRef(null)
+  // Phone-sized screens get the dropdown instead of the strip. Deliberately the
+  // screen and not the drawer: a narrow drawer on a desktop still has a pointer,
+  // hover and a real scrollbar, which is what the strip needs to work.
+  const isSmallScreen = useIsScreenSize('sm')
   // State rather than a ref: the model popover needs this element as its parent, and
   // a ref assignment wouldn't re-render to hand it over.
   const [containerElement, setContainerElement] = useState(null)
@@ -248,95 +258,123 @@ const AgentMessenger = ({
           isResizing ? ' is-resizing' : ''
         }`}
       >
-        {/* The toolbar is the Data Messenger session track - a rounded strip the
-            chips sit on, scrolling horizontally once the threads outgrow it. */}
-        <div className='react-autoql-agent-toolbar'>
-          <div className='react-autoql-agent-tabs' role='tablist' ref={tabsRef}>
-            {threads.map((thread) => (
-              <div
-                key={thread.id}
-                role='tab'
-                tabIndex={0}
-                aria-selected={thread.id === activeThread?.id}
-                className={`react-autoql-agent-tab${thread.id === activeThread?.id ? ' is-active' : ''}${
-                  thread.id === justOpenedId ? ' is-new' : ''
-                }`}
-                onClick={() => activateThread(thread.id)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    activateThread(thread.id)
-                  }
-                }}
-              >
-                <span className='react-autoql-agent-tab-dot' aria-hidden='true' />
-                {/* Titles are ellipsised, so the full text has to be reachable
-                    somewhere - react-tooltip reads it off the anchor. */}
-                <span
-                  className='react-autoql-agent-tab-title'
-                  data-tooltip-content={thread.title}
-                  data-tooltip-id={tooltipIdRef.current}
+        {/* On a phone the strip becomes a dropdown: one and a half chips fit at that
+            width, and with no hover and a hidden scrollbar nothing says the other
+            threads are there. Same chips, same track, stacked instead of scrolled. */}
+        {isSmallScreen ? (
+          <ThreadSwitcher
+            items={threads.map((thread) => ({
+              id: thread.id,
+              title: thread.title,
+              // Closing the last thread resets it rather than leaving the page with
+              // nothing - so on an empty one there would be nothing to reset, and
+              // the click would look like it did nothing.
+              canClose: threads.length > 1 || !!thread.messages.length,
+              closeLabel: `Close ${thread.title}`,
+            }))}
+            activeId={activeThread?.id}
+            onSelect={activateThread}
+            onClose={onCloseThread}
+            onNew={onNewThread}
+            onCloseAll={onCloseAllThreads}
+            canAddNew={threads.length < maxThreads}
+            newLabel='New thread'
+            closeAllLabel='Close all threads'
+            confirmTitle={`Close all ${threads.length} threads?`}
+            confirmText='Your conversations will be cleared and a new thread will be started.'
+            tooltipID={tooltipIdRef.current}
+          />
+        ) : (
+          /* The toolbar is the Data Messenger session track - a rounded strip the
+           chips sit on, scrolling horizontally once the threads outgrow it. */
+          <div className='react-autoql-agent-toolbar'>
+            <div className='react-autoql-agent-tabs' role='tablist' ref={tabsRef}>
+              {threads.map((thread) => (
+                <div
+                  key={thread.id}
+                  role='tab'
+                  tabIndex={0}
+                  aria-selected={thread.id === activeThread?.id}
+                  className={`react-autoql-agent-tab${thread.id === activeThread?.id ? ' is-active' : ''}${
+                    thread.id === justOpenedId ? ' is-new' : ''
+                  }`}
+                  onClick={() => activateThread(thread.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      activateThread(thread.id)
+                    }
+                  }}
                 >
-                  {thread.title}
-                </span>
-                {/* Closing the last thread resets it rather than leaving the page
-                    with nothing - so on an empty one there would be nothing to
-                    reset, and the click would look like it did nothing. */}
-                {(threads.length > 1 || !!thread.messages.length) && (
-                  <button
-                    className='react-autoql-agent-tab-close'
-                    aria-label={`Close ${thread.title}`}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onCloseThread(thread.id)
-                    }}
-                    data-tooltip-content='Close thread'
+                  <span className='react-autoql-agent-tab-dot' aria-hidden='true' />
+                  {/* Titles are ellipsised, so the full text has to be reachable
+                    somewhere - react-tooltip reads it off the anchor. */}
+                  <span
+                    className='react-autoql-agent-tab-title'
+                    data-tooltip-content={thread.title}
                     data-tooltip-id={tooltipIdRef.current}
                   >
-                    <Icon type='close' />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className='react-autoql-agent-toolbar-right'>
-            {/* Only once there are several: with a single thread this is the close
+                    {thread.title}
+                  </span>
+                  {/* Closing the last thread resets it rather than leaving the page
+                    with nothing - so on an empty one there would be nothing to
+                    reset, and the click would look like it did nothing. */}
+                  {(threads.length > 1 || !!thread.messages.length) && (
+                    <button
+                      className='react-autoql-agent-tab-close'
+                      aria-label={`Close ${thread.title}`}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onCloseThread(thread.id)
+                      }}
+                      data-tooltip-content='Close thread'
+                      data-tooltip-id={tooltipIdRef.current}
+                    >
+                      <Icon type='close' />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className='react-autoql-agent-toolbar-right'>
+              {/* Only once there are several: with a single thread this is the close
                 button already on the tab, under a name that promises more. */}
-            {threads.length > 1 && (
-              <ConfirmPopover
-                className='react-autoql-agent-close-all-wrapper'
-                popoverParentElement={containerElement}
-                title={`Close all ${threads.length} threads?`}
-                text='Your conversations will be cleared and a new thread will be started.'
-                confirmText='Close all'
-                backText='Cancel'
-                danger
-                onConfirm={onCloseAllThreads}
-                positions={['bottom', 'left', 'top', 'right']}
-                align='end'
-                tooltipID={tooltipIdRef.current}
-              >
-                <button
-                  className='react-autoql-agent-icon-btn is-close-all'
-                  aria-label='Close all threads'
-                  data-tooltip-content='Close all threads'
-                  data-tooltip-id={tooltipIdRef.current}
+              {threads.length > 1 && (
+                <ConfirmPopover
+                  className='react-autoql-agent-close-all-wrapper'
+                  popoverParentElement={containerElement}
+                  title={`Close all ${threads.length} threads?`}
+                  text='Your conversations will be cleared and a new thread will be started.'
+                  confirmText='Close all'
+                  backText='Cancel'
+                  danger
+                  onConfirm={onCloseAllThreads}
+                  positions={['bottom', 'left', 'top', 'right']}
+                  align='end'
+                  tooltipID={tooltipIdRef.current}
                 >
-                  <Icon type='close-circle' />
-                </button>
-              </ConfirmPopover>
-            )}
-            <button
-              className='react-autoql-agent-icon-btn react-autoql-agent-tab-new'
-              onClick={onNewThread}
-              disabled={threads.length >= maxThreads}
-              aria-label='New thread'
-              data-tooltip-content='New thread'
-              data-tooltip-id={tooltipIdRef.current}
-            >
-              <Icon type='plus' />
-            </button>
+                  <button
+                    className='react-autoql-agent-icon-btn is-close-all'
+                    aria-label='Close all threads'
+                    data-tooltip-content='Close all threads'
+                    data-tooltip-id={tooltipIdRef.current}
+                  >
+                    <Icon type='close-circle' />
+                  </button>
+                </ConfirmPopover>
+              )}
+              <button
+                className='react-autoql-agent-icon-btn react-autoql-agent-tab-new'
+                onClick={onNewThread}
+                disabled={threads.length >= maxThreads}
+                aria-label='New thread'
+                data-tooltip-content='New thread'
+                data-tooltip-id={tooltipIdRef.current}
+              >
+                <Icon type='plus' />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className='react-autoql-agent-threads'>
           {/* Every thread stays mounted - an inactive one is hidden, not unmounted, so

@@ -4,9 +4,10 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
-import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault } from 'autoql-fe-utils'
+import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault, ColumnTypes } from 'autoql-fe-utils'
 
 import { SelectableTable } from '../SelectableTable'
+import { SimpleTable } from '../SimpleTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
@@ -40,6 +41,12 @@ export default class DataPreview extends React.Component {
 
     defaultCollapsed: PropTypes.bool,
     disableColumnSelection: PropTypes.bool,
+    // Whether the preview is a column picker. The Data Explorer's is — clicking a
+    // header is how you build a sample query there. Quick Topics picks its columns
+    // through the FieldSelector in the header instead, so its preview is just a
+    // table, and gets the plain one (sortable, filterable, virtualized) rather than
+    // a selection grid with selection turned off.
+    selectable: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -54,6 +61,7 @@ export default class DataPreview extends React.Component {
 
     defaultCollapsed: false,
     disableColumnSelection: false,
+    selectable: true,
   }
 
   componentDidMount = () => {
@@ -140,6 +148,23 @@ export default class DataPreview extends React.Component {
             <a onClick={this.getDataPreview}>Try again</a>
           </p>
         </div>
+      )
+    }
+
+    if (!this.props.selectable) {
+      const { columns, rows } = this.state.dataPreview.data.data
+
+      return (
+        <SimpleTable
+          // SimpleTable keys formatting and sorting off column.type, and a preview
+          // column can arrive without one.
+          columns={columns.map((column) => ({ ...column, type: column?.type || ColumnTypes.STRING }))}
+          rows={rows}
+          dataFormatting={this.props.dataFormatting}
+          // Fill the panel it was given rather than the component's own 400px
+          // default — the preview pane is already a sized, scrollable box.
+          maxHeight='100%'
+        />
       )
     }
 

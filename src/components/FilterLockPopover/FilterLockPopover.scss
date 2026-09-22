@@ -14,6 +14,12 @@
   // an inline width, which is why this works without !important.
   max-width: 480px;
 
+  // The mobile sheet is deliberately full-width — the cap above is for a wide
+  // desktop thread, and on a tablet-sized phone layout it would inset one edge.
+  &.filter-lock-popover-mobile {
+    max-width: none;
+  }
+
   &.react-tiny-popover-container:not(.popover-with-arrow-container) {
     display: flex;
     border: 1px solid var(--react-autoql-border-color);
@@ -74,11 +80,18 @@
   }
 
   &.filter-lock-popover-mobile {
-    border: none;
     transform: unset !important;
-    height: calc(100% - 80px);
-    max-height: calc(100% - 80px);
     top: 0px !important;
+    // The sheet is pinned to the top of the screen, so its height IS the distance
+    // down to the composer: ChatContent publishes that edge in viewport coordinates
+    // (--react-autoql-composer-top) and the sheet stops 4px short of it. Measuring
+    // the composer's top rather than subtracting its height from 100% is what makes
+    // this exact — the percentage resolves against the document, which is not the
+    // box the chat occupies, and that difference was the leftover gap. The fallback
+    // is the old flat estimate, for a page where the variable never gets set.
+    --react-autoql-filter-lock-sheet-height: calc(var(--react-autoql-composer-top, calc(100% - 80px)) - 4px);
+    height: var(--react-autoql-filter-lock-sheet-height);
+    max-height: var(--react-autoql-filter-lock-sheet-height);
 
     .popover-container-content {
       animation: scale-down-tl 0.2s ease;

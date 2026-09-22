@@ -1,0 +1,331 @@
+// Deliberately the same kit as the tab strips this replaces on a phone, so the
+// switch across the breakpoint reads as the same control laid out differently
+// rather than as a second design: the same neutral washes, the same pill radii,
+// the same accent dot, and a trigger built out of the active tab's exact material.
+.react-autoql-thread-switcher {
+  // Copied from .react-autoql-chat-session-tabs / .react-autoql-agent-messenger.
+  // Grey at these alphas darkens a light theme and lightens a dark one, so one
+  // value covers both.
+  --ts-track: rgba(128, 134, 142, 0.08);
+  --ts-hover: rgba(128, 134, 142, 0.12);
+  --ts-close-hover: rgba(128, 134, 142, 0.22);
+  --ts-accent-wash: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.12
+  );
+  --ts-accent-wash-hover: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.22
+  );
+
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  // The strip's own track and inset, so the bar occupies the same band of the
+  // panel at either size.
+  margin: 0.25rem 1.25rem 0.5rem;
+  padding: 6px;
+  border-radius: 26px;
+  background-color: var(--ts-track);
+  box-sizing: border-box;
+}
+
+// The active tab, given the whole width. Same surface, hairline border and soft
+// ambient shadow, so it still reads as a raised chip floating in the track.
+.react-autoql-thread-switcher-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 11px 0 13px;
+  box-sizing: border-box;
+  border-radius: 20px;
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+    0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
+  color: var(--react-autoql-text-color-primary);
+  // The tab's type, unchanged.
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  text-align: left;
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease;
+
+  // One chat: nothing to open, so it is just a label. Keeping the chip rather
+  // than swapping it for plain text stops the bar from changing shape.
+  &:disabled {
+    cursor: default;
+  }
+
+  // The dot the tabs use, in the accent — the one coloured thing in the bar.
+  &::before {
+    content: '';
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--react-autoql-accent-color);
+  }
+
+  &.is-open .react-autoql-thread-switcher-caret {
+    transform: rotate(180deg);
+  }
+}
+
+.react-autoql-thread-switcher-trigger-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.react-autoql-thread-switcher-caret {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+// The strip's accent-tinted "+", at a touch size.
+.react-autoql-thread-switcher-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--ts-accent-wash);
+  color: var(--react-autoql-accent-color);
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+
+  .react-autoql-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.875rem;
+  }
+
+  &:active {
+    background-color: var(--ts-accent-wash-hover);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+// Covers the messenger, not the viewport, so a tap outside the drawer still
+// reaches whatever the drawer is over.
+.react-autoql-thread-switcher-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.react-autoql-thread-switcher-menu {
+  position: absolute;
+  z-index: 21;
+  // Drops from just under the track, aligned to its outer edges so the panel and
+  // the bar share a left and right margin.
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  // Same surface as the trigger chip, one step more shadow because it floats
+  // over the thread rather than sitting in the flow.
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -2px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.06)),
+    0 12px 28px -6px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.16));
+  overflow: hidden;
+}
+
+.react-autoql-thread-switcher-list {
+  padding: 6px;
+  // Eight chats at 44px is taller than a phone in landscape, so the list scrolls
+  // rather than the panel running off the bottom of the drawer.
+  max-height: 50vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+// A tab, unrolled: the same pill, dot, type and close button, just full width and
+// at a touch height.
+.react-autoql-thread-switcher-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 6px 0 12px;
+  box-sizing: border-box;
+  border-radius: 22px;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.008em;
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  & + & {
+    margin-top: 2px;
+  }
+
+  // The panel is already the tab's raised surface, so the selected row is marked
+  // with the accent wash instead — the same tint the "+" uses, rather than a
+  // second raised chip inside a raised panel.
+  &.is-active {
+    background-color: var(--ts-accent-wash);
+    color: var(--react-autoql-text-color-primary);
+    font-weight: 600;
+
+    .react-autoql-thread-switcher-item-dot {
+      background-color: var(--react-autoql-accent-color);
+      opacity: 1;
+    }
+  }
+
+  &:not(.is-active):active {
+    background-color: var(--ts-hover);
+    color: var(--react-autoql-text-color-primary);
+  }
+}
+
+// currentColor, so the dot tracks the label and the accent on the selected row is
+// the only colour in the list.
+.react-autoql-thread-switcher-item-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.45;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.react-autoql-thread-switcher-item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.react-autoql-thread-switcher-item-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  // The strip's X is 18px, which is under the touch minimum. The glyph stays that
+  // size; the target around it grows.
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  outline: none !important;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+
+  // Flex + line-height:1, or the drawer's inherited 22px line-height makes the
+  // glyph's box taller than the circle and it sits low in it.
+  .react-autoql-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.6875rem;
+  }
+
+  &:active {
+    opacity: 1;
+    background-color: var(--ts-close-hover);
+  }
+}
+
+.react-autoql-thread-switcher-footer {
+  border-top: 1px solid var(--react-autoql-border-color);
+  padding: 6px;
+}
+
+// A quiet row, not a red button: it is the least likely thing to be wanted in
+// here, and the confirm step is what makes it safe.
+.react-autoql-thread-switcher-close-all-wrapper {
+  display: block;
+}
+
+.react-autoql-thread-switcher-close-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 22px;
+  background-color: transparent;
+  color: var(--react-autoql-text-color-placeholder);
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.008em;
+  text-align: left;
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  .react-autoql-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.875rem;
+    opacity: 0.7;
+  }
+
+  &:active {
+    background-color: var(--ts-hover);
+    color: var(--react-autoql-danger-color, #ce4257);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-autoql-thread-switcher-trigger,
+  .react-autoql-thread-switcher-caret,
+  .react-autoql-thread-switcher-new,
+  .react-autoql-thread-switcher-item,
+  .react-autoql-thread-switcher-item-dot,
+  .react-autoql-thread-switcher-item-close,
+  .react-autoql-thread-switcher-close-all {
+    transition: none;
+  }
+}

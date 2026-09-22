@@ -106,22 +106,27 @@
   }
 }
 
-// iOS Safari auto-zooms the page when a focused input's text is under 16px, and
-// never zooms back out. Touch devices keep the old 1rem to avoid that; the size
-// mismatch with the thread is the lesser problem there.
+// iOS WebKit auto-zooms the page when a focused input's text is under 16px, and
+// never zooms back out. Only there, so the bump is scoped to WebKit on iOS with
+// -webkit-touch-callout, which no other engine supports - the touch media query
+// alone also caught Android and Chrome's device emulation, where the text just
+// looked oversized for no reason. Chrome and Firefox on iOS are WebKit too, and
+// zoom the same way, so they're covered.
 // 16px, not 1rem: the threshold Safari checks is the computed pixel size, and an app
 // that sets its own html font-size would put 1rem under it.
-@media (hover: none) and (pointer: coarse) {
-  .react-autoql-chatbar-input {
-    font-size: 16px;
-  }
+@supports (-webkit-touch-callout: none) {
+  @media (hover: none) and (pointer: coarse) {
+    .react-autoql-chatbar-input {
+      font-size: 16px;
+    }
 
-  // Safari's zoom heuristic reads the input's own font-size, not the placeholder's,
-  // so the prompt can stay at the thread's 0.875rem while the text you type keeps
-  // the 16px that stops the page zooming. Without this the placeholder is the
-  // largest text on the screen in an empty chat.
-  .react-autoql-chatbar-input::placeholder {
-    font-size: 0.875rem;
+    // Safari's zoom heuristic reads the input's own font-size, not the placeholder's,
+    // so the prompt can stay at the thread's 0.875rem while the text you type keeps
+    // the 16px that stops the page zooming. Without this the placeholder is the
+    // largest text on the screen in an empty chat.
+    .react-autoql-chatbar-input::placeholder {
+      font-size: 0.875rem;
+    }
   }
 }
 
@@ -701,6 +706,15 @@
     .react-autoql-selectable-table {
       flex: 1;
       min-height: 0;
+    }
+
+    // SimpleTable sizes itself to its content (width: fit-content, height: auto up
+    // to maxHeight). In this pane it should take the room it is given instead, so a
+    // narrow preview doesn't sit in a half-width box.
+    .simple-table-outer-container {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
     }
   }
 }

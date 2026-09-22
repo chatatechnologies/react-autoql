@@ -15,6 +15,7 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import { lang } from '../../js/Localization'
 import { fetchSubjectListCached } from '../../js/subjectListService'
 import { scrollTabIntoView } from '../../js/scrollTabIntoView'
+import { isScreenSize, subscribeToScreenSize } from '../../js/breakpoints'
 import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
 
 // Components
@@ -24,6 +25,7 @@ import { ChatMessage } from '../ChatMessage'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
 import { ConfirmPopover } from '../ConfirmPopover'
+import { ThreadSwitcher } from '../ThreadSwitcher'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Tooltip } from '../Tooltip'
@@ -88,6 +90,10 @@ export default class ChatContent extends React.Component {
       isFilterLockMenuOpen: false,
       lockedFilters: [],
       hasFilters: false,
+      // Phone-sized screens swap the session strip for a dropdown. Deliberately
+      // the screen and not the drawer width: a narrow drawer on a desktop still
+      // has a pointer, hover and a real scrollbar, which is what the strip needs.
+      isSmallScreen: isScreenSize('sm'),
     }
   }
 
@@ -200,6 +206,14 @@ export default class ChatContent extends React.Component {
   componentDidMount = () => {
     this._isMounted = true
 
+    // Before the host's early return below: the host is the one that renders the
+    // tab bar, so it is the only one that cares about this.
+    this.unsubscribeFromScreenSize = subscribeToScreenSize('sm', (isSmallScreen) => {
+      if (this._isMounted) {
+        this.setState({ isSmallScreen })
+      }
+    })
+
     // A session host has no thread of its own — its children do the work.
     if (this.isSessionHost()) {
       return
@@ -233,6 +247,12 @@ export default class ChatContent extends React.Component {
     //disable input focus for mobile, as ios keyboard has bug
     if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
+    }
+
+    // Coming back on screen (the drawer opened, or this session tab was selected):
+    // the composer may have moved while this thread wasn't the one publishing.
+    if (this.props.shouldRender && !prevProps.shouldRender) {
+      this.publishComposerMetrics()
     }
 
     // The thread went off screen (the drawer closed, or another page took over)
@@ -313,6 +333,8 @@ export default class ChatContent extends React.Component {
       this.cancelTabScroll()
     }
 
+    this.unsubscribeFromScreenSize?.()
+
     clearTimeout(this.feedbackTimeout)
     clearTimeout(this.responseDelayTimeout)
     if (this.scrollTimeout) {
@@ -322,35 +344,58 @@ export default class ChatContent extends React.Component {
     this.removeScrollListener()
     this.composerObserver?.disconnect()
     this.composerObserver = undefined
+    window.removeEventListener('resize', this.publishComposerMetrics)
+    window.removeEventListener('orientationchange', this.publishComposerMetrics)
+    window.visualViewport?.removeEventListener('resize', this.publishComposerMetrics)
   }
 
-  // The composer's height, published so the mobile filter-lock sheet can stop just
-  // above it. That sheet is portalled to the body (react-tiny-popover drops
-  // parentElement on mobile), so it has no way to measure the input itself, and the
-  // height is not a constant: the Quick Topics row is optional and wraps.
+  // Where the composer starts, in viewport coordinates, published for the mobile
+  // filter-lock sheet: it is portalled to the body (react-tiny-popover drops
+  // parentElement on mobile) and pinned to the top of the screen, so its own
+  // percentage height resolves against the document rather than against whatever
+  // the chat occupies. The composer's top edge is the measurement that actually
+  // says where the sheet has to stop, whatever sits around the thread and however
+  // tall the optional Quick Topics row makes the composer.
+  publishComposerMetrics = () => {
+    const element = this.composerRef
+
+    // Background session tabs measure the same composer as the visible one, so let
+    // whichever is on screen own the value rather than fighting over it. Not gated
+    // on _isMounted: a ref callback runs before componentDidMount, and the first
+    // measurement is the one that matters.
+    if (!element || this.props.shouldRender === false) {
+      return
+    }
+
+    const top = element.getBoundingClientRect?.().top
+
+    if (typeof top === 'number') {
+      document.documentElement.style.setProperty('--react-autoql-composer-top', `${Math.round(top)}px`)
+    }
+  }
+
   setComposerRef = (element) => {
     this.composerRef = element
 
     this.composerObserver?.disconnect()
     this.composerObserver = undefined
 
-    if (!element || typeof ResizeObserver === 'undefined') {
+    if (!element) {
       return
     }
 
-    const publish = () => {
-      // Background session tabs measure the same composer as the visible one, so
-      // let whichever is on screen own the value rather than fighting over it.
-      if (!this._isMounted || this.props.shouldRender === false) {
-        return
-      }
+    this.publishComposerMetrics()
 
-      document.documentElement.style.setProperty('--react-autoql-composer-height', `${element.offsetHeight}px`)
+    if (typeof ResizeObserver !== 'undefined') {
+      this.composerObserver = new ResizeObserver(this.publishComposerMetrics)
+      this.composerObserver.observe(element)
     }
 
-    publish()
-    this.composerObserver = new ResizeObserver(publish)
-    this.composerObserver.observe(element)
+    // A ResizeObserver fires when the composer's own box changes; the on-screen
+    // keyboard and a rotation move it without resizing it.
+    window.addEventListener('resize', this.publishComposerMetrics)
+    window.addEventListener('orientationchange', this.publishComposerMetrics)
+    window.visualViewport?.addEventListener('resize', this.publishComposerMetrics)
   }
 
   // ---- Sessions ----
@@ -1384,9 +1429,45 @@ export default class ChatContent extends React.Component {
     // This prevents multiple conflicting scrolls
   }
 
+  // On a phone the strip becomes a dropdown: about one and a half tabs fit at that
+  // width, and with no hover and a hidden scrollbar nothing on screen says the
+  // other chats exist. Same chips and track, stacked instead of scrolled.
+  renderSessionSwitcher = () => {
+    const { sessions, activeSessionId } = this.state
+
+    return (
+      <ThreadSwitcher
+        items={sessions.map((session) => ({
+          id: session.id,
+          title: session.title,
+          // Stays on the last tab, which closing resets rather than removes - but
+          // not while that tab is still empty, where the reset would look like the
+          // click did nothing.
+          canClose: sessions.length > 1 || session.hasContent,
+          closeLabel: `Close ${session.title}`,
+        }))}
+        activeId={activeSessionId}
+        onSelect={this.setActiveSession}
+        onClose={this.closeSession}
+        onNew={this.addSession}
+        onCloseAll={this.closeAllSessions}
+        canAddNew={sessions.length < MAX_SESSIONS}
+        newLabel='New chat'
+        closeAllLabel='Close all chats'
+        confirmTitle={`Close all ${sessions.length} chats?`}
+        confirmText='Your conversations will be cleared and a new chat will be started.'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+      />
+    )
+  }
+
   renderSessionTabs = () => {
     const { sessions, activeSessionId } = this.state
     const tooltipID = this.props.tooltipID ?? this.TOOLTIP_ID
+
+    if (this.state.isSmallScreen) {
+      return this.renderSessionSwitcher()
+    }
 
     return (
       <div className='react-autoql-chat-session-tabs'>
@@ -1524,7 +1605,9 @@ export default class ChatContent extends React.Component {
                   // element, and only the tab on screen mounts it.
                   filterLockElement={isActiveSession && this.ownsFilterLock() ? this.renderFilterLockPopover() : null}
                   queryFilters={this.ownsFilterLock() ? this.state.lockedFilters : this.props.queryFilters}
-                  onRTValueLabelClick={this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick}
+                  onRTValueLabelClick={
+                    this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
+                  }
                   shouldRender={this.props.shouldRender && isActiveSession}
                   isActivePage={isLaidOut && isActiveSession}
                 />
