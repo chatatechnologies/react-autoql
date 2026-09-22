@@ -355,9 +355,26 @@ export class ChatMessage extends React.Component {
     }, 500)
   }
 
-  onCSVDownloadFinish = ({ error, exportLimit, limitReached }) => {
+  getCSVDownloadErrorContent = (error) => {
+    if (typeof error === 'string') {
+      return error
+    }
+
+    // A failed export can come back as a query response with a message from the
+    // service, as an axios error response, or as a plain Error when the request
+    // never reached the service at all.
+    const message = error?.data?.message ?? error?.response?.data?.message
+    if (typeof message === 'string' && message) {
+      return message
+    }
+
+    return GENERAL_QUERY_ERROR
+  }
+
+  onCSVDownloadFinish = ({ id, error, exportLimit, limitReached }) => {
     if (error) {
-      return this.props.addMessageToDM({ response: error })
+      this.props.onCSVDownloadError?.({ id })
+      return this.props.addMessageToDM({ content: this.getCSVDownloadErrorContent(error) })
     }
 
     const queryText = this.props.response?.data?.data?.text
@@ -587,6 +604,9 @@ export class ChatMessage extends React.Component {
   }
 
   renderCSVProgressMessage = () => {
+    if (this.state.csvDownloadFailed) {
+      return 'Your file could not be downloaded.'
+    }
     if (isNaN(this.state.csvDownloadProgress)) {
       return this.renderFetchingFileMessage()
     }

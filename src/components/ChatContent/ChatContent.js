@@ -851,6 +851,15 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // Stops the progress message's spinner when its export fails, so it doesn't
+  // sit at "Fetching your file" forever next to the error message.
+  onCSVDownloadError = ({ id }) => {
+    delete this.csvProgressLog[id]
+    if (this.messageRefs[id]?._isMounted) {
+      this.messageRefs[id].setState({ csvDownloadFailed: true })
+    }
+  }
+
   // Whether there is a conversation to clear right now — for a host, in the tab
   // that's on screen. Reported up so the drawer header can show its "Clear
   // conversation" button only when it would do something.
@@ -1511,6 +1520,7 @@ export default class ChatContent extends React.Component {
                       isCSVProgressMessage={message.isCSVProgressMessage}
                       initialCSVDownloadProgress={this.csvProgressLog[message.id]}
                       onCSVDownloadProgress={this.onCSVDownloadProgress}
+                      onCSVDownloadError={this.onCSVDownloadError}
                       queryId={message.queryId}
                       queryText={message.query}
                       originalQueryID={message.originalQueryID}

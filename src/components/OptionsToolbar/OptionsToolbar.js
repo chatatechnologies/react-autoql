@@ -223,7 +223,7 @@ export class OptionsToolbar extends React.Component {
     const uniqueId = uuid()
 
     this.props.onCSVDownloadStart({ id: uniqueId, queryId, query })
-    exportCSV({
+    return exportCSV({
       queryId,
       ...getAuthentication(this.props.authentication),
       filters: this.props.responseRef?.queryResponse?.data?.data?.fe_req?.session_filter_locks,
@@ -254,7 +254,11 @@ export class OptionsToolbar extends React.Component {
         })
       })
       .catch((error) => {
-        this.props.onCSVDownloadFinish({ id: uniqueId, error })
+        // exportCSV rejects with error.response, which is undefined when the
+        // request never got a usable response (network failure, or a gateway
+        // error like a 502 whose response the browser blocks). Always hand the
+        // callback a truthy error so the failure isn't reported as a success.
+        this.props.onCSVDownloadFinish({ id: uniqueId, error: error ?? new Error('CSV export failed') })
         console.error(error)
       })
   }
@@ -276,7 +280,7 @@ export class OptionsToolbar extends React.Component {
           })
           .catch((error) => {
             console.error(error)
-            this.props.onCSVDownloadFinish({ id: uniqueId })
+            this.props.onCSVDownloadFinish({ id: uniqueId, error: error ?? new Error('CSV export failed') })
           })
       }
     } else {

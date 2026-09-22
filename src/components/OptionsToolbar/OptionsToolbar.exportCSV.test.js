@@ -74,3 +74,45 @@ describe('OptionsToolbar fetchCSVAndExport query id', () => {
     wrapper.unmount()
   })
 })
+
+describe('OptionsToolbar fetchCSVAndExport failures', () => {
+  let consoleError
+
+  beforeEach(() => {
+    exportCSV.mockClear()
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  it('reports an error when the export rejects with a response', async () => {
+    exportCSV.mockImplementationOnce(() => Promise.reject({ status: 502, data: {} }))
+    const onCSVDownloadFinish = jest.fn()
+    const wrapper = setup({}, { onCSVDownloadFinish })
+
+    await wrapper.instance().fetchCSVAndExport()
+
+    expect(onCSVDownloadFinish).toHaveBeenCalledWith(expect.objectContaining({ error: expect.anything() }))
+
+    wrapper.unmount()
+  })
+
+  // exportCSV rejects with error.response, which is undefined when the browser
+  // never hands back a usable response - a 502 from a gateway, for one. That
+  // used to reach onCSVDownloadFinish with no error and show "successfully
+  // downloaded".
+  it('reports an error when the export rejects with nothing', async () => {
+    exportCSV.mockImplementationOnce(() => Promise.reject(undefined))
+    const onCSVDownloadFinish = jest.fn()
+    const wrapper = setup({}, { onCSVDownloadFinish })
+
+    await wrapper.instance().fetchCSVAndExport()
+
+    expect(onCSVDownloadFinish).toHaveBeenCalledTimes(1)
+    expect(onCSVDownloadFinish.mock.calls[0][0].error).toBeTruthy()
+
+    wrapper.unmount()
+  })
+})
