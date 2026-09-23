@@ -852,6 +852,15 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  // The row below everything already placed - where ReactGridLayout's compaction
+  // would land a tile added at the bottom.
+  getNextAvailableY = (tiles) => {
+    return tiles.reduce((bottom, tile) => {
+      const tileBottom = (tile?.y ?? 0) + (tile?.h ?? 0)
+      return Number.isFinite(tileBottom) ? Math.max(bottom, tileBottom) : bottom
+    }, 0)
+  }
+
   addTile = (content) => {
     try {
       const tiles = _cloneDeep(this.getMostRecentTiles())
@@ -862,7 +871,12 @@ class DashboardWithoutTheme extends React.Component {
         w: 6,
         h: 5,
         x: (Object.keys(tiles).length * 6) % 12,
-        y: Number.MAX_VALUE,
+        // Number.MAX_VALUE is ReactGridLayout's "put it at the bottom", and its
+        // compaction echoes a real y back through updateTileLayout. That echo is
+        // skipped on a small screen (it would carry the stacked phone geometry, see
+        // renderTiles), so there the placeholder would survive into the tiles the
+        // consumer stores and saves - resolved here instead.
+        y: this.state.isSmallScreen ? this.getNextAvailableY(tiles) : Number.MAX_VALUE,
         query: '',
         title: '',
         // New tiles default to the dashboard's current project until explicitly reassigned (multi-project dashboards)

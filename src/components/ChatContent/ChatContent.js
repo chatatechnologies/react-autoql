@@ -991,7 +991,29 @@ export default class ChatContent extends React.Component {
 
   clearMessages = () => {
     if (this.isSessionHost()) {
+      // Empty the tab first, which also cancels whatever it has in flight...
       this.getActiveSessionRef()?.clearMessages()
+
+      // ...then replace the session object itself. Emptying the messages alone
+      // leaves the tab on the same querySessionId (AutoQL-Session-ID) and its
+      // first-wins title, so the next question would carry on the conversation the
+      // user just cleared - on the backend, and under the old project after a
+      // project switch. A new id also remounts the thread, the way closeSession
+      // already starts the last tab over.
+      this.setState((state) => {
+        const index = state.sessions.findIndex((session) => session.id === state.activeSessionId)
+
+        if (index === -1) {
+          return null
+        }
+
+        const session = this.createSessionObject(state.sessions.filter((s) => s.id !== state.activeSessionId))
+        const sessions = [...state.sessions]
+        sessions[index] = session
+
+        return { sessions, activeSessionId: session.id }
+      })
+
       return
     }
 

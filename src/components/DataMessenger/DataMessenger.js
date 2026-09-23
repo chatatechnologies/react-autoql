@@ -87,6 +87,10 @@ export class DataMessenger extends React.Component {
 
     this.state = {
       dataMessengerId: uuid(),
+      // The Data Agent's own remount key. Its threads hold live backend sessions,
+      // so they have to be dropped when the conversation is cleared or the project
+      // changes underneath them - see clearMessages and componentDidUpdate.
+      agentMessengerId: uuid(),
       hasError: false,
       activePage: props.defaultTab,
       width: isBrowser ? props.width : '100vw',
@@ -309,6 +313,14 @@ export class DataMessenger extends React.Component {
 
       if (!this.state.isVisible && prevState.isVisible && this.props.clearOnClose) {
         this.setState({ dataMessengerId: uuid() })
+      }
+
+      // A project switch only calls clearMessages() for the page being looked at,
+      // but an agent thread left over from the old project would resume its
+      // session_id against the new project's credentials. So the agent is reset on
+      // the change itself, whichever page is showing.
+      if (this.props.selectedProjectId !== prevProps.selectedProjectId) {
+        nextState.agentMessengerId = uuid()
       }
 
       if (this.state.activePage !== prevState.activePage) {
@@ -616,6 +628,13 @@ export class DataMessenger extends React.Component {
       this.dataMessengerContentRef?.clearMessages()
     } else if (this.state.activePage === 'dpr') {
       this.dprMessengerContentRef?.clearMessages()
+    } else if (this.state.activePage === 'agent') {
+      // The agent has no clearMessages of its own to call: a thread is a live
+      // backend session, so clearing it means starting over with fresh ones -
+      // hence the remount. Without this branch the header's clear, the project
+      // select and a consumer's dataMessengerRef.current.clearMessages() all did
+      // nothing at all on this page.
+      this.setState({ agentMessengerId: uuid() })
     }
     this.setState({ isOptionsDropdownOpen: false })
   }
@@ -947,7 +966,7 @@ export class DataMessenger extends React.Component {
       <ErrorBoundary>
         <AgentMessenger
           data-test='data-messenger-agent-content'
-          key={this.state.dataMessengerId}
+          key={`${this.state.dataMessengerId}-${this.state.agentMessengerId}`}
           shouldRender={this.shouldRenderPage('agent')}
           isActivePage={this.isActivePage('agent')}
           authentication={this.props.authentication}

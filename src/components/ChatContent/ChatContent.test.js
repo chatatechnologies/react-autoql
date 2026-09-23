@@ -265,4 +265,36 @@ describe('enableSessions', () => {
     wrapper.instance().setSessionTitle(sessionId, 'Something else entirely')
     expect(wrapper.state('sessions')[0].title).toBe('Sales by region')
   })
+
+  test('clearing a session gives the tab a new id and title, not just empty messages', () => {
+    const wrapper = setup({ enableSessions: true })
+    const sessionId = wrapper.state('sessions')[0].id
+
+    wrapper.instance().setSessionTitle(sessionId, 'Sales by region')
+    wrapper.instance().clearMessages()
+    wrapper.update()
+
+    const [session] = wrapper.state('sessions')
+    // A kept id would carry on the same backend conversation (AutoQL-Session-ID)
+    // the next time the user asked something in the "cleared" tab.
+    expect(session.id).not.toBe(sessionId)
+    expect(session.title).toBe('New thread')
+    expect(wrapper.state('activeSessionId')).toBe(session.id)
+    expect(getTabs(wrapper)).toHaveLength(1)
+  })
+
+  test('clearing one session leaves the others alone', () => {
+    const wrapper = setup({ enableSessions: true })
+    wrapper.instance().addSession()
+    wrapper.update()
+
+    const [firstSession, secondSession] = wrapper.state('sessions')
+    wrapper.instance().clearMessages()
+    wrapper.update()
+
+    const sessions = wrapper.state('sessions')
+    expect(sessions).toHaveLength(2)
+    expect(sessions[0].id).toBe(firstSession.id)
+    expect(sessions[1].id).not.toBe(secondSession.id)
+  })
 })

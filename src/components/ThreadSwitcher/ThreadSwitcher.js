@@ -59,14 +59,20 @@ export const ThreadSwitcher = ({
     return () => document.removeEventListener('keydown', onKeyDown, true)
   }, [isOpen, close])
 
+  // One chat is still worth opening the menu for when that chat can be closed: the
+  // per-item close button lives only in here, and at this width there is no tab
+  // strip and no header "Clear conversation" to fall back on - so without this the
+  // only way to reset a lone conversation was "+" followed by closing the old one.
+  const canOpenMenu = items.length > 1 || items.some((item) => item.canClose)
+
   // A chat closed from inside the menu leaves the menu open, so you can close
-  // several in a row - but closing the last one but one leaves nothing to switch
-  // between, so the menu has no reason to stay.
+  // several in a row - but once there is nothing left to switch to or close, the
+  // menu has no reason to stay.
   useEffect(() => {
-    if (isOpen && items.length <= 1) {
+    if (isOpen && !canOpenMenu) {
       close()
     }
-  }, [isOpen, items.length, close])
+  }, [isOpen, canOpenMenu, close])
 
   const activeItem = items.find((item) => item.id === activeId) ?? items[0]
 
@@ -90,13 +96,13 @@ export const ThreadSwitcher = ({
           onClick={() => setIsOpen(!isOpen)}
           aria-haspopup='listbox'
           aria-expanded={isOpen}
-          // Only one chat means there is nothing to switch to. The trigger stays
-          // put rather than collapsing, so the title doesn't jump around as chats
-          // come and go - it just stops being a button.
-          disabled={items.length <= 1}
+          // Nothing to switch to and nothing to close means nothing to open. The
+          // trigger stays put rather than collapsing, so the title doesn't jump
+          // around as chats come and go - it just stops being a button.
+          disabled={!canOpenMenu}
         >
           <span className='react-autoql-thread-switcher-trigger-title'>{activeItem?.title}</span>
-          {items.length > 1 && <Icon type='caret-down' className='react-autoql-thread-switcher-caret' />}
+          {canOpenMenu && <Icon type='caret-down' className='react-autoql-thread-switcher-caret' />}
         </button>
 
         <button
