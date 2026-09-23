@@ -101,6 +101,10 @@ export class DataMessenger extends React.Component {
       // ChatContent (per visible session tab), and all the header's
       // "Clear conversation" button goes on.
       hasClearableMessages: { 'data-messenger': false, dpr: false },
+      // The lock itself lives in ChatContent now (see openFilterLockMenu), but
+      // integrators read `dataMessengerRef.current.state.hasFilters` to drive
+      // their own lock affordances, so it is mirrored back up here.
+      hasFilters: false,
     }
   }
 
@@ -723,6 +727,26 @@ export class DataMessenger extends React.Component {
     )
   }
 
+  // The filter lock moved into ChatContent (it sits at the head of the query
+  // input now rather than in this header), but these stay part of this
+  // component's public surface: hosts drive the lock through the Data Messenger
+  // ref - opening it from their own mobile chrome, and reading `hasFilters` to
+  // badge their lock button.
+  openFilterLockMenu = () => {
+    this.dataMessengerContentRef?.openFilterLockMenu()
+  }
+
+  closeFilterLockMenu = () => {
+    this.dataMessengerContentRef?.closeFilterLockMenu()
+  }
+
+  onFilterLockChange = (filters) => {
+    const hasFilters = !!filters?.length
+    if (hasFilters !== this.state.hasFilters) {
+      this.setState({ hasFilters })
+    }
+  }
+
   setHasClearableMessages = (page, hasContent) => {
     this.setState((state) => {
       if (state.hasClearableMessages[page] === hasContent) {
@@ -986,6 +1010,7 @@ export class DataMessenger extends React.Component {
           // the visible session through the same ref, so nothing here changes.
           enableSessions={this.props.enableSessions}
           onContentChange={(hasContent) => this.setHasClearableMessages('data-messenger', hasContent)}
+          onFilterLockChange={this.onFilterLockChange}
         />
       </ErrorBoundary>
     )

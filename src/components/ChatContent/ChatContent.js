@@ -46,6 +46,10 @@ const NESTED_SCROLLER_SELECTOR = '.tabulator-tableholder, .react-autoql-custom-s
 // Px per line, for browsers that report wheel deltas in lines rather than pixels.
 const WHEEL_LINE_HEIGHT = 16
 
+// Trackpad momentum decays, so a delta that grows instead means the user pushed
+// again - a new gesture. Small tolerance so wheel jitter doesn't read as a push.
+const NEW_GESTURE_DELTA_TOLERANCE = 1
+
 // Same ceiling the Data Agent puts on threads: past this the tab bar is all scroll
 // and no context.
 const MAX_SESSIONS = 8
@@ -90,6 +94,10 @@ export default class ChatContent extends React.Component {
       isFilterLockMenuOpen: false,
       lockedFilters: [],
       hasFilters: false,
+      // Whether lockedFilters has been filled in by a fetch yet. Until it has,
+      // a mounting popover has to fetch; after it has, it is seeded from here
+      // instead (see renderFilterLockPopover).
+      hasFetchedFilters: false,
       // Phone-sized screens swap the session strip for a dropdown. Deliberately
       // the screen and not the drawer width: a narrow drawer on a desktop still
       // has a pointer, hover and a real scrollbar, which is what the strip needs.
@@ -114,6 +122,9 @@ export default class ChatContent extends React.Component {
     // Tooltip for the filter-lock button (e.g. the filter category the data uses,
     // like "Household"). Defaults to the generic "Manage Filters".
     filterLockButtonLabel: PropTypes.string,
+    // Called with the full lock list whenever it changes, for a parent that
+    // holds this thread and needs to reflect the lock state (see DataMessenger).
+    onFilterLockChange: PropTypes.func,
     onErrorCallback: PropTypes.func.isRequired,
     onSuccessAlert: PropTypes.func.isRequired,
     onRTValueLabelClick: PropTypes.func,
@@ -641,12 +652,23 @@ export default class ChatContent extends React.Component {
     // Not over a nested scroller: an ordinary thread scroll, just record it.
     if (!isOverNestedScroller) {
       this.lastThreadWheelTime = now
+      this.lastThreadWheelDelta = Math.abs(e.deltaY)
       return
     }
 
     // Cursor started on the table with the thread at rest — the user means to
     // scroll the table, so leave it alone.
     if (!isMidGesture) {
+      return
+    }
+
+    // Mid-gesture, but the delta grew: momentum only ever decays, so this is a
+    // fresh push over the table. Without this the hijack below feeds itself -
+    // every stolen event extends the gesture, so flicking repeatedly over a
+    // table never hands the wheel back and the table looks stuck.
+    if (Math.abs(e.deltaY) > (this.lastThreadWheelDelta ?? 0) + NEW_GESTURE_DELTA_TOLERANCE) {
+      this.lastThreadWheelTime = 0
+      this.lastThreadWheelDelta = 0
       return
     }
 
@@ -667,6 +689,7 @@ export default class ChatContent extends React.Component {
     e.stopPropagation()
     container.scrollTop += e.deltaY * scale
     this.lastThreadWheelTime = now
+    this.lastThreadWheelDelta = Math.abs(e.deltaY)
   }
 
   checkIfAtBottom = () => {
@@ -1258,13 +1281,12 @@ export default class ChatContent extends React.Component {
       return false
     }
 
-    return (
-      !!this.props.showFilterLockButton ||
-      !!this.props.autoQLConfig?.enableFilterLocking ||
-      // Some integrations set the flag at the top level rather than inside
-      // autoQLConfig — it is a declared prop here either way, so honour both.
-      !!this.props.enableFilterLocking
-    )
+    // Deliberately NOT the top-level `enableFilterLocking` prop, even though it
+    // is declared here: it predates this and standalone consumers pass it while
+    // running their own lock and feeding this thread through `queryFilters`.
+    // Counting it would swap their filters for ours and give them two lock
+    // buttons. The Data Messenger's chat gets its lock from the config flag.
+    return !!this.props.showFilterLockButton || !!this.props.autoQLConfig?.enableFilterLocking
   }
 
   // The lock for this thread's query input: the host's when this is a tab, its own
@@ -1306,7 +1328,12 @@ export default class ChatContent extends React.Component {
     // refetched next session; session locks last only this session), not whether
     // a lock applies now. So forward every lock to QueryInput's queryFilters.
     const lockedFilters = allFilters ?? []
-    this.setState({ lockedFilters, hasFilters: !!lockedFilters.length })
+    this.setState({ lockedFilters, hasFilters: !!lockedFilters.length, hasFetchedFilters: true })
+
+    // Mirror it up so a parent holding this thread (the Data Messenger, whose
+    // ref is what integrators read) can reflect the lock state without owning
+    // the popover.
+    this.props.onFilterLockChange?.(lockedFilters)
   }
 
   // A plain-text summary of what the next query is scoped to, grouped by the
@@ -1355,6 +1382,12 @@ export default class ChatContent extends React.Component {
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
+        // With sessions on, the popover is rendered into whichever tab is on
+        // screen, so switching tabs unmounts and remounts it. A remount that
+        // refetched would come back with persisted locks only, silently dropping
+        // every session-scoped lock (those live in the popover's own state, not
+        // in the filter-locking API). Seed it from what we already hold instead.
+        seedFilters={this.state.hasFetchedFilters ? this.state.lockedFilters : undefined}
         parentElement={this.chatContentRef}
         // The menu takes its width from the boundary, which keeps it inside a panel
         // as narrow as the Data Messenger drawer. On a full-page thread that would

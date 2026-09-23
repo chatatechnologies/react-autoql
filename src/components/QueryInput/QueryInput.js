@@ -568,11 +568,12 @@ class QueryInput extends React.Component {
       })
       .catch((error) => {
         if (error?.message === REQUEST_CANCELLED_ERROR) {
-          // onResponse is what normally clears isQueryRunning, and a cancel skips it -
-          // without this the input stays stuck showing the stop button.
-          if (this._isMounted) {
-            this.setState({ isQueryRunning: false })
-          }
+          // onSubmit above already put the host into its busy state (disabled
+          // input, thinking dots), and only onResponseCallback takes it back out.
+          // Report the cancel the shape runQuery's arrives in so the host's
+          // existing cancel handling runs - setting isQueryRunning here alone
+          // would clear the stop button but leave the chat input disabled.
+          this.onResponse({ data: { message: REQUEST_CANCELLED_ERROR } }, queryText, id)
           return
         }
 

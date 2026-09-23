@@ -1360,11 +1360,18 @@ class DashboardWithoutTheme extends React.Component {
       }
     })
 
+    // The stacked phone layout is display-only: it goes to ReactGridLayout as its
+    // `layout` and nowhere else. The tiles below keep their real geometry, because
+    // that is what DashboardTile resolves into `processTile`'s result, which is
+    // what executeDashboard hands back for the consumer to store and save -
+    // stacking them there would overwrite every tile's desktop position the first
+    // time a dashboard is opened on a narrow screen.
+    let gridLayout = tileLayout
     if (isSmallScreen) {
       // Stack tiles into a single full-width column, preserving their
       // original visual order and fixed row height
       let nextY = 0
-      tileLayout = [...tileLayout]
+      gridLayout = [...tileLayout]
         .sort((a, b) => a.y - b.y || a.x - b.x)
         .map((tile) => {
           const stackedTile = { ...tile, x: 0, y: nextY, w: 12, minW: 12, maxW: 12 }
@@ -1398,7 +1405,7 @@ class DashboardWithoutTheme extends React.Component {
         isDraggable={this.props.isEditing && !isSmallScreen}
         isResizable={this.props.isEditing && !isSmallScreen}
         draggableHandle='.react-autoql-dashboard-tile-drag-handle'
-        layout={tileLayout}
+        layout={gridLayout}
         margin={[20, 20]}
       >
         {tileLayout.map((tile) => (
@@ -1426,7 +1433,7 @@ class DashboardWithoutTheme extends React.Component {
               i: tile.key,
               maxH: 10,
               minH: 2,
-              minW: isSmallScreen ? 12 : 3,
+              minW: 3,
             }}
             dashboardSlicers={this.props.enableSlicers ? this.state.dashboardSlicers.map((s) => s.data) : []}
             displayType={tile.displayType}
