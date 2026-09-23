@@ -458,6 +458,14 @@
     color: var(--react-autoql-accent-color);
   }
 
+  // The native outline is suppressed above, so focus needs a style of its own -
+  // STYLES.md's rule for inputs applies to a control you can tab to as well.
+  // box-shadow rather than `outline`, which that !important would beat, and
+  // :focus-visible so clicking the button doesn't leave a ring behind.
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--react-autoql-accent-color);
+  }
+
   // The badge sits BESIDE the funnel here rather than on top of it - at 24px a dot
   // pinned to the corner covered the icon it was meant to annotate. The button
   // widens into a pill to make room, so both are legible.

@@ -170,6 +170,13 @@
       flex: none;
     }
 
+    .react-autoql-modal-header-title-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     @media (max-width: 768px) {
       margin-left: 12px;
       font-size: 1rem;

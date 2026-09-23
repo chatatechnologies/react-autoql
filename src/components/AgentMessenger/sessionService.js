@@ -60,22 +60,27 @@ const normalizeError = (error, context = {}) => {
     return { message: UNAUTHENTICATED_ERROR, status }
   }
 
-  // The API puts a sentence written for the person reading it on `detail` ("Session
-  // has already completed…"). That reads as the agent talking, so it's flagged to be
-  // spoken as an agent message rather than boxed up as a failure. Other error shapes
-  // are internal text, and keep the error item. `detail` can also be a validation
-  // array, which is not something to say out loud - hence the string check.
+  // `detail` is always the best text we have for the failure, so it is always what
+  // the message says. `detail` can also be a validation array, which is not text -
+  // hence the string check.
   const detail = typeof responseData?.detail === 'string' ? responseData.detail.trim() : ''
 
   // 409 means the session the thread was resuming has closed. The caller recovers by
   // starting a new one, so this is flagged separately from the message itself.
   const isSessionExpired = status === 409
 
-  if (detail) {
+  // ...but only on 409 is that text a sentence the API wrote for the reader
+  // ("Session has already completed…"), and so only there is it spoken as an agent
+  // message instead of boxed up as a failure. Every other status keeps the error
+  // item: the backend is FastAPI-shaped, so an HTTPException puts its message on
+  // `detail` too, and a 404 from a resume or a 500 would otherwise be typed out as a
+  // normal reply - no error styling, no retry, and a thread left open to fail the
+  // same way on every follow-up.
+  if (detail && isSessionExpired) {
     return { message: detail, status, responseData, isConversational: true, isSessionExpired }
   }
 
-  const responseMessage = responseData?.message ?? responseData?.error
+  const responseMessage = detail || responseData?.message || responseData?.error
 
   return { message: responseMessage || GENERAL_QUERY_ERROR, status, responseData, isSessionExpired }
 }

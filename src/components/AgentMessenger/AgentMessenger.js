@@ -107,11 +107,16 @@ const AgentMessenger = ({
   const isLaidOut = isActivePage ?? shouldRender
 
   useEffect(() => {
+    // shouldRender, not isLaidOut: the page stays laid out with the drawer shut
+    // (and rc-drawer keeps its content mounted), so focusing on isLaidOut took
+    // focus off the host page on load with defaultTab='agent', sending the user's
+    // keystrokes - and an Enter - into a textarea they couldn't see. ChatContent
+    // gates the same focus the same way.
     // The iOS keyboard misbehaves on autofocus, so mobile is left alone.
-    if (isLaidOut && !isMobile) {
+    if (shouldRender && !isMobile) {
       composerRef.current?.focus()
     }
-  }, [isLaidOut, activeThread?.id])
+  }, [shouldRender, activeThread?.id])
 
   const onSubmit = useCallback(
     (text) => {

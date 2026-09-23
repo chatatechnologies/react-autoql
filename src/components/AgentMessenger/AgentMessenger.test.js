@@ -115,9 +115,9 @@ describe('AgentMessenger', () => {
     await waitFor(() => expect(screen.getByText('Server exploded')).toBeInTheDocument())
   })
 
-  it('speaks a `detail` message as the agent rather than boxing it as an error', async () => {
+  it('speaks a 409 `detail` message as the agent rather than boxing it as an error', async () => {
     const detail = 'Session has already completed and cannot accept further messages.'
-    axios.post.mockRejectedValueOnce({ response: { status: 400, data: { detail } } })
+    axios.post.mockRejectedValueOnce({ response: { status: 409, data: { detail } } })
 
     const { container } = renderMessenger()
     await sendMessage('Carry on')

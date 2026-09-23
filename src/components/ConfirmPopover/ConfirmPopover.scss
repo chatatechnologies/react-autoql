@@ -16,6 +16,15 @@
     .popover-container-content {
       border-radius: inherit;
     }
+
+    // Sized like the small panel it is on a desktop. Not on mobile: there the
+    // popover is a full-width sheet (see Popover.scss), and a 20rem cap left the
+    // text and buttons huddled in its left third - which is every confirm the
+    // ThreadSwitcher's "close all" shows, since that button only exists there.
+    .react-autoql-confirm-popover-content {
+      min-width: 15rem;
+      max-width: 20rem;
+    }
   }
 }
 
@@ -24,8 +33,6 @@
   // the Button component carries so the buttons sit flush with that inset.
   padding: 1.25rem;
   flex: 1;
-  min-width: 15rem;
-  max-width: 20rem;
   font-size: 0.875rem;
   font-family: var(--react-autoql-font-family), sans-serif;
 

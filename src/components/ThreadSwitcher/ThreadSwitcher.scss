@@ -329,3 +329,19 @@
     transition: none;
   }
 }
+
+// Every button above suppresses the native outline (`outline: none !important`),
+// so each has to supply its own focus style - STYLES.md's rule for inputs applies
+// just as much to a control you can tab to, and without this there was no sign at
+// all of where focus was in the switcher. box-shadow rather than `outline`, which
+// the !important above would beat; :focus-visible, so a pointer click doesn't
+// leave a ring behind it.
+.react-autoql-thread-switcher-trigger,
+.react-autoql-thread-switcher-new,
+.react-autoql-thread-switcher-item,
+.react-autoql-thread-switcher-item-close,
+.react-autoql-thread-switcher-close-all {
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--react-autoql-accent-color);
+  }
+}

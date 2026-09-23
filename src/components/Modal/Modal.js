@@ -143,7 +143,19 @@ class Modal extends React.Component {
             <div className='react-autoql-modal-header'>
               <div className='react-autoql-modal-header-title-container'>
                 <div className='react-autoql-modal-header-title'>
-                  {this.props.titleIcon} {this.props.title}
+                  {this.props.titleIcon}{' '}
+                  {/* The text gets an element of its own so the ellipsis has
+                      something to hang on: text sitting directly in this flex row
+                      can only be clipped mid-word. Drilldown modals title
+                      themselves with the whole query and the alert details modal
+                      with the alert name, so on a narrow screen that clip used to
+                      lose most of it - hence the tooltip too. */}
+                  <span
+                    className='react-autoql-modal-header-title-text'
+                    title={typeof this.props.title === 'string' ? this.props.title : undefined}
+                  >
+                    {this.props.title}
+                  </span>
                 </div>
                 <div className='react-autoql-modal-header-subtitle'>{this.props.subtitle}</div>
               </div>

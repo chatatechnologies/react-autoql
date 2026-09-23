@@ -93,14 +93,26 @@ describe('sessionService', () => {
       })
     })
 
-    it('flags a `detail` message as conversational, so the agent can speak it', async () => {
+    it('flags a 409 `detail` message as conversational, so the agent can speak it', async () => {
       const detail = 'Session has already completed and cannot accept further messages. Please start a new session.'
-      axios.post.mockRejectedValueOnce({ response: { status: 400, data: { detail } } })
+      axios.post.mockRejectedValueOnce({ response: { status: 409, data: { detail } } })
 
       await expect(createSession({ userInquiry: 'hi', authentication })).rejects.toMatchObject({
         message: detail,
         isConversational: true,
       })
+    })
+
+    // A real failure has to look like one - the backend is FastAPI-shaped, so an
+    // HTTPException lands on `detail` as well. The text is still the best thing we
+    // have to show, it just isn't spoken as the agent.
+    it('keeps a `detail` on any other status as the error text, without speaking it', async () => {
+      const detail = 'Session not found'
+      axios.post.mockRejectedValueOnce({ response: { status: 404, data: { detail } } })
+
+      const error = await createSession({ userInquiry: 'hi', authentication }).catch((e) => e)
+      expect(error.message).toBe(detail)
+      expect(error.isConversational).toBeFalsy()
     })
 
     it('does not speak a `detail` that is a validation array', async () => {
