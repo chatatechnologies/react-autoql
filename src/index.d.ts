@@ -277,7 +277,8 @@ export interface DataMessengerProps {
   enableVoiceRecord?: boolean
   title?: string
   maxMessages?: number
-  introMessage?: string
+  emptyStateTitle?: React.ReactNode
+  emptyStateSubtitle?: React.ReactNode
   enableExploreQueriesTab?: boolean
   enableNotificationsTab?: boolean
   resizable?: boolean

@@ -1,0 +1,310 @@
+.react-autoql-agent-thread {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+
+  // Inactive threads stay mounted so their scroll position, revealed text and table
+  // measurements survive a thread switch. Hidden the same way the page itself is
+  // (see .react-autoql-content-hidden in AgentMessenger.scss) rather than with
+  // display: none, and taken out of flow instead: inside a display: none subtree
+  // every scrollWidth reads 0, so a table arriving in a background thread would
+  // measure every column at the 50px minimum and never re-measure.
+  &.is-hidden {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // Possible bug in PerfectScrollbars putting the scrollbar on the left side
+  .react-autoql-custom-scrollbars {
+    .ps__rail-y {
+      right: 0 !important;
+      left: unset !important;
+    }
+  }
+}
+
+.react-autoql-agent-thread-scrollbars {
+  height: 100%;
+  background-color: var(--am-b1);
+}
+
+// 1.25rem matches .chat-message-and-rt-container in ChatMessage.scss, so a message
+// here sits the same distance from the drawer edge as one in the regular messenger.
+.react-autoql-agent-thread-content {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  min-height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ---- Session id (debug only) ---- */
+
+// Deliberately quiet: it sits above the first message and scrolls away with the
+// transcript, so it is there when someone needs to quote a session and invisible
+// otherwise.
+.react-autoql-agent-session-debug {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.75rem;
+  min-width: 0;
+  color: var(--am-t2);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  opacity: 0.65;
+  transition: opacity var(--am-transition);
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.react-autoql-agent-session-debug-label {
+  flex: 0 0 auto;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.react-autoql-agent-session-debug-id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: monospace;
+  user-select: all;
+}
+
+.react-autoql-agent-session-debug-copy {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--am-radius-menu);
+  background: none;
+  color: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition-property: color, background-color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+
+  &:hover {
+    color: var(--am-t1);
+    background-color: var(--am-hover);
+  }
+
+  &.is-copied {
+    color: var(--am-accent);
+  }
+}
+
+/* ---- Empty state ---- */
+
+.react-autoql-agent-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  // Optical centring, same as ChatContent's empty state: the logo makes the block
+  // top-heavy, so the geometric centre reads low. The bottom padding lifts it ~3rem.
+  padding: 1rem 0 7rem;
+  text-align: center;
+}
+
+.react-autoql-agent-empty-state-logo {
+  font-size: 1.75rem;
+  color: var(--am-accent);
+}
+
+.react-autoql-agent-empty-state-title {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--am-t1);
+}
+
+.react-autoql-agent-empty-state-subtitle {
+  margin: -0.625rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--am-t2);
+}
+
+.react-autoql-agent-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+  max-width: 24rem;
+  margin-top: 0.5rem;
+}
+
+// Full-width rows rather than chips: at 400px, chips wrap into ragged fragments and
+// a whole question rarely fits on one.
+.react-autoql-agent-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--am-border);
+  border-radius: var(--am-radius-card);
+  background-color: var(--am-b2);
+  color: var(--am-t1);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition-property: color, border-color, background-color, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+
+  &:hover {
+    background-color: var(--am-hover);
+  }
+}
+
+.react-autoql-agent-suggestion-arrow {
+  flex: 0 0 auto;
+  color: var(--am-accent);
+  font-size: 0.9375rem;
+}
+
+/* ---- End of a completed session ---- */
+
+/* Closes the transcript off. The rules either side make it read as the end of the
+   conversation rather than as one more thing the agent said. */
+.react-autoql-agent-ended-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  color: var(--am-t2);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--am-border);
+  }
+}
+
+/* ---- Thinking indicator ---- */
+
+.react-autoql-agent-thinking {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 2rem;
+}
+
+.react-autoql-agent-thinking-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  // Matches the avatar so the rule beside it lines up.
+  height: 1.75rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--am-border);
+
+  span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--am-t2);
+    animation: react-autoql-agent-dot 1.2s ease-in-out infinite;
+
+    &:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+}
+
+@keyframes react-autoql-agent-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+/* ---- Scroll to latest ---- */
+
+.react-autoql-agent-scroll-to-bottom {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid var(--am-border);
+  border-radius: var(--am-radius-pill);
+  background-color: var(--am-b2);
+  box-shadow: 0 2px 8px var(--am-shadow);
+  color: var(--am-t1);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  animation: react-autoql-agent-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: var(--am-hover);
+  }
+}
+
+@keyframes react-autoql-agent-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-autoql-agent-scroll-to-bottom,
+  .react-autoql-agent-thinking-dots span {
+    animation: none;
+  }
+}

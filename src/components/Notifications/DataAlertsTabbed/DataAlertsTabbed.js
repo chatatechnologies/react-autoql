@@ -75,12 +75,21 @@ class DataAlertsTabbed extends React.Component {
   getDataAlerts = () => {
     fetchDataAlerts({ ...getAuthentication(this.props.authentication) })
       .then((response) => {
-        this._isMounted &&
-          this.setState({
-            loading: false,
-            customAlertsList: response?.data?.custom_alerts,
-            projectAlertsList: response?.data?.project_alerts,
-          })
+        if (!this._isMounted) {
+          return
+        }
+
+        const projectAlertsList = response?.data?.project_alerts
+
+        this.setState((state) => ({
+          loading: false,
+          customAlertsList: response?.data?.custom_alerts,
+          projectAlertsList,
+          // The Available Alerts tab is hidden when there are none, so don't
+          // leave the user stranded on a tab that no longer exists
+          activeTab:
+            state.activeTab === TAB_ORG_ALERTS && !projectAlertsList?.length ? TAB_MY_ALERTS : state.activeTab,
+        }))
       })
       .catch(console.error)
   }
@@ -174,6 +183,10 @@ class DataAlertsTabbed extends React.Component {
     const customAlertsList = this.state.customAlertsList ?? []
     const projectAlertsList = this.state.projectAlertsList ?? []
 
+    // Nothing to browse in there, so the tab is just noise
+    const showOrgAlertsTab = projectAlertsList.length > 0
+    const showOrgAlerts = showOrgAlertsTab && activeTab === TAB_ORG_ALERTS
+
     const sharedListProps = {
       authentication: this.props.authentication,
       tooltipID: this.props.tooltipID,
@@ -189,27 +202,35 @@ class DataAlertsTabbed extends React.Component {
     return (
       <ErrorBoundary>
         <div className='react-autoql-data-alerts-tabbed'>
-          <div className='data-alerts-tab-bar'>
-            <button
-              className={`data-alerts-tab${activeTab === TAB_MY_ALERTS ? ' active' : ''}`}
-              onClick={() => this.setState({ activeTab: TAB_MY_ALERTS })}
-            >
-              My Alerts
-              {customAlertsList.length > 0 && <span className='data-alerts-tab-count'>{customAlertsList.length}</span>}
-            </button>
-            <button
-              className={`data-alerts-tab${activeTab === TAB_ORG_ALERTS ? ' active' : ''}`}
-              onClick={() => this.setState({ activeTab: TAB_ORG_ALERTS })}
-            >
-              Available Alerts
-              {projectAlertsList.length > 0 && (
+          {showOrgAlertsTab && (
+            <div className='data-alerts-tab-bar'>
+              <button
+                className={`data-alerts-tab${!showOrgAlerts ? ' active' : ''}`}
+                onClick={() => this.setState({ activeTab: TAB_MY_ALERTS })}
+              >
+                My Alerts
+                {customAlertsList.length > 0 && <span className='data-alerts-tab-count'>{customAlertsList.length}</span>}
+              </button>
+              <button
+                className={`data-alerts-tab${showOrgAlerts ? ' active' : ''}`}
+                onClick={() => this.setState({ activeTab: TAB_ORG_ALERTS })}
+              >
+                Available Alerts
                 <span className='data-alerts-tab-count'>{projectAlertsList.length}</span>
-              )}
-            </button>
-          </div>
+              </button>
+            </div>
+          )}
 
           <div className='data-alerts-tab-content'>
-            {activeTab === TAB_MY_ALERTS && (
+            {showOrgAlerts ? (
+              <DataAlertsList
+                {...sharedListProps}
+                type='project'
+                alerts={projectAlertsList}
+                loading={loading}
+                emptyMessage='No Available Alerts have been set up yet.'
+              />
+            ) : (
               <DataAlertsList
                 {...sharedListProps}
                 type='custom'
@@ -217,15 +238,6 @@ class DataAlertsTabbed extends React.Component {
                 loading={loading}
                 emptyMessage='No Custom Alerts are set up yet.'
                 shouldRenderCreateCustomFilteredAlert
-              />
-            )}
-            {activeTab === TAB_ORG_ALERTS && (
-              <DataAlertsList
-                {...sharedListProps}
-                type='project'
-                alerts={projectAlertsList}
-                loading={loading}
-                emptyMessage='No Available Alerts have been set up yet.'
               />
             )}
           </div>

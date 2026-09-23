@@ -4,9 +4,10 @@ import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
 import _isEqual from 'lodash.isequal'
 
-import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault } from 'autoql-fe-utils'
+import { fetchDataPreview, REQUEST_CANCELLED_ERROR, dataFormattingDefault, ColumnTypes } from 'autoql-fe-utils'
 
 import { SelectableTable } from '../SelectableTable'
+import { SimpleTable } from '../SimpleTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import TablePlaceholder from '../TablePlaceholder/TablePlaceholder'
 
@@ -40,6 +41,12 @@ export default class DataPreview extends React.Component {
 
     defaultCollapsed: PropTypes.bool,
     disableColumnSelection: PropTypes.bool,
+    // Whether the preview is a column picker. The Data Explorer's is — clicking a
+    // header is how you build a sample query there. Quick Topics picks its columns
+    // through the FieldSelector in the header instead, so its preview is just a
+    // table, and gets the plain one (sortable, filterable, virtualized) rather than
+    // a selection grid with selection turned off.
+    selectable: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -54,6 +61,7 @@ export default class DataPreview extends React.Component {
 
     defaultCollapsed: false,
     disableColumnSelection: false,
+    selectable: true,
   }
 
   componentDidMount = () => {
@@ -128,6 +136,25 @@ export default class DataPreview extends React.Component {
     return filtersAllowed
   }
 
+  // SimpleTable reads a new `columns` reference as new data and resets sort,
+  // filter values and measured widths. This panel re-renders on anything its
+  // parent does (in Quick Topics, on every keystroke in the query box), so the
+  // mapped array is computed once per fetched preview rather than per render -
+  // otherwise typing wipes the sort the user just applied.
+  getSimpleTableColumns = (columns) => {
+    if (this.simpleTableColumnsSource !== columns) {
+      this.simpleTableColumnsSource = columns
+      this.simpleTableColumns = columns.map((column) => ({
+        // SimpleTable keys formatting and sorting off column.type, and a preview
+        // column can arrive without one.
+        ...column,
+        type: column?.type || ColumnTypes.STRING,
+      }))
+    }
+
+    return this.simpleTableColumns
+  }
+
   renderDataPreviewGrid = () => {
     if (this.state.error || !this.state.dataPreview?.data?.data?.columns || !this.state.dataPreview?.data?.data?.rows) {
       return (
@@ -140,6 +167,25 @@ export default class DataPreview extends React.Component {
             <a onClick={this.getDataPreview}>Try again</a>
           </p>
         </div>
+      )
+    }
+
+    if (!this.props.selectable) {
+      const { columns, rows } = this.state.dataPreview.data.data
+
+      return (
+        <SimpleTable
+          columns={this.getSimpleTableColumns(columns)}
+          rows={rows}
+          dataFormatting={this.props.dataFormatting}
+          // Fill the panel it was given rather than the component's own 400px
+          // default — the preview pane is already a sized, scrollable box.
+          maxHeight='100%'
+          // A total or an average over the handful of rows in a preview would read
+          // as a figure for the whole dataset.
+          showSummaryStats={false}
+          footer='End of Preview'
+        />
       )
     }
 

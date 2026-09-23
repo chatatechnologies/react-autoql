@@ -1,8 +1,16 @@
 import React, { PureComponent } from 'react'
+import PropTypes from 'prop-types'
 import { getThemeValue, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
 
 import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 import { createSVGPath } from './lineFns'
+
+// How close a click has to land to a vertex to count as clicking that vertex.
+// The hover overlay covers the whole plot, but a drilldown is a real navigation:
+// without this, dismissing a popover by clicking in the plot, or any tap on
+// mobile (where there is no hover preview to aim with), would start one.
+// Generous enough to forgive an imprecise aim at a dot ~5px across.
+const CLICK_HIT_RADIUS = 20
 
 export default class Line extends PureComponent {
   constructor(props) {
@@ -17,13 +25,24 @@ export default class Line extends PureComponent {
       hoveredKey: null,
       hoveredVertex: null, // { x, y, color } coordinates of hovered vertex
       hoveredLineColIndex: null, // colIndex of the line being hovered
+      hoveredTooltip: null, // tooltip html for the currently hovered vertex
       activeVertex: null, // { x, y, color } coordinates of active (clicked) vertex
       previousHoveredLineColIndex: null, // Track previous line hover to prevent size flash
     }
+
+    // Vertex lookup used by the chart-wide hover overlay, keyed by row index.
+    // Rebuilt on every render in makeChartElements
+    this.hoverPoints = []
   }
 
-  static propTypes = chartElementPropTypes
-  static defaultProps = chartElementDefaultProps
+  static propTypes = {
+    ...chartElementPropTypes,
+    enableAreaHover: PropTypes.bool,
+  }
+  static defaultProps = {
+    ...chartElementDefaultProps,
+    enableAreaHover: false,
+  }
 
   static getDerivedStateFromProps(nextProps, prevState) {
     // Sync activeKey from props if it changed externally
@@ -87,6 +106,10 @@ export default class Line extends PureComponent {
     }
   }
 
+  componentWillUnmount() {
+    clearTimeout(this.hoverFadeTimeout)
+  }
+
   onDotClick = (row, colIndex, rowIndex) => {
     const newActiveKey = getKey(colIndex, rowIndex)
     const { columns, stringColumnIndex, dataFormatting, xScale, yScale, colorScale } = this.props
@@ -121,16 +144,187 @@ export default class Line extends PureComponent {
     })
   }
 
+  // Hovering anywhere in the plot area (instead of directly over a vertex) is only
+  // safe when the line is the only interactive layer. In the column+line combo chart
+  // a full size overlay would swallow the column hover/click events
+  isAreaHoverEnabled = () => !!this.props.enableAreaHover
+
+  // Convert a mouse event to coordinates in the chart's user space
+  getLocalCoords = (e) => {
+    const element = e.currentTarget
+
+    try {
+      const svg = element.ownerSVGElement
+      const ctm = element.getScreenCTM?.()
+      if (svg?.createSVGPoint && ctm) {
+        const point = svg.createSVGPoint()
+        point.x = e.clientX
+        point.y = e.clientY
+        const { x, y } = point.matrixTransform(ctm.inverse())
+        return { x, y }
+      }
+    } catch (error) {
+      // Fall through to the bounding box approximation below
+    }
+
+    const bbox = element.getBoundingClientRect?.()
+    if (!bbox?.width || !bbox?.height) {
+      return null
+    }
+
+    const area = this.getHoverAreaBounds()
+    if (!area) {
+      return null
+    }
+
+    return {
+      x: area.x + ((e.clientX - bbox.left) * area.width) / bbox.width,
+      y: area.y + ((e.clientY - bbox.top) * area.height) / bbox.height,
+    }
+  }
+
+  getHoverAreaBounds = () => {
+    const { xScale, yScale } = this.props
+
+    const xRange = xScale?.range?.()
+    const yRange = yScale?.range?.()
+    if (!xRange?.length || !yRange?.length) {
+      return null
+    }
+
+    const x = Math.min(xRange[0], xRange[1])
+    const x2 = Math.max(xRange[0], xRange[1])
+    const y = Math.min(yRange[0], yRange[1])
+    const y2 = Math.max(yRange[0], yRange[1])
+
+    if (x2 - x <= 0 || y2 - y <= 0) {
+      return null
+    }
+
+    return { x, y, width: x2 - x, height: y2 - y }
+  }
+
+  // Closest vertex to the cursor: snap to the nearest x position first, then
+  // pick the series whose value is closest vertically at that position
+  getClosestPoint = (coords) => {
+    if (!coords || !this.hoverPoints?.length) {
+      return null
+    }
+
+    let closestColumn = this.hoverPoints[0]
+    for (let i = 1; i < this.hoverPoints.length; i++) {
+      if (Math.abs(this.hoverPoints[i].x - coords.x) < Math.abs(closestColumn.x - coords.x)) {
+        closestColumn = this.hoverPoints[i]
+      } else if (this.hoverPoints[i].x > coords.x) {
+        // Points are sorted by x, so nothing further right can be closer
+        break
+      }
+    }
+
+    let closestPoint = closestColumn.points[0]
+    closestColumn.points.forEach((point) => {
+      if (Math.abs(point.y - coords.y) < Math.abs(closestPoint.y - coords.y)) {
+        closestPoint = point
+      }
+    })
+
+    return closestPoint
+  }
+
+  onHoverAreaMouseMove = (e) => {
+    const point = this.getClosestPoint(this.getLocalCoords(e))
+
+    if (!point) {
+      return
+    }
+
+    if (point.key === this.state.hoveredKey) {
+      return
+    }
+
+    this.setState({
+      hoveredKey: point.key,
+      hoveredVertex: { x: point.x, y: point.y, color: point.color },
+      hoveredLineColIndex: point.colIndex,
+      previousHoveredLineColIndex: point.colIndex,
+      hoveredTooltip: point.tooltip,
+    })
+  }
+
+  onHoverAreaMouseLeave = () => {
+    this.setState({
+      hoveredKey: null,
+      hoveredVertex: null,
+      hoveredLineColIndex: null,
+      hoveredTooltip: null,
+    })
+
+    // Clear previous after a short delay to allow fade-out
+    clearTimeout(this.hoverFadeTimeout)
+    this.hoverFadeTimeout = setTimeout(() => {
+      this.setState({ previousHoveredLineColIndex: null })
+    }, 150)
+  }
+
+  onHoverAreaClick = (e) => {
+    const coords = this.getLocalCoords(e)
+    const point = this.getClosestPoint(coords)
+
+    if (!point) {
+      return
+    }
+
+    // Hover snaps to the nearest vertex from anywhere; a click has to actually be
+    // aimed at one. See CLICK_HIT_RADIUS.
+    if (Math.hypot(point.x - coords.x, point.y - coords.y) > CLICK_HIT_RADIUS) {
+      return
+    }
+
+    this.onDotClick(point.row, point.colIndex, point.rowIndex)
+  }
+
+  renderHoverArea = () => {
+    const area = this.getHoverAreaBounds()
+    if (!area) {
+      return null
+    }
+
+    return (
+      <rect
+        className='line-chart-hover-area'
+        x={area.x}
+        y={area.y}
+        width={area.width}
+        height={area.height}
+        fill='transparent'
+        stroke='none'
+        style={{ cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default' }}
+        onMouseMove={this.onHoverAreaMouseMove}
+        onMouseLeave={this.onHoverAreaMouseLeave}
+        onClick={this.onHoverAreaClick}
+        data-tooltip-id={this.props.chartTooltipID}
+        data-tooltip-html={this.state.hoveredTooltip ?? undefined}
+        data-tooltip-hidden={this.state.hoveredTooltip ? 'false' : 'true'}
+        data-tooltip-float='true'
+      />
+    )
+  }
+
   makeChartElements = () => {
     const { columns, legendColumn, numberColumnIndices, stringColumnIndex, dataFormatting, yScale, xScale, colorScale } = this.props
     const backgroundColor = getThemeValue('background-color-secondary')
 
     const largeDataset = this.props.width / this.props.data?.length < 10
+    const areaHover = this.isAreaHoverEnabled()
 
     const innerCircles = []
     const paths = []
     const gradientAreas = []
     const hoverLines = []
+
+    // Vertices grouped by row index so the hover overlay can snap to the
+    // nearest x position, then the nearest series at that position
+    const hoverPointsByIndex = new Map()
 
     // Get visible series for gradient fill (now supports multi-series)
     const visibleSeries = numberColumnIndices.filter((colIndex) => !columns[colIndex]?.isSeriesHidden)
@@ -193,21 +387,14 @@ export default class Line extends PureComponent {
 
           const key = getKey(colIndex, index)
 
-          // Render a bigger transparent circle so it's easier for the user
-          // to hover over and see tooltip
-          const transparentHoverVertex = (
-            <circle
-              key={`hover-circle-${key}`}
-              cx={x}
-              cy={y}
-              r={6}
-              style={{
-                stroke: 'transparent',
-                fill: 'transparent',
-                cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default',
-              }}
-            />
-          )
+          const pointsAtIndex = hoverPointsByIndex.get(index)
+          const point = { key, colIndex, rowIndex: index, row: d, x, y, color, tooltip }
+          if (pointsAtIndex) {
+            pointsAtIndex.points.push(point)
+          } else {
+            hoverPointsByIndex.set(index, { x, points: [point] })
+          }
+
           // Determine if this dot should be shown due to line hover
           // Line is hovered if: line path is hovered OR a vertex on this line is hovered
           const isLineHovered = this.state.hoveredLineColIndex === colIndex
@@ -239,27 +426,54 @@ export default class Line extends PureComponent {
             />
           )
 
-          innerCircles.push(
-            <g
-              className={`line-dot${this.state.activeKey === key ? ' active' : ''}${this.state.hoveredKey === key ? ' hovered' : ''}${isLineHovered ? ' line-hovered' : ''}${largeDataset ? ' hidden-dot' : ''}`}
-              key={`circle-group-${key}`}
-              onClick={() => this.onDotClick(d, colIndex, index)}
-              onMouseEnter={() => {
-                // When hovering over a vertex, show all dots for the line and highlight this vertex
-                this.setState({ hoveredKey: key, hoveredVertex: { x, y, color }, hoveredLineColIndex: colIndex })
-              }}
-              onMouseLeave={() => {
-                // When leaving vertex, clear both vertex and line hover
-                // The line path's onMouseEnter will restore hoveredLineColIndex if still over the line
-                this.setState({ hoveredKey: null, hoveredVertex: null, hoveredLineColIndex: null })
-              }}
-              data-tooltip-html={tooltip}
-              data-tooltip-id={this.props.chartTooltipID}
-            >
-              {circle}
-              {transparentHoverVertex}
-            </g>,
-          )
+          const dotClassName = `line-dot${this.state.activeKey === key ? ' active' : ''}${this.state.hoveredKey === key ? ' hovered' : ''}${isLineHovered ? ' line-hovered' : ''}${largeDataset ? ' hidden-dot' : ''}`
+
+          if (areaHover) {
+            // The chart-wide overlay handles hover, tooltip and click for every vertex
+            innerCircles.push(
+              <g className={dotClassName} key={`circle-group-${key}`} style={{ pointerEvents: 'none' }}>
+                {circle}
+              </g>,
+            )
+          } else {
+            // Render a bigger transparent circle so it's easier for the user
+            // to hover over and see tooltip
+            const transparentHoverVertex = (
+              <circle
+                key={`hover-circle-${key}`}
+                cx={x}
+                cy={y}
+                r={6}
+                style={{
+                  stroke: 'transparent',
+                  fill: 'transparent',
+                  cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default',
+                }}
+              />
+            )
+
+            innerCircles.push(
+              <g
+                className={dotClassName}
+                key={`circle-group-${key}`}
+                onClick={() => this.onDotClick(d, colIndex, index)}
+                onMouseEnter={() => {
+                  // When hovering over a vertex, show all dots for the line and highlight this vertex
+                  this.setState({ hoveredKey: key, hoveredVertex: { x, y, color }, hoveredLineColIndex: colIndex })
+                }}
+                onMouseLeave={() => {
+                  // When leaving vertex, clear both vertex and line hover
+                  // The line path's onMouseEnter will restore hoveredLineColIndex if still over the line
+                  this.setState({ hoveredKey: null, hoveredVertex: null, hoveredLineColIndex: null })
+                }}
+                data-tooltip-html={tooltip}
+                data-tooltip-id={this.props.chartTooltipID}
+              >
+                {circle}
+                {transparentHoverVertex}
+              </g>,
+            )
+          }
         })
       }
 
@@ -279,7 +493,8 @@ export default class Line extends PureComponent {
       )
 
       // Transparent hover overlay path for easier hovering
-      const hoverPath = (
+      // Not needed when the chart-wide overlay is active - it already snaps to the nearest line
+      const hoverPath = areaHover ? null : (
         <path
           key={`line-hover-${getKey(0, i, pathIndex)}`}
           className='line-hover-overlay'
@@ -304,7 +519,9 @@ export default class Line extends PureComponent {
       )
 
       paths.push(path)
-      paths.push(hoverPath)
+      if (hoverPath) {
+        paths.push(hoverPath)
+      }
 
       // Add gradient area fill for all series (single and multi-series)
       if (vertices.length > 0) {
@@ -346,6 +563,9 @@ export default class Line extends PureComponent {
         )
       }
     })
+
+    // Sorted by x so the overlay can snap to the closest x position on mouse move
+    this.hoverPoints = Array.from(hoverPointsByIndex.values()).sort((a, b) => a.x - b.x)
 
     // Add dashed vertical line for hovered vertex (render once, not per series)
     if (this.state.hoveredKey && this.state.hoveredVertex) {
@@ -410,6 +630,7 @@ export default class Line extends PureComponent {
         {paths}
         {hoverLines}
         {innerCircles}
+        {this.isAreaHoverEnabled() && this.renderHoverArea()}
       </g>
     )
   }

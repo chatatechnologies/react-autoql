@@ -1,4 +1,9 @@
 .react-autoql-drawer {
+  --react-autoql-dm-header-height: 56px;
+  // A neutral wash for icon-button hover. Grey at this alpha darkens a light
+  // theme and lightens a dark one, so one value covers both.
+  --react-autoql-dm-header-btn-hover: rgba(128, 134, 142, 0.16);
+
   font-family: var(--react-autoql-font-family), sans-serif;
   line-height: 22px;
   outline: none !important;
@@ -99,57 +104,55 @@
       }
     }
 
-    &.data-explorer {
-      background-color: var(--react-autoql-background-color-secondary, #fff);
-      &::before {
-        background-color: var(--react-autoql-background-color-secondary, #fff);
-      }
-    }
   }
 
   .chat-content-wrapper {
     position: absolute;
     inset: 0;
-    padding-top: 60px;
+    padding-top: var(--react-autoql-dm-header-height);
   }
 
+  // Same page geometry as .chat-content-wrapper: fill the drawer below the header.
+  // Transparent so the drawer's glass background shows through.
+  .react-autoql-agent-messenger {
+    position: absolute;
+    inset: 0;
+    padding-top: var(--react-autoql-dm-header-height);
+    background-color: transparent;
+  }
+
+  // With sessions on, the session host takes over that absolutely-positioned
+  // slot (and the room the header needs), and the threads it holds just fill
+  // whatever is left under the tab bar.
+  .react-autoql-chat-sessions {
+    position: absolute;
+    inset: 0;
+    padding-top: var(--react-autoql-dm-header-height);
+
+    .chat-content-wrapper {
+      position: relative;
+      inset: auto;
+      padding-top: 0;
+    }
+  }
+
+  // The header is the panel's own surface, not an accent bar: title and page nav
+  // sit together on the left, window controls on the right, and nothing but the
+  // content below separates it from the thread.
   .chat-header-container {
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    gap: 10px;
     width: 100%;
-    height: 60px;
-    // Glassmorphism header: semi-transparent accent color with blur
-    background-color: var(--react-autoql-accent-color);
-    backdrop-filter: blur(10px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    color: var(--react-autoql-text-color-accent);
-    box-shadow: 
-      0 2px 8px rgba(0, 0, 0, 0.1),
-      0 1px 3px rgba(0, 0, 0, 0.08);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    height: var(--react-autoql-dm-header-height);
+    padding: 0 12px 0 16px;
+    box-sizing: border-box;
+    background-color: var(--react-autoql-background-color-primary);
+    color: var(--react-autoql-text-color-primary);
     flex: 0 0 auto;
     z-index: 1;
     position: relative;
-    isolation: isolate;
-
-    // Semi-transparent overlay
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-color: var(--react-autoql-accent-color);
-      opacity: 0.85;
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    // Fallback for browsers without backdrop-filter support
-    @supports not (backdrop-filter: blur(10px)) {
-      background-color: var(--react-autoql-accent-color);
-      &::before {
-        opacity: 0.95;
-      }
-    }
 
     &.mobile-hidden {
       display: none !important;
@@ -158,9 +161,10 @@
 
   .react-autoql-header-left-container {
     display: flex;
-    justify-content: left;
-    width: 100px;
-    margin-left: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    min-width: 0;
 
     &.mobile-hidden {
       display: none !important;
@@ -169,29 +173,77 @@
 
   .react-autoql-header-right-container {
     display: flex;
-    justify-content: right;
-    width: 100px;
-    margin-right: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
 
     &.mobile-hidden {
       display: none !important;
     }
   }
 
+  .react-autoql-header-logo {
+    display: flex;
+    align-items: center;
+    flex: none;
+    color: var(--react-autoql-accent-color);
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  // Hairline between the title and the page nav.
+  .react-autoql-header-divider {
+    width: 1px;
+    height: 16px;
+    margin: 0 2px;
+    flex: none;
+    background-color: var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  }
+
   .react-autoql-header-center-container {
     display: flex;
-    justify-content: center;
     align-items: center;
+    // Shrinkable, unlike the logo, divider, nav and right-hand controls, which are
+    // all fixed-size. Something in the row has to give: at the drawer's 400px
+    // minimum with a full nav and "Clear conversation" showing, nothing could, so
+    // the left group ran under the right one and swallowed its clicks. This is the
+    // piece that can lose width gracefully - .header-title already carries the
+    // ellipsis, and needed a container that could shrink for it to ever engage.
+    flex: 0 1 auto;
+    min-width: 0;
     position: relative;
     font-weight: 600;
+    letter-spacing: -0.008em;
+    white-space: nowrap;
 
     .react-autoql-header-project-selector-container {
       flex: 1;
       padding: 0;
-      margin-bottom: 10px;
-      margin-left: 15px;
-      margin-top: 25px;
+      margin: 0;
+      // The Select is fullWidth, so without a floor it collapses to its text
+      // inside the header's min-width: 0 flex row.
+      min-width: 180px;
     }
+
+    .react-autoql-header-project-selector {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      flex: 1;
+      padding: 0;
+      margin: 0;
+    }
+  }
+
+  .react-autoql-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
   }
 }
 
@@ -228,24 +280,6 @@
 }
 
 @media (max-width: 479px) {
-  .react-autoql-drawer .react-autoql-header-center-container {
-    color: var(--react-autoql-text-color-primary);
-    font-size: 1.125rem;
-    letter-spacing: 0.05em;
-  }
-
-  .react-autoql-drawer .react-autoql-header-left-container {
-    &.hidden {
-      width: 0px;
-    }
-  }
-
-  .react-autoql-drawer .react-autoql-header-right-container {
-    &.hidden {
-      width: 0px;
-    }
-  }
-
   .react-autoql-drawer .drawer-content-wrapper {
     transition: unset !important;
   }
@@ -255,20 +289,95 @@
   }
 }
 
-@media (min-width: 480px) {
-  .react-autoql-drawer .react-autoql-header-center-container {
-    font-size: 1.125rem;
-    letter-spacing: 0.05em;
-    justify-content: center;
+.react-autoql-drawer .react-autoql-header-center-container {
+  font-size: 1rem;
+}
+
+// The maximize pill straddles the drawer's outer edge, half on and half off, so
+// it reads as a grab point on the panel rather than a button inside it.
+.react-autoql-drawer .react-autoql-drawer-maximize-handle {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  border-radius: 999px;
+  background-color: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-placeholder);
+  box-shadow: 0 2px 8px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.12));
+  transition: color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    box-shadow: 0 2px 10px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.2));
+  }
+
+  .react-autoql-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  // Vertical pill on a side-docked drawer, horizontal on a top/bottom one. The
+  // caret always points the way the panel will grow.
+  &.right,
+  &.left {
+    top: 50%;
+    width: 26px;
+    height: 44px;
+    margin-top: -22px;
+  }
+
+  &.top,
+  &.bottom {
+    left: 50%;
+    width: 44px;
+    height: 26px;
+    margin-left: -22px;
+  }
+
+  &.right {
+    left: -13px;
+  }
+
+  &.left {
+    right: -13px;
+
+    .react-autoql-icon svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  &.top {
+    bottom: -13px;
+
+    .react-autoql-icon svg {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &.bottom {
+    top: -13px;
+
+    .react-autoql-icon svg {
+      transform: rotate(90deg);
+    }
   }
 }
 
 .react-autoql-drawer .header-title {
-  width: 100%;
   animation: fadeIn 0.3s;
-  text-align: center;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+// Header buttons only. The in-input filter lock has its own block above: it was
+// listed here too, and this block's badge rule (one class deeper, and later in the
+// file) overrode it, which is why the dot kept sitting on top of the funnel.
 .react-autoql-drawer .react-autoql-drawer-header-btn {
   &.hidden {
     display: none !important;
@@ -281,38 +390,28 @@
   .react-autoql-filter-lock-icon-container {
     display: inline-flex;
     position: relative;
-    margin-right: 4px;
-    margin-top: 3px;
+    // Centred in its own 32px hit box now that the button is a square chip.
+    margin: 0;
 
     .react-autoql-filter-lock-icon-badge {
       position: absolute;
       display: inline-block;
-      border: 2px solid var(--react-autoql-accent-color);
+      // Ringed in the surface behind it - the input pill, or the header. Small
+      // enough to sit on the control rather than hang off it.
+      border: 1.5px solid var(--react-autoql-background-color-secondary);
+      box-sizing: content-box;
       background: var(--react-autoql-warning-color);
       border-radius: 50%;
-      height: 14px;
-      width: 14px;
-      right: -5px;
-      top: -4px;
+      height: 8px;
+      width: 8px;
+      right: -2px;
+      top: -1px;
     }
   }
 }
 
 .react-autoql-drawer .react-autoql-drawer:focus {
   outline: none;
-}
-
-.react-autoql-drawer .chat-header-container .react-autoql-drawer-header-btn {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  margin: 10px 0px 10px 0px;
-  margin-right: 0;
-
-  .react-autoql-icon-close {
-    font-size: 1.2rem;
-  }
 }
 
 .react-autoql-drawer .chat-header-container button {
@@ -322,25 +421,103 @@
   position: relative;
   background: transparent;
   border: none;
-  color: var(--react-autoql-text-color-accent);
+  color: var(--react-autoql-text-color-placeholder);
   margin: 0;
-  font-size: 1.5rem;
+  padding: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  border-radius: 9px;
   cursor: pointer;
   outline: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.react-autoql-drawer .chat-header-container button:hover {
-  opacity: 0.7;
+// Window controls (maximize / close) and the filter lock. Scoped to `button` so
+// it misses the popover wrappers that share this class — the clear-conversation
+// one holds a text label and must keep its natural width.
+.react-autoql-drawer .chat-header-container button.react-autoql-drawer-header-btn {
+  width: 32px;
+  height: 32px;
+  flex: none;
+
+  &:hover {
+    background-color: var(--react-autoql-dm-header-btn-hover);
+    color: var(--react-autoql-text-color-primary);
+  }
+}
+
+// The popover wrappers themselves are just layout.
+.react-autoql-drawer .chat-header-container .react-autoql-drawer-header-btn {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+// Page nav (Data Messenger / Explore / Data Explorer / Notifications / Education).
+// Active reads as an accent-tinted chip rather than a raised folder tab.
+.react-autoql-drawer .chat-header-container .react-autoql-header-nav-btn {
+  width: 30px;
+  height: 30px;
+  flex: none;
+
+  &:hover {
+    background-color: var(--react-autoql-dm-header-btn-hover);
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  &.active {
+    background-color: rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.14
+    );
+    color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .react-autoql-icon.data-search svg {
+    stroke: currentColor;
+    stroke-width: 0.3px;
+  }
+
+  // The dot defaults to a currentColor ring, which disappears into the icon now
+  // that the button is not an accent-filled tab.
+  .react-autoql-notifications-badge-dot {
+    border-color: var(--react-autoql-background-color-primary);
+  }
+}
+
+// The clear-conversation action is a quiet text button, not an icon.
+.react-autoql-drawer .chat-header-container .popover-delete-button {
+  height: 28px;
+  padding: 0 8px;
+  margin-right: 2px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  white-space: nowrap;
+  border-radius: 8px;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    background-color: var(--react-autoql-dm-header-btn-hover);
+  }
 }
 
 .topics-container {
   margin: 5px 0;
 }
 
-.intro-qi-link {
+.empty-state-de-link {
   cursor: pointer;
   color: var(--react-autoql-accent-color);
   font-weight: 600;
+  white-space: nowrap;
 
   .react-autoql-icon {
     margin-right: -3px;
@@ -359,9 +536,7 @@
     border-radius: 12px;
     overflow: visible;
     border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.12),
-      0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
     position: relative;
 
     // Semi-transparent overlay sits behind content but above the backdrop-filter layer
@@ -392,29 +567,57 @@
     opacity: 0;
   }
 
+  // The front door to the panel: an accent disc carrying the product mark, lifted
+  // off the page on the same soft ambient shadow the rest of the library uses. The
+  // icon is centred with flex rather than the absolute offsets it used to need.
   .drawer-handle {
-    transition: opacity 0.5s ease;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 50px;
     height: 50px;
-    border-radius: 50px !important;
+    overflow: hidden;
+    border-radius: 999px !important;
     font-size: 1.375rem;
+    transition: opacity 0.5s ease, transform 0.2s ease, box-shadow 0.2s ease;
 
     &.default-logo {
       background-color: var(--react-autoql-accent-color, #26a7df);
       color: var(--react-autoql-text-color-accent);
+      box-shadow: 0 1px 2px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.06)),
+        0 8px 20px -6px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.18));
 
-      .react-autoql-bubbles-outlined {
-        position: absolute;
-        vertical-align: top;
-        top: 11px;
-        left: 12px;
+      .react-autoql-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        // Optical centring. The mark is an apex-up triangle with a solid base and
+        // the accent polygon at its bottom-right, so its visual weight sits below
+        // its bounding box's centre - geometrically centred, it reads low. 1px at
+        // 24px is about 4% of the glyph's height, which is the usual correction.
+        transform: translateY(-1px);
+      }
 
-        svg {
-          position: absolute;
-          width: 26px;
-          height: 26px;
-        }
+      // Rises very slightly and deepens its shadow, the way the message bubbles
+      // lift when they're active. No colour change - the disc is already accent.
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.08)),
+          0 12px 28px -8px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.24));
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drawer-handle.default-logo {
+      transition: opacity 0.5s ease;
+
+      &:hover {
+        transform: none;
       }
     }
   }
@@ -459,13 +662,13 @@
 @media (min-width: 1281px) {
   .react-autoql-drawer.drawer-right .drawer-content-wrapper,
   .react-autoql-drawer.drawer-left .drawer-content-wrapper {
-    max-width: calc(100vw - 45px) !important;
+    max-width: 100vw !important;
     min-width: 400px !important;
   }
 
   .react-autoql-drawer.drawer-top .drawer-content-wrapper,
   .react-autoql-drawer.drawer-bottom .drawer-content-wrapper {
-    max-height: calc(100vh - 45px) !important;
+    max-height: 100vh !important;
     min-height: 400px !important;
   }
 }
@@ -565,225 +768,12 @@
   margin-bottom: 3px;
 }
 
-.data-messenger-tab-container {
-  position: absolute;
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-
-  &.hidden {
-    pointer-events: none;
-    visibility: hidden;
-    opacity: 0;
-  }
-
-  &.right {
-    height: 100vh;
-    width: 60px;
-    left: -60px;
-  }
-
-  &.left {
-    height: 100vh;
-    width: 60px;
-    right: -60px;
-  }
-
-  &.top {
-    width: 100vw;
-    height: 60px;
-    bottom: -60px;
-  }
-
-  &.bottom {
-    width: 100vw;
-    height: 60px;
-    top: -60px;
-  }
-}
-
-/* Shadow container (this is used to cut off the shadow so it doesnt show in the drawer) */
-.page-switcher-shadow-container {
-  position: absolute;
-  background: transparent;
-  overflow: hidden;
-}
-
-.page-switcher-shadow-container.right {
-  top: 80px;
-  width: 60px;
-}
-
-.page-switcher-shadow-container.left {
-  top: 80px;
-  width: 60px;
-}
-
-.react-autoql-header-project-selector {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex: 1;
-  padding: 0;
-  margin-bottom: 10px;
-  margin-left: 15px;
-}
-
-/* Container holding the tabs */
-.page-switcher-container {
-  box-shadow: -2px 0 8px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-  overflow: hidden;
-  box-sizing: border-box;
-  display: flex;
-  pointer-events: all;
-
-  .react-autoql-dm-tab {
-    position: relative;
-    z-index: 1;
-
-    background: var(--react-autoql-accent-color);
-    color: var(--react-autoql-text-color-accent);
-    opacity: 1;
-
-    font-size: 1.375rem;
-    text-align: center;
-    transform: translate(0, 0);
-    cursor: pointer;
-
-    transition-property: background, color, transform, line-height, height, width, margin-right, margin-top, margin-left,
-      margin-bottom, z-index, opacity;
-    transition-duration: 0.2s;
-
-    &.react-autoql-explore-queries span.react-autoql-icon svg {
-      height: 22px;
-      width: 23px;
-    }
-
-    .react-autoql-icon.data-search svg {
-      stroke: var(--react-autoql-accent-color);
-      stroke-width: 0.3px;
-    }
-  }
-
-  &.right {
-    border-top-left-radius: 5px;
-    border-bottom-left-radius: 5px;
-    margin-top: 20px;
-    margin-left: 20px;
-    margin-bottom: 20px;
-    flex-direction: column;
-
-    .react-autoql-dm-tab {
-      box-shadow: inset -18px 0px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-    }
-  }
-
-  &.left {
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
-    margin-top: 20px;
-    margin-right: 20px;
-    margin-bottom: 20px;
-    margin-left: -5px;
-    flex-direction: column;
-
-    .react-autoql-dm-tab {
-      box-shadow: inset 18px 0px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-    }
-  }
-
-  &.top {
-    border-bottom-right-radius: 5px;
-    border-bottom-left-radius: 5px;
-    margin-right: 20px;
-    margin-left: 20px;
-    margin-bottom: 20px;
-    flex-direction: row;
-    height: 40px;
-
-    .react-autoql-dm-tab {
-      box-shadow: inset 0px 12px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-    }
-  }
-
-  &.bottom {
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    margin-top: 20px;
-    margin-left: 20px;
-    margin-right: 20px;
-    flex-direction: row;
-    height: 40px;
-
-    .react-autoql-dm-tab {
-      box-shadow: inset 0px -17px 8px -10px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-    }
-  }
-}
-
-/* Individual Tabs */
-.react-autoql-notifications.react-autoql-dm-tab.active .react-autoql-notifications-badge-dot {
-  border: 1px solid var(--react-autoql-background-color-primary);
-}
-
-.page-switcher-container .react-autoql-dm-tab {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
+/* The notification icon keeps its badge positioned inside the header nav button */
 .data-messenger-notification-btn {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   line-height: inherit;
-}
-
-.page-switcher-container.right .react-autoql-dm-tab,
-.page-switcher-container.left .react-autoql-dm-tab {
-  height: 65px;
-}
-
-.page-switcher-container.top .react-autoql-dm-tab,
-.page-switcher-container.bottom .react-autoql-dm-tab {
-  width: 65px;
-}
-
-.page-switcher-container.bottom .react-autoql-dm-tab {
-  background: var(--react-autoql-background-color-primary);
-  color: var(--react-autoql-text-color-primary);
-
-  .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-background-color-primary);
-    stroke-width: 0.3px;
-  }
-}
-
-.page-switcher-container .react-autoql-dm-tab.active {
-  background: var(--react-autoql-background-color-primary);
-  color: var(--react-autoql-accent-color);
-  box-shadow: -2px 0px 8px 2px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
-  font-weight: bold;
-  position: relative;
-  z-index: 2;
-
-  .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-background-color-primary);
-    stroke-width: 0.3px;
-  }
-}
-
-.page-switcher-container.bottom .react-autoql-dm-tab.active {
-  background: var(--react-autoql-accent-color);
-  color: var(--react-autoql-text-color-accent);
-  font-weight: bold;
-
-  .react-autoql-icon.data-search svg {
-    stroke: var(--react-autoql-accent-color);
-    stroke-width: 0.3px;
-  }
 }
 
 /* animations */

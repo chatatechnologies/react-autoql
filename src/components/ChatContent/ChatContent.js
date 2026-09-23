@@ -9,12 +9,14 @@ import {
   UNAUTHENTICATED_ERROR,
   GENERAL_QUERY_ERROR,
   dataFormattingDefault,
-  getAuthentication,
-  fetchSubjectList,
 } from 'autoql-fe-utils'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
+import { fetchSubjectListCached } from '../../js/subjectListService'
+import { scrollTabIntoView } from '../../js/scrollTabIntoView'
+import { isScreenSize, subscribeToScreenSize } from '../../js/breakpoints'
+import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
 
 // Components
 import { Icon } from '../Icon'
@@ -22,6 +24,8 @@ import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { ConfirmPopover } from '../ConfirmPopover'
+import { ThreadSwitcher } from '../ThreadSwitcher'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Tooltip } from '../Tooltip'
@@ -30,6 +34,25 @@ import { Tooltip } from '../Tooltip'
 import './ChatContent.scss'
 
 const TOOLBAR_OFFSET = 90 // Offset in pixels to account for toolbar at the top
+
+// How long after the last wheel event a thread scroll is still considered "in
+// progress". Long enough to bridge the gaps between wheel events in one flick,
+// short enough that a deliberate pause hands the wheel back to the table.
+const THREAD_WHEEL_IDLE_MS = 250
+
+// Scrollers nested inside a message that would otherwise capture the wheel.
+const NESTED_SCROLLER_SELECTOR = '.tabulator-tableholder, .react-autoql-custom-scrollbars'
+
+// Px per line, for browsers that report wheel deltas in lines rather than pixels.
+const WHEEL_LINE_HEIGHT = 16
+
+// Trackpad momentum decays, so a delta that grows instead means the user pushed
+// again - a new gesture. Small tolerance so wheel jitter doesn't read as a push.
+const NEW_GESTURE_DELTA_TOLERANCE = 1
+
+// Same ceiling the Data Agent puts on threads: past this the tab bar is all scroll
+// and no context.
+const MAX_SESSIONS = 8
 
 export default class ChatContent extends React.Component {
   constructor(props) {
@@ -43,7 +66,22 @@ export default class ChatContent extends React.Component {
     this.lastScrollMessageId = null
     this.lastScrollTime = 0
 
+    // Sessions: when enableSessions is set, this instance becomes a "host" — it
+    // renders the tab bar and one ChatContent per session (each with
+    // isSessionTab, so they render a normal single thread). A session is a whole
+    // ChatContent instance rather than a swapped-out message array so that
+    // switching tabs keeps every response's own state (table config, chart type,
+    // expanded rows) intact — only the active tab is laid out.
+    this.sessionRefs = {}
+
+    // Not isSessionHost()/createSessionObject() — those are class properties, so
+    // reading props directly here keeps this independent of field-init order.
+    const isSessionHost = !!props.enableSessions && !props.isSessionTab
+    const initialSession = isSessionHost ? { id: uuid(), title: NEW_THREAD_TITLE } : null
+
     this.state = {
+      sessions: initialSession ? [initialSession] : [],
+      activeSessionId: initialSession?.id ?? null,
       messages: [],
       subjects: [],
       isQueryRunning: false,
@@ -51,12 +89,19 @@ export default class ChatContent extends React.Component {
       isInputDisabled: false,
       isGeneratingSummary: false,
       isAtBottom: true,
-      // Filter lock (only used when showFilterLockButton is set — renders the
-      // lock control in a toolbar above the composer). lockedFilters/hasFilters
-      // are populated by onFilterChange once FilterLockPopover fetches on mount.
+      // Filter lock (see ownsFilterLock). lockedFilters/hasFilters are populated
+      // by onFilterChange once FilterLockPopover fetches on mount.
       isFilterLockMenuOpen: false,
       lockedFilters: [],
       hasFilters: false,
+      // Whether lockedFilters has been filled in by a fetch yet. Until it has,
+      // a mounting popover has to fetch; after it has, it is seeded from here
+      // instead (see renderFilterLockPopover).
+      hasFetchedFilters: false,
+      // Phone-sized screens swap the session strip for a dropdown. Deliberately
+      // the screen and not the drawer width: a narrow drawer on a desktop still
+      // has a pointer, hover and a real scrollbar, which is what the strip needs.
+      isSmallScreen: isScreenSize('sm'),
     }
   }
 
@@ -70,15 +115,16 @@ export default class ChatContent extends React.Component {
     enableDynamicCharting: PropTypes.bool.isRequired,
     autoChartAggregations: PropTypes.bool.isRequired,
     enableFilterLocking: PropTypes.bool.isRequired,
-    // When true, ChatContent renders its OWN filter-lock control (a toolbar
-    // above the composer) and manages the locked filters internally, feeding
-    // them to its QueryInput. Use this when ChatContent is embedded outside
-    // DataMessenger (which renders its own header lock). Default false so
-    // DataMessenger is unaffected.
+    // Forces the filter-lock control on when `autoQLConfig.enableFilterLocking`
+    // is not set. The lock normally follows that config flag — this is for a
+    // consumer that wants the control without it.
     showFilterLockButton: PropTypes.bool,
-    // Label for the filter-lock toolbar button (e.g. the filter category the
-    // data uses, like "Household"). Defaults to a generic "Filters".
+    // Tooltip for the filter-lock button (e.g. the filter category the data uses,
+    // like "Household"). Defaults to the generic "Manage Filters".
     filterLockButtonLabel: PropTypes.string,
+    // Called with the full lock list whenever it changes, for a parent that
+    // holds this thread and needs to reflect the lock state (see DataMessenger).
+    onFilterLockChange: PropTypes.func,
     onErrorCallback: PropTypes.func.isRequired,
     onSuccessAlert: PropTypes.func.isRequired,
     onRTValueLabelClick: PropTypes.func,
@@ -100,17 +146,45 @@ export default class ChatContent extends React.Component {
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
-    enableLLMStyleEmptyState: PropTypes.bool,
-    llmEmptyStateTitle: PropTypes.string,
-    // When false, the LLM empty state renders WITHOUT its title/logo row (the
-    // rest of the empty-state layout — and the `.llm-empty-state` class hosts
-    // rely on — stays intact). Default true.
-    showLLMEmptyStateTitle: PropTypes.bool,
+    // Headline and supporting line for the centred message shown while the
+    // thread has no messages. Fall back to the defaults in Localization.
+    emptyStateTitle: PropTypes.node,
+    emptyStateSubtitle: PropTypes.node,
     // When false, no message offers the "Delete data response" button. For
     // integrators whose chat is a durable record rather than a scratchpad —
     // removing an answer from the thread is meaningless there, and the button
     // is the only destructive control in the toolbar. Default true.
     enableMessageDelete: PropTypes.bool,
+    // When true, the chat is split into user sessions: a tab bar across the top
+    // with a close button per tab and a "+" to start a new one. Each session
+    // gets its own UUID, sent to the query endpoint with the queries the user
+    // types (see QueryInput's querySessionId). Default false — no tabs, no
+    // session UUID, and no session header on any request.
+    enableSessions: PropTypes.bool,
+    // Internal. Set on the per-session children a session host renders, so they
+    // render a plain single thread instead of recursing into another tab bar.
+    isSessionTab: PropTypes.bool,
+    // The session a thread belongs to. Set by the host on its children; a
+    // consumer can also pass its own id when it manages sessions itself.
+    querySessionId: PropTypes.string,
+    // Internal. How a session tab reports the tab_display_name from a query
+    // response back to its host.
+    onSessionTitleChange: PropTypes.func,
+    // Internal. The host's filter lock, handed to the visible session only: it is
+    // one element with one ref and one set of locked filters, so mounting a copy in
+    // every tab would have them fighting over it. Tabs never render their own.
+    filterLockElement: PropTypes.node,
+    // Internal. How a session tab tells its host it now has (or no longer has)
+    // messages of its own, which decides whether its close button shows when it
+    // is the only tab.
+    onSessionContentChange: PropTypes.func,
+    // Called with whether there is a conversation to clear — for a session host,
+    // in whichever tab is on screen. The Data Messenger uses it to show its
+    // header's "Clear conversation" button only when it has something to do.
+    onContentChange: PropTypes.func,
+    // A tooltip instance owned by the host to register against, so an embedded
+    // ChatContent doesn't stand up a second one. Falls back to its own.
+    tooltipID: PropTypes.string,
   }
 
   static defaultProps = {
@@ -130,18 +204,30 @@ export default class ChatContent extends React.Component {
     enableBillingGate: false,
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
-    enableLLMStyleEmptyState: false,
-    llmEmptyStateTitle: undefined,
-    showLLMEmptyStateTitle: true,
+    emptyStateTitle: undefined,
+    emptyStateSubtitle: undefined,
     showFilterLockButton: false,
     filterLockButtonLabel: undefined,
     enableMessageDelete: true,
+    enableSessions: false,
+    isSessionTab: false,
+    querySessionId: undefined,
   }
 
   componentDidMount = () => {
     this._isMounted = true
-    if (!this.props.enableLLMStyleEmptyState && this.props.introMessages?.length) {
-      this.addIntroMessages(this.props.introMessages)
+
+    // Before the host's early return below: the host is the one that renders the
+    // tab bar, so it is the only one that cares about this.
+    this.unsubscribeFromScreenSize = subscribeToScreenSize('sm', (isSmallScreen) => {
+      if (this._isMounted) {
+        this.setState({ isSmallScreen })
+      }
+    })
+
+    // A session host has no thread of its own — its children do the work.
+    if (this.isSessionHost()) {
+      return
     }
 
     //disable input focus for mobile, as ios keyboard has bug
@@ -154,14 +240,71 @@ export default class ChatContent extends React.Component {
   }
 
   componentDidUpdate = (prevProps, prevState) => {
+    if (this.isSessionHost()) {
+      // enableSessions turned on after mount - an integrator whose flag resolves
+      // after the first render, or the example app's toggle. Only the constructor
+      // seeds a session, so without this the host renders a tab strip with no
+      // thread under it and no input, and every ref call (clearMessages,
+      // animateInputTextAndSubmit) reaches nothing.
+      if (!this.state.sessions.length) {
+        const session = this.createSessionObject([])
+        this.setState({ sessions: [session], activeSessionId: session.id })
+      }
+
+      // Reveal the selected tab: a session opened while the strip is already full
+      // would otherwise land off the right edge with nothing to say it exists.
+      if (
+        prevState.activeSessionId !== this.state.activeSessionId ||
+        prevState.sessions.length !== this.state.sessions.length
+      ) {
+        this.scrollActiveSessionTabIntoView()
+      }
+
+      this.notifyContentChange()
+
+      return
+    }
+
+    // The other direction: this was a host on mount, so it took the early return
+    // in componentDidMount and never set up the thread it now renders itself.
+    if (!!prevProps.enableSessions && !prevProps.isSessionTab) {
+      this.fetchAllSubjects()
+      this.setupScrollListener()
+    }
+
     //disable input focus for mobile, as ios keyboard has bug
     if (this.props.shouldRender && !prevProps.shouldRender && !isMobile) {
       this.focusInput()
     }
 
+    // Coming back on screen (the drawer opened, or this session tab was selected):
+    // the composer may have moved while this thread wasn't the one publishing.
+    if (this.props.shouldRender && !prevProps.shouldRender) {
+      this.publishComposerMetrics()
+    }
+
+    // The thread went off screen (the drawer closed, or another page took over)
+    // with the lock menu open — it would otherwise be waiting there on the way back.
+    if (!this.props.shouldRender && prevProps.shouldRender && this.state.isFilterLockMenuOpen) {
+      this.closeFilterLockMenu()
+    }
+
     if (!_isEqual(this.props.authentication, prevProps.authentication)) {
       this.fetchAllSubjects()
     }
+
+    // Tell the session host when this tab stops (or goes back to) being empty, so
+    // it can show or hide the close button on a lone tab.
+    if (this.props.onSessionContentChange && prevState.messages !== this.state.messages) {
+      const hadContent = !!prevState.messages?.length
+      const hasContent = !!this.state.messages?.length
+
+      if (hadContent !== hasContent) {
+        this.props.onSessionContentChange(hasContent)
+      }
+    }
+
+    this.notifyContentChange()
 
     // Check if a new message was added (user request or system response) and scroll to it
     if (this.state.messages.length > prevState.messages.length) {
@@ -195,6 +338,12 @@ export default class ChatContent extends React.Component {
       }
     }
 
+    // The thinking indicator appears without a message being added, so the
+    // block above never fires for it.
+    if (this.isThinkingState(this.state) && !this.isThinkingState(prevState)) {
+      this.scrollThinkingIndicatorIntoView()
+    }
+
     // Setup scroll listener if not already set up
     if (this.messengerScrollComponent && !this.handleScroll) {
       this.setupScrollListener()
@@ -207,6 +356,13 @@ export default class ChatContent extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+
+    if (this.cancelTabScroll) {
+      this.cancelTabScroll()
+    }
+
+    this.unsubscribeFromScreenSize?.()
+
     clearTimeout(this.feedbackTimeout)
     clearTimeout(this.responseDelayTimeout)
     if (this.scrollTimeout) {
@@ -214,10 +370,211 @@ export default class ChatContent extends React.Component {
       this.scrollTimeout = null
     }
     this.removeScrollListener()
+    this.composerObserver?.disconnect()
+    this.composerObserver = undefined
+    window.removeEventListener('resize', this.publishComposerMetrics)
+    window.removeEventListener('orientationchange', this.publishComposerMetrics)
+    window.visualViewport?.removeEventListener('resize', this.publishComposerMetrics)
+  }
+
+  // Where the composer starts, in viewport coordinates, published for the mobile
+  // filter-lock sheet: it is portalled to the body (react-tiny-popover drops
+  // parentElement on mobile) and pinned to the top of the screen, so its own
+  // percentage height resolves against the document rather than against whatever
+  // the chat occupies. The composer's top edge is the measurement that actually
+  // says where the sheet has to stop, whatever sits around the thread and however
+  // tall the optional Quick Topics row makes the composer.
+  publishComposerMetrics = () => {
+    const element = this.composerRef
+
+    // Background session tabs measure the same composer as the visible one, so let
+    // whichever is on screen own the value rather than fighting over it. Not gated
+    // on _isMounted: a ref callback runs before componentDidMount, and the first
+    // measurement is the one that matters.
+    if (!element || this.props.shouldRender === false) {
+      return
+    }
+
+    const top = element.getBoundingClientRect?.().top
+
+    if (typeof top === 'number') {
+      document.documentElement.style.setProperty('--react-autoql-composer-top', `${Math.round(top)}px`)
+    }
+  }
+
+  setComposerRef = (element) => {
+    this.composerRef = element
+
+    this.composerObserver?.disconnect()
+    this.composerObserver = undefined
+
+    if (!element) {
+      return
+    }
+
+    this.publishComposerMetrics()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.composerObserver = new ResizeObserver(this.publishComposerMetrics)
+      this.composerObserver.observe(element)
+    }
+
+    // A ResizeObserver fires when the composer's own box changes; the on-screen
+    // keyboard and a rotation move it without resizing it.
+    window.addEventListener('resize', this.publishComposerMetrics)
+    window.addEventListener('orientationchange', this.publishComposerMetrics)
+    window.visualViewport?.addEventListener('resize', this.publishComposerMetrics)
+  }
+
+  // ---- Sessions ----
+  // Only the host (enableSessions, and not itself a session tab) runs any of
+  // this. Everything below is a no-op for a plain thread.
+  isSessionHost = () => {
+    return !!this.props.enableSessions && !this.props.isSessionTab
+  }
+
+  createSessionObject = (sessions) => {
+    // Placeholder title, numbered the way the Data Agent numbers threads: plain
+    // "New thread" unless that name is taken, then the lowest free suffix. Once a
+    // query in the session comes back with a tab_display_name, setSessionTitle
+    // replaces it.
+    return { id: uuid(), title: getUntitledTitle(sessions.map((session) => session.title)) }
+  }
+
+  scrollActiveSessionTabIntoView = () => {
+    const list = this.sessionTabListRef
+    const tab = list?.querySelector('.react-autoql-chat-session-tab.active')
+
+    if (!list || !tab) {
+      return
+    }
+
+    if (this.cancelTabScroll) {
+      this.cancelTabScroll()
+    }
+
+    this.cancelTabScroll = scrollTabIntoView(list, tab)
+  }
+
+  getActiveSessionRef = () => {
+    return this.sessionRefs[this.state.activeSessionId]
+  }
+
+  // Updater form here and in the two below: double-clicking "+" or closing two
+  // tabs in one batch has to see the sessions the previous update produced, not
+  // the ones from the render it started in.
+  addSession = () => {
+    this.setState((state) => {
+      if (state.sessions.length >= MAX_SESSIONS) {
+        return null
+      }
+
+      const session = this.createSessionObject(state.sessions)
+      return { sessions: [...state.sessions, session], activeSessionId: session.id }
+    })
+  }
+
+  setActiveSession = (sessionId) => {
+    if (sessionId === this.state.activeSessionId) {
+      return
+    }
+
+    this.setState({ activeSessionId: sessionId }, () => {
+      // The tab that just became visible has been mounted all along, so its own
+      // mount-time focus already happened; focus it again on the way in.
+      !isMobile && this.getActiveSessionRef()?.focusInput()
+    })
+  }
+
+  closeSession = (sessionId) => {
+    this.setState(
+      (state) => {
+        const { sessions, activeSessionId } = state
+
+        const closingIndex = sessions.findIndex((session) => session.id === sessionId)
+        if (closingIndex === -1) {
+          return null
+        }
+
+        const remainingSessions = sessions.filter((session) => session.id !== sessionId)
+
+        // Closing the last tab starts a fresh one rather than leaving the page with
+        // nothing, the same way the Data Agent's threads behave. The new id remounts
+        // the thread, so its messages and session go with it.
+        if (!remainingSessions.length) {
+          const session = this.createSessionObject(remainingSessions)
+          return { sessions: [session], activeSessionId: session.id }
+        }
+
+        let newActiveSessionId = activeSessionId
+        if (sessionId === activeSessionId) {
+          // Fall back to the tab on the left, or the first one if we closed the leftmost.
+          newActiveSessionId = remainingSessions[Math.max(0, closingIndex - 1)]?.id
+        }
+
+        return { sessions: remainingSessions, activeSessionId: newActiveSessionId }
+      },
+      () => {
+        !isMobile && this.getActiveSessionRef()?.focusInput()
+      },
+    )
+  }
+
+  // Every tab at once, replaced by one empty tab - the same end state as closing
+  // them one by one, without the tab bar reshuffling under the cursor each time.
+  // Confirmed before it runs: nothing here is recoverable.
+  closeAllSessions = () => {
+    this.sessionRefs = {}
+
+    // No updater form, unlike the closes above: this doesn't read the sessions it
+    // replaces, so there is nothing for a batched update to get stale.
+    const session = this.createSessionObject([])
+
+    this.setState({ sessions: [session], activeSessionId: session.id }, () => {
+      !isMobile && this.getActiveSessionRef()?.focusInput()
+    })
+  }
+
+  // First title wins, for the life of the tab. The backend derives the name
+  // from the session's queries, so it can come back different on a later query —
+  // but a tab renaming itself out from under the user as they keep asking
+  // questions is worse than a name that only fits the first thing they asked.
+  setSessionTitle = (sessionId, title) => {
+    if (!title) {
+      return
+    }
+
+    this.setState((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId)
+      if (!session || session.isTitled) {
+        return null
+      }
+
+      return {
+        sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, title, isTitled: true } : s)),
+      }
+    })
+  }
+
+  // Whether the session has anything in it beyond the intro message. Closing the
+  // last tab resets it, so on an empty one there is nothing to reset and the tab
+  // bar hides the close button rather than offering a no-op.
+  setSessionHasContent = (sessionId, hasContent) => {
+    this.setState((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId)
+      if (!session || !!session.hasContent === hasContent) {
+        return null
+      }
+
+      return {
+        sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, hasContent } : s)),
+      }
+    })
   }
 
   fetchAllSubjects = () => {
-    fetchSubjectList({ ...getAuthentication(this.props.authentication) })
+    // Cached: with sessions on, one of these runs per tab with the same answer.
+    fetchSubjectListCached(this.props.authentication)
       .then((subjects) => {
         if (this._isMounted) {
           if (subjects?.length) {
@@ -230,6 +587,11 @@ export default class ChatContent extends React.Component {
   }
 
   focusInput = () => {
+    if (this.isSessionHost()) {
+      this.getActiveSessionRef()?.focusInput()
+      return
+    }
+
     if (this.queryInputRef?._isMounted) {
       this.queryInputRef.focus()
     }
@@ -249,6 +611,16 @@ export default class ChatContent extends React.Component {
         this.checkIfAtBottom()
       }
       container.addEventListener('scroll', this.handleScroll)
+
+      // PerfectScrollbar binds its own wheel handler to the container and applies
+      // the delta itself, so a listener on the container would scroll on top of it
+      // (PS registers first at mount, and stopPropagation doesn't reach a listener
+      // on the same element). Capture on the ancestor runs before anything on the
+      // container, so stopPropagation below keeps the delta from being applied twice.
+      // passive: false — handleThreadWheel needs to be able to preventDefault.
+      this.wheelListenerTarget = container.parentElement ?? container
+      this.wheelListenerTarget.addEventListener('wheel', this.handleThreadWheel, { passive: false, capture: true })
+
       // Initial check
       this.checkIfAtBottom()
     }
@@ -259,6 +631,82 @@ export default class ChatContent extends React.Component {
     if (container && this.handleScroll) {
       container.removeEventListener('scroll', this.handleScroll)
     }
+
+    if (this.wheelListenerTarget) {
+      this.wheelListenerTarget.removeEventListener('wheel', this.handleThreadWheel, { capture: true })
+      this.wheelListenerTarget = undefined
+    }
+  }
+
+  // Scrolling the thread past a table used to stop dead: the wheel event lands on
+  // whatever is under the cursor, so the table's own scroller swallowed it
+  // mid-flick. Once a scroll gesture is underway, keep it on the thread and let
+  // the table have the wheel again only after the gesture has actually stopped.
+  //
+  // Runs in capture phase on the container's parent (see addScrollListener), so it
+  // sees the event before PerfectScrollbar and before the table, and the browser
+  // still applies the default scroll after dispatch — preventDefault here cancels it.
+  handleThreadWheel = (e) => {
+    const container = this.messengerScrollComponent?.getContainer()
+    if (!container || !e.deltaY) {
+      return
+    }
+
+    // Capture on the parent also sees wheel events on the container's siblings.
+    if (e.target !== container && !container.contains(e.target)) {
+      return
+    }
+
+    const now = Date.now()
+    const isMidGesture = now - (this.lastThreadWheelTime ?? 0) < THREAD_WHEEL_IDLE_MS
+
+    // The thread's own scroller carries .react-autoql-custom-scrollbars too, so
+    // "nested" means a match that is strictly inside the container, not the
+    // container itself.
+    const nested = e.target?.closest?.(NESTED_SCROLLER_SELECTOR)
+    const isOverNestedScroller = !!nested && nested !== container && container.contains(nested)
+
+    // Not over a nested scroller: an ordinary thread scroll, just record it.
+    if (!isOverNestedScroller) {
+      this.lastThreadWheelTime = now
+      this.lastThreadWheelDelta = Math.abs(e.deltaY)
+      return
+    }
+
+    // Cursor started on the table with the thread at rest — the user means to
+    // scroll the table, so leave it alone.
+    if (!isMidGesture) {
+      return
+    }
+
+    // Mid-gesture, but the delta grew: momentum only ever decays, so this is a
+    // fresh push over the table. Without this the hijack below feeds itself -
+    // every stolen event extends the gesture, so flicking repeatedly over a
+    // table never hands the wheel back and the table looks stuck.
+    if (Math.abs(e.deltaY) > (this.lastThreadWheelDelta ?? 0) + NEW_GESTURE_DELTA_TOLERANCE) {
+      this.lastThreadWheelTime = 0
+      this.lastThreadWheelDelta = 0
+      return
+    }
+
+    // At the thread's own edge, let the event through so the table can take over
+    // rather than swallowing the scroll entirely.
+    const atTop = container.scrollTop <= 0
+    const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 1
+    if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+      return
+    }
+
+    // deltaY is only in pixels when deltaMode is DOM_DELTA_PIXEL. Firefox commonly
+    // reports lines instead, which would scroll a few pixels per flick.
+    const scale = e.deltaMode === 1 ? WHEEL_LINE_HEIGHT : e.deltaMode === 2 ? container.clientHeight : 1
+
+    e.preventDefault()
+    // We own this delta now — keep PerfectScrollbar and the table from applying it again.
+    e.stopPropagation()
+    container.scrollTop += e.deltaY * scale
+    this.lastThreadWheelTime = now
+    this.lastThreadWheelDelta = Math.abs(e.deltaY)
   }
 
   checkIfAtBottom = () => {
@@ -514,17 +962,76 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // Stops the progress message's spinner when its export fails, so it doesn't
+  // sit at "Fetching your file" forever next to the error message.
+  onCSVDownloadError = ({ id }) => {
+    delete this.csvProgressLog[id]
+    if (this.messageRefs[id]?._isMounted) {
+      this.messageRefs[id].setState({ csvDownloadFailed: true })
+    }
+  }
+
+  // Whether there is a conversation to clear right now — for a host, in the tab
+  // that's on screen. Reported up so the drawer header can show its "Clear
+  // conversation" button only when it would do something.
+  notifyContentChange = () => {
+    if (!this.props.onContentChange) {
+      return
+    }
+
+    const hasContent = this.isSessionHost()
+      ? !!this.state.sessions.find((session) => session.id === this.state.activeSessionId)?.hasContent
+      : !!this.state.messages?.length
+
+    if (hasContent !== this.lastReportedHasContent) {
+      this.lastReportedHasContent = hasContent
+      this.props.onContentChange(hasContent)
+    }
+  }
+
   clearMessages = () => {
+    if (this.isSessionHost()) {
+      // Empty the tab first, which also cancels whatever it has in flight...
+      this.getActiveSessionRef()?.clearMessages()
+
+      // ...then replace the session object itself. Emptying the messages alone
+      // leaves the tab on the same querySessionId (AutoQL-Session-ID) and its
+      // first-wins title, so the next question would carry on the conversation the
+      // user just cleared - on the backend, and under the old project after a
+      // project switch. A new id also remounts the thread, the way closeSession
+      // already starts the last tab over.
+      this.setState((state) => {
+        const index = state.sessions.findIndex((session) => session.id === state.activeSessionId)
+
+        if (index === -1) {
+          return null
+        }
+
+        const session = this.createSessionObject(state.sessions.filter((s) => s.id !== state.activeSessionId))
+        const sessions = [...state.sessions]
+        sessions[index] = session
+
+        return { sessions, activeSessionId: session.id }
+      })
+
+      return
+    }
+
     this.queryInputRef?.cancelQuery()
     if (this._isMounted) {
       this.setState({
-        messages: this.getIntroMessages(this.props.introMessages),
+        messages: [],
         isClearingAllMessages: true,
       })
     }
   }
 
   animateInputTextAndSubmit = (...params) => {
+    if (this.isSessionHost()) {
+      this.getActiveSessionRef()?.animateInputTextAndSubmit(...params)
+      return
+    }
+
     if (this.queryInputRef?._isMounted) {
       this.queryInputRef?.animateInputTextAndSubmit(...params)
     }
@@ -597,22 +1104,6 @@ export default class ChatContent extends React.Component {
 
     const newMessages = messages.filter((message) => !messagesToDelete.includes(message.id))
     this.setState({ messages: newMessages })
-  }
-
-  getIntroMessages = (contentList) => {
-    return contentList.map((content) =>
-      this.createMessage({
-        isResponse: true,
-        content: content || '',
-        isIntroMessage: true,
-      }),
-    )
-  }
-
-  addIntroMessages = (contentList) => {
-    if (Array.isArray(contentList) && contentList.length) {
-      this.addMessages(this.getIntroMessages(contentList))
-    }
   }
 
   addMessage = (message) => {
@@ -690,6 +1181,13 @@ export default class ChatContent extends React.Component {
   onResponse = (response, query, queryMessageID) => {
     if (this._isMounted) {
       this.setState({ isQueryRunning: false, isInputDisabled: false })
+
+      // Names the session's tab off what was asked in it. Not returned by the
+      // backend yet — until it is, tabs keep their "New thread" placeholder.
+      // The host ignores everything after the first one it accepts.
+      if (response?.data?.data?.tab_display_name) {
+        this.props.onSessionTitleChange?.(response.data.data.tab_display_name)
+      }
 
       if (response?.data?.message === REQUEST_CANCELLED_ERROR && this.state.isClearingAllMessages) {
         this.setState({
@@ -769,19 +1267,77 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  isChataThinking = () => {
-    return this.state.isQueryRunning || this.state.isDrilldownRunning || this.state.isGeneratingSummary
+  // Takes a state object so componentDidUpdate can ask the same question of
+  // prevState and spot the transition into thinking.
+  isThinkingState = (state) => {
+    return !!(state?.isQueryRunning || state?.isDrilldownRunning || state?.isGeneratingSummary)
   }
 
-  // ---- Filter lock (self-managed, used with showFilterLockButton) ----
-  // Mirrors DataMessenger's filter-lock wiring so ChatContent can render its
-  // own lock control when embedded outside the DataMessenger drawer.
-  // ⚠️ KEEP IN SYNC with the same trio in DataMessenger.js (openFilterLockMenu /
-  // closeFilterLockMenu / onFilterChange / onRTValueLabelClick): the semantics
-  // are intentionally identical, so a fix to open/close/change behaviour in one
-  // file needs the same fix in the other. Not extracted into a shared module
-  // because both are class components and DataMessenger's copy is on the
-  // hot path for the drawer — see PR #1404 discussion.
+  isChataThinking = () => {
+    return this.isThinkingState(this.state)
+  }
+
+  // The thinking indicator mounts on its own — 600ms after the request message
+  // in onInputSubmit — so the scroll that followed that message ran against
+  // content this element wasn't part of yet. Adding it grows the thread with
+  // nothing repositioning the view, which leaves it below the fold on any
+  // conversation long enough to scroll. Nudge it back into frame, but only when
+  // it is genuinely cut off, so an already-visible indicator doesn't jump.
+  scrollThinkingIndicatorIntoView = () => {
+    requestAnimationFrame(() => {
+      const container = this.messengerScrollComponent?.getContainer()
+      if (!container || !this.isChataThinking()) {
+        return
+      }
+
+      const indicator = container.querySelector('.chat-content-thinking-indicator')
+      if (!indicator) {
+        return
+      }
+
+      // The watermark bar is painted over the foot of the scroll container, so
+      // the last stretch of it isn't really visible.
+      const bottomBar = this.chatContentRef?.querySelector('.chat-content-bottom-bar')
+      const visibleBottom = container.getBoundingClientRect().bottom - (bottomBar?.getBoundingClientRect().height ?? 0)
+
+      if (indicator.getBoundingClientRect().bottom > visibleBottom) {
+        this.smoothScrollToBottom()
+      }
+    })
+  }
+
+  // ---- Filter lock ----
+  // The thread owns the lock wherever it is rendered — standalone, or as the Data
+  // Messenger's chat page. It sits at the head of the query input, it scopes the
+  // queries this thread sends, and its locked filters feed this thread's
+  // QueryInput, so there is nothing about it a parent is better placed to hold.
+  //
+  // A session tab is the one exception: its host renders one lock for the whole
+  // strip and hands the element down, so the tabs share a single set of filters
+  // instead of each fetching and holding its own.
+  ownsFilterLock = () => {
+    if (this.props.isSessionTab) {
+      return false
+    }
+
+    // Deliberately NOT the top-level `enableFilterLocking` prop, even though it
+    // is declared here: it predates this and standalone consumers pass it while
+    // running their own lock and feeding this thread through `queryFilters`.
+    // Counting it would swap their filters for ours and give them two lock
+    // buttons. The Data Messenger's chat gets its lock from the config flag.
+    return !!this.props.showFilterLockButton || !!this.props.autoQLConfig?.enableFilterLocking
+  }
+
+  // The lock for this thread's query input: the host's when this is a tab, its own
+  // otherwise.
+  getFilterLockElement = () => {
+    if (this.props.isSessionTab) {
+      return this.props.filterLockElement ?? null
+    }
+
+    return this.ownsFilterLock() ? this.renderFilterLockPopover() : null
+  }
+
   openFilterLockMenu = () => {
     if (!this.state.isFilterLockMenuOpen) {
       this.setState({ isFilterLockMenuOpen: true })
@@ -794,12 +1350,9 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  // Clicking a value label in a response inserts it as a locked filter, the
-  // same affordance DataMessenger provides (it passes its own handler down as
-  // onRTValueLabelClick). Standalone ChatContent has no such parent, so when it
-  // owns the lock UI it wires its own popover ref here — otherwise the feature
-  // is silently missing outside DataMessenger. Only used when
-  // showFilterLockButton is set; the consumer's callback still fires.
+  // Clicking a value label in a response inserts it as a locked filter. Only
+  // wired when this thread owns the lock; the consumer's callback still fires
+  // either way.
   onRTValueLabelClick = (text) => {
     this.props.onRTValueLabelClick?.(text)
     this.setState({ isFilterLockMenuOpen: true }, () => {
@@ -814,10 +1367,53 @@ export default class ChatContent extends React.Component {
     // refetched next session; session locks last only this session), not whether
     // a lock applies now. So forward every lock to QueryInput's queryFilters.
     const lockedFilters = allFilters ?? []
-    this.setState({ lockedFilters, hasFilters: !!lockedFilters.length })
+    this.setState({ lockedFilters, hasFilters: !!lockedFilters.length, hasFetchedFilters: true })
+
+    // Mirror it up so a parent holding this thread (the Data Messenger, whose
+    // ref is what integrators read) can reflect the lock state without owning
+    // the popover.
+    this.props.onFilterLockChange?.(lockedFilters)
+  }
+
+  // A plain-text summary of what the next query is scoped to, grouped by the
+  // category each value came from and split by include/exclude. Text rather than
+  // HTML so a filter value — which is user data — can never inject markup; the
+  // newlines render because the tooltip class sets white-space: pre-line.
+  getFilterSummary = () => {
+    const filters = this.state.lockedFilters ?? []
+
+    if (!filters.length) {
+      return undefined
+    }
+
+    const groups = []
+    filters.forEach((filter) => {
+      const category = filter.show_message || 'Filter'
+      const isExcluded = filter.filter_type === 'exclude'
+      let group = groups.find((g) => g.category === category && g.isExcluded === isExcluded)
+
+      if (!group) {
+        group = { category, isExcluded, values: [] }
+        groups.push(group)
+      }
+
+      group.values.push(filter.value)
+    })
+
+    const MAX_VALUES_PER_GROUP = 4
+    const lines = groups.map(({ category, isExcluded, values }) => {
+      const shown = values.slice(0, MAX_VALUES_PER_GROUP)
+      const remaining = values.length - shown.length
+      const suffix = remaining > 0 ? `, +${remaining} more` : ''
+      return `${category}${isExcluded ? ' (excluded)' : ''}: ${shown.join(', ')}${suffix}`
+    })
+
+    return [lang.filterSummaryTooltipTitle, ...lines].join('\n')
   }
 
   renderFilterLockPopover = () => {
+    const filterSummary = this.getFilterSummary()
+
     return (
       <FilterLockPopover
         ref={(r) => (this.filterLockRef = r)}
@@ -825,11 +1421,17 @@ export default class ChatContent extends React.Component {
         isOpen={this.state.isFilterLockMenuOpen}
         onChange={this.onFilterChange}
         onClose={this.closeFilterLockMenu}
+        // With sessions on, the popover is rendered into whichever tab is on
+        // screen, so switching tabs unmounts and remounts it. A remount that
+        // refetched would come back with persisted locks only, silently dropping
+        // every session-scoped lock (those live in the popover's own state, not
+        // in the filter-locking API). Seed it from what we already hold instead.
+        seedFilters={this.state.hasFetchedFilters ? this.state.lockedFilters : undefined}
         parentElement={this.chatContentRef}
-        // No boundaryElement: it drives the popover width off the boundary's
-        // offsetWidth (meant for the narrow DataMessenger drawer). Full-page
-        // ChatContent would make the menu full-width — omit it so the popover
-        // uses its natural min-width instead.
+        // The menu takes its width from the boundary, which keeps it inside a panel
+        // as narrow as the Data Messenger drawer. On a full-page thread that would
+        // stretch it across the screen, so .filter-lock-popover caps it in CSS.
+        boundaryElement={this.chatContentRef}
         // Match the other tooltip consumers in this render: when a consumer
         // passes its own tooltipID we do NOT mount our <Tooltip> (see render),
         // so hardcoding TOOLTIP_ID here would aim the popover's tooltips at an
@@ -845,16 +1447,26 @@ export default class ChatContent extends React.Component {
         showArrow={false}
         padding={0}
       >
+        {/* The same control the Data Messenger puts at the head of its input pill,
+            rather than a labelled pill on a row of its own above the composer: it
+            scopes the next query, so it belongs where you read it before typing —
+            and a standalone ChatContent on a phone has no room for an extra row. */}
         <button
-          className={`react-autoql-chat-filter-lock-btn${this.state.isFilterLockMenuOpen ? ' is-open' : ''}`}
+          className={`react-autoql-input-filter-lock-btn${this.state.isFilterLockMenuOpen ? ' is-open' : ''}${
+            this.state.hasFilters ? ' has-filters' : ''
+          }${isMobile ? ' mobile' : ''}`}
+          // With filters on, the tooltip says what they are and says it straight
+          // away — the badge alone tells you something is filtered but not what,
+          // and that is the thing you want to check before asking a question.
+          data-tooltip-content={filterSummary ?? this.props.filterLockButtonLabel ?? lang.openFilterLocking}
+          data-tooltip-delay-show={filterSummary ? 0 : undefined}
+          data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
           onClick={this.state.isFilterLockMenuOpen ? this.closeFilterLockMenu : this.openFilterLockMenu}
         >
           <span className='react-autoql-filter-lock-icon-container'>
-            <Icon type={this.state.hasFilters ? 'lock' : 'unlock'} />
+            <Icon type='filter' />
             {this.state.hasFilters ? <div className='react-autoql-filter-lock-icon-badge' /> : null}
           </span>
-          <span className='react-autoql-chat-filter-lock-label'>{this.props.filterLockButtonLabel ?? 'Filters'}</span>
-          <Icon type='caret-down' className='react-autoql-chat-filter-lock-caret' />
         </button>
       </FilterLockPopover>
     )
@@ -889,9 +1501,204 @@ export default class ChatContent extends React.Component {
     // This prevents multiple conflicting scrolls
   }
 
+  // On a phone the strip becomes a dropdown: about one and a half tabs fit at that
+  // width, and with no hover and a hidden scrollbar nothing on screen says the
+  // other chats exist. Same chips and track, stacked instead of scrolled.
+  renderSessionSwitcher = () => {
+    const { sessions, activeSessionId } = this.state
+
+    return (
+      <ThreadSwitcher
+        items={sessions.map((session) => ({
+          id: session.id,
+          title: session.title,
+          // Stays on the last tab, which closing resets rather than removes - but
+          // not while that tab is still empty, where the reset would look like the
+          // click did nothing.
+          canClose: sessions.length > 1 || session.hasContent,
+          closeLabel: `Close ${session.title}`,
+        }))}
+        activeId={activeSessionId}
+        onSelect={this.setActiveSession}
+        onClose={this.closeSession}
+        onNew={this.addSession}
+        onCloseAll={this.closeAllSessions}
+        canAddNew={sessions.length < MAX_SESSIONS}
+        newLabel='New chat'
+        closeAllLabel='Close all chats'
+        confirmTitle={`Close all ${sessions.length} chats?`}
+        confirmText='Your conversations will be cleared and a new chat will be started.'
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+      />
+    )
+  }
+
+  renderSessionTabs = () => {
+    const { sessions, activeSessionId } = this.state
+    const tooltipID = this.props.tooltipID ?? this.TOOLTIP_ID
+
+    if (this.state.isSmallScreen) {
+      return this.renderSessionSwitcher()
+    }
+
+    return (
+      <div className='react-autoql-chat-session-tabs'>
+        <div className='react-autoql-chat-session-tab-list' role='tablist' ref={(r) => (this.sessionTabListRef = r)}>
+          {sessions.map((session) => {
+            const isActive = session.id === activeSessionId
+
+            return (
+              <div
+                key={session.id}
+                className={`react-autoql-chat-session-tab ${isActive ? 'active' : ''}`}
+                role='tab'
+                aria-selected={isActive}
+                tabIndex={0}
+                onClick={() => this.setActiveSession(session.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    this.setActiveSession(session.id)
+                  }
+                }}
+              >
+                <span className='react-autoql-chat-session-tab-dot' aria-hidden='true' />
+                <span className='react-autoql-chat-session-tab-title' title={session.title}>
+                  {session.title}
+                </span>
+                {/* Stays on the last tab, which closing resets rather than removes -
+                    but not while that tab is still empty, where the reset would
+                    look like the click did nothing. */}
+                {(sessions.length > 1 || session.hasContent) && (
+                  <span
+                    className='react-autoql-chat-session-tab-close'
+                    role='button'
+                    aria-label={`Close ${session.title}`}
+                    // Without this the click bubbles to the tab and activates
+                    // the tab we're about to unmount.
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      this.closeSession(session.id)
+                    }}
+                    data-tooltip-content='Close chat'
+                    data-tooltip-id={tooltipID}
+                  >
+                    <Icon type='close' />
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {/* Only once there are several: with a single tab this is the close button
+            already on the tab itself, under a name that promises more. */}
+        {sessions.length > 1 && (
+          <ConfirmPopover
+            className='react-autoql-chat-session-close-all-wrapper'
+            popoverParentElement={this.chatSessionsRef}
+            title={`Close all ${sessions.length} chats?`}
+            text='Your conversations will be cleared and a new chat will be started.'
+            confirmText='Close all'
+            backText='Cancel'
+            danger
+            onConfirm={this.closeAllSessions}
+            positions={['bottom', 'left', 'top', 'right']}
+            align='end'
+            tooltipID={tooltipID}
+          >
+            <button
+              className='react-autoql-chat-session-tab-close-all'
+              aria-label='Close all chats'
+              data-tooltip-content='Close all chats'
+              data-tooltip-id={tooltipID}
+            >
+              <Icon type='close-circle' />
+            </button>
+          </ConfirmPopover>
+        )}
+        <button
+          className='react-autoql-chat-session-tab-new'
+          onClick={this.addSession}
+          disabled={sessions.length >= MAX_SESSIONS}
+          aria-label='New chat'
+          data-tooltip-content='New chat'
+          data-tooltip-id={tooltipID}
+        >
+          <Icon type='plus' />
+        </button>
+      </div>
+    )
+  }
+
+  // Session host: the tab bar, plus one ChatContent per session. Every session
+  // stays mounted so its responses keep their state; only the active one is
+  // laid out and allowed to re-render.
+  renderSessions = () => {
+    const isLaidOut = this.isLaidOut()
+
+    return (
+      <ErrorBoundary>
+        <div
+          className={`react-autoql-chat-sessions ${isLaidOut ? '' : 'react-autoql-content-hidden'}`}
+          ref={(r) => (this.chatSessionsRef = r)}
+          // The threads hide themselves the same way when they aren't laid out,
+          // but the tab bar is the host's own — it has to go too.
+          style={isLaidOut ? undefined : { visibility: 'hidden', opacity: '0', display: 'none' }}
+        >
+          {this.renderSessionTabs()}
+          <div className='react-autoql-chat-sessions-content'>
+            {this.state.sessions.map((session) => {
+              const isActiveSession = session.id === this.state.activeSessionId
+
+              return (
+                <ChatContent
+                  {...this.props}
+                  key={session.id}
+                  // React calls this with null as the tab unmounts, which is where a
+                  // closed session's ref is dropped - doing it from closeSession
+                  // instead would be undone by that detach.
+                  ref={(r) => {
+                    if (r) {
+                      this.sessionRefs[session.id] = r
+                    } else {
+                      delete this.sessionRefs[session.id]
+                    }
+                  }}
+                  isSessionTab={true}
+                  enableSessions={false}
+                  querySessionId={session.id}
+                  // Only the host reports content up to the drawer header, and it
+                  // reports the active tab's state. A tab inheriting this from the
+                  // spread would clobber that with its own, background or not.
+                  onContentChange={undefined}
+                  onSessionTitleChange={(title) => this.setSessionTitle(session.id, title)}
+                  onSessionContentChange={(hasContent) => this.setSessionHasContent(session.id, hasContent)}
+                  // One lock for the strip: the host holds the filters and the
+                  // element, and only the tab on screen mounts it.
+                  filterLockElement={isActiveSession && this.ownsFilterLock() ? this.renderFilterLockPopover() : null}
+                  queryFilters={this.ownsFilterLock() ? this.state.lockedFilters : this.props.queryFilters}
+                  onRTValueLabelClick={
+                    this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
+                  }
+                  shouldRender={this.props.shouldRender && isActiveSession}
+                  isActivePage={isLaidOut && isActiveSession}
+                />
+              )
+            })}
+          </div>
+        </div>
+        {!this.props.tooltipID && <Tooltip tooltipId={this.TOOLTIP_ID} positionStrategy='fixed' />}
+      </ErrorBoundary>
+    )
+  }
+
   render = () => {
+    if (this.isSessionHost()) {
+      return this.renderSessions()
+    }
+
     const { messages } = this.state
-    const isLLMEmptyState = this.props.enableLLMStyleEmptyState && messages.length === 0 && !this.isChataThinking()
+    const isEmpty = messages.length === 0 && !this.isChataThinking()
 
     let chatMessageVisibility
     let chatMessageOpacity
@@ -919,9 +1726,7 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           ref={(r) => (this.chatContentRef = r)}
-          className={`chat-content-wrapper ${isLaidOut ? '' : 'react-autoql-content-hidden'} ${
-            isLLMEmptyState ? 'llm-empty-state' : ''
-          }`}
+          className={`chat-content-wrapper ${isLaidOut ? '' : 'react-autoql-content-hidden'}`}
           style={{ visibility: chatMessageVisibility, opacity: chatMessageOpacity, display: chatMessageDisplay }}
         >
           <div
@@ -941,12 +1746,12 @@ export default class ChatContent extends React.Component {
                       key={message.id}
                       id={message.id}
                       ref={(r) => (this.messageRefs[message.id] = r)}
-                      isIntroMessage={message.isIntroMessage}
                       authentication={this.props.authentication}
                       autoQLConfig={this.props.autoQLConfig}
                       isCSVProgressMessage={message.isCSVProgressMessage}
                       initialCSVDownloadProgress={this.csvProgressLog[message.id]}
                       onCSVDownloadProgress={this.onCSVDownloadProgress}
+                      onCSVDownloadError={this.onCSVDownloadError}
                       queryId={message.queryId}
                       queryText={message.query}
                       originalQueryID={message.originalQueryID}
@@ -983,7 +1788,7 @@ export default class ChatContent extends React.Component {
                       onNoneOfTheseClick={this.onNoneOfTheseClick}
                       autoChartAggregations={this.props.autoChartAggregations}
                       onRTValueLabelClick={
-                        this.props.showFilterLockButton ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
+                        this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
                       }
                       appliedFilters={message.appliedFilters}
                       disableMaxHeight={this.props.disableMaxMessageHeight}
@@ -1010,8 +1815,25 @@ export default class ChatContent extends React.Component {
                     />
                   )
                 })}
+                {this.isChataThinking() && (
+                  <div className='chat-content-thinking-indicator'>
+                    <div className='chat-content-thinking-avatar' aria-hidden='true'>
+                      <Icon type='react-autoql-logo' />
+                    </div>
+                    <LoadingDots />
+                  </div>
+                )}
               </div>
             </CustomScrollbars>
+            {isEmpty && (
+              <div className='chat-content-empty-state'>
+                <Icon type='react-autoql-logo' className='chat-content-empty-state-logo' />
+                <h3 className='chat-content-empty-state-title'>{this.props.emptyStateTitle ?? lang.emptyStateTitle}</h3>
+                <p className='chat-content-empty-state-subtitle'>
+                  {this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}
+                </p>
+              </div>
+            )}
             {!this.state.isAtBottom && (
               <button
                 className='scroll-to-bottom-button'
@@ -1022,7 +1844,8 @@ export default class ChatContent extends React.Component {
               </button>
             )}
             <div className='chat-content-bottom-bar'>
-              <div className='bottom-bar-left'>{this.isChataThinking() && <LoadingDots />}</div>
+              {/* Kept as a flex spacer so the watermark stays centred */}
+              <div className='bottom-bar-left' />
               <div className='watermark'>
                 <Icon type='react-autoql-bubbles-outlined' />
                 {lang.run}
@@ -1031,18 +1854,10 @@ export default class ChatContent extends React.Component {
             </div>
           </div>
           <div
+            ref={this.setComposerRef}
             style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
             className={`chat-bar-container ${!hideQueryInput ? '' : 'react-autoql-content-hidden'}`}
           >
-            {isLLMEmptyState && this.props.showLLMEmptyStateTitle && (
-              <div className='llm-empty-state-title'>
-                <Icon type='react-autoql-logo' />
-                {lang.llmEmptyStateTitle}
-              </div>
-            )}
-            {this.props.showFilterLockButton && (
-              <div className='react-autoql-chat-filter-lock-toolbar'>{this.renderFilterLockPopover()}</div>
-            )}
             <QueryInput
               ref={(r) => (this.queryInputRef = r)}
               className='chat-drawer-chat-bar'
@@ -1055,22 +1870,24 @@ export default class ChatContent extends React.Component {
               enableVoiceRecord={this.props.enableVoiceRecord}
               autoCompletePlacement='above'
               showChataIcon={false}
-              showLoadingDots={false}
               placeholder={this.props.inputPlaceholder}
               onErrorCallback={this.props.onErrorCallback}
-              hideInput={this.props.hideInput}
               source={this.props.source}
               scope={this.props.scope}
-              queryFilters={this.props.showFilterLockButton ? this.state.lockedFilters : this.props.queryFilters}
+              queryFilters={this.ownsFilterLock() ? this.state.lockedFilters : this.props.queryFilters}
               sessionId={this.props.sessionId}
+              querySessionId={this.props.querySessionId}
               dataPageSize={this.props.dataPageSize}
               isResizing={this.props.isResizing}
               shouldRender={this.props.shouldRender}
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               executeQuery={this.props.executeQuery}
               enableQueryInputTopics={this.props.enableQueryInputTopics}
+              // The filter lock sits at the head of the input pill. A consumer's own
+              // left content wins — the Data Messenger passes its lock down this way,
+              // and only one control fits there.
+              leftContent={this.getFilterLockElement()}
               disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
-              isLLMEmptyState={isLLMEmptyState}
             />
           </div>
         </div>

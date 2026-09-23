@@ -38,6 +38,15 @@ export class FilterLockPopover extends React.Component {
      * long-standing behaviour. See FilterLockPopoverContent for the full note.
      */
     persistNewFilters: PropTypes.bool,
+    /**
+     * Lock list to start from instead of fetching on mount. For a host that
+     * unmounts and remounts this popover as its own layout changes (the chat's
+     * session tabs) and already holds the filters from the previous mount — a
+     * refetch would return persisted locks only and drop the session-scoped
+     * ones. Omit it (undefined) to fetch as usual; an empty array is a valid
+     * seed and means "no filters".
+     */
+    seedFilters: PropTypes.array,
   }
 
   static defaultProps = {
@@ -48,9 +57,10 @@ export class FilterLockPopover extends React.Component {
     align: 'center',
     onClose: () => {},
     onChange: () => {},
-    // Default true preserves the DataMessenger header lock's arrow; ChatContent
-    // opts out with showArrow={false}.
-    showArrow: true,
+    // No arrow by default. The lock button lives at the head of the query input
+    // now rather than in the header, and the pointer never lined up with it from
+    // there - the menu reads fine as a plain panel.
+    showArrow: false,
     persistNewFilters: true,
   }
 
@@ -114,6 +124,15 @@ export class FilterLockPopover extends React.Component {
   }
 
   initialize = () => {
+    // A host that already holds the current lock list hands it back on mount
+    // (see the `seedFilters` propType). Session-scoped locks only exist in this
+    // component's state, so refetching here would drop them on every remount.
+    if (this.props.seedFilters) {
+      this.setState({ initialFilters: this.props.seedFilters, isFetchingFilters: false })
+      this.props.onChange(this.props.seedFilters)
+      return
+    }
+
     this.setState({ isFetchingFilters: true })
     fetchFilters(getAuthentication(this.props.authentication))
       .then((response) => {

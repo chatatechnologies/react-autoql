@@ -1,9 +1,17 @@
+$mobile-breakpoint: 768px;
+$tablet-breakpoint: 992px;
+
 .react-autoql-data-alert-modal-body {
   padding: 0;
 }
 
 .react-autoql-data-alert-creation-modal {
   height: calc(100vh - 90px);
+
+  @media (max-width: $mobile-breakpoint) {
+    // The surrounding gutter is already down to a few px on a phone - use it all
+    height: calc(100vh - 16px);
+  }
 
   &.react-autoql-data-alert-details-modal {
     height: auto;
@@ -48,6 +56,11 @@
         padding: 10px 20px;
         text-align: center;
         color: var(--react-autoql-text-color-primary);
+
+        @media (max-width: $mobile-breakpoint) {
+          padding: 8px 12px;
+          font-size: 0.875rem;
+        }
       }
     }
 
@@ -55,7 +68,37 @@
       width: 100%;
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 8px;
       padding: 8px 10px;
+
+      // Delete / Cancel / Back / Next won't fit on one phone-width line
+      @media (max-width: $mobile-breakpoint) {
+        flex-wrap: wrap;
+        row-gap: 6px;
+        padding: 8px;
+      }
+
+      .modal-footer-button-container {
+        flex-wrap: wrap;
+        gap: 6px;
+        min-width: 0;
+
+        // A new alert has no delete button, so the left container is empty and
+        // space-between has nothing to push against - without this the actions
+        // slide to the left edge. The Custom Filtered Alert modal is always in
+        // that state.
+        &:last-child {
+          margin-left: auto;
+        }
+
+        @media (max-width: $mobile-breakpoint) {
+          // Empty container when there's no delete button - don't let it eat a row
+          &:empty {
+            display: none;
+          }
+        }
+      }
     }
   }
 }
@@ -67,6 +110,14 @@
   .react-autoql-steps-hoz-container {
     padding: 0px 100px;
     padding-bottom: 20px;
+
+    @media (max-width: $tablet-breakpoint) {
+      padding: 0 24px 16px;
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+      padding: 0 4px 12px;
+    }
   }
 
   .react-autoql-data-alert-type-step {
@@ -80,9 +131,14 @@
     font-size: 0.9375rem;
     padding-top: 15px;
     padding-bottom: 20px;
+    min-width: 0;
 
     @media (min-width: 1200px) {
       padding: 10px;
+    }
+
+    @media (max-width: $mobile-breakpoint) {
+      padding: 8px 4px 12px;
     }
 
     .react-autoql-data-alert-frequency-option {
@@ -131,12 +187,20 @@
   .compose-message-section {
     display: flex;
     flex-wrap: wrap;
+    gap: 0;
 
     .form-section,
     .preview-section {
       display: flex;
       flex-direction: column;
-      flex: 1;
+      flex: 1 1 280px;
+      min-width: 0;
+
+      // Side by side gives each of them too little to work with - the preview
+      // gets its own line under the form
+      @media (max-width: $mobile-breakpoint) {
+        flex-basis: 100%;
+      }
     }
 
     .react-autoql-notification-message-input {
@@ -153,6 +217,12 @@
       flex-direction: column;
       margin-left: 14px;
 
+      // Matches the width at which the two columns stack above
+      @media (max-width: $mobile-breakpoint) {
+        margin-left: 0;
+        margin-top: 14px;
+      }
+
       .data-alert-preview {
         flex: 1;
         padding: 20px;
@@ -161,6 +231,13 @@
         background: var(--react-autoql-background-color-primary);
         overflow: auto;
         pointer-events: none !important;
+
+        // Stacked it no longer inherits the form column's height, so it needs
+        // enough of its own to show the notification it's previewing
+        @media (max-width: $mobile-breakpoint) {
+          padding: 12px;
+          min-height: 90px;
+        }
 
         .react-autoql-notification-list-item {
           transition: none;
@@ -219,6 +296,7 @@
   box-sizing: border-box;
   /* Ensures padding and border don't affect width */
   padding: 5px 10px;
+  min-width: 0;
 
   &.full-width {
     flex-basis: 100%;
@@ -227,11 +305,25 @@
   &.three-item-row {
     flex-basis: 33%;
   }
+
+  // Two inputs side by side stop being readable well before phone width
+  @media (max-width: 768px) {
+    flex-basis: 100%;
+    padding: 5px 0;
+
+    &.three-item-row {
+      flex-basis: 100%;
+    }
+  }
 }
 
 .data-alert-preview {
   flex: 1;
   padding: 20px;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 2px;
   background: var(--react-autoql-background-color-primary);

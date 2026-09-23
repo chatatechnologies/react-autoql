@@ -1,7 +1,14 @@
 import React from 'react'
 
 export const autoqlLogoIcon = (
-  <svg viewBox='0 0 975.71 900' fill='currentColor' xmlns='http://www.w3.org/2000/svg'>
+  // Sized in em like the react-icons glyphs the rest of the set uses, so it picks up
+  // the .react-autoql-icon font-size. This was the one icon in the set with no
+  // dimensions of its own, so it fell back to the SVG default of width/height 100% --
+  // a percentage the browser has to resolve against a flex container that is itself
+  // being sized by this SVG. Browsers resolve that circularity to 0 often enough that
+  // the mark went missing in the thinking indicator and the agent avatars, on desktop
+  // as well as mobile.
+  <svg width='1em' height='1em' viewBox='0 0 975.71 900' fill='currentColor' xmlns='http://www.w3.org/2000/svg'>
     <path d='M169.8,897.34H0L309.56,113.64c16.53-41.8,39.84-71.19,69.87-88.17C409.49,8.49,448.02,0,495.03,0s84.25,8.49,114.3,25.47c30.04,16.98,52.89,46.37,68.57,88.17l297.81,783.71h-171.11L536.84,188.09c-7.84-20.02-22.21-30.04-43.11-30.04s-35.72,10.02-44.4,30.04L169.8,897.34Z' />
     <polygon points='961.17 900 490.09 900 522.21 750.11 821.99 750.11 961.17 900' />
   </svg>
@@ -371,8 +378,8 @@ export const minimum = (
     viewBox='0 0 24 24'
     strokeLinecap='round'
     strokeLinejoin='round'
-    height='200px'
-    width='200px'
+    height='1em'
+    width='1em'
     xmlns='http://www.w3.org/2000/svg'
   >
     <path stroke='none' d='M0 0h24v24H0z' fill='none'></path>
@@ -390,8 +397,8 @@ export const maximum = (
     viewBox='0 0 24 24'
     strokeLinecap='round'
     strokeLinejoin='round'
-    height='200px'
-    width='200px'
+    height='1em'
+    width='1em'
     xmlns='http://www.w3.org/2000/svg'
   >
     <path stroke='none' d='M0 0h24v24H0z' fill='none'></path>
@@ -408,8 +415,8 @@ export const sum = (
     viewBox='0 0 24 24'
     strokeLinecap='round'
     strokeLinejoin='round'
-    height='200px'
-    width='200px'
+    height='1em'
+    width='1em'
     xmlns='http://www.w3.org/2000/svg'
   >
     <path stroke='none' d='M0 0h24v24H0z' fill='none'></path>
@@ -423,8 +430,8 @@ export const median = (
     fill='currentColor'
     strokeWidth='0'
     viewBox='0 0 16 16'
-    height='200px'
-    width='200px'
+    height='1em'
+    width='1em'
     xmlns='http://www.w3.org/2000/svg'
   >
     <path d='M6 13a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v10zM1 8a.5.5 0 0 0 .5.5H6v-1H1.5A.5.5 0 0 0 1 8zm14 0a.5.5 0 0 1-.5.5H10v-1h4.5a.5.5 0 0 1 .5.5z'></path>
@@ -543,8 +550,8 @@ export const magicWandIcon = (
     fill='currentColor'
     strokeWidth='0'
     viewBox='0 0 576 512'
-    height='200px'
-    width='200px'
+    height='1em'
+    width='1em'
     xmlns='http://www.w3.org/2000/svg'
   >
     <path d='M234.7 42.7L197 56.8c-3 1.1-5 4-5 7.2s2 6.1 5 7.2l37.7 14.1L248.8 123c1.1 3 4 5 7.2 5s6.1-2 7.2-5l14.1-37.7L315 71.2c3-1.1 5-4 5-7.2s-2-6.1-5-7.2L277.3 42.7 263.2 5c-1.1-3-4-5-7.2-5s-6.1 2-7.2 5L234.7 42.7zM46.1 395.4c-18.7 18.7-18.7 49.1 0 67.9l34.6 34.6c18.7 18.7 49.1 18.7 67.9 0L529.9 116.5c18.7-18.7 18.7-49.1 0-67.9L495.3 14.1c-18.7-18.7-49.1-18.7-67.9 0L46.1 395.4zM484.6 82.6l-105 105-23.3-23.3 105-105 23.3 23.3zM7.5 117.2C3 118.9 0 123.2 0 128s3 9.1 7.5 10.8L64 160l21.2 56.5c1.7 4.5 6 7.5 10.8 7.5s9.1-3 10.8-7.5L128 160l56.5-21.2c4.5-1.7 7.5-6 7.5-10.8s-3-9.1-7.5-10.8L128 96 106.8 39.5C105.1 35 100.8 32 96 32s-9.1 3-10.8 7.5L64 96 7.5 117.2zm352 256c-4.5 1.7-7.5 6-7.5 10.8s3 9.1 7.5 10.8L416 416l21.2 56.5c1.7 4.5 6 7.5 10.8 7.5s9.1-3 10.8-7.5L480 416l56.5-21.2c4.5-1.7 7.5-6 7.5-10.8s-3-9.1-7.5-10.8L480 352l-21.2-56.5c-1.7-4.5-6-7.5-10.8-7.5s-9.1 3-10.8 7.5L416 352l-56.5 21.2z'></path>

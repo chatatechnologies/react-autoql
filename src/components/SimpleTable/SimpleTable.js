@@ -1,10 +1,14 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
+import { v4 as uuid } from 'uuid'
+import { mean, sum as d3Sum } from 'd3-array'
 import {
   formatElement,
   dataFormattingDefault,
   dateSortFn,
   ColumnTypes,
+  COLUMN_TYPES,
+  getDayJSObj,
   setHeaderFilterPlaceholder,
   createFilterFunction,
   isColumnNumberType,
@@ -17,6 +21,8 @@ import { dataFormattingType } from '../../props/types'
 import { Popover } from '../Popover'
 import { DateRangePicker } from '../DateRangePicker'
 import { Button } from '../Button'
+import { Icon } from '../Icon'
+import { Tooltip } from '../Tooltip'
 
 import './SimpleTable.scss'
 
@@ -24,6 +30,12 @@ const ROW_HEIGHT = 28
 const OVERSCAN = 10
 const MIN_COL_WIDTH = 50
 const WIDTH_BUFFER = 20
+// A gap this long between wheel events ends the gesture, so the next one is free to
+// pick a new target. Trackpad momentum fires far more often than this.
+const WHEEL_GESTURE_GAP = 200
+// How long after something outside the table scrolled a wheel event still counts as
+// part of that scroll rather than a fresh one aimed at the table.
+const OUTSIDE_SCROLL_GRACE = 200
 
 export default class SimpleTable extends Component {
   static propTypes = {
@@ -40,6 +52,14 @@ export default class SimpleTable extends Component {
     rows: PropTypes.array,
     dataFormatting: dataFormattingType,
     maxHeight: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    // Whether a column header's tooltip carries aggregates over the loaded rows
+    // (total and average for a number column, earliest and latest for a date).
+    // Off for a table that only holds a sample of the data — a total over the first
+    // twenty rows is a number that looks like an answer and isn't one.
+    showSummaryStats: PropTypes.bool,
+    // Rendered in the scroll container after the last row, so it is what you reach
+    // at the end of a scroll. The data preview puts its "End of Preview" line here.
+    footer: PropTypes.node,
   }
 
   static defaultProps = {
@@ -47,6 +67,8 @@ export default class SimpleTable extends Component {
     rows: [],
     dataFormatting: dataFormattingDefault,
     maxHeight: 400,
+    showSummaryStats: true,
+    footer: undefined,
   }
 
   constructor(props) {
@@ -66,18 +88,29 @@ export default class SimpleTable extends Component {
       datePickerColIndex: null,
       dateRangeSelection: null,
     }
+    this.TABLE_ID = uuid()
     this.currentDateRangeSelections = {}
+    this.summaryStats = {}
     this.scrollContainerRef = React.createRef()
     this.tableRef = React.createRef()
   }
 
   componentDidMount() {
     this._isMounted = true
+    this.summaryStats = this.calculateSummaryStats()
     this.captureColumnWidths()
     this.scrollContainerRef.current?.addEventListener('scroll', this.onScroll, { passive: true })
+    // Not passive: the wheel has to be cancellable to hand a gesture back to the page.
+    this.scrollContainerRef.current?.addEventListener('wheel', this.onWheel, { passive: false })
+    // Scroll doesn't bubble, but it does reach a capturing listener on the document,
+    // which is how we notice the page moving underneath us.
+    document.addEventListener('scroll', this.onDocumentScroll, { capture: true, passive: true })
   }
 
   componentDidUpdate(prevProps) {
+    if (prevProps.rows !== this.props.rows || prevProps.columns !== this.props.columns) {
+      this.summaryStats = this.calculateSummaryStats()
+    }
     if (prevProps.rows !== this.props.rows) {
       this.setState({
         startIdx: 0,
@@ -102,6 +135,8 @@ export default class SimpleTable extends Component {
     if (this.rafId) cancelAnimationFrame(this.rafId)
     if (this.scrollRafId) cancelAnimationFrame(this.scrollRafId)
     this.scrollContainerRef.current?.removeEventListener('scroll', this.onScroll)
+    this.scrollContainerRef.current?.removeEventListener('wheel', this.onWheel)
+    document.removeEventListener('scroll', this.onDocumentScroll, { capture: true })
     document.removeEventListener('mousemove', this.onResizeMouseMove)
     document.removeEventListener('mouseup', this.onResizeMouseUp)
   }
@@ -109,6 +144,129 @@ export default class SimpleTable extends Component {
   onScroll = () => {
     if (this.scrollRafId) cancelAnimationFrame(this.scrollRafId)
     this.scrollRafId = requestAnimationFrame(this.updateVisibleRange)
+  }
+
+  onDocumentScroll = (event) => {
+    const el = this.scrollContainerRef.current
+    const target = event.target
+
+    // Our own scrolling doesn't count - only the page moving around us does.
+    if (!el || target === el || (target?.nodeType === 1 && el.contains(target))) {
+      return
+    }
+
+    this.lastOutsideScrollTime = Date.now()
+  }
+
+  // The browser latches a wheel gesture to whichever scroller is under the cursor and
+  // keeps it there for the whole gesture: a page scroll dies the moment the pointer
+  // crosses the table, and a table that has hit its top or bottom swallows the rest of
+  // the gesture instead of passing it on. Both are the same fix - decide once per
+  // gesture who the wheel belongs to, and drive that scroller ourselves when it isn't
+  // this table.
+  onWheel = (event) => {
+    const el = this.scrollContainerRef.current
+    if (!el) {
+      return
+    }
+
+    const now = Date.now()
+    const isNewGesture = now - (this.lastWheelTime ?? 0) > WHEEL_GESTURE_GAP
+    this.lastWheelTime = now
+
+    if (isNewGesture) {
+      // A gesture already in flight over the page keeps the page: the cursor drifting
+      // over the table mid-scroll is not a request to scroll the table.
+      this.isWheelOnAncestor = now - (this.lastOutsideScrollTime ?? 0) < OUTSIDE_SCROLL_GRACE
+      this.wheelAncestor = null
+    }
+
+    // Once the table runs out of room the rest of the gesture goes to the page, and
+    // stays there - otherwise every flick would stall at the table's edge.
+    if (!this.isWheelOnAncestor && !this.canScrollBy(el, event)) {
+      this.isWheelOnAncestor = true
+    }
+
+    if (!this.isWheelOnAncestor) {
+      return
+    }
+
+    if (!this.wheelAncestor) {
+      this.wheelAncestor = this.getScrollableAncestor()
+    }
+
+    const ancestor = this.wheelAncestor
+    if (!ancestor) {
+      return
+    }
+
+    const deltaY = this.normalizeDelta(event.deltaY, event.deltaMode, ancestor.clientHeight)
+    const deltaX = this.normalizeDelta(event.deltaX, event.deltaMode, ancestor.clientWidth)
+
+    event.preventDefault()
+    // PerfectScrollbar has a wheel handler of its own on the container it wraps; left
+    // to bubble, this event would be applied a second time there.
+    event.stopPropagation()
+
+    if (deltaY) {
+      ancestor.scrollTop += deltaY
+    }
+    if (deltaX) {
+      ancestor.scrollLeft += deltaX
+    }
+  }
+
+  // deltaMode 1 is lines and 2 is pages; the line height is the usual browser default.
+  normalizeDelta = (delta, deltaMode, pageSize) => {
+    if (deltaMode === 1) {
+      return delta * 16
+    }
+    if (deltaMode === 2) {
+      return delta * (pageSize || 0)
+    }
+    return delta
+  }
+
+  // Whether the table can still absorb this wheel event on its dominant axis.
+  canScrollBy = (el, event) => {
+    const { deltaX, deltaY } = event
+
+    if (Math.abs(deltaY) >= Math.abs(deltaX)) {
+      const max = el.scrollHeight - el.clientHeight
+      if (max <= 1) {
+        return false
+      }
+      return deltaY > 0 ? el.scrollTop < max - 1 : el.scrollTop > 1
+    }
+
+    const maxX = el.scrollWidth - el.clientWidth
+    if (maxX <= 1) {
+      return false
+    }
+    return deltaX > 0 ? el.scrollLeft < maxX - 1 : el.scrollLeft > 1
+  }
+
+  // The scroller the wheel would have reached if the table weren't in the way. Cached
+  // per gesture rather than per event, since walking the tree is the expensive part.
+  getScrollableAncestor = () => {
+    let element = this.scrollContainerRef.current?.parentElement
+
+    while (element && element !== document.body) {
+      const style = window.getComputedStyle(element)
+      const overflowY = style.overflowY
+      // PerfectScrollbar (CustomScrollbars) forces `overflow: hidden` and scrolls its
+      // container by scrollTop, so it has to be matched by class rather than overflow.
+      const isScroller =
+        overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay' || element.classList.contains('ps')
+
+      if (isScroller && element.scrollHeight - element.clientHeight > 1) {
+        return element
+      }
+
+      element = element.parentElement
+    }
+
+    return document.scrollingElement ?? null
   }
 
   updateVisibleRange = () => {
@@ -201,6 +359,125 @@ export default class SimpleTable extends Component {
     this.setState({ columnWidths: newWidths })
   }
 
+
+  calculateSummaryStats = () => {
+    const stats = {}
+
+    try {
+      const { rows, columns, dataFormatting } = this.props
+
+      if (!this.props.showSummaryStats || !(rows?.length > 1)) {
+        return {}
+      }
+
+      columns?.forEach((column, columnIndex) => {
+        if (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) {
+          const columnData = rows.map((r) => r[columnIndex]).filter((val) => Number.isFinite(val))
+          stats[columnIndex] = {
+            avg: formatElement({ element: mean(columnData), column, config: dataFormatting }),
+            sum: formatElement({ element: d3Sum(columnData), column, config: dataFormatting }),
+          }
+        } else if (column?.type === ColumnTypes.DATE) {
+          const dates = rows.map((r) => r[columnIndex]).filter((date) => !!date)
+          const columnData = dates.map((date) => getDayJSObj({ value: date, column }))?.filter((r) => r?.isValid?.())
+
+          const min = dayjs.min(columnData)
+          const max = dayjs.max(columnData)
+
+          if (min && max) {
+            stats[columnIndex] = {
+              min: formatElement({ element: min.toISOString(), column, config: dataFormatting }),
+              max: formatElement({ element: max.toISOString(), column, config: dataFormatting }),
+            }
+          }
+        }
+      })
+    } catch (error) {
+      console.error(error)
+    }
+
+    return stats
+  }
+
+  renderHeaderTooltipContent = ({ content }) => {
+    try {
+      let column
+      try {
+        column = JSON.parse(content)
+      } catch (error) {
+        return null
+      }
+
+      if (!column) {
+        return null
+      }
+
+      const name = column.display_name
+      const type = COLUMN_TYPES[column?.type]?.description
+      const icon = COLUMN_TYPES[column?.type]?.icon
+      const stats = this.summaryStats[column.index]
+
+      return (
+        <div>
+          <div className='selectable-table-tooltip-title'>
+            <span>{name}</span>
+          </div>
+          {!!type && (
+            <div className='selectable-table-tooltip-section selectable-table-tooltip-subtitle'>
+              {!!icon && <Icon type={icon} />}
+              <span>{type}</span>
+            </div>
+          )}
+          {!!column.fnSummary && (
+            <div className='selectable-table-tooltip-section'>
+              <span>
+                <strong>Custom formula:</strong>
+                <span> = {column.fnSummary}</span>
+              </span>
+            </div>
+          )}
+          {!!stats && (column?.type === ColumnTypes.QUANTITY || column?.type === ColumnTypes.DOLLAR_AMT) && (
+            <>
+              <div className='selectable-table-tooltip-section'>
+                <span>
+                  <strong>Total: </strong>
+                  <span>{stats.sum}</span>
+                </span>
+              </div>
+              <div className='selectable-table-tooltip-section'>
+                <span>
+                  <strong>Average: </strong>
+                  <span>{stats.avg}</span>
+                </span>
+              </div>
+            </>
+          )}
+          {!!stats && column?.type === ColumnTypes.DATE && (
+            <>
+              {stats.min !== null && (
+                <div className='selectable-table-tooltip-section'>
+                  <span>
+                    <strong>Earliest: </strong>
+                    <span>{stats.min}</span>
+                  </span>
+                </div>
+              )}
+              {stats.max !== null && (
+                <div className='selectable-table-tooltip-section'>
+                  <span>
+                    <strong>Latest: </strong>
+                    <span>{stats.max}</span>
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )
+    } catch (error) {
+      return null
+    }
+  }
 
   handleHeaderClick = (colIndex) => {
     if (this.resizeDragged) return
@@ -473,7 +750,13 @@ export default class SimpleTable extends Component {
                 style={columnWidths.length ? { width: `var(--col-${i}-width)` } : undefined}
                 onClick={() => this.handleHeaderClick(i)}
               >
-                <div className='simple-table-header-cell-content'>{col.display_name}</div>
+                <div
+                  className='simple-table-header-cell-content'
+                  data-tooltip-id={`simple-table-column-header-tooltip-${this.TABLE_ID}`}
+                  data-tooltip-content={JSON.stringify({ ...col, index: i })}
+                >
+                  {col.display_name}
+                </div>
                 <div className={`simple-table-sort-arrow simple-table-sort-arrow--${dir || 'none'}`} />
                 <div
                   className='simple-table-resize-handle'
@@ -634,11 +917,20 @@ export default class SimpleTable extends Component {
             {visibleRows.length > 0 ? this.renderRows(visibleRows) : null}
           </table>
         </div>
+        {!emptyMessage && !!this.props.footer && <div className='simple-table-footer'>{this.props.footer}</div>}
         {emptyMessage && (
           <div className='simple-table-empty'>
             {emptyMessage}
           </div>
         )}
+        <Tooltip
+          tooltipId={`simple-table-column-header-tooltip-${this.TABLE_ID}`}
+          className='selectable-table-column-header-tooltip'
+          render={this.renderHeaderTooltipContent}
+          opacity={1}
+          delayHide={0}
+          border
+        />
       </div>
     )
   }

@@ -1,5 +1,83 @@
 .filter-lock-popover {
-  &:not(.filter-lock-popover-mobile) {
+  // One surface, not two. The outer container carries the whole treatment - the
+  // drawer's 12px radius, a hairline border and the soft ambient shadow the bubbles
+  // and tiles carry, one step higher since it floats - and the inner content div is
+  // stripped back to a transparent box that fills it.
+  //
+  // Matched with :not(.popover-with-arrow-container) purely for weight: Popover.scss
+  // styles every arrowless popover through that exact selector (0,2,0) with a 4px
+  // radius, a border and a shadow of its own, which outranks a bare
+  // `.filter-lock-popover` - that rule was the sharp corner.
+  // The menu sizes itself off its boundary element so it stays inside a panel as
+  // narrow as the Data Messenger drawer. A full-page thread is the other extreme —
+  // that inline width would run the whole screen — so cap it here. max-width beats
+  // an inline width, which is why this works without !important.
+  max-width: 480px;
+
+  // The mobile sheet is deliberately full-width — the cap above is for a wide
+  // desktop thread, and on a tablet-sized phone layout it would inset one edge.
+  &.filter-lock-popover-mobile {
+    max-width: none;
+  }
+
+  &.react-tiny-popover-container:not(.popover-with-arrow-container) {
+    display: flex;
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 12px;
+    background-color: var(--react-autoql-background-color-secondary);
+    box-shadow: 0 1px 2px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+      0 8px 24px -8px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.1));
+  }
+
+  // react-tiny-popover writes `overflow: visible` as an INLINE style on this
+  // container, which beats any stylesheet rule without !important - so rounding the
+  // container alone never clipped anything sitting inside it. Every layer that can
+  // paint therefore carries the radius itself, and the container's clip is forced.
+  overflow: hidden !important;
+
+  // Specificity note: Popover.scss's own `.react-tiny-popover-container
+  // .popover-container-content` rule is the same weight as a plain
+  // `.filter-lock-popover .popover-container-content`, so whichever file imports
+  // last would win. Qualifying with both classes settles it.
+  &.react-tiny-popover-container .popover-container-content {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .filter-lock-menu-content {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  // Mobile is a sheet dropped from the top of the screen: it reaches the edges, so
+  // the sides and top get no corners, but it STOPS above the composer — and there it
+  // needs an edge of its own. Without one the panel and the page behind it are the
+  // same dark, and the sheet just seems to stop existing partway down.
+  &.filter-lock-popover-mobile,
+  &.filter-lock-popover-mobile.react-tiny-popover-container:not(.popover-with-arrow-container) {
+    border: none;
+    border-bottom: 1px solid var(--react-autoql-border-color);
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 8px 24px -8px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.1));
+
+    &.react-tiny-popover-container .popover-container-content,
+    .filter-lock-menu-content {
+      border-radius: 0 0 12px 12px;
+    }
+  }
+
+  // Both qualified with .react-tiny-popover-container: Popover.scss positions every
+  // mobile popover through `.react-tiny-popover-container.react-autoql-popover-mobile`
+  // (top: 45%, a translate, all !important). A bare `.filter-lock-popover.…-mobile`
+  // ties with that on specificity, so which one won came down to file order - that
+  // is how a stale copy of these rules in CustomList.scss used to be what pinned the
+  // sheet to the top. Three classes settle it outright.
+  &.react-tiny-popover-container:not(.filter-lock-popover-mobile) {
     top: -15px !important;
     left: -2px !important;
     // Width is set dynamically via containerStyle prop to match drawer width
@@ -7,12 +85,19 @@
     height: 350px;
   }
 
-  &.filter-lock-popover-mobile {
-    border: none;
+  &.react-tiny-popover-container.filter-lock-popover-mobile {
     transform: unset !important;
-    height: calc(100% - 80px);
-    max-height: calc(100% - 80px);
     top: 0px !important;
+    // The sheet is pinned to the top of the screen, so its height IS the distance
+    // down to the composer: ChatContent publishes that edge in viewport coordinates
+    // (--react-autoql-composer-top) and the sheet stops 4px short of it. Measuring
+    // the composer's top rather than subtracting its height from 100% is what makes
+    // this exact — the percentage resolves against the document, which is not the
+    // box the chat occupies, and that difference was the leftover gap. The fallback
+    // is the old flat estimate, for a page where the variable never gets set.
+    --react-autoql-filter-lock-sheet-height: calc(var(--react-autoql-composer-top, calc(100% - 80px)) - 4px);
+    height: var(--react-autoql-filter-lock-sheet-height);
+    max-height: var(--react-autoql-filter-lock-sheet-height);
 
     .popover-container-content {
       animation: scale-down-tl 0.2s ease;
@@ -43,6 +128,23 @@
     height: 23px;
     font-size: 0.75rem;
     font-weight: 400;
+    // A pill, like every other small control in the drawer. Radio.scss's 4px
+    // default is the library-wide button-group shape; only this instance changes.
+    border-radius: 999px;
+
+    .react-autoql-radio-btn {
+      padding: 3px 14px;
+
+      &:first-child {
+        border-top-left-radius: 999px;
+        border-bottom-left-radius: 999px;
+      }
+
+      &:last-child {
+        border-top-right-radius: 999px;
+        border-bottom-right-radius: 999px;
+      }
+    }
 
     .react-autoql-radio-btn.active {
       background-color: var(--react-autoql-border-color);
@@ -67,10 +169,18 @@
 }
 
 .filter-lock-menu-content {
-  padding: 5px 10px;
+  // Room to breathe on all four sides - it was 5px/10px, so the panel's content sat
+  // right against its edges.
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   height: 100%;
+  box-sizing: border-box;
+  // One type scale for the whole panel, matching the chat thread's body text.
+  // Everything inside inherits from here unless it is deliberately a step away:
+  // 0.9375rem title, 0.875rem body, 0.8125rem secondary, 0.75rem labels.
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
 
   &.closed {
     opacity: 0;
@@ -80,12 +190,12 @@
   h4 {
     margin: 0px;
     font-size: 0.9375rem;
+    font-weight: 600;
     color: var(--react-autoql-text-color-primary);
   }
 
   h4 {
     font-size: 0.875rem;
-    font-weight: bold;
   }
 
   .react-autoql-empty-filter-list {
@@ -135,18 +245,36 @@
       display: flex;
       justify-content: flex-end;
 
+      // The same close button as the Data Messenger header's: placeholder grey at
+      // rest, primary on a soft wash when hovered.
       .filter-locking-close-btn {
-        border-radius: 20px;
-        margin: 0px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        // Pulled back into the corner: the hit box is bigger than the glyph, so
+        // without this the X sits a button's worth of padding in from the panel
+        // edge instead of level with it.
+        margin: -6px -8px 0 0;
         padding: 0px;
-        font-size: 1.25rem;
-        color: var(--react-autoql-text-color-primary);
+        font-size: 1rem;
+        color: var(--react-autoql-text-color-placeholder);
+        transition: background-color 0.2s ease, color 0.2s ease;
+
+        // Fallback value as well as the token: the popover portals out of the
+        // drawer that declares it when ChatContent hosts its own lock.
+        &:hover {
+          background-color: var(--react-autoql-dm-header-btn-hover, rgba(128, 134, 142, 0.16));
+          color: var(--react-autoql-text-color-primary);
+        }
       }
 
       .filter-locking-saving-indicator {
         display: inline-block;
         font-weight: 400;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         padding-right: 20px;
         color: var(--react-autoql-accent-color);
         transition: opacity 0.2s ease;
@@ -212,7 +340,8 @@
         align-items: center;
         justify-content: flex-end;
         flex: 0 0 auto;
-        margin-right: 20px;
+        // Same rail allowance as the rows below it, so the columns line up.
+        margin-right: 18px;
       }
     }
 
@@ -231,8 +360,12 @@
         padding-top: 1px;
         padding-bottom: 1px;
         padding-left: 5px;
+        // Clears perfect-scrollbar's rail, which overlays the right edge of the
+        // list - it was sitting on top of the delete button and eating its clicks.
+        padding-right: 18px;
+
         &.mobile {
-          padding-right: 1rem;
+          padding-right: 18px;
         }
         .react-autoql-filter-list-item-filter {
           overflow: hidden;
@@ -273,10 +406,12 @@
 .react-autoql-vl-autocomplete-input {
   padding: 5px;
   padding-left: 20px;
-  height: 32px;
+  height: 36px;
   box-sizing: border-box;
   border-radius: 24px;
-  font-size: 0.75rem;
+  // Same as .react-autoql-chatbar-input - this is the box you type a value into,
+  // so it should read like the one you type a query into.
+  font-size: 0.875rem;
   font-family: inherit;
   letter-spacing: 0.04em;
   outline: none !important;
@@ -317,7 +452,7 @@
       padding: 10px 0;
       display: block;
       font-family: inherit;
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       font-weight: normal;
       z-index: 2;
       box-shadow: var(--react-autoql-box-shadow-1);

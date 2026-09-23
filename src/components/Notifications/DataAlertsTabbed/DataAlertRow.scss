@@ -1,6 +1,30 @@
-$mobile-breakpoint: 700px;
+// ─── Column definitions ───────────────────────────────────────────────────────
+// Change widths here — header and rows stay in sync automatically
+$col-name: minmax(180px, 3fr);
+$col-frequency: minmax(120px, 1.5fr);
+$col-state: minmax(110px, 1.5fr);
+$col-next-check: minmax(110px, 1.5fr);
+$col-status: 140px;
+$col-actions: 90px;
 
-// Table wrapper
+// Sum of the column minimums plus the row's outer padding. The grid can't go
+// below this without crushing cells, so the table scrolls sideways instead.
+$table-min-width: 790px;
+$table-min-width-no-actions: 700px;
+
+// ─── Outer wrapper ────────────────────────────────────────────────────────────
+// DataAlertsList measures this element and swaps to cards below NARROW_WIDTH,
+// so there are no viewport media queries here on purpose - the list is embedded
+// in host layouts that are regularly narrower than the window.
+.data-alerts-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+}
+
 .data-alerts-table {
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 24px;
@@ -9,20 +33,18 @@ $mobile-breakpoint: 700px;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   flex: 1;
-
-  @media (max-width: $mobile-breakpoint) {
-    border: none;
-    border-radius: 0;
-    overflow: visible;
-    margin: 0.5rem 0.75rem;
-  }
 }
 
-.data-alerts-table-body {
+// Header and rows live inside this single scroller so they can never drift
+// apart horizontally.
+.data-alerts-table-scroll {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 
   // Styled native scrollbars
   scrollbar-width: thin;
@@ -46,11 +68,21 @@ $mobile-breakpoint: 700px;
   &::-webkit-scrollbar-corner {
     background: transparent;
   }
+}
 
-  @media (max-width: $mobile-breakpoint) {
-    overflow: visible;
-    padding: 0.75rem 0.75rem 0;
+.data-alerts-table-inner {
+  min-width: $table-min-width;
+  display: flex;
+  flex-direction: column;
+
+  // One fewer column needs less room before it has to scroll
+  &.no-actions-column {
+    min-width: $table-min-width-no-actions;
   }
+}
+
+.data-alerts-table-body {
+  min-width: 0;
 }
 
 .data-alerts-empty-state {
@@ -68,15 +100,6 @@ $mobile-breakpoint: 700px;
     margin-bottom: 0.75rem;
   }
 }
-
-// ─── Column definitions ───────────────────────────────────────────────────────
-// Change widths here — header and rows stay in sync automatically
-$col-name: minmax(180px, 3fr);
-$col-frequency: minmax(120px, 1.5fr);
-$col-state: minmax(110px, 1.5fr);
-$col-next-check: minmax(110px, 1.5fr);
-$col-status: 140px;
-$col-actions: 90px;
 
 @mixin data-alert-grid {
   display: grid;
@@ -97,12 +120,13 @@ $col-actions: 90px;
   background-color: var(--react-autoql-background-color-primary);
   border-radius: 24px 24px 0 0;
 
+  // Stays put while the body scrolls vertically, travels with it horizontally
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
   &.no-actions-column {
     @include data-alert-grid-no-actions;
-  }
-
-  @media (max-width: $mobile-breakpoint) {
-    display: none;
   }
 
   .data-alert-header-cell {
@@ -115,22 +139,17 @@ $col-actions: 90px;
     opacity: 0.7;
     white-space: nowrap;
 
-    &:first-child { padding-left: 1.25rem; }
-    &:last-child  { padding-right: 1.25rem; }
+    &:first-child {
+      padding-left: 1.25rem;
+    }
+    &:last-child {
+      padding-right: 1.25rem;
+    }
   }
 }
 
-// ─── Table row (desktop) ──────────────────────────────────────────────────────
-.data-alert-card {
-  @media (min-width: #{$mobile-breakpoint + 1px}) {
-    display: none;
-  }
-}
-
+// ─── Table row ────────────────────────────────────────────────────────────────
 .data-alert-table-row {
-  @media (max-width: $mobile-breakpoint) {
-    display: none !important;
-  }
   @include data-alert-grid;
   background-color: var(--react-autoql-background-color-secondary);
   border-bottom: 1px solid var(--react-autoql-box-shadow-color);
@@ -161,7 +180,6 @@ $col-actions: 90px;
       opacity: 0.45;
     }
   }
-
 }
 
 // ─── Cells ────────────────────────────────────────────────────────────────────
@@ -173,8 +191,12 @@ $col-actions: 90px;
   align-items: center;
   overflow: hidden;
 
-  &:first-child { padding-left: 1.25rem; }
-  &:last-child  { padding-right: 1.25rem; }
+  &:first-child {
+    padding-left: 1.25rem;
+  }
+  &:last-child {
+    padding-right: 1.25rem;
+  }
 }
 
 .data-alert-cell-name {
@@ -203,23 +225,57 @@ $col-actions: 90px;
   }
 }
 
-// ─── Mobile card ─────────────────────────────────────────────────────────────
+// ─── Card list (narrow containers) ────────────────────────────────────────────
+.data-alerts-card-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.75rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--react-autoql-text-color-primary) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--react-autoql-text-color-primary);
+    border-radius: 10px;
+    opacity: 0.2;
+  }
+}
+
 .data-alert-card {
   background-color: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
-  border-radius: 24px;
+  border-radius: 16px;
   padding: 0.875rem 1rem;
   margin-bottom: 0.625rem;
   transition: background-color 0.15s ease;
 
-  &:last-child { margin-bottom: 0; }
+  &:last-child {
+    margin-bottom: 0;
+  }
 
-  &.data-alert-row-clickable { cursor: pointer; }
+  &.data-alert-row-clickable {
+    cursor: pointer;
+  }
 
-  &:hover { background-color: var(--react-autoql-mask-color); }
+  &:hover {
+    background-color: var(--react-autoql-mask-color);
+  }
 
   &.data-alert-disabled {
-    .data-alert-card-meta { opacity: 0.55; }
+    .data-alert-card-meta {
+      opacity: 0.55;
+    }
   }
 }
 
@@ -227,7 +283,7 @@ $col-actions: 90px;
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 0.625rem;
+  margin-bottom: 0.75rem;
 }
 
 .data-alert-card-title-wrap {
@@ -240,19 +296,16 @@ $col-actions: 90px;
   .data-alert-name-text {
     font-size: 0.9375rem;
     font-weight: 500;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
   }
 
   .data-alert-description-text {
     font-size: 0.75rem;
     font-weight: 400;
     opacity: 0.55;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
     line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -261,21 +314,28 @@ $col-actions: 90px;
   align-items: center;
   gap: 0.125rem;
   flex-shrink: 0;
+  margin: -0.25rem -0.25rem 0 0;
 }
 
+// Two up while there's room, stacked once there isn't
 .data-alert-card-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.625rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.data-alert-card-meta-item {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  margin-bottom: 0.625rem;
-}
-
-.data-alert-card-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  gap: 0.2rem;
+  min-width: 0;
   font-size: 0.8125rem;
   color: var(--react-autoql-text-color-primary);
+}
+
+.data-alert-card-meta-value {
+  overflow-wrap: anywhere;
 }
 
 .data-alert-card-meta-label {
@@ -285,12 +345,14 @@ $col-actions: 90px;
   letter-spacing: 0.04em;
   opacity: 0.5;
   white-space: nowrap;
-  min-width: 5.5rem;
 }
 
 .data-alert-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   border-top: 1px solid var(--react-autoql-box-shadow-color);
-  padding-top: 0.625rem;
+  padding-top: 0.75rem;
 }
 
 // ─── State badges ─────────────────────────────────────────────────────────────
@@ -313,20 +375,46 @@ $col-actions: 90px;
   }
 
   &.data-alert-on {
-    &.data-alert-active    { color: var(--react-autoql-success-color); }
-    &.data-alert-scheduled { color: var(--react-autoql-success-color); }
-    &.data-alert-triggered { color: var(--react-autoql-info-color); }
-    &.data-alert-warning   { color: var(--react-autoql-warning-color); cursor: pointer; }
-    &.data-alert-error     { color: var(--react-autoql-error-color); cursor: pointer; }
+    &.data-alert-active {
+      color: var(--react-autoql-success-color);
+    }
+    &.data-alert-scheduled {
+      color: var(--react-autoql-success-color);
+    }
+    &.data-alert-triggered {
+      color: var(--react-autoql-info-color);
+    }
+    &.data-alert-warning {
+      color: var(--react-autoql-warning-color);
+      cursor: pointer;
+    }
+    &.data-alert-error {
+      color: var(--react-autoql-error-color);
+      cursor: pointer;
+    }
   }
 
   &.data-alert-off {
     &.data-alert-ready,
     &.data-alert-paused,
-    &.data-alert-triggered { color: var(--react-autoql-text-color-primary); }
-    &.data-alert-warning   { color: var(--react-autoql-warning-color); font-size: 1.125rem; }
-    &.data-alert-error     { color: var(--react-autoql-error-color); font-size: 1.125rem; }
+    &.data-alert-triggered {
+      color: var(--react-autoql-text-color-primary);
+    }
+    &.data-alert-warning {
+      color: var(--react-autoql-warning-color);
+      font-size: 1.125rem;
+    }
+    &.data-alert-error {
+      color: var(--react-autoql-error-color);
+      font-size: 1.125rem;
+    }
   }
+}
+
+// Inside a card the badge sits flush under its label
+.data-alert-card-meta-item .data-alert-state {
+  padding-left: 0;
+  margin-left: -0.125rem;
 }
 
 // ─── Reinitialize button ──────────────────────────────────────────────────────
@@ -342,7 +430,9 @@ $col-actions: 90px;
   box-sizing: content-box;
   transition: background-color 0.2s ease;
 
-  &:hover { background-color: var(--react-autoql-hover-color); }
+  &:hover {
+    background-color: var(--react-autoql-hover-color);
+  }
 }
 
 // ─── Action icons ─────────────────────────────────────────────────────────────
@@ -372,17 +462,26 @@ $col-actions: 90px;
   }
 }
 
-// ─── Skeleton rows ────────────────────────────────────────────────────────────
+// Icons need a finger-sized hit area in the card layout
+.data-alert-card-actions .data-alert-action-btn {
+  padding: 0.5rem;
+}
+
+// ─── Skeletons ────────────────────────────────────────────────────────────────
 @keyframes data-alert-shimmer {
-  0%   { background-position: -600px 0; }
-  100% { background-position:  600px 0; }
+  0% {
+    background-position: -600px 0;
+  }
+  100% {
+    background-position: 600px 0;
+  }
 }
 
 @mixin shimmer {
   background: linear-gradient(
     90deg,
     var(--react-autoql-border-color) 25%,
-    var(--react-autoql-mask-color)   50%,
+    var(--react-autoql-mask-color) 50%,
     var(--react-autoql-border-color) 75%
   );
   background-size: 600px 100%;
@@ -396,6 +495,10 @@ $col-actions: 90px;
   border-bottom: 1px solid var(--react-autoql-box-shadow-color);
   height: 3.125rem;
 
+  &.no-actions-column {
+    @include data-alert-grid-no-actions;
+  }
+
   &:last-child {
     border-bottom: none;
     border-radius: 0 0 24px 24px;
@@ -405,8 +508,27 @@ $col-actions: 90px;
 .data-alert-skeleton-cell {
   padding: 0.5rem 0.75rem;
 
-  &:first-child { padding-left: 1rem; }
-  &:last-child  { padding-right: 1rem; }
+  &:first-child {
+    padding-left: 1rem;
+  }
+  &:last-child {
+    padding-right: 1rem;
+  }
+}
+
+.data-alert-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--react-autoql-background-color-secondary);
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 16px;
+  padding: 1rem;
+  margin-bottom: 0.625rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .data-alert-skeleton-block {
@@ -414,6 +536,10 @@ $col-actions: 90px;
   height: 0.75rem;
   width: 70%;
 
-  &.short  { width: 40%; }
-  &.medium { width: 55%; }
+  &.short {
+    width: 40%;
+  }
+  &.medium {
+    width: 55%;
+  }
 }

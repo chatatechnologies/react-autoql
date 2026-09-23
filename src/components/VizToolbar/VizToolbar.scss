@@ -2,8 +2,10 @@
   display: flex;
   flex-direction: row;
   background: inherit;
-  padding: 0.3125rem;
-  border-radius: 6px;
+  padding: 0.25rem 0.375rem;
+  // The same pill the options toolbar is - the two sit side by side under a
+  // response, and one squared off next to one rounded read as a mistake.
+  border-radius: 999px;
   line-height: 1.75rem;
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
@@ -50,7 +52,11 @@
   }
 }
 
-.react-autoql-toolbar {
+// Both wrappers, not just the desktop one: these rules are what strip the Button
+// component's default blue outline off a toolbar icon, and the mobile toolbar was
+// missing out on them - every button showed up as a bordered blue square.
+.react-autoql-toolbar,
+.react-autoql-toolbar-mobile {
   .react-autoql-btn.react-autoql-toolbar-btn {
     height: 1.75rem;
     width: 1.75rem;
@@ -76,6 +82,40 @@
 
   .react-autoql-toolbar-btn:hover {
     opacity: 0.7;
+  }
+}
+
+// Touch toolbars: a 2.25rem round target per icon - still under the 44px Apple asks
+// for once the row's own padding is counted, and big enough to hit without aiming.
+// Hover means nothing here, so the feedback is a press wash and a tinted disc behind
+// whichever button is currently on, the way a native segmented control marks itself.
+.react-autoql-toolbar-mobile {
+  .react-autoql-btn.react-autoql-toolbar-btn {
+    height: 2.25rem;
+    width: 2.25rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    // Safari paints its own grey box over a tapped button otherwise, which is the
+    // other half of what made these look unfinished.
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &:active {
+      background-color: var(--react-autoql-mask-color, rgba(0, 0, 0, 0.06)) !important;
+    }
+
+    &.react-autoql-toolbar-btn-selected {
+      background-color: rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.12
+      ) !important;
+    }
   }
 }
 

@@ -57,6 +57,16 @@
     margin: 2px 0px;
   }
 }
+// 160px of gutter is most of the screen on a phone or a split view - give the
+// modal back the width as the viewport narrows
+@media (max-width: 992px) {
+  .ReactModal__Content {
+    max-width: calc(100vw - 48px);
+    margin-top: 12px;
+    margin-bottom: 12px;
+    max-height: calc(100vh - 24px);
+  }
+}
 @media (max-width: 479px) {
   .ReactModal__Content {
     position: initial !important;
@@ -79,10 +89,10 @@
 
     padding: 0 !important;
 
-    margin-top: 20px;
-    margin-bottom: 30px;
-    max-width: calc(100vw - 30px);
-    max-height: calc(100vh - 40px);
+    margin-top: 8px;
+    margin-bottom: 8px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
 
     input.react-autoql-input,
     textarea.react-autoql-input,
@@ -139,6 +149,7 @@
 
   .react-autoql-modal-header-title-container {
     width: 100%;
+    min-width: 0;
     text-align: center;
     padding: 10px 0px;
   }
@@ -150,9 +161,25 @@
     font-size: 1.0625rem;
     margin-left: 20px;
     font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
 
     .react-autoql-icon {
       margin-right: 5px;
+      flex: none;
+    }
+
+    .react-autoql-modal-header-title-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+      margin-left: 12px;
+      font-size: 1rem;
     }
   }
 
@@ -170,7 +197,10 @@
 }
 .react-autoql-modal-footer {
   position: relative;
-  flex: 0 0 52px;
+  // Grows instead of clipping when the buttons wrap onto a second line
+  flex: 0 0 auto;
+  min-height: 52px;
+  box-sizing: border-box;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   text-align: right;
   padding: 8px 10px;
@@ -183,6 +213,10 @@
   padding: 10px 20px;
   overflow: auto;
 
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+  }
+
   h3 {
     color: var(--react-autoql-text-color-primary);
   }
@@ -193,12 +227,16 @@
   }
 }
 .react-autoql-modal-close-btn {
-  flex: 0;
+  flex: 0 0 auto;
   font-size: 1.375rem;
   margin: 16px;
   opacity: 0.6 !important;
   cursor: pointer;
   box-sizing: content-box;
+
+  @media (max-width: 768px) {
+    margin: 12px;
+  }
 }
 .react-autoql-modal-close-btn:hover {
   opacity: 1 !important;

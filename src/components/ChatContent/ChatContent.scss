@@ -15,6 +15,265 @@
   height: 100%;
   width: 100%;
   font-size: 0.875rem;
+  // Inside the Data Messenger the drawer sets these; standalone there is nothing
+  // above this element, so the thread and the query input (which inherit their
+  // font) picked up whatever the host page uses — typically a larger-looking face
+  // and a taller line box than the same components show in the drawer.
+  font-family: var(--react-autoql-font-family), sans-serif;
+  line-height: 22px;
+}
+
+// Session tabs (only rendered when `enableSessions`). The tab bar sits above
+// the threads; every session stays mounted, so the content area stacks them and
+// the inactive ones take themselves out of layout (`display: none`, same as a
+// ChatContent whose page isn't active).
+.react-autoql-chat-sessions {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+
+  .react-autoql-chat-sessions-content {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+}
+
+// Sessions read as a segmented control: the whole strip is one sunken, rounded
+// track and the selected session is a raised chip floating inside it. Nothing
+// connects a tab to the thread below, so the bar can sit anywhere in the panel.
+.react-autoql-chat-session-tabs {
+  // Neutral washes rather than --react-autoql-hover-color, which is tuned for
+  // menu rows and reads far too heavy here. Grey at these alphas darkens a
+  // light theme and lightens a dark one, so one value covers both.
+  --react-autoql-session-tab-track: rgba(128, 134, 142, 0.08);
+  --react-autoql-session-tab-hover: rgba(128, 134, 142, 0.12);
+  --react-autoql-session-tab-close-hover: rgba(128, 134, 142, 0.22);
+  // The one accent-tinted thing in the strip, so the eye lands on it. configureTheme
+  // publishes the accent's channels separately, which is how SelectableTable tints.
+  --react-autoql-session-tab-new: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.12
+  );
+  --react-autoql-session-tab-new-hover: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.22
+  );
+
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  // A flat groove in the flow above the threads, not a floating glass panel. The
+  // drawer's other surfaces all sit behind a 0.9-0.95 overlay, so they read as
+  // solid; a genuinely transparent, blurred strip was the only thing here behaving
+  // differently, which is what made it look out of place. The 1.25rem inset is
+  // .chat-message-and-rt-container's, so the track's edges line up with the message
+  // bubbles below it.
+  margin: 0.25rem 1.25rem 0.5rem;
+  padding: 6px;
+  border-radius: 23px;
+  background-color: var(--react-autoql-session-tab-track);
+
+  .react-autoql-chat-session-tab-list {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    // Tabs keep their width and the strip scrolls, rather than every tab
+    // shrinking to nothing once there are a lot of sessions.
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .react-autoql-chat-session-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    // Widened alongside the font bump below so a title still shows about as many
+    // characters before it ellipsises as it did at the old 12.5px.
+    width: 148px;
+    height: 34px;
+    padding: 0 6px 0 14px;
+    box-sizing: border-box;
+    // Fully rounded, like the message bubbles and the query input below it - the
+    // page speaks in pills, so a squared-off tab read as a different kit.
+    border-radius: 17px;
+    background-color: transparent;
+    color: var(--react-autoql-text-color-placeholder);
+    font-size: 0.875rem; // Matches the chat thread
+    font-weight: 500;
+    // The header title's tracking. It was -0.004em, tighter than anything around
+    // it, which is part of why the strip read as a separate piece of design.
+    letter-spacing: -0.008em;
+    cursor: pointer;
+    // Width is in here so selecting a tab eases it wider instead of snapping.
+    transition: width 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+    // Hover is for tabs you could switch to — the selected one is already here,
+    // so it deliberately has no hover state of its own.
+    &:not(.active):hover {
+      color: var(--react-autoql-text-color-primary);
+      background-color: var(--react-autoql-session-tab-hover);
+    }
+
+    // The raised chip. A wider box plus the lift is what makes the selected
+    // session read as selected; there is no accent rule or connecting flare.
+    &.active {
+      width: 188px;
+      // Same material as a message bubble: the theme's surface colour, a hairline
+      // border and the same soft ambient shadow, so the selected tab and the
+      // thread below it read as one system.
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      padding: 0 5px 0 13px; // Absorbs the border, so the label doesn't shift.
+      color: var(--react-autoql-text-color-primary);
+      font-weight: 600;
+      box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+        0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
+
+      .react-autoql-chat-session-tab-dot {
+        background-color: var(--react-autoql-accent-color);
+        opacity: 1;
+      }
+    }
+
+    // currentColor rather than a fixed grey, so the dot tracks whatever the tab
+    // label is doing -- placeholder when idle, primary on hover -- and the accent
+    // on the active tab is then the only colour in the strip.
+    .react-autoql-chat-session-tab-dot {
+      flex: none;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: currentColor;
+      opacity: 0.45;
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .react-autoql-chat-session-tab-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .react-autoql-chat-session-tab-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      opacity: 0.6;
+      transition: opacity 0.2s ease, background-color 0.2s ease;
+
+      // Flex + line-height:1, or the drawer's inherited 22px line-height makes the
+      // glyph's box taller than the 18px circle and it sits low in it.
+      .react-autoql-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        font-size: 0.625rem;
+      }
+
+      &:hover {
+        opacity: 1;
+        // A touch stronger than the tab's own hover, so the X still reads as a
+        // separate target once you're over it.
+        background-color: var(--react-autoql-session-tab-close-hover);
+      }
+    }
+  }
+
+  // The click wrapper ConfirmPopover puts around its trigger - it would otherwise
+  // stretch and push the "+" off the strip.
+  .react-autoql-chat-session-close-all-wrapper {
+    flex: none;
+    display: flex;
+    margin-left: 8px;
+  }
+
+  // Neutral, beside the accent-washed "+": closing every tab is the destructive
+  // one of the pair, and the accent is spent on the action worth inviting.
+  .react-autoql-chat-session-tab-close-all {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-placeholder));
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+      background-color: var(--react-autoql-session-tab-close-hover);
+      color: var(--react-autoql-text-color-primary);
+    }
+
+    .react-autoql-icon {
+      font-size: 1.0625rem;
+    }
+  }
+
+  // Pinned to the right rather than trailing the last tab: the strip scrolls at a
+  // fixed tab width, so a "+" inside it would scroll out of reach exactly when
+  // there are the most sessions. Since it can't borrow the tabs' position for its
+  // meaning, it carries an accent glyph on a faint accent wash - circular, like the
+  // icon buttons in the header above it.
+  .react-autoql-chat-session-tab-new {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    margin-left: 8px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--react-autoql-session-tab-new);
+    color: var(--react-autoql-accent-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: var(--react-autoql-session-tab-new-hover);
+    }
+
+    // At the tab ceiling. Left in place rather than hidden, so the row doesn't
+    // reflow on the eighth tab.
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .react-autoql-icon {
+      font-size: 1.0625rem;
+      // The plus reads lighter than the tab labels beside it at the same size.
+      stroke-width: 2.5;
+    }
+  }
 }
 
 .chat-content-scroll-container {
@@ -77,7 +336,6 @@
   }
 }
 
-
 .chat-bar-container {
   flex-shrink: 0;
   padding: 0px;
@@ -106,17 +364,112 @@
 
   .bottom-bar-left {
     flex: 1;
-    position: relative;
-    align-self: stretch;
-    overflow: visible;
+  }
+}
 
-    .response-loading {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      height: 78px;
+// The thinking dots sit inline at the end of the message list, aligned to the
+// same left edge as a response so they read as the answer about to arrive.
+// The 1.25rem left edge matches .chat-message-and-rt-container in ChatMessage.scss.
+.chat-content-thinking-indicator {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.9375rem 1.25rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+
+  // Only the thinking state gets a logo -- messages themselves are unmarked.
+  .chat-content-thinking-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 1px solid var(--react-autoql-border-color);
+    background-color: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-accent-color);
+
+    .react-autoql-icon {
+      font-size: 0.875rem;
+      display: flex;
+
+      // The logo is a viewBox-only SVG, so its size comes from the box around it.
+      // Stating it here rather than leaving the browser to resolve the SVG's
+      // default 100% against a flex container it is itself sizing - that circular
+      // case is the one browsers collapse to 0, which is how the mark went missing.
+      svg {
+        width: 1em;
+        height: 1em;
+      }
     }
+  }
+
+  // The agent page's thinking dots, reused here so both messengers wait the same
+  // way: three dots bouncing in place. The base .response-loading is a 64px box
+  // with four absolutely positioned dots that slide across it, so everything about
+  // that layout gets undone -- static dots in a flex row, and the fourth hidden.
+  .response-loading {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    transform: none;
+    width: auto;
+    height: 26px;
+    margin: 0;
+
+    // Every dot is addressed through :nth-child, matching the specificity of
+    // LoadingDots.scss's own :nth-child rules - a plain `div` selector ties with
+    // them and loses on source order, which left the first dot still sliding.
+    div:nth-child(n) {
+      position: static;
+      top: auto;
+      left: auto;
+      width: 5px;
+      height: 5px;
+      background: var(--react-autoql-text-color-placeholder);
+      animation: chat-content-thinking-dot 1.2s ease-in-out infinite;
+      animation-delay: 0s;
+    }
+
+    div {
+      &:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      &:nth-child(4) {
+        display: none;
+      }
+    }
+  }
+}
+
+@keyframes chat-content-thinking-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-content-thinking-indicator .response-loading div {
+    animation: none;
   }
 }
 
@@ -137,81 +490,49 @@
   display: none;
 }
 
-
 .chat-bar-container .chat-drawer-chat-bar {
   flex-shrink: 0;
   flex-grow: 0;
   animation: fadeIn 0.3s;
 }
 
-// LLM-style empty state: centers the input like Claude/ChatGPT
-.chat-content-wrapper.llm-empty-state {
-  .chat-content-scroll-container {
-    flex: 0 0 0;
-    max-height: 0;
-    overflow: hidden;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+.chat-content-empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  // Optical centring: the logo gives the block a top-heavy silhouette, so geometric
+  // centre reads low. The extra bottom padding lifts the group by ~3rem against the
+  // flex centre, which is what makes it look centred.
+  padding: 1rem 2rem 7rem;
+  text-align: center;
+  // The thread underneath is empty, so nothing here needs to intercept a scroll.
+  pointer-events: none;
 
-    &::before {
-      display: none;
-    }
+  .chat-content-empty-state-logo {
+    font-size: 1.75rem;
+    color: var(--react-autoql-accent-color);
   }
 
-  .chat-bar-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0 24px 48px;
+  .chat-content-empty-state-title {
+    margin: 0;
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--react-autoql-text-color-primary);
+  }
 
-    .llm-empty-state-title {
-      max-width: 700px;
-      width: 100%;
-      margin: 0 auto 16px;
-      padding-left: 6px;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--react-autoql-text-color-primary);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-
-      .react-autoql-icon {
-        color: var(--react-autoql-accent-color);
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-
-        svg {
-          width: 1.4em;
-          height: 1.4em;
-        }
-      }
-    }
-
-    @media (max-width: 576px) {
-      padding: 0 12px 24px;
-
-      .llm-empty-state-title {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 8px;
-        margin-bottom: 16px;
-        padding-left: 0;
-
-        .react-autoql-icon {
-          font-size: 2.5rem;
-
-          svg {
-            width: 2em;
-            height: 2em;
-          }
-        }
-      }
-    }
+  .chat-content-empty-state-subtitle {
+    margin: -0.625rem 0 0;
+    max-width: 24rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--react-autoql-text-color-placeholder);
+    // The container ignores pointer events; the subtitle may hold a link.
+    pointer-events: auto;
   }
 }
 
@@ -249,76 +570,3 @@
   }
 }
 
-// Filter-lock toolbar (only rendered when `showFilterLockButton` — ChatContent
-// embedded outside DataMessenger). A small pill above the composer input.
-.react-autoql-chat-filter-lock-toolbar {
-  display: flex;
-  align-items: center;
-  // Left/right 20px lines the pill's edge up with the input bar below it.
-  // Measured chain (both start from .chat-bar-container, which has NO padding
-  // of its own): the input picks up 10px from .react-autoql-bar-container's
-  // padding + 10px from .react-autoql-chatbar-input's own margin. That
-  // bar-container is a child of the input wrapper, NOT an ancestor of this
-  // toolbar, so the toolbar has to supply the whole 20px itself.
-  // Bottom 6px keeps a gap above the input.
-  padding: 0 20px 6px;
-  // Sit BELOW the upward "Recent queries" autocomplete (z-index 2) so that when
-  // it opens, the opaque dropdown covers this pill rather than the pill poking
-  // through the suggestions. The pill reappears once the dropdown closes.
-  position: relative;
-  z-index: 1;
-
-  .react-autoql-chat-filter-lock-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 28px;
-    padding: 0 12px;
-    border-radius: 999px;
-    border: 1px solid var(--react-autoql-border-color);
-    background-color: var(--react-autoql-background-color-secondary);
-    color: var(--react-autoql-text-color-primary);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
-
-    &:hover {
-      border-color: var(--react-autoql-accent-color);
-      color: var(--react-autoql-accent-color);
-    }
-
-    .react-autoql-filter-lock-icon-container {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .react-autoql-filter-lock-icon-badge {
-      position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--react-autoql-accent-color);
-    }
-
-    .react-autoql-chat-filter-lock-label {
-      line-height: 1;
-    }
-  }
-}
-
-// Down caret on the filter-lock button (flips when the menu is open).
-.react-autoql-chat-filter-lock-btn {
-  .react-autoql-chat-filter-lock-caret {
-    font-size: 0.75rem;
-    opacity: 0.6;
-    transition: transform 0.2s ease;
-  }
-
-  &.is-open .react-autoql-chat-filter-lock-caret {
-    transform: rotate(180deg);
-  }
-}

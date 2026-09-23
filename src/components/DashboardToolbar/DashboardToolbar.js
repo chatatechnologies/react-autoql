@@ -304,14 +304,16 @@ export class DashboardToolbarWithoutRef extends React.Component {
               {this.dashboardSlicingFeatureToggle && !this.props.isEditing && this.renderFilterInput()}
               {!this.props.isEditing ? (
                 <>
-                  <Button
-                    iconOnly
-                    icon='refresh'
-                    border={false}
-                    tooltip={this.getRefreshButtonTooltip()}
-                    tooltipID={this.props.tooltipID}
-                    onClick={this.props.onRefreshClick}
-                  />
+                  {this.props.hasTiles && (
+                    <Button
+                      iconOnly
+                      icon='refresh'
+                      border={false}
+                      tooltip={this.getRefreshButtonTooltip()}
+                      tooltipID={this.props.tooltipID}
+                      onClick={this.props.onRefreshClick}
+                    />
+                  )}
                 </>
               ) : (
                 <div className='react-autoql-dashboard-edit-toolbar-container-right'>
@@ -400,15 +402,19 @@ export class DashboardToolbarWithoutRef extends React.Component {
                 >
                   Add Tile
                 </Button>
-                <hr className='react-autoql-horizontal-divider' />
-                <Button
-                  iconOnly
-                  icon='refresh'
-                  border={false}
-                  tooltip='Refresh all tiles'
-                  tooltipID={this.props.tooltipID}
-                  onClick={this.props.onEditRefreshClick}
-                />
+                {this.props.hasTiles && (
+                  <>
+                    <hr className='react-autoql-horizontal-divider' />
+                    <Button
+                      iconOnly
+                      icon='refresh'
+                      border={false}
+                      tooltip='Refresh all tiles'
+                      tooltipID={this.props.tooltipID}
+                      onClick={this.props.onEditRefreshClick}
+                    />
+                  </>
+                )}
               </div>
               <div className='react-autoql-dashboard-edit-toolbar-container-right'>
                 {this.dashboardSlicingFeatureToggle && this.renderFilterInput()}

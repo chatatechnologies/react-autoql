@@ -40,6 +40,12 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import './ChatMessage.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
 
+// Staggered prose reveal: blocks start REVEAL_STAGGER_MAX_MS apart, but the gap
+// shrinks for longer messages so the last block always lands by REVEAL_TOTAL_MS.
+const REVEAL_STAGGER_MAX_MS = 40
+const REVEAL_TOTAL_MS = 600
+const REVEAL_DURATION_MS = 260
+
 export class ChatMessage extends React.Component {
   // Static Set to track which message IDs have already animated
   // This persists across component mounts/unmounts (e.g., when DM closes/reopens)
@@ -202,6 +208,71 @@ export class ChatMessage extends React.Component {
     // Wait until message bubble animation finishes to show query output content
     // The scroll will happen after animation completes (500ms) in clearIsAnimatingIn500ms
     this.setIsAnimating()
+
+    this.applyStaggeredReveal()
+  }
+
+  // Plain text + markdown responses. These render without bubble chrome and get
+  // the staggered per-block reveal; data responses keep their bubble.
+  isProseResponse = () => {
+    return (
+      this.props.isResponse &&
+      (this.props.type === 'text' || this.props.type === 'markdown' || this.props.type === 'md')
+    )
+  }
+
+  // Walk past single-child wrappers to find the node whose children are the
+  // actual content blocks (paragraphs, list items, headings).
+  getRevealBlockContainer = (root) => {
+    let node = root
+    while (node.children.length === 1 && node.children[0].children.length > 0) {
+      node = node.children[0]
+    }
+    return node
+  }
+
+  // Reveal prose a block at a time rather than all at once. The stagger shrinks as
+  // the message grows so a long answer never takes longer to appear than a short
+  // one -- total reveal is capped at REVEAL_TOTAL_MS regardless of block count.
+  applyStaggeredReveal = () => {
+    if (!this.isProseResponse() || !this.state.isAnimatingMessageBubble || this.hasRevealed) {
+      return
+    }
+
+    const root = this.markdownContentRef.current ?? this.messageBubbleRef
+    if (!root) {
+      return
+    }
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      return
+    }
+
+    const container = this.getRevealBlockContainer(root)
+    const blocks = Array.from(container.children)
+    if (!blocks.length) {
+      return
+    }
+
+    this.hasRevealed = true
+
+    const stagger = Math.min(REVEAL_STAGGER_MAX_MS, REVEAL_TOTAL_MS / blocks.length)
+    blocks.forEach((block, i) => {
+      block.style.setProperty('--reveal-index', i)
+      block.style.setProperty('--reveal-stagger', `${stagger}ms`)
+      block.classList.add('chat-message-reveal-block')
+    })
+
+    // Strip the animation once it's done -- a lingering transform would create a
+    // containing block and reposition any fixed-position menus inside the message.
+    clearTimeout(this.revealTimeout)
+    this.revealTimeout = setTimeout(() => {
+      blocks.forEach((block) => {
+        block.style.removeProperty('--reveal-index')
+        block.style.removeProperty('--reveal-stagger')
+        block.classList.remove('chat-message-reveal-block')
+      })
+    }, stagger * blocks.length + REVEAL_DURATION_MS + 50)
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
@@ -250,12 +321,16 @@ export class ChatMessage extends React.Component {
         })
       }
     }
+
+    // Markdown content can land after mount -- applyStaggeredReveal no-ops once it's run
+    this.applyStaggeredReveal()
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
     clearTimeout(this.scrollToBottomTimeout)
     clearTimeout(this.animationTimeout)
+    clearTimeout(this.revealTimeout)
   }
   toggleQueryOutputModal = () => {
     this.setState((prevState) => ({
@@ -280,9 +355,26 @@ export class ChatMessage extends React.Component {
     }, 500)
   }
 
-  onCSVDownloadFinish = ({ error, exportLimit, limitReached }) => {
+  getCSVDownloadErrorContent = (error) => {
+    if (typeof error === 'string') {
+      return error
+    }
+
+    // A failed export can come back as a query response with a message from the
+    // service, as an axios error response, or as a plain Error when the request
+    // never reached the service at all.
+    const message = error?.data?.message ?? error?.response?.data?.message
+    if (typeof message === 'string' && message) {
+      return message
+    }
+
+    return GENERAL_QUERY_ERROR
+  }
+
+  onCSVDownloadFinish = ({ id, error, exportLimit, limitReached }) => {
     if (error) {
-      return this.props.addMessageToDM({ response: error })
+      this.props.onCSVDownloadError?.({ id })
+      return this.props.addMessageToDM({ content: this.getCSVDownloadErrorContent(error) })
     }
 
     const queryText = this.props.response?.data?.data?.text
@@ -512,6 +604,9 @@ export class ChatMessage extends React.Component {
   }
 
   renderCSVProgressMessage = () => {
+    if (this.state.csvDownloadFailed) {
+      return 'Your file could not be downloaded.'
+    }
     if (isNaN(this.state.csvDownloadProgress)) {
       return this.renderFetchingFileMessage()
     }
@@ -1459,6 +1554,7 @@ export class ChatMessage extends React.Component {
 			${this.props.isResponse ? 'response' : 'request'}
 			${isMobile ? 'pwa' : ''}
 			${this.props.type === 'text' ? 'text' : ''}
+			${this.isProseResponse() ? 'prose-response' : ''}
 			${this.props.isActive ? 'active' : ''}
 			${this.props.disableMaxHeight || this.props.isIntroMessage ? ' no-max-height' : ''}
 			${shouldAnimate ? ' animate-on-mount' : ''}`}
