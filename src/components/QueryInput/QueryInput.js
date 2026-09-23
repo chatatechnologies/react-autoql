@@ -471,6 +471,13 @@ class QueryInput extends React.Component {
   }
 
   onEscKeypress = (event) => {
+    // The listener is on `document`, and with sessions on every tab keeps a
+    // QueryInput mounted - so without this, Escape anywhere on the page cancels
+    // the running query in every thread, not just the one being looked at.
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (event.key === 'Escape') {
       // If esc key was not pressed in combination with ctrl or alt or shift
       const isNotCombinedKey = !(event.ctrlKey || event.altKey || event.shiftKey)
@@ -987,7 +994,11 @@ class QueryInput extends React.Component {
 
   render = () => {
     const isQueryRunning = this.state.isQueryRunning
-    const hasMicrophone = !isMobile && this.props.enableVoiceRecord
+    // Only the input on screen mounts a mic. react-speech-recognition shares one
+    // recogniser across every SpeechToTextButtonBrowser and hands the transcript
+    // to whichever mounted last, so a mic in a hidden session tab (or on a page
+    // that isn't showing) would swallow dictation meant for this one.
+    const hasMicrophone = !isMobile && this.props.enableVoiceRecord && this.props.shouldRender
 
     const showTopics =
       this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0

@@ -71,7 +71,13 @@
     }
   }
 
-  &:not(.filter-lock-popover-mobile) {
+  // Both qualified with .react-tiny-popover-container: Popover.scss positions every
+  // mobile popover through `.react-tiny-popover-container.react-autoql-popover-mobile`
+  // (top: 45%, a translate, all !important). A bare `.filter-lock-popover.…-mobile`
+  // ties with that on specificity, so which one won came down to file order - that
+  // is how a stale copy of these rules in CustomList.scss used to be what pinned the
+  // sheet to the top. Three classes settle it outright.
+  &.react-tiny-popover-container:not(.filter-lock-popover-mobile) {
     top: -15px !important;
     left: -2px !important;
     // Width is set dynamically via containerStyle prop to match drawer width
@@ -79,7 +85,7 @@
     height: 350px;
   }
 
-  &.filter-lock-popover-mobile {
+  &.react-tiny-popover-container.filter-lock-popover-mobile {
     transform: unset !important;
     top: 0px !important;
     // The sheet is pinned to the top of the screen, so its height IS the distance

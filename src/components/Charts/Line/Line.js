@@ -5,6 +5,13 @@ import { getThemeValue, getKey, getTooltipContent, getAutoQLConfig } from 'autoq
 import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
 import { createSVGPath } from './lineFns'
 
+// How close a click has to land to a vertex to count as clicking that vertex.
+// The hover overlay covers the whole plot, but a drilldown is a real navigation:
+// without this, dismissing a popover by clicking in the plot, or any tap on
+// mobile (where there is no hover preview to aim with), would start one.
+// Generous enough to forgive an imprecise aim at a dot ~5px across.
+const CLICK_HIT_RADIUS = 20
+
 export default class Line extends PureComponent {
   constructor(props) {
     super(props)
@@ -260,9 +267,16 @@ export default class Line extends PureComponent {
   }
 
   onHoverAreaClick = (e) => {
-    const point = this.getClosestPoint(this.getLocalCoords(e))
+    const coords = this.getLocalCoords(e)
+    const point = this.getClosestPoint(coords)
 
     if (!point) {
+      return
+    }
+
+    // Hover snaps to the nearest vertex from anywhere; a click has to actually be
+    // aimed at one. See CLICK_HIT_RADIUS.
+    if (Math.hypot(point.x - coords.x, point.y - coords.y) > CLICK_HIT_RADIUS) {
       return
     }
 

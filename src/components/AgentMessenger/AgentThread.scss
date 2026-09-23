@@ -6,9 +6,20 @@
   width: 100%;
 
   // Inactive threads stay mounted so their scroll position, revealed text and table
-  // measurements survive a thread switch.
+  // measurements survive a thread switch. Hidden the same way the page itself is
+  // (see .react-autoql-content-hidden in AgentMessenger.scss) rather than with
+  // display: none, and taken out of flow instead: inside a display: none subtree
+  // every scrollWidth reads 0, so a table arriving in a background thread would
+  // measure every column at the 50px minimum and never re-measure.
   &.is-hidden {
-    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
   }
 
   // Possible bug in PerfectScrollbars putting the scrollbar on the left side

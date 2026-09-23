@@ -125,7 +125,23 @@ describe('chart area hover', () => {
     expect(wrapper.state('hoveredTooltip')).toBe(null)
   })
 
-  test('clicking the area drills down on the closest vertex', () => {
+  test('clicking near a vertex drills down on it', () => {
+    const onChartClick = jest.fn()
+    const wrapper = setup(makeStubProps({ onChartClick }))
+    const instance = wrapper.instance()
+    const target = instance.hoverPoints[1].points[0]
+
+    instance.getLocalCoords = () => ({ x: target.x, y: target.y + 5 })
+    instance.onHoverAreaClick({})
+
+    expect(onChartClick).toHaveBeenCalledTimes(1)
+    expect(onChartClick.mock.calls[0][0].activeKey).toBe(target.key)
+  })
+
+  // Hover snaps from anywhere in the plot, but a drilldown is a real navigation:
+  // dismissing a popover by clicking in the plot, or any tap on mobile, must not
+  // start one.
+  test('clicking the area away from every vertex does not drill down', () => {
     const onChartClick = jest.fn()
     const wrapper = setup(makeStubProps({ onChartClick }))
     const instance = wrapper.instance()
@@ -134,7 +150,6 @@ describe('chart area hover', () => {
     instance.getLocalCoords = () => ({ x: target.x, y: target.y + 50 })
     instance.onHoverAreaClick({})
 
-    expect(onChartClick).toHaveBeenCalledTimes(1)
-    expect(onChartClick.mock.calls[0][0].activeKey).toBe(target.key)
+    expect(onChartClick).not.toHaveBeenCalled()
   })
 })

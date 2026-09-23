@@ -192,14 +192,27 @@ const AgentMessenger = ({
     return lastUserMessage?.items?.[0]?.data?.text
   }, [])
 
-  // "Try again" on an error item re-sends the question that failed.
-  const onRetry = useCallback(() => {
-    const text = getLastUserText(activeThread)
+  // "Try again" on an error item re-sends the question that failed - the user
+  // message just above the errored one, not the most recent question in the
+  // thread. Those differ as soon as the user asks something else after an error
+  // and then scrolls back to retry the older one.
+  const onRetry = useCallback(
+    (messageId) => {
+      const messages = activeThread?.messages ?? []
+      const failedIndex = messages.findIndex((message) => message.id === messageId)
+      const precedingUserMessage =
+        failedIndex > 0
+          ? [...messages.slice(0, failedIndex)].reverse().find((message) => message.role === 'user')
+          : undefined
 
-    if (text) {
-      onSubmit(text)
-    }
-  }, [activeThread, onSubmit, getLastUserText])
+      const text = precedingUserMessage?.items?.[0]?.data?.text ?? getLastUserText(activeThread)
+
+      if (text) {
+        onSubmit(text)
+      }
+    },
+    [activeThread, onSubmit, getLastUserText],
+  )
 
   // Offered when a thread's session has ended. The question moves to a new thread as
   // a draft rather than being sent: it's often a follow-up that only made sense
@@ -421,6 +434,12 @@ const AgentMessenger = ({
           // withheld rather than rendered as a button that does nothing.
           onStartNewSession={threads.length >= maxThreads ? undefined : onStartNewSession}
           enableVoiceRecord={enableVoiceRecord}
+          // Not isLaidOut: that stays true with the drawer shut. The mic is the
+          // one control that matters off screen, because every
+          // SpeechToTextButtonBrowser shares a recogniser and the last one
+          // mounted receives the transcript - a mic here while the chat is on
+          // screen would take dictation meant for the chat's input.
+          isOnScreen={shouldRender}
           models={modelsState.list}
           modelsStatus={modelsState.status}
           llmModel={activeThread?.llmModel}

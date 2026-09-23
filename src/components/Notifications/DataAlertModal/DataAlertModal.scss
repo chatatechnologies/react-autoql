@@ -84,9 +84,19 @@ $tablet-breakpoint: 992px;
         gap: 6px;
         min-width: 0;
 
-        // Empty container when there's no delete button - don't let it eat a row
-        &:empty {
-          display: none;
+        // A new alert has no delete button, so the left container is empty and
+        // space-between has nothing to push against - without this the actions
+        // slide to the left edge. The Custom Filtered Alert modal is always in
+        // that state.
+        &:last-child {
+          margin-left: auto;
+        }
+
+        @media (max-width: $mobile-breakpoint) {
+          // Empty container when there's no delete button - don't let it eat a row
+          &:empty {
+            display: none;
+          }
         }
       }
     }

@@ -241,6 +241,16 @@ export default class ChatContent extends React.Component {
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.isSessionHost()) {
+      // enableSessions turned on after mount - an integrator whose flag resolves
+      // after the first render, or the example app's toggle. Only the constructor
+      // seeds a session, so without this the host renders a tab strip with no
+      // thread under it and no input, and every ref call (clearMessages,
+      // animateInputTextAndSubmit) reaches nothing.
+      if (!this.state.sessions.length) {
+        const session = this.createSessionObject([])
+        this.setState({ sessions: [session], activeSessionId: session.id })
+      }
+
       // Reveal the selected tab: a session opened while the strip is already full
       // would otherwise land off the right edge with nothing to say it exists.
       if (
@@ -253,6 +263,13 @@ export default class ChatContent extends React.Component {
       this.notifyContentChange()
 
       return
+    }
+
+    // The other direction: this was a host on mount, so it took the early return
+    // in componentDidMount and never set up the thread it now renders itself.
+    if (!!prevProps.enableSessions && !prevProps.isSessionTab) {
+      this.fetchAllSubjects()
+      this.setupScrollListener()
     }
 
     //disable input focus for mobile, as ios keyboard has bug

@@ -126,10 +126,23 @@ const TextItem = ({ data, isRevealed, shouldAnimate, onRevealComplete, onProgres
 
   const isTyping = revealedLength < text.length
 
+  // The split is a reveal mechanism, not a rendering one. Blank lines separate
+  // paragraphs, but they also appear *inside* constructs - a fenced code block, a
+  // list item's continuation paragraph, a reference-style link and its definition
+  // - and parsing those in separate documents comes apart permanently. So the
+  // finished text is one ReactMarkdown, the way SummaryContent renders its string.
+  if (!isTyping) {
+    return (
+      <div className='react-autoql-agent-text-item'>
+        <MarkdownBlock content={text} />
+      </div>
+    )
+  }
+
   return (
-    <div className={`react-autoql-agent-text-item${isTyping ? ' is-typing' : ''}`}>
+    <div className='react-autoql-agent-text-item is-typing'>
       {blocks.map((block) => {
-        if (!isTyping || revealedLength >= block.end) {
+        if (revealedLength >= block.end) {
           return <MarkdownBlock key={block.start} content={block.content} />
         }
 

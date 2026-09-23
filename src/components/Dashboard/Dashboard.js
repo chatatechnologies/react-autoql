@@ -24,7 +24,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { buildDashboardSource } from './dashboardSource'
-import { isSm } from '../../js/breakpoints'
+import { isSm, subscribeToScreenSize } from '../../js/breakpoints'
 
 import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
@@ -236,6 +236,16 @@ class DashboardWithoutTheme extends React.Component {
     }
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
+
+    // Not onWindowResize: that returns early on the first event of a burst
+    // (currentWindowWidth is seeded from the already-resized innerWidth), so a
+    // single event - a phone rotating, a window being maximized - never reached
+    // the breakpoint check. matchMedia fires on the crossing itself instead.
+    this.unsubscribeFromScreenSize = subscribeToScreenSize('sm', (isSmallScreen) => {
+      if (this._isMounted && isSmallScreen !== this.state.isSmallScreen) {
+        this.setState({ isSmallScreen })
+      }
+    })
   }
 
   getSlicersArrayFromProps = (props) => {
@@ -360,6 +370,7 @@ class DashboardWithoutTheme extends React.Component {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
       window.removeEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
+      this.unsubscribeFromScreenSize?.()
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
@@ -496,11 +507,6 @@ class DashboardWithoutTheme extends React.Component {
     const hasWidthChanged = e.target.innerWidth !== this.currentWindowWidth
     if (!hasWidthChanged) {
       return
-    }
-
-    const isSmallScreen = isSm()
-    if (isSmallScreen !== this.state.isSmallScreen) {
-      this.setState({ isSmallScreen })
     }
 
     if (this._isMounted) {

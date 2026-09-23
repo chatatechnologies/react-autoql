@@ -90,6 +90,7 @@ const AgentComposer = forwardRef(
       endedMessage,
       onStartNewSession,
       enableVoiceRecord,
+      isOnScreen,
       // models, modelsStatus, llmModel, onModelChange and popoverParentElement are
       // still accepted (see propTypes) but unused while the picker is off.
       onSubmit,
@@ -248,7 +249,11 @@ const AgentComposer = forwardRef(
     }
 
     const onKeyDown = (event) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
+      // Not the Enter that confirms an IME conversion (Japanese, Chinese, Korean)
+      // - that one belongs to the input method, and sending on it fires off
+      // half-typed text. Safari reports it as keyCode 229 rather than through
+      // isComposing, hence both checks.
+      if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing && event.keyCode !== 229) {
         event.preventDefault()
         submit()
         return
@@ -312,7 +317,11 @@ const AgentComposer = forwardRef(
             onBlur={() => setIsFocused(false)}
             aria-label={placeholder}
           />
-          {!isMobile && enableVoiceRecord && !isSending && (
+          {/* isOnScreen: one recogniser is shared across every
+              SpeechToTextButtonBrowser, and the last one mounted gets the
+              transcript. A mic mounted here while the chat is the visible page
+              would swallow what the user dictates into the chat input. */}
+          {!isMobile && enableVoiceRecord && isOnScreen && !isSending && (
             <div className='react-autoql-agent-composer-microphone'>
               <SpeechToTextButtonBrowser
                 authentication={authentication}
@@ -364,6 +373,8 @@ AgentComposer.propTypes = {
   endedMessage: PropTypes.string,
   onStartNewSession: PropTypes.func,
   enableVoiceRecord: PropTypes.bool,
+  /** Whether this composer is the one the user is looking at. Gates the mic. */
+  isOnScreen: PropTypes.bool,
   models: PropTypes.array,
   modelsStatus: PropTypes.string,
   llmModel: PropTypes.string,
@@ -383,6 +394,7 @@ AgentComposer.defaultProps = {
   endedMessage: 'This conversation has ended. Start a new one to keep going.',
   onStartNewSession: undefined,
   enableVoiceRecord: false,
+  isOnScreen: true,
   models: [],
   modelsStatus: undefined,
   llmModel: undefined,

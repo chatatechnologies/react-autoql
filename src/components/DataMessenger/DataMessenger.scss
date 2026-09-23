@@ -207,7 +207,13 @@
   .react-autoql-header-center-container {
     display: flex;
     align-items: center;
-    flex: none;
+    // Shrinkable, unlike the logo, divider, nav and right-hand controls, which are
+    // all fixed-size. Something in the row has to give: at the drawer's 400px
+    // minimum with a full nav and "Clear conversation" showing, nothing could, so
+    // the left group ran under the right one and swallowed its clicks. This is the
+    // piece that can lose width gracefully - .header-title already carries the
+    // ellipsis, and needed a container that could shrink for it to ever engage.
+    flex: 0 1 auto;
     min-width: 0;
     position: relative;
     font-weight: 600;

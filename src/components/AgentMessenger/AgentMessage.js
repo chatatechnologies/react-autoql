@@ -57,6 +57,10 @@ const AgentMessage = ({
     [onItemRevealed],
   )
 
+  // Which message failed, so a retry re-sends the question that produced THIS
+  // error rather than whatever was asked most recently.
+  const onRetryMessage = useCallback(() => onRetry?.(message.id), [onRetry, message.id])
+
   const spacingClass = isFirst ? ' is-first' : followsSameRole ? ' follows-same-role' : ''
   const phaseLabel = showPhaseLabel ? getPhaseLabel(message.phase) : null
 
@@ -105,7 +109,7 @@ const AgentMessage = ({
                 dataFormatting={dataFormatting}
                 maxHeight={tableMaxHeight}
                 onProgress={onItemProgress}
-                onRetry={onRetry}
+                onRetry={onRetry ? onRetryMessage : undefined}
                 onStartNewSession={onStartNewSession}
                 onRevealComplete={() => onRevealComplete(item.id)}
               />

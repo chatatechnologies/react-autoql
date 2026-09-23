@@ -136,6 +136,25 @@ export default class DataPreview extends React.Component {
     return filtersAllowed
   }
 
+  // SimpleTable reads a new `columns` reference as new data and resets sort,
+  // filter values and measured widths. This panel re-renders on anything its
+  // parent does (in Quick Topics, on every keystroke in the query box), so the
+  // mapped array is computed once per fetched preview rather than per render -
+  // otherwise typing wipes the sort the user just applied.
+  getSimpleTableColumns = (columns) => {
+    if (this.simpleTableColumnsSource !== columns) {
+      this.simpleTableColumnsSource = columns
+      this.simpleTableColumns = columns.map((column) => ({
+        // SimpleTable keys formatting and sorting off column.type, and a preview
+        // column can arrive without one.
+        ...column,
+        type: column?.type || ColumnTypes.STRING,
+      }))
+    }
+
+    return this.simpleTableColumns
+  }
+
   renderDataPreviewGrid = () => {
     if (this.state.error || !this.state.dataPreview?.data?.data?.columns || !this.state.dataPreview?.data?.data?.rows) {
       return (
@@ -156,9 +175,7 @@ export default class DataPreview extends React.Component {
 
       return (
         <SimpleTable
-          // SimpleTable keys formatting and sorting off column.type, and a preview
-          // column can arrive without one.
-          columns={columns.map((column) => ({ ...column, type: column?.type || ColumnTypes.STRING }))}
+          columns={this.getSimpleTableColumns(columns)}
           rows={rows}
           dataFormatting={this.props.dataFormatting}
           // Fill the panel it was given rather than the component's own 400px
