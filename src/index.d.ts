@@ -365,6 +365,8 @@ export interface QueryOutputProps {
 }
 
 export declare class QueryOutput extends React.Component<QueryOutputProps> {
+  // What the answer shows now, as plain JSON, for a report to keep (a report's Data block `capture`).
+  captureForReport(options?: { maxTableRows?: number; maxChartRows?: number }): ReportCaptureResult
   changeDisplayType(displayType: string): void
   getCurrentSupportedDisplayTypes(): string[]
   readonly state: { displayType: string; [key: string]: any }
@@ -409,6 +411,189 @@ export interface DataExplorerProps {
 }
 
 export declare class DataExplorer extends React.Component<DataExplorerProps> {}
+
+// ─── ReportBuilder ───────────────────────────────────────────────────────────
+
+// A report is a template: plain, versioned JSON that says what to show, never the data itself. The
+// builder keeps blocks and fields it doesn't know (from a newer version) through a save.
+
+export type ReportBlockWidth = 'full' | 'half'
+export type ReportHeadingLevel = 1 | 2 | 3
+export type ReportTableRows = 10 | 25 | 50 | 100
+export type ReportTypeface = 'theme' | 'archivo' | 'newsreader' | 'plex-mono'
+
+export interface ReportTextStyle {
+  font?: Exclude<ReportTypeface, 'theme'>
+  size?: 'small' | 'normal' | 'large' | 'xlarge' | 'huge'
+  weight?: 'regular' | 'medium' | 'semibold' | 'bold'
+  color?: string
+  background?: string
+  align?: 'center' | 'right'
+}
+
+export interface ReportHeadingBlock {
+  id: string
+  type: 'heading'
+  text: string
+  level: ReportHeadingLevel
+  width?: ReportBlockWidth
+  style?: ReportTextStyle
+}
+
+export interface ReportTextBlock {
+  id: string
+  type: 'text'
+  text: string
+  width?: ReportBlockWidth
+  style?: ReportTextStyle
+}
+
+export interface ReportTileSource {
+  type: 'tile'
+  dashboardId: string
+  tileKey: string
+  // Labels for when the tile can't be found; never executed.
+  snapshot?: { dashboardName?: string; tileTitle?: string; query?: string; displayType?: string }
+}
+
+export interface ReportQuestionSource {
+  type: 'query'
+  query: string
+}
+
+// What an answer showed when it was added to a report ("Add to Report…"): its data and the settings that
+// shaped it, shaped like a dashboard tile's saved view. Made by QueryOutput.captureForReport.
+export interface ReportCapture {
+  version: number
+  capturedAt: string
+  displayType: string
+  data: {
+    columns: Array<Record<string, any>>
+    rows: any[][]
+    count_rows: number
+    text?: string
+    query_id?: string
+    interpretation?: string
+    parsed_interpretation?: any
+  }
+  // Tables only: the columns shown, in display order (indices into `columns`), the sort shown, and the
+  // header filters as typed (optional: older captures have none).
+  table?: {
+    columnIndices?: number[]
+    sort: Array<{ name: string; sort: string }>
+    filters?: Array<{ name: string; value: string }>
+    filtered: boolean
+  }
+  config: Record<string, any>
+}
+
+export type ReportCaptureResult =
+  | { ok: true; capture: ReportCapture }
+  | { ok: false; reason: 'no-data' | 'unsupported' | 'too-large'; rowCount?: number }
+
+export interface ReportDataBlock {
+  id: string
+  type: 'data'
+  source: ReportTileSource | ReportQuestionSource | null
+  // Table rows to print; a chart shows its tile as the dashboard does.
+  rows: ReportTableRows
+  width?: ReportBlockWidth
+  // What the block shows until a run replaces it (always, while enableRunReport is off).
+  capture?: ReportCapture
+  // How it's shown, when not as captured: 'table' or a chart type its data supports ('bar', 'line', …).
+  // Chosen in the properties panel; a choice the data can't be drawn as is ignored.
+  displayType?: string
+}
+
+export interface ReportPageBreakBlock {
+  id: string
+  type: 'pagebreak'
+}
+
+export type ReportBlock = ReportHeadingBlock | ReportTextBlock | ReportDataBlock | ReportPageBreakBlock
+
+// Paper is always US Letter.
+export interface ReportPageSetup {
+  orientation: 'portrait' | 'landscape'
+  margins: 'narrow' | 'normal' | 'wide'
+  typeface: ReportTypeface
+  header: boolean
+  footer: boolean
+  pageNumbers: boolean
+  repeatTableHeaders: boolean
+  showInterpretation: boolean
+  coverPage: boolean
+  tableOfContents: boolean
+}
+
+export interface Report {
+  schemaVersion: number
+  title: string
+  page: ReportPageSetup
+  blocks: ReportBlock[]
+}
+
+export interface ReportDashboard {
+  id: string | number
+  name?: string
+  tiles?: DashboardTile[]
+  slicers?: Array<{ type?: string; data: any }>
+}
+
+export interface ReportBranding {
+  name?: string
+  logoUrl?: string
+  color?: string
+}
+
+export interface ReportRunSummary {
+  status: 'success' | 'partial' | 'error' | 'cancelled'
+  // One timestamp for the whole run (ISO 8601).
+  runAt: string
+  blocks: Array<{
+    blockId: string
+    status: 'success' | 'error' | 'cancelled' | 'skipped'
+    rowCount?: number
+    countRows?: number | null
+    error?: { message: string; referenceId?: string }
+  }>
+}
+
+export interface ReportBuilderProps {
+  authentication?: Authentication
+  autoQLConfig?: AutoQLConfig
+  dataFormatting?: DataFormatting
+  // Fetched by the host; data blocks read their tiles from these.
+  dashboards?: ReportDashboard[]
+  // Controlled: the builder stores nothing itself.
+  report?: Report
+  onChange?: (report: Report) => void
+  // Organisation-level; there is no editor for it in the builder.
+  branding?: ReportBranding
+  onRunComplete?: (summary: ReportRunSummary) => void
+  onErrorCallback?: (error: any) => void
+  getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined
+  // A stylesheet that loads the typefaces the report can use. None is loaded by default.
+  fontStylesheetUrl?: string | null
+  // Run report: the builder fetches every data block itself. Off by default: blocks show what was
+  // captured when they were added, and runReport() resolves null.
+  enableRunReport?: boolean
+  className?: string
+}
+
+export declare class ReportBuilder extends React.Component<ReportBuilderProps> {
+  // Runs every data block as one run with one timestamp; null if superseded, or if enableRunReport is off.
+  runReport(): Promise<ReportRunSummary | null>
+  openPrintPreview(): Promise<void>
+  closePrintPreview(): Promise<void>
+  // Waits for the preview's pages and charts, then opens the browser's print dialog; true once it has.
+  print(): Promise<boolean>
+}
+
+export declare const REPORT_SCHEMA_VERSION: number
+export declare function createEmptyReport(
+  overrides?: Partial<Omit<Report, 'page'>> & { page?: Partial<ReportPageSetup> },
+): Report
 
 // ─── Miscellaneous components ─────────────────────────────────────────────────
 
