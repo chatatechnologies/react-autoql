@@ -1691,6 +1691,29 @@ export class DashboardTile extends React.Component {
       queryOutputRef: this.state.responseRef,
     })
 
+  // Custom toolbar options, told which tile they were chosen on: the payload OptionsToolbar hands their
+  // callback gets this tile's `tileKey` and `dashboardId`, so a host can refer to the tile rather than copy
+  // it. Cached so the toolbar gets the same array while nothing it depends on changes.
+  getCustomToolbarOptions = () => {
+    const options = this.props.customToolbarOptions
+    if (!Array.isArray(options) || !options.length) {
+      return options
+    }
+    const tileKey = this.props.tileKey ?? this.props.tile?.key ?? this.props.tile?.i
+    const { dashboardId } = this.props
+    const cached = this.customToolbarOptionsCache
+    if (cached && cached.options === options && cached.tileKey === tileKey && cached.dashboardId === dashboardId) {
+      return cached.wrapped
+    }
+    const wrapped = options.map((option) =>
+      typeof option?.callback === 'function'
+        ? { ...option, callback: (data, extra) => option.callback({ ...data, tileKey, dashboardId }, extra) }
+        : option,
+    )
+    this.customToolbarOptionsCache = { options, tileKey, dashboardId, wrapped }
+    return wrapped
+  }
+
   renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps }) => {
     const { hideOnError, ...toolbarProps } = optionsToolbarProps
     return (
@@ -1719,7 +1742,7 @@ export class DashboardTile extends React.Component {
               shouldRender={!this.props.isDragging}
               tooltipID={this.props.tooltipID}
               popoverPositions={['top', 'left', 'bottom', 'right']}
-              customOptions={this.props.customToolbarOptions}
+              customOptions={this.getCustomToolbarOptions()}
               popoverAlign='end'
               enableMagicWand={this.props.enableMagicWand}
               showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
