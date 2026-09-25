@@ -9,7 +9,6 @@ import {
   runQuery,
   fetchAutocomplete,
   deepEqual,
-  isChartType,
   findNetworkColumns,
   REQUEST_CANCELLED_ERROR,
   UNAUTHENTICATED_ERROR,
@@ -38,6 +37,13 @@ import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
 import { buildDashboardSource } from '../dashboardSource'
+import {
+  getTileQueryOutputProps,
+  getTileRequestParams,
+  getTileScopedAuthentication,
+  getTileScopedAutoQLConfig,
+  normalizeTileAxisSorts,
+} from '../tileQueryConfig'
 
 import './DashboardTile.scss'
 
@@ -431,25 +437,15 @@ export class DashboardTile extends React.Component {
   }
 
   // autoQLConfig scoped to this tile's own project, if it has one (multi-project dashboards)
-  getTileAutoQLConfig = () => {
-    const autoQLConfig = getAutoQLConfig(this.props.autoQLConfig)
-    if (this.props.tile?.projectId == null) {
-      return autoQLConfig
-    }
-    return { ...autoQLConfig, projectId: this.props.tile.projectId }
-  }
+  getTileAutoQLConfig = () => getTileScopedAutoQLConfig(this.props.autoQLConfig, this.props.tile)
 
   // authentication scoped to this tile's own project, if it has one and a token is cached for it (multi-project dashboards)
-  getTileAuthentication = () => {
-    const projectId = this.props.tile?.projectId
-    if (projectId != null && this.props.getAuthenticationForProject) {
-      const tileAuthentication = this.props.getAuthenticationForProject(projectId)
-      if (tileAuthentication) {
-        return tileAuthentication
-      }
-    }
-    return this.props.authentication
-  }
+  getTileAuthentication = () =>
+    getTileScopedAuthentication({
+      authentication: this.props.authentication,
+      tile: this.props.tile,
+      getAuthenticationForProject: this.props.getAuthenticationForProject,
+    })
 
   // Resolves true once this tile's per-project auth token is available (or not needed), false if it never arrives in time.
   // staleToken: a token matching it doesn't count as ready - used after onTileAuthExpired so we wait for an actual refresh.
@@ -635,17 +631,7 @@ export class DashboardTile extends React.Component {
     return resp?.status === 401 || resp?.response?.status === 401 || resp?.data?.message === UNAUTHENTICATED_ERROR
   }
 
-  normalizeAxisSorts = (v) => {
-    if (!v) return {}
-    if (!Array.isArray(v)) return v
-    const obj = {}
-    v.forEach((item) => {
-      if (item && typeof item === 'object' && !Array.isArray(item)) {
-        Object.assign(obj, item)
-      }
-    })
-    return obj
-  }
+  normalizeAxisSorts = (v) => normalizeTileAxisSorts(v)
 
   // Helper to check if dataConfig has valid values
   hasValidDataConfig = (dataConfig) => {
@@ -820,21 +806,6 @@ export class DashboardTile extends React.Component {
     axiosSource = this.axiosSource,
   }) => {
     if (this.isQueryValid(query)) {
-      const pageSize = isChartType(this.props.tile.displayType)
-        ? this.props.tile.pageSize ?? this.props.dataPageSize
-        : undefined
-
-      const additionalColumnSelects = isReset ? [] : this.props.tile.columnSelects
-      const currentDisplayOverrides = isReset ? [] : this.props.tile?.displayOverrides
-      let currentSessionFilters = isReset ? [] : this.props.tile.filters || []
-
-      // Merge dashboard-level slicers (applied even during reset, not tile-specific).
-      if (this.props.dashboardSlicers && this.props.dashboardSlicers.length > 0) {
-        currentSessionFilters = [...currentSessionFilters, ...this.props.dashboardSlicers]
-      }
-      const currentOrders = isReset ? [] : this.props.tile.orders
-      const currentFilter = isReset ? [] : this.props.tile.tableFilters
-
       const requestData = {
         ...getAuthentication(this.getTileAuthentication()),
         ...this.getTileAutoQLConfig(),
@@ -842,19 +813,20 @@ export class DashboardTile extends React.Component {
           ? false
           : getAutoQLConfig(this.props.autoQLConfig).enableQueryValidation,
         skipQueryValidation: skipQueryValidation,
-        newColumns: additionalColumnSelects,
-        displayOverrides: currentDisplayOverrides,
-        filters: currentSessionFilters,
-        orders: currentOrders,
-        tableFilters: currentFilter,
+        // Columns, overrides, filters (plus dashboard slicers, applied even during reset), orders,
+        // page size and source query, all from the tile's saved config.
+        ...getTileRequestParams({
+          tile: this.props.tile,
+          isReset,
+          dashboardSlicers: this.props.dashboardSlicers,
+          dataPageSize: this.props.dataPageSize,
+        }),
         source: this.getDashboardSource(),
         scope: 'dashboards',
         userSelection,
         cancelToken: axiosSource?.token,
-        pageSize,
         query,
         force: false,
-        sourceQuery: this.props.tile.queryId,
       }
 
       // For Nikki: using GET (`runCachedDashboardQuery`) until backend supports POST. When ready, use `runCachedDashboardQueryPost` here instead.
@@ -1719,6 +1691,29 @@ export class DashboardTile extends React.Component {
       queryOutputRef: this.state.responseRef,
     })
 
+  // Custom toolbar options, told which tile they were chosen on: the payload OptionsToolbar hands their
+  // callback gets this tile's `tileKey` and `dashboardId`, so a host can refer to the tile rather than copy
+  // it. Cached so the toolbar gets the same array while nothing it depends on changes.
+  getCustomToolbarOptions = () => {
+    const options = this.props.customToolbarOptions
+    if (!Array.isArray(options) || !options.length) {
+      return options
+    }
+    const tileKey = this.props.tileKey ?? this.props.tile?.key ?? this.props.tile?.i
+    const { dashboardId } = this.props
+    const cached = this.customToolbarOptionsCache
+    if (cached && cached.options === options && cached.tileKey === tileKey && cached.dashboardId === dashboardId) {
+      return cached.wrapped
+    }
+    const wrapped = options.map((option) =>
+      typeof option?.callback === 'function'
+        ? { ...option, callback: (data, extra) => option.callback({ ...data, tileKey, dashboardId }, extra) }
+        : option,
+    )
+    this.customToolbarOptionsCache = { options, tileKey, dashboardId, wrapped }
+    return wrapped
+  }
+
   renderToolbars = ({ queryOutputProps, vizToolbarProps, optionsToolbarProps }) => {
     const { hideOnError, ...toolbarProps } = optionsToolbarProps
     return (
@@ -1747,7 +1742,7 @@ export class DashboardTile extends React.Component {
               shouldRender={!this.props.isDragging}
               tooltipID={this.props.tooltipID}
               popoverPositions={['top', 'left', 'bottom', 'right']}
-              customOptions={this.props.customToolbarOptions}
+              customOptions={this.getCustomToolbarOptions()}
               popoverAlign='end'
               enableMagicWand={this.props.enableMagicWand}
               showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
@@ -1841,8 +1836,6 @@ export class DashboardTile extends React.Component {
 
     const renderPlaceholder = !this.props.tile?.queryResponse || isExecuting || !isExecuted
 
-    const initialDisplayType = this.props?.tile?.displayType
-
     return this.renderResponse({
       renderPlaceholder,
       isExecuting,
@@ -1852,76 +1845,14 @@ export class DashboardTile extends React.Component {
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}`,
-        initialDisplayType,
-        queryResponse: this.props.tile?.queryResponse,
-        // Pin drilldowns to the tile's already-cached query id — a cached-refresh response can carry
-        // a different (fresh) query_id for what is logically the same cached query, and the backend
-        // 500s if that fresh id is used for drilldown.
-        queryId: this.props.tile?.queryId,
-        initialTableConfigs: (() => {
-          const dataConfig = this.props.tile?.dataConfig || {}
-          // Extract columnOverrides from tile.columns if it exists (for date precision persistence)
-          // Compare tile.columns with queryResponse columns to find overrides
-          // Use columnOverrides from dataConfig if it exists (preferred method)
-          let columnOverrides = dataConfig?.columnOverrides || {}
-
-          // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
-          // This handles backwards compatibility with dashboards saved before columnOverrides was added
-          if (
-            !dataConfig?.columnOverrides &&
-            this.props.tile?.columns &&
-            this.props.tile?.queryResponse?.data?.data?.columns
-          ) {
-            const savedColumns = this.props.tile.columns
-            const originalColumns = this.props.tile.queryResponse.data.data.columns
-            savedColumns.forEach((savedCol) => {
-              if (savedCol?.index !== undefined) {
-                const originalCol = originalColumns.find(
-                  (oc) =>
-                    oc.index === savedCol.index ||
-                    oc.name === savedCol.name ||
-                    oc.id === savedCol.id ||
-                    oc.display_name === savedCol.display_name,
-                )
-                if (
-                  originalCol &&
-                  originalCol.index !== undefined &&
-                  (savedCol.type !== originalCol.type || savedCol.precision !== originalCol.precision)
-                ) {
-                  columnOverrides[originalCol.index] = {
-                    type: savedCol.type,
-                    precision: savedCol.precision,
-                  }
-                }
-              }
-            })
-          }
-          // If pivotTableConfig has all empty index arrays it was saved before the data was
-          // properly initialized (e.g. readonly tile whose config was never generated).
-          // Strip both pivotTableConfig and tableConfig so QueryOutput regenerates them fresh
-          // from the actual response columns — an empty config causes pivotTableData = [] and
-          // a completely blank tile.
-          const ptc = dataConfig?.pivotTableConfig
-          const pivotConfigIsEmpty = ptc && !ptc.numberColumnIndices?.length && !ptc.stringColumnIndices?.length
-
-          const { pivotTableConfig, tableConfig, ...restDataConfig } = dataConfig
-
-          return {
-            ...restDataConfig,
-            columnOverrides,
-            columnVisibility: this.props.tile?.columnVisibility,
-            ...(!pivotConfigIsEmpty && pivotTableConfig !== undefined ? { pivotTableConfig } : {}),
-            ...(!pivotConfigIsEmpty && tableConfig !== undefined ? { tableConfig } : {}),
-          }
-        })(),
-        initialAggConfig: this.props.tile.aggConfig,
+        // Display type, response, query id, table/agg/chart config, axis sorts, column order,
+        // frozen columns, filters and page size, all from the tile's saved config.
+        ...getTileQueryOutputProps(this.props.tile),
         onTableConfigChange: this.onDataConfigChange,
         onTableParamsChange: this.onTableParamsChange,
         onAggConfigChange: this.onAggConfigChange,
         onColumnChange: this.onColumnChange,
-        queryValidationSelections: this.props.tile.queryValidationSelections,
         onSuggestionClick: this.onSuggestionClick,
-        defaultSelectedSuggestion: this.props.tile?.defaultSelectedSuggestion,
         onNoneOfTheseClick: this.onNoneOfTheseClick,
         onDrilldownStart: this.onDrilldownStart,
         onDrilldownEnd: this.props.onDrilldownEnd,
@@ -1929,33 +1860,16 @@ export class DashboardTile extends React.Component {
         reportProblemCallback: this.reportProblemCallback,
         queryRequestData: this.topRequestData,
         onDisplayTypeChange: this.onDisplayTypeChange,
-        dataPageSize: this.props.tile.pageSize,
         onPageSizeChange: this.onPageSizeChange,
         onBucketSizeChange: this.onBucketSizeChange,
-        bucketSize: this.props.tile.bucketSize,
-        initialNetworkColumnConfig: this.props.tile.networkColumnConfig,
         onNetworkColumnChange: this.onNetworkColumnChange,
-        legendFilterConfig: this.props.tile.legendFilterConfig,
         onLegendFilterChange: this.onLegendFilterChange,
-        initialAxisSorts: this.normalizeAxisSorts(this.props.tile?.axisSorts),
         onAxisSortChange: this.onAxisSortChange,
-        initialColumnOrder: this.props.tile?.columnOrder,
         onColumnOrderChange: this.onColumnOrderChange,
-        initialFrozenColumns: this.props.tile?.frozenColumns,
         onFrozenColumnsChange: this.onFrozenColumnsChange,
         disableAggregationMenu: this.props.disableAggregationMenu,
         allowCustomColumnsOnDrilldown: this.props.allowCustomColumnsOnDrilldown,
-        initialFormattedTableParams: {
-          filters: this.props.tile?.tableFilters,
-          sorters: this.props.tile?.orders,
-          sessionFilters: this.props.tile?.filters || [],
-        },
-        lockedFilters: this.props.tile?.tableFilters ?? [],
         enableChartControls: true,
-        initialChartControls: this.props.tile?.chartControls || {
-          showAverageLine: false,
-          showRegressionLine: false,
-        },
         onChartControlsChange: this.onChartControlsChange,
         isDashboardEditing: this.props.isEditing,
         skipInitialFilters: true,

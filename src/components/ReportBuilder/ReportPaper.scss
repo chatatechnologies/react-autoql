@@ -1,0 +1,541 @@
+// Paper: the editor sheet, the measurer and the printed pages. In inches and points, so a page is the
+// same size whatever the host's root font size. Everything is nested under the paper class, not the
+// builder root, because printed pages are copied into a frame that has no builder root.
+// Vertical spacing inside a block is padding, never margin, so measured heights add up exactly.
+
+$rb: 'react-autoql-report-builder';
+
+$ink: #16181c;
+$ink-2: #454b52;
+$ink-3: #6e767d;
+$rule: #d9dad5;
+$rule-soft: #efefec;
+$rule-strong: #bcbeb8;
+$warn-ink: #8a5a00;
+$warn-bg: #fff6e3;
+$warn-rule: #f0dcb0;
+
+.#{$rb}-paper {
+  // Paper is white in every theme: AutoQL components inside it read these instead of the host's.
+  --react-autoql-text-color-primary: #343434;
+  --react-autoql-text-color-secondary: #8b8b8b;
+  --react-autoql-background-color-primary: #ffffff;
+  --react-autoql-background-color-secondary: #ffffff;
+  --react-autoql-background-color-tertiary: #e8e8e8;
+  --react-autoql-border-color: #d8d8d8;
+  --react-autoql-table-border-color: #efefef;
+  --react-autoql-hover-color: #f7f7f7;
+
+  color-scheme: light;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: $ink;
+  font-family: var(--react-autoql-font-family, 'Helvetica Neue', Arial, sans-serif);
+  font-size: 10.5pt;
+  line-height: 1.45;
+  text-align: left;
+  -webkit-font-smoothing: antialiased;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  // ChataChart sets its background and text colour inline from the host's theme; on paper they're ours.
+  .react-autoql-chart-container > svg {
+    background: transparent !important;
+    color: var(--react-autoql-text-color-primary) !important;
+  }
+
+  // A chart on paper looks the way its PNG export does. The charts draw every control at opacity 0 — axis
+  // and legend selector arrows, the axis sort button, legend filters, the network graph's and Sankey
+  // chart's buttons — which is all an exported PNG sees, and reveal them with CSS on screen; on paper they
+  // stay at 0. The selector boxes only ever show on hover, and a PNG is the chart's svg alone, so the
+  // header above it (Average / Trend and the other toggles) goes too. Nothing responds to the pointer, so a
+  // legend click can't make the editor disagree with the printed pages.
+  .react-autoql-chart-container {
+    pointer-events: none !important;
+
+    [opacity='0'],
+    [style*='opacity: 0;'] {
+      opacity: 0 !important;
+    }
+
+    .axis-label-border,
+    .legend-title-border,
+    .axis-scaler-border {
+      stroke: transparent !important;
+    }
+  }
+
+  .react-autoql-chart-header-container {
+    display: none !important;
+  }
+
+  .#{$rb}-flow {
+    display: flow-root;
+  }
+
+  // ---------------------------------------------------------------- rows of blocks
+
+  .#{$rb}-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0 14pt;
+    width: 100%;
+  }
+
+  .#{$rb}-cell {
+    display: flow-root;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 0 8pt;
+
+    &[data-width='half'] {
+      flex: 0 0 calc(50% - 7pt);
+    }
+  }
+
+  .#{$rb}-block-box {
+    display: flow-root;
+    padding: 3pt 4pt;
+    border-radius: 2pt;
+  }
+
+  // ---------------------------------------------------------------- text
+
+  .#{$rb}-heading {
+    display: block;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    color: $ink;
+    overflow-wrap: anywhere;
+
+    &[data-level='1'] {
+      font-size: 17pt;
+    }
+    &[data-level='2'] {
+      font-size: 13pt;
+    }
+    // Kept as typed: forcing capitals rewrote what people wrote.
+    &[data-level='3'] {
+      font-size: 11pt;
+      color: $ink-2;
+    }
+  }
+
+  .#{$rb}-text {
+    display: block;
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #2b2f34;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  textarea.#{$rb}-heading,
+  textarea.#{$rb}-text {
+    width: 100%;
+    resize: none;
+    overflow: hidden;
+    border: 0 solid transparent;
+    outline: none;
+    background: transparent;
+    box-shadow: none;
+    text-align: inherit;
+
+    &::placeholder {
+      color: #a4a8ad;
+      opacity: 1;
+    }
+  }
+
+  // ---------------------------------------------------------------- data blocks
+
+  .#{$rb}-data-title {
+    padding: 0 0 4pt;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: $ink;
+    overflow-wrap: anywhere;
+
+    // A continuation's title stays on one line, so it can only take less room than the measured first piece.
+    &[data-continuation] {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .#{$rb}-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: auto;
+    font-size: 8.5pt;
+    line-height: 1.35;
+    color: #2b2f34;
+
+    th,
+    td {
+      padding: 3pt 5pt;
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+
+      &[data-numeric] {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+    }
+
+    th {
+      font-weight: 600;
+      color: $ink-2;
+      border-bottom: 1.2pt solid $rule-strong;
+    }
+
+    td {
+      border-bottom: 0.75pt solid $rule-soft;
+    }
+
+    tr[data-total] td {
+      font-weight: 700;
+      color: $ink;
+      border-top: 1.2pt solid $rule-strong;
+      border-bottom: 0 solid transparent;
+    }
+  }
+
+  .#{$rb}-caption,
+  .#{$rb}-continued {
+    padding: 4pt 0 0;
+    font-size: 7.5pt;
+    color: $ink-3;
+  }
+
+  .#{$rb}-continued {
+    font-style: italic;
+  }
+
+  .#{$rb}-interpretation {
+    padding: 3pt 0 0;
+    font-size: 7.5pt;
+    color: $ink-3;
+
+    b {
+      font-weight: 600;
+      color: $ink-2;
+    }
+
+    // Why nothing will print here: editor only.
+    &[data-missing] {
+      font-style: italic;
+    }
+  }
+
+  .#{$rb}-chart {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #ffffff;
+
+    .react-autoql-response-content-container {
+      background: transparent;
+    }
+  }
+
+  .#{$rb}-single-value {
+    padding: 6pt 0 2pt;
+    font-size: 24pt;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: $ink;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .#{$rb}-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5pt;
+    padding: 14pt 12pt;
+    border: 0.75pt dashed $rule-strong;
+    border-radius: 2pt;
+    background: #f5f6f7;
+    font-size: 8.5pt;
+    color: $ink-3;
+    text-align: center;
+
+    &[data-tone='warning'] {
+      border-color: $warn-rule;
+      background: $warn-bg;
+      color: $warn-ink;
+    }
+  }
+
+  .#{$rb}-placeholder-title {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: $ink-2;
+  }
+
+  .#{$rb}-placeholder-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4pt;
+  }
+
+  .#{$rb}-ask {
+    width: min(250pt, 100%);
+    margin: 0;
+    padding: 5pt 8pt;
+    border: 0.75pt solid var(--react-autoql-accent-color, #26a7e9);
+    border-radius: 2pt;
+    background: #ffffff;
+    color: $ink;
+    font: inherit;
+    font-size: 9.5pt;
+    outline: none;
+
+    &:focus-visible {
+      box-shadow: 0 0 0 2px var(--react-autoql-accent-color, #26a7e9);
+    }
+  }
+
+  .#{$rb}-page-break {
+    display: flex;
+    align-items: center;
+    gap: 7pt;
+    font-size: 6.5pt;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $ink-3;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-top: 0.75pt dashed $rule-strong;
+    }
+  }
+
+  // ---------------------------------------------------------------- page furniture
+
+  .#{$rb}-running-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12pt;
+    height: 100%;
+    padding: 0 0 6pt;
+    border-bottom: 0.75pt solid $rule;
+  }
+
+  .#{$rb}-running-title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 11pt;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: $ink;
+  }
+
+  .#{$rb}-running-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12pt;
+    height: 100%;
+    padding: 5pt 0 0;
+    border-top: 0.75pt solid $rule;
+    font-size: 7pt;
+    color: $ink-3;
+    font-variant-numeric: tabular-nums;
+
+    span:last-child {
+      flex: none;
+    }
+  }
+
+  .#{$rb}-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6pt;
+    flex: none;
+    max-width: 50%;
+    color: $ink;
+  }
+
+  .#{$rb}-brand-logo {
+    display: block;
+    max-width: 100%;
+    height: 18pt;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .#{$rb}-brand-chip {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 18pt;
+    height: 18pt;
+    border-radius: 4pt;
+    background: var(--react-autoql-accent-color, #26a7e9);
+    color: #ffffff;
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .#{$rb}-brand-name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 9pt;
+    font-weight: 700;
+  }
+
+  .#{$rb}-brand[data-size='large'] {
+    .#{$rb}-brand-logo {
+      height: 34pt;
+    }
+    .#{$rb}-brand-chip {
+      width: 30pt;
+      height: 30pt;
+      border-radius: 6pt;
+      font-size: 11pt;
+    }
+    .#{$rb}-brand-name {
+      font-size: 14pt;
+    }
+  }
+
+  // ---------------------------------------------------------------- front matter
+
+  .#{$rb}-cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+  }
+
+  .#{$rb}-cover-middle {
+    padding: 0 0 40%;
+  }
+
+  .#{$rb}-cover-title {
+    margin: 0 0 8pt;
+    font-size: 26pt;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: $ink;
+    overflow-wrap: anywhere;
+  }
+
+  .#{$rb}-cover-sub {
+    font-size: 10.5pt;
+    color: $ink-2;
+  }
+
+  .#{$rb}-cover-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: 8pt 0 0;
+    border-top: 1.5pt solid $ink;
+    font-size: 7.5pt;
+    color: $ink-3;
+  }
+
+  .#{$rb}-toc-title {
+    padding: 0 0 10pt;
+    font-size: 13pt;
+    font-weight: 650;
+    color: $ink;
+  }
+
+  .#{$rb}-toc-entry {
+    display: flex;
+    align-items: baseline;
+    gap: 5pt;
+    padding: 2.5pt 0;
+    font-size: 9.5pt;
+    color: $ink-2;
+
+    span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    i {
+      flex: 1;
+      min-width: 12pt;
+      border-bottom: 0.75pt dotted $rule-strong;
+    }
+
+    b {
+      flex: none;
+      font-weight: 600;
+      color: $ink;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &[data-level='1'] {
+      font-weight: 600;
+      color: $ink;
+    }
+    &[data-level='2'] {
+      padding-left: 12pt;
+    }
+    &[data-level='3'] {
+      padding-left: 24pt;
+      font-size: 8.5pt;
+      color: $ink-3;
+    }
+  }
+
+  // ---------------------------------------------------------------- a printed page
+
+  &.#{$rb}-page {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    overflow: hidden;
+  }
+
+  // Fixed heights (pageGeometry's HEADER_IN / FOOTER_IN); the padding is the gap to the content.
+  .#{$rb}-page-header,
+  .#{$rb}-page-footer {
+    flex: none;
+    overflow: hidden;
+  }
+
+  .#{$rb}-page-header {
+    padding: 0 0 8pt;
+  }
+
+  .#{$rb}-page-footer {
+    padding: 6pt 0 0;
+  }
+
+  .#{$rb}-page-content {
+    flex: none;
+    overflow: hidden;
+  }
+}

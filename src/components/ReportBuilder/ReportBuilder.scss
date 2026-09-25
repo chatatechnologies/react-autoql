@@ -1,0 +1,942 @@
+// The builder's chrome: toolbar, palette, details layer, canvas, properties panel and the preview's desk.
+// rem units, AutoQL theme variables, and every rule nested under the root class so it outranks a host's
+// unprefixed element and attribute selectors (Tailwind Preflight's [type='button'] among them).
+// No @page and no @media print: this CSS ships to every host in autoql.esm.css, and printing happens in
+// a frame of its own (print/printFrame.js).
+
+$rb: 'react-autoql-report-builder';
+
+$text: var(--react-autoql-text-color-primary, #343434);
+$text-2: var(--react-autoql-text-color-secondary, #8b8b8b);
+$bg: var(--react-autoql-background-color-primary, #f8f8f8);
+$surface: var(--react-autoql-background-color-secondary, #ffffff);
+$desk: var(--react-autoql-background-color-tertiary, #e8e8e8);
+$border: var(--react-autoql-border-color, #d8d8d8);
+$hover: var(--react-autoql-hover-color, #f7f7f7);
+$accent: var(--react-autoql-accent-color, #28a8e0);
+$on-accent: var(--react-autoql-text-color-accent, #ffffff);
+$warning: var(--react-autoql-warning-color, #ffb600);
+$danger: var(--react-autoql-danger-color, #ca0b00);
+
+@mixin accent-soft {
+  background: $hover;
+  background: color-mix(in srgb, var(--react-autoql-accent-color, #28a8e0) 14%, transparent);
+}
+
+@mixin focus-ring {
+  outline: 2px solid $accent;
+  outline-offset: 1px;
+}
+
+.#{$rb} {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 30rem;
+  overflow: hidden;
+  background: $bg;
+  color: $text;
+  font-family: var(--react-autoql-font-family, sans-serif);
+  font-size: 0.875rem;
+  line-height: 1.45;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  .#{$rb}-icon {
+    display: inline-block;
+    flex: none;
+    vertical-align: middle;
+  }
+
+  // ---------------------------------------------------------------- toolbar
+
+  .#{$rb}-toolbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    min-height: 3rem;
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid $border;
+    background: $surface;
+  }
+
+  .#{$rb}-title-input {
+    flex: 1 1 12rem;
+    min-width: 8rem;
+    max-width: 28rem;
+    margin: 0;
+    padding: 0.25rem 0.4375rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: $text;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+
+    &:hover {
+      border-color: $border;
+    }
+    &:focus {
+      outline: none;
+      border-color: $accent;
+      background: $surface;
+    }
+    &::placeholder {
+      color: $text-2;
+      opacity: 1;
+    }
+  }
+
+  .#{$rb}-toolbar-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 0.25rem 0;
+  }
+
+  .#{$rb}-toolbar-heading {
+    font-size: 0.9375rem;
+    font-weight: 650;
+  }
+
+  .#{$rb}-toolbar-meta {
+    font-size: 0.75rem;
+    color: $text-2;
+    white-space: nowrap;
+  }
+
+  .#{$rb}-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .#{$rb}-toolbar-separator {
+    width: 1px;
+    height: 1.25rem;
+    background: $border;
+  }
+
+  .#{$rb}-run-label {
+    font-size: 0.75rem;
+    color: $text-2;
+    white-space: nowrap;
+
+    &[data-attention] {
+      color: $text;
+      font-weight: 600;
+    }
+  }
+
+  .#{$rb}-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.4375rem 0.75rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 550;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $hover;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    &[data-variant='primary'] {
+      border-color: $accent;
+      background: $accent;
+      color: $on-accent;
+
+      &:hover:not(:disabled) {
+        background: $accent;
+        filter: brightness(0.94);
+      }
+    }
+    &[data-block] {
+      width: 100%;
+      margin: 0 0 0.625rem;
+    }
+  }
+
+  .#{$rb}-icon-button {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.625rem;
+    height: 1.625rem;
+    margin: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: $text-2;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+      color: $text;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rb}-notice {
+    flex: none;
+    padding: 0.5rem 0.875rem;
+    border-bottom: 1px solid $border;
+    background: $hover;
+    background: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 16%, transparent);
+    font-size: 0.8125rem;
+  }
+
+  // ---------------------------------------------------------------- body
+
+  .#{$rb}-body {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+  }
+
+  .#{$rb}-section-label {
+    display: block;
+    margin: 0 0 0.5625rem 0.125rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: $text-2;
+  }
+
+  // ---------------------------------------------------------------- palette
+
+  .#{$rb}-palette {
+    flex: none;
+    width: 11rem;
+    overflow-y: auto;
+    padding: 0.875rem 0.75rem 1.25rem;
+    border-right: 1px solid $border;
+    background: $bg;
+  }
+
+  .#{$rb}-palette-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3125rem;
+    margin: 0 0 1rem;
+  }
+
+  .#{$rb}-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text;
+    font: inherit;
+    font-size: 0.8125rem;
+    text-align: left;
+    cursor: pointer;
+
+    .#{$rb}-icon {
+      color: $text-2;
+    }
+
+    &:hover,
+    &[data-selected] {
+      border-color: $accent;
+      @include accent-soft;
+
+      .#{$rb}-icon {
+        color: $accent;
+      }
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rb}-hint {
+    margin: 0 0.125rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: $text-2;
+  }
+
+  // ---------------------------------------------------------------- details layer
+
+  .#{$rb}-details-backdrop {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    background: rgba(12, 14, 16, 0.2);
+  }
+
+  .#{$rb}-details {
+    position: absolute;
+    top: 0.5rem;
+    left: 11.625rem;
+    z-index: 21;
+    display: flex;
+    flex-direction: column;
+    width: 18.5rem;
+    max-width: calc(100% - 1rem);
+    max-height: calc(100% - 1rem);
+    overflow: hidden;
+    border: 1px solid $border;
+    border-radius: 6px;
+    background: $surface;
+    box-shadow: 0 20px 48px -14px rgba(0, 0, 0, 0.45);
+  }
+
+  .#{$rb}-details-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5625rem;
+    padding: 0.6875rem 0.75rem 0.625rem;
+    border-bottom: 1px solid $border;
+
+    > .#{$rb}-icon {
+      margin-top: 0.125rem;
+      color: $accent;
+    }
+  }
+
+  .#{$rb}-details-heading {
+    flex: 1;
+    min-width: 0;
+
+    b {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 650;
+    }
+    span {
+      display: block;
+      font-size: 0.72rem;
+      color: $text-2;
+    }
+  }
+
+  .#{$rb}-details-preview {
+    flex: none;
+    padding: 0.75rem 0.8125rem;
+    border-bottom: 1px solid $border;
+    background: $bg;
+  }
+
+  .#{$rb}-details-caption {
+    margin: 0 0 0.4375rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: $text-2;
+  }
+
+  .#{$rb}-details-paper {
+    padding: 0.625rem 0.6875rem;
+    border: 1px solid $border;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .#{$rb}-sample-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: #16181c;
+  }
+
+  .#{$rb}-details-body {
+    overflow-y: auto;
+    padding: 0.8125rem 0.875rem 0.9375rem;
+  }
+
+  .#{$rb}-details-name {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+
+  .#{$rb}-details-what {
+    margin: 0 0 0.8125rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: $text-2;
+  }
+
+  .#{$rb}-details-body > .#{$rb}-button {
+    width: 100%;
+  }
+
+  .#{$rb}-details-props {
+    margin: 0.875rem 0 0;
+    padding: 0.75rem 0 0;
+    border-top: 1px solid $border;
+  }
+
+  .#{$rb}-details-body > .#{$rb}-note {
+    margin: 0.625rem 0 0;
+  }
+
+  // ---------------------------------------------------------------- canvas and sheet
+
+  .#{$rb}-canvas {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: auto;
+    padding: 1.625rem 1.25rem 3.75rem;
+    background: $desk;
+  }
+
+  .#{$rb}-sheet {
+    width: 100%;
+    margin: 0 auto;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), 0 18px 40px -22px rgba(0, 0, 0, 0.5);
+
+    // At least one page's shape; content longer than a page still grows the sheet.
+    &[data-orientation='portrait'] {
+      aspect-ratio: 8.5 / 11;
+    }
+    // A landscape page keeps its true width, and the canvas scrolls sideways when it's narrower, as the
+    // preview's pages do. Fitted into a laptop's canvas it came out as wide as a portrait page, so
+    // switching orientation seemed to do nothing. (A portrait page loses only a little when fitted.)
+    // It can't be scaled down to fit instead: charts size themselves from their scaled box.
+    &[data-orientation='landscape'] {
+      width: 11in;
+      aspect-ratio: 11 / 8.5;
+    }
+
+    .#{$rb}-running-header {
+      height: auto;
+      margin: 0 0 10pt;
+    }
+    .#{$rb}-running-footer {
+      height: auto;
+      margin: 16pt 0 0;
+    }
+  }
+
+  .#{$rb}-front-matter-note {
+    margin: 0 0 10pt;
+    padding: 5pt 8pt;
+    border: 0.75pt dashed #bcbeb8;
+    border-radius: 2pt;
+    font-size: 8pt;
+    color: #6e767d;
+  }
+
+  .#{$rb}-sheet-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 6pt;
+  }
+
+  .#{$rb}-block {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 3pt 4pt;
+    border: 1.5px solid transparent;
+    border-radius: 3px;
+    cursor: default;
+
+    &[data-width='half'] {
+      flex: 0 0 calc(50% - 7pt);
+    }
+    &:hover {
+      border-color: #bcbeb8;
+    }
+    &[data-selected] {
+      border-color: $accent;
+    }
+    &:focus-visible {
+      outline: none;
+      border-color: $accent;
+    }
+  }
+
+  .#{$rb}-block-tag {
+    position: absolute;
+    top: -0.8rem;
+    left: -1.5px;
+    z-index: 3;
+    padding: 0.125rem 0.375rem;
+    border-radius: 2px;
+    background: $accent;
+    color: $on-accent;
+    font-family: var(--react-autoql-font-family, sans-serif);
+    font-size: 0.55rem;
+    letter-spacing: 0.09em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  .#{$rb}-block-tools {
+    position: absolute;
+    top: -0.9rem;
+    right: -1.5px;
+    z-index: 3;
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid #bcbeb8;
+    border-radius: 3px;
+    background: #ffffff;
+
+    button {
+      display: inline-grid;
+      place-items: center;
+      width: 1.375rem;
+      height: 1.25rem;
+      margin: 0;
+      padding: 0;
+      border: 0 solid transparent;
+      border-radius: 2px;
+      background: transparent;
+      color: #454b52;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        background: #efefec;
+        color: #16181c;
+      }
+      &[data-danger]:hover:not(:disabled) {
+        background: #f7e5e1;
+        color: #a8402f;
+      }
+      &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      &:focus-visible {
+        @include focus-ring;
+      }
+    }
+  }
+
+  .#{$rb}-empty-report {
+    padding: 2.75rem 1.25rem;
+    text-align: center;
+    font-family: var(--react-autoql-font-family, sans-serif);
+
+    p {
+      max-width: 38ch;
+      margin: 0 auto;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      color: #6e767d;
+    }
+  }
+
+  .#{$rb}-empty-report-title {
+    margin: 0 0 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    color: #16181c;
+  }
+
+  // ---------------------------------------------------------------- properties panel
+
+  .#{$rb}-panel {
+    flex: none;
+    width: 15rem;
+    overflow-y: auto;
+    padding: 0.875rem 0.875rem 1.5rem;
+    border-left: 1px solid $border;
+    background: $bg;
+  }
+
+  .#{$rb}-field {
+    margin: 0 0 0.875rem;
+  }
+
+  .#{$rb}-label {
+    display: block;
+    margin: 0 0 0.3125rem;
+    font-size: 0.75rem;
+    color: $text-2;
+  }
+
+  .#{$rb}-select,
+  .#{$rb}-input {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0.4375rem 0.5625rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text;
+    font: inherit;
+    font-size: 0.8125rem;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    &::placeholder {
+      color: $text-2;
+      opacity: 1;
+    }
+  }
+
+  .#{$rb}-input {
+    border-color: $accent;
+  }
+
+  .#{$rb}-segmented {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .#{$rb}-segment {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0.375rem 0.25rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text;
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &[data-selected] {
+      border-color: $accent;
+      @include accent-soft;
+      font-weight: 600;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rb}-display-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+    gap: 0.25rem;
+  }
+
+  .#{$rb}-display-type {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    margin: 0;
+    padding: 0;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text-2;
+    font-size: 1rem;
+    cursor: pointer;
+
+    &:hover {
+      color: $text;
+    }
+    &[data-selected] {
+      border-color: $accent;
+      @include accent-soft;
+      color: $accent;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rb}-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.625rem;
+    padding: 0.4375rem 0;
+    font-size: 0.8125rem;
+
+    label {
+      cursor: pointer;
+    }
+  }
+
+  .#{$rb}-switch {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    flex: none;
+    width: 2rem;
+    height: 1.0625rem;
+    margin: 0;
+    border: 0 solid transparent;
+    border-radius: 999px;
+    background: $border;
+    cursor: pointer;
+    transition: background 0.14s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: calc(1.0625rem - 4px);
+      height: calc(1.0625rem - 4px);
+      border-radius: 50%;
+      background: #ffffff;
+      transition: transform 0.14s;
+    }
+    &:checked {
+      background: $accent;
+    }
+    &:checked::after {
+      transform: translateX(0.9375rem);
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rb}-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .#{$rb}-swatch {
+    position: relative;
+    display: inline-block;
+    width: 1.375rem;
+    height: 1.375rem;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    cursor: pointer;
+
+    &[data-selected] {
+      @include focus-ring;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &[data-none]::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -3px;
+      width: calc(100% + 6px);
+      height: 1px;
+      background: $danger;
+      transform: rotate(-45deg);
+    }
+    &[data-custom] {
+      border-style: dashed;
+      background: conic-gradient(#dd6a6a, #ffa700, #a5cd39, #26a7e9, #dd6a6a);
+
+      input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        border: 0 solid transparent;
+        opacity: 0;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .#{$rb}-note {
+    margin: 0 0 0.875rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: $text-2;
+
+    &[data-tone='warning'] {
+      padding: 0.5rem 0.625rem;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 16%, transparent);
+      color: $text;
+    }
+  }
+
+  .#{$rb}-field + .#{$rb}-note {
+    margin-top: -0.5rem;
+  }
+
+  .#{$rb}-divider {
+    height: 1px;
+    margin: 1rem 0;
+    border: 0 solid transparent;
+    background: $border;
+  }
+
+  .#{$rb}-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 0.625rem;
+  }
+
+  .#{$rb}-or {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    margin: 0.25rem 0 0.75rem;
+    font-size: 0.6875rem;
+    color: $text-2;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid $border;
+    }
+  }
+
+  .#{$rb}-source-card {
+    margin: 0 0 0.625rem;
+    padding: 0.5rem 0.6875rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+  }
+
+  .#{$rb}-source-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.1875rem 0;
+    font-size: 0.75rem;
+
+    span {
+      flex: none;
+      color: $text-2;
+    }
+    b {
+      min-width: 0;
+      font-weight: 600;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .#{$rb}-empty-props {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: $text-2;
+  }
+
+  // ---------------------------------------------------------------- preview
+
+  .#{$rb}-preview {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: auto;
+    background: $desk;
+  }
+
+  .#{$rb}-preview-pages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.375rem;
+    min-width: min-content;
+    padding: 1.5rem 3rem 3.75rem;
+
+    &[data-measuring] {
+      opacity: 0.6;
+    }
+  }
+
+  .#{$rb}-preview-status {
+    padding: 3rem 1rem;
+    color: $text-2;
+  }
+
+  .#{$rb}-page-frame {
+    position: relative;
+    flex: none;
+
+    > .#{$rb}-page {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), 0 18px 40px -22px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  .#{$rb}-page-label {
+    position: absolute;
+    top: 0;
+    left: -2.25rem;
+    font-size: 0.6875rem;
+    color: $text-2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .#{$rb}-page-overflow {
+    position: absolute;
+    right: 0.625rem;
+    bottom: 0.625rem;
+    padding: 0.1875rem 0.5rem;
+    border: 1px solid $warning;
+    border-radius: 3px;
+    background: #fff6e3;
+    color: #8a5a00;
+    font-size: 0.66rem;
+    font-weight: 600;
+  }
+
+  // Laid out for measuring only: off-screen, but with real layout (display:none would have none).
+  .#{$rb}-measurer {
+    position: absolute;
+    top: 0;
+    left: -10000px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
