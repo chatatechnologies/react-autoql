@@ -1,4 +1,68 @@
-import { isDatalessResponse } from './responseUtils'
+import { cloneResponseSharingRows, isDatalessResponse } from './responseUtils'
+
+// The saving is the rows; the isolation that callers rely on is everything else.
+// QueryOutput edits columns, fe_req and available_selects on its own copy and must
+// not reach the message's response through them — but it only ever reads rows.
+describe('cloneResponseSharingRows', () => {
+  const makeResponse = () => ({
+    data: {
+      message: 'Success',
+      reference_id: '1.1.210',
+      data: {
+        query_id: 'abc',
+        columns: [{ name: 'amount', is_visible: true }],
+        fe_req: { filters: [] },
+        rows: [[1], [2], [3]],
+      },
+    },
+  })
+
+  test('shares the rows array rather than copying it', () => {
+    const response = makeResponse()
+    const clone = cloneResponseSharingRows(response)
+
+    expect(clone.data.data.rows).toBe(response.data.data.rows)
+  })
+
+  test('copies everything else, so edits to the clone do not reach the original', () => {
+    const response = makeResponse()
+    const clone = cloneResponseSharingRows(response)
+
+    expect(clone.data.data.columns).not.toBe(response.data.data.columns)
+    expect(clone.data.data).toEqual(response.data.data)
+
+    clone.data.data.columns[0].is_visible = false
+    clone.data.data.fe_req = { filters: ['changed'] }
+    clone.data.data.available_selects = ['new']
+
+    expect(response.data.data.columns[0].is_visible).toBe(true)
+    expect(response.data.data.fe_req).toEqual({ filters: [] })
+    expect(response.data.data.available_selects).toBeUndefined()
+  })
+
+  test('replacing the rows on the clone leaves the original pointing at its own array', () => {
+    const response = makeResponse()
+    const originalRows = response.data.data.rows
+    const clone = cloneResponseSharingRows(response)
+
+    clone.data.data.rows = [[9]]
+
+    expect(response.data.data.rows).toBe(originalRows)
+  })
+
+  test('falls back to a full deep clone when there are no rows to share', () => {
+    const suggestionResponse = { data: { reference_id: '1.1.210', data: { items: ['did you mean'] } } }
+    const clone = cloneResponseSharingRows(suggestionResponse)
+
+    expect(clone).toEqual(suggestionResponse)
+    expect(clone.data.data.items).not.toBe(suggestionResponse.data.data.items)
+  })
+
+  test('handles a response with no payload at all', () => {
+    expect(cloneResponseSharingRows(undefined)).toBeUndefined()
+    expect(cloneResponseSharingRows({})).toEqual({})
+  })
+})
 
 // The contract that matters at the call site (ChatMessage deciding whether to
 // offer custom toolbar options such as "Add to Dashboard..."): a message only

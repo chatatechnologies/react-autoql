@@ -19,6 +19,7 @@ import {
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 import { useMagicWandBillingGate, getMagicWandBillingErrorState, MAGIC_WAND_BILLING_GATE_MESSAGES } from '../../hooks/billing'
 import { isDatalessResponse } from '../../js/responseUtils'
+import { arePropsEqualByIdentity } from '../../js/propsEqual'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -42,6 +43,19 @@ import '../FocusPromptPopover/FocusPromptPopover.scss'
 
 // Staggered prose reveal: blocks start REVEAL_STAGGER_MAX_MS apart, but the gap
 // shrinks for longer messages so the last block always lands by REVEAL_TOTAL_MS.
+// Props big enough that deep-comparing them is the expensive part of an update, and
+// stable enough that identity is the right question. A message's response is a plain
+// object held in ChatContent's state and replaced wholesale, never edited in place;
+// the same goes for the filters and the subject list it is handed.
+const MESSAGE_IDENTITY_PROPS = new Set([
+  'response',
+  'summaryResponseData',
+  'appliedFilters',
+  'drilldownFilters',
+  'queryRequestData',
+  'subjects',
+])
+
 const REVEAL_STAGGER_MAX_MS = 40
 const REVEAL_TOTAL_MS = 600
 const REVEAL_DURATION_MS = 260
@@ -276,11 +290,23 @@ export class ChatMessage extends React.Component {
   }
 
   shouldComponentUpdate = (nextProps, nextState) => {
+    // A message in a background session tab stays mounted so its table config and
+    // scroll position survive the switch, but nothing about it is on screen. The
+    // deepEqual below walks the whole response - every row - so with eight tabs of
+    // history that comparison alone is the expensive part of an unrelated render.
+    // QueryOutput guards itself the same way (see its shouldComponentUpdate); this
+    // stops the work one level higher, before the props are walked at all.
+    if (!this.props.shouldRender && !nextProps.shouldRender) {
+      return false
+    }
+
     if (this.props.isResizing && nextProps.isResizing) {
       return false
     }
 
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    return (
+      !arePropsEqualByIdentity(this.props, nextProps, MESSAGE_IDENTITY_PROPS) || !deepEqual(this.state, nextState)
+    )
   }
 
   getSnapshotBeforeUpdate = (nextProps, nextState) => {

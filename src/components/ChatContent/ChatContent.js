@@ -14,8 +14,8 @@ import {
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
 import { fetchSubjectListCached } from '../../js/subjectListService'
-import { scrollTabIntoView } from '../../js/scrollTabIntoView'
 import { isScreenSize, subscribeToScreenSize } from '../../js/breakpoints'
+import { isShallowEqual } from '../../js/propsEqual'
 import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
 
 // Components
@@ -24,8 +24,7 @@ import { QueryInput } from '../QueryInput'
 import { ChatMessage } from '../ChatMessage'
 import { FilterLockPopover } from '../FilterLockPopover'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { ConfirmPopover } from '../ConfirmPopover'
-import { ThreadSwitcher } from '../ThreadSwitcher'
+import { SessionTabs } from '../SessionTabs'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Tooltip } from '../Tooltip'
@@ -239,6 +238,30 @@ export default class ChatContent extends React.Component {
     this.setupScrollListener()
   }
 
+  // A background session tab stays mounted so its messages, table configs and scroll
+  // position survive the switch — but the host hands all eight tabs the same spread
+  // of props, so anything that re-renders the host used to re-render every tab's
+  // whole transcript. A hidden tab still has to render its own state (a response can
+  // land in it while the user is reading another one); what it must not do is follow
+  // the host's props. The transition renders in both directions still happen, so
+  // componentDidUpdate's shouldRender edges are untouched — and because prevProps is
+  // the props of the last *commit*, a change skipped while hidden (authentication,
+  // say) is still seen as a change on the render that brings the tab back.
+  shouldComponentUpdate = (nextProps, nextState) => {
+    if (this.isSessionHost() || !this.props.isSessionTab) {
+      return true
+    }
+
+    const isLaidOut = this.isLaidOut()
+    const willBeLaidOut = nextProps.isActivePage ?? nextProps.shouldRender
+
+    if (isLaidOut || willBeLaidOut) {
+      return true
+    }
+
+    return !isShallowEqual(this.state, nextState)
+  }
+
   componentDidUpdate = (prevProps, prevState) => {
     if (this.isSessionHost()) {
       // enableSessions turned on after mount - an integrator whose flag resolves
@@ -249,15 +272,6 @@ export default class ChatContent extends React.Component {
       if (!this.state.sessions.length) {
         const session = this.createSessionObject([])
         this.setState({ sessions: [session], activeSessionId: session.id })
-      }
-
-      // Reveal the selected tab: a session opened while the strip is already full
-      // would otherwise land off the right edge with nothing to say it exists.
-      if (
-        prevState.activeSessionId !== this.state.activeSessionId ||
-        prevState.sessions.length !== this.state.sessions.length
-      ) {
-        this.scrollActiveSessionTabIntoView()
       }
 
       this.notifyContentChange()
@@ -349,17 +363,19 @@ export default class ChatContent extends React.Component {
       this.setupScrollListener()
     }
 
-    this.messengerScrollComponent?.update()
-    // Check scroll position after update
-    setTimeout(() => this.checkIfAtBottom(), 0)
+    // Both of these measure the scroll container, and a tab that isn't on screen has
+    // nothing worth measuring - the numbers come back as zeroes and are recomputed the
+    // moment it is shown anyway. The transition render that reveals the tab is not
+    // hidden, so the tab still gets its update on the way in.
+    if (this.isLaidOut()) {
+      this.messengerScrollComponent?.update()
+      // Check scroll position after update
+      setTimeout(() => this.checkIfAtBottom(), 0)
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
-
-    if (this.cancelTabScroll) {
-      this.cancelTabScroll()
-    }
 
     this.unsubscribeFromScreenSize?.()
 
@@ -441,21 +457,6 @@ export default class ChatContent extends React.Component {
     return { id: uuid(), title: getUntitledTitle(sessions.map((session) => session.title)) }
   }
 
-  scrollActiveSessionTabIntoView = () => {
-    const list = this.sessionTabListRef
-    const tab = list?.querySelector('.react-autoql-chat-session-tab.active')
-
-    if (!list || !tab) {
-      return
-    }
-
-    if (this.cancelTabScroll) {
-      this.cancelTabScroll()
-    }
-
-    this.cancelTabScroll = scrollTabIntoView(list, tab)
-  }
-
   getActiveSessionRef = () => {
     return this.sessionRefs[this.state.activeSessionId]
   }
@@ -518,21 +519,6 @@ export default class ChatContent extends React.Component {
         !isMobile && this.getActiveSessionRef()?.focusInput()
       },
     )
-  }
-
-  // Every tab at once, replaced by one empty tab - the same end state as closing
-  // them one by one, without the tab bar reshuffling under the cursor each time.
-  // Confirmed before it runs: nothing here is recoverable.
-  closeAllSessions = () => {
-    this.sessionRefs = {}
-
-    // No updater form, unlike the closes above: this doesn't read the sessions it
-    // replaces, so there is nothing for a batched update to get stale.
-    const session = this.createSessionObject([])
-
-    this.setState({ sessions: [session], activeSessionId: session.id }, () => {
-      !isMobile && this.getActiveSessionRef()?.focusInput()
-    })
   }
 
   // First title wins, for the life of the tab. The backend derives the name
@@ -1501,132 +1487,30 @@ export default class ChatContent extends React.Component {
     // This prevents multiple conflicting scrolls
   }
 
-  // On a phone the strip becomes a dropdown: about one and a half tabs fit at that
-  // width, and with no hover and a hidden scrollbar nothing on screen says the
-  // other chats exist. Same chips and track, stacked instead of scrolled.
-  renderSessionSwitcher = () => {
+  renderSessionTabs = () => {
     const { sessions, activeSessionId } = this.state
 
     return (
-      <ThreadSwitcher
+      <SessionTabs
         items={sessions.map((session) => ({
           id: session.id,
           title: session.title,
           // Stays on the last tab, which closing resets rather than removes - but
           // not while that tab is still empty, where the reset would look like the
           // click did nothing.
-          canClose: sessions.length > 1 || session.hasContent,
+          canClose: sessions.length > 1 || !!session.hasContent,
           closeLabel: `Close ${session.title}`,
         }))}
         activeId={activeSessionId}
         onSelect={this.setActiveSession}
         onClose={this.closeSession}
         onNew={this.addSession}
-        onCloseAll={this.closeAllSessions}
         canAddNew={sessions.length < MAX_SESSIONS}
         newLabel='New chat'
-        closeAllLabel='Close all chats'
-        confirmTitle={`Close all ${sessions.length} chats?`}
-        confirmText='Your conversations will be cleared and a new chat will be started.'
+        closeItemTooltip='Close chat'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        isSmallScreen={this.state.isSmallScreen}
       />
-    )
-  }
-
-  renderSessionTabs = () => {
-    const { sessions, activeSessionId } = this.state
-    const tooltipID = this.props.tooltipID ?? this.TOOLTIP_ID
-
-    if (this.state.isSmallScreen) {
-      return this.renderSessionSwitcher()
-    }
-
-    return (
-      <div className='react-autoql-chat-session-tabs'>
-        <div className='react-autoql-chat-session-tab-list' role='tablist' ref={(r) => (this.sessionTabListRef = r)}>
-          {sessions.map((session) => {
-            const isActive = session.id === activeSessionId
-
-            return (
-              <div
-                key={session.id}
-                className={`react-autoql-chat-session-tab ${isActive ? 'active' : ''}`}
-                role='tab'
-                aria-selected={isActive}
-                tabIndex={0}
-                onClick={() => this.setActiveSession(session.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    this.setActiveSession(session.id)
-                  }
-                }}
-              >
-                <span className='react-autoql-chat-session-tab-dot' aria-hidden='true' />
-                <span className='react-autoql-chat-session-tab-title' title={session.title}>
-                  {session.title}
-                </span>
-                {/* Stays on the last tab, which closing resets rather than removes -
-                    but not while that tab is still empty, where the reset would
-                    look like the click did nothing. */}
-                {(sessions.length > 1 || session.hasContent) && (
-                  <span
-                    className='react-autoql-chat-session-tab-close'
-                    role='button'
-                    aria-label={`Close ${session.title}`}
-                    // Without this the click bubbles to the tab and activates
-                    // the tab we're about to unmount.
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      this.closeSession(session.id)
-                    }}
-                    data-tooltip-content='Close chat'
-                    data-tooltip-id={tooltipID}
-                  >
-                    <Icon type='close' />
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-        {/* Only once there are several: with a single tab this is the close button
-            already on the tab itself, under a name that promises more. */}
-        {sessions.length > 1 && (
-          <ConfirmPopover
-            className='react-autoql-chat-session-close-all-wrapper'
-            popoverParentElement={this.chatSessionsRef}
-            title={`Close all ${sessions.length} chats?`}
-            text='Your conversations will be cleared and a new chat will be started.'
-            confirmText='Close all'
-            backText='Cancel'
-            danger
-            onConfirm={this.closeAllSessions}
-            positions={['bottom', 'left', 'top', 'right']}
-            align='end'
-            tooltipID={tooltipID}
-          >
-            <button
-              className='react-autoql-chat-session-tab-close-all'
-              aria-label='Close all chats'
-              data-tooltip-content='Close all chats'
-              data-tooltip-id={tooltipID}
-            >
-              <Icon type='close-circle' />
-            </button>
-          </ConfirmPopover>
-        )}
-        <button
-          className='react-autoql-chat-session-tab-new'
-          onClick={this.addSession}
-          disabled={sessions.length >= MAX_SESSIONS}
-          aria-label='New chat'
-          data-tooltip-content='New chat'
-          data-tooltip-id={tooltipID}
-        >
-          <Icon type='plus' />
-        </button>
-      </div>
     )
   }
 
@@ -1640,7 +1524,6 @@ export default class ChatContent extends React.Component {
       <ErrorBoundary>
         <div
           className={`react-autoql-chat-sessions ${isLaidOut ? '' : 'react-autoql-content-hidden'}`}
-          ref={(r) => (this.chatSessionsRef = r)}
           // The threads hide themselves the same way when they aren't laid out,
           // but the tab bar is the host's own — it has to go too.
           style={isLaidOut ? undefined : { visibility: 'hidden', opacity: '0', display: 'none' }}

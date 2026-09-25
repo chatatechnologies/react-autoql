@@ -388,7 +388,9 @@ AgentComposer.propTypes = {
 AgentComposer.defaultProps = {
   authentication: undefined,
   threadId: undefined,
-  placeholder: 'Ask a question…',
+  // Only reached when a composer is rendered on its own; AgentMessenger passes its
+  // own, and the reasoning behind the wording is there.
+  placeholder: 'Start with a rough question…',
   isSending: false,
   isSessionComplete: false,
   endedMessage: 'This conversation has ended. Start a new one to keep going.',

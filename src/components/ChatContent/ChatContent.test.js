@@ -2,6 +2,7 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import ChatContent from './ChatContent'
 import { QueryInput } from '../QueryInput'
+import { SessionTabs } from '../SessionTabs'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
 jest.mock('react-tooltip', () => ({ Tooltip: () => null, __esModule: true }))
@@ -31,13 +32,18 @@ const requiredProps = {
 // tree it returns (ErrorBoundary and everything under it) is still findable.
 const setup = (props = {}) => shallow(<ChatContent {...requiredProps} {...props} />)
 
-const getTabs = (wrapper) => wrapper.find('.react-autoql-chat-session-tab')
+// The strip itself is SessionTabs' business (and its own test's); what ChatContent
+// owns is the list of sessions it hands over, so these read that rather than the
+// rendered chips.
+const getTabBar = (wrapper) => wrapper.find(SessionTabs)
+const getTabs = (wrapper) => getTabBar(wrapper).prop('items')
+const getTitles = (wrapper) => getTabs(wrapper).map((tab) => tab.title)
 const getThreads = (wrapper) => wrapper.find(ChatContent)
 
 describe('sessions disabled (default)', () => {
   test('renders a single thread with no tab bar', () => {
     const wrapper = setup()
-    expect(wrapper.find('.react-autoql-chat-session-tabs').exists()).toBe(false)
+    expect(wrapper.find(SessionTabs).exists()).toBe(false)
     expect(getThreads(wrapper).exists()).toBe(false)
     expect(wrapper.find('.chat-content-wrapper').exists()).toBe(true)
   })
@@ -54,7 +60,7 @@ describe('enableSessions', () => {
     const tabs = getTabs(wrapper)
 
     expect(tabs).toHaveLength(1)
-    expect(tabs.at(0).text()).toContain('New thread')
+    expect(tabs[0].title).toContain('New thread')
 
     const threads = getThreads(wrapper)
     expect(threads).toHaveLength(1)
@@ -90,13 +96,13 @@ describe('enableSessions', () => {
 
   test('the + button adds a tab and switches to it', () => {
     const wrapper = setup({ enableSessions: true })
-    wrapper.find('.react-autoql-chat-session-tab-new').simulate('click')
+    getTabBar(wrapper).prop('onNew')()
     wrapper.update()
 
     const tabs = getTabs(wrapper)
     expect(tabs).toHaveLength(2)
-    expect(tabs.at(1).text()).toContain('New thread 2')
-    expect(tabs.at(1).hasClass('active')).toBe(true)
+    expect(tabs[1].title).toContain('New thread 2')
+    expect(getTabBar(wrapper).prop('activeId')).toBe(tabs[1].id)
   })
 
   test('stops at 8 tabs, the same ceiling the Data Agent puts on threads', () => {
@@ -108,7 +114,7 @@ describe('enableSessions', () => {
     wrapper.update()
 
     expect(getTabs(wrapper)).toHaveLength(8)
-    expect(wrapper.find('.react-autoql-chat-session-tab-new').prop('disabled')).toBe(true)
+    expect(getTabBar(wrapper).prop('canAddNew')).toBe(false)
   })
 
   test('clicking a tab activates it', () => {
@@ -116,20 +122,20 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.update()
 
-    getTabs(wrapper).at(0).simulate('click')
+    const firstTabId = getTabs(wrapper)[0].id
+    getTabBar(wrapper).prop('onSelect')(firstTabId)
     wrapper.update()
 
-    expect(getTabs(wrapper).at(0).hasClass('active')).toBe(true)
-    expect(getTabs(wrapper).at(1).hasClass('active')).toBe(false)
+    expect(getTabBar(wrapper).prop('activeId')).toBe(firstTabId)
   })
 
   test('no close button on the last remaining session', () => {
     const wrapper = setup({ enableSessions: true })
-    expect(wrapper.find('.react-autoql-chat-session-tab-close').exists()).toBe(false)
+    expect(getTabs(wrapper).map((tab) => tab.canClose)).toEqual([false])
 
     wrapper.instance().addSession()
     wrapper.update()
-    expect(wrapper.find('.react-autoql-chat-session-tab-close')).toHaveLength(2)
+    expect(getTabs(wrapper).map((tab) => tab.canClose)).toEqual([true, true])
   })
 
   test('closing the active tab falls back to the one on its left', () => {
@@ -138,10 +144,7 @@ describe('enableSessions', () => {
     wrapper.update()
 
     const firstSessionId = wrapper.state('sessions')[0].id
-    wrapper
-      .find('.react-autoql-chat-session-tab-close')
-      .at(1)
-      .simulate('click', { stopPropagation: () => {} })
+    getTabBar(wrapper).prop('onClose')(getTabs(wrapper)[1].id)
     wrapper.update()
 
     expect(getTabs(wrapper)).toHaveLength(1)
@@ -154,40 +157,10 @@ describe('enableSessions', () => {
     wrapper.update()
 
     const activeSessionId = wrapper.state('activeSessionId')
-    wrapper
-      .find('.react-autoql-chat-session-tab-close')
-      .at(0)
-      .simulate('click', { stopPropagation: () => {} })
+    getTabBar(wrapper).prop('onClose')(getTabs(wrapper)[0].id)
     wrapper.update()
 
     expect(wrapper.state('activeSessionId')).toBe(activeSessionId)
-  })
-
-  test('the close-all button only appears once there are several tabs', () => {
-    const wrapper = setup({ enableSessions: true })
-    expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(false)
-
-    wrapper.instance().addSession()
-    wrapper.update()
-    expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(true)
-  })
-
-  test('closing all tabs leaves one empty new thread tab', () => {
-    const wrapper = setup({ enableSessions: true })
-    wrapper.instance().addSession()
-    wrapper.instance().addSession()
-    wrapper.update()
-
-    const closedIds = wrapper.state('sessions').map((session) => session.id)
-    wrapper.instance().closeAllSessions()
-    wrapper.update()
-
-    const sessions = wrapper.state('sessions')
-    expect(sessions).toHaveLength(1)
-    // A new tab, not one of the ones that was open - its thread remounts with it.
-    expect(closedIds).not.toContain(sessions[0].id)
-    expect(sessions[0].title).toBe('New thread')
-    expect(wrapper.state('activeSessionId')).toBe(sessions[0].id)
   })
 
   test('a new tab takes the lowest new thread number no open tab is using', () => {
@@ -195,7 +168,7 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.instance().addSession()
     wrapper.update()
-    expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
+    expect(getTitles(wrapper)).toEqual([
       expect.stringContaining('New thread'),
       expect.stringContaining('New thread 2'),
       expect.stringContaining('New thread 3'),
@@ -208,10 +181,7 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.update()
 
-    expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
-      expect.stringContaining('New thread'),
-      expect.stringContaining('New thread 2'),
-    ])
+    expect(getTitles(wrapper)).toEqual([expect.stringContaining('New thread'), expect.stringContaining('New thread 2')])
   })
 
   test('a tab the backend named frees its new thread number', () => {
@@ -224,7 +194,7 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.update()
 
-    expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
+    expect(getTitles(wrapper)).toEqual([
       expect.stringContaining('New thread'),
       expect.stringContaining('Sales by region'),
       expect.stringContaining('New thread 2'),

@@ -43,9 +43,16 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
+import { arePropsEqualByIdentity } from '../../js/propsEqual'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
+
+// The rows, twice over — deep-comparing them is most of what an update costs here, and
+// both are instance variables on QueryOutput that get replaced rather than edited, so
+// their identity already answers the question. Columns are deliberately left out: they
+// are rebuilt by formatColumnsForTable and compared structurally just above.
+const TABLE_IDENTITY_PROPS = new Set(['data', 'response'])
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -297,7 +304,8 @@ export default class ChataTable extends React.Component {
       return false
     }
 
-    const propsOrStateNotEqual = !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    const propsOrStateNotEqual =
+      !arePropsEqualByIdentity(this.props, nextProps, TABLE_IDENTITY_PROPS) || !deepEqual(this.state, nextState)
     return propsOrStateNotEqual
   }
 
@@ -337,6 +345,12 @@ export default class ChataTable extends React.Component {
     }
 
     if (!this.props.hidden && prevProps.hidden) {
+      // Any window resize that happened while this table was hidden left its cell
+      // alignment unmeasured (see TableWrapper.handleWindowResizeForAlignment). The
+      // height is handled by the getSnapshotBeforeUpdate branch above, which does see
+      // this particular transition.
+      this.ref?.flushPendingAlignment()
+
       if (this.state.subscribedData) {
         this.updateData(this.state.subscribedData)
         this.setState({ subscribedData: undefined })
@@ -551,6 +565,23 @@ export default class ChataTable extends React.Component {
     }
 
     return this.ref?.updateData(data)
+  }
+
+  // For the caller that knows this table came back on screen without its own `hidden`
+  // prop changing — a session tab being selected, or the Data Messenger opening, hides
+  // the whole thread above the table, so none of the transitions this component watches
+  // for (`hidden`, `isResizing`, `isAnimating`, `firstRender`) ever fire. QueryOutput
+  // calls this from its "back on screen" branch.
+  onBecameVisible = () => {
+    // A table whose build was deferred because it had no box yet - it has one now. This
+    // fires from the React update that reveals the tab and TableWrapper's own
+    // ResizeObserver from the layout that follows it; whichever gets there first builds,
+    // and the other finds nothing deferred.
+    this.ref?.buildWhenVisible()
+
+    // Any window resize while this was off screen skipped its cell alignment rather than
+    // measure a hidden table (see TableWrapper.handleWindowResizeForAlignment).
+    this.ref?.flushPendingAlignment()
   }
 
   getRTForRemoteFilterAndSort = async () => {

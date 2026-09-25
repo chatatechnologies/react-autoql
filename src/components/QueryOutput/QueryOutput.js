@@ -9,6 +9,8 @@ import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import { uniqueValues } from '../../js/arrayUtils'
+import { cloneResponseSharingRows } from '../../js/responseUtils'
+import { arePropsEqualByIdentity } from '../../js/propsEqual'
 
 import {
   AggTypes,
@@ -88,6 +90,19 @@ import { dataFormattingType, autoQLConfigType, authenticationType } from '../../
 
 import './QueryOutput.scss'
 
+// Props whose weight makes deep-comparing them the expensive part of an update, and
+// whose identity is the honest signal anyway: the response is held in ChatContent's
+// state and replaced wholesale rather than edited, and the rest are arrays built once
+// alongside it. See arePropsEqualByIdentity for why this matters on a tab switch.
+const OUTPUT_IDENTITY_PROPS = new Set([
+  'queryResponse',
+  'originalQueryResponse',
+  'appliedFilters',
+  'drilldownFilters',
+  'queryFilters',
+  'subjects',
+])
+
 export class QueryOutput extends React.Component {
   constructor(props) {
     super(props)
@@ -125,7 +140,7 @@ export class QueryOutput extends React.Component {
     this.initialFrozenColumns = props.initialFrozenColumns || []
 
     let response = props.queryResponse
-    this.queryResponse = _cloneDeep(response)
+    this.queryResponse = cloneResponseSharingRows(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
@@ -550,7 +565,7 @@ export class QueryOutput extends React.Component {
       return false
     }
 
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    return !arePropsEqualByIdentity(this.props, nextProps, OUTPUT_IDENTITY_PROPS) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -572,7 +587,7 @@ export class QueryOutput extends React.Component {
         if (propsHaveData && instanceVarIsStale) {
           // Full re-init: sync instance var and rebuild columns + data as if freshly mounted
           const prevQueryID = this.queryID
-          this.queryResponse = _cloneDeep(this.props.queryResponse)
+          this.queryResponse = cloneResponseSharingRows(this.props.queryResponse)
           this.columnDateRanges = getColumnDateRanges(this.props.queryResponse)
           this.queryID = this.queryResponse?.data?.data?.query_id
           if (this.queryID && this.queryID !== prevQueryID) {
@@ -594,6 +609,14 @@ export class QueryOutput extends React.Component {
         // closed, so Tabulator and the charts measured a real container on mount and their dimensions
         // are still valid. Remounting would reset table height and scroll position - the reason
         // reopening the DM used to jump.
+
+        // A table whose answer arrived while this was off screen deferred its build
+        // rather than size itself against a container with no height, and any window
+        // resize in the meantime skipped its cell alignment rather than measure a
+        // hidden table. Neither is visible to ChataTable, whose own `hidden` prop
+        // never moved - so this is where it gets told.
+        this.tableRef?.onBecameVisible()
+        this.pivotTableRef?.onBecameVisible()
       }
 
       // Keep local chartControls in sync if consumer updates initialChartControls prop
@@ -1404,7 +1427,7 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.queryResponse = _cloneDeep(response)
+      this.queryResponse = cloneResponseSharingRows(response)
       this.tableData = response?.data?.data?.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
@@ -2412,7 +2435,7 @@ export class QueryOutput extends React.Component {
     }
 
     this.isOriginalData = false
-    this.queryResponse = _cloneDeep(response)
+    this.queryResponse = cloneResponseSharingRows(response)
     this.tableData = response?.data?.data?.rows || []
 
     if (this.shouldGeneratePivotData()) {
@@ -4846,9 +4869,26 @@ export class QueryOutput extends React.Component {
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, displayType)
 
-    const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
+    // With allowDisplayTypeChange on, all three of these used to mount for every
+    // response and two of them sat hidden — three heavy widgets per answer, times
+    // twenty answers, times eight session tabs. The chart and the pivot table now
+    // mount the first time they are actually asked for and stay mounted afterwards,
+    // so switching back and forth is still instant but a response the user only ever
+    // reads as a table never builds a chart at all.
+    //
+    // The table is deliberately exempt and mounts for every response: it owns
+    // progressive loading (ajaxRequestFunc, setPageLoading), the header filters and
+    // CSV/clipboard export, and this.tableData - which the chart reads - is kept
+    // current through it. Dropping it would break paging for a charted response.
+    this.hasMountedChart = this.hasMountedChart || displayTypeIsChart
+    this.hasMountedPivotTable = this.hasMountedPivotTable || displayTypeIsPivotTable
+
+    const chartIsWanted = allowsDisplayTypeChange ? this.hasMountedChart : displayTypeIsChart
+    const pivotTableIsWanted = allowsDisplayTypeChange ? this.hasMountedPivotTable : displayTypeIsPivotTable
+
+    const shouldRenderChart = chartIsWanted && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
-    const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable
+    const shouldRenderPivotTable = pivotTableIsWanted && supportsPivotTable
 
     return (
       <>

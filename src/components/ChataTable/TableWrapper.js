@@ -93,8 +93,17 @@ export default class TableWrapper extends React.Component {
 
   componentDidMount = async () => {
     this._isMounted = true
-    this.instantiateTabulator()
+
+    // Building off screen is the bug, not something to repair afterwards - so a table
+    // with no box waits for one. See buildWhenVisible.
+    this.buildDeferred = !this.isVisible()
+
+    if (!this.buildDeferred) {
+      this.instantiateTabulator()
+    }
+
     window.addEventListener('resize', this.throttledHandleResize)
+    this.observeFirstRealHeight()
 
     // Add touch event listeners for better mobile scrolling
     if (isMobile && this.tableRef) {
@@ -116,14 +125,108 @@ export default class TableWrapper extends React.Component {
     }, 1000)
     window.removeEventListener('resize', this.throttledHandleResize)
 
+    // A table closed before it was ever revealed never built, so there is nothing to
+    // destroy above - and nothing should build it now either.
+    this.buildDeferred = false
+    this.heightObserver?.disconnect()
+    this.heightObserver = undefined
+    cancelAnimationFrame(this.buildFrame)
+
     // Clean up mobile touch handlers
     if (isMobile && this.tableRef) {
       this.cleanupMobileTouchHandlers()
     }
   }
 
+  /**
+   * Don't build a table that has nowhere to be.
+   *
+   * The sizing here is circular: `.react-autoql-tabulator-container` is `flex: 1` with a
+   * `min-height`, so it takes its height from its content, and Tabulator is configured
+   * `height: '100%'`, so it takes its height from the container. Built while visible
+   * that resolves upwards - the rows lay out, the container grows to fit them. Built
+   * inside a `display: none` subtree it resolves downwards: Tabulator measures nothing,
+   * settles on its own `minHeight`, and the container lands on its floor of 140px.
+   *
+   * There is no repairing that afterwards. `redraw(true)` re-measures the container, and
+   * by then the container really is 138px tall - the collapse has become the truth. So
+   * the table waits instead: no box, no build. `autoResize` is off in chat scope, which
+   * is why nothing else was ever going to catch this.
+   *
+   * The observer is how it learns it has a box. An element inside a `display: none`
+   * subtree generates none at all, so ResizeObserver reports nothing for it - the first
+   * callback it ever delivers is the one after the reveal, already carrying a real
+   * height. That single callback is the signal, which is why there is no zero to wait
+   * for. ChataTable.onBecameVisible drives the same method from the React update that
+   * reveals the tab, so the build doesn't depend on observer timing either.
+   */
+  observeFirstRealHeight = () => {
+    if (typeof ResizeObserver === 'undefined' || !this.tableRef) {
+      return
+    }
+
+    this.heightObserver = new ResizeObserver((entries) => {
+      const height = entries[entries.length - 1]?.contentRect?.height ?? 0
+
+      if (!height || !this.buildDeferred) {
+        return
+      }
+
+      // Building inside the callback is what trips the "ResizeObserver loop completed
+      // with undelivered notifications" warning, so hand it to the next frame - by
+      // which point the layout that woke us up has settled.
+      cancelAnimationFrame(this.buildFrame)
+      this.buildFrame = requestAnimationFrame(() => {
+        this.buildWhenVisible()
+      })
+    })
+
+    this.heightObserver.observe(this.tableRef)
+  }
+
+  // Also called directly by ChataTable.onBecameVisible.
+  buildWhenVisible = () => {
+    if (!this._isMounted || !this.buildDeferred) {
+      return
+    }
+
+    // Still off screen - whatever woke us up was not the reveal. Stay deferred.
+    if (!this.isVisible()) {
+      return
+    }
+
+    this.buildDeferred = false
+    this.instantiateTabulator()
+  }
+
+  // A table behind another display type, or in a background session tab, is inside a
+  // `display: none` subtree. Reading offsetParent costs one layout; reading a cell's
+  // clientWidth in there costs one per cell and answers 0 anyway.
+  isVisible = () => !!this.tableRef?.offsetParent
+
+  // Alignment skipped while hidden, replayed by ChataTable on the way back on screen.
+  flushPendingAlignment = () => {
+    if (!this.needsAlignmentOnShow) {
+      return
+    }
+
+    this.needsAlignmentOnShow = false
+    this.handleWindowResizeForAlignment()
+  }
+
   handleWindowResizeForAlignment = () => {
     if (!this.tabulator) return
+
+    // Every cell below is measured, and each measurement in a hidden table is both a
+    // forced reflow and a wrong answer: clientWidth reads 0, so a window resize while
+    // eight tabs of tables sat in the background used to left-align all of them. Defer
+    // to the transition back on screen, where the numbers are real - and where one
+    // table pays the cost instead of every table the user has ever opened.
+    if (!this.isVisible()) {
+      this.needsAlignmentOnShow = true
+      return
+    }
+
     this.tabulator.getColumns().forEach((column) => {
       const colDef = column.getDefinition()
       const columnMinWidth = 90

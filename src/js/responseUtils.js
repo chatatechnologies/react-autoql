@@ -1,3 +1,42 @@
+import _cloneDeep from 'lodash.clonedeep'
+
+/**
+ * Deep-clone a query response, but keep its `rows` by reference.
+ *
+ * Every response used to be held several times over: the message keeps one, the
+ * QueryOutput that renders it deep-clones a second, and Tabulator deep-clones a
+ * third. Rows are all but the entirety of that weight, and with eight session tabs
+ * of history the copies are what the browser feels.
+ *
+ * The clone exists to protect the caller's response from the edits QueryOutput makes
+ * to `columns`, `fe_req` and `available_selects` — none of which touch `rows`, which
+ * is only ever read or wholesale reassigned. So the envelope is still copied and the
+ * rows are shared: the isolation that was actually being relied on survives, and the
+ * bytes do not multiply.
+ *
+ * If you ever need to mutate a row in place, clone that row first — or use
+ * `_cloneDeep` here instead and say why.
+ */
+export const cloneResponseSharingRows = (response) => {
+  const rows = response?.data?.data?.rows
+
+  if (!Array.isArray(rows)) {
+    return _cloneDeep(response)
+  }
+
+  // Cloning a response whose rows have been swapped for an empty array walks
+  // everything except the rows; putting the original array back afterwards shares it.
+  // The input is never mutated, not even briefly.
+  const clone = _cloneDeep({
+    ...response,
+    data: { ...response.data, data: { ...response.data.data, rows: [] } },
+  })
+
+  clone.data.data.rows = rows
+
+  return clone
+}
+
 /**
  * Does a query response carry an answer we can act on?
  *
