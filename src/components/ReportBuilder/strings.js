@@ -65,6 +65,11 @@ export const STRINGS = {
     continued: 'Continued on the next page',
     continuedTitle: '(continued)',
     interpretedAs: 'Interpreted as',
+    // In the editor only, when interpretations are on but this answer came without one.
+    noInterpretation: {
+      tile: 'No interpretation to print: dashboard tiles don’t come with one yet.',
+      query: 'No interpretation to print: AutoQL didn’t return one for this answer.',
+    },
     askedAs: 'Asked as',
     total: 'Total',
   },
@@ -82,7 +87,8 @@ export const STRINGS = {
     repeatTableHeaders: 'Repeat table headers',
     results: 'Results',
     showInterpretation: 'Show how each question was read',
-    showInterpretationNote: 'Prints AutoQL’s interpretation under each result, so a forwarded PDF can be checked.',
+    showInterpretationNote:
+      'Prints AutoQL’s interpretation under each result, so a forwarded PDF can be checked. Answers added from a dashboard tile don’t have one yet.',
     frontMatter: 'Front matter',
     coverPage: 'Cover page',
     tableOfContents: 'Table of contents',

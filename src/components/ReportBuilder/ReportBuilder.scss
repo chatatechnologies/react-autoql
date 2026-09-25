@@ -431,11 +431,17 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     margin: 0 auto;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), 0 18px 40px -22px rgba(0, 0, 0, 0.5);
 
+    // At least one page's shape; content longer than a page still grows the sheet.
     &[data-orientation='portrait'] {
-      min-height: 11in;
+      aspect-ratio: 8.5 / 11;
     }
+    // A landscape page keeps its true width, and the canvas scrolls sideways when it's narrower, as the
+    // preview's pages do. Fitted into a laptop's canvas it came out as wide as a portrait page, so
+    // switching orientation seemed to do nothing. (A portrait page loses only a little when fitted.)
+    // It can't be scaled down to fit instead: charts size themselves from their scaled box.
     &[data-orientation='landscape'] {
-      min-height: 8.5in;
+      width: 11in;
+      aspect-ratio: 11 / 8.5;
     }
 
     .#{$rb}-running-header {

@@ -436,6 +436,7 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
     columnIndices,
     filters,
     config = {},
+    interpretation = 'total aum by account',
   }) => ({
     version: 1,
     capturedAt: CAPTURED_AT,
@@ -445,7 +446,7 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
       columns: COLUMNS.map((col, i) => ({ ...col, field: String(i), is_visible: true, groupable: i === 0 })),
       rows,
       count_rows: countRows,
-      interpretation: 'total aum by account',
+      interpretation,
     },
     ...(displayType === 'table'
       ? {
@@ -517,6 +518,31 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
     setup(report)
     expect(screen.getByText('A-1')).toBeTruthy()
     expect(screen.queryByText('This tile is no longer on its dashboard.')).toBeNull()
+  })
+
+  const interpretationOf = (container) => container.querySelector('.react-autoql-report-builder-interpretation')
+
+  it('shows how the question was read under its answer', () => {
+    const { container } = setup(captured(captureOf({ rows: rowsOf(3) })))
+    expect(interpretationOf(container).textContent).toBe('Interpreted as total aum by account')
+  })
+
+  // A dashboard tile's answer arrives with an empty interpretation, so the setting printed nothing and
+  // looked broken. The editor says why; nothing is added to what prints.
+  it('says in the editor why a dashboard tile’s answer has no interpretation to print', () => {
+    const { container } = setup(captured(captureOf({ rows: rowsOf(3), interpretation: '' })))
+    const note = interpretationOf(container)
+    expect(note.hasAttribute('data-missing')).toBe(true)
+    expect(note.textContent).toBe('No interpretation to print: dashboard tiles don’t come with one yet.')
+  })
+
+  it('says nothing about interpretations once they are turned off', () => {
+    const withOne = captured(captureOf({ rows: rowsOf(3) }))
+    withOne.page.showInterpretation = false
+    const withNone = captured(captureOf({ rows: rowsOf(3), interpretation: '' }))
+    withNone.page.showInterpretation = false
+    expect(interpretationOf(setup(withOne).container)).toBeNull()
+    expect(interpretationOf(setup(withNone).container)).toBeNull()
   })
 
   it('redraws a captured chart with the settings it was captured with', () => {

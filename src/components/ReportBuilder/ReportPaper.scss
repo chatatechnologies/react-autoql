@@ -122,10 +122,9 @@ $warn-rule: #f0dcb0;
     &[data-level='2'] {
       font-size: 13pt;
     }
+    // Kept as typed: forcing capitals rewrote what people wrote.
     &[data-level='3'] {
-      font-size: 9.5pt;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
+      font-size: 11pt;
       color: $ink-2;
     }
   }
@@ -236,6 +235,11 @@ $warn-rule: #f0dcb0;
     b {
       font-weight: 600;
       color: $ink-2;
+    }
+
+    // Why nothing will print here: editor only.
+    &[data-missing] {
+      font-style: italic;
     }
   }
 
