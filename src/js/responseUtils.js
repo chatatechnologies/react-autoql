@@ -37,6 +37,58 @@ export const cloneResponseSharingRows = (response) => {
   return clone
 }
 
+// How many rows a truncated answer keeps, so the message still reads as an answer when
+// you scroll back past it.
+export const PREVIEW_ROW_COUNT = 10
+
+/**
+ * Drop a response's rows to a preview, keeping everything needed to fetch them again.
+ *
+ * An answer far enough back in the history is worth keeping on screen but not worth
+ * keeping in memory - a few thousand rows sit in the message, in QueryOutput's copy and
+ * in Tabulator's, times eight session tabs. This slices the rows and leaves the rest of
+ * the envelope alone.
+ *
+ * What survives is not arbitrary: `QueryOutput.queryFn` rebuilds the request from
+ * `fe_req` (and `runDrilldown` from the query id), so dropping either would make the
+ * answer unrecoverable rather than merely truncated. `columns` keeps the table
+ * rendering, and `count_rows` is how the notice knows what it is hiding.
+ *
+ * Returns the response unchanged when there is nothing worth truncating, so callers can
+ * apply it unconditionally.
+ */
+export const withPreviewRows = (response, previewRowCount = PREVIEW_ROW_COUNT) => {
+  const rows = response?.data?.data?.rows
+
+  if (!Array.isArray(rows) || rows.length <= previewRowCount) {
+    return response
+  }
+
+  return {
+    ...response,
+    data: {
+      ...response.data,
+      data: {
+        ...response.data.data,
+        rows: rows.slice(0, previewRowCount),
+        // The true size of the answer, which `rows.length` no longer tells us. Only set
+        // if the response didn't already carry a count - a data-limited answer's
+        // count_rows is the real total and must not be overwritten with the page size.
+        count_rows: response.data.data.count_rows ?? rows.length,
+      },
+    },
+  }
+}
+
+/**
+ * How many rows a response is holding, for deciding whether truncating it is worth the
+ * round-trip it will cost to get them back.
+ */
+export const getResponseRowCount = (response) => {
+  const rows = response?.data?.data?.rows
+  return Array.isArray(rows) ? rows.length : 0
+}
+
 /**
  * Does a query response carry an answer we can act on?
  *

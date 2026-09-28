@@ -49,6 +49,21 @@
     justify-content: center;
   }
 
+  // Mirrors .simple-table-footer, which is what the data preview uses for the same
+  // purpose - a truncated table should end the same way a preview table does.
+  .react-autoql-table-preview-footer {
+    position: sticky;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    color: var(--react-autoql-text-color-secondary);
+    font-size: 0.78125rem;
+    font-style: italic;
+    pointer-events: none;
+  }
+
   .table-row-count {
     flex: 0;
     width: 100%;

@@ -132,6 +132,14 @@ export class DataMessenger extends React.Component {
     enableVoiceRecord: PropTypes.bool,
     title: PropTypes.string,
     maxMessages: PropTypes.number,
+    // How much answer data is held in memory at once. Once an answer has been pushed
+    // back past `keepHydratedMessages` other answers, its rows are dropped to a preview
+    // and fetched again on request, so the history can be long without the data behind
+    // it growing without bound. Answers smaller than `truncateMinRows` are left alone,
+    // since fetching them again would cost more than holding them. Both are forwarded
+    // to ChatContent, which holds the defaults.
+    keepHydratedMessages: PropTypes.number,
+    truncateMinRows: PropTypes.number,
     // Headline and supporting line for the centred message shown while the chat is
     // empty. Forwarded to ChatContent, which falls back to its own defaults.
     emptyStateTitle: PropTypes.node,
@@ -224,7 +232,11 @@ export class DataMessenger extends React.Component {
     clearOnClose: false,
     enableVoiceRecord: true,
     title: 'Data Messenger',
-    maxMessages: 20,
+    // Raised from 20 now that the data behind older answers is dropped to a preview
+    // once they fall out of the recent history (see ChatContent's keepHydratedMessages).
+    // What a message costs to keep no longer scales with the size of its result, so the
+    // limit can be about how far back it is useful to scroll instead.
+    maxMessages: 50,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
     enableDataExplorerTab: false,

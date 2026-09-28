@@ -148,6 +148,19 @@ export class ChatMessage extends React.Component {
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     shouldRender: PropTypes.bool,
+    // How this answer was last being looked at, held on the message so it survives the
+    // output being torn down and rebuilt. See updateViewState.
+    viewState: PropTypes.shape({}),
+    onViewStateChange: PropTypes.func,
+    // Set once the answer's rows have been dropped to a preview to save memory.
+    dataTruncated: PropTypes.shape({
+      droppedRowCount: PropTypes.number,
+      wasDataLimited: PropTypes.bool,
+    }),
+    onRestoreData: PropTypes.func,
+    // Bumped whenever the data behind this message is swapped out, to remount the
+    // output rather than leave it holding copies of rows that are gone.
+    dataVersion: PropTypes.number,
     enableDynamicCharting: PropTypes.bool,
     scrollToBottom: PropTypes.func,
     onNoneOfTheseClick: PropTypes.func,
@@ -191,6 +204,11 @@ export class ChatMessage extends React.Component {
     enableColumnVisibilityManager: false,
     isResizing: false,
     shouldRender: true,
+    viewState: undefined,
+    onViewStateChange: undefined,
+    dataTruncated: undefined,
+    onRestoreData: undefined,
+    dataVersion: 0,
     enableDynamicCharting: true,
     autoChartAggregations: true,
     csvDownloadProgress: undefined,
@@ -618,7 +636,37 @@ export class ChatMessage extends React.Component {
   updateDataConfig = (config) => {
     if (this.isValidConfig(config)) {
       this.setState({ dataConfig: config })
+      this.updateViewState({ tableConfigs: config })
     }
+  }
+
+  /**
+   * Record how this answer is being looked at, on the message rather than in component
+   * state, so it survives the QueryOutput being torn down and rebuilt.
+   *
+   * That happens for real now: truncating an old answer's data remounts it (see
+   * `dataVersion` below), and restoring it re-runs the query. Without this, a message
+   * would come back on a different display type, unsorted and unfiltered - which is
+   * exactly what the user had arranged before scrolling away.
+   *
+   * These are the same four handles DashboardTile persists a saved tile with.
+   */
+  updateViewState = (patch) => {
+    this.props.onViewStateChange?.(this.props.id, patch)
+  }
+
+  onTableParamsChange = (tableParams, formattedTableParams) => {
+    this.updateViewState({ tableParams, formattedTableParams })
+  }
+
+  onChartControlsChange = (chartControls) => {
+    this.updateViewState({ chartControls })
+  }
+
+  // QueryOutput has re-run the query and has the rows again; the message is where they
+  // have to live, or the next remount would lose them.
+  onRestoreData = (response) => {
+    this.props.onRestoreData?.(this.props.id, response)
   }
 
   renderFetchingFileMessage = () => {
@@ -645,6 +693,8 @@ export class ChatMessage extends React.Component {
   }
 
   onDisplayTypeChange = (displayType) => {
+    this.updateViewState({ displayType })
+
     // Reset resizable state when changing display types
     this.setState({
       isResizable: false,
@@ -1394,8 +1444,16 @@ export class ChatMessage extends React.Component {
     } else if (this.props.response) {
       const isDataPreview = this.props.response?.data?.data?.isDataPreview
 
+      const viewState = this.props.viewState ?? {}
+
       return (
         <QueryOutput
+          // Truncating this answer's data bumps dataVersion, which remounts the output
+          // rather than leaving a QueryOutput holding derived copies of rows that are no
+          // longer there - its tableData, pivot data and Tabulator instance all go with
+          // it. Restoring bumps it again. The mount path seeds itself from viewState, so
+          // the remount is invisible apart from the data changing.
+          key={this.props.dataVersion ?? 0}
           enableResizing={true}
           onResize={this.onQueryOutputResize}
           ref={(ref) => (this.responseRef = ref)}
@@ -1418,6 +1476,18 @@ export class ChatMessage extends React.Component {
           enableDynamicCharting={this.props.enableDynamicCharting}
           initialTableConfigs={this.isValidConfig(this.state.dataConfig) ? this.state.dataConfig : undefined}
           onTableConfigChange={this.updateDataConfig}
+          // How this answer was last being looked at. Seeded from the message so it
+          // survives the remount that truncating and restoring the data causes.
+          initialDisplayType={viewState.displayType}
+          initialTableParams={viewState.tableParams}
+          onTableParamsChange={this.onTableParamsChange}
+          initialChartControls={viewState.chartControls}
+          onChartControlsChange={this.onChartControlsChange}
+          // Set once this answer's rows have been dropped to a preview. QueryOutput uses
+          // it to show the notice, to refuse to draw a chart of a partial dataset, and
+          // to pin the display type rather than re-derive it from ten rows.
+          dataTruncated={this.props.dataTruncated}
+          onRestoreData={this.onRestoreData}
           onNoneOfTheseClick={() => this.props.onNoneOfTheseClick(this.props.queryMessageID)}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}

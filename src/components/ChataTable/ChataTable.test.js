@@ -1678,3 +1678,64 @@ describe('clientSortAndFilterData with reordered columns', () => {
     expect(result.data.data.rows).toEqual([['Widget', 20.5, 'X']])
   })
 })
+
+// A truncated table ends in a statement rather than just stopping, the way the data
+// preview's SimpleTable footer does. It lives inside Tabulator's scroll container, so
+// it is put there by hand rather than rendered by React.
+describe('end of preview footer', () => {
+  const withScrollElement = (wrapper) => {
+    const scrollEl = document.createElement('div')
+    wrapper.instance().ref = { tabulator: { rowManager: { element: scrollEl } } }
+    return scrollEl
+  }
+
+  const footerIn = (scrollEl) => scrollEl.querySelector('.react-autoql-table-preview-footer')
+
+  test('is added when the rows are a preview', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const scrollEl = withScrollElement(wrapper)
+
+    wrapper.instance().syncPreviewFooter()
+
+    expect(footerIn(scrollEl)?.textContent).toBe('End of preview')
+  })
+
+  test('is not added for a table showing all its rows', () => {
+    const wrapper = setup({ isDataTruncated: false })
+    const scrollEl = withScrollElement(wrapper)
+
+    wrapper.instance().syncPreviewFooter()
+
+    expect(footerIn(scrollEl)).toBeNull()
+  })
+
+  test('is removed once the data is restored', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const scrollEl = withScrollElement(wrapper)
+    wrapper.instance().syncPreviewFooter()
+
+    wrapper.setProps({ isDataTruncated: false })
+    wrapper.instance().syncPreviewFooter()
+
+    expect(footerIn(scrollEl)).toBeNull()
+  })
+
+  // componentDidUpdate calls this on every update, so it has to be idempotent.
+  test('does not stack up when called repeatedly', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const scrollEl = withScrollElement(wrapper)
+
+    wrapper.instance().syncPreviewFooter()
+    wrapper.instance().syncPreviewFooter()
+    wrapper.instance().syncPreviewFooter()
+
+    expect(scrollEl.querySelectorAll('.react-autoql-table-preview-footer')).toHaveLength(1)
+  })
+
+  test('does nothing before the table has a scroll container', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    wrapper.instance().ref = undefined
+
+    expect(() => wrapper.instance().syncPreviewFooter()).not.toThrow()
+  })
+})

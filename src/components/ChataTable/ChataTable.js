@@ -173,6 +173,8 @@ export default class ChataTable extends React.Component {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     queryRequestData: PropTypes.shape({}),
+    // The answer's rows are a preview; the notice above the table already explains it.
+    isDataTruncated: PropTypes.bool,
     onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
@@ -219,6 +221,7 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     queryRequestData: {},
+    isDataTruncated: false,
     data: undefined,
     columns: undefined,
     isResizing: false,
@@ -422,6 +425,10 @@ export default class ChataTable extends React.Component {
     }
 
     this.summaryStats = this.calculateSummaryStats(this.props)
+
+    // Cheap and idempotent: puts the "End of preview" line back if a redraw took it, and
+    // removes it the moment the data is restored.
+    this.syncPreviewFooter()
   }
 
   componentWillUnmount = () => {
@@ -572,6 +579,41 @@ export default class ChataTable extends React.Component {
   // the whole thread above the table, so none of the transitions this component watches
   // for (`hidden`, `isResizing`, `isAnimating`, `firstRender`) ever fire. QueryOutput
   // calls this from its "back on screen" branch.
+  /**
+   * "End of preview" after the last row, the same closure SimpleTable's footer gives the
+   * data preview (see DataPreview) - so a scroll to the bottom of a truncated table ends
+   * in a statement rather than just stopping.
+   *
+   * Injected into Tabulator's scroll container rather than rendered by React, because it
+   * has to sit after the rows *inside* the element that scrolls, and Tabulator owns
+   * that. It goes in as a sibling of `.tabulator-table`, which Tabulator re-renders the
+   * rows inside of, so it survives a redraw - and componentDidUpdate puts it back if
+   * ever it doesn't.
+   */
+  syncPreviewFooter = () => {
+    const scrollEl = this.ref?.tabulator?.rowManager?.element
+
+    if (!scrollEl) {
+      return
+    }
+
+    const existing = scrollEl.querySelector('.react-autoql-table-preview-footer')
+
+    if (!this.props.isDataTruncated) {
+      existing?.remove()
+      return
+    }
+
+    if (existing) {
+      return
+    }
+
+    const footer = document.createElement('div')
+    footer.className = 'react-autoql-table-preview-footer'
+    footer.textContent = 'End of preview'
+    scrollEl.appendChild(footer)
+  }
+
   onBecameVisible = () => {
     // A table whose build was deferred because it had no box yet - it has one now. This
     // fires from the React update that reveals the tab and TableWrapper's own
@@ -754,6 +796,8 @@ export default class ChataTable extends React.Component {
         this.tabulatorScrollEl = scrollEl
         this.tabulatorScrollEl.addEventListener('wheel', this.handleTableWheel, { passive: false })
       }
+
+      this.syncPreviewFooter()
     }
   }
 
@@ -1979,6 +2023,13 @@ export default class ChataTable extends React.Component {
   renderTableRowWarning = () => {
     // For regular (non-pivot) tables - render data limit warning
     if (this.props.pivot) {
+      return null
+    }
+
+    // The preview notice above already says what is and isn't on screen, and says it
+    // about the same rows. Two stacked warnings about the size of one answer is noise,
+    // and the row limit is not what is being hit here. It comes back on restore.
+    if (this.props.isDataTruncated) {
       return null
     }
 

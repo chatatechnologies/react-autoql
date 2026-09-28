@@ -16,6 +16,7 @@ import { lang } from '../../js/Localization'
 import { fetchSubjectListCached } from '../../js/subjectListService'
 import { isScreenSize, subscribeToScreenSize } from '../../js/breakpoints'
 import { isShallowEqual } from '../../js/propsEqual'
+import { KEEP_HYDRATED_MESSAGES, TRUNCATE_MIN_ROWS, truncateOldMessageData } from '../../js/messageTruncation'
 import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
 
 // Components
@@ -110,6 +111,12 @@ export default class ChatContent extends React.Component {
     dataFormatting: dataFormattingType,
     enableVoiceRecord: PropTypes.bool.isRequired,
     maxMessages: PropTypes.number.isRequired,
+    // How many data-bearing answers stay fully in memory. Older ones keep a preview of
+    // their rows and fetch the rest back on request. Set to 0 to keep everything.
+    keepHydratedMessages: PropTypes.number,
+    // Answers smaller than this are never truncated - the round trip to fetch them
+    // again would cost more than holding them.
+    truncateMinRows: PropTypes.number,
     inputPlaceholder: PropTypes.string.isRequired,
     enableDynamicCharting: PropTypes.bool.isRequired,
     autoChartAggregations: PropTypes.bool.isRequired,
@@ -188,6 +195,8 @@ export default class ChatContent extends React.Component {
 
   static defaultProps = {
     dataFormatting: dataFormattingDefault,
+    keepHydratedMessages: KEEP_HYDRATED_MESSAGES,
+    truncateMinRows: TRUNCATE_MIN_ROWS,
     disableMaxMessageHeight: false,
     isResizing: false,
     dataPageSize: undefined,
@@ -1116,11 +1125,71 @@ export default class ChatContent extends React.Component {
       updatedMessages = updatedMessages.slice(-this.props.maxMessages)
     }
 
+    updatedMessages = truncateOldMessageData(updatedMessages, {
+      keepHydratedMessages: this.props.keepHydratedMessages,
+      truncateMinRows: this.props.truncateMinRows,
+    })
+
     if (this._isMounted) {
       this.setState({
         messages: updatedMessages,
       })
     }
+  }
+
+  // Merged into the message rather than held in ChatMessage's state, so it survives the
+  // remount that truncating and restoring this answer's data causes.
+  onMessageViewStateChange = (messageId, patch) => {
+    if (!this._isMounted || !patch) {
+      return
+    }
+
+    this.setState((state) => {
+      const index = state.messages.findIndex((message) => message.id === messageId)
+
+      if (index === -1) {
+        return null
+      }
+
+      const message = state.messages[index]
+      const viewState = { ...message.viewState, ...patch }
+
+      if (_isEqual(viewState, message.viewState)) {
+        return null
+      }
+
+      const messages = [...state.messages]
+      messages[index] = { ...message, viewState }
+
+      return { messages }
+    })
+  }
+
+  // The user asked for this answer's data back and QueryOutput has re-run the query.
+  // Storing the rows here is what keeps them after the next remount, and the restored
+  // flag is what stops the sweep above taking them away again on the next query.
+  onMessageDataRestored = (messageId, response) => {
+    if (!this._isMounted || !response?.data?.data?.rows) {
+      return
+    }
+
+    this.setState((state) => {
+      const index = state.messages.findIndex((message) => message.id === messageId)
+
+      if (index === -1) {
+        return null
+      }
+
+      const messages = [...state.messages]
+      messages[index] = {
+        ...messages[index],
+        response,
+        dataTruncated: undefined,
+        isDataRestored: true,
+      }
+
+      return { messages }
+    })
   }
 
   addRequestMessage = (text, queryMessageID) => {
@@ -1676,6 +1745,13 @@ export default class ChatContent extends React.Component {
                       appliedFilters={message.appliedFilters}
                       disableMaxHeight={this.props.disableMaxMessageHeight}
                       queryRequestData={message.queryRequestData}
+                      // Held on the message so they survive the remount that truncating
+                      // and restoring this answer's data causes.
+                      viewState={message.viewState}
+                      onViewStateChange={this.onMessageViewStateChange}
+                      dataTruncated={message.dataTruncated}
+                      dataVersion={message.dataVersion}
+                      onRestoreData={this.onMessageDataRestored}
                       popoverParentElement={this.chatContentRef}
                       isVisibleInDOM={isLaidOut}
                       dataPageSize={this.props.dataPageSize}
