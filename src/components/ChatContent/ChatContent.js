@@ -46,10 +46,6 @@ const NESTED_SCROLLER_SELECTOR = '.tabulator-tableholder, .react-autoql-custom-s
 // Px per line, for browsers that report wheel deltas in lines rather than pixels.
 const WHEEL_LINE_HEIGHT = 16
 
-// Trackpad momentum decays, so a delta that grows instead means the user pushed
-// again - a new gesture. Small tolerance so wheel jitter doesn't read as a push.
-const NEW_GESTURE_DELTA_TOLERANCE = 1
-
 // Same ceiling the Data Agent puts on threads: past this the tab bar is all scroll
 // and no context.
 const MAX_SESSIONS = 8
@@ -635,8 +631,20 @@ export default class ChatContent extends React.Component {
 
   // Scrolling the thread past a table used to stop dead: the wheel event lands on
   // whatever is under the cursor, so the table's own scroller swallowed it
-  // mid-flick. Once a scroll gesture is underway, keep it on the thread and let
-  // the table have the wheel again only after the gesture has actually stopped.
+  // mid-flick. So a thread scroll already underway keeps the wheel when it passes
+  // over a table, and the table gets it back once that scroll has stopped.
+  //
+  // "Stopped" is measured only from events the thread was scrolled by on its own
+  // merits - events over a table never extend it. An earlier version extended the
+  // window from the events it stole, which made the hijack self-sustaining: with a
+  // mouse wheel, where every notch reports the same delta and notches keep arriving
+  // inside the idle window, the thread took the wheel and never gave it back, and a
+  // table under the cursor could not be scrolled at all. (The delta-growth check
+  // that used to guard against this only works for trackpad momentum, which decays;
+  // uniform mouse deltas slip straight past it.) Measuring from thread events alone
+  // bounds the hijack at one idle window after the user's last thread scroll, so a
+  // flick still carries past a table and a deliberate scroll of the table lands on
+  // the table.
   //
   // Runs in capture phase on the container's parent (see addScrollListener), so it
   // sees the event before PerfectScrollbar and before the table, and the browser
@@ -652,35 +660,21 @@ export default class ChatContent extends React.Component {
       return
     }
 
-    const now = Date.now()
-    const isMidGesture = now - (this.lastThreadWheelTime ?? 0) < THREAD_WHEEL_IDLE_MS
-
     // The thread's own scroller carries .react-autoql-custom-scrollbars too, so
     // "nested" means a match that is strictly inside the container, not the
     // container itself.
     const nested = e.target?.closest?.(NESTED_SCROLLER_SELECTOR)
     const isOverNestedScroller = !!nested && nested !== container && container.contains(nested)
 
-    // Not over a nested scroller: an ordinary thread scroll, just record it.
+    // Not over a nested scroller: an ordinary thread scroll. This is the only place
+    // the window is extended from - see above.
     if (!isOverNestedScroller) {
-      this.lastThreadWheelTime = now
-      this.lastThreadWheelDelta = Math.abs(e.deltaY)
+      this.lastThreadWheelTime = Date.now()
       return
     }
 
-    // Cursor started on the table with the thread at rest — the user means to
-    // scroll the table, so leave it alone.
-    if (!isMidGesture) {
-      return
-    }
-
-    // Mid-gesture, but the delta grew: momentum only ever decays, so this is a
-    // fresh push over the table. Without this the hijack below feeds itself -
-    // every stolen event extends the gesture, so flicking repeatedly over a
-    // table never hands the wheel back and the table looks stuck.
-    if (Math.abs(e.deltaY) > (this.lastThreadWheelDelta ?? 0) + NEW_GESTURE_DELTA_TOLERANCE) {
-      this.lastThreadWheelTime = 0
-      this.lastThreadWheelDelta = 0
+    // The thread is not mid-scroll, so the user means the thing under the cursor.
+    if (Date.now() - (this.lastThreadWheelTime ?? 0) >= THREAD_WHEEL_IDLE_MS) {
       return
     }
 
@@ -700,8 +694,6 @@ export default class ChatContent extends React.Component {
     // We own this delta now — keep PerfectScrollbar and the table from applying it again.
     e.stopPropagation()
     container.scrollTop += e.deltaY * scale
-    this.lastThreadWheelTime = now
-    this.lastThreadWheelDelta = Math.abs(e.deltaY)
   }
 
   checkIfAtBottom = () => {

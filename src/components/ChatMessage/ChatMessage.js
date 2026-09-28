@@ -1586,6 +1586,10 @@ export class ChatMessage extends React.Component {
             enableDeleteBtn={!this.props.isIntroMessage && this.props.enableMessageDelete !== false}
             enableFilterBtn={!isDataPreview && !this.props.isIntroMessage}
             enableCopyBtn={!isDataPreview && !this.props.isIntroMessage}
+            // Passed rather than read off responseRef: the toolbar is a sibling of the
+            // output, so a change in the output's own state is not something it renders
+            // for. The message's prop is what both of them are driven by.
+            isDataTruncated={!!this.props.dataTruncated}
             isMarkdownMessage={isMarkdownMessage}
             markdownContent={isMarkdownMessage ? this.props.content : undefined}
             onCopyMarkdown={this.copyMarkdownAsPlainText}

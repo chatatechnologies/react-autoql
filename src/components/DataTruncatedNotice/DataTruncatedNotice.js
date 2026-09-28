@@ -5,6 +5,7 @@ import { dataFormattingDefault, getDataFormatting } from 'autoql-fe-utils'
 import { Button } from '../Button'
 import { Icon } from '../Icon'
 import { dataFormattingType } from '../../props/types'
+import { getIconForDisplayType } from '../../js/displayTypeIcons'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './DataTruncatedNotice.scss'
@@ -39,12 +40,18 @@ const DataTruncatedNotice = ({
   // The shared Button rather than a bespoke one, so it matches every other control in
   // the messenger - and so the loading state is Button's own small spinner instead of
   // something sized for a whole empty panel.
+  //
+  // Bordered only in the card. The banner is already a tinted strip, and an outlined
+  // pill inside it stacks a third line on top of the bubble's and the strip's own -
+  // there, the label and icon in the accent colour are enough to read as a control. The
+  // card has nothing else in it, so the button has to carry its own edge.
   const restoreButton = (
     <Button
       className='react-autoql-data-truncated-restore'
       type='default'
       size='medium'
       icon='refresh'
+      border={variant === 'card'}
       loading={isRestoring}
       onClick={onRestore}
       tooltip='Re-run this query to load the full result'
@@ -63,8 +70,9 @@ const DataTruncatedNotice = ({
       <ErrorBoundary>
         <div className={`react-autoql-data-truncated-card ${className ?? ''}`}>
           {/* The icon is the chart they were looking at, so the card reads as that
-              chart's empty frame rather than as an error. */}
-          <Icon type={displayType || 'column-chart'} size={32} className='react-autoql-data-truncated-card-icon' />
+              chart's empty frame rather than as an error. Display type names and icon
+              names are not the same vocabulary - see getIconForDisplayType. */}
+          <Icon type={getIconForDisplayType(displayType)} size={32} className='react-autoql-data-truncated-card-icon' />
           <div className='react-autoql-data-truncated-card-text'>
             <strong>Chart data was cleared to save memory</strong>
           </div>
@@ -101,7 +109,7 @@ DataTruncatedNotice.propTypes = {
   // Shown alongside the restore control when the re-run failed.
   error: PropTypes.string,
   previewRowCount: PropTypes.number,
-  // Used as the card's icon; Icon's type vocabulary is the display type names.
+  // Chooses the card's icon, via getIconForDisplayType.
   displayType: PropTypes.string,
   isRestoring: PropTypes.bool,
   onRestore: PropTypes.func,

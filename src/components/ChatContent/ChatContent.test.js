@@ -268,3 +268,88 @@ describe('enableSessions', () => {
     expect(sessions[1].id).not.toBe(secondSession.id)
   })
 })
+
+// A thread scroll already underway keeps the wheel when it passes over a table, but
+// only for one idle window after the user's last scroll of the thread itself.
+describe('wheel handling over a nested table', () => {
+  const setupWheel = ({ threadScrollTop = 500 } = {}) => {
+    const wrapper = setup()
+
+    const container = document.createElement('div')
+    Object.defineProperties(container, {
+      scrollHeight: { value: 2000, configurable: true },
+      clientHeight: { value: 400, configurable: true },
+    })
+    container.scrollTop = threadScrollTop
+
+    const table = document.createElement('div')
+    table.className = 'tabulator-tableholder'
+    container.appendChild(table)
+
+    wrapper.instance().messengerScrollComponent = { getContainer: () => container }
+
+    const wheel = (target, deltaY = 100) => {
+      const event = { target, deltaY, deltaMode: 0, preventDefault: jest.fn(), stopPropagation: jest.fn() }
+      wrapper.instance().handleThreadWheel(event)
+      return event
+    }
+
+    return { container, table, wheel }
+  }
+
+  test('leaves the table alone when the thread is at rest', () => {
+    const { container, table, wheel } = setupWheel()
+
+    const event = wheel(table)
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(container.scrollTop).toBe(500)
+  })
+
+  test('keeps a thread scroll going when it passes over a table', () => {
+    const { container, table, wheel } = setupWheel()
+
+    wheel(container)
+    const event = wheel(table)
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(container.scrollTop).toBe(600)
+  })
+
+  // The bug this replaced: every stolen event used to extend the window, so a mouse
+  // wheel - whose notches all report the same delta and keep arriving - held the
+  // thread's claim open forever and the table could never be scrolled.
+  test('hands the wheel back to the table rather than holding it open', () => {
+    jest.useFakeTimers()
+    try {
+      const { container, table, wheel } = setupWheel()
+
+      wheel(container)
+      wheel(table)
+
+      // Uniform mouse-wheel notches, arriving inside the window of each other but
+      // past it from the thread's own last scroll. The old version measured from the
+      // stolen events, so these kept the claim alive indefinitely.
+      jest.advanceTimersByTime(200)
+      wheel(table)
+      jest.advanceTimersByTime(200)
+      const event = wheel(table)
+
+      expect(event.preventDefault).not.toHaveBeenCalled()
+      // 600 from the first steal, 700 from the second - and nothing after.
+      expect(container.scrollTop).toBe(700)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test('lets the table take over at the end of the thread', () => {
+    const { container, table, wheel } = setupWheel({ threadScrollTop: 1600 })
+
+    wheel(container)
+    const event = wheel(table)
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(container.scrollTop).toBe(1600)
+  })
+})

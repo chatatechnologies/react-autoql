@@ -76,6 +76,9 @@ export class OptionsToolbar extends React.Component {
     shouldRender: PropTypes.bool,
     enableFilterBtn: PropTypes.bool,
     enableCopyBtn: PropTypes.bool,
+    // The answer's rows are a preview of the full result. Every option that reads the
+    // rows on screen is withdrawn while this is true - see getShouldShowButtonObj.
+    isDataTruncated: PropTypes.bool,
     isMarkdownMessage: PropTypes.bool,
     markdownContent: PropTypes.string,
     onCopyMarkdown: PropTypes.func,
@@ -112,6 +115,7 @@ export class OptionsToolbar extends React.Component {
     enableFilterBtn: true,
     enableDeleteBtn: false,
     enableCopyBtn: true,
+    isDataTruncated: false,
     isMarkdownMessage: false,
     markdownContent: undefined,
     onCopyMarkdown: undefined,
@@ -208,13 +212,16 @@ export class OptionsToolbar extends React.Component {
   }
 
   copyTableToClipboard = () => {
-    if (this.props.responseRef) {
-      this.props.responseRef?.copyTableToClipboard()
+    // Only announce a copy that happened: QueryOutput declines when the rows on screen
+    // are a preview of a truncated answer, and there is no table mounted to read in
+    // every display type.
+    const copied = this.props.responseRef?.copyTableToClipboard()
+
+    if (copied) {
       this.props.onSuccessAlert('Successfully copied table to clipboard!')
-      this.setTemporaryState('copiedTable', true, 1000)
-    } else {
-      this.setTemporaryState('copiedTable', false, 1000)
     }
+
+    this.setTemporaryState('copiedTable', !!copied, 1000)
   }
 
   fetchCSVAndExport = () => {
@@ -1054,16 +1061,39 @@ export class OptionsToolbar extends React.Component {
       // For markdown messages, only show copy and delete buttons
       const isMarkdownOnly = props.isMarkdownMessage && props.onCopyMarkdown
 
+      /**
+       * While the rows on screen are a preview, every option that reads them is
+       * withdrawn rather than left to hand back ten rows dressed up as the answer.
+       *
+       * Copy and PNG read the rendered table or chart directly. Sorting and filtering
+       * are answered from those same rows (ChataTable disables them at the header), so
+       * the filter button has nothing left to open.
+       *
+       * CSV is the exception, and only for regular tables: it is fetched server-side
+       * from the query id and returns the full result, so it stays - it is the one way
+       * to get the whole answer without restoring it. A pivot table's CSV is built from
+       * the rows in the browser, so that one goes with the rest.
+       */
+      const isDataTruncated = !!props.isDataTruncated
+      const isClientSideCSV = displayType === 'pivot_table'
+
       shouldShowButton = {
         showFilterButton:
           !isMarkdownOnly &&
+          !isDataTruncated &&
           this.props.enableFilterBtn &&
           (displayType === 'table' || isChartType(displayType)) &&
           !allColumnsHidden &&
           hasMoreThanOneRow,
-        showCopyButton: !isMarkdownOnly && isDataResponse && this.props.enableCopyBtn && isTable && !allColumnsHidden,
+        showCopyButton:
+          !isMarkdownOnly &&
+          !isDataTruncated &&
+          isDataResponse &&
+          this.props.enableCopyBtn &&
+          isTable &&
+          !allColumnsHidden,
         showCopyMarkdownButton: isMarkdownOnly,
-        showSaveAsPNGButton: !isMarkdownOnly && isChart,
+        showSaveAsPNGButton: !isMarkdownOnly && !isDataTruncated && isChart,
         showHideColumnsButton:
           !isMarkdownOnly &&
           autoQLConfig.enableColumnVisibilityManager &&
@@ -1072,7 +1102,12 @@ export class OptionsToolbar extends React.Component {
         showHiddenColsBadge: !isMarkdownOnly && someColumnsHidden,
         showSQLButton: !isMarkdownOnly && isDataResponse && autoQLConfig.translation === 'include',
         showSaveAsCSVButton:
-          !isMarkdownOnly && isDataResponse && isTable && hasMoreThanOneRow && autoQLConfig.enableCSVDownload,
+          !isMarkdownOnly &&
+          !(isDataTruncated && isClientSideCSV) &&
+          isDataResponse &&
+          isTable &&
+          hasMoreThanOneRow &&
+          autoQLConfig.enableCSVDownload,
         showDeleteButton: props.enableDeleteBtn,
         showReportProblemButton:
           !isMarkdownOnly &&

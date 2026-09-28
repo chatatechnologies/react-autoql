@@ -10,10 +10,17 @@
   padding: 0 0.875rem;
   margin: 0;
 
-  // A real hover, not the near-invisible mask tint the default button settles for:
-  // fills with the accent and flips the label and icon to read against it. The icon
-  // needs saying explicitly because Icon sets its own colour with !important.
-  &:not(.disabled):hover {
+  // A real hover, not the near-invisible mask tint the default button settles for. Two
+  // versions, because the two variants sit on different ground:
+  //
+  //   Bordered (the card): fills with the accent and flips the label and icon to read
+  //   against it. The icon needs saying explicitly because Icon sets its own colour
+  //   with !important.
+  //
+  //   Borderless (the banner): a solid fill would put back the hard edge the missing
+  //   border was there to avoid, so the hover is a deeper wash of the same accent the
+  //   strip is already tinted with, and the label stays accent-coloured.
+  &:not(.btn-no-border):not(.disabled):hover {
     background: var(--react-autoql-accent-color);
     border-color: var(--react-autoql-accent-color);
     color: var(--react-autoql-text-color-accent);
@@ -24,38 +31,87 @@
     }
   }
 
+  &.btn-no-border {
+    padding: 0 0.625rem;
+
+    // Deeper than it would need to be on a plain background: this lands on top of the
+    // banner's own accent wash, so the two only read apart if the hover clears it by a
+    // good margin.
+    &:not(.disabled):hover {
+      background: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.28);
+    }
+  }
+
   &:not(.disabled):active {
     opacity: 0.85;
   }
 }
 
+/**
+ * What the banner costs in vertical space, published so the one thing that has to know
+ * isn't left guessing at it.
+ *
+ * The add-column button is positioned against the top of the *message*, not the top of
+ * the table, so a banner above the table pushes the table out from under it. It gets
+ * moved down by exactly this much (see .has-truncated-banner in AddColumnBtn.scss)
+ * rather than by a number copied out of here that would go stale the first time this
+ * one changed.
+ *
+ * Height is the restore button (2rem) plus the banner's own vertical padding; the gap
+ * is what separates it from the table below.
+ */
+:root {
+  --react-autoql-truncated-banner-height: 2.5rem;
+  --react-autoql-truncated-banner-gap: 5px;
+  --react-autoql-truncated-banner-offset: calc(
+    var(--react-autoql-truncated-banner-height) + var(--react-autoql-truncated-banner-gap)
+  );
+}
+
 // Sits above a table that is still showing real rows, so it is informational rather
-// than a warning - the answer is not wrong, just partial. Modelled on
-// .react-autoql-data-limit-warning, in the accent colour instead of the warning one.
+// than a warning - the answer is not wrong, just partial.
+//
+// A tinted strip rather than an outlined box. .react-autoql-data-limit-warning, which
+// this started as a copy of, is a 3px-cornered 1px rectangle - a shape from before the
+// messenger settled on 25px bubbles and 8-12px panels, and it reads as a foreign object
+// pressed against the top of the bubble. Fill alone separates it from the table just as
+// well and removes a line from a view that is already three deep in outlines: the
+// bubble, this, and the control inside it.
+//
+// 12px because the bubble's corner is 25px and its padding is ~11px, so a box sitting
+// against its inside edge wants roughly the difference - any tighter and the two curves
+// fight rather than nest.
 .react-autoql-data-truncated-banner {
   position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 2px 10px;
-  margin-bottom: 3px;
-  min-height: 34px;
-  border: 1px solid var(--react-autoql-accent-color);
-  border-radius: 3px;
+  padding: 4px 12px;
+  // Both from the variables above, so the offset that tracks this stays true.
+  margin-bottom: var(--react-autoql-truncated-banner-gap);
+  min-height: var(--react-autoql-truncated-banner-height);
+  border-radius: 12px;
   letter-spacing: initial;
   // Stated rather than inherited, for the same reason the icon is: this sits directly
   // above the data limit warning and the two have to read at the same size.
   font-size: 0.875rem;
 
+  // The fill is the only thing separating this from the bubble now, so it has to do the
+  // work the border used to. At the 0.08-0.11 the outlined version could get away with,
+  // an accent wash over the bubble's own background is a shade nobody notices - the
+  // strip has to be visibly a different surface, not a slightly different one.
+  //
+  // 0.22 rather than a fixed colour so it still reads against whatever accent and theme
+  // the integrator has set: it is the same accent, just enough of it.
   &:before {
     content: '';
     position: absolute;
     inset: 0;
     background: var(--react-autoql-accent-color);
-    opacity: 0.08;
+    opacity: 0.22;
     pointer-events: none;
-    border-radius: 3px;
+    border-radius: 12px;
   }
 
   .react-autoql-data-truncated-banner-text {

@@ -1787,20 +1787,30 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  /**
+   * Returns whether anything was actually copied, so the caller can decide what to tell
+   * the user. The toolbar used to announce success unconditionally, which meant the
+   * truncated no-op below was reported as a successful copy.
+   */
   copyTableToClipboard = () => {
-    // These read the rows that are actually on screen, so while those are a preview
-    // they would hand back ten rows dressed up as the whole answer. CSV export is
-    // deliberately not guarded - it is fetched server-side from the query id, so it
-    // still returns the full result.
+    // This reads the rows that are actually on screen, so while those are a preview it
+    // would hand back ten rows dressed up as the whole answer. The toolbar withdraws the
+    // option entirely (see getShouldShowButtonObj); this covers direct callers. CSV
+    // export is deliberately not guarded - it is fetched server-side from the query id,
+    // so it still returns the full result.
     if (this.isDataTruncated()) {
-      return
+      return false
     }
 
     if (this.state.displayType === 'table' && this.tableRef?._isMounted) {
       this.tableRef.copyToClipboard()
+      return true
     } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef?._isMounted) {
       this.pivotTableRef.copyToClipboard()
+      return true
     }
+
+    return false
   }
 
   getBase64Data = () => {
@@ -1833,6 +1843,11 @@ export class QueryOutput extends React.Component {
   }
   handleQueryFnError = (error) => {
     if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
+      // Cancelling hands back the data already on screen, which is the right answer for
+      // every caller that just wants something to render - but it makes the cancellation
+      // indistinguishable from a successful fetch of the same rows. Callers that need to
+      // tell the difference read this flag; queryFn clears it on the way in.
+      this.wasQueryFnCancelled = true
       return this.queryResponse
     } else {
       return error
@@ -1840,6 +1855,8 @@ export class QueryOutput extends React.Component {
   }
 
   queryFn = async (args = {}) => {
+    this.wasQueryFnCancelled = false
+
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
 
     // Update formattedTableParams with current state from ChataTable before processing
@@ -1992,6 +2009,14 @@ export class QueryOutput extends React.Component {
       const response = await this.queryFn()
 
       if (!this._isMounted) {
+        return
+      }
+
+      // A cancelled request resolves with the rows already on screen - which are the
+      // preview. Marking the message restored off the back of that would clear the
+      // banner and lose the only route back to the real data. Nothing failed either, so
+      // leave the notice exactly as it was and let the user press Restore again.
+      if (this.wasQueryFnCancelled) {
         return
       }
 
@@ -2483,6 +2508,12 @@ export class QueryOutput extends React.Component {
   }
 
   toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
+    // Filtering is off while the rows are a preview - the toolbar hides the button, and
+    // this covers the callers that reach the method directly.
+    if (this.isDataTruncated()) {
+      return
+    }
+
     if (this.state.displayType === 'table') {
       return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
     }
@@ -5050,19 +5081,28 @@ export class QueryOutput extends React.Component {
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
     const shouldRenderPivotTable = pivotTableIsWanted && supportsPivotTable
 
-    // Above the table rather than around it: the rows below are real, so the answer
-    // still reads as an answer - what the banner adds is that there are more of them.
-    // A charted message gets the card from renderChart instead, never both.
-    const showTruncatedBanner = this.isDataTruncated() && !isChartType(displayType)
-
     return (
       <>
-        {showTruncatedBanner && this.renderDataTruncatedNotice('banner')}
+        {this.shouldShowTruncatedBanner(displayType) && this.renderDataTruncatedNotice('banner')}
         {shouldRenderTable && this.renderTable(displayType)}
         {shouldRenderChart && this.renderChart(displayType)}
         {shouldRenderPivotTable && this.renderPivotTable(displayType)}
       </>
     )
+  }
+
+  /**
+   * Above the table rather than around it: the rows below are real, so the answer still
+   * reads as an answer - what the banner adds is that there are more of them. A charted
+   * message gets the card from renderChart instead, never both.
+   *
+   * render() asks as well as renderResponse, because the banner takes vertical space at
+   * the top of the message and the add-column button is positioned against the top of
+   * the message rather than the top of the table - so it has to know to move down. See
+   * .has-truncated-banner in AddColumnBtn.scss.
+   */
+  shouldShowTruncatedBanner = (displayType = this.state.displayType) => {
+    return this.isDataTruncated() && !isChartType(displayType)
   }
 
   shouldRenderReverseTranslation = () => {
@@ -5147,7 +5187,8 @@ export class QueryOutput extends React.Component {
         ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
         ${this.state.displayType === 'single-value' ? 'single-value' : ''}
         ${this.shouldEnableResize ? 'resizable' : ''}
-        ${this.state.isResizing ? 'resizing' : ''}`}
+        ${this.state.isResizing ? 'resizing' : ''}
+        ${this.shouldShowTruncatedBanner() ? 'has-truncated-banner' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

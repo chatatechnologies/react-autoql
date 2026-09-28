@@ -17,6 +17,17 @@ describe('DataTruncatedNotice', () => {
       expect(wrapper.text()).not.toMatch(/\d+ of \d/)
     })
 
+    // The banner is already a tinted strip inside an outlined bubble; an outlined pill
+    // in there is a third line. The card's button is alone in an empty frame, so it
+    // keeps its edge.
+    test('drops the button outline, which the card keeps', () => {
+      const bannerButton = setup({ variant: 'banner' }).find('button.react-autoql-data-truncated-restore')
+      const cardButton = setup({ variant: 'card' }).find('button.react-autoql-data-truncated-restore')
+
+      expect(bannerButton.hasClass('btn-no-border')).toBe(true)
+      expect(cardButton.hasClass('btn-no-border')).toBe(false)
+    })
+
     test('offers the data back', () => {
       const onRestore = jest.fn()
       const wrapper = setup({ variant: 'banner', onRestore })
@@ -28,15 +39,30 @@ describe('DataTruncatedNotice', () => {
   })
 
   describe('card', () => {
+    const cardIcon = (wrapper) => wrapper.find('span.react-autoql-data-truncated-card-icon')
+
     test('says the data is gone rather than drawing anything', () => {
-      const wrapper = setup({ variant: 'card', displayType: 'column-chart' })
+      const wrapper = setup({ variant: 'card', displayType: 'column' })
 
       expect(wrapper.find('.react-autoql-data-truncated-card').exists()).toBe(true)
       expect(wrapper.text()).toContain('Chart data was cleared to save memory')
     })
 
+    // The display type is `column`; the icon is `column-chart`. Passing the first where
+    // the second belongs renders an empty span and says nothing about it, which is how
+    // the card went iconless for every chart type.
+    test('translates the display type into an icon name', () => {
+      const wrapper = setup({ variant: 'card', displayType: 'stacked_bar' })
+
+      expect(cardIcon(wrapper).hasClass('react-autoql-icon-stacked-bar-chart')).toBe(true)
+      expect(cardIcon(wrapper).find('svg').exists()).toBe(true)
+    })
+
     test('falls back to a chart icon when the display type is unknown', () => {
-      expect(() => setup({ variant: 'card', displayType: undefined })).not.toThrow()
+      const wrapper = setup({ variant: 'card', displayType: undefined })
+
+      expect(cardIcon(wrapper).hasClass('react-autoql-icon-column-chart')).toBe(true)
+      expect(cardIcon(wrapper).find('svg').exists()).toBe(true)
     })
   })
 

@@ -1084,3 +1084,55 @@ describe('billing gate (enableBillingGate)', () => {
     queryOutputComponent.unmount()
   })
 })
+
+// While an answer's rows are a preview, every option that reads them would hand ten
+// rows back as the whole result. They are withdrawn rather than left to no-op.
+describe('an answer whose rows have been dropped to a preview', () => {
+  const shouldShow = (props, queryOutputProps) => {
+    const { wrapper } = setup(props, queryOutputProps)
+    return wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+  }
+
+  test('withdraws copy and filter on a table', () => {
+    expect(shouldShow({ isDataTruncated: true }).showCopyButton).toBe(false)
+    expect(shouldShow({ isDataTruncated: true }).showFilterButton).toBe(false)
+  })
+
+  test('withdraws PNG export on a chart', () => {
+    expect(shouldShow({ isDataTruncated: true }, { initialDisplayType: 'column' }).showSaveAsPNGButton).toBe(false)
+  })
+
+  test('offers them again once the data is back', () => {
+    expect(shouldShow({ isDataTruncated: false }).showCopyButton).toBe(true)
+    expect(shouldShow({ isDataTruncated: false }).showFilterButton).toBe(true)
+    expect(shouldShow({ isDataTruncated: false }, { initialDisplayType: 'column' }).showSaveAsPNGButton).toBe(true)
+  })
+
+  // CSV is fetched server-side from the query id, so it still returns the full result -
+  // it is the one export that stays. A pivot table's CSV is built in the browser.
+  test('keeps CSV export for a regular table but not a pivot table', () => {
+    expect(shouldShow({ isDataTruncated: true }).showSaveAsCSVButton).toBe(true)
+    expect(shouldShow({ isDataTruncated: true }, { initialDisplayType: 'pivot_table' }).showSaveAsCSVButton).toBe(false)
+  })
+})
+
+describe('copy table success alert', () => {
+  const setupWithCopyResult = (copied) => {
+    const { wrapper } = setup()
+    const onSuccessAlert = jest.fn()
+    wrapper.setProps({ onSuccessAlert })
+    wrapper.instance().props.responseRef.copyTableToClipboard = () => copied
+    wrapper.instance().copyTableToClipboard()
+    return onSuccessAlert
+  }
+
+  test('announces a copy that happened', () => {
+    expect(setupWithCopyResult(true)).toHaveBeenCalledWith('Successfully copied table to clipboard!')
+  })
+
+  // QueryOutput declines while the rows are a preview; announcing that as a success is
+  // how the silent no-op used to read to the user.
+  test('stays quiet when the copy was declined', () => {
+    expect(setupWithCopyResult(false)).not.toHaveBeenCalled()
+  })
+})

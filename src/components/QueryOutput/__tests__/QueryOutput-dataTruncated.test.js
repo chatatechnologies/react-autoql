@@ -58,6 +58,79 @@ describe('an answer whose rows have been dropped to a preview', () => {
     const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
 
     expect(output.instance().getBase64Data()).toBeUndefined()
-    expect(() => output.instance().copyTableToClipboard()).not.toThrow()
+    // False rather than undefined: the toolbar reports a successful copy off this
+    // return value, so a refusal has to be distinguishable from a copy.
+    expect(output.instance().copyTableToClipboard()).toBe(false)
+  })
+
+  // Filtering is answered from the rows the table is holding, which are the preview.
+  test('refuses to open the table filters', () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const toggleIsFiltering = jest.fn()
+    output.instance().tableRef = { _isMounted: true, toggleIsFiltering }
+    output.setState({ displayType: 'table' })
+
+    output.instance().toggleTableFilter(true)
+
+    expect(toggleIsFiltering).not.toHaveBeenCalled()
+  })
+
+  // The add-column button is positioned against the top of the message, not the top of
+  // the table, so the banner pushes the header out from under it. The class is how the
+  // stylesheet knows to move it down (see AddColumnBtn.scss).
+  test('marks the container so the add-column button can follow the table down', () => {
+    const hasMarker = (props) => {
+      const output = mountOutput(props)
+      output.setState({ displayType: 'table' })
+      return output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')
+    }
+
+    expect(hasMarker({ dataTruncated: { droppedRowCount: 4512 } })).toBe(true)
+    expect(hasMarker()).toBe(false)
+  })
+
+  test('drops the marker for a charted message, which gets the card instead', () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    output.setState({ displayType: 'column' })
+
+    expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')).toBe(false)
+  })
+
+  // Cancelling resolves with the rows already on screen - the preview. Treating that as
+  // a restore cleared the banner and left the real rows unreachable.
+  test('does not mark the data restored when the request was cancelled', async () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const onRestoreData = jest.fn()
+    output.setProps({ onRestoreData })
+
+    instance.queryFn = async () => {
+      instance.wasQueryFnCancelled = true
+      return instance.queryResponse
+    }
+
+    await instance.restoreTruncatedData()
+
+    expect(onRestoreData).not.toHaveBeenCalled()
+    expect(instance.state.isDataRestored).toBe(false)
+    expect(instance.isDataTruncated()).toBe(true)
+    // Nothing failed, so nothing to report - the notice is left as it was.
+    expect(instance.state.restoreError).toBeFalsy()
+  })
+
+  test('marks the data restored when the request lands', async () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const onRestoreData = jest.fn()
+    output.setProps({ onRestoreData })
+
+    const full = makeResponse()
+    instance.queryFn = async () => full
+
+    await instance.restoreTruncatedData()
+
+    expect(onRestoreData).toHaveBeenCalledWith(full)
+    expect(instance.state.isDataRestored).toBe(true)
+    expect(instance.isDataTruncated()).toBe(false)
   })
 })

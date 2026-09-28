@@ -1679,63 +1679,77 @@ describe('clientSortAndFilterData with reordered columns', () => {
   })
 })
 
-// A truncated table ends in a statement rather than just stopping, the way the data
-// preview's SimpleTable footer does. It lives inside Tabulator's scroll container, so
-// it is put there by hand rather than rendered by React.
-describe('end of preview footer', () => {
-  const withScrollElement = (wrapper) => {
-    const scrollEl = document.createElement('div')
-    wrapper.instance().ref = { tabulator: { rowManager: { element: scrollEl } } }
-    return scrollEl
-  }
-
-  const footerIn = (scrollEl) => scrollEl.querySelector('.react-autoql-table-preview-footer')
-
-  test('is added when the rows are a preview', () => {
+// Sorting or filtering a preview is answered from the ten rows the table is holding,
+// and reports the result as the whole answer. Both are withdrawn until the data is back.
+describe('sorting and filtering a truncated table', () => {
+  test('strips header sort and filter from the column definitions', () => {
     const wrapper = setup({ isDataTruncated: true })
-    const scrollEl = withScrollElement(wrapper)
 
-    wrapper.instance().syncPreviewFooter()
-
-    expect(footerIn(scrollEl)?.textContent).toBe('End of preview')
+    wrapper
+      .instance()
+      .getFilteredTabulatorColumnDefinitions()
+      .forEach((col) => {
+        expect(col.headerSort).toBe(false)
+        expect(col.headerFilter).toBe(false)
+      })
   })
 
-  test('is not added for a table showing all its rows', () => {
+  test('leaves the column definitions alone when the data is all there', () => {
     const wrapper = setup({ isDataTruncated: false })
-    const scrollEl = withScrollElement(wrapper)
 
-    wrapper.instance().syncPreviewFooter()
-
-    expect(footerIn(scrollEl)).toBeNull()
+    wrapper
+      .instance()
+      .getFilteredTabulatorColumnDefinitions()
+      .forEach((col) => {
+        expect(col.headerSort).not.toBe(false)
+        expect(col.headerFilter).not.toBe(false)
+      })
   })
 
-  test('is removed once the data is restored', () => {
+  // setSort() is programmatic, so `headerSort: false` doesn't stop it - it would replay
+  // the stored sort straight through the local path on mount.
+  test('does not replay the stored sort', () => {
+    const wrapper = setup({ isDataTruncated: true, initialTableParams: { sort: [{ field: '1', dir: 'asc' }] } })
+    const setSort = jest.fn()
+    wrapper.instance().ref = { tabulator: { setSort } }
+
+    wrapper.instance().setSorters()
+
+    expect(setSort).not.toHaveBeenCalled()
+  })
+
+  test('replays the stored sort once the data is back', () => {
+    const wrapper = setup({ isDataTruncated: false, initialTableParams: { sort: [{ field: '1', dir: 'asc' }] } })
+    const setSort = jest.fn()
+    wrapper.instance().ref = { tabulator: { setSort } }
+
+    wrapper.instance().setSorters()
+
+    expect(setSort).toHaveBeenCalledWith([{ column: '1', dir: 'asc' }])
+  })
+
+  test('does not open the filter row', () => {
     const wrapper = setup({ isDataTruncated: true })
-    const scrollEl = withScrollElement(wrapper)
-    wrapper.instance().syncPreviewFooter()
+
+    wrapper.instance().toggleIsFiltering(true)
+
+    expect(wrapper.state('isFiltering')).toBe(false)
+  })
+
+  // The flag changes the definitions Tabulator holds without changing `columns`, so a
+  // deep compare of the columns alone would leave the headers inert after a restore.
+  test('rebuilds the columns when the data is restored', () => {
+    const wrapper = setup({ isDataTruncated: true }, { tabulatorMounted: true })
+    const setColumns = jest.fn()
+    wrapper.instance().ref = { tabulator: { setColumns }, restoreRedraw: jest.fn() }
+    wrapper.instance().updateData = jest.fn(() => Promise.resolve())
+    wrapper.instance().setHeaderInputEventListeners = jest.fn()
+    wrapper.instance().setFilters = jest.fn()
+    wrapper.instance().clearLoadingIndicators = jest.fn()
 
     wrapper.setProps({ isDataTruncated: false })
-    wrapper.instance().syncPreviewFooter()
 
-    expect(footerIn(scrollEl)).toBeNull()
-  })
-
-  // componentDidUpdate calls this on every update, so it has to be idempotent.
-  test('does not stack up when called repeatedly', () => {
-    const wrapper = setup({ isDataTruncated: true })
-    const scrollEl = withScrollElement(wrapper)
-
-    wrapper.instance().syncPreviewFooter()
-    wrapper.instance().syncPreviewFooter()
-    wrapper.instance().syncPreviewFooter()
-
-    expect(scrollEl.querySelectorAll('.react-autoql-table-preview-footer')).toHaveLength(1)
-  })
-
-  test('does nothing before the table has a scroll container', () => {
-    const wrapper = setup({ isDataTruncated: true })
-    wrapper.instance().ref = undefined
-
-    expect(() => wrapper.instance().syncPreviewFooter()).not.toThrow()
+    expect(setColumns).toHaveBeenCalled()
+    expect(setColumns.mock.calls[0][0].every((col) => col.headerFilter !== false)).toBe(true)
   })
 })
