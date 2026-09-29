@@ -518,8 +518,7 @@ export class OptionsToolbar extends React.Component {
               Create a Data Alert...
             </li>
           )}
-          {!!this.props.customOptions?.length &&
-            !this.isDrilldownResponse(this.props) &&
+          {shouldShowButton.showCustomOptions &&
             this.props.customOptions.map((option, i) => {
               return (
                 <li
@@ -1073,6 +1072,14 @@ export class OptionsToolbar extends React.Component {
        * from the query id and returns the full result, so it stays - it is the one way
        * to get the whole answer without restoring it. A pivot table's CSV is built from
        * the rows in the browser, so that one goes with the rest.
+       *
+       * Custom options and Create a Data Alert are withdrawn for the same reason even
+       * though neither draws anything: a custom option is handed a deep clone of
+       * `queryResponse`, which while truncated carries the preview rows and nothing to
+       * say so - whatever the consumer does with it (saving a dashboard tile, most
+       * often) would persist ten rows as the answer. A data alert is built off the same
+       * response and then goes on running unattended, so seeding it from a preview is
+       * worse still.
        */
       const isDataTruncated = !!props.isDataTruncated
       const isClientSideCSV = displayType === 'pivot_table'
@@ -1116,7 +1123,9 @@ export class OptionsToolbar extends React.Component {
           !!response?.data?.data?.query_id,
         showCreateNotificationIcon:
           !isMarkdownOnly &&
+          !isDataTruncated &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
+        showCustomOptions: !isDataTruncated && !!props.customOptions?.length && !this.isDrilldownResponse(props),
         showRefreshDataButton:
           (!isMarkdownOnly && isDataResponse && !!props.onRefreshClick) ||
           (!!props.onRefreshClick && !!props.showRefreshInEdit),
@@ -1140,7 +1149,6 @@ export class OptionsToolbar extends React.Component {
       }
 
       // Don't show more options button if it's a markdown-only message
-      const hasCustomOptions = !!props.customOptions?.length && !this.isDrilldownResponse(props)
       const willShowRefreshInMenu =
         !!props.showResetQueryOption && (shouldShowButton.showRefreshDataButton || !!props.showRefreshInEdit)
       const willShowResetQuery = !!props.showResetQueryOption && !!props.isEditing
@@ -1154,7 +1162,7 @@ export class OptionsToolbar extends React.Component {
           shouldShowButton.showSaveAsPNGButton ||
           willShowRefreshInMenu ||
           willShowResetQuery ||
-          hasCustomOptions)
+          shouldShowButton.showCustomOptions)
     } catch (error) {
       console.error(error)
     }

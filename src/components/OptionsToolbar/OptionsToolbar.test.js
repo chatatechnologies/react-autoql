@@ -1114,6 +1114,34 @@ describe('an answer whose rows have been dropped to a preview', () => {
     expect(shouldShow({ isDataTruncated: true }).showSaveAsCSVButton).toBe(true)
     expect(shouldShow({ isDataTruncated: true }, { initialDisplayType: 'pivot_table' }).showSaveAsCSVButton).toBe(false)
   })
+
+  // A custom option is handed a deep clone of queryResponse, which while truncated is the
+  // preview - and the consumer's usual use for it is saving a dashboard tile.
+  test('withdraws the host app custom options', () => {
+    const customOptions = [{ name: 'Save to dashboard', icon: 'dashboard', callback: jest.fn() }]
+
+    expect(shouldShow({ isDataTruncated: true, customOptions }).showCustomOptions).toBe(false)
+    expect(shouldShow({ isDataTruncated: false, customOptions }).showCustomOptions).toBe(true)
+  })
+
+  // A data alert is built off the same response and then runs unattended afterwards.
+  test('withdraws Create a Data Alert', () => {
+    const autoQLConfig = { ...defaultProps.autoQLConfig, enableNotifications: true }
+
+    expect(shouldShow({ isDataTruncated: true, autoQLConfig }).showCreateNotificationIcon).toBe(false)
+    expect(shouldShow({ isDataTruncated: false, autoQLConfig }).showCreateNotificationIcon).toBe(true)
+  })
+
+  // With every other entry already withdrawn, custom options were the last thing keeping
+  // the menu open - so the button has to go with them rather than open an empty popover.
+  test('drops the more options button once nothing is left in the menu', () => {
+    const customOptions = [{ name: 'Save to dashboard', icon: 'dashboard', callback: jest.fn() }]
+
+    expect(
+      shouldShow({ isDataTruncated: true, customOptions }, { initialDisplayType: 'pivot_table' })
+        .showMoreOptionsButton,
+    ).toBe(false)
+  })
 })
 
 describe('copy table success alert', () => {
