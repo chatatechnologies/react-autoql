@@ -522,6 +522,8 @@ export interface ReportDataBlock {
   // How it's shown, when not as captured: 'table' or a chart type its data supports ('bar', 'line', …).
   // Chosen in the properties panel; a choice the data can't be drawn as is ignored.
   displayType?: string
+  // A question asked in the builder (enableDataBlocks), which its Rerun button can ask again.
+  askedHere?: boolean
 }
 
 export interface ReportPageBreakBlock {
@@ -597,6 +599,11 @@ export interface ReportBuilderProps {
   // Run report: the builder fetches every data block itself. Off by default: blocks show what was
   // captured when they were added, and runReport() resolves null.
   enableRunReport?: boolean
+  // Data blocks can be made in the builder, not only arrive with "Add to Report…". Off by default.
+  enableDataBlocks?: boolean
+  // With enableDataBlocks: an empty Data block offers "Pick dashboard tiles…", which calls this. Show your own
+  // picker and resolve with the blocks to put in the empty block's place, in order, or null to leave it.
+  pickDashboardTiles?: () => Promise<ReportBlock[] | null | undefined> | ReportBlock[] | null | undefined
   className?: string
 }
 

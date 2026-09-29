@@ -1,6 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import axios from 'axios'
+import { v4 as uuid } from 'uuid'
 import {
   authenticationDefault,
   autoQLConfigDefault,
@@ -20,6 +21,8 @@ import {
   insertBlock,
   moveBlock,
   removeBlock,
+  replaceBlock,
+  replaceDataSource,
   resetBlockStyle,
   setDataSource,
   setTitle,
@@ -30,6 +33,7 @@ import {
 import { buildTileIndex, resolveTile } from './model/tiles'
 import { getDataBlockView } from './model/blockView'
 import { executeReport, formatPrintedDate, getRunLabel, planReportRun, summarizeRun } from './run/reportRun'
+import { captureQuestion } from './run/captureRun'
 import { getPageGeometry } from './layout/pageGeometry'
 import { DEFAULT_CHART_TIMEOUT, waitForCharts } from './print/waitForCharts'
 import { printFrame } from './print/printFrame'
@@ -45,9 +49,10 @@ import { footerText, hasDataBlocks } from './components/PageFurniture'
 import './ReportBuilder.scss'
 import './ReportPaper.scss'
 
-// The report builder: a controlled editor for a report template (`report` + `onChange`), which runs the
-// template's data blocks as one unit, lays it out on true Letter pages and prints it with the browser.
-// It stores nothing itself: the host persists `report`, and query results live only in this component.
+// The report builder: a controlled editor for a report (`report` + `onChange`), which lays it out on true
+// Letter pages and prints it with the browser. Data blocks keep what they were given — an answer as it was
+// shown when it was added — and nothing reruns by itself (running every block as one, enableRunReport, is
+// opt-in). It stores nothing itself: the host persists `report`.
 
 const memoize = (fn) => {
   let lastArgs = null
@@ -101,6 +106,13 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // Run report: the builder fetches every data block itself. Off by default — blocks show what was
     // captured when they were added ("Add to Report…"), and running is kept for refreshing them later.
     enableRunReport: PropTypes.bool,
+    // Data blocks can be made here, not only arrive with "Add to Report…": an empty one asks a question once
+    // and keeps the answer (with a Rerun button), or takes tiles from pickDashboardTiles. Off by default.
+    enableDataBlocks: PropTypes.bool,
+    // With enableDataBlocks: an empty Data block offers "Pick dashboard tiles…", which calls this. The host
+    // shows its own picker and resolves with the blocks to put in the empty block's place (in order), or
+    // null to leave it as it is.
+    pickDashboardTiles: PropTypes.func,
     className: PropTypes.string,
   }
 
@@ -117,6 +129,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     getAuthenticationForProject: undefined,
     fontStylesheetUrl: null,
     enableRunReport: false,
+    enableDataBlocks: false,
+    pickDashboardTiles: undefined,
     className: undefined,
   }
 
@@ -137,7 +151,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
       results: {},
       printing: false,
       notice: null,
+      // blockId → { kind: 'tiles' | 'question', seq, query?, error? } while a block waits (or its question failed)
+      pending: {},
     }
+    this.pendingSeq = 0
+    this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
+    this.pendingAborts = {} // blockId → the AbortController of a question on its way
   }
 
   componentDidMount() {
@@ -147,6 +166,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
   componentWillUnmount() {
     this.mounted = false
     this.cancelRequests()
+    Object.values(this.pendingAborts).forEach((controller) => controller?.abort())
     this.printJob?.remove()
   }
 
@@ -244,7 +264,18 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   // ---------------------------------------------------------------- editing
 
-  change = (next) => this.props.onChange(next)
+  // Remembers what it emitted: something that finishes later builds on it until the host passes a report
+  // back (a host may apply onChange a render or more later).
+  change = (next) => {
+    this.lastEmitted = { base: this.props.report, report: next }
+    this.props.onChange(next)
+  }
+
+  // The report as it stands for something finishing now: the last one emitted, until the host passes a new one.
+  getLatestReport = () => {
+    const emitted = this.lastEmitted
+    return emitted && emitted.base === this.props.report ? emitted.report : this.getReport()
+  }
 
   onTitleChange = (title) => this.change(setTitle(this.getReport(), title))
 
@@ -298,6 +329,123 @@ export class ReportBuilderWithoutTheme extends React.Component {
       const el = this.rootRef.current?.querySelector(`[data-block-id="${id}"]`)
       el?.scrollIntoView?.({ block: 'nearest' })
     }, 0)
+  }
+
+  // ---------------------------------------------------------------- filling data blocks
+
+  setPending = (id, entry) =>
+    this.setState((state) => {
+      const pending = { ...state.pending }
+      if (entry) pending[id] = entry
+      else delete pending[id]
+      return { pending }
+    })
+
+  // "Pick dashboard tiles…" on an empty Data block: the host shows its picker (pickDashboardTiles), and the
+  // blocks it resolves with take the empty block's place, in order. Nothing changes if it resolves with none,
+  // if the block is gone or has been filled by then, or if the builder has gone away.
+  onPickTiles = (id) => {
+    const pick = this.props.pickDashboardTiles
+    if (typeof pick !== 'function' || this.pendingSeqs[id]) return
+    this.pendingSeq += 1
+    const seq = this.pendingSeq
+    this.pendingSeqs[id] = seq
+    this.setPending(id, { kind: 'tiles', seq })
+    const settle = () => {
+      if (!this.mounted || this.pendingSeqs[id] !== seq) return false
+      delete this.pendingSeqs[id]
+      this.setPending(id, null)
+      return true
+    }
+
+    let picking
+    try {
+      picking = pick() // at once, so the host's picker opens on this click
+    } catch (error) {
+      picking = Promise.reject(error)
+    }
+
+    Promise.resolve(picking)
+      .then((picked) => {
+        if (!settle()) return
+        const report = this.getLatestReport()
+        const target = report.blocks.find((block) => block.id === id)
+        if (!target || target.type !== 'data' || target.source || target.capture) return
+        const taken = new Set(report.blocks.map((block) => block.id))
+        const blocks = (Array.isArray(picked) ? picked : [])
+          .map(normalizeBlock)
+          .filter(Boolean)
+          .map((block) => {
+            const unique = taken.has(block.id) ? { ...block, id: uuid() } : block
+            taken.add(unique.id)
+            return unique
+          })
+        if (!blocks.length) return
+        this.change(replaceBlock(report, id, blocks))
+        this.setState({ selectedId: blocks[0].id }, () => this.scrollToBlock(blocks[0].id))
+      })
+      .catch((error) => {
+        if (settle()) this.props.onErrorCallback(error)
+      })
+  }
+
+  // A question asked on a Data block: asked once, and its answer kept as the block's capture, marked askedHere
+  // so it can be asked again (Rerun). A failed question stays with the block, with why, to be fixed and asked
+  // again. The answer is dropped if the block is gone or filled by then, and the request stopped if the
+  // builder goes away.
+  askQuestion = (id, query, { rerun = false } = {}) => {
+    if (this.pendingSeqs[id]) return
+    this.pendingSeq += 1
+    const seq = this.pendingSeq
+    this.pendingSeqs[id] = seq
+    const controller = typeof AbortController === 'function' ? new AbortController() : null
+    this.pendingAborts[id] = controller
+    this.setPending(id, { kind: 'question', seq, query, rerun })
+
+    captureQuestion({
+      query,
+      authentication: this.props.authentication,
+      autoQLConfig: this.props.autoQLConfig,
+      signal: controller?.signal,
+    }).then((result) => {
+      if (!this.mounted || this.pendingSeqs[id] !== seq) return
+      delete this.pendingSeqs[id]
+      delete this.pendingAborts[id]
+      if (!result.ok) {
+        const why = STRINGS.data.askFailed[result.reason] || STRINGS.data.askFailed.error
+        const error = result.error?.message ? `${why} ${result.error.message}` : why
+        this.setPending(id, result.reason === 'cancelled' ? null : { kind: 'question', seq, query, rerun, error })
+        return
+      }
+      this.setPending(id, null)
+      const report = this.getLatestReport()
+      const target = report.blocks.find((block) => block.id === id)
+      if (!target || target.type !== 'data') return
+      if (rerun) {
+        // Only while the block still asks this question.
+        if (!target.askedHere || target.source?.type !== 'query' || target.source.query !== query) return
+        this.change(updateBlock(report, id, { capture: result.capture }))
+        return
+      }
+      if (target.source || target.capture) return
+      this.change(
+        replaceDataSource(report, id, {
+          source: { type: 'query', query },
+          capture: result.capture,
+          rows: result.rows,
+          askedHere: true,
+        }),
+      )
+    })
+  }
+
+  onAskCapture = (id, query) => this.askQuestion(id, query)
+
+  onRerun = (id) => {
+    const block = this.getLatestReport().blocks.find((b) => b.id === id)
+    if (block?.askedHere && block.source?.type === 'query') {
+      this.askQuestion(id, block.source.query, { rerun: true })
+    }
   }
 
   // ---------------------------------------------------------------- details layer
@@ -470,8 +618,13 @@ export class ReportBuilderWithoutTheme extends React.Component {
   }
 
   renderEditor = ({ report, views, geometry }) => {
-    const { selectedId, details, run } = this.state
+    const { selectedId, details, run, pending } = this.state
     const canRun = this.props.enableRunReport
+    // Data blocks made here keep what they're given. Running keeps its own Data block, which fetches.
+    const canCapture = !canRun && !!this.props.enableDataBlocks
+    const onPickTiles = canCapture && typeof this.props.pickDashboardTiles === 'function' ? this.onPickTiles : undefined
+    // How the palette and details layer describe a Data block made here: with the host's tile picker or not.
+    const fill = onPickTiles ? 'tiles' : 'ask'
     const selected = report.blocks.find((block) => block.id === selectedId) || null
     const runAt = run && run.status !== 'running' ? run.runAt : null
     return (
@@ -479,9 +632,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
         <Palette
           openType={details?.type}
           onOpen={this.openDetails}
-          // Without running, a Data block made here could never have data: it comes with "Add to Report…".
-          types={canRun ? BLOCK_TYPES : BLOCK_TYPES.filter((type) => type !== 'data')}
-          note={canRun ? STRINGS.paletteNote : STRINGS.paletteNoteCaptures}
+          // A Data block made here is filled by running, or by a question asked (or tiles picked) here.
+          // Otherwise data comes with "Add to Report…".
+          types={canRun || canCapture ? BLOCK_TYPES : BLOCK_TYPES.filter((type) => type !== 'data')}
+          note={
+            canRun
+              ? STRINGS.paletteNote
+              : canCapture
+              ? STRINGS.paletteNoteDataBlocks[fill]
+              : STRINGS.paletteNoteCaptures
+          }
         />
         <main className={`${RB}-canvas`} onMouseDown={this.onCanvasMouseDown}>
           <Sheet
@@ -497,11 +657,14 @@ export class ReportBuilderWithoutTheme extends React.Component {
             onSelect={this.onSelect}
             onAction={this.onBlockAction}
             onText={this.onText}
-            onAsk={this.onAsk}
+            onAsk={canCapture ? this.onAskCapture : this.onAsk}
             dataFormatting={this.props.dataFormatting}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             canRun={canRun}
+            canCapture={canCapture}
+            onPickTiles={onPickTiles}
+            pending={pending}
           />
         </main>
         <PropertiesPanel
@@ -515,12 +678,18 @@ export class ReportBuilderWithoutTheme extends React.Component {
           onStyleReset={this.onStyleReset}
           onSourceChange={this.onSourceChange}
           canRun={canRun}
+          canCapture={canCapture}
+          onPickTiles={onPickTiles}
+          onAskCapture={canCapture ? this.onAskCapture : undefined}
+          onRerun={canCapture ? this.onRerun : undefined}
+          pending={selected ? pending[selected.id] : undefined}
         />
         {details ? (
           <BlockDetails
             type={details.type}
             draft={details.draft}
             position={details.position}
+            copy={details.type === 'data' && canCapture ? STRINGS.dataDetails[fill] : undefined}
             onDraftChange={this.onDraftChange}
             onInsert={this.insertFromDetails}
             onClose={this.closeDetails}

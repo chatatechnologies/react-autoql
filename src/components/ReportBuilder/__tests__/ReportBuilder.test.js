@@ -666,3 +666,331 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
     expect(JSON.parse(JSON.stringify(saved))).toStrictEqual(saved)
   })
 })
+
+describe('Data blocks made in the builder (enableDataBlocks)', () => {
+  const deferred = () => {
+    let resolve
+    let reject
+    const promise = new Promise((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  // A tile block as the host's picker makes it: the tile as its source, what it showed as its capture.
+  const pickedBlock = (id, tileKey, rows) => ({
+    id,
+    type: 'data',
+    width: 'full',
+    rows: 25,
+    source: tileSourceOf(tileKey),
+    capture: {
+      version: 1,
+      capturedAt: new Date(2026, 8, 29, 13, 0).toISOString(),
+      displayType: 'table',
+      data: { columns: COLUMNS, rows: rowsOf(rows), count_rows: rows },
+      table: { sort: [], filtered: false },
+      config: { displayType: 'table' },
+    },
+  })
+
+  const EMPTY = { id: 'e', type: 'data', source: null, rows: 25, width: 'full' }
+  const around = (block) =>
+    createEmptyReport({
+      blocks: [
+        { id: 'a', type: 'heading', text: 'Before', level: 2, width: 'full' },
+        block,
+        { id: 'z', type: 'heading', text: 'After', level: 2, width: 'full' },
+      ],
+    })
+
+  const setupPicking = (initial, props = {}) =>
+    setup(initial, { enableDataBlocks: true, pickDashboardTiles: jest.fn(() => null), ...props })
+
+  it('offers a Data block, described by what can fill it', () => {
+    const { unmount } = setup(createEmptyReport(), { enableDataBlocks: true })
+    expect(screen.getByRole('button', { name: 'Data' })).toBeTruthy()
+    expect(screen.getByText(/a question you ask here, or an answer added with/)).toBeTruthy()
+    unmount()
+
+    setupPicking()
+    expect(screen.getByText(/a question you ask here, dashboard tiles you pick, or an answer/)).toBeTruthy()
+  })
+
+  it('inserts an empty Data block that asks a question or picks tiles, on the page and in the panel', () => {
+    const { lastReport } = setupPicking()
+    fireEvent.click(screen.getByRole('button', { name: 'Data' }))
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByText(/ask a question, or pick dashboard tiles/)).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Insert block' }))
+
+    expect(lastReport().blocks).toMatchObject([{ type: 'data', source: null }])
+    expect(screen.getByTestId('report-builder-ask')).toBeTruthy()
+    expect(screen.getByTestId('report-builder-pick-tiles').textContent).toBe('Pick dashboard tiles…')
+    expect(within(panel()).getByTestId('report-builder-question')).toBeTruthy()
+    expect(within(panel()).getByTestId('report-builder-panel-pick-tiles')).toBeTruthy()
+    expect(within(panel()).getByText(/Each tile you pick becomes a Data block of its own/)).toBeTruthy()
+  })
+
+  it('asks without a tile picker, too', () => {
+    setup(createEmptyReport({ blocks: [EMPTY] }), { enableDataBlocks: true })
+    expect(screen.getByTestId('report-builder-ask')).toBeTruthy()
+    expect(screen.queryByTestId('report-builder-pick-tiles')).toBeNull()
+  })
+
+  it('puts the picked tiles in the empty block’s place, in order, and selects the first', async () => {
+    const pick = deferred()
+    const pickDashboardTiles = jest.fn(() => pick.promise)
+    const { lastReport } = setupPicking(around(EMPTY), { pickDashboardTiles })
+
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    expect(pickDashboardTiles).toHaveBeenCalledTimes(1)
+
+    await act(async () => pick.resolve([pickedBlock('p1', 't1', 3), pickedBlock('p2', 't2', 4)]))
+
+    await waitFor(() => expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['a', 'p1', 'p2', 'z']))
+    expect(lastReport().blocks[1]).toMatchObject({ type: 'data', source: tileSourceOf('t1') })
+    expect(lastReport().blocks[1].capture.data.rows).toHaveLength(3)
+    // The first picked block is selected: the panel shows what it captured.
+    expect(within(panel()).getByText('Captured')).toBeTruthy()
+  })
+
+  it('asks the host once while its picker is open', async () => {
+    const pick = deferred()
+    const pickDashboardTiles = jest.fn(() => pick.promise)
+    setupPicking(around(EMPTY), { pickDashboardTiles })
+
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    const button = await screen.findByText('Picking tiles…')
+    expect(button.disabled).toBe(true)
+    fireEvent.click(button)
+    expect(pickDashboardTiles).toHaveBeenCalledTimes(1)
+
+    await act(async () => pick.resolve(null))
+    await waitFor(() => expect(screen.getByTestId('report-builder-pick-tiles').disabled).toBe(false))
+  })
+
+  it('leaves the block as it is when the picker closes with nothing', async () => {
+    const pick = deferred()
+    const { spy } = setupPicking(around(EMPTY), { pickDashboardTiles: () => pick.promise })
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    await act(async () => pick.resolve([]))
+    await waitFor(() =>
+      expect(screen.getByTestId('report-builder-pick-tiles').textContent).toBe('Pick dashboard tiles…'),
+    )
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('drops the tiles when the block was deleted while picking', async () => {
+    const pick = deferred()
+    const { lastReport } = setupPicking(around(EMPTY), { pickDashboardTiles: () => pick.promise })
+    selectBlock('Data')
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['a', 'z'])
+
+    await act(async () => pick.resolve([pickedBlock('p1', 't1', 3)]))
+    expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['a', 'z'])
+  })
+
+  it('does nothing once the builder has gone away', async () => {
+    const pick = deferred()
+    const { spy, unmount } = setupPicking(around(EMPTY), { pickDashboardTiles: () => pick.promise })
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    unmount()
+    await act(async () => pick.resolve([pickedBlock('p1', 't1', 3)]))
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('reports a picker that failed, and keeps the block', async () => {
+    const pick = deferred()
+    const onErrorCallback = jest.fn()
+    const { spy } = setupPicking(around(EMPTY), { pickDashboardTiles: () => pick.promise, onErrorCallback })
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    const error = new Error('no dashboards')
+    await act(async () => pick.reject(error))
+    await waitFor(() => expect(onErrorCallback).toHaveBeenCalledWith(error))
+    expect(spy).not.toHaveBeenCalled()
+    expect(screen.getByTestId('report-builder-pick-tiles').disabled).toBe(false)
+  })
+
+  it('builds on what it last emitted when the host passes it back late', async () => {
+    // A host that applies each change only when told to.
+    let flush = () => {}
+    const spy = jest.fn()
+    const LateHost = ({ initial, ...props }) => {
+      const [report, setReport] = React.useState(initial)
+      flush = () => setReport(spy.mock.calls[spy.mock.calls.length - 1][0])
+      return <ReportBuilder authentication={AUTH} dashboards={DASHBOARDS} report={report} onChange={spy} {...props} />
+    }
+    const pick = deferred()
+    render(<LateHost initial={around(EMPTY)} enableDataBlocks pickDashboardTiles={() => pick.promise} />)
+
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    fireEvent.change(screen.getByTestId('report-builder-title'), { target: { value: 'Q3 review' } })
+    await act(async () => pick.resolve([pickedBlock('p1', 't1', 3)]))
+
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2))
+    const last = spy.mock.calls[1][0]
+    expect(last.title).toBe('Q3 review')
+    expect(last.blocks.map((block) => block.id)).toStrictEqual(['a', 'p1', 'z'])
+    act(() => flush())
+  })
+
+  it('gives a picked block a new id when it would clash with one in the report', async () => {
+    const pick = deferred()
+    const { lastReport } = setupPicking(around(EMPTY), { pickDashboardTiles: () => pick.promise })
+    fireEvent.click(screen.getByTestId('report-builder-pick-tiles'))
+    await act(async () => pick.resolve([pickedBlock('a', 't1', 3), pickedBlock('a', 't2', 2)]))
+    await waitFor(() => expect(lastReport().blocks).toHaveLength(4))
+    const ids = lastReport().blocks.map((block) => block.id)
+    expect(new Set(ids).size).toBe(4)
+    expect(ids[0]).toBe('a')
+  })
+
+  it('keeps running reports’ own Data block when both are on', () => {
+    setup(createEmptyReport({ blocks: [EMPTY] }), {
+      enableRunReport: true,
+      enableDataBlocks: true,
+      pickDashboardTiles: jest.fn(),
+    })
+    expect(screen.queryByTestId('report-builder-pick-tiles')).toBeNull()
+    expect(screen.queryByTestId('report-builder-ask')).toBeNull()
+    expect(screen.getByPlaceholderText('Type a query in your own words')).toBeTruthy()
+  })
+})
+
+describe('questions asked in the builder (enableDataBlocks)', () => {
+  const EMPTY = { id: 'e', type: 'data', source: null, rows: 25, width: 'full' }
+  const captureOfRows = (n) => ({
+    version: 1,
+    capturedAt: new Date(2026, 8, 29, 13, 0).toISOString(),
+    displayType: 'table',
+    data: { columns: COLUMNS, rows: rowsOf(n), count_rows: n },
+    table: { sort: [], filtered: false },
+    config: { displayType: 'table' },
+  })
+  const ASKED = {
+    id: 'q',
+    type: 'data',
+    width: 'full',
+    rows: 25,
+    source: { type: 'query', query: 'aum by account' },
+    capture: captureOfRows(2),
+    askedHere: true,
+  }
+
+  const setupAsking = (initial, props = {}) => setup(initial, { enableDataBlocks: true, ...props })
+  const ask = (text) => {
+    const input = screen.getByTestId('report-builder-ask')
+    fireEvent.change(input, { target: { value: text } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+  }
+
+  it('asks a question once and keeps the answer, marked as asked here', async () => {
+    runQuery.mockResolvedValue(responseOf(rowsOf(3)))
+    const { lastReport } = setupAsking(createEmptyReport({ blocks: [EMPTY] }))
+
+    ask('aum by account')
+    expect(screen.getByText('Asking “aum by account”…')).toBeTruthy()
+
+    await waitFor(() =>
+      expect(lastReport()?.blocks[0]).toMatchObject({
+        id: 'e',
+        type: 'data',
+        source: { type: 'query', query: 'aum by account' },
+        askedHere: true,
+        // Three rows fit the smallest option, so the block prints them all.
+        rows: 10,
+      }),
+    )
+    expect(runQuery).toHaveBeenCalledTimes(1)
+    expect(runQuery.mock.calls[0][0]).toMatchObject({
+      query: 'aum by account',
+      source: 'report_builder.question',
+      pageSize: 2000,
+    })
+    expect(lastReport().blocks[0].capture.data.rows).toHaveLength(3)
+    expect(JSON.parse(JSON.stringify(lastReport()))).toStrictEqual(lastReport())
+    expect(screen.getByText('“aum by account”')).toBeTruthy()
+  })
+
+  it('asks from the panel as well', async () => {
+    runQuery.mockResolvedValue(responseOf(rowsOf(3)))
+    const { lastReport } = setupAsking(createEmptyReport({ blocks: [EMPTY] }))
+    selectBlock('Data')
+    const box = within(panel()).getByTestId('report-builder-question')
+    fireEvent.change(box, { target: { value: 'aum by account' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
+    await waitFor(() => expect(lastReport()?.blocks[0].askedHere).toBe(true))
+  })
+
+  it('keeps a question that failed in the block, with why, to be asked again', async () => {
+    runQuery.mockRejectedValue({ data: { message: 'The query timed out.', reference_id: '1.1.504' } })
+    const { spy } = setupAsking(createEmptyReport({ blocks: [EMPTY] }))
+
+    ask('aum by account')
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toBe('That question didn’t run. The query timed out.')
+    expect(screen.getByTestId('report-builder-ask').value).toBe('aum by account')
+    expect(spy).not.toHaveBeenCalled()
+
+    runQuery.mockResolvedValue(responseOf(rowsOf(3)))
+    ask('aum by account')
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(1))
+  })
+
+  it('reruns only a question asked here, keeping how the block is shown', async () => {
+    const added = { ...ASKED, id: 'x', askedHere: undefined }
+    const tile = { ...ASKED, id: 't', source: tileSourceOf('t1'), askedHere: undefined }
+    const { lastReport } = setupAsking(createEmptyReport({ blocks: [{ ...ASKED, rows: 50 }, added, tile] }))
+
+    selectBlock('Data', 1)
+    expect(within(panel()).queryByTestId('report-builder-rerun')).toBeNull()
+    selectBlock('Data', 2)
+    expect(within(panel()).queryByTestId('report-builder-rerun')).toBeNull()
+
+    selectBlock('Data', 0)
+    runQuery.mockResolvedValue(responseOf(rowsOf(5)))
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+    expect(within(panel()).getByTestId('report-builder-rerun').textContent).toBe('Asking again…')
+
+    await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(5))
+    expect(runQuery.mock.calls[0][0]).toMatchObject({ query: 'aum by account' })
+    expect(lastReport().blocks[0]).toMatchObject({ id: 'q', rows: 50, askedHere: true })
+    expect(within(panel()).getByTestId('report-builder-rerun').textContent).toBe('Rerun')
+  })
+
+  it('drops the answer for a block deleted while asking', async () => {
+    let answer
+    runQuery.mockImplementation(() => new Promise((resolve) => (answer = resolve)))
+    const { lastReport } = setupAsking(
+      createEmptyReport({ blocks: [EMPTY, { id: 'z', type: 'heading', text: 'After', level: 2, width: 'full' }] }),
+    )
+    selectBlock('Data')
+    ask('aum by account')
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    await act(async () => answer(responseOf(rowsOf(3))))
+    expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['z'])
+  })
+
+  it('stops asking when the builder goes away', async () => {
+    let request
+    runQuery.mockImplementation((req) => {
+      request = req
+      return new Promise((resolve, reject) => {
+        req.cancelToken.addEventListener('abort', () => reject(new Error('canceled')))
+      })
+    })
+    const { spy, unmount } = setupAsking(createEmptyReport({ blocks: [EMPTY] }))
+    ask('aum by account')
+    unmount()
+
+    expect(request.cancelToken.aborted).toBe(true)
+    await act(async () => {})
+    expect(spy).not.toHaveBeenCalled()
+  })
+})

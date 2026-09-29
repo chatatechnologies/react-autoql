@@ -158,7 +158,7 @@ const TextStyle = ({ block, onBlockChange, onStyleChange, onStyleReset }) => {
   )
 }
 
-const QuestionBox = ({ initial, onAsk }) => {
+const QuestionBox = ({ initial, onAsk, note = P.askNote, disabled = false }) => {
   const id = useStableId('question')
   return (
     <>
@@ -170,6 +170,7 @@ const QuestionBox = ({ initial, onAsk }) => {
           defaultValue={initial || ''}
           placeholder={STRINGS.data.askPlaceholder}
           data-test='report-builder-question'
+          disabled={disabled}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && e.currentTarget.value.trim()) {
               e.preventDefault()
@@ -178,7 +179,7 @@ const QuestionBox = ({ initial, onAsk }) => {
           }}
         />
       </Field>
-      <Note>{P.askNote}</Note>
+      <Note>{note}</Note>
     </>
   )
 }
@@ -348,12 +349,27 @@ class DataProperties extends React.Component {
   }
 
   render() {
-    const { block, view, dashboards, onBlockChange, canRun = true } = this.props
+    const {
+      block,
+      view,
+      dashboards,
+      onBlockChange,
+      canRun = true,
+      canCapture = false,
+      onPickTiles,
+      onAskCapture,
+      onRerun,
+      pending,
+    } = this.props
     const { source } = block
     const captured = !!view?.capturedAt
     // Without running, a new source would have no data, so sources aren't chosen here at all.
     const picking = canRun && (!source || this.state.editing)
     const dashboardId = this.state.dashboardId ?? (source?.type === 'tile' ? source.dashboardId : null)
+    const question = pending?.kind === 'question' ? pending : null
+    const asking = !!question && !question.error
+    // A question asked in this builder can be asked again; nothing else here reruns.
+    const rerunnable = !canRun && canCapture && !!onRerun && !!block.askedHere && source?.type === 'query'
 
     return (
       <>
@@ -388,8 +404,31 @@ class DataProperties extends React.Component {
           <>
             <SectionLabel>{P.source}</SectionLabel>
             <SourceCard block={block} view={view} />
-            <Note>{captured ? P.capturedNote : source.type === 'query' ? P.questionNote : P.sourceNote}</Note>
+            <Note>
+              {rerunnable
+                ? P.askedNote
+                : captured
+                ? P.capturedNote
+                : source.type === 'query'
+                ? P.questionNote
+                : P.sourceNote}
+            </Note>
             {!canRun && !captured ? <Note>{P.noCaptureNote}</Note> : null}
+            {rerunnable ? (
+              <>
+                <button
+                  type='button'
+                  className={`${RB}-button`}
+                  data-block=''
+                  data-test='report-builder-rerun'
+                  disabled={asking}
+                  onClick={() => onRerun(block.id)}
+                >
+                  {asking ? P.rerunning : P.rerun}
+                </button>
+                {question?.error ? <Note tone='warning'>{question.error}</Note> : <Note>{P.rerunNote}</Note>}
+              </>
+            ) : null}
             {canRun ? (
               <button
                 type='button'
@@ -411,6 +450,36 @@ class DataProperties extends React.Component {
               <>
                 <Divider />
                 <RowsField block={block} view={view} onBlockChange={onBlockChange} />
+              </>
+            ) : null}
+          </>
+        ) : !canRun && canCapture ? (
+          <>
+            <QuestionBox
+              // Remade after a failed question so it comes back with that question in it.
+              key={question ? `asked-${question.seq}` : 'ask'}
+              initial={question ? question.query : ''}
+              onAsk={(query) => onAskCapture?.(block.id, query)}
+              note={asking ? STRINGS.data.asking(question.query) : P.askCaptureNote}
+              disabled={asking || pending?.kind === 'tiles'}
+            />
+            {question?.error ? <Note tone='warning'>{question.error}</Note> : null}
+            {onPickTiles ? (
+              <>
+                <div className={`${RB}-or`}>
+                  <span>{P.orTiles}</span>
+                </div>
+                <button
+                  type='button'
+                  className={`${RB}-button`}
+                  data-block=''
+                  data-test='report-builder-panel-pick-tiles'
+                  disabled={!!pending && !pending.error}
+                  onClick={() => onPickTiles(block.id)}
+                >
+                  {pending?.kind === 'tiles' ? STRINGS.data.picking : STRINGS.data.pickTiles}
+                </button>
+                <Note>{P.pickTilesNote}</Note>
               </>
             ) : null}
           </>

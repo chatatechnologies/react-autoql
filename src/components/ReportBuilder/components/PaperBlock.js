@@ -82,9 +82,62 @@ const Placeholder = ({ title, children, tone }) => (
   </div>
 )
 
-const EmptyDataContent = ({ mode, onAsk, canRun }) => {
+const EmptyDataContent = ({ mode, onAsk, canRun, canCapture, onPickTiles, pending }) => {
   if (mode !== 'edit') {
     return null
+  }
+  if (!canRun && canCapture) {
+    // Filled once: by a question asked here, kept as it answers, or by the tiles picked in the host's picker,
+    // which take this block's place.
+    const question = pending?.kind === 'question' ? pending : null
+    const asking = !!question && !question.error
+    return (
+      <Placeholder title={STRINGS.data.emptyTitle}>
+        {asking ? (
+          <span role='status'>{STRINGS.data.asking(question.query)}</span>
+        ) : (
+          <input
+            // Remade after a failed question so it comes back with that question in it.
+            key={question ? `asked-${question.seq}` : 'ask'}
+            type='text'
+            className={`${RB}-ask`}
+            defaultValue={question ? question.query : ''}
+            placeholder={STRINGS.data.askPlaceholder}
+            aria-label={STRINGS.data.askPlaceholder}
+            data-test='report-builder-ask'
+            disabled={pending?.kind === 'tiles'}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                e.preventDefault()
+                onAsk?.(e.currentTarget.value.trim())
+              }
+            }}
+          />
+        )}
+        {question?.error ? (
+          <span className={`${RB}-ask-error`} role='alert'>
+            {question.error}
+          </span>
+        ) : null}
+        <span>{STRINGS.data.askBody}</span>
+        {onPickTiles ? (
+          <>
+            <span>{STRINGS.data.or}</span>
+            <button
+              type='button'
+              className={`${RB}-button`}
+              data-variant='primary'
+              data-test='report-builder-pick-tiles'
+              disabled={!!pending && !pending.error}
+              onClick={onPickTiles}
+            >
+              {pending?.kind === 'tiles' ? STRINGS.data.picking : STRINGS.data.pickTiles}
+            </button>
+            <span>{STRINGS.data.pickBody}</span>
+          </>
+        ) : null}
+      </Placeholder>
+    )
   }
   if (!canRun) {
     // Nothing here could fetch data: it arrives with "Add to Report…".
@@ -170,9 +223,21 @@ const DataContent = ({
   autoQLConfig,
   onAsk,
   canRun = true,
+  canCapture = false,
+  onPickTiles,
+  pending,
 }) => {
   if (!view || view.state === 'empty') {
-    return <EmptyDataContent mode={mode} onAsk={onAsk} canRun={canRun} />
+    return (
+      <EmptyDataContent
+        mode={mode}
+        onAsk={onAsk}
+        canRun={canRun}
+        canCapture={canCapture}
+        onPickTiles={onPickTiles}
+        pending={pending}
+      />
+    )
   }
 
   const continuation = !!piece && piece.from > 0

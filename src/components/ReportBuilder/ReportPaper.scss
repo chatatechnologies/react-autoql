@@ -314,6 +314,11 @@ $warn-rule: #f0dcb0;
     }
   }
 
+  .#{$rb}-ask-error {
+    max-width: 250pt;
+    color: $warn-ink;
+  }
+
   .#{$rb}-page-break {
     display: flex;
     align-items: center;

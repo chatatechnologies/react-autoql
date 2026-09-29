@@ -56,6 +56,17 @@ export const resetBlockStyle = (report, id) =>
     }),
   )
 
+// The block gives way to the given blocks, in order, where it stood.
+export const replaceBlock = (report, id, blocks) => {
+  const at = indexOf(report, id)
+  if (at < 0) {
+    return report
+  }
+  const next = report.blocks.slice()
+  next.splice(at, 1, ...blocks)
+  return withBlocks(report, next)
+}
+
 export const removeBlock = (report, id) =>
   withBlocks(
     report,
@@ -89,3 +100,18 @@ export const setTitle = (report, title) => ({ ...report, title })
 
 // Pointing a data block at a new source clears nothing else: rows stay what the author chose.
 export const setDataSource = (report, id, source) => updateBlock(report, id, { source })
+
+// A data block given a new answer: its source and capture change together (a capture without its source
+// doesn't print), and how it's shown starts again from that answer — its rows as given, no chosen display.
+// `askedHere` marks a question asked in the builder, which can be asked again (Rerun).
+export const replaceDataSource = (report, id, { source, capture, rows, askedHere = false }) =>
+  withBlocks(
+    report,
+    report.blocks.map((block) => {
+      if (block.id !== id) {
+        return block
+      }
+      const { displayType, askedHere: previous, ...rest } = block
+      return { ...rest, source, capture, rows: snapTableRows(rows), ...(askedHere ? { askedHere: true } : {}) }
+    }),
+  )

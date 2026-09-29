@@ -59,6 +59,7 @@ export const EditorBlock = React.memo(function EditorBlock({
   onAction,
   onText,
   onAsk,
+  onPickTiles,
   ...paperProps
 }) {
   const label = BLOCK_INFO[block.type]?.label || block.type
@@ -87,6 +88,7 @@ export const EditorBlock = React.memo(function EditorBlock({
         mode='edit'
         onTextChange={(text) => onText(block.id, text)}
         onAsk={(query) => onAsk(block.id, query)}
+        onPickTiles={onPickTiles ? () => onPickTiles(block.id) : undefined}
         {...paperProps}
       />
     </div>
@@ -115,6 +117,9 @@ export const Sheet = ({
   authentication,
   autoQLConfig,
   canRun,
+  canCapture,
+  onPickTiles,
+  pending,
 }) => {
   const { page, blocks } = report
   const stack = TYPEFACES[page.typeface]?.stack
@@ -154,6 +159,10 @@ export const Sheet = ({
                     authentication={authentication}
                     autoQLConfig={autoQLConfig}
                     canRun={canRun}
+                    canCapture={canCapture}
+                    onPickTiles={onPickTiles}
+                    // Its own entry only: the block is memoized.
+                    pending={pending?.[block.id]}
                   />
                 )
               })}

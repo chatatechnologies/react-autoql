@@ -67,8 +67,9 @@ export class BlockDetails extends React.Component {
   }
 
   render() {
-    const { type, draft, position, onDraftChange, onInsert, onClose } = this.props
-    const info = BLOCK_INFO[type]
+    const { type, draft, position, copy, onDraftChange, onInsert, onClose } = this.props
+    // `copy` ({ what, note }) replaces the block type's own, where the builder's mode changes what it does.
+    const info = { ...BLOCK_INFO[type], ...copy }
     const nameId = `${RB}-details-name-${type}`
     return (
       <>

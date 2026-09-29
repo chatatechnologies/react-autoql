@@ -20,6 +20,23 @@ export const STRINGS = {
   paletteHint: 'Click a block to see what it does, then insert it.',
   paletteNote: 'A Data block shows a dashboard tile exactly as its dashboard does, or answers a question.',
   paletteNoteCaptures: 'To add data, use “Add to Report…” on a dashboard tile or an answer in the Query view.',
+  // When Data blocks keep what they're given (enableDataBlocks): with and without the host's tile picker.
+  paletteNoteDataBlocks: {
+    tiles:
+      'A Data block keeps a result as it was shown: a question you ask here, dashboard tiles you pick, or an answer added with “Add to Report…”.',
+    ask: 'A Data block keeps a result as it was shown: a question you ask here, or an answer added with “Add to Report…”.',
+  },
+  // The details layer's copy for such a Data block.
+  dataDetails: {
+    tiles: {
+      what: 'A result kept as it was shown: ask a question, or pick dashboard tiles. Nothing reruns by itself.',
+      note: 'The block arrives empty — ask it a question, or pick dashboard tiles for it.',
+    },
+    ask: {
+      what: 'A result kept as it was shown: ask a question, and its answer stays as it came back.',
+      note: 'The block arrives empty — ask it a question.',
+    },
+  },
 
   details: 'Details',
   detailsSub: 'Report blocks',
@@ -49,6 +66,17 @@ export const STRINGS = {
     emptyTitle: 'What should this block show?',
     emptyBody: 'Ask a question, or pick a dashboard tile in the panel on the right.',
     askPlaceholder: 'Type a query in your own words',
+    pickTiles: 'Pick dashboard tiles…',
+    picking: 'Picking tiles…',
+    pickBody: 'Each tile you pick becomes a Data block here, as its dashboard shows it now.',
+    or: 'or',
+    askBody: 'Press Enter to ask. The answer is kept as it comes back; nothing reruns by itself.',
+    asking: (query) => `Asking “${query}”…`,
+    askFailed: {
+      error: 'That question didn’t run.',
+      'no-data': 'That question came back with no data to show.',
+      unsupported: 'That answer can’t be kept in a report yet.',
+    },
     notRun: 'Run the report to load this.',
     noCapture:
       'No data was kept for this block. Add it again with “Add to Report…” from its dashboard or the Query view.',
@@ -126,6 +154,14 @@ export const STRINGS = {
     capturedNote:
       'This is what the answer showed when it was added — its data, sorting, filters, columns and chart settings — kept as it was. Add it again to update it.',
     noCaptureNote: 'Data blocks come from “Add to Report…” on a dashboard tile or an answer in the Query view.',
+    pickTilesNote:
+      'Each tile you pick becomes a Data block of its own, kept as its dashboard shows it now. Nothing reruns by itself.',
+    askCaptureNote: 'Press Enter to ask. The answer is kept as it comes back — nothing reruns by itself.',
+    orTiles: 'or pick dashboard tiles',
+    askedNote: 'This is the answer as it came back when the question was asked, kept as it was.',
+    rerun: 'Rerun',
+    rerunning: 'Asking again…',
+    rerunNote: 'Asks the question again, and keeps the new answer in place of this one.',
     questionNote: 'A question has no tile to inherit from, so it shows AutoQL’s default display.',
     changeSource: 'Change source',
     cancel: 'Cancel',
