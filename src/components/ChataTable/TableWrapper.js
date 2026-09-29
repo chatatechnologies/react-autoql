@@ -105,10 +105,8 @@ export default class TableWrapper extends React.Component {
     window.addEventListener('resize', this.throttledHandleResize)
     this.observeFirstRealHeight()
 
-    // Add touch event listeners for better mobile scrolling
-    if (isMobile && this.tableRef) {
-      this.setupMobileTouchHandlers()
-    }
+    // Mobile touch handlers attach on `tableBuilt` - the tableholder they bind to is
+    // Tabulator's, and a deferred table has no tableholder to find yet.
   }
 
   shouldComponentUpdate = () => {
@@ -133,9 +131,7 @@ export default class TableWrapper extends React.Component {
     cancelAnimationFrame(this.buildFrame)
 
     // Clean up mobile touch handlers
-    if (isMobile && this.tableRef) {
-      this.cleanupMobileTouchHandlers()
-    }
+    this.cleanupMobileTouchHandlers()
   }
 
   /**
@@ -243,8 +239,17 @@ export default class TableWrapper extends React.Component {
   }
 
   setupMobileTouchHandlers = () => {
+    if (this.touchStartHandler) {
+      return
+    }
+
     // Add minimal touch handling to prevent parent container scrolling when actively interacting with table
+    let retriesLeft = 10
     const setupHandlers = () => {
+      if (!this._isMounted) {
+        return
+      }
+
       const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
       if (tableholder) {
         // Track if user is currently actively touching the table (not just momentum scrolling)
@@ -334,9 +339,10 @@ export default class TableWrapper extends React.Component {
           passive: true,
           capture: true, // Use capture to catch events before they reach other elements
         })
-      } else {
-        // If tableholder isn't ready yet, try again after a short delay
-        setTimeout(setupHandlers, 100)
+      } else if (retriesLeft-- > 0) {
+        // If tableholder isn't ready yet, try again after a short delay. Bounded and
+        // tracked - an unbounded loop here outlived the table it was waiting for.
+        this.touchSetupTimeout = setTimeout(setupHandlers, 100)
       }
     }
 
@@ -344,6 +350,8 @@ export default class TableWrapper extends React.Component {
   }
 
   cleanupMobileTouchHandlers = () => {
+    clearTimeout(this.touchSetupTimeout)
+
     const tableholder = this.tableRef?.querySelector('.tabulator-tableholder')
     if (tableholder && this.touchStartHandler) {
       tableholder.removeEventListener('touchstart', this.touchStartHandler, { capture: false })
@@ -380,6 +388,10 @@ export default class TableWrapper extends React.Component {
 
     this.tabulator.on('tableBuilt', async () => {
       this.isInitialized = true
+
+      if (isMobile && this.tableRef) {
+        this.setupMobileTouchHandlers()
+      }
 
       if (this.props.options?.ajaxRequestFunc) {
         try {

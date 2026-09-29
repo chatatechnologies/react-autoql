@@ -96,6 +96,42 @@ describe('an answer whose rows have been dropped to a preview', () => {
     expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')).toBe(false)
   })
 
+  // Every cell of a pivot table is an aggregate, so one built from the preview shows
+  // totals that are wrong with nothing on screen to give that away.
+  describe('a pivoted message', () => {
+    // testCases[8] has no pivot; this one does.
+    const mountPivotable = (props) =>
+      mount(<QueryOutputWithoutTheme queryResponse={_cloneDeep(testCases[10])} queryFn={() => {}} {...props} />)
+
+    test('is replaced by the card rather than pivoting the preview', () => {
+      const output = mountPivotable({ dataTruncated: { droppedRowCount: 4512 } })
+      output.setState({ displayType: 'pivot_table' })
+
+      expect(output.find('.react-autoql-data-truncated-card').exists()).toBe(true)
+      // Not both: the card already says what happened.
+      expect(output.find('.react-autoql-data-truncated-banner').exists()).toBe(false)
+      expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')).toBe(
+        false,
+      )
+    })
+
+    test('pivots normally once the data is back', () => {
+      const output = mountPivotable({ dataTruncated: { droppedRowCount: 4512 } })
+      output.setState({ displayType: 'pivot_table', isDataRestored: true })
+
+      expect(output.find('.react-autoql-data-truncated-card').exists()).toBe(false)
+    })
+
+    // Hidden behind another display type, it contributes nothing but a wrong table.
+    test('renders nothing while the message is showing something else', () => {
+      const output = mountPivotable({ dataTruncated: { droppedRowCount: 4512 } })
+      output.setState({ displayType: 'table' })
+
+      expect(output.instance().renderPivotTable('pivot_table')).not.toBeNull()
+      expect(output.instance().renderPivotTable('table')).toBeNull()
+    })
+  })
+
   // Cancelling resolves with the rows already on screen - the preview. Treating that as
   // a restore cleared the banner and left the real rows unreachable.
   test('does not mark the data restored when the request was cancelled', async () => {

@@ -222,7 +222,7 @@ export class DataMessenger extends React.Component {
     placement: 'right',
     maskClosable: true,
     isVisible: true,
-    width: 600,
+    width: 800,
     height: 350,
     showHandle: true,
     handleImage: undefined,
@@ -585,7 +585,7 @@ export class DataMessenger extends React.Component {
   onDrawerChange = (isOpen) => {
     if (!isOpen) {
       this.setState({
-          selectedValueLabel: undefined,
+        selectedValueLabel: undefined,
         isVisible: false,
       })
     } else {

@@ -483,6 +483,12 @@ export default class ChataTable extends React.Component {
     const stats = {}
 
     try {
+      // A truncated answer only has its preview rows on hand, and a total or an average
+      // over those is a wrong number, not a partial one. No stats until the data is back.
+      if (props.isDataTruncated) {
+        return {}
+      }
+
       const rows = this.getAllRows(props)
 
       if (!(rows?.length > 1)) {
@@ -1974,8 +1980,11 @@ export default class ChataTable extends React.Component {
       const initialFilters = this.props.initialTableParams?.filter || []
       const hasFilters = feFilters.length > 0 || initialFilters.length > 0
 
+      // Same reasoning as renderTableRowWarning: while the rows are a preview, the row
+      // limit is not what is being hit, and the preview notice already covers it.
       const hasDataLimit =
-        (this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited
+        !this.props.isDataTruncated &&
+        ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited)
 
       if (!hasFilters && !hasDataLimit) {
         return null

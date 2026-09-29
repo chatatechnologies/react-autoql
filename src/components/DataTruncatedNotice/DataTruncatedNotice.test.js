@@ -48,6 +48,15 @@ describe('DataTruncatedNotice', () => {
       expect(wrapper.text()).toContain('Chart data was cleared to save memory')
     })
 
+    // The card stands in for a pivot table too, and calling that a chart would name a
+    // view the user was never looking at.
+    test('names the pivot table rather than a chart when that is what it replaced', () => {
+      const wrapper = setup({ variant: 'card', displayType: 'pivot_table' })
+
+      expect(wrapper.text()).toContain('Pivot table data was cleared to save memory')
+      expect(cardIcon(wrapper).hasClass('react-autoql-icon-pivot-table')).toBe(true)
+    })
+
     // The display type is `column`; the icon is `column-chart`. Passing the first where
     // the second belongs renders an empty span and says nothing about it, which is how
     // the card went iconless for every chart type.

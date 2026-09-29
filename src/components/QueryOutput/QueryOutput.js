@@ -171,9 +171,6 @@ export class QueryOutput extends React.Component {
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     const displayType = this.getDisplayTypeFromInitial(props)
-    if (props.onDisplayTypeChange) {
-      props.onDisplayTypeChange(displayType)
-    }
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
@@ -531,6 +528,11 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+
+      // Not in the constructor: the parent records this in its own state, and setting state
+      // on another component while this one is rendering is a React error.
+      this.props.onDisplayTypeChange?.(this.state.displayType)
+
       if (this.shouldEnableResize) {
         // Only the window resize listener belongs here. The drag listeners are registered by
         // handleResizeStart and torn down by handleMouseUp, so registering them up front would
@@ -4629,6 +4631,17 @@ export class QueryOutput extends React.Component {
   }
 
   renderPivotTable = (displayType = this.state.displayType) => {
+    // Same reasoning as renderChart: every cell of a pivot table is an aggregate, so one
+    // built from the preview rows shows totals that are wrong with nothing on screen to
+    // give that away. The card stands in for it until the data is back.
+    if (this.isDataTruncated()) {
+      if (displayType !== 'pivot_table') {
+        return null
+      }
+
+      return this.renderDataTruncatedNotice('card')
+    }
+
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
@@ -5094,7 +5107,7 @@ export class QueryOutput extends React.Component {
   /**
    * Above the table rather than around it: the rows below are real, so the answer still
    * reads as an answer - what the banner adds is that there are more of them. A charted
-   * message gets the card from renderChart instead, never both.
+   * or pivoted message gets the card instead, never both.
    *
    * render() asks as well as renderResponse, because the banner takes vertical space at
    * the top of the message and the add-column button is positioned against the top of
@@ -5102,7 +5115,7 @@ export class QueryOutput extends React.Component {
    * .has-truncated-banner in AddColumnBtn.scss.
    */
   shouldShowTruncatedBanner = (displayType = this.state.displayType) => {
-    return this.isDataTruncated() && !isChartType(displayType)
+    return this.isDataTruncated() && !isChartType(displayType) && displayType !== 'pivot_table'
   }
 
   shouldRenderReverseTranslation = () => {

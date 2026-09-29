@@ -19,9 +19,10 @@ import './DataTruncatedNotice.scss'
  *   are real, so the message still reads as an answer - the banner's job is to make
  *   sure nobody mistakes ten rows for the whole result.
  *
- *   'card' replaces a chart entirely. A chart drawn from the preview would look
- *   finished and be wrong, and unlike a table it gives the reader no way to tell. So
- *   the chart is not drawn at all until the data is back.
+ *   'card' replaces a chart, or a pivot table, entirely. Either one drawn from the
+ *   preview would look finished and be wrong, and unlike a plain table it gives the
+ *   reader no way to tell - a pivot's cells are aggregates, so nothing on screen is
+ *   even one of the rows that survived. Neither is drawn until the data is back.
  */
 const DataTruncatedNotice = ({
   variant,
@@ -66,15 +67,20 @@ const DataTruncatedNotice = ({
   const errorText = error ? <span className='react-autoql-data-truncated-error'>{error}</span> : null
 
   if (variant === 'card') {
+    // A pivot table aggregates the rows it is given, so like a chart it would present a
+    // finished-looking wrong answer off the preview - it gets the card too, and has to
+    // name itself rather than claim to be a chart.
+    const subject = displayType === 'pivot_table' ? 'Pivot table' : 'Chart'
+
     return (
       <ErrorBoundary>
         <div className={`react-autoql-data-truncated-card ${className ?? ''}`}>
-          {/* The icon is the chart they were looking at, so the card reads as that
-              chart's empty frame rather than as an error. Display type names and icon
-              names are not the same vocabulary - see getIconForDisplayType. */}
+          {/* The icon is the view they were looking at, so the card reads as that view's
+              empty frame rather than as an error. Display type names and icon names are
+              not the same vocabulary - see getIconForDisplayType. */}
           <Icon type={getIconForDisplayType(displayType)} size={32} className='react-autoql-data-truncated-card-icon' />
           <div className='react-autoql-data-truncated-card-text'>
-            <strong>Chart data was cleared to save memory</strong>
+            <strong>{subject} data was cleared to save memory</strong>
           </div>
           {errorText}
           {restoreButton}

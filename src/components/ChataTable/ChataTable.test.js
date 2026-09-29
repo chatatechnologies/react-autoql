@@ -1753,3 +1753,53 @@ describe('sorting and filtering a truncated table', () => {
     expect(setColumns.mock.calls[0][0].every((col) => col.headerFilter !== false)).toBe(true)
   })
 })
+
+// A total or an average over ten preview rows is a wrong number, not a partial one, and
+// the header tooltip presents it with nothing to say it came from a fraction of the data.
+describe('summary stats for a truncated table', () => {
+  const amountColumns = [
+    { id: '1', field: '1', display_name: 'Name', type: 'STRING', index: 0 },
+    { id: '2', field: '2', display_name: 'Amount', type: 'QUANTITY', index: 1 },
+  ]
+
+  const amountResponse = {
+    data: {
+      data: {
+        rows: [
+          ['Widget', 10],
+          ['Gadget', 20],
+        ],
+        count_rows: 2,
+        query_id: 'test-query-stats',
+      },
+    },
+  }
+
+  const statsFor = (isDataTruncated) =>
+    setup({ columns: amountColumns, response: amountResponse, isDataTruncated }).instance().summaryStats
+
+  test('are withheld while the rows are a preview', () => {
+    expect(statsFor(true)).toEqual({})
+  })
+
+  test('come back once the data is restored', () => {
+    expect(statsFor(false)[1]).toEqual(expect.objectContaining({ sum: expect.anything(), avg: expect.anything() }))
+  })
+})
+
+// The preview notice already says what is and isn't on screen; the row limit is not what
+// is being hit while truncated. The non-pivot path already withheld this warning.
+describe('the data limit warning on a truncated pivot table', () => {
+  const pivotProps = { pivot: true, pivotTableDataLimited: true }
+
+  test('is withheld while the rows are a preview', () => {
+    expect(setup({ ...pivotProps, isDataTruncated: true }).instance().renderTableWarnings()).toBeNull()
+  })
+
+  test('is shown once the data is restored', () => {
+    const warnings = setup({ ...pivotProps, isDataTruncated: false }).instance().renderTableWarnings()
+
+    expect(warnings).not.toBeNull()
+    expect(shallow(warnings).find('.react-autoql-table-data-limit-icon').exists()).toBe(true)
+  })
+})

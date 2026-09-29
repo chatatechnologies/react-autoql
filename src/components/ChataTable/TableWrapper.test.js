@@ -176,3 +176,64 @@ describe('deferring the build until the table has a box', () => {
     expect(instance.heightObserver).toBeUndefined()
   })
 })
+
+// The handlers bind to Tabulator's own `.tabulator-tableholder`, so a table that defers
+// its build has nothing for them to find. Waiting for it on an unbounded 100ms loop meant
+// one timer per never-revealed table, running for as long as the session stayed open.
+describe('mobile touch handlers', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => jest.useRealTimers())
+
+  const instanceWithRef = () => {
+    const instance = createInstance()
+    instance._isMounted = true
+    instance.tableRef = document.createElement('div')
+    return instance
+  }
+
+  test('attach when the tableholder is there', () => {
+    const instance = instanceWithRef()
+    instance.tableRef.appendChild(document.createElement('div')).className = 'tabulator-tableholder'
+
+    instance.setupMobileTouchHandlers()
+
+    expect(instance.touchStartHandler).toBeDefined()
+    expect(jest.getTimerCount()).toBe(0)
+  })
+
+  test('give up rather than wait forever for a tableholder that never appears', () => {
+    const instance = instanceWithRef()
+
+    instance.setupMobileTouchHandlers()
+    jest.advanceTimersByTime(5000)
+
+    expect(instance.touchStartHandler).toBeUndefined()
+    expect(jest.getTimerCount()).toBe(0)
+  })
+
+  test('stop waiting when the table unmounts', () => {
+    const instance = instanceWithRef()
+
+    instance.setupMobileTouchHandlers()
+    expect(jest.getTimerCount()).toBe(1)
+
+    instance.cleanupMobileTouchHandlers()
+
+    expect(jest.getTimerCount()).toBe(0)
+  })
+
+  // tableBuilt can fire more than once over a table's life (a rebuild after a column
+  // change); attaching a second set would leave the first permanently on the element.
+  test('attach only once', () => {
+    const instance = instanceWithRef()
+    const tableholder = instance.tableRef.appendChild(document.createElement('div'))
+    tableholder.className = 'tabulator-tableholder'
+    const addEventListener = jest.spyOn(tableholder, 'addEventListener')
+
+    instance.setupMobileTouchHandlers()
+    const callsAfterFirst = addEventListener.mock.calls.length
+    instance.setupMobileTouchHandlers()
+
+    expect(addEventListener).toHaveBeenCalledTimes(callsAfterFirst)
+  })
+})
