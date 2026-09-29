@@ -256,7 +256,26 @@ export interface DashboardProps {
   [key: string]: any
 }
 
-export declare class Dashboard extends React.Component<DashboardProps> {}
+export declare class Dashboard extends React.Component<DashboardProps> {
+  // What the chosen tiles show now, for a report: each tile captured as "Add to Report…" captures it
+  // (QueryOutput.captureForReport). Without tileKeys, every tile in reading order.
+  captureTilesForReport(options?: {
+    tileKeys?: Array<string | number>
+    maxTableRows?: number
+    maxChartRows?: number
+  }): DashboardTileCapture[]
+}
+
+// One tile's capture from Dashboard.captureTilesForReport. `result` is { ok: false, reason: 'loading' }
+// while the tile has no finished answer on screen, and 'not-found' for a key the dashboard has no tile for.
+export interface DashboardTileCapture {
+  tileKey: string | number
+  dashboardId?: string
+  title: string
+  query: string
+  displayType?: string
+  result: ReportCaptureResult | { ok: false; reason: 'loading' | 'not-found' }
+}
 
 // ─── DataMessenger ───────────────────────────────────────────────────────────
 

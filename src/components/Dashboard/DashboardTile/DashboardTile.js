@@ -1691,6 +1691,25 @@ export class DashboardTile extends React.Component {
       queryOutputRef: this.state.responseRef,
     })
 
+  // What this tile shows now, captured for a report: the same capture "Add to Report…" makes of it
+  // (QueryOutput.captureForReport). While the tile has no finished answer on screen (running, not run yet,
+  // or its answer still mounting) it returns { ok: false, reason: 'loading' }.
+  captureForReport = (options) => {
+    const responseRef = this.topQueryOutputRef
+    const isShown =
+      !!this.props.tile?.queryResponse &&
+      this.state.isTopExecuted &&
+      !this.state.isTopExecuting &&
+      !!responseRef?._isMounted &&
+      typeof responseRef.captureForReport === 'function'
+
+    if (!isShown) {
+      return { ok: false, reason: this.props.tile?.query ? 'loading' : 'no-data' }
+    }
+
+    return responseRef.captureForReport(options)
+  }
+
   // Custom toolbar options, told which tile they were chosen on: the payload OptionsToolbar hands their
   // callback gets this tile's `tileKey` and `dashboardId`, so a host can refer to the tile rather than copy
   // it. Cached so the toolbar gets the same array while nothing it depends on changes.
@@ -1841,7 +1860,12 @@ export class DashboardTile extends React.Component {
       isExecuting,
       isExecuted,
       queryOutputProps: {
-        ref: (ref) => ref && ref !== this.state.responseRef && this._isMounted && this.setState({ responseRef: ref }),
+        ref: (ref) => {
+          // For captureForReport: state.responseRef is only set on a render after mounting, and a tile whose
+          // props don't change never gets one.
+          this.topQueryOutputRef = ref
+          if (ref && ref !== this.state.responseRef && this._isMounted) this.setState({ responseRef: ref })
+        },
         optionsToolbarRef: this.optionsToolbarRef,
         vizToolbarRef: this.vizToolbarRef,
         key: `dashboard-tile-query-top-${this.FIRST_QUERY_RESPONSE_KEY}-${this.state.queryResponseVersion}`,
