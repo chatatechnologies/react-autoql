@@ -614,6 +614,30 @@ export declare function createEmptyReport(
   overrides?: Partial<Omit<Report, 'page'>> & { page?: Partial<ReportPageSetup> },
 ): Report
 
+// A question asked once, its answer kept as a Data block's capture (shown the way AutoQL shows it by default),
+// with the table rows the block should print. Never rejects.
+export type CaptureQuestionResult =
+  | { ok: true; capture: ReportCapture; rows: ReportTableRows }
+  | {
+      ok: false
+      reason: 'cancelled' | 'error' | 'no-data' | 'unsupported'
+      // For 'error': why the question didn't run or didn't answer with data.
+      error?: { message: string; referenceId?: string }
+    }
+
+export declare function captureQuestion(options: {
+  query: string
+  authentication?: Authentication
+  autoQLConfig?: AutoQLConfig
+  // Stops the request; the result is then { ok: false, reason: 'cancelled' }.
+  signal?: AbortSignal
+  cancelToken?: any
+}): Promise<CaptureQuestionResult>
+
+// How many table rows a new block for this capture prints: all of a table that 10, 25, 50 or 100 holds,
+// else 25.
+export declare function rowsForCapture(capture: ReportCapture | null | undefined): ReportTableRows
+
 // ─── Miscellaneous components ─────────────────────────────────────────────────
 
 export declare const Icon: React.FC<{ type: string; className?: string; [key: string]: any }>

@@ -39,3 +39,5 @@ export { AppearanceSection } from './components/Notifications/DataAlertSettings/
 export { SlicerChip } from './components/DashboardToolbar'
 export { ReportBuilder } from './components/ReportBuilder'
 export { createEmptyReport, REPORT_SCHEMA_VERSION } from './components/ReportBuilder/model/reportSchema'
+export { captureQuestion } from './components/ReportBuilder/run/captureRun'
+export { rowsForCapture } from './components/ReportBuilder/model/capture'
