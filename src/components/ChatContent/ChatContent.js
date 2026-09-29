@@ -1129,6 +1129,38 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  /**
+   * The answer's columns changed - a custom column was added, or columns were shown or
+   * hidden - and the response the message is holding no longer matches what is on
+   * screen.
+   *
+   * Without this the two drift apart silently and only the sweep reveals it: it
+   * truncates the response the message has, so the remount rebuilds the answer from
+   * before the column existed. The column disappears, and so does any view that needed
+   * it.
+   *
+   * Deliberately not a restore: no rows have been recovered, so the message stays
+   * eligible for truncation - it is the up-to-date answer we want truncated.
+   */
+  onMessageResponseUpdate = (messageId, response) => {
+    if (!this._isMounted || !response) {
+      return
+    }
+
+    this.setState((state) => {
+      const index = state.messages.findIndex((message) => message.id === messageId)
+
+      if (index === -1 || state.messages[index].response === response) {
+        return null
+      }
+
+      const messages = [...state.messages]
+      messages[index] = { ...messages[index], response }
+
+      return { messages }
+    })
+  }
+
   // Merged into the message rather than held in ChatMessage's state, so it survives the
   // remount that truncating and restoring this answer's data causes.
   onMessageViewStateChange = (messageId, patch) => {
@@ -1744,6 +1776,7 @@ export default class ChatContent extends React.Component {
                       dataTruncated={message.dataTruncated}
                       dataVersion={message.dataVersion}
                       onRestoreData={this.onMessageDataRestored}
+                      onResponseUpdate={this.onMessageResponseUpdate}
                       popoverParentElement={this.chatContentRef}
                       isVisibleInDOM={isLaidOut}
                       dataPageSize={this.props.dataPageSize}

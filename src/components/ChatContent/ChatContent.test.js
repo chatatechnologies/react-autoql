@@ -353,3 +353,53 @@ describe('wheel handling over a nested table', () => {
     expect(container.scrollTop).toBe(1600)
   })
 })
+
+// Adding a custom column re-runs the query, and the answer on screen from then on is the
+// one with the column in it. The message kept the response it was created with, so the
+// first sweep truncated *that* one and the remount rebuilt the answer without the column
+// - taking the pivot table the user had switched to with it.
+describe('keeping the message response current when columns change', () => {
+  const responseWith = (columns) => ({
+    data: { reference_id: '1.1.210', data: { columns, rows: [[1]], query_id: 'q1' } },
+  })
+
+  const setupWithMessage = () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = true
+    instance.setState({ messages: [{ id: 'm1', response: responseWith(['a']) }] })
+    return { wrapper, instance }
+  }
+
+  test('replaces the stored response', () => {
+    const { wrapper, instance } = setupWithMessage()
+    const withColumn = responseWith(['a', 'b'])
+
+    instance.onMessageResponseUpdate('m1', withColumn)
+
+    expect(wrapper.state('messages')[0].response).toBe(withColumn)
+  })
+
+  // A restore is the thing that exempts a message from the sweep. This is not one: the
+  // answer that just gained a column is exactly what should be truncated next time.
+  test('does not mark the message restored or clear its truncated state', () => {
+    const { wrapper, instance } = setupWithMessage()
+
+    instance.onMessageResponseUpdate('m1', responseWith(['a', 'b']))
+
+    const message = wrapper.state('messages')[0]
+    expect(message.isDataRestored).toBeUndefined()
+    expect(message.dataTruncated).toBeUndefined()
+  })
+
+  test('ignores an unknown message, a missing response, and a response it already holds', () => {
+    const { wrapper, instance } = setupWithMessage()
+    const before = wrapper.state('messages')
+
+    instance.onMessageResponseUpdate('nope', responseWith(['a', 'b']))
+    instance.onMessageResponseUpdate('m1', undefined)
+    instance.onMessageResponseUpdate('m1', before[0].response)
+
+    expect(wrapper.state('messages')).toBe(before)
+  })
+})

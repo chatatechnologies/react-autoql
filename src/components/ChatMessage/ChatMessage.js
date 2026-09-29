@@ -158,6 +158,7 @@ export class ChatMessage extends React.Component {
       wasDataLimited: PropTypes.bool,
     }),
     onRestoreData: PropTypes.func,
+    onResponseUpdate: PropTypes.func,
     // Bumped whenever the data behind this message is swapped out, to remount the
     // output rather than leave it holding copies of rows that are gone.
     dataVersion: PropTypes.number,
@@ -208,6 +209,7 @@ export class ChatMessage extends React.Component {
     onViewStateChange: undefined,
     dataTruncated: undefined,
     onRestoreData: undefined,
+    onResponseUpdate: undefined,
     dataVersion: 0,
     enableDynamicCharting: true,
     autoChartAggregations: true,
@@ -693,6 +695,13 @@ export class ChatMessage extends React.Component {
   // have to live, or the next remount would lose them.
   onRestoreData = (response) => {
     this.props.onRestoreData?.(this.props.id, response)
+  }
+
+  // The answer's columns changed under it. Same destination as onRestoreData and for the
+  // same reason, but this one is not a restore: the message stays eligible for the next
+  // sweep, which is the point - it should be truncating the answer as it is now.
+  onResponseUpdate = (response) => {
+    this.props.onResponseUpdate?.(this.props.id, response)
   }
 
   renderFetchingFileMessage = () => {
@@ -1526,6 +1535,7 @@ export class ChatMessage extends React.Component {
           // to pin the display type rather than re-derive it from ten rows.
           dataTruncated={this.props.dataTruncated}
           onRestoreData={this.onRestoreData}
+          onResponseUpdate={this.onResponseUpdate}
           onNoneOfTheseClick={() => this.props.onNoneOfTheseClick(this.props.queryMessageID)}
           autoChartAggregations={this.props.autoChartAggregations}
           showQueryInterpretation={false}

@@ -369,6 +369,13 @@ export default class ChataTable extends React.Component {
     // compare below would miss a restore and leave the headers inert.
     const truncationChanged = this.props.isDataTruncated !== prevProps.isDataTruncated
 
+    // Tabulator is not up yet, so the rebuild below would go nowhere and the headers
+    // would keep whichever definitions the table was built with. Remember it and rebuild
+    // the moment it mounts.
+    if (truncationChanged && !this.state.tabulatorMounted) {
+      this.needsTruncationColumnRebuild = true
+    }
+
     if (
       this.props.columns &&
       this.state.tabulatorMounted &&
@@ -392,6 +399,11 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
+      if (this.needsTruncationColumnRebuild) {
+        this.needsTruncationColumnRebuild = false
+        this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
+      }
+
       if (!this.props.skipInitialFilters) {
         this.tableParams.filter = this.props?.initialTableParams?.filter
       }

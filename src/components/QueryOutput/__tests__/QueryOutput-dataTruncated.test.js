@@ -93,7 +93,17 @@ describe('an answer whose rows have been dropped to a preview', () => {
     const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
     output.setState({ displayType: 'column' })
 
-    expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')).toBe(false)
+    const container = output.find('.react-autoql-response-content-container').first()
+    expect(container.hasClass('has-truncated-banner')).toBe(false)
+    expect(container.hasClass('has-truncated-card')).toBe(true)
+  })
+
+  // A table keeps its rows and its banner, so there is no card to make room for.
+  test('does not mark a tabled message as showing the card', () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    output.setState({ displayType: 'table' })
+
+    expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-card')).toBe(false)
   })
 
   // Every cell of a pivot table is an aggregate, so one built from the preview shows
@@ -113,6 +123,16 @@ describe('an answer whose rows have been dropped to a preview', () => {
       expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')).toBe(
         false,
       )
+    })
+
+    // The card replaces a view that would have been tall. Without this the container is
+    // in table mode, where height follows the content, and the card came out a fraction
+    // of the height a charted message's card gets for free from .chart.
+    test('marks the container so the card gets a chart-sized box', () => {
+      const output = mountPivotable({ dataTruncated: { droppedRowCount: 4512 } })
+      output.setState({ displayType: 'pivot_table' })
+
+      expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-card')).toBe(true)
     })
 
     test('pivots normally once the data is back', () => {
@@ -185,5 +205,57 @@ describe('an answer whose rows have been dropped to a preview', () => {
     expect(onRestoreData).toHaveBeenCalledWith(full)
     expect(instance.state.isDataRestored).toBe(true)
     expect(instance.isDataTruncated()).toBe(false)
+  })
+
+  // A column change remounts the table, so if the restore flag arrived in a second,
+  // later state update the table would remount while the rows were still marked a
+  // preview - and Tabulator would build its columns with the header filters stripped.
+  test('marks the data restored in the same state update as the columns', () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const updates = []
+    const setState = instance.setState.bind(instance)
+    instance.setState = (update, callback) => {
+      updates.push(typeof update === 'function' ? update(instance.state) : update)
+      return setState(update, callback)
+    }
+
+    instance.updateColumnsAndData(makeResponse())
+
+    const columnUpdate = updates.find((update) => 'columnChangeCount' in update)
+    expect(columnUpdate.isDataRestored).toBe(true)
+    // And nothing else set it afterwards, which is what used to split the two apart.
+    expect(updates.filter((update) => update.isDataRestored)).toHaveLength(1)
+  })
+
+  // The message holds the response it was created with, and only this tells it the
+  // columns have changed. Without it the sweep truncates the older response and the
+  // remount rebuilds the answer without the added column.
+  test('hands the updated response up when columns change on an untruncated answer', () => {
+    const output = mountOutput()
+    const instance = output.instance()
+    const onResponseUpdate = jest.fn()
+    output.setProps({ onResponseUpdate })
+
+    instance.updateColumnsAndData(makeResponse())
+
+    expect(onResponseUpdate).toHaveBeenCalledWith(instance.queryResponse)
+  })
+
+  // While truncated the restore path already hands the response up, and it says more:
+  // it also clears the truncated flag. Saying it twice would store the same response
+  // through a route that leaves the message eligible for the next sweep.
+  test('leaves that to the restore path while the rows are a preview', () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const onResponseUpdate = jest.fn()
+    const onRestoreData = jest.fn()
+    output.setProps({ onResponseUpdate, onRestoreData })
+
+    const full = makeResponse()
+    instance.updateColumnsAndData(full)
+
+    expect(onRestoreData).toHaveBeenCalledWith(full)
+    expect(onResponseUpdate).not.toHaveBeenCalled()
   })
 })

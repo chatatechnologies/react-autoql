@@ -1815,3 +1815,38 @@ describe('the scrolled-rows count on a truncated table', () => {
     expect(setup({ isDataTruncated: false }).instance().renderTableRowCount()).not.toBeNull()
   })
 })
+
+// The restore remounts the table (a column change regenerates QueryOutput's tableID), so
+// the flag can flip while Tabulator is still coming up. The rebuild in componentDidUpdate
+// requires it to be mounted, so without this the headers keep the definitions they were
+// built with and the filter row opens empty.
+describe('a truncation change that lands before Tabulator is mounted', () => {
+  test('rebuilds the columns as soon as it mounts', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const setColumns = jest.fn()
+    wrapper.instance().ref = { tabulator: { setColumns }, restoreRedraw: jest.fn() }
+
+    wrapper.setProps({ isDataTruncated: false })
+    expect(setColumns).not.toHaveBeenCalled()
+
+    wrapper.setState({ tabulatorMounted: true })
+
+    expect(setColumns).toHaveBeenCalled()
+    expect(setColumns.mock.calls[0][0].every((col) => col.headerFilter !== false)).toBe(true)
+  })
+
+  test('does not rebuild again on later mounts', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const setColumns = jest.fn()
+    wrapper.instance().ref = { tabulator: { setColumns }, restoreRedraw: jest.fn() }
+
+    wrapper.setProps({ isDataTruncated: false })
+    wrapper.setState({ tabulatorMounted: true })
+    setColumns.mockClear()
+
+    wrapper.setState({ tabulatorMounted: false })
+    wrapper.setState({ tabulatorMounted: true })
+
+    expect(setColumns).not.toHaveBeenCalled()
+  })
+})

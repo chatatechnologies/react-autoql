@@ -338,6 +338,9 @@ export class QueryOutput extends React.Component {
     }),
     // Called with the full response after a restore, so the caller can keep the rows.
     onRestoreData: PropTypes.func,
+    // Called with the current response whenever the columns change under it - a custom
+    // column added, columns shown or hidden - so the caller's copy does not go stale.
+    onResponseUpdate: PropTypes.func,
     onQueryValidationSelectOption: PropTypes.func,
     autoSelectQueryValidationSuggestion: PropTypes.bool,
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
@@ -1446,6 +1449,7 @@ export class QueryOutput extends React.Component {
 
   updateColumnsAndData = (response) => {
     if (response && this._isMounted) {
+      const wasTruncated = this.isDataTruncated()
       this._consecutiveConfigResets = 0
       this.pivotTableID = uuid()
       this.isOriginalData = false
@@ -1489,6 +1493,11 @@ export class QueryOutput extends React.Component {
         displayType = 'single-value'
       }
 
+      // Every route into here - Restore, adding a custom column, changing the selected
+      // columns from the reverse translation - has been to the server for the answer
+      // again, so the rows now on screen are not a preview any more.
+      const isNoLongerTruncated = wasTruncated && !!response?.data?.data?.rows?.length
+
       this.setState((prevState) => ({
         columns: newColumns,
         columnChangeCount: prevState.columnChangeCount + 1,
@@ -1496,15 +1505,27 @@ export class QueryOutput extends React.Component {
         aggConfig,
         customColumnSelects,
         displayType,
+        // In the same update as the columns, not a second one after it. A column change
+        // remounts the table (componentDidUpdate regenerates tableID), and these two
+        // calls are past an await, so React does not batch them: split up, the table
+        // remounted on the first update - while the rows were still marked a preview -
+        // and Tabulator built its columns with the header filters stripped. The second
+        // update then found the table not yet mounted, so the rebuild that would have
+        // put them back was skipped, and the filter row opened empty.
+        ...(isNoLongerTruncated ? { isDataRestored: true, restoreError: null } : {}),
       }))
 
-      // Every route into here - Restore, adding a custom column, changing the selected
-      // columns from the reverse translation - has been to the server for the answer
-      // again, so the rows now on screen are not a preview any more. Said here rather
-      // than at each call site so a new one cannot leave the banner up over full data.
-      // After the setState above: this clears the truncated state, and doing it first
-      // would render the chart empty for a frame.
-      this.noticeDataIsNoLongerTruncated(response)
+      if (isNoLongerTruncated) {
+        // The rows have to live on the message or the next remount would lose them.
+        this.props.onRestoreData?.(response)
+      } else if (!wasTruncated) {
+        // Nobody else has told the message that its answer now has a column it did not
+        // have before. Left unsaid, the message goes on holding the response it was
+        // created with - and the first sweep that truncates it slices *that* one, so the
+        // remount puts the answer back the way it was before the column existed, taking
+        // any view that depended on it (a pivot table, most visibly) with it.
+        this.props.onResponseUpdate?.(this.queryResponse)
+      }
     }
   }
 
@@ -1536,6 +1557,10 @@ export class QueryOutput extends React.Component {
           this.queryResponse.data.data.columns = newColumns
         }
         this.resetTableConfig(newColumns)
+
+        // Same reasoning as updateColumnsAndData: what the user can see of this answer
+        // has changed, and the message is where that has to survive a remount.
+        this.props.onResponseUpdate?.(this.queryResponse)
       }
 
       // Determine appropriate display type based on column visibility
@@ -5123,6 +5148,20 @@ export class QueryOutput extends React.Component {
     return this.isDataTruncated() && !isChartType(displayType) && displayType !== 'pivot_table'
   }
 
+  /**
+   * The other half of the same decision: whichever view the banner is not enough for is
+   * replaced by the card.
+   *
+   * The container has to know because it is what gives the card its height. A charted
+   * message got that for free - `.chart` sizes itself off the viewport, so the card
+   * standing in for the chart inherited a chart-sized box. A pivoted one is in table
+   * mode, where height comes from the content, so the same card came out a fraction of
+   * the height for no reason the reader can see. See .has-truncated-card.
+   */
+  shouldShowTruncatedCard = (displayType = this.state.displayType) => {
+    return this.isDataTruncated() && (isChartType(displayType) || displayType === 'pivot_table')
+  }
+
   shouldRenderReverseTranslation = () => {
     return (
       getAutoQLConfig(this.props.autoQLConfig).enableQueryInterpretation &&
@@ -5206,7 +5245,8 @@ export class QueryOutput extends React.Component {
         ${this.state.displayType === 'single-value' ? 'single-value' : ''}
         ${this.shouldEnableResize ? 'resizable' : ''}
         ${this.state.isResizing ? 'resizing' : ''}
-        ${this.shouldShowTruncatedBanner() ? 'has-truncated-banner' : ''}`}
+        ${this.shouldShowTruncatedBanner() ? 'has-truncated-banner' : ''}
+        ${this.shouldShowTruncatedCard() ? 'has-truncated-card' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

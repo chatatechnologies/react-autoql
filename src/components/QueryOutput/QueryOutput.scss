@@ -83,6 +83,17 @@ body.react-autoql-no-select {
   overflow: hidden;
 }
 
+// The truncated placeholder stands in for a view that would have been tall, so the box
+// it lands in has to be that tall whichever view it replaced. A charted message already
+// got this from .chart above; a pivoted one is in table mode, where the height follows
+// the content - and a card is one line of content. Same sizing, stated once for both.
+.react-autoql-response-content-container.has-truncated-card {
+  width: 100vw;
+  max-width: 100%;
+  flex: 1 1 100vh;
+  overflow: hidden;
+}
+
 .react-autoql-response-content-container.non-table-non-chart {
   min-height: 100%;
   height: auto;

@@ -10,33 +10,20 @@
   padding: 0 0.875rem;
   margin: 0;
 
-  // A real hover, not the near-invisible mask tint the default button settles for. Two
-  // versions, because the two variants sit on different ground:
-  //
-  //   Bordered (the card): fills with the accent and flips the label and icon to read
-  //   against it. The icon needs saying explicitly because Icon sets its own colour
-  //   with !important.
-  //
-  //   Borderless (the banner): a solid fill would put back the hard edge the missing
-  //   border was there to avoid, so the hover is a deeper wash of the same accent the
-  //   strip is already tinted with, and the label stays accent-coloured.
-  &:not(.btn-no-border):not(.disabled):hover {
-    background: var(--react-autoql-accent-color);
-    border-color: var(--react-autoql-accent-color);
-    color: var(--react-autoql-text-color-accent);
-
-    .react-autoql-icon svg,
-    .react-autoql-btn-icon svg {
-      color: var(--react-autoql-text-color-accent) !important;
-    }
-  }
-
+  // Borderless in both the banner and the card, so the same control looks the same
+  // wherever the notice appears (see DataTruncatedNotice's restoreButton).
   &.btn-no-border {
     padding: 0 0.625rem;
 
-    // Deeper than it would need to be on a plain background: this lands on top of the
-    // banner's own accent wash, so the two only read apart if the hover clears it by a
-    // good margin.
+    // A real hover, not the near-invisible mask tint the default button settles for. A
+    // solid fill would put back the hard edge the missing border was there to avoid, so
+    // it is a wash of the accent instead, with the label left accent-coloured.
+    //
+    // Deeper than it would need to be on a plain background: in the banner this lands
+    // on top of the strip's own accent tint, and the two only read apart if the hover
+    // clears it by a good margin. The card has no tint under it, where the same value
+    // is a light accent wash - still clearly a hover, and the point is that it is the
+    // same one.
     &:not(.disabled):hover {
       background: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.28);
     }

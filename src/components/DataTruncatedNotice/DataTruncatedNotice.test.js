@@ -17,15 +17,15 @@ describe('DataTruncatedNotice', () => {
       expect(wrapper.text()).not.toMatch(/\d+ of \d/)
     })
 
-    // The banner is already a tinted strip inside an outlined bubble; an outlined pill
-    // in there is a third line. The card's button is alone in an empty frame, so it
-    // keeps its edge.
-    test('drops the button outline, which the card keeps', () => {
+    // Both variants say the same thing about the same answer, and which one a message
+    // gets is decided by nothing but the view it is on - so a restore button that
+    // changes shape between them reads as a different control.
+    test('drops the button outline, and so does the card', () => {
       const bannerButton = setup({ variant: 'banner' }).find('button.react-autoql-data-truncated-restore')
       const cardButton = setup({ variant: 'card' }).find('button.react-autoql-data-truncated-restore')
 
       expect(bannerButton.hasClass('btn-no-border')).toBe(true)
-      expect(cardButton.hasClass('btn-no-border')).toBe(false)
+      expect(cardButton.hasClass('btn-no-border')).toBe(true)
     })
 
     test('offers the data back', () => {

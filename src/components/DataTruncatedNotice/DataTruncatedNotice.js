@@ -42,17 +42,17 @@ const DataTruncatedNotice = ({
   // the messenger - and so the loading state is Button's own small spinner instead of
   // something sized for a whole empty panel.
   //
-  // Bordered only in the card. The banner is already a tinted strip, and an outlined
-  // pill inside it stacks a third line on top of the bubble's and the strip's own -
-  // there, the label and icon in the accent colour are enough to read as a control. The
-  // card has nothing else in it, so the button has to carry its own edge.
+  // Borderless in both variants. The two notices say the same thing about the same
+  // answer and are swapped between by nothing more than which view the message is on,
+  // so a control that changes shape between them reads as a different control. The
+  // label and icon in the accent colour carry it without an outline.
   const restoreButton = (
     <Button
       className='react-autoql-data-truncated-restore'
       type='default'
       size='medium'
       icon='refresh'
-      border={variant === 'card'}
+      border={false}
       loading={isRestoring}
       onClick={onRestore}
       tooltip='Re-run this query to load the full result'
