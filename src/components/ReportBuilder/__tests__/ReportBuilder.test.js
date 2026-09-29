@@ -1,11 +1,15 @@
 import React from 'react'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { runQuery } from 'autoql-fe-utils'
+import { fetchLLMSummary, runQuery } from 'autoql-fe-utils'
 import { ReportBuilder } from '..'
 import { createEmptyReport } from '../model/reportSchema'
 import { printFrame } from '../print/printFrame'
 
-jest.mock('autoql-fe-utils', () => ({ ...jest.requireActual('autoql-fe-utils'), runQuery: jest.fn() }))
+jest.mock('autoql-fe-utils', () => ({
+  ...jest.requireActual('autoql-fe-utils'),
+  runQuery: jest.fn(),
+  fetchLLMSummary: jest.fn(),
+}))
 
 // Charts are covered in components.test.js; here QueryOutput is a stub so no chart is drawn in jsdom.
 jest.mock('../../QueryOutput', () => {
@@ -86,6 +90,7 @@ const selectBlock = (label, index = 0) => fireEvent.mouseDown(screen.getAllByRol
 
 beforeEach(() => {
   runQuery.mockReset()
+  fetchLLMSummary.mockReset()
   printFrame.mockClear()
 })
 
@@ -992,5 +997,170 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
     expect(request.cancelToken.aborted).toBe(true)
     await act(async () => {})
     expect(spy).not.toHaveBeenCalled()
+  })
+})
+
+describe('analysis blocks (enableAnalysis)', () => {
+  const CAPTURED_AT = new Date(2026, 8, 29, 13, 0).toISOString()
+  const resultBlock = (extra = {}) => ({
+    id: 'd',
+    type: 'data',
+    width: 'full',
+    rows: 25,
+    source: { type: 'query', query: 'aum by account' },
+    capture: {
+      version: 1,
+      capturedAt: CAPTURED_AT,
+      displayType: 'table',
+      data: { columns: COLUMNS, rows: rowsOf(30), count_rows: 30, text: 'aum by account', query_id: 'q_1' },
+      table: { sort: [], filtered: false },
+      config: { displayType: 'table' },
+    },
+    ...extra,
+  })
+  const analysisBlock = (extra = {}) => ({
+    id: 'a',
+    type: 'analysis',
+    width: 'full',
+    target: 'd',
+    focus: '',
+    text: '',
+    ...extra,
+  })
+  const reportOf = (...blocks) => createEmptyReport({ title: 'Q3', blocks })
+  const summary = (text) => Promise.resolve({ data: { data: { summary: text } } })
+  const analysisIn = (report) => report.blocks.find((block) => block.type === 'analysis')
+
+  it('offers an Analysis block only with enableAnalysis, and says it costs a credit', () => {
+    const { unmount } = setup()
+    expect(screen.queryByRole('button', { name: 'Analysis' })).toBeNull()
+    unmount()
+
+    setup(createEmptyReport(), { enableAnalysis: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Analysis' }))
+    expect(within(screen.getByRole('dialog')).getByText('Each run uses one Auto Analyze credit.')).toBeTruthy()
+  })
+
+  it('writes about the chosen result, from the rows the block shows', async () => {
+    fetchLLMSummary.mockReturnValue(summary('**Leader** leads.\n\n- one\n- two'))
+    const { lastReport } = setup(reportOf(resultBlock(), analysisBlock()), { enableAnalysis: true })
+
+    selectBlock('Analysis')
+    expect(within(panel()).getByTestId('report-builder-analysis-target').value).toBe('d')
+    fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+    expect(within(panel()).getByTestId('report-builder-analyze').textContent).toBe('Analyzing…')
+
+    await waitFor(() => expect(analysisIn(lastReport())?.text).toBe('**Leader** leads.\n\n- one\n- two'))
+    expect(fetchLLMSummary).toHaveBeenCalledTimes(1)
+    const [request] = fetchLLMSummary.mock.calls[0]
+    expect(request.queryID).toBe('q_1')
+    expect(request.data.rows).toHaveLength(25)
+    expect(request.data.columns).toHaveLength(2)
+    expect(request.data.additional_context).toMatchObject({
+      text: 'aum by account, first 25 of 30 rows',
+      focus_prompt: '',
+    })
+    expect(analysisIn(lastReport())).toMatchObject({
+      targetAsOf: CAPTURED_AT,
+      targetTitle: 'aum by account',
+      focusUsed: '',
+      rowsAnalyzed: 25,
+    })
+    expect(screen.getByText('Leader').tagName).toBe('STRONG')
+    expect(screen.getByText('✦ Auto Analyze · from “aum by account”')).toBeTruthy()
+    expect(within(panel()).getByTestId('report-builder-analyze').textContent).toBe('Analyze again')
+  })
+
+  it('asks again with the focus given, and replaces the wording', async () => {
+    fetchLLMSummary.mockReturnValue(summary('Growth was uneven.'))
+    const { lastReport } = setup(reportOf(resultBlock(), analysisBlock({ text: 'Old words.' })), {
+      enableAnalysis: true,
+    })
+
+    selectBlock('Analysis')
+    fireEvent.change(within(panel()).getByTestId('report-builder-analysis-focus'), { target: { value: 'growth' } })
+    fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+
+    await waitFor(() => expect(analysisIn(lastReport()).text).toBe('Growth was uneven.'))
+    expect(fetchLLMSummary.mock.calls[0][0].data.additional_context.focus_prompt).toBe('growth')
+    expect(analysisIn(lastReport()).focusUsed).toBe('growth')
+    expect(screen.getByText('✦ Auto Analyze · from “aum by account” · focus: growth')).toBeTruthy()
+  })
+
+  it('says why Auto Analyze didn’t write, and changes nothing', async () => {
+    fetchLLMSummary.mockReturnValue(
+      Promise.reject({ data: { code: 'BILLING_USAGE_CEILING_REACHED', outcome: 'BLOCK_CEILING_EXCEEDED' } }),
+    )
+    const { spy } = setup(reportOf(resultBlock(), analysisBlock()), { enableAnalysis: true })
+    selectBlock('Analysis')
+    fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+
+    expect(await within(panel()).findByText(/at or over its monthly quota/)).toBeTruthy()
+    expect(spy).not.toHaveBeenCalled()
+    expect(within(panel()).getByTestId('report-builder-analyze').disabled).toBe(false)
+  })
+
+  it('adds an analysis after a result from its toolbar, and writes it', async () => {
+    fetchLLMSummary.mockReturnValue(summary('A-30 is largest.'))
+    const tail = { id: 'z', type: 'heading', text: 'After', level: 2, width: 'full' }
+    const { lastReport } = setup(reportOf(resultBlock(), tail), { enableAnalysis: true })
+
+    selectBlock('Data')
+    fireEvent.click(screen.getByTestId('report-builder-analyze-result'))
+
+    expect(lastReport().blocks.map((block) => block.type)).toStrictEqual(['data', 'analysis', 'heading'])
+    expect(analysisIn(lastReport()).target).toBe('d')
+    await waitFor(() => expect(analysisIn(lastReport()).text).toBe('A-30 is largest.'))
+    expect(fetchLLMSummary).toHaveBeenCalledTimes(1)
+  })
+
+  it('can’t analyze a result kept without a query id', () => {
+    const noId = resultBlock()
+    delete noId.capture.data.query_id
+    setup(reportOf(noId, analysisBlock()), { enableAnalysis: true })
+
+    selectBlock('Data')
+    expect(screen.queryByTestId('report-builder-analyze-result')).toBeNull()
+    selectBlock('Analysis')
+    expect(within(panel()).getByTestId('report-builder-analyze').disabled).toBe(true)
+    expect(within(panel()).getByText(/without the query id Auto Analyze needs/)).toBeTruthy()
+  })
+
+  it('shows and prints an analysis without enableAnalysis, but won’t write one', async () => {
+    const written = analysisBlock({ text: 'Up **18%** on Q2.', targetTitle: 'aum by account', targetAsOf: CAPTURED_AT })
+    const { container } = setup(reportOf(resultBlock(), written))
+    expect(screen.getByText('18%').tagName).toBe('STRONG')
+
+    selectBlock('Analysis')
+    expect(within(panel()).queryByTestId('report-builder-analyze')).toBeNull()
+    selectBlock('Data')
+    expect(screen.queryByTestId('report-builder-analyze-result')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+    await waitFor(() => expect(container.querySelector('.react-autoql-report-builder-page')).not.toBeNull())
+    const pages = [...container.querySelectorAll('.react-autoql-report-builder-page')]
+    expect(pages.some((page) => page.textContent.includes('Up 18% on Q2.'))).toBe(true)
+  })
+
+  it('notes in the editor when its result has changed since, or was removed', () => {
+    const changed = analysisBlock({ text: 'Old.', targetAsOf: '2026-09-01T00:00:00.000Z' })
+    const { unmount } = setup(reportOf(resultBlock(), changed), { enableAnalysis: true })
+    expect(screen.getByText(/Its result has changed since this was written/)).toBeTruthy()
+    unmount()
+
+    setup(reportOf(analysisBlock({ text: 'Orphan.', target: 'gone' })), { enableAnalysis: true })
+    expect(screen.getByText(/has been removed from the report/)).toBeTruthy()
+  })
+
+  it('drops the wording for an analysis deleted while it was being written', async () => {
+    let answer
+    fetchLLMSummary.mockReturnValue(new Promise((resolve) => (answer = resolve)))
+    const { lastReport } = setup(reportOf(resultBlock(), analysisBlock()), { enableAnalysis: true })
+    selectBlock('Analysis')
+    fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    await act(async () => answer({ data: { data: { summary: 'Too late.' } } }))
+    expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['d'])
   })
 })

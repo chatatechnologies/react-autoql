@@ -120,11 +120,11 @@ describe('normalizeReport', () => {
       schemaVersion: 1,
       title: 'Q3',
       futureField: { x: 1 },
-      blocks: [{ id: 'z', type: 'analysis', scope: 'report' }],
+      blocks: [{ id: 'z', type: 'timeline', scope: 'report' }],
     }
     const report = normalizeReport(input)
     expect(report.futureField).toStrictEqual({ x: 1 })
-    expect(report.blocks[0]).toStrictEqual({ id: 'z', type: 'analysis', scope: 'report' })
+    expect(report.blocks[0]).toStrictEqual({ id: 'z', type: 'timeline', scope: 'report' })
   })
 
   it('validates page setup values and resets bad ones', () => {

@@ -39,6 +39,20 @@ const Sample = ({ type, draft }) => {
           <SampleChart />
         </div>
       )
+    case 'analysis':
+      return (
+        <div className={`${RB}-analysis`}>
+          <div className={`${RB}-analysis-text`}>
+            <p>
+              South led the quarter at $1.42M, up 18% on Q2, while North slipped 3% on softer renewals. International
+              grew fastest, from the smallest base.
+            </p>
+          </div>
+          <div className={`${RB}-analysis-meta`}>
+            ✦ {STRINGS.analysis.source} · {STRINGS.analysis.from('Revenue by region')}
+          </div>
+        </div>
+      )
     case 'pagebreak':
       return (
         <div className={`${RB}-page-break`} role='separator'>

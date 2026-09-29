@@ -126,6 +126,21 @@ export const normalizeBlock = (block) => {
         ...(typeof displayType === 'string' && displayType ? { displayType } : {}),
       }
     }
+    case 'analysis':
+      // Auto Analyze's wording about one data block (`target`), and what it was written from (writtenAt,
+      // targetAsOf, targetTitle, focusUsed, rowsAnalyzed), which are kept as they are.
+      return withStyle(
+        {
+          ...block,
+          id,
+          type: 'analysis',
+          width,
+          target: typeof block.target === 'string' && block.target ? block.target : null,
+          focus: typeof block.focus === 'string' ? block.focus : '',
+          text: typeof block.text === 'string' ? block.text : '',
+        },
+        block.style,
+      )
     case 'pagebreak':
       return { id, type: 'pagebreak' }
     default:
@@ -186,6 +201,8 @@ export const createBlock = (type, draft = {}) => {
       return { ...base, type, text: '' }
     case 'data':
       return { ...base, type, source: null, rows: DEFAULT_TABLE_ROWS }
+    case 'analysis':
+      return { ...base, type, target: typeof draft.target === 'string' ? draft.target : null, focus: '', text: '' }
     case 'pagebreak':
       return { id: base.id, type }
     default:

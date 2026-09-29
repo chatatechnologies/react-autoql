@@ -141,6 +141,79 @@ $warn-rule: #f0dcb0;
     overflow-wrap: anywhere;
   }
 
+  // An analysis: Auto Analyze's wording, set as body text beside an accent rule, and a line saying where it
+  // came from. The type is on the block so a block style can change it.
+  .#{$rb}-analysis {
+    padding: 1pt 0 1pt 9pt;
+    border-left: 2.25pt solid var(--react-autoql-accent-color, #26a7e9);
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #2b2f34;
+
+    &[data-writing] {
+      opacity: 0.55;
+    }
+  }
+
+  .#{$rb}-analysis-text {
+    overflow-wrap: anywhere;
+
+    p,
+    ul,
+    ol,
+    blockquote {
+      margin: 0 0 5pt;
+    }
+    > :last-child {
+      margin-bottom: 0;
+    }
+    // A host's reset often takes list markers away; paper needs them.
+    ul {
+      padding-left: 14pt;
+      list-style: disc outside;
+    }
+    ol {
+      padding-left: 14pt;
+      list-style: decimal outside;
+    }
+    li {
+      display: list-item;
+      margin: 0 0 2pt;
+    }
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 7pt 0 3pt;
+      font-size: 1em;
+      font-weight: 600;
+      color: $ink;
+    }
+    blockquote {
+      padding-left: 8pt;
+      border-left: 0.75pt solid $rule-strong;
+      color: $ink-2;
+    }
+    code {
+      font-family: 'IBM Plex Mono', Menlo, Consolas, monospace;
+      font-size: 0.86em;
+    }
+  }
+
+  .#{$rb}-analysis-meta {
+    margin-top: 5pt;
+    font-size: 6.5pt;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: $ink-3;
+  }
+
+  .#{$rb}-analysis-note {
+    margin-top: 4pt;
+    font-size: 8pt;
+    color: $warn-ink;
+  }
+
   textarea.#{$rb}-heading,
   textarea.#{$rb}-text {
     width: 100%;

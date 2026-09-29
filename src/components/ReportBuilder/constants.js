@@ -2,7 +2,8 @@
 // friends, unprefixed) can't collide with it.
 export const RB = 'react-autoql-report-builder'
 
-export const BLOCK_TYPES = ['heading', 'text', 'data', 'pagebreak']
+// 'analysis' is offered only with enableAnalysis; a report can hold any of them.
+export const BLOCK_TYPES = ['heading', 'text', 'data', 'analysis', 'pagebreak']
 
 // Named by what they do in the document, not by markdown convention.
 export const HEADING_LEVELS = [
@@ -104,6 +105,11 @@ export const BLOCK_INFO = {
     label: 'Data',
     what: 'One result, shown exactly as its dashboard tile shows it. Pick a tile, or ask a question.',
     note: 'The block arrives empty — ask it a question, or pick a dashboard tile on the right.',
+  },
+  analysis: {
+    label: 'Analysis',
+    what: 'Auto Analyze, written as prose. Summarises one result in the report.',
+    note: 'Each run uses one Auto Analyze credit.',
   },
   pagebreak: {
     label: 'Page break',

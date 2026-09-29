@@ -1,4 +1,6 @@
 import React from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 import { formatElement, getDataFormatting } from 'autoql-fe-utils'
 import { RB, TEXT_SIZES, TEXT_WEIGHTS, TYPEFACES } from '../constants'
 import { STRINGS } from '../strings'
@@ -328,6 +330,80 @@ const DataContent = ({
   )
 }
 
+// What Auto Analyze's Markdown may print as: prose, lists and emphasis. Links and images are dropped (paper
+// can't follow them), raw HTML is skipped, and headings past h4 read as h4.
+const ANALYSIS_ELEMENTS = [
+  'p',
+  'br',
+  'strong',
+  'em',
+  'ul',
+  'ol',
+  'li',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'blockquote',
+  'code',
+]
+const ANALYSIS_COMPONENTS = { h5: 'h4', h6: 'h4' }
+
+const AnalysisText = React.memo(function AnalysisText({ text }) {
+  // Some answers come back with the characters "\n" rather than line breaks.
+  const markdown = String(text ?? '').replace(/\\n/g, '\n')
+  return (
+    <ReactMarkdown
+      className={`${RB}-analysis-text`}
+      remarkPlugins={[remarkBreaks]}
+      allowedElements={ANALYSIS_ELEMENTS}
+      unwrapDisallowed
+      skipHtml
+      components={ANALYSIS_COMPONENTS}
+    >
+      {markdown}
+    </ReactMarkdown>
+  )
+})
+
+const AnalysisContent = ({ block, view, mode, pending }) => {
+  const writing = pending?.kind === 'analysis' && !pending.error
+  if (!view || view.state !== 'written') {
+    if (mode !== 'edit') {
+      return null
+    }
+    return (
+      <Placeholder title={STRINGS.analysis.emptyTitle}>
+        {writing
+          ? STRINGS.analysis.writing
+          : view?.canAnalyze
+          ? STRINGS.analysis.emptyReady
+          : STRINGS.analysis.emptyBody}
+      </Placeholder>
+    )
+  }
+  const meta = [
+    STRINGS.analysis.source,
+    view.fromTitle ? STRINGS.analysis.from(view.fromTitle) : null,
+    view.focusUsed ? STRINGS.analysis.focus(view.focusUsed) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+  return (
+    <div className={`${RB}-analysis`} style={textStyleOf(block.style)} data-writing={writing || undefined}>
+      <AnalysisText text={view.text} />
+      <div className={`${RB}-analysis-meta`}>✦ {meta}</div>
+      {mode === 'edit' && (view.targetGone || view.targetChanged) ? (
+        <div className={`${RB}-analysis-note`}>
+          {view.targetGone ? STRINGS.analysis.targetGone : STRINGS.analysis.targetChanged}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 const PageBreakContent = ({ mode }) =>
   mode === 'edit' ? (
     <div className={`${RB}-page-break`} role='separator'>
@@ -343,6 +419,8 @@ export const PaperBlock = ({ block, mode = 'page', onTextChange, ...rest }) => {
       return <TextContent block={block} mode={mode} onTextChange={onTextChange} />
     case 'data':
       return <DataContent block={block} mode={mode} {...rest} />
+    case 'analysis':
+      return <AnalysisContent block={block} view={rest.view} mode={mode} pending={rest.pending} />
     case 'pagebreak':
       return <PageBreakContent mode={mode} />
     default:

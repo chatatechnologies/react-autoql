@@ -5,10 +5,10 @@ import { CHART_HEIGHT_PX } from '../constants'
 
 const sum = (values) => values.reduce((total, v) => total + v, 0)
 
-// A block prints only if it has something to show: empty headings and text, and data blocks with no
-// source yet, are left out.
+// A block prints only if it has something to show: empty headings, text and analyses, and data blocks
+// with no source yet, are left out.
 export const isPrintable = (block) => {
-  if (block.type === 'heading' || block.type === 'text') {
+  if (block.type === 'heading' || block.type === 'text' || block.type === 'analysis') {
     return !!(block.text || '').trim()
   }
   if (block.type === 'data') {
@@ -190,20 +190,24 @@ export const estimateMeasurements = ({ blocks, views, contentWidthPx }) => {
   blocks.forEach((block) => {
     const view = views?.[block.id]
     const half = block.width === 'half'
+    const lineCount = () =>
+      (block.text || '')
+        .split('\n')
+        .reduce(
+          (total, line) => total + Math.max(1, Math.ceil(line.length / (half ? charsPerLine / 2 : charsPerLine))),
+          0,
+        )
     switch (block.type) {
       case 'heading':
         measurements.blocks[block.id] = HEADING_PX[block.level] || HEADING_PX[2]
         break
-      case 'text': {
-        const lines = (block.text || '')
-          .split('\n')
-          .reduce(
-            (total, line) => total + Math.max(1, Math.ceil(line.length / (half ? charsPerLine / 2 : charsPerLine))),
-            0,
-          )
-        measurements.blocks[block.id] = lines * TEXT_LINE_PX + 12
+      case 'text':
+        measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 12
         break
-      }
+      case 'analysis':
+        // Its wording, plus the Auto Analyze line under it.
+        measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 34
+        break
       case 'data': {
         if (view?.kind === 'table' && view.state === 'ready') {
           const rows = new Array(view.rows.length).fill(TABLE.row)

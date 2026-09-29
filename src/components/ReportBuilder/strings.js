@@ -57,6 +57,7 @@ export const STRINGS = {
   textPlaceholder: 'Write anything here — context, a caveat, what the reader should take away.',
   pageBreak: 'Page break',
 
+  analyzeResult: 'Auto Analyze this result (uses one credit)',
   moveUp: 'Move up',
   moveDown: 'Move down',
   duplicate: 'Duplicate',
@@ -100,6 +101,20 @@ export const STRINGS = {
     },
     askedAs: 'Asked as',
     total: 'Total',
+  },
+
+  analysis: {
+    emptyTitle: 'Nothing written yet',
+    emptyBody: 'Choose a result in the panel on the right, then Analyze.',
+    emptyReady: 'Analyze in the panel on the right to write about this result.',
+    writing: 'Auto Analyze is writing…',
+    source: 'Auto Analyze',
+    from: (title) => `from “${title}”`,
+    focus: (focus) => `focus: ${focus}`,
+    // In the editor only.
+    targetGone: 'The result this was written about has been removed from the report.',
+    targetChanged: 'Its result has changed since this was written. Analyze again to update the wording.',
+    failed: 'Auto Analyze couldn’t write this.',
   },
 
   panel: {
@@ -162,6 +177,23 @@ export const STRINGS = {
     rerun: 'Rerun',
     rerunning: 'Asking again…',
     rerunNote: 'Asks the question again, and keeps the new answer in place of this one.',
+
+    analysisResult: 'Result',
+    chooseResult: 'Choose a result…',
+    removedResult: 'A result that was removed',
+    thisResult: 'This result',
+    noResults: 'Add a Data block with a result to the report first.',
+    focus: 'Focus (optional)',
+    focusPlaceholder: 'e.g., “Anomaly detection”',
+    analyze: 'Analyze',
+    analyzeAgain: 'Analyze again',
+    analyzing: 'Analyzing…',
+    analyzeNote: 'The same Auto Analyze an answer has. Each run uses one Auto Analyze credit.',
+    analyzeAgainNote: 'Replaces the wording below. Each run uses one Auto Analyze credit.',
+    cantAnalyze:
+      'This result can’t be analyzed: it was kept without the query id Auto Analyze needs. Add it again to analyze it.',
+    wording: 'Wording',
+    wordingNote: 'Edit it as you like: it prints as written, and Analyze again replaces it.',
     questionNote: 'A question has no tile to inherit from, so it shows AutoQL’s default display.',
     changeSource: 'Change source',
     cancel: 'Cancel',

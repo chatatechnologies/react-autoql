@@ -32,6 +32,8 @@ import {
 } from './model/reportOperations'
 import { buildTileIndex, resolveTile } from './model/tiles'
 import { getDataBlockView } from './model/blockView'
+import { getAnalysisInput, getAnalysisTargets, getAnalysisView } from './model/analysis'
+import { runAnalysis } from './run/analysis'
 import { executeReport, formatPrintedDate, getRunLabel, planReportRun, summarizeRun } from './run/reportRun'
 import { captureQuestion } from './run/captureRun'
 import { getPageGeometry } from './layout/pageGeometry'
@@ -113,6 +115,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // shows its own picker and resolves with the blocks to put in the empty block's place (in order), or
     // null to leave it as it is.
     pickDashboardTiles: PropTypes.func,
+    // Analysis blocks can be made and written here: Auto Analyze's wording about one result, one credit per
+    // run. Off by default; analyses already in a report always show and print.
+    enableAnalysis: PropTypes.bool,
     className: PropTypes.string,
   }
 
@@ -131,6 +136,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     enableRunReport: false,
     enableDataBlocks: false,
     pickDashboardTiles: undefined,
+    enableAnalysis: false,
     className: undefined,
   }
 
@@ -151,7 +157,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
       results: {},
       printing: false,
       notice: null,
-      // blockId → { kind: 'tiles' | 'question', seq, query?, error? } while a block waits (or its question failed)
+      // blockId → { kind: 'tiles' | 'question' | 'analysis', seq, query?, error? } while a block waits (or failed)
       pending: {},
     }
     this.pendingSeq = 0
@@ -231,6 +237,21 @@ export class ReportBuilderWithoutTheme extends React.Component {
         old && old.inputs.every((value, i) => value === inputs[i])
           ? old
           : { inputs, view: getDataBlockView({ block, tileIndex, result: results[block.id], requestKey, running }) }
+      entries[block.id] = entry
+      views[block.id] = entry.view
+    })
+    // Then analyses, which read the view of the Data block they're about.
+    report.blocks.forEach((block) => {
+      if (block.type !== 'analysis') return
+      const target = block.target
+        ? report.blocks.find((other) => other.id === block.target && other.type === 'data')
+        : undefined
+      const inputs = [block, target, target ? views[target.id] : undefined]
+      const old = previous[block.id]
+      const entry =
+        old && old.inputs.length === inputs.length && old.inputs.every((value, i) => value === inputs[i])
+          ? old
+          : { inputs, view: getAnalysisView({ block, target, targetView: inputs[2] }) }
       entries[block.id] = entry
       views[block.id] = entry.view
     })
@@ -448,6 +469,55 @@ export class ReportBuilderWithoutTheme extends React.Component {
     }
   }
 
+  // Writes (or rewrites) an Analysis block's wording with Auto Analyze, from the result it's about as that
+  // result shows now — one credit per call. The wording is dropped if the block is gone by then, and a failure
+  // is kept on the block, with why.
+  onAnalyze = (id) => {
+    if (!this.props.enableAnalysis || this.pendingSeqs[id]) return
+    const report = this.getLatestReport()
+    const block = report.blocks.find((b) => b.id === id && b.type === 'analysis')
+    const target = block?.target && report.blocks.find((b) => b.id === block.target && b.type === 'data')
+    const input = target ? getAnalysisInput({ target, targetView: this.derive().views[target.id] }) : null
+    if (!input) return
+
+    this.pendingSeq += 1
+    const seq = this.pendingSeq
+    this.pendingSeqs[id] = seq
+    this.setPending(id, { kind: 'analysis', seq })
+    const focus = (block.focus || '').trim()
+
+    runAnalysis({ input, focus, authentication: this.props.authentication }).then((result) => {
+      if (!this.mounted || this.pendingSeqs[id] !== seq) return
+      delete this.pendingSeqs[id]
+      if (!result.ok) {
+        this.setPending(id, { kind: 'analysis', seq, error: result.message })
+        return
+      }
+      this.setPending(id, null)
+      const latest = this.getLatestReport()
+      if (!latest.blocks.some((b) => b.id === id && b.type === 'analysis')) return
+      this.change(
+        updateBlock(latest, id, {
+          text: result.text,
+          writtenAt: new Date().toISOString(),
+          targetAsOf: input.asOf,
+          targetTitle: input.title,
+          focusUsed: focus,
+          rowsAnalyzed: input.rows.length,
+        }),
+      )
+    })
+  }
+
+  // The ✦ on a Data block's toolbar: an Analysis block about it, put right after it and written at once.
+  onAnalyzeResult = (dataId) => {
+    if (!this.props.enableAnalysis) return
+    const block = createBlock('analysis', { target: dataId })
+    this.change(insertBlock(this.getLatestReport(), block, dataId))
+    this.setState({ selectedId: block.id }, () => this.scrollToBlock(block.id))
+    this.onAnalyze(block.id)
+  }
+
   // ---------------------------------------------------------------- details layer
 
   openDetails = (type, button) => {
@@ -625,6 +695,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const onPickTiles = canCapture && typeof this.props.pickDashboardTiles === 'function' ? this.onPickTiles : undefined
     // How the palette and details layer describe a Data block made here: with the host's tile picker or not.
     const fill = onPickTiles ? 'tiles' : 'ask'
+    const canAnalyze = !!this.props.enableAnalysis
     const selected = report.blocks.find((block) => block.id === selectedId) || null
     const runAt = run && run.status !== 'running' ? run.runAt : null
     return (
@@ -632,9 +703,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
         <Palette
           openType={details?.type}
           onOpen={this.openDetails}
-          // A Data block made here is filled by running, or by a question asked (or tiles picked) here.
-          // Otherwise data comes with "Add to Report…".
-          types={canRun || canCapture ? BLOCK_TYPES : BLOCK_TYPES.filter((type) => type !== 'data')}
+          // A Data block made here is filled by running, or by a question asked (or tiles picked) here;
+          // otherwise data comes with "Add to Report…". An analysis needs Auto Analyze (enableAnalysis).
+          types={BLOCK_TYPES.filter((type) =>
+            type === 'data' ? canRun || canCapture : type === 'analysis' ? canAnalyze : true,
+          )}
           note={
             canRun
               ? STRINGS.paletteNote
@@ -664,6 +737,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
             canRun={canRun}
             canCapture={canCapture}
             onPickTiles={onPickTiles}
+            onAnalyzeResult={canAnalyze ? this.onAnalyzeResult : undefined}
             pending={pending}
           />
         </main>
@@ -682,6 +756,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
           onPickTiles={onPickTiles}
           onAskCapture={canCapture ? this.onAskCapture : undefined}
           onRerun={canCapture ? this.onRerun : undefined}
+          targets={selected?.type === 'analysis' ? getAnalysisTargets(report.blocks, views) : undefined}
+          onAnalyze={canAnalyze ? this.onAnalyze : undefined}
           pending={selected ? pending[selected.id] : undefined}
         />
         {details ? (

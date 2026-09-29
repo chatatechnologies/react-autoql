@@ -9,8 +9,23 @@ import { RunningFooter, RunningHeader } from './PageFurniture'
 // The editing surface. It reflows to the space it has (never wider than the page) and doesn't paginate:
 // the print preview, which lays out true Letter pages, is the source of truth for what prints.
 
-const BlockTools = ({ id, isFirst, isLast, onAction }) => (
+const BlockTools = ({ id, isFirst, isLast, onAction, onAnalyze }) => (
   <div className={`${RB}-block-tools`} role='toolbar' aria-label={STRINGS.panel.block}>
+    {onAnalyze ? (
+      <>
+        <button
+          type='button'
+          title={STRINGS.analyzeResult}
+          aria-label={STRINGS.analyzeResult}
+          data-accent=''
+          data-test='report-builder-analyze-result'
+          onClick={onAnalyze}
+        >
+          <Icon name='analysis' />
+        </button>
+        <span className={`${RB}-block-tools-sep`} />
+      </>
+    ) : null}
     <button
       type='button'
       title={STRINGS.moveUp}
@@ -60,12 +75,16 @@ export const EditorBlock = React.memo(function EditorBlock({
   onText,
   onAsk,
   onPickTiles,
+  onAnalyzeResult,
   ...paperProps
 }) {
   const label = BLOCK_INFO[block.type]?.label || block.type
   const select = () => {
     if (!selected) onSelect(block.id)
   }
+  // Auto Analyze needs the answer's query id, so only a result kept with one offers it.
+  const analyzable =
+    !!onAnalyzeResult && block.type === 'data' && view?.state === 'ready' && !!block.capture?.data?.query_id
   return (
     <div
       className={`${RB}-block`}
@@ -76,12 +95,20 @@ export const EditorBlock = React.memo(function EditorBlock({
       style={boxStyleOf(block.style)}
       role='group'
       aria-label={label}
-      tabIndex={block.type === 'data' || block.type === 'pagebreak' ? 0 : undefined}
+      tabIndex={['data', 'analysis', 'pagebreak'].includes(block.type) ? 0 : undefined}
       onMouseDown={select}
       onFocus={select}
     >
       {selected ? <span className={`${RB}-block-tag`}>{label}</span> : null}
-      {selected ? <BlockTools id={block.id} isFirst={isFirst} isLast={isLast} onAction={onAction} /> : null}
+      {selected ? (
+        <BlockTools
+          id={block.id}
+          isFirst={isFirst}
+          isLast={isLast}
+          onAction={onAction}
+          onAnalyze={analyzable ? () => onAnalyzeResult(block.id) : undefined}
+        />
+      ) : null}
       <PaperBlock
         block={block}
         view={view}
@@ -119,6 +146,7 @@ export const Sheet = ({
   canRun,
   canCapture,
   onPickTiles,
+  onAnalyzeResult,
   pending,
 }) => {
   const { page, blocks } = report
@@ -161,6 +189,7 @@ export const Sheet = ({
                     canRun={canRun}
                     canCapture={canCapture}
                     onPickTiles={onPickTiles}
+                    onAnalyzeResult={onAnalyzeResult}
                     // Its own entry only: the block is memoized.
                     pending={pending?.[block.id]}
                   />

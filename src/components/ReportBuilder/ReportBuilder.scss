@@ -542,6 +542,14 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
         background: #f7e5e1;
         color: #a8402f;
       }
+      // Auto Analyze, in its accent.
+      &[data-accent] {
+        color: var(--react-autoql-accent-color, #26a7e9);
+      }
+      &[data-accent]:hover:not(:disabled) {
+        background: #e3f3fc;
+        color: var(--react-autoql-accent-color, #26a7e9);
+      }
       &:disabled {
         opacity: 0.35;
         cursor: not-allowed;
@@ -550,6 +558,12 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
         @include focus-ring;
       }
     }
+  }
+
+  .#{$rb}-block-tools-sep {
+    width: 1px;
+    margin: 2px 3px;
+    background: #d9dad5;
   }
 
   .#{$rb}-empty-report {
@@ -623,6 +637,14 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
 
   .#{$rb}-input {
     border-color: $accent;
+  }
+
+  // An analysis's wording: grows with its text (AutoGrowTextarea), from a few lines up.
+  textarea.#{$rb}-input {
+    min-height: 6rem;
+    line-height: 1.45;
+    resize: none;
+    overflow: hidden;
   }
 
   .#{$rb}-segmented {

@@ -531,7 +531,30 @@ export interface ReportPageBreakBlock {
   type: 'pagebreak'
 }
 
-export type ReportBlock = ReportHeadingBlock | ReportTextBlock | ReportDataBlock | ReportPageBreakBlock
+// Auto Analyze's wording about one Data block (`target`), as written — Markdown — and edited since.
+export interface ReportAnalysisBlock {
+  id: string
+  type: 'analysis'
+  target: string | null
+  // Asked for next time it's written (Analyze again).
+  focus?: string
+  text: string
+  width?: ReportBlockWidth
+  style?: ReportTextStyle
+  // What it was written from: when, the target's capturedAt then, its title, the focus used, the rows read.
+  writtenAt?: string
+  targetAsOf?: string
+  targetTitle?: string
+  focusUsed?: string
+  rowsAnalyzed?: number
+}
+
+export type ReportBlock =
+  | ReportHeadingBlock
+  | ReportTextBlock
+  | ReportDataBlock
+  | ReportAnalysisBlock
+  | ReportPageBreakBlock
 
 // Paper is always US Letter.
 export interface ReportPageSetup {
@@ -604,6 +627,9 @@ export interface ReportBuilderProps {
   // With enableDataBlocks: an empty Data block offers "Pick dashboard tiles…", which calls this. Show your own
   // picker and resolve with the blocks to put in the empty block's place, in order, or null to leave it.
   pickDashboardTiles?: () => Promise<ReportBlock[] | null | undefined> | ReportBlock[] | null | undefined
+  // Analysis blocks can be made and written: Auto Analyze's wording about one result, one Auto Analyze credit
+  // per run. Off by default; analyses already in a report always show and print.
+  enableAnalysis?: boolean
   className?: string
 }
 

@@ -22,6 +22,7 @@ import { getTileLabel } from '../../Dashboard/tileQueryConfig'
 import { Icon } from '../../Icon'
 import { formatPrintedDate } from '../run/reportRun'
 import { Divider, Field, Note, SectionLabel, Segmented, SelectField, Swatches, Toggle, useStableId } from './controls'
+import { AutoGrowTextarea } from './AutoGrowTextarea'
 
 const P = STRINGS.panel
 
@@ -494,6 +495,80 @@ class DataProperties extends React.Component {
   }
 }
 
+// Auto Analyze's wording about one result: which result, an optional focus, Analyze (when the builder can run
+// it), and the wording itself, which prints as written.
+const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyze, pending }) => {
+  const focusId = useStableId('focus')
+  const wordingId = useStableId('wording')
+  const writing = pending?.kind === 'analysis' && !pending.error
+  const written = view?.state === 'written'
+  const options = [['', P.chooseResult], ...targets.map((target) => [target.id, target.label])]
+  if (block.target && !targets.some((target) => target.id === block.target)) {
+    options.push([block.target, view?.targetGone ? P.removedResult : view?.fromTitle || P.thisResult])
+  }
+  return (
+    <>
+      <SelectField
+        label={P.analysisResult}
+        value={block.target || ''}
+        options={options}
+        testId='report-builder-analysis-target'
+        onChange={(target) => onBlockChange(block.id, { target: target || null })}
+      />
+      {view?.targetGone ? <Note tone='warning'>{STRINGS.analysis.targetGone}</Note> : null}
+      {!targets.length ? <Note>{P.noResults}</Note> : null}
+      <Field label={P.focus} htmlFor={focusId}>
+        <input
+          id={focusId}
+          type='text'
+          className={`${RB}-input`}
+          value={block.focus || ''}
+          placeholder={P.focusPlaceholder}
+          data-test='report-builder-analysis-focus'
+          onChange={(e) => onBlockChange(block.id, { focus: e.target.value })}
+        />
+      </Field>
+      {onAnalyze ? (
+        <>
+          <button
+            type='button'
+            className={`${RB}-button`}
+            data-block=''
+            data-variant='primary'
+            data-test='report-builder-analyze'
+            disabled={!view?.canAnalyze || writing}
+            onClick={() => onAnalyze(block.id)}
+          >
+            {writing ? P.analyzing : written ? P.analyzeAgain : P.analyze}
+          </button>
+          {pending?.error ? (
+            <Note tone='warning'>{pending.error}</Note>
+          ) : (
+            <Note>{written ? P.analyzeAgainNote : P.analyzeNote}</Note>
+          )}
+          {block.target && view && !view.canAnalyze && !view.targetGone ? <Note>{P.cantAnalyze}</Note> : null}
+        </>
+      ) : null}
+      {view?.targetChanged ? <Note tone='warning'>{STRINGS.analysis.targetChanged}</Note> : null}
+      <Divider />
+      <Field label={P.wording} htmlFor={wordingId}>
+        <AutoGrowTextarea
+          id={wordingId}
+          className={`${RB}-input`}
+          data-multiline=''
+          data-test='report-builder-analysis-text'
+          value={block.text}
+          onChange={(text) => onBlockChange(block.id, { text })}
+        />
+      </Field>
+      <Note>{P.wordingNote}</Note>
+      <Divider />
+      <SectionLabel>{P.block}</SectionLabel>
+      <WidthField block={block} onBlockChange={onBlockChange} />
+    </>
+  )
+}
+
 export const PropertiesPanel = (props) => {
   const { report, block, view, onPageChange } = props
   let content
@@ -524,6 +599,7 @@ export const PropertiesPanel = (props) => {
           </>
         ) : null}
         {block.type === 'data' ? <DataProperties key={block.id} {...props} view={view} /> : null}
+        {block.type === 'analysis' ? <AnalysisProperties key={block.id} {...props} view={view} /> : null}
         {block.type === 'pagebreak' ? <Note>{P.pageBreakNote}</Note> : null}
         {!info ? <Note>{P.unknownNote}</Note> : null}
       </>
