@@ -18,6 +18,9 @@ export const STRINGS = {
 
   addBlock: 'Add a block',
   paletteHint: 'Click a block to see what it does, then insert it.',
+  newReport: 'New report',
+  getStarted: 'Get started…',
+  getStartedHint: 'Start from a question, a dashboard, or a blank page.',
   paletteNote: 'A Data block shows a dashboard tile exactly as its dashboard does, or answers a question.',
   paletteNoteCaptures: 'To add data, use “Add to Report…” on a dashboard tile or an answer in the Query view.',
   // When Data blocks keep what they're given (enableDataBlocks): with and without the host's tile picker.

@@ -1164,3 +1164,17 @@ describe('analysis blocks (enableAnalysis)', () => {
     expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['d'])
   })
 })
+
+describe('Get started (onGetStarted)', () => {
+  it('offers a new report when the host can start one', () => {
+    const { unmount } = setup()
+    expect(screen.queryByTestId('report-builder-get-started')).toBeNull()
+    unmount()
+
+    const onGetStarted = jest.fn()
+    setup(createEmptyReport(), { onGetStarted })
+    expect(screen.getByText('Start from a question, a dashboard, or a blank page.')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('report-builder-get-started'))
+    expect(onGetStarted).toHaveBeenCalledTimes(1)
+  })
+})

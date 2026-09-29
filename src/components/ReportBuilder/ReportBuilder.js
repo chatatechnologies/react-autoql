@@ -118,6 +118,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // Analysis blocks can be made and written here: Auto Analyze's wording about one result, one credit per
     // run. Off by default; analyses already in a report always show and print.
     enableAnalysis: PropTypes.bool,
+    // Adds "New report · Get started…" to the palette, which calls this; the host starts the new report.
+    onGetStarted: PropTypes.func,
     className: PropTypes.string,
   }
 
@@ -137,6 +139,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     enableDataBlocks: false,
     pickDashboardTiles: undefined,
     enableAnalysis: false,
+    onGetStarted: undefined,
     className: undefined,
   }
 
@@ -703,6 +706,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
         <Palette
           openType={details?.type}
           onOpen={this.openDetails}
+          onGetStarted={this.props.onGetStarted}
           // A Data block made here is filled by running, or by a question asked (or tiles picked) here;
           // otherwise data comes with "Add to Report…". An analysis needs Auto Analyze (enableAnalysis).
           types={BLOCK_TYPES.filter((type) =>

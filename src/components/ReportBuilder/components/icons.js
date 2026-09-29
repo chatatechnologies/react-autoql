@@ -25,6 +25,13 @@ const PATHS = {
       <path d='M1.8 8h12.4' strokeDasharray='2.4 2' />
     </>
   ),
+  // A new report.
+  new: (
+    <>
+      <path d='M4 2.5h5l3 3v8H4z' />
+      <path d='M8 7.5v4M6 9.5h4' />
+    </>
+  ),
   up: <path d='M4 10l4-4 4 4' />,
   down: <path d='M4 6l4 4 4-4' />,
   duplicate: (

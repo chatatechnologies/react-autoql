@@ -630,6 +630,8 @@ export interface ReportBuilderProps {
   // Analysis blocks can be made and written: Auto Analyze's wording about one result, one Auto Analyze credit
   // per run. Off by default; analyses already in a report always show and print.
   enableAnalysis?: boolean
+  // Adds "New report · Get started…" to the palette, which calls this. The host starts the report.
+  onGetStarted?: () => void
   className?: string
 }
 
