@@ -38,18 +38,6 @@
   }
 }
 
-// The button is absolutely positioned against the top of the message so it lands on the
-// table's header row - which only works while the table is the first thing in the
-// message. The truncation banner puts itself above the table and pushes the header out
-// from under the button, so the button follows it down by the banner's own footprint
-// (declared in DataTruncatedNotice.scss, not restated here).
-//
-// A sibling selector because the button is rendered outside the response container, next
-// to it - see QueryOutput.render.
-.react-autoql-response-content-container.has-truncated-banner ~ .react-autoql-table-add-column-btn {
-  --react-autoql-add-column-btn-offset: var(--react-autoql-truncated-banner-offset);
-}
-
 .react-autoql-add-column-menu {
   max-height: 250px;
   min-width: 115px;

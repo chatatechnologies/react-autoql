@@ -34,25 +34,11 @@
   }
 }
 
-/**
- * What the banner costs in vertical space, published so the one thing that has to know
- * isn't left guessing at it.
- *
- * The add-column button is positioned against the top of the *message*, not the top of
- * the table, so a banner above the table pushes the table out from under it. It gets
- * moved down by exactly this much (see .has-truncated-banner in AddColumnBtn.scss)
- * rather than by a number copied out of here that would go stale the first time this
- * one changed.
- *
- * Height is the restore button (2rem) plus the banner's own vertical padding; the gap
- * is what separates it from the table below.
- */
+// The banner's own footprint: height is the restore button (2rem) plus the banner's
+// vertical padding, and the gap is what separates it from the table below.
 :root {
   --react-autoql-truncated-banner-height: 2.5rem;
   --react-autoql-truncated-banner-gap: 5px;
-  --react-autoql-truncated-banner-offset: calc(
-    var(--react-autoql-truncated-banner-height) + var(--react-autoql-truncated-banner-gap)
-  );
 }
 
 // Sits above a table that is still showing real rows, so it is informational rather
@@ -75,7 +61,6 @@
   gap: 8px;
   width: 100%;
   padding: 4px 12px;
-  // Both from the variables above, so the offset that tracks this stays true.
   margin-bottom: var(--react-autoql-truncated-banner-gap);
   min-height: var(--react-autoql-truncated-banner-height);
   border-radius: 12px;

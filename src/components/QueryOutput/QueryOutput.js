@@ -4552,6 +4552,14 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
+    // Adding a column re-runs the query and comes back with the whole answer, so it
+    // quietly undoes the truncation - the message goes from a preview to a full result
+    // through a control that says nothing about either. Restore is the one way back to
+    // the data, and it is already sitting in the banner; the button returns with it.
+    if (this.isDataTruncated()) {
+      return null
+    }
+
     const isSingleValue = this.isSingleValueOrEmptyResponse(this.queryResponse)
     const allColumnsHidden = areAllColumnsHidden(this.getColumns())
     const isDrilldownResponse = isDrilldown(this.queryResponse)
@@ -5138,11 +5146,6 @@ export class QueryOutput extends React.Component {
    * Above the table rather than around it: the rows below are real, so the answer still
    * reads as an answer - what the banner adds is that there are more of them. A charted
    * or pivoted message gets the card instead, never both.
-   *
-   * render() asks as well as renderResponse, because the banner takes vertical space at
-   * the top of the message and the add-column button is positioned against the top of
-   * the message rather than the top of the table - so it has to know to move down. See
-   * .has-truncated-banner in AddColumnBtn.scss.
    */
   shouldShowTruncatedBanner = (displayType = this.state.displayType) => {
     return this.isDataTruncated() && !isChartType(displayType) && displayType !== 'pivot_table'
@@ -5245,7 +5248,6 @@ export class QueryOutput extends React.Component {
         ${this.state.displayType === 'single-value' ? 'single-value' : ''}
         ${this.shouldEnableResize ? 'resizable' : ''}
         ${this.state.isResizing ? 'resizing' : ''}
-        ${this.shouldShowTruncatedBanner() ? 'has-truncated-banner' : ''}
         ${this.shouldShowTruncatedCard() ? 'has-truncated-card' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}

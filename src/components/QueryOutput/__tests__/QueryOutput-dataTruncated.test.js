@@ -75,27 +75,25 @@ describe('an answer whose rows have been dropped to a preview', () => {
     expect(toggleIsFiltering).not.toHaveBeenCalled()
   })
 
-  // The add-column button is positioned against the top of the message, not the top of
-  // the table, so the banner pushes the header out from under it. The class is how the
-  // stylesheet knows to move it down (see AddColumnBtn.scss).
-  test('marks the container so the add-column button can follow the table down', () => {
-    const hasMarker = (props) => {
-      const output = mountOutput(props)
+  // Adding a column re-runs the query and comes back with the whole answer, so the
+  // button would undo the truncation through a control that mentions neither. Restore
+  // is the one way back to the data, and it is already in the banner.
+  test('withholds the add-column button until the data is back', () => {
+    const renderButton = (props) => {
+      const output = mountOutput({ allowColumnAddition: true, ...props })
       output.setState({ displayType: 'table' })
-      return output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-banner')
+      return output.instance().renderAddColumnBtn()
     }
 
-    expect(hasMarker({ dataTruncated: { droppedRowCount: 4512 } })).toBe(true)
-    expect(hasMarker()).toBe(false)
+    expect(renderButton({ dataTruncated: { droppedRowCount: 4512 } })).toBeNull()
+    expect(renderButton()).toBeTruthy()
   })
 
-  test('drops the marker for a charted message, which gets the card instead', () => {
+  test('gives a charted message the card', () => {
     const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
     output.setState({ displayType: 'column' })
 
-    const container = output.find('.react-autoql-response-content-container').first()
-    expect(container.hasClass('has-truncated-banner')).toBe(false)
-    expect(container.hasClass('has-truncated-card')).toBe(true)
+    expect(output.find('.react-autoql-response-content-container').first().hasClass('has-truncated-card')).toBe(true)
   })
 
   // A table keeps its rows and its banner, so there is no card to make room for.
