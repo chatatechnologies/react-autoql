@@ -2082,6 +2082,14 @@ export default class ChataTable extends React.Component {
       return null
     }
 
+    // Both halves of "Scrolled 50 / 3,000 rows" are wrong on a preview: the table holds
+    // ten rows and cannot be scrolled, and `count_rows` counts an answer we are no
+    // longer showing. The banner above says what is actually on screen, and says it
+    // without quoting a total for the same reason. It comes back on restore.
+    if (this.props.isDataTruncated) {
+      return null
+    }
+
     // QueryOutput does not pass `data`; rows live on `response`. `undefined < 50` is false, so
     // without this fallback the label stays at "50" instead of the real loaded row count.
     const loadedRowCount = this.props.data?.length ?? this.props.response?.data?.data?.rows?.length ?? 0

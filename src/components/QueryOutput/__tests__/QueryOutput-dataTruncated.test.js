@@ -169,4 +169,21 @@ describe('an answer whose rows have been dropped to a preview', () => {
     expect(instance.state.isDataRestored).toBe(true)
     expect(instance.isDataTruncated()).toBe(false)
   })
+
+  // Adding a custom column re-runs the query, so the rows it comes back with are the
+  // whole answer. Leaving the truncated flag set left the banner up over full data, and
+  // the rows would have been dropped again on the next remount.
+  test('marks the data restored when new columns bring the whole answer back', () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const onRestoreData = jest.fn()
+    output.setProps({ onRestoreData })
+
+    const full = makeResponse()
+    instance.updateColumnsAndData(full)
+
+    expect(onRestoreData).toHaveBeenCalledWith(full)
+    expect(instance.state.isDataRestored).toBe(true)
+    expect(instance.isDataTruncated()).toBe(false)
+  })
 })

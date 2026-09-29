@@ -376,6 +376,32 @@ export class ChatMessage extends React.Component {
     clearTimeout(this.animationTimeout)
     clearTimeout(this.revealTimeout)
   }
+  /**
+   * Both toolbars take this ref as a prop, so they hold whatever instance the last
+   * render handed them - and a ref callback fires after that render, never causing
+   * another. First mount gets away with it because something else re-renders the
+   * message soon enough; the remount that truncating and restoring this answer forces
+   * (see the `key` on QueryOutput) does not, leaving the toolbar pointed at an
+   * unmounted output. Show/Hide Columns is where that showed: its button is drawn from
+   * columns the dead instance can still derive, but the modal checks `_isMounted` and
+   * so rendered nothing at all when clicked.
+   *
+   * A method rather than an inline arrow on purpose: a new function each render would
+   * be called with null and then the instance every time, and the forceUpdate below
+   * would never settle.
+   */
+  setResponseRef = (ref) => {
+    if (ref === this.responseRef) {
+      return
+    }
+
+    this.responseRef = ref
+
+    if (ref && this._isMounted) {
+      this.forceUpdate()
+    }
+  }
+
   toggleQueryOutputModal = () => {
     this.setState((prevState) => ({
       isQueryOutputModalVisible: !prevState.isQueryOutputModalVisible,
@@ -1171,10 +1197,20 @@ export class ChatMessage extends React.Component {
     }
   }
 
+  /**
+   * A truncated answer is holding preview rows and nothing that says so to whatever
+   * reads them. Both bubble actions send the answer's data away to be reasoned over -
+   * Auto Analyze summarises it, a follow-up query runs against it - so either one would
+   * quietly describe ten rows as the whole result. They come back when the user restores
+   * the data, which clears `dataTruncated` on the message.
+   */
+  isDataTruncated = () => !!this.props.dataTruncated
+
   shouldShowFollowOnButton = () => {
     if (this.props.type === 'markdown' || this.props.type === 'md') return false
     if (this.props.isCSVProgressMessage) return false
     if (this.props.content) return false
+    if (this.isDataTruncated()) return false
     const queryResponse = this.responseRef?.queryResponse || this.props.response
     return shouldShowQueryActionButton(this.props.enableFollowOnQuery, queryResponse)
   }
@@ -1318,13 +1354,15 @@ export class ChatMessage extends React.Component {
     // This ensures we check the most up-to-date data (e.g., after columns are added)
     const currentResponse = this.responseRef?.queryResponse || this.props.response
 
-    const showMagicWand = shouldShowSummaryButton({
-      enableMagicWand: this.props.enableMagicWand,
-      queryResponse: currentResponse,
-      isResponse: this.props.isResponse,
-      type: this.props.type,
-      isCSVProgressMessage: this.props.isCSVProgressMessage,
-    })
+    const showMagicWand =
+      !this.isDataTruncated() &&
+      shouldShowSummaryButton({
+        enableMagicWand: this.props.enableMagicWand,
+        queryResponse: currentResponse,
+        isResponse: this.props.isResponse,
+        type: this.props.type,
+        isCSVProgressMessage: this.props.isCSVProgressMessage,
+      })
     const showFollowOn = this.shouldShowFollowOnButton()
 
     if (!showMagicWand && !showFollowOn) {
@@ -1456,7 +1494,7 @@ export class ChatMessage extends React.Component {
           key={this.props.dataVersion ?? 0}
           enableResizing={true}
           onResize={this.onQueryOutputResize}
-          ref={(ref) => (this.responseRef = ref)}
+          ref={this.setResponseRef}
           optionsToolbarRef={this.optionsToolbarRef}
           vizToolbarRef={this.vizToolbarRef}
           rtRef={this.rtRef}

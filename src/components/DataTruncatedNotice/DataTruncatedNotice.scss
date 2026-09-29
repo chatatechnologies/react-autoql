@@ -135,7 +135,13 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 100%;
+  // 100vw capped at 100%, the same trick .react-autoql-response-content-container.chart
+  // uses on itself. The bubble's width comes from its content, so `width: 100%` alone
+  // leaves the card as wide as its one line of text - which is what the chart's
+  // container was already fixing for the chart, and nothing was doing for the pivot
+  // table. Stated here so the card is full width whichever view it stands in for.
+  width: 100vw;
+  max-width: 100%;
   height: 100%;
   min-height: 140px;
   padding: 20px;

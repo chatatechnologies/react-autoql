@@ -285,3 +285,58 @@ describe('billing gate (enableBillingGate)', () => {
     expect(popoverContentElement.props.billingExecutionType).toBe('STRIPE')
   })
 })
+
+// Both bubble actions reason over the answer's rows, so on a truncated answer they would
+// be reasoning over the ten-row preview without knowing it. They return once the user
+// restores the data, which clears `dataTruncated` on the message.
+describe('truncated data gating', () => {
+  const truncatedProps = {
+    enableMagicWand: true,
+    enableFollowOnQuery: true,
+    dataTruncated: { droppedRowCount: 4512 },
+  }
+
+  test('hides the Auto Analyze button and the follow-up button, leaving no footer at all', () => {
+    const instance = setup(truncatedProps).instance()
+
+    expect(instance.shouldShowFollowOnButton()).toBe(false)
+    expect(instance.renderSummaryFooter()).toBeNull()
+  })
+
+  test('shows both again on the same answer once its data is restored', () => {
+    const instance = setup({ ...truncatedProps, dataTruncated: undefined }).instance()
+
+    expect(instance.shouldShowFollowOnButton()).toBe(true)
+    expect(instance.renderSummaryFooter()).not.toBeNull()
+  })
+})
+
+// The toolbars hold the QueryOutput ref as a prop, so they go stale on the remount that
+// truncating and restoring an answer forces - which is how Show/Hide Columns ended up
+// opening nothing.
+describe('the QueryOutput ref handed to the toolbars', () => {
+  test('re-renders the message when the output remounts, so the toolbars get the live one', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const forceUpdate = jest.spyOn(instance, 'forceUpdate')
+
+    const remounted = { _isMounted: true }
+    instance.setResponseRef(remounted)
+
+    expect(instance.responseRef).toBe(remounted)
+    expect(forceUpdate).toHaveBeenCalled()
+  })
+
+  test('does not re-render for the same ref, or for the null the old instance leaves behind', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const output = { _isMounted: true }
+    instance.setResponseRef(output)
+
+    const forceUpdate = jest.spyOn(instance, 'forceUpdate')
+    instance.setResponseRef(output)
+    instance.setResponseRef(null)
+
+    expect(forceUpdate).not.toHaveBeenCalled()
+  })
+})

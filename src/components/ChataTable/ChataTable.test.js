@@ -1803,3 +1803,15 @@ describe('the data limit warning on a truncated pivot table', () => {
     expect(shallow(warnings).find('.react-autoql-table-data-limit-icon').exists()).toBe(true)
   })
 })
+
+// "Scrolled 50 / 3,000 rows" over a ten-row preview misstates both halves: nothing is
+// scrollable, and the total belongs to an answer that is no longer on screen.
+describe('the scrolled-rows count on a truncated table', () => {
+  test('is withheld while the rows are a preview', () => {
+    expect(setup({ isDataTruncated: true }).instance().renderTableRowCount()).toBeNull()
+  })
+
+  test('is shown once the data is restored', () => {
+    expect(setup({ isDataTruncated: false }).instance().renderTableRowCount()).not.toBeNull()
+  })
+})

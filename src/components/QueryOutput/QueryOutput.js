@@ -1497,6 +1497,14 @@ export class QueryOutput extends React.Component {
         customColumnSelects,
         displayType,
       }))
+
+      // Every route into here - Restore, adding a custom column, changing the selected
+      // columns from the reverse translation - has been to the server for the answer
+      // again, so the rows now on screen are not a preview any more. Said here rather
+      // than at each call site so a new one cannot leave the banner up over full data.
+      // After the setState above: this clears the truncated state, and doing it first
+      // would render the chart empty for a frame.
+      this.noticeDataIsNoLongerTruncated(response)
     }
   }
 
@@ -2026,11 +2034,8 @@ export class QueryOutput extends React.Component {
         throw new Error('Restoring the full data returned no rows')
       }
 
+      // Clears the truncated state as its last step, once the data is in place.
       this.updateColumnsAndData(response)
-
-      // Ordering matters: this clears the truncated state, so it has to happen after the
-      // data is actually in place or the chart would render empty for a frame.
-      this.noticeDataIsNoLongerTruncated(response)
     } catch (error) {
       console.error(error)
 
