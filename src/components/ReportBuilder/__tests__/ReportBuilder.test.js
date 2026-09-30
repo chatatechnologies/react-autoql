@@ -1537,3 +1537,27 @@ describe('Get started (onGetStarted)', () => {
     expect(onGetStarted).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('the host’s toolbar status (toolbarStatus)', () => {
+  const toolbarOf = (container) => container.querySelector('.react-autoql-report-builder-toolbar')
+
+  it('adds nothing to the toolbar by default', () => {
+    const { container } = setup()
+    expect(screen.queryByTestId('report-builder-toolbar-status')).toBeNull()
+    expect(toolbarOf(container).querySelector('.react-autoql-report-builder-toolbar-separator')).toBeNull()
+  })
+
+  it('shows the host’s element just before Preview, and keeps it in the preview', () => {
+    const { container } = setup(createEmptyReport({ title: 'Board pack' }), {
+      toolbarStatus: <button type='button'>Saved</button>,
+    })
+    const status = within(toolbarOf(container)).getByTestId('report-builder-toolbar-status')
+    expect(within(status).getByRole('button', { name: 'Saved' })).toBeTruthy()
+    const preview = screen.getByTestId('report-builder-open-preview')
+    expect(status.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    fireEvent.click(preview)
+    expect(within(toolbarOf(container)).getByRole('button', { name: 'Saved' })).toBeTruthy()
+    expect(screen.getByTestId('report-builder-close-preview')).toBeTruthy()
+  })
+})

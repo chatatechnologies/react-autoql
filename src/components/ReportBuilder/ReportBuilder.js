@@ -130,6 +130,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     enableAnalysis: PropTypes.bool,
     // Adds "New report · Get started…" to the palette, which calls this; the host starts the new report.
     onGetStarted: PropTypes.func,
+    // The host's own element for the toolbar, shown just before Preview (and in the preview): whether the
+    // report is saved, say. None by default.
+    toolbarStatus: PropTypes.node,
     className: PropTypes.string,
   }
 
@@ -150,6 +153,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     pickDashboardTiles: undefined,
     enableAnalysis: false,
     onGetStarted: undefined,
+    toolbarStatus: null,
     className: undefined,
   }
 
@@ -854,6 +858,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
             onClosePreview={this.closePrintPreview}
             printing={printing}
             onPrint={this.print}
+            status={this.props.toolbarStatus}
           />
           {notice || (previewOpen && layoutInfo?.overflowCount) ? (
             <div className={`${RB}-notice`} role='status'>

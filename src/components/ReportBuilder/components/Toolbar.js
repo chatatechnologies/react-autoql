@@ -5,6 +5,7 @@ import { Icon } from './icons'
 
 // Run, preview and print are the builder's own; a host adds nothing to make a report work. Run shows only
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
+// `status` is the host's own element (toolbarStatus), set apart just before them.
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -22,6 +23,7 @@ export const Toolbar = ({
   onClosePreview,
   printing,
   onPrint,
+  status,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
@@ -41,6 +43,14 @@ export const Toolbar = ({
       />
     )}
     <div className={`${RB}-toolbar-actions`}>
+      {status ? (
+        <>
+          <div className={`${RB}-toolbar-status`} data-test='report-builder-toolbar-status'>
+            {status}
+          </div>
+          <span className={`${RB}-toolbar-separator`} aria-hidden='true' />
+        </>
+      ) : null}
       {showRun ? (
         <>
           <span className={`${RB}-run-label`} data-attention={highlightRun || undefined} aria-live='polite'>

@@ -641,6 +641,9 @@ export interface ReportBuilderProps {
   enableAnalysis?: boolean
   // Adds "New report · Get started…" to the palette, which calls this. The host starts the report.
   onGetStarted?: () => void
+  // Your own element for the toolbar, shown just before Preview (and in the preview): whether the report is
+  // saved, say. None by default.
+  toolbarStatus?: React.ReactNode
   className?: string
 }
 
