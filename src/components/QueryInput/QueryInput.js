@@ -1007,8 +1007,9 @@ class QueryInput extends React.Component {
     // that isn't showing) would swallow dictation meant for this one.
     const hasMicrophone = !isMobile && this.props.enableVoiceRecord && this.props.shouldRender
 
-    const showTopics =
-      this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
+    // Quick Topics stand on their own prop. They come from the subject list, not
+    // from the related-queries endpoint, so enableQuerySuggestions has no say here.
+    const showTopics = this.props.enableQueryInputTopics && this.state.topics.length > 0
     const showCollapsedIcon = showTopics && this.state.topicsCollapsed
     const { controlsStart, inputMargin, gap, collapsedIconWidth, textGap } = this.getLeftControlGeometry()
 
