@@ -1289,6 +1289,58 @@ describe('analysis blocks (enableAnalysis)', () => {
     expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['d'])
   })
 
+  // A single value: the Query view and dashboards don't offer the magic wand on it either.
+  const totalBlock = () =>
+    resultBlock({
+      id: 't',
+      source: { type: 'query', query: 'total aum' },
+      capture: {
+        version: 1,
+        capturedAt: CAPTURED_AT,
+        displayType: 'single-value',
+        data: { columns: [COLUMNS[1]], rows: [[4200000]], count_rows: 1, text: 'total aum', query_id: 'q_2' },
+        config: { displayType: 'single-value' },
+      },
+    })
+
+  it('won’t analyze a result the magic wand isn’t offered on', () => {
+    setup(reportOf(totalBlock(), resultBlock(), analysisBlock({ target: 't' })), { enableAnalysis: true })
+
+    selectBlock('Data', 0)
+    expect(screen.queryByTestId('report-builder-analyze-result')).toBeNull()
+    selectBlock('Data', 1)
+    expect(screen.getByTestId('report-builder-analyze-result')).toBeTruthy()
+
+    selectBlock('Analysis')
+    const options = [...within(panel()).getByTestId('report-builder-analysis-target').options]
+    const total = options.find((option) => option.value === 't')
+    expect(total.disabled).toBe(true)
+    expect(total.textContent).toBe('“total aum” (too little to analyze)')
+    expect(options.find((option) => option.value === 'd').disabled).toBe(false)
+    expect(within(panel()).getByTestId('report-builder-analyze').disabled).toBe(true)
+    expect(within(panel()).getByText(/needs more than one row to write about/)).toBeTruthy()
+    expect(screen.getByText(/can’t write about this result/)).toBeTruthy()
+
+    fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+    expect(fetchLLMSummary).not.toHaveBeenCalled()
+  })
+
+  it('keeps what was written about a result that no longer qualifies, but won’t write it again', () => {
+    const written = analysisBlock({
+      target: 't',
+      text: 'Up **18%**.',
+      targetTitle: 'total aum',
+      targetAsOf: CAPTURED_AT,
+    })
+    setup(reportOf(totalBlock(), written), { enableAnalysis: true })
+    expect(screen.getByText('18%').tagName).toBe('STRONG')
+
+    selectBlock('Analysis')
+    const analyze = within(panel()).getByTestId('report-builder-analyze')
+    expect(analyze.textContent).toBe('Analyze again')
+    expect(analyze.disabled).toBe(true)
+  })
+
   it('keeps Auto Analyze’s wording with real line breaks', async () => {
     fetchLLMSummary.mockReturnValue(summary('First.\\nSecond.'))
     const { lastReport } = setup(reportOf(resultBlock(), analysisBlock()), { enableAnalysis: true })

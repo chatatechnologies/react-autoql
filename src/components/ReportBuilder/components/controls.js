@@ -55,8 +55,9 @@ export const SelectField = ({ label, value, options, onChange, disabled, testId 
           onChange(match ? match[0] : e.target.value)
         }}
       >
-        {options.map(([optionValue, optionLabel]) => (
-          <option key={String(optionValue)} value={String(optionValue)}>
+        {/* An option may be listed but not chosen: [value, label, true]. */}
+        {options.map(([optionValue, optionLabel, optionDisabled]) => (
+          <option key={String(optionValue)} value={String(optionValue)} disabled={!!optionDisabled}>
             {optionLabel}
           </option>
         ))}

@@ -503,7 +503,14 @@ const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyz
   const wordingId = useStableId('wording')
   const writing = pending?.kind === 'analysis' && !pending.error
   const written = view?.state === 'written'
-  const options = [['', P.chooseResult], ...targets.map((target) => [target.id, target.label])]
+  // Results Auto Analyze can't write about are listed, greyed, with why.
+  const options = [
+    ['', P.chooseResult],
+    ...targets.map((target) =>
+      target.blocker ? [target.id, P.cantAnalyzeOption(target.label, target.blocker), true] : [target.id, target.label],
+    ),
+  ]
+  const cantAnalyze = { 'no-query-id': P.cantAnalyze, 'too-little': P.cantAnalyzeTooLittle }[view?.blocker]
   if (block.target && !targets.some((target) => target.id === block.target)) {
     options.push([block.target, view?.targetGone ? P.removedResult : view?.fromTitle || P.thisResult])
   }
@@ -547,7 +554,7 @@ const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyz
           ) : (
             <Note>{written ? P.analyzeAgainNote : P.analyzeNote}</Note>
           )}
-          {block.target && view && !view.canAnalyze && !view.targetGone ? <Note>{P.cantAnalyze}</Note> : null}
+          {block.target && !view?.targetGone && cantAnalyze ? <Note>{cantAnalyze}</Note> : null}
         </>
       ) : null}
       {view?.targetChanged ? <Note tone='warning'>{STRINGS.analysis.targetChanged}</Note> : null}

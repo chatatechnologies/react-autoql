@@ -32,7 +32,13 @@ import {
 } from './model/reportOperations'
 import { buildTileIndex, resolveTile } from './model/tiles'
 import { getDataBlockView } from './model/blockView'
-import { getAnalysisInput, getAnalysisTargets, getAnalysisView, toAnalysisMarkdown } from './model/analysis'
+import {
+  getAnalysisBlocker,
+  getAnalysisInput,
+  getAnalysisTargets,
+  getAnalysisView,
+  toAnalysisMarkdown,
+} from './model/analysis'
 import { runAnalysis } from './run/analysis'
 import { executeReport, formatPrintedDate, getRunLabel, planReportRun, summarizeRun } from './run/reportRun'
 import { captureQuestion } from './run/captureRun'
@@ -533,8 +539,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // The ✦ on a Data block's toolbar: an Analysis block about it, put right after it and written at once.
   onAnalyzeResult = (dataId) => {
     if (!this.props.enableAnalysis) return
+    const report = this.getLatestReport()
+    const target = report.blocks.find((b) => b.id === dataId && b.type === 'data')
+    if (getAnalysisBlocker({ target, targetView: this.derive().views[dataId] })) return
     const block = createBlock('analysis', { target: dataId })
-    this.change(insertBlock(this.getLatestReport(), block, dataId))
+    this.change(insertBlock(report, block, dataId))
     this.setState({ selectedId: block.id }, () => this.scrollToBlock(block.id))
     this.onAnalyze(block.id)
   }

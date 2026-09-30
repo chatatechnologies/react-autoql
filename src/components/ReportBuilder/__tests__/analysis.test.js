@@ -1,6 +1,6 @@
 import React from 'react'
 import { render } from '@testing-library/react'
-import { getAnalysisInput, getAnalysisTargets, getAnalysisView } from '../model/analysis'
+import { getAnalysisBlocker, getAnalysisInput, getAnalysisTargets, getAnalysisView } from '../model/analysis'
 import { getDataBlockView } from '../model/blockView'
 import { runAnalysis } from '../run/analysis'
 import { PaperBlock } from '../components/PaperBlock'
@@ -76,7 +76,57 @@ describe('what an analysis reads', () => {
     const empty = { id: 'e', type: 'data', source: null, rows: 25 }
     const blocks = [{ id: 'h', type: 'heading', text: 'Q3', level: 2 }, question, empty]
     const views = { d: viewOf(question), e: viewOf(empty) }
-    expect(getAnalysisTargets(blocks, views)).toStrictEqual([{ id: 'd', label: '“aum by account”' }])
+    expect(getAnalysisTargets(blocks, views)).toStrictEqual([{ id: 'd', label: '“aum by account”', blocker: null }])
+  })
+})
+
+// The same answers the magic wand isn't offered on in the Query view and on dashboards.
+describe('what Auto Analyze can’t write about', () => {
+  const blockerOf = (target) => getAnalysisBlocker({ target, targetView: viewOf(target) })
+  const oneValue = (extra = {}) =>
+    dataBlock(
+      {
+        ...captureOf({ rows: [[4200000]], displayType: 'single-value' }),
+        data: { columns: [COLUMNS[1]], rows: [[4200000]], count_rows: 1, text: 'total aum', query_id: 'q_2' },
+      },
+      extra,
+    )
+
+  it('can write about more than one row', () => {
+    expect(blockerOf(dataBlock(captureOf({ rows: rowsOf(2) })))).toBeNull()
+  })
+
+  it('can’t write about a single value, one row, or no rows', () => {
+    expect(blockerOf(oneValue())).toBe('too-little')
+    expect(blockerOf(dataBlock(captureOf({ rows: rowsOf(1) })))).toBe('too-little')
+    expect(blockerOf(dataBlock(captureOf({ rows: [] })))).toBe('too-little')
+
+    const target = oneValue()
+    expect(getAnalysisInput({ target, targetView: viewOf(target) })).toBeNull()
+  })
+
+  it('says why: no query id, or no result on show', () => {
+    expect(blockerOf(dataBlock(captureOf({ rows: rowsOf(3), queryId: null })))).toBe('no-query-id')
+    const empty = { id: 'e', type: 'data', source: null, rows: 25 }
+    expect(blockerOf(empty)).toBe('not-ready')
+    expect(getAnalysisBlocker({ target: undefined, targetView: undefined })).toBe('not-ready')
+  })
+
+  it('lists a result it can’t write about, with why', () => {
+    const total = oneValue({ id: 't' })
+    const byAccount = dataBlock(captureOf({ rows: rowsOf(3) }))
+    const views = { t: viewOf(total), d: viewOf(byAccount) }
+    expect(getAnalysisTargets([total, byAccount], views).map(({ id, blocker }) => [id, blocker])).toStrictEqual([
+      ['t', 'too-little'],
+      ['d', null],
+    ])
+  })
+
+  it('keeps what was written about a result that no longer qualifies, but won’t write again', () => {
+    const target = oneValue()
+    const block = { id: 'a', type: 'analysis', width: 'full', target: 'd', focus: '', text: 'Up **18%**.' }
+    const view = getAnalysisView({ block, target, targetView: viewOf(target) })
+    expect(view).toMatchObject({ state: 'written', text: 'Up **18%**.', canAnalyze: false, blocker: 'too-little' })
   })
 })
 

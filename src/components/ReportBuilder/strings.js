@@ -112,6 +112,7 @@ export const STRINGS = {
     emptyTitle: 'Nothing written yet',
     emptyBody: 'Choose a result in the panel on the right, then Analyze.',
     emptyReady: 'Analyze in the panel on the right to write about this result.',
+    emptyBlocked: 'Auto Analyze can’t write about this result. Choose another in the panel on the right.',
     writing: 'Auto Analyze is writing…',
     source: 'Auto Analyze',
     from: (title) => `from “${title}”`,
@@ -199,6 +200,11 @@ export const STRINGS = {
     analyzeAgainNote: 'Replaces the wording below. Each run uses one Auto Analyze credit.',
     cantAnalyze:
       'This result can’t be analyzed: it was kept without the query id Auto Analyze needs. Add it again to analyze it.',
+    cantAnalyzeTooLittle:
+      'Auto Analyze needs more than one row to write about, so it isn’t offered for this result, as in the Query view and on dashboards.',
+    // A result in the list that can't be chosen, and why.
+    cantAnalyzeOption: (label, blocker) =>
+      blocker === 'no-query-id' ? `${label} (kept without a query id)` : `${label} (too little to analyze)`,
     wording: 'Wording',
     wordingNote: 'Edit it here or click it on the page. It prints as written, and Analyze again replaces it.',
     questionNote: 'A question has no tile to inherit from, so it shows AutoQL’s default display.',

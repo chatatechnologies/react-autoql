@@ -4,6 +4,7 @@ import { STRINGS } from '../strings'
 import { groupIntoRows } from '../layout/paginate'
 import { Icon } from './icons'
 import { boxStyleOf, PaperBlock } from './PaperBlock'
+import { getAnalysisBlocker } from '../model/analysis'
 import { RunningFooter, RunningHeader } from './PageFurniture'
 
 // The editing surface. It reflows to the space it has (never wider than the page) and doesn't paginate:
@@ -82,9 +83,10 @@ export const EditorBlock = React.memo(function EditorBlock({
   const select = () => {
     if (!selected) onSelect(block.id)
   }
-  // Auto Analyze needs the answer's query id, so only a result kept with one offers it.
+  // Only a result Auto Analyze can write about offers it: kept with the answer's query id, and one the magic
+  // wand is offered on elsewhere.
   const analyzable =
-    !!onAnalyzeResult && block.type === 'data' && view?.state === 'ready' && !!block.capture?.data?.query_id
+    !!onAnalyzeResult && block.type === 'data' && !getAnalysisBlocker({ target: block, targetView: view })
   return (
     <div
       className={`${RB}-block`}

@@ -444,6 +444,8 @@ class AnalysisContent extends React.Component {
             ? STRINGS.analysis.writing
             : view?.canAnalyze
             ? STRINGS.analysis.emptyReady
+            : view?.blocker === 'too-little' || view?.blocker === 'no-query-id'
+            ? STRINGS.analysis.emptyBlocked
             : STRINGS.analysis.emptyBody}
         </Placeholder>
       )
