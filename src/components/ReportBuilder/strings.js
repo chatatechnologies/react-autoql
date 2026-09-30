@@ -46,6 +46,8 @@ export const STRINGS = {
   previewSample: 'Preview · sample data',
   insert: 'Insert block',
   properties: 'Properties',
+  resizePanel: 'Resize the properties panel',
+  resizePanelHint: 'Drag to resize. Double-click to reset.',
   close: 'Close',
 
   emptyReportTitle: 'This report is empty',
@@ -118,6 +120,8 @@ export const STRINGS = {
     targetGone: 'The result this was written about has been removed from the report.',
     targetChanged: 'Its result has changed since this was written. Analyze again to update the wording.',
     failed: 'Auto Analyze couldn’t write this.',
+    edit: 'Click to edit the wording',
+    editingNote: 'Markdown: “- ” starts a list item, **text** is bold. Click away or press Esc when you’re done.',
   },
 
   panel: {
@@ -196,7 +200,7 @@ export const STRINGS = {
     cantAnalyze:
       'This result can’t be analyzed: it was kept without the query id Auto Analyze needs. Add it again to analyze it.',
     wording: 'Wording',
-    wordingNote: 'Edit it as you like: it prints as written, and Analyze again replaces it.',
+    wordingNote: 'Edit it here or click it on the page. It prints as written, and Analyze again replaces it.',
     questionNote: 'A question has no tile to inherit from, so it shows AutoQL’s default display.',
     changeSource: 'Change source',
     cancel: 'Cancel',

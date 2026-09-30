@@ -4,6 +4,10 @@
 
 const count = (n) => Number(n).toLocaleString()
 
+// The wording as Markdown. Some answers come back with the characters "\n" rather than line breaks; the
+// page prints them as breaks, so the wording is kept, and edited, with real ones.
+export const toAnalysisMarkdown = (text) => String(text ?? '').replace(/\\n/g, '\n')
+
 // What Auto Analyze reads from a Data block: the rows the block prints (a table's slice, every row a chart
 // draws), all of the answer's columns, its question and how it was read. A slice is named with the question
 // ("…, first 25 of 88 rows") so its figures aren't read as the whole result's. null when there's nothing to

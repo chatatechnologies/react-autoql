@@ -32,7 +32,7 @@ import {
 } from './model/reportOperations'
 import { buildTileIndex, resolveTile } from './model/tiles'
 import { getDataBlockView } from './model/blockView'
-import { getAnalysisInput, getAnalysisTargets, getAnalysisView } from './model/analysis'
+import { getAnalysisInput, getAnalysisTargets, getAnalysisView, toAnalysisMarkdown } from './model/analysis'
 import { runAnalysis } from './run/analysis'
 import { executeReport, formatPrintedDate, getRunLabel, planReportRun, summarizeRun } from './run/reportRun'
 import { captureQuestion } from './run/captureRun'
@@ -45,6 +45,7 @@ import { Palette } from './components/Palette'
 import { BlockDetails, defaultDraft } from './components/BlockDetails'
 import { Sheet } from './components/Sheet'
 import { PropertiesPanel } from './components/PropertiesPanel'
+import { PanelResizer, readPanelWidth, storePanelWidth } from './components/PanelResizer'
 import { PrintPreview } from './components/preview/PrintPreview'
 import { footerText, hasDataBlocks } from './components/PageFurniture'
 
@@ -54,7 +55,10 @@ import './ReportPaper.scss'
 // The report builder: a controlled editor for a report (`report` + `onChange`), which lays it out on true
 // Letter pages and prints it with the browser. Data blocks keep what they were given — an answer as it was
 // shown when it was added — and nothing reruns by itself (running every block as one, enableRunReport, is
-// opt-in). It stores nothing itself: the host persists `report`.
+// opt-in). It stores none of the report itself: the host persists `report`. (It remembers only how wide its
+// properties panel was left, in this browser.)
+
+let panelIds = 0
 
 const memoize = (fn) => {
   let lastArgs = null
@@ -150,6 +154,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     this.previewRef = React.createRef()
     this.blockCache = new WeakMap()
     this.runId = 0
+    panelIds += 1
+    this.panelId = `${RB}-panel-${panelIds}`
 
     this.state = {
       selectedId: null,
@@ -162,6 +168,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
       notice: null,
       // blockId → { kind: 'tiles' | 'question' | 'analysis', seq, query?, error? } while a block waits (or failed)
       pending: {},
+      // The properties panel's width once it's been resized (PanelResizer), else null for its own.
+      panelWidth: readPanelWidth(),
     }
     this.pendingSeq = 0
     this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
@@ -348,6 +356,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
     }
   }
 
+  // The properties panel's width follows a drag (or the keys) on its edge, and is remembered once it's let go.
+  onPanelResize = (panelWidth) => this.setState({ panelWidth })
+
+  onPanelResizeEnd = (panelWidth) => storePanelWidth(panelWidth)
+
+  onPanelResizeReset = () => {
+    this.setState({ panelWidth: null })
+    storePanelWidth(null)
+  }
+
   scrollToBlock = (id) => {
     setTimeout(() => {
       const el = this.rootRef.current?.querySelector(`[data-block-id="${id}"]`)
@@ -501,7 +519,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
       if (!latest.blocks.some((b) => b.id === id && b.type === 'analysis')) return
       this.change(
         updateBlock(latest, id, {
-          text: result.text,
+          text: toAnalysisMarkdown(result.text),
           writtenAt: new Date().toISOString(),
           targetAsOf: input.asOf,
           targetTitle: input.title,
@@ -691,7 +709,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
   }
 
   renderEditor = ({ report, views, geometry }) => {
-    const { selectedId, details, run, pending } = this.state
+    const { selectedId, details, run, pending, panelWidth } = this.state
     const canRun = this.props.enableRunReport
     // Data blocks made here keep what they're given. Running keeps its own Data block, which fetches.
     const canCapture = !canRun && !!this.props.enableDataBlocks
@@ -745,7 +763,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
             pending={pending}
           />
         </main>
+        <PanelResizer
+          width={panelWidth}
+          controls={this.panelId}
+          onResize={this.onPanelResize}
+          onResizeEnd={this.onPanelResizeEnd}
+          onReset={this.onPanelResizeReset}
+        />
         <PropertiesPanel
+          id={this.panelId}
+          width={panelWidth}
           report={report}
           block={selected}
           view={selected ? views[selected.id] : null}

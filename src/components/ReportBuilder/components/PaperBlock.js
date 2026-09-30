@@ -7,11 +7,14 @@ import { STRINGS } from '../strings'
 import { ReportTable } from './ReportTable'
 import { ReportChart } from './ReportChart'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
+import { renderedTextBefore, sourceOffsetAfter } from './textCaret'
 import { formatPrintedDate } from '../run/reportRun'
+import { toAnalysisMarkdown } from '../model/analysis'
 
 // The content of one block, on paper. The editor sheet, the offscreen measurer and the printed pages all
 // render blocks through this, so what is measured is what prints.
-//   mode 'edit'     headings and text are editable; empty and unfinished data blocks explain themselves
+//   mode 'edit'     headings, text and an analysis's wording are editable; empty and unfinished blocks explain
+//                   themselves
 //   mode 'measure'  charts are empty boxes of their final height (their height is fixed, so nothing is lost)
 //   mode 'page'     a table may be one piece of a table split across pages
 
@@ -352,8 +355,7 @@ const ANALYSIS_ELEMENTS = [
 const ANALYSIS_COMPONENTS = { h5: 'h4', h6: 'h4' }
 
 const AnalysisText = React.memo(function AnalysisText({ text }) {
-  // Some answers come back with the characters "\n" rather than line breaks.
-  const markdown = String(text ?? '').replace(/\\n/g, '\n')
+  const markdown = toAnalysisMarkdown(text)
   return (
     <ReactMarkdown
       className={`${RB}-analysis-text`}
@@ -368,40 +370,140 @@ const AnalysisText = React.memo(function AnalysisText({ text }) {
   )
 })
 
-const AnalysisContent = ({ block, view, mode, pending }) => {
-  const writing = pending?.kind === 'analysis' && !pending.error
-  if (!view || view.state !== 'written') {
-    if (mode !== 'edit') {
-      return null
+// In the editor, clicking the wording edits it in place, as headings and text are edited: its Markdown in a
+// textarea, the caret where the click was, until the textarea loses focus or Esc is pressed. The textarea
+// stays while the wording is emptied, and closes while Auto Analyze rewrites it.
+class AnalysisContent extends React.Component {
+  state = { editing: false }
+  input = React.createRef()
+  caret = null
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.editing && this.isWriting()) {
+      this.setState({ editing: false })
+      return
+    }
+    if (this.state.editing && !prevState.editing) {
+      const el = this.input.current?.ref?.current
+      if (el) {
+        el.focus()
+        const at = Math.min(this.caret ?? el.value.length, el.value.length)
+        el.setSelectionRange?.(at, at)
+      }
+    }
+  }
+
+  isWriting = () => this.props.pending?.kind === 'analysis' && !this.props.pending.error
+
+  canEdit = () => this.props.mode === 'edit' && typeof this.props.onTextChange === 'function' && !this.isWriting()
+
+  startEditing = (caret) => {
+    if (!this.canEdit()) return
+    this.caret = caret
+    this.setState({ editing: true })
+  }
+
+  stopEditing = () => this.setState({ editing: false })
+
+  onWordingClick = (e) => {
+    // A drag that selected some of the wording is someone copying it.
+    const selection = window.getSelection?.()
+    if (selection && !selection.isCollapsed && String(selection)) return
+    const markdown = toAnalysisMarkdown(this.props.block.text)
+    const before = renderedTextBefore(e.currentTarget, e.clientX, e.clientY)
+    this.startEditing(before == null ? markdown.length : sourceOffsetAfter(markdown, before))
+  }
+
+  onWordingKeyDown = (e) => {
+    if (e.key === 'Enter' && e.target === e.currentTarget) {
+      e.preventDefault()
+      this.startEditing(null)
+    }
+  }
+
+  onInputKeyDown = (e) => {
+    if (e.key !== 'Escape') return
+    e.preventDefault()
+    // Back to the block, so the keyboard carries on from there; leaving the textarea ends the editing.
+    const block = e.currentTarget.closest?.('[data-block-id]')
+    if (block) block.focus()
+    else e.currentTarget.blur()
+  }
+
+  render() {
+    const { block, view, mode } = this.props
+    const writing = this.isWriting()
+    const editing = this.state.editing && mode === 'edit'
+    if (!editing && (!view || view.state !== 'written')) {
+      if (mode !== 'edit') {
+        return null
+      }
+      return (
+        <Placeholder title={STRINGS.analysis.emptyTitle}>
+          {writing
+            ? STRINGS.analysis.writing
+            : view?.canAnalyze
+            ? STRINGS.analysis.emptyReady
+            : STRINGS.analysis.emptyBody}
+        </Placeholder>
+      )
+    }
+    const meta = [
+      STRINGS.analysis.source,
+      view?.fromTitle ? STRINGS.analysis.from(view.fromTitle) : null,
+      view?.focusUsed ? STRINGS.analysis.focus(view.focusUsed) : null,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+    let wording
+    if (editing) {
+      wording = (
+        <AutoGrowTextarea
+          ref={this.input}
+          className={`${RB}-analysis-input`}
+          value={toAnalysisMarkdown(block.text)}
+          aria-label={STRINGS.panel.wording}
+          data-test='report-builder-analysis-edit'
+          onChange={this.props.onTextChange}
+          onBlur={this.stopEditing}
+          onKeyDown={this.onInputKeyDown}
+        />
+      )
+    } else if (this.canEdit()) {
+      wording = (
+        <div
+          className={`${RB}-analysis-body`}
+          data-editable=''
+          tabIndex={0}
+          title={STRINGS.analysis.edit}
+          data-test='report-builder-analysis-wording'
+          onClick={this.onWordingClick}
+          onKeyDown={this.onWordingKeyDown}
+        >
+          <AnalysisText text={view.text} />
+        </div>
+      )
+    } else {
+      wording = <AnalysisText text={view.text} />
     }
     return (
-      <Placeholder title={STRINGS.analysis.emptyTitle}>
-        {writing
-          ? STRINGS.analysis.writing
-          : view?.canAnalyze
-          ? STRINGS.analysis.emptyReady
-          : STRINGS.analysis.emptyBody}
-      </Placeholder>
+      <div
+        className={`${RB}-analysis`}
+        style={textStyleOf(block.style)}
+        data-writing={writing || undefined}
+        data-editing={editing || undefined}
+      >
+        {wording}
+        <div className={`${RB}-analysis-meta`}>✦ {meta}</div>
+        {editing ? <div className={`${RB}-analysis-hint`}>{STRINGS.analysis.editingNote}</div> : null}
+        {mode === 'edit' && view && (view.targetGone || view.targetChanged) ? (
+          <div className={`${RB}-analysis-note`}>
+            {view.targetGone ? STRINGS.analysis.targetGone : STRINGS.analysis.targetChanged}
+          </div>
+        ) : null}
+      </div>
     )
   }
-  const meta = [
-    STRINGS.analysis.source,
-    view.fromTitle ? STRINGS.analysis.from(view.fromTitle) : null,
-    view.focusUsed ? STRINGS.analysis.focus(view.focusUsed) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
-  return (
-    <div className={`${RB}-analysis`} style={textStyleOf(block.style)} data-writing={writing || undefined}>
-      <AnalysisText text={view.text} />
-      <div className={`${RB}-analysis-meta`}>✦ {meta}</div>
-      {mode === 'edit' && (view.targetGone || view.targetChanged) ? (
-        <div className={`${RB}-analysis-note`}>
-          {view.targetGone ? STRINGS.analysis.targetGone : STRINGS.analysis.targetChanged}
-        </div>
-      ) : null}
-    </div>
-  )
 }
 
 const PageBreakContent = ({ mode }) =>
@@ -420,7 +522,15 @@ export const PaperBlock = ({ block, mode = 'page', onTextChange, ...rest }) => {
     case 'data':
       return <DataContent block={block} mode={mode} {...rest} />
     case 'analysis':
-      return <AnalysisContent block={block} view={rest.view} mode={mode} pending={rest.pending} />
+      return (
+        <AnalysisContent
+          block={block}
+          view={rest.view}
+          mode={mode}
+          pending={rest.pending}
+          onTextChange={onTextChange}
+        />
+      )
     case 'pagebreak':
       return <PageBreakContent mode={mode} />
     default:

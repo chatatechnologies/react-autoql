@@ -17,6 +17,7 @@ import {
 } from '../constants'
 import { STRINGS } from '../strings'
 import { getRowOptions } from '../model/dataBlock'
+import { toAnalysisMarkdown } from '../model/analysis'
 import { getTileKey, getTileSupport, tileSource } from '../model/tiles'
 import { getTileLabel } from '../../Dashboard/tileQueryConfig'
 import { Icon } from '../../Icon'
@@ -557,7 +558,7 @@ const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyz
           className={`${RB}-input`}
           data-multiline=''
           data-test='report-builder-analysis-text'
-          value={block.text}
+          value={toAnalysisMarkdown(block.text)}
           onChange={(text) => onBlockChange(block.id, { text })}
         />
       </Field>
@@ -605,9 +606,12 @@ export const PropertiesPanel = (props) => {
       </>
     )
   }
+  // A width only once the panel has been resized (PanelResizer); otherwise its own.
   return (
     <aside
+      id={props.id}
       className={`${RB}-panel`}
+      style={props.width ? { width: `${props.width}px` } : undefined}
       aria-label={block ? STRINGS.properties : P.pageSetup}
       data-test='report-builder-panel'
     >

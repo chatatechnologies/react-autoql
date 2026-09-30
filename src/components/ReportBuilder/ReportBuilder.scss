@@ -589,9 +589,58 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
 
   // ---------------------------------------------------------------- properties panel
 
+  // The panel's edge, to drag: a flex item of no width whose hit area straddles the panel's border. The
+  // accent line shows on hover, on focus and while dragging.
+  .#{$rb}-panel-resizer {
+    position: relative;
+    z-index: 4;
+    flex: none;
+    width: 0;
+    outline: none;
+    cursor: col-resize;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -4px;
+      width: 8px;
+    }
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -1px;
+      width: 2px;
+      background: transparent;
+      transition: background-color 0.15s ease;
+    }
+    &:hover::after,
+    &:focus-visible::after,
+    &[data-dragging]::after {
+      background: $accent;
+    }
+  }
+
+  .#{$rb}-panel-resize-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100000;
+    cursor: col-resize;
+  }
+
+  // Its edge can be dragged (PanelResizer), from its own width up to whatever leaves the canvas 25rem beside
+  // the 11rem palette — which also holds when the window narrows after a drag.
   .#{$rb}-panel {
     flex: none;
     width: 15rem;
+    min-width: 15rem;
+    max-width: calc(100% - 36rem);
     overflow-y: auto;
     padding: 0.875rem 0.875rem 1.5rem;
     border-left: 1px solid $border;
@@ -639,12 +688,14 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     border-color: $accent;
   }
 
-  // An analysis's wording: grows with its text (AutoGrowTextarea), from a few lines up.
+  // An analysis's wording: grows with its text (AutoGrowTextarea) from a few lines up to under half the
+  // window, then scrolls inside itself, so the panel doesn't become one long column.
   textarea.#{$rb}-input {
     min-height: 6rem;
+    max-height: 45vh;
     line-height: 1.45;
     resize: none;
-    overflow: hidden;
+    overflow-y: auto;
   }
 
   .#{$rb}-segmented {

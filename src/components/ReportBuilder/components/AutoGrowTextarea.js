@@ -56,10 +56,11 @@ export class AutoGrowTextarea extends React.Component {
       e.preventDefault()
       e.currentTarget.blur()
     }
+    this.props.onKeyDown?.(e)
   }
 
   render() {
-    const { singleLine, onChange, value, ...rest } = this.props
+    const { singleLine, onChange, onKeyDown, value, ...rest } = this.props
     return (
       <textarea
         {...rest}

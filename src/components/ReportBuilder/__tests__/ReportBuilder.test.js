@@ -219,6 +219,131 @@ describe('the properties panel', () => {
   })
 })
 
+// jsdom measures nothing, so the panel starts from its own width (15rem, 240px) and may reach 40rem (640px).
+describe('the properties panel’s width', () => {
+  const KEY = 'react-autoql-report-builder-panel-width'
+  const edge = () => screen.getByTestId('report-builder-panel-resizer')
+  const drag = (from, to, buttons = 1) => {
+    fireEvent.mouseDown(edge(), { button: 0, clientX: from })
+    fireEvent.mouseMove(document, { clientX: to, buttons })
+  }
+
+  afterEach(() => localStorage.clear())
+
+  it('widens as its edge is dragged left, and remembers the width once let go', () => {
+    setup()
+    expect(edge().getAttribute('role')).toBe('separator')
+    expect(edge().getAttribute('aria-controls')).toBe(panel().id)
+    expect(panel().style.width).toBe('')
+
+    drag(1000, 900)
+    expect(panel().style.width).toBe('340px')
+    expect(edge().getAttribute('aria-valuenow')).toBe('340')
+    expect(localStorage.getItem(KEY)).toBeNull()
+
+    fireEvent.mouseUp(document)
+    expect(localStorage.getItem(KEY)).toBe('340')
+    fireEvent.mouseMove(document, { clientX: 700, buttons: 1 })
+    expect(panel().style.width).toBe('340px')
+  })
+
+  it('stays between its own width and 40rem', () => {
+    setup()
+    drag(1000, -3000)
+    expect(panel().style.width).toBe('640px')
+    fireEvent.mouseUp(document)
+
+    drag(1000, 3000)
+    expect(panel().style.width).toBe('240px')
+    fireEvent.mouseUp(document)
+  })
+
+  it('covers the window only once the edge moves, so a click or double-click still gets through', () => {
+    setup()
+    const overlay = () => document.querySelector('.react-autoql-report-builder-panel-resize-overlay')
+    fireEvent.mouseDown(edge(), { button: 0, clientX: 1000 })
+    expect(overlay()).toBeNull()
+    fireEvent.mouseUp(document)
+
+    drag(1000, 990)
+    expect(overlay()).not.toBeNull()
+    expect(edge().hasAttribute('data-dragging')).toBe(true)
+    fireEvent.mouseUp(document)
+    expect(overlay()).toBeNull()
+    expect(edge().hasAttribute('data-dragging')).toBe(false)
+  })
+
+  it('ends a drag let go outside the window', () => {
+    setup()
+    drag(1000, 950)
+    fireEvent.mouseMove(document, { clientX: 800, buttons: 0 })
+    expect(panel().style.width).toBe('290px')
+    expect(localStorage.getItem(KEY)).toBe('290')
+    fireEvent.mouseMove(document, { clientX: 700, buttons: 1 })
+    expect(panel().style.width).toBe('290px')
+  })
+
+  it('resizes from the keyboard, and goes back to its own width on a double-click', () => {
+    setup()
+    fireEvent.keyDown(edge(), { key: 'ArrowLeft' })
+    expect(panel().style.width).toBe('256px')
+    fireEvent.keyDown(edge(), { key: 'ArrowLeft', shiftKey: true })
+    expect(panel().style.width).toBe('320px')
+    fireEvent.keyDown(edge(), { key: 'ArrowRight' })
+    expect(panel().style.width).toBe('304px')
+    expect(localStorage.getItem(KEY)).toBe('304')
+    fireEvent.keyDown(edge(), { key: 'End' })
+    expect(panel().style.width).toBe('640px')
+    fireEvent.keyDown(edge(), { key: 'Home' })
+    expect(panel().style.width).toBe('240px')
+
+    fireEvent.doubleClick(edge())
+    expect(panel().style.width).toBe('')
+    expect(localStorage.getItem(KEY)).toBeNull()
+  })
+
+  it('opens at the width it was left at, and ignores a width it can’t use', () => {
+    localStorage.setItem(KEY, '420')
+    const first = setup()
+    expect(panel().style.width).toBe('420px')
+    first.unmount()
+
+    localStorage.setItem(KEY, 'wide')
+    const second = setup()
+    expect(panel().style.width).toBe('')
+    second.unmount()
+
+    const blocked = () => {
+      throw new Error('blocked')
+    }
+    const getItem = jest.spyOn(Storage.prototype, 'getItem').mockImplementation(blocked)
+    const setItem = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(blocked)
+    try {
+      setup()
+      expect(panel().style.width).toBe('')
+      drag(1000, 900)
+      fireEvent.mouseUp(document)
+      expect(panel().style.width).toBe('340px')
+    } finally {
+      getItem.mockRestore()
+      setItem.mockRestore()
+    }
+  })
+
+  it('stops following the mouse once the builder is gone', () => {
+    const { unmount } = setup()
+    const remove = jest.spyOn(document, 'removeEventListener')
+    try {
+      drag(1000, 900)
+      unmount()
+      expect(remove).toHaveBeenCalledWith('mousemove', expect.any(Function))
+      expect(remove).toHaveBeenCalledWith('mouseup', expect.any(Function))
+    } finally {
+      remove.mockRestore()
+    }
+  })
+})
+
 describe('running a report', () => {
   const report = () =>
     createEmptyReport({
@@ -1162,6 +1287,115 @@ describe('analysis blocks (enableAnalysis)', () => {
 
     await act(async () => answer({ data: { data: { summary: 'Too late.' } } }))
     expect(lastReport().blocks.map((block) => block.id)).toStrictEqual(['d'])
+  })
+
+  it('keeps Auto Analyze’s wording with real line breaks', async () => {
+    fetchLLMSummary.mockReturnValue(summary('First.\\nSecond.'))
+    const { lastReport } = setup(reportOf(resultBlock(), analysisBlock()), { enableAnalysis: true })
+    selectBlock('Analysis')
+    fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+    await waitFor(() => expect(analysisIn(lastReport())?.text).toBe('First.\nSecond.'))
+  })
+
+  describe('editing the wording on the page', () => {
+    // As some answers come back: with the characters "\n" rather than a line break.
+    const written = (text = 'Up **18%** on Q2.\\n- one') =>
+      reportOf(resultBlock(), analysisBlock({ text, targetTitle: 'aum by account', targetAsOf: CAPTURED_AT }))
+    const wording = () => screen.getByTestId('report-builder-analysis-wording')
+    const editor = () => screen.queryByTestId('report-builder-analysis-edit')
+
+    it('edits its Markdown in place, and shows it printed again once left', () => {
+      const { lastReport } = setup(written())
+      selectBlock('Analysis')
+      expect(within(panel()).getByTestId('report-builder-analysis-text').value).toBe('Up **18%** on Q2.\n- one')
+
+      fireEvent.click(wording())
+      expect(editor().value).toBe('Up **18%** on Q2.\n- one')
+      expect(document.activeElement).toBe(editor())
+      // jsdom can't say where a click fell, so the caret goes to the end.
+      expect(editor().selectionStart).toBe(editor().value.length)
+      expect(screen.getByText(/Click away or press Esc/)).toBeTruthy()
+
+      fireEvent.change(editor(), { target: { value: 'Up **20%** on Q2.' } })
+      expect(analysisIn(lastReport()).text).toBe('Up **20%** on Q2.')
+      fireEvent.blur(editor())
+      expect(editor()).toBeNull()
+      expect(screen.getByText('20%').tagName).toBe('STRONG')
+    })
+
+    it('puts the caret where the wording was clicked', () => {
+      setup(written('Up **18%** on Q2.'))
+      const node = wording().querySelector('p').lastChild // " on Q2."
+      document.caretRangeFromPoint = jest.fn(() => {
+        const range = document.createRange()
+        range.setStart(node, 4)
+        range.collapse(true)
+        return range
+      })
+      try {
+        fireEvent.click(wording(), { clientX: 40, clientY: 12 })
+        expect(editor().selectionStart).toBe('Up **18%** on '.length)
+      } finally {
+        delete document.caretRangeFromPoint
+      }
+    })
+
+    it('stays open while the wording is emptied, and closes on Esc', () => {
+      setup(written())
+      fireEvent.click(wording())
+      fireEvent.change(editor(), { target: { value: '' } })
+      expect(editor()).not.toBeNull()
+      expect(screen.queryByText('Nothing written yet')).toBeNull()
+
+      fireEvent.keyDown(editor(), { key: 'Escape' })
+      expect(editor()).toBeNull()
+      expect(screen.getByText('Nothing written yet')).toBeTruthy()
+      expect(document.activeElement).toBe(screen.getByRole('group', { name: 'Analysis' }))
+    })
+
+    it('edits from the keyboard', () => {
+      setup(written())
+      wording().focus()
+      fireEvent.keyDown(wording(), { key: 'Enter' })
+      expect(document.activeElement).toBe(editor())
+    })
+
+    it('leaves alone a drag that selected some of the wording', () => {
+      setup(written())
+      const getSelection = jest
+        .spyOn(window, 'getSelection')
+        .mockReturnValue({ isCollapsed: false, toString: () => 'Up 18%' })
+      try {
+        fireEvent.click(wording())
+        expect(editor()).toBeNull()
+      } finally {
+        getSelection.mockRestore()
+      }
+    })
+
+    it('closes, and can’t be opened, while Auto Analyze rewrites it', async () => {
+      let answer
+      fetchLLMSummary.mockReturnValue(new Promise((resolve) => (answer = resolve)))
+      setup(written(), { enableAnalysis: true })
+      selectBlock('Analysis')
+      fireEvent.click(wording())
+      expect(editor()).not.toBeNull()
+
+      fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
+      expect(editor()).toBeNull()
+      expect(screen.queryByTestId('report-builder-analysis-wording')).toBeNull()
+
+      await act(async () => answer({ data: { data: { summary: 'New words.' } } }))
+      expect(wording().textContent).toBe('New words.')
+    })
+
+    it('can’t be edited in the preview', async () => {
+      const { container } = setup(written())
+      fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+      await waitFor(() => expect(container.querySelector('.react-autoql-report-builder-page')).not.toBeNull())
+      expect(container.querySelector('[data-editable]')).toBeNull()
+      expect(editor()).toBeNull()
+    })
   })
 })
 
