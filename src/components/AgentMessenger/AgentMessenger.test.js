@@ -145,48 +145,6 @@ describe('AgentMessenger', () => {
     expect(input().value).toBe('a different question')
   })
 
-  describe('closing every thread', () => {
-    const openThread = () => fireEvent.click(screen.getByLabelText('New thread'))
-
-    it('offers the button only once there is more than one thread', () => {
-      renderMessenger()
-      expect(screen.queryByLabelText('Close all threads')).toBeNull()
-
-      openThread()
-      expect(screen.getByLabelText('Close all threads')).toBeInTheDocument()
-    })
-
-    it('leaves a single empty thread once confirmed, and reports each one closed', async () => {
-      const onThreadClose = jest.fn()
-      axios.post.mockResolvedValueOnce(CREATE_RESPONSE)
-
-      renderMessenger({ onThreadClose })
-      await sendMessage('How did the Eagles do?')
-      await waitFor(() => expect(screen.getByText(CREATE_TEXT)).toBeInTheDocument())
-
-      openThread()
-      expect(screen.getAllByRole('tab')).toHaveLength(2)
-
-      fireEvent.click(screen.getByLabelText('Close all threads'))
-      fireEvent.click(screen.getByText('Close all'))
-
-      expect(screen.getAllByRole('tab')).toHaveLength(1)
-      expect(screen.getByText('New thread')).toBeInTheDocument()
-      expect(screen.queryByText(CREATE_TEXT)).toBeNull()
-      expect(onThreadClose).toHaveBeenCalledTimes(2)
-    })
-
-    it('keeps the threads when the confirmation is cancelled', () => {
-      renderMessenger()
-      openThread()
-
-      fireEvent.click(screen.getByLabelText('Close all threads'))
-      fireEvent.click(screen.getByText('Cancel'))
-
-      expect(screen.getAllByRole('tab')).toHaveLength(2)
-    })
-  })
-
   describe('session meta_data', () => {
     const completedResponse = (text = 'In short, they scored more.') => ({
       data: {
@@ -358,7 +316,7 @@ describe('AgentMessenger', () => {
 
       expect(screen.queryByText(CREATE_TEXT)).not.toBeInTheDocument()
       expect(screen.getAllByRole('tab')).toHaveLength(1)
-      expect(document.querySelector('.react-autoql-agent-tab-title').textContent).toBe('New thread')
+      expect(document.querySelector('.react-autoql-session-tab-title').textContent).toBe('New thread')
     })
 
     it('numbers untitled threads so two fresh ones are distinguishable', () => {
@@ -380,7 +338,7 @@ describe('AgentMessenger', () => {
 
       // The visible text is clipped by CSS (which jsdom doesn't apply), so what
       // matters here is that the untruncated title reaches the tooltip anchor.
-      const title = document.querySelector('.react-autoql-agent-tab-title')
+      const title = document.querySelector('.react-autoql-session-tab-title')
       expect(title.getAttribute('data-tooltip-content')).toBe(question)
       expect(title.getAttribute('data-tooltip-id')).toBeTruthy()
     })

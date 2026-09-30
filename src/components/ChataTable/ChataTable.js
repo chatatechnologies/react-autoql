@@ -43,9 +43,16 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
+import { arePropsEqualByIdentity } from '../../js/propsEqual'
 
 import './ChataTable.scss'
 import 'tabulator-tables/dist/css/tabulator.min.css' //import Tabulator stylesheet
+
+// The rows, twice over — deep-comparing them is most of what an update costs here, and
+// both are instance variables on QueryOutput that get replaced rather than edited, so
+// their identity already answers the question. Columns are deliberately left out: they
+// are rebuilt by formatColumnsForTable and compared structurally just above.
+const TABLE_IDENTITY_PROPS = new Set(['data', 'response'])
 
 export default class ChataTable extends React.Component {
   constructor(props) {
@@ -97,8 +104,9 @@ export default class ChataTable extends React.Component {
     this.baseSort = _cloneDeep(props?.initialTableParams?.sort || [])
 
     // pivot table headers reflect the correct sort direction
+    // Skipped while the rows are a preview, for the same reason setSorters is.
     let initialSort = undefined
-    if (props.pivot && props.initialTableParams?.sort?.length) {
+    if (props.pivot && !props.isDataTruncated && props.initialTableParams?.sort?.length) {
       initialSort = props.initialTableParams.sort.map((sorter) => ({
         field: sorter.field,
         dir: sorter.dir,
@@ -138,7 +146,7 @@ export default class ChataTable extends React.Component {
     this.summaryStats = {}
 
     this.state = {
-      isFiltering: props.initialIsFiltering || false,
+      isFiltering: (props.initialIsFiltering && !props.isDataTruncated) || false,
       isSorting: false,
       loading: false,
       pageLoading: false,
@@ -166,6 +174,8 @@ export default class ChataTable extends React.Component {
     data: PropTypes.arrayOf(PropTypes.array),
     columns: PropTypes.arrayOf(PropTypes.shape({})),
     queryRequestData: PropTypes.shape({}),
+    // The answer's rows are a preview; the notice above the table already explains it.
+    isDataTruncated: PropTypes.bool,
     onTableParamsChange: PropTypes.func,
     isResizing: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
@@ -212,6 +222,7 @@ export default class ChataTable extends React.Component {
 
   static defaultProps = {
     queryRequestData: {},
+    isDataTruncated: false,
     data: undefined,
     columns: undefined,
     isResizing: false,
@@ -297,7 +308,8 @@ export default class ChataTable extends React.Component {
       return false
     }
 
-    const propsOrStateNotEqual = !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    const propsOrStateNotEqual =
+      !arePropsEqualByIdentity(this.props, nextProps, TABLE_IDENTITY_PROPS) || !deepEqual(this.state, nextState)
     return propsOrStateNotEqual
   }
 
@@ -337,6 +349,12 @@ export default class ChataTable extends React.Component {
     }
 
     if (!this.props.hidden && prevProps.hidden) {
+      // Any window resize that happened while this table was hidden left its cell
+      // alignment unmeasured (see TableWrapper.handleWindowResizeForAlignment). The
+      // height is handled by the getSnapshotBeforeUpdate branch above, which does see
+      // this particular transition.
+      this.ref?.flushPendingAlignment()
+
       if (this.state.subscribedData) {
         this.updateData(this.state.subscribedData)
         this.setState({ subscribedData: undefined })
@@ -346,7 +364,23 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    if (this.props.columns && this.state.tabulatorMounted && !deepEqual(this.props.columns, prevProps.columns)) {
+    // The truncation flag changes the definitions Tabulator holds (see
+    // withTruncationDisabledControls) without changing `columns` itself, so the deep
+    // compare below would miss a restore and leave the headers inert.
+    const truncationChanged = this.props.isDataTruncated !== prevProps.isDataTruncated
+
+    // Tabulator is not up yet, so the rebuild below would go nowhere and the headers
+    // would keep whichever definitions the table was built with. Remember it and rebuild
+    // the moment it mounts.
+    if (truncationChanged && !this.state.tabulatorMounted) {
+      this.needsTruncationColumnRebuild = true
+    }
+
+    if (
+      this.props.columns &&
+      this.state.tabulatorMounted &&
+      (truncationChanged || !deepEqual(this.props.columns, prevProps.columns))
+    ) {
       this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
       this.updateData(this.getRows(this.props, 1)).then(() => {
         if (this.props.keepScrolledRight) {
@@ -365,6 +399,11 @@ export default class ChataTable extends React.Component {
     }
 
     if (this.state.tabulatorMounted && !prevState.tabulatorMounted) {
+      if (this.needsTruncationColumnRebuild) {
+        this.needsTruncationColumnRebuild = false
+        this.ref?.tabulator?.setColumns(this.getFilteredTabulatorColumnDefinitions())
+      }
+
       if (!this.props.skipInitialFilters) {
         this.tableParams.filter = this.props?.initialTableParams?.filter
       }
@@ -456,6 +495,12 @@ export default class ChataTable extends React.Component {
     const stats = {}
 
     try {
+      // A truncated answer only has its preview rows on hand, and a total or an average
+      // over those is a wrong number, not a partial one. No stats until the data is back.
+      if (props.isDataTruncated) {
+        return {}
+      }
+
       const rows = this.getAllRows(props)
 
       if (!(rows?.length > 1)) {
@@ -551,6 +596,23 @@ export default class ChataTable extends React.Component {
     }
 
     return this.ref?.updateData(data)
+  }
+
+  // For the caller that knows this table came back on screen without its own `hidden`
+  // prop changing — a session tab being selected, or the Data Messenger opening, hides
+  // the whole thread above the table, so none of the transitions this component watches
+  // for (`hidden`, `isResizing`, `isAnimating`, `firstRender`) ever fire. QueryOutput
+  // calls this from its "back on screen" branch.
+  onBecameVisible = () => {
+    // A table whose build was deferred because it had no box yet - it has one now. This
+    // fires from the React update that reveals the tab and TableWrapper's own
+    // ResizeObserver from the layout that follows it; whichever gets there first builds,
+    // and the other finds nothing deferred.
+    this.ref?.buildWhenVisible()
+
+    // Any window resize while this was off screen skipped its cell alignment rather than
+    // measure a hidden table (see TableWrapper.handleWindowResizeForAlignment).
+    this.ref?.flushPendingAlignment()
   }
 
   getRTForRemoteFilterAndSort = async () => {
@@ -1489,6 +1551,14 @@ export default class ChataTable extends React.Component {
   }
 
   setSorters = (newSorters) => {
+    // setSort() is programmatic, so unlike a header click it isn't stopped by
+    // `headerSort: false` - and with sortMode remote it would push the stored sort
+    // through the same local path that sorts the preview and reports ten rows as the
+    // whole answer. The sort is still in tableParams, so restoring replays it.
+    if (this.props.isDataTruncated) {
+      return
+    }
+
     const sorterValues = newSorters || this.tableParams?.sort
     this.settingSorters = true
 
@@ -1505,6 +1575,12 @@ export default class ChataTable extends React.Component {
   }
 
   toggleIsFiltering = (filterOn, scrollToFirstFilteredColumn) => {
+    // The columns carry no header filters while the rows are a preview, so opening the
+    // filter row would show an empty strip that does nothing.
+    if (this.props.isDataTruncated) {
+      return
+    }
+
     if (scrollToFirstFilteredColumn && this.tableParams?.filter?.length) {
       const column = this.ref?.tabulator
         ?.getColumns()
@@ -1764,6 +1840,28 @@ export default class ChataTable extends React.Component {
     )
   }
 
+  /**
+   * Sorting and filtering are off while the rows are a preview.
+   *
+   * Both are answered from whatever rows the table is holding whenever the answer is
+   * small enough to handle locally - which is almost always, since the local limit is
+   * 50,000 rows. Sorting ten preview rows returns the top of nothing: the header would
+   * show a sort indicator, the rows would rearrange, and the result would be a confident
+   * wrong answer with no sign that it came from a tenth of a percent of the data.
+   *
+   * Disabling them rather than routing them to the server is the honest version of the
+   * same fix: the user already has a control that says what it does - Restore data - and
+   * a silent re-fetch on a header click would both hide that and quietly undo the memory
+   * saving the truncation was for. Sort and filter come back the moment the data does.
+   */
+  withTruncationDisabledControls = (columnDefinition) => {
+    if (!this.props.isDataTruncated) {
+      return columnDefinition
+    }
+
+    return { ...columnDefinition, headerSort: false, headerFilter: false }
+  }
+
   getFilteredTabulatorColumnDefinitions = () => {
     try {
       if (this.props.pivot && this.props.columns?.length) {
@@ -1771,7 +1869,7 @@ export default class ChataTable extends React.Component {
 
         this.props.columns.forEach((col, i) => {
           if (i === 0) {
-            const pivotCol = { ...col }
+            const pivotCol = this.withTruncationDisabledControls({ ...col })
             // Title for the pivot header (button is added directly to the DOM later)
             pivotCol.title = pivotCol.title || pivotCol.display_name || pivotCol.name || ''
             columns.push(pivotCol)
@@ -1779,10 +1877,10 @@ export default class ChataTable extends React.Component {
             if (!columns[1]) {
               columns.push({
                 title: col.origColumn?.display_name,
-                columns: [col],
+                columns: [this.withTruncationDisabledControls(col)],
               })
             } else {
-              columns[1].columns.push(col)
+              columns[1].columns.push(this.withTruncationDisabledControls(col))
             }
           }
         })
@@ -1796,7 +1894,7 @@ export default class ChataTable extends React.Component {
               newCol[option] = col[option]
             }
           })
-          return newCol
+          return this.withTruncationDisabledControls(newCol)
         })
         return filteredColumns
       }
@@ -1894,8 +1992,11 @@ export default class ChataTable extends React.Component {
       const initialFilters = this.props.initialTableParams?.filter || []
       const hasFilters = feFilters.length > 0 || initialFilters.length > 0
 
+      // Same reasoning as renderTableRowWarning: while the rows are a preview, the row
+      // limit is not what is being hit, and the preview notice already covers it.
       const hasDataLimit =
-        (this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited
+        !this.props.isDataTruncated &&
+        ((this.useInfiniteScroll && isDataLimited(this.props.response)) || this.props.pivotTableDataLimited)
 
       if (!hasFilters && !hasDataLimit) {
         return null
@@ -1951,6 +2052,13 @@ export default class ChataTable extends React.Component {
       return null
     }
 
+    // The preview notice above already says what is and isn't on screen, and says it
+    // about the same rows. Two stacked warnings about the size of one answer is noise,
+    // and the row limit is not what is being hit here. It comes back on restore.
+    if (this.props.isDataTruncated) {
+      return null
+    }
+
     // For regular tables - show warning whenever data is limited, regardless of useInfiniteScroll
     // useInfiniteScroll is only set once in constructor and may be stale after axis changes
     if (isDataLimited(this.props.response)) {
@@ -1983,6 +2091,14 @@ export default class ChataTable extends React.Component {
 
   renderTableRowCount = () => {
     if (this.isTableEmpty()) {
+      return null
+    }
+
+    // Both halves of "Scrolled 50 / 3,000 rows" are wrong on a preview: the table holds
+    // ten rows and cannot be scrolled, and `count_rows` counts an answer we are no
+    // longer showing. The banner above says what is actually on screen, and says it
+    // without quoting a total for the same reason. It comes back on restore.
+    if (this.props.isDataTruncated) {
       return null
     }
 

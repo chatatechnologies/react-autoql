@@ -5,7 +5,9 @@
   justify-content: center;
 
   right: -6px;
-  top: 13px;
+  // Lands on the table's header row, which is the top of the message plus this. Anything
+  // that gets between the two adds to the offset rather than restating the 13px.
+  top: calc(13px + var(--react-autoql-add-column-btn-offset, 0px));
   width: 23px;
   height: 22px;
   margin: 8px 0;

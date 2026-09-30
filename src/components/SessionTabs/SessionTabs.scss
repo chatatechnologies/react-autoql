@@ -1,0 +1,252 @@
+// The tab strip shared by the Data Messenger's chat sessions and the Data Agent's
+// threads. Sessions read as a segmented control: the whole strip is one sunken,
+// rounded track and the selected item is a raised chip floating inside it.
+.react-autoql-session-tabs {
+  // Neutral washes rather than --react-autoql-hover-color, which is tuned for
+  // menu rows and reads far too heavy here. Grey at these alphas darkens a
+  // light theme and lightens a dark one, so one value covers both.
+  --react-autoql-session-tab-track: rgba(128, 134, 142, 0.08);
+  --react-autoql-session-tab-hover: rgba(128, 134, 142, 0.12);
+  --react-autoql-session-tab-close-hover: rgba(128, 134, 142, 0.22);
+  // The one accent-tinted thing in the strip, so the eye lands on it. configureTheme
+  // publishes the accent's channels separately, which is how SelectableTable tints.
+  --react-autoql-session-tab-new: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.12
+  );
+  --react-autoql-session-tab-new-hover: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.22
+  );
+  --react-autoql-session-tab-glow: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.35
+  );
+
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  // Not space-between: the controls sit against the tabs, and only get pushed to
+  // the right edge once the tabs themselves fill the track.
+  justify-content: flex-start;
+  gap: 4px;
+  // A flat groove in the flow above the threads, not a floating glass panel. The
+  // drawer's other surfaces all sit behind a 0.9-0.95 overlay, so they read as
+  // solid; a genuinely transparent, blurred strip was the only thing here behaving
+  // differently, which is what made it look out of place. The 1.25rem inset is
+  // .chat-message-and-rt-container's, so the track's edges line up with the message
+  // bubbles below it.
+  margin: 0.25rem 1.25rem 0.5rem;
+  padding: 6px;
+  border-radius: 23px;
+  background-color: var(--react-autoql-session-tab-track);
+  position: relative;
+  z-index: 12;
+  min-width: 0;
+
+  .react-autoql-session-tab-list {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    // Shrink-to-fit rather than filling the track, so the "+" beside it ends up
+    // next to the last tab; it still takes the whole width once the tabs overflow.
+    flex: 0 1 auto;
+    min-width: 0;
+    // Tabs keep their width and the strip scrolls, rather than every tab
+    // shrinking to nothing once there are a lot of them.
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .react-autoql-session-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    // Widened alongside the font bump below so a title still shows about as many
+    // characters before it ellipsises as it did at the old 12.5px.
+    width: 148px;
+    height: 34px;
+    padding: 0 6px 0 14px;
+    box-sizing: border-box;
+    // Fully rounded, like the message bubbles and the query input below it - the
+    // page speaks in pills, so a squared-off tab read as a different kit.
+    border-radius: 17px;
+    background-color: transparent;
+    color: var(--react-autoql-text-color-placeholder);
+    font-size: 0.875rem; // Matches the chat thread
+    font-weight: 500;
+    // The header title's tracking. It was -0.004em, tighter than anything around
+    // it, which is part of why the strip read as a separate piece of design.
+    letter-spacing: -0.008em;
+    cursor: pointer;
+    // Width is in here so selecting a tab eases it wider instead of snapping.
+    transition: width 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+    // Hover is for tabs you could switch to — the selected one is already here,
+    // so it deliberately has no hover state of its own.
+    &:not(.is-active):hover {
+      color: var(--react-autoql-text-color-primary);
+      background-color: var(--react-autoql-session-tab-hover);
+    }
+
+    // The raised chip. A wider box plus the lift is what makes the selected
+    // session read as selected; there is no accent rule or connecting flare.
+    &.is-active {
+      width: 188px;
+      // Same material as a message bubble: the theme's surface colour, a hairline
+      // border and the same soft ambient shadow, so the selected tab and the
+      // thread below it read as one system.
+      background-color: var(--react-autoql-background-color-secondary);
+      border: 1px solid var(--react-autoql-border-color);
+      padding: 0 5px 0 13px; // Absorbs the border, so the label doesn't shift.
+      color: var(--react-autoql-text-color-primary);
+      font-weight: 600;
+      box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+        0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
+
+      .react-autoql-session-tab-dot {
+        background-color: var(--react-autoql-accent-color);
+        opacity: 1;
+      }
+    }
+
+    // Brief flash so opening a tab is visible even when what's below it looks the
+    // same either way. A glow ring rather than a background tint: the active chip
+    // has a background of its own, and animating that would blank it out mid-flash.
+    // Tinting rather than fading in - fading a brand new tab up from invisible is
+    // the opposite of the point, which is to make it obvious one appeared.
+    &.is-new {
+      animation: react-autoql-session-tab-flash 0.9s ease;
+    }
+
+    // currentColor rather than a fixed grey, so the dot tracks whatever the tab
+    // label is doing -- placeholder when idle, primary on hover -- and the accent
+    // on the active tab is then the only colour in the strip.
+    .react-autoql-session-tab-dot {
+      flex: none;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: currentColor;
+      opacity: 0.45;
+      transition: background-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .react-autoql-session-tab-title {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    // The X is centred by the box model alone - 4px of padding on all four sides
+    // of an 18px border-box, with the glyph stretched to whatever is left. No
+    // flex, grid or line-box centring is involved, so there is nothing left to
+    // drift: the inherited 22px line-height, Icon.scss's 1em content-box (which
+    // only lands on a whole pixel when the host page's root is 16px) and the
+    // svg's own 1em sizing are all overridden rather than compensated for.
+    .react-autoql-session-tab-close {
+      display: block;
+      box-sizing: border-box;
+      flex: none;
+      width: 18px;
+      height: 18px;
+      padding: 4px;
+      border: 0;
+      background: none;
+      border-radius: 50%;
+      // No line box at all, so the glyph can't pick up half-leading or a
+      // descender's worth of space.
+      line-height: 0;
+      font-size: 0;
+      opacity: 0.6;
+      transition: opacity 0.2s ease, background-color 0.2s ease;
+
+      .react-autoql-icon {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+
+        // MdClose's ink is symmetric in its 24-unit viewBox, so an svg that fills
+        // the padding box exactly puts the X on the circle's centre by
+        // construction.
+        svg {
+          display: block;
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      &:hover {
+        opacity: 1;
+        // A touch stronger than the tab's own hover, so the X still reads as a
+        // separate target once you're over it.
+        background-color: var(--react-autoql-session-tab-close-hover);
+      }
+    }
+  }
+
+  // Sits just past the last tab, outside the scrolling strip - a "+" inside it
+  // would scroll out of reach once there are the most tabs, so instead the strip
+  // stops growing at the track's width and the button lands against the right edge
+  // on its own. Accent glyph on a faint accent wash - circular, like the icon
+  // buttons in the header above it - so it still reads as the invitation.
+  .react-autoql-session-tab-new {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    margin-left: 4px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--react-autoql-session-tab-new);
+    color: var(--react-autoql-accent-color);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: var(--react-autoql-session-tab-new-hover);
+    }
+
+    // At the tab ceiling. Left in place rather than hidden, so the row doesn't
+    // reflow on the last tab.
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .react-autoql-icon {
+      font-size: 1.0625rem;
+      // The plus reads lighter than the tab labels beside it at the same size.
+      stroke-width: 2.5;
+    }
+  }
+}
+
+@keyframes react-autoql-session-tab-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  30% {
+    box-shadow: 0 0 0 2px var(--react-autoql-session-tab-glow);
+  }
+}

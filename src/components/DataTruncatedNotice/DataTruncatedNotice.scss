@@ -1,0 +1,143 @@
+// The shared Button, dressed the way the messenger dresses its buttons: pill shaped at
+// 0.8125rem, the same treatment .chat-message-bubble gives Auto Analyze and Ask a
+// Follow-up. Set here rather than relying on that rule, because the chart placeholder
+// renders outside the bubble's scope.
+.react-autoql-data-truncated-restore.react-autoql-btn.react-autoql-btn-default {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  border-radius: 50px;
+  padding: 0 0.875rem;
+  margin: 0;
+
+  // Borderless in both the banner and the card, so the same control looks the same
+  // wherever the notice appears (see DataTruncatedNotice's restoreButton).
+  &.btn-no-border {
+    padding: 0 0.625rem;
+
+    // A real hover, not the near-invisible mask tint the default button settles for. A
+    // solid fill would put back the hard edge the missing border was there to avoid, so
+    // it is a wash of the accent instead, with the label left accent-coloured.
+    //
+    // Deeper than it would need to be on a plain background: in the banner this lands
+    // on top of the strip's own accent tint, and the two only read apart if the hover
+    // clears it by a good margin. The card has no tint under it, where the same value
+    // is a light accent wash - still clearly a hover, and the point is that it is the
+    // same one.
+    &:not(.disabled):hover {
+      background: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.28);
+    }
+  }
+
+  &:not(.disabled):active {
+    opacity: 0.85;
+  }
+}
+
+// The banner's own footprint: height is the restore button (2rem) plus the banner's
+// vertical padding, and the gap is what separates it from the table below.
+:root {
+  --react-autoql-truncated-banner-height: 2.5rem;
+  --react-autoql-truncated-banner-gap: 5px;
+}
+
+// Sits above a table that is still showing real rows, so it is informational rather
+// than a warning - the answer is not wrong, just partial.
+//
+// A tinted strip rather than an outlined box. .react-autoql-data-limit-warning, which
+// this started as a copy of, is a 3px-cornered 1px rectangle - a shape from before the
+// messenger settled on 25px bubbles and 8-12px panels, and it reads as a foreign object
+// pressed against the top of the bubble. Fill alone separates it from the table just as
+// well and removes a line from a view that is already three deep in outlines: the
+// bubble, this, and the control inside it.
+//
+// 12px because the bubble's corner is 25px and its padding is ~11px, so a box sitting
+// against its inside edge wants roughly the difference - any tighter and the two curves
+// fight rather than nest.
+.react-autoql-data-truncated-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 12px;
+  margin-bottom: var(--react-autoql-truncated-banner-gap);
+  min-height: var(--react-autoql-truncated-banner-height);
+  border-radius: 12px;
+  letter-spacing: initial;
+  // Stated rather than inherited, for the same reason the icon is: this sits directly
+  // above the data limit warning and the two have to read at the same size.
+  font-size: 0.875rem;
+
+  // The fill is the only thing separating this from the bubble now, so it has to do the
+  // work the border used to. At the 0.08-0.11 the outlined version could get away with,
+  // an accent wash over the bubble's own background is a shade nobody notices - the
+  // strip has to be visibly a different surface, not a slightly different one.
+  //
+  // 0.22 rather than a fixed colour so it still reads against whatever accent and theme
+  // the integrator has set: it is the same accent, just enough of it.
+  &:before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--react-autoql-accent-color);
+    opacity: 0.22;
+    pointer-events: none;
+    border-radius: 12px;
+  }
+
+  .react-autoql-data-truncated-banner-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .react-autoql-icon svg {
+    color: var(--react-autoql-accent-color) !important;
+  }
+}
+
+// Stands in for the chart, so it fills the space the chart would have taken - a short
+// notice floating in a tall empty bubble reads as something having gone wrong.
+.react-autoql-data-truncated-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  // 100vw capped at 100%, the same trick .react-autoql-response-content-container.chart
+  // uses on itself. The bubble's width comes from its content, so `width: 100%` alone
+  // leaves the card as wide as its one line of text - which is what the chart's
+  // container was already fixing for the chart, and nothing was doing for the pivot
+  // table. Stated here so the card is full width whichever view it stands in for.
+  width: 100vw;
+  max-width: 100%;
+  height: 100%;
+  min-height: 140px;
+  padding: 20px;
+  text-align: center;
+
+  .react-autoql-data-truncated-card-icon {
+    opacity: 0.35;
+  }
+
+  .react-autoql-data-truncated-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--react-autoql-text-color-primary);
+    font-size: 0.8125rem;
+
+    span {
+      opacity: 0.7;
+      font-size: 0.75rem;
+    }
+  }
+}
+
+.react-autoql-data-truncated-error {
+  color: var(--react-autoql-danger-color);
+  font-size: 0.75rem;
+}

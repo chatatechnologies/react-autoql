@@ -132,6 +132,14 @@ export class DataMessenger extends React.Component {
     enableVoiceRecord: PropTypes.bool,
     title: PropTypes.string,
     maxMessages: PropTypes.number,
+    // How much answer data is held in memory at once. Once an answer has been pushed
+    // back past `keepHydratedMessages` other answers, its rows are dropped to a preview
+    // and fetched again on request, so the history can be long without the data behind
+    // it growing without bound. Answers smaller than `truncateMinRows` are left alone,
+    // since fetching them again would cost more than holding them. Both are forwarded
+    // to ChatContent, which holds the defaults.
+    keepHydratedMessages: PropTypes.number,
+    truncateMinRows: PropTypes.number,
     // Headline and supporting line for the centred message shown while the chat is
     // empty. Forwarded to ChatContent, which falls back to its own defaults.
     emptyStateTitle: PropTypes.node,
@@ -169,6 +177,10 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
+    // Turns on query suggestions: the Data Explorer's suggestion list, the input's
+    // topics dropdown, and the related-queries fallback that answers a failed query
+    // with a list of close queries instead of an error. Off by default.
+    enableQuerySuggestions: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
@@ -214,7 +226,7 @@ export class DataMessenger extends React.Component {
     placement: 'right',
     maskClosable: true,
     isVisible: true,
-    width: 600,
+    width: 800,
     height: 350,
     showHandle: true,
     handleImage: undefined,
@@ -224,7 +236,11 @@ export class DataMessenger extends React.Component {
     clearOnClose: false,
     enableVoiceRecord: true,
     title: 'Data Messenger',
-    maxMessages: 20,
+    // Raised from 20 now that the data behind older answers is dropped to a preview
+    // once they fall out of the recent history (see ChatContent's keepHydratedMessages).
+    // What a message costs to keep no longer scales with the size of its result, so the
+    // limit can be about how far back it is useful to scroll instead.
+    maxMessages: 50,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
     enableDataExplorerTab: false,
@@ -248,6 +264,7 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
     enableQueryInputTopics: true,
+    enableQuerySuggestions: false,
     enableDPRTab: false,
     enableAgentTab: false,
     agentInputPlaceholder: undefined,
@@ -573,7 +590,7 @@ export class DataMessenger extends React.Component {
   onDrawerChange = (isOpen) => {
     if (!isOpen) {
       this.setState({
-          selectedValueLabel: undefined,
+        selectedValueLabel: undefined,
         isVisible: false,
       })
     } else {
@@ -1024,6 +1041,7 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
+          enableQuerySuggestions={this.props.enableQuerySuggestions}
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
@@ -1062,6 +1080,9 @@ export class DataMessenger extends React.Component {
           // different service and already has its own session id below, so keep
           // the tab bar out of it even when the integrator turns sessions on.
           enableSessions={false}
+          // The DPR service has no related-queries endpoint behind it, so the
+          // suggestion fallback never applies here regardless of the prop.
+          enableQuerySuggestions={false}
           sessionId={this.COMPONENT_KEY}
           autoQLConfig={{
             enableAutocomplete: false,

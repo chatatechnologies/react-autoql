@@ -3,7 +3,7 @@
 // rather than as a second design: the same neutral washes, the same pill radii,
 // the same accent dot, and a trigger built out of the active tab's exact material.
 .react-autoql-thread-switcher {
-  // Copied from .react-autoql-chat-session-tabs / .react-autoql-agent-messenger.
+  // Copied from .react-autoql-session-tabs, the strip this stands in for.
   // Grey at these alphas darkens a light theme and lightens a dark one, so one
   // value covers both.
   --ts-track: rgba(128, 134, 142, 0.08);
@@ -271,61 +271,13 @@
   }
 }
 
-.react-autoql-thread-switcher-footer {
-  border-top: 1px solid var(--react-autoql-border-color);
-  padding: 6px;
-}
-
-// A quiet row, not a red button: it is the least likely thing to be wanted in
-// here, and the confirm step is what makes it safe.
-.react-autoql-thread-switcher-close-all-wrapper {
-  display: block;
-}
-
-.react-autoql-thread-switcher-close-all {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  height: 44px;
-  padding: 0 12px;
-  box-sizing: border-box;
-  border: none;
-  border-radius: 22px;
-  background-color: transparent;
-  color: var(--react-autoql-text-color-placeholder);
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: -0.008em;
-  text-align: left;
-  cursor: pointer;
-  outline: none !important;
-  transition: background-color 0.2s ease, color 0.2s ease;
-
-  .react-autoql-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    font-size: 0.875rem;
-    opacity: 0.7;
-  }
-
-  &:active {
-    background-color: var(--ts-hover);
-    color: var(--react-autoql-danger-color, #ce4257);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .react-autoql-thread-switcher-trigger,
   .react-autoql-thread-switcher-caret,
   .react-autoql-thread-switcher-new,
   .react-autoql-thread-switcher-item,
   .react-autoql-thread-switcher-item-dot,
-  .react-autoql-thread-switcher-item-close,
-  .react-autoql-thread-switcher-close-all {
+  .react-autoql-thread-switcher-item-close {
     transition: none;
   }
 }
@@ -339,8 +291,7 @@
 .react-autoql-thread-switcher-trigger,
 .react-autoql-thread-switcher-new,
 .react-autoql-thread-switcher-item,
-.react-autoql-thread-switcher-item-close,
-.react-autoql-thread-switcher-close-all {
+.react-autoql-thread-switcher-item-close {
   &:focus-visible {
     box-shadow: 0 0 0 2px var(--react-autoql-accent-color);
   }
