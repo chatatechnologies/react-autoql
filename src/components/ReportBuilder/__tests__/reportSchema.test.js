@@ -100,6 +100,20 @@ describe('normalizeReport', () => {
     expect(bad).not.toHaveProperty('displayType')
   })
 
+  it('keeps a data block’s chosen axes and aggregation only when they are objects', () => {
+    const dataConfig = { tableConfig: { stringColumnIndex: 1, numberColumnIndices: [0] } }
+    const [chosen, bad] = normalizeReport({
+      blocks: [
+        { id: 'a', type: 'data', source: null, dataConfig, aggConfig: { aum: 'avg' } },
+        { id: 'b', type: 'data', source: null, dataConfig: 'x', aggConfig: ['sum'] },
+      ],
+    }).blocks
+    expect(chosen.dataConfig).toStrictEqual(dataConfig)
+    expect(chosen.aggConfig).toStrictEqual({ aum: 'avg' })
+    expect(bad).not.toHaveProperty('dataConfig')
+    expect(bad).not.toHaveProperty('aggConfig')
+  })
+
   it('accepts tile and question sources, and nothing else', () => {
     const blocks = normalizeReport({
       blocks: [

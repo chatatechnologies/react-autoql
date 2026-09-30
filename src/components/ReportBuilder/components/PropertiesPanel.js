@@ -237,6 +237,7 @@ const DisplayField = ({ block, view, onBlockChange }) => (
     {view.kind === 'chart' && !view.complete && view.countRows != null ? (
       <Note>{P.chartOfSlice(view.rowCount, view.countRows)}</Note>
     ) : null}
+    {view.kind === 'chart' ? <Note>{P.axesNote}</Note> : null}
   </>
 )
 

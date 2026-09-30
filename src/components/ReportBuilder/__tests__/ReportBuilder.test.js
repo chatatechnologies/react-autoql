@@ -773,6 +773,72 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
     expect(queryOutputCalls[queryOutputCalls.length - 1]).toMatchObject({ initialDisplayType: 'column' })
   })
 
+  describe('changing a chart’s axes', () => {
+    const CAPTURED_AXES = { stringColumnIndex: 0, numberColumnIndex: 1, numberColumnIndices: [1] }
+    // As the chart reports them: the axes, a pivot config (empty when the data can't pivot) and overrides.
+    const reported = (tableConfig) => ({ tableConfig, pivotTableConfig: {}, columnOverrides: {} })
+    const CHOSEN = {
+      tableConfig: { stringColumnIndex: 1, numberColumnIndex: 0, numberColumnIndices: [0] },
+      columnOverrides: {},
+    }
+    // As captureForReport keeps it: an undefined pivot config drops out of the JSON, the overrides stay.
+    const chartCapture = () =>
+      captureOf({
+        rows: rowsOf(6),
+        displayType: 'column',
+        config: { dataConfig: { tableConfig: CAPTURED_AXES, columnOverrides: {} } },
+      })
+    const chartProps = () => queryOutputCalls[queryOutputCalls.length - 1]
+    const chartBox = (container) => container.querySelector('.react-autoql-report-builder-chart')
+
+    it('turns on the chart’s axis selectors in the editor, and keeps what’s chosen with them', () => {
+      const { container, lastReport } = setup(captured(chartCapture()))
+      expect(chartProps()).toMatchObject({ enableDynamicCharting: true, allowDisplayTypeChange: false })
+      expect(chartProps().initialTableConfigs.tableConfig).toMatchObject(CAPTURED_AXES)
+      expect(chartBox(container).hasAttribute('data-editable')).toBe(true)
+
+      // What the chart reports on its own, working out its first layout, isn't kept.
+      act(() => chartProps().onTableConfigChange(reported({ ...CAPTURED_AXES, numberColumnIndices2: [] })))
+      expect(lastReport()).toBeUndefined()
+
+      // What it reports once it's been used is, without an empty pivot config (it would drop the axes on load).
+      fireEvent.mouseDown(chartBox(container))
+      act(() => chartProps().onTableConfigChange(reported(CHOSEN.tableConfig)))
+      expect(lastReport().blocks[0].dataConfig).toStrictEqual(CHOSEN)
+      expect(chartProps().initialTableConfigs.tableConfig).toMatchObject(CHOSEN.tableConfig)
+
+      selectBlock('Data')
+      expect(within(panel()).getByText(/Click an axis title on the chart/)).toBeTruthy()
+    })
+
+    it('keeps an aggregation chosen there too, but not a report of what the block already has', () => {
+      const { container, spy, lastReport } = setup(captured(chartCapture()))
+      fireEvent.mouseDown(chartBox(container))
+      act(() => chartProps().onTableConfigChange(reported(CAPTURED_AXES)))
+      expect(spy).not.toHaveBeenCalled()
+
+      act(() => chartProps().onAggConfigChange({ aum: 'avg' }))
+      expect(lastReport().blocks[0].aggConfig).toStrictEqual({ aum: 'avg' })
+      expect(chartProps().initialAggConfig).toStrictEqual({ aum: 'avg' })
+    })
+
+    it('prints with the axes chosen, and has no selectors in the preview', async () => {
+      const { container } = setup(captured(chartCapture(), { dataConfig: CHOSEN }))
+      expect(chartProps().initialTableConfigs.tableConfig).toMatchObject(CHOSEN.tableConfig)
+
+      queryOutputCalls.splice(0)
+      fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+      await waitFor(() => expect(container.querySelector('.react-autoql-report-builder-page')).not.toBeNull())
+      expect(queryOutputCalls.length).toBeGreaterThan(0)
+      queryOutputCalls.forEach((props) => {
+        expect(props.enableDynamicCharting).toBe(false)
+        expect(props.onTableConfigChange).toBeUndefined()
+        expect(props.initialTableConfigs.tableConfig).toMatchObject(CHOSEN.tableConfig)
+      })
+      expect(container.querySelector('.react-autoql-report-builder-page [data-editable]')).toBeNull()
+    })
+  })
+
   it('says how to add data to a block that has none, rather than offering to run it', () => {
     setup(createEmptyReport({ blocks: [{ id: 'd', type: 'data', source: tileSourceOf('t1') }] }))
     expect(screen.getByText(/No data was kept for this block/)).toBeTruthy()
@@ -1075,7 +1141,10 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
   it('reruns only a question asked here, keeping how the block is shown', async () => {
     const added = { ...ASKED, id: 'x', askedHere: undefined }
     const tile = { ...ASKED, id: 't', source: tileSourceOf('t1'), askedHere: undefined }
-    const { lastReport } = setupAsking(createEmptyReport({ blocks: [{ ...ASKED, rows: 50 }, added, tile] }))
+    const axes = { tableConfig: { stringColumnIndex: 0, numberColumnIndices: [1] } }
+    const { lastReport } = setupAsking(
+      createEmptyReport({ blocks: [{ ...ASKED, rows: 50, dataConfig: axes }, added, tile] }),
+    )
 
     selectBlock('Data', 1)
     expect(within(panel()).queryByTestId('report-builder-rerun')).toBeNull()
@@ -1089,7 +1158,7 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
 
     await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(5))
     expect(runQuery.mock.calls[0][0]).toMatchObject({ query: 'aum by account' })
-    expect(lastReport().blocks[0]).toMatchObject({ id: 'q', rows: 50, askedHere: true })
+    expect(lastReport().blocks[0]).toMatchObject({ id: 'q', rows: 50, askedHere: true, dataConfig: axes })
     expect(within(panel()).getByTestId('report-builder-rerun').textContent).toBe('Rerun')
   })
 

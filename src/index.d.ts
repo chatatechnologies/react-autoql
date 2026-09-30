@@ -524,6 +524,15 @@ export interface ReportDataBlock {
   displayType?: string
   // A question asked in the builder (enableDataBlocks), which its Rerun button can ask again.
   askedHere?: boolean
+  // Its chart's axes and aggregation, when chosen in the builder with the chart's own axis selectors: what
+  // QueryOutput reports (onTableConfigChange, onAggConfigChange). Kept across Rerun; set right when drawn if the
+  // data no longer fits.
+  dataConfig?: {
+    tableConfig?: Record<string, unknown>
+    pivotTableConfig?: Record<string, unknown>
+    columnOverrides?: Record<string, unknown>
+  }
+  aggConfig?: Record<string, string>
 }
 
 export interface ReportPageBreakBlock {

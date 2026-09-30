@@ -242,6 +242,7 @@ export const STRINGS = {
       `The chart draws the ${Number(shown).toLocaleString()} rows this block keeps, not all ${Number(
         total,
       ).toLocaleString()}.`,
+    axesNote: 'Click an axis title on the chart to choose which column it shows. It prints that way.',
 
     rows: 'Rows to include',
     rowsCap: (max) => `A printed page can’t scroll, so a table shows at most ${max} rows.`,

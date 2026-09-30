@@ -77,6 +77,7 @@ export const EditorBlock = React.memo(function EditorBlock({
   onAsk,
   onPickTiles,
   onAnalyzeResult,
+  onChartChange,
   ...paperProps
 }) {
   const label = BLOCK_INFO[block.type]?.label || block.type
@@ -118,6 +119,7 @@ export const EditorBlock = React.memo(function EditorBlock({
         onTextChange={(text) => onText(block.id, text)}
         onAsk={(query) => onAsk(block.id, query)}
         onPickTiles={onPickTiles ? () => onPickTiles(block.id) : undefined}
+        onChartChange={onChartChange ? (patch) => onChartChange(block.id, patch) : undefined}
         {...paperProps}
       />
     </div>
@@ -149,6 +151,7 @@ export const Sheet = ({
   canCapture,
   onPickTiles,
   onAnalyzeResult,
+  onChartChange,
   pending,
 }) => {
   const { page, blocks } = report
@@ -192,6 +195,7 @@ export const Sheet = ({
                     canCapture={canCapture}
                     onPickTiles={onPickTiles}
                     onAnalyzeResult={onAnalyzeResult}
+                    onChartChange={onChartChange}
                     // Its own entry only: the block is memoized.
                     pending={pending?.[block.id]}
                   />

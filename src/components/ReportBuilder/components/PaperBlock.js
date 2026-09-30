@@ -231,6 +231,7 @@ const DataContent = ({
   canCapture = false,
   onPickTiles,
   pending,
+  onChartChange,
 }) => {
   if (!view || view.state === 'empty') {
     return (
@@ -326,6 +327,8 @@ const DataContent = ({
           authentication={authentication}
           autoQLConfig={autoQLConfig}
           dataFormatting={dataFormatting}
+          // Its axes can be changed in the editor only; the pages print what was chosen.
+          onConfigChange={mode === 'edit' ? onChartChange : undefined}
         />
       )}
       <Tail caption={captionOf(view)} interpretation={interpretation} missingInterpretation={missingInterpretation} />

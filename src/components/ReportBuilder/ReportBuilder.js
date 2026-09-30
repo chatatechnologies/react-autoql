@@ -329,6 +329,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   onText = (id, text) => this.change(updateBlock(this.getReport(), id, { text }))
 
+  // A chart's axes or aggregation, changed with its own selectors in the editor (ReportChart).
+  onChartChange = (id, patch) => this.change(updateBlock(this.getLatestReport(), id, patch))
+
   onAsk = (id, query) => this.onSourceChange(id, { type: 'query', query })
 
   onBlockAction = (id, action) => {
@@ -769,6 +772,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
             canCapture={canCapture}
             onPickTiles={onPickTiles}
             onAnalyzeResult={canAnalyze ? this.onAnalyzeResult : undefined}
+            onChartChange={this.onChartChange}
             pending={pending}
           />
         </main>

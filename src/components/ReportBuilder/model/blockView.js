@@ -153,6 +153,18 @@ const captureTile = (capture) => {
   }
 }
 
+// The chart as the block has it: axes (`dataConfig`) and aggregation (`aggConfig`) chosen in the builder with
+// the chart's own axis selectors win over the tile's or the capture's. A choice the data no longer fits is set
+// right by QueryOutput when it's drawn.
+const withChartChoices = (tile, block) =>
+  block?.dataConfig || block?.aggConfig
+    ? {
+        ...(tile || {}),
+        ...(block.dataConfig ? { dataConfig: block.dataConfig } : {}),
+        ...(block.aggConfig ? { aggConfig: block.aggConfig } : {}),
+      }
+    : tile
+
 // One result object per capture, so what a chart is drawn from keeps its identity across edits elsewhere.
 const captureResults = new WeakMap()
 const captureResult = (capture) => {
@@ -184,13 +196,14 @@ export const getDataBlockView = ({ block, tileIndex, result, requestKey, running
   if (capture && !ran && !running) {
     const captured = captureResult(capture)
     // Its settings are the captured ones, not the live tile's, for everything that reads the view.
+    const capturedTile = withChartChoices(captured.tile, block)
     return readyView({
       block,
-      tile: captured.tile,
+      tile: capturedTile,
       result: captured,
       base: {
         ...base,
-        tile: captured.tile,
+        tile: capturedTile,
         capturedAt: capture.capturedAt,
         filterLabel: getFilterLabel(capture.table?.filters, capture.data.columns),
       },
@@ -220,5 +233,5 @@ export const getDataBlockView = ({ block, tileIndex, result, requestKey, running
   if (result.status === 'error') {
     return { ...base, state: 'error', error: result.error }
   }
-  return readyView({ block, tile, result, base })
+  return readyView({ block, tile: withChartChoices(tile, block), result, base })
 }

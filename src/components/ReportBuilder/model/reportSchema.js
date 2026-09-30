@@ -114,7 +114,7 @@ export const normalizeBlock = (block) => {
         block.style,
       )
     case 'data': {
-      const { style, displayType, ...rest } = block // a data block looks the way its tile does
+      const { style, displayType, dataConfig, aggConfig, ...rest } = block // a data block looks the way its tile does
       return {
         ...rest,
         id,
@@ -124,6 +124,9 @@ export const normalizeBlock = (block) => {
         rows: snapTableRows(block.rows),
         // How it's shown, when not as captured; checked against the data when it's drawn.
         ...(typeof displayType === 'string' && displayType ? { displayType } : {}),
+        // Its chart's axes and aggregation as chosen in the builder, as QueryOutput reports them.
+        ...(isObject(dataConfig) ? { dataConfig } : {}),
+        ...(isObject(aggConfig) ? { aggConfig } : {}),
       }
     }
     case 'analysis':
