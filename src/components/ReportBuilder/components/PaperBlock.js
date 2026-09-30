@@ -4,6 +4,7 @@ import remarkBreaks from 'remark-breaks'
 import { formatElement, getDataFormatting } from 'autoql-fe-utils'
 import { RB, TEXT_SIZES, TEXT_WEIGHTS, TYPEFACES } from '../constants'
 import { STRINGS } from '../strings'
+import { LoadingDots } from '../../LoadingDots'
 import { ReportTable } from './ReportTable'
 import { ReportChart } from './ReportChart'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
@@ -99,7 +100,12 @@ const EmptyDataContent = ({ mode, onAsk, canRun, canCapture, onPickTiles, pendin
     return (
       <Placeholder title={STRINGS.data.emptyTitle}>
         {asking ? (
-          <span role='status'>{STRINGS.data.asking(question.query)}</span>
+          // AutoQL's loading dots where the question box was, as while an answer comes back in the Data
+          // Messenger; what it's asking is still read out.
+          <div className={`${RB}-asking`} role='status' data-test='report-builder-asking'>
+            <LoadingDots />
+            <span className={`${RB}-sr-only`}>{STRINGS.data.asking(question.query)}</span>
+          </div>
         ) : (
           <input
             // Remade after a failed question so it comes back with that question in it.

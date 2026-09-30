@@ -1089,7 +1089,11 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
     const { lastReport } = setupAsking(createEmptyReport({ blocks: [EMPTY] }))
 
     ask('aum by account')
-    expect(screen.getByText('Asking “aum by account”…')).toBeTruthy()
+    // Loading dots where the question box was; what it's asking is still read out.
+    const asking = screen.getByRole('status')
+    expect(within(asking).getByTestId('loading-dots')).toBeTruthy()
+    expect(within(asking).getByText('Asking “aum by account”…').className).toBe('react-autoql-report-builder-sr-only')
+    expect(screen.queryByTestId('report-builder-ask')).toBeNull()
 
     await waitFor(() =>
       expect(lastReport()?.blocks[0]).toMatchObject({

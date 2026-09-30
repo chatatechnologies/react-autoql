@@ -446,6 +446,38 @@ $warn-rule: #f0dcb0;
     color: $warn-ink;
   }
 
+  // While a question runs: AutoQL's loading dots in the question box's place, as tall as the box (a 9.5pt line
+  // at the paper's 1.45, 5pt padding and a 0.75pt border each side) so the block doesn't move. Its dots are
+  // drawn for a white chat bubble, so on the placeholder's grey they're a shade darker.
+  .#{$rb}-asking {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: calc(9.5pt * 1.45 + 11.5pt);
+
+    .response-loading {
+      height: 11px;
+
+      div {
+        top: 0;
+        background: #b9bec4;
+      }
+    }
+  }
+
+  // Read out, not shown.
+  .#{$rb}-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .#{$rb}-page-break {
     display: flex;
     align-items: center;
