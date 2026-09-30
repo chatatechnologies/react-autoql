@@ -187,6 +187,9 @@ export class ChatMessage extends React.Component {
     enableCyclicalDates: PropTypes.bool,
     onSummaryFeedback: PropTypes.func, // Callback for feedback: (messageId, feedback: 'positive' | 'negative', message?: string) => void
     enableFollowOnQuery: PropTypes.bool,
+    // Whether a failed re-run of this query may fall back to related queries
+    // instead of an error. See ChatContent for the full description.
+    enableQuerySuggestions: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -234,6 +237,7 @@ export class ChatMessage extends React.Component {
     billingExecutionType: undefined,
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
+    enableQuerySuggestions: false,
   }
 
   componentDidMount = () => {
@@ -1521,6 +1525,7 @@ export class ChatMessage extends React.Component {
           isAnimating={this.state.isAnimatingMessageBubble}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}
+          enableQuerySuggestions={this.props.enableQuerySuggestions}
           initialTableConfigs={this.isValidConfig(this.state.dataConfig) ? this.state.dataConfig : undefined}
           onTableConfigChange={this.updateDataConfig}
           // How this answer was last being looked at. Seeded from the message so it

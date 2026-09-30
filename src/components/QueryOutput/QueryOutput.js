@@ -352,6 +352,9 @@ export class QueryOutput extends React.Component {
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
+    // Whether a failed re-run of this query may fall back to related queries
+    // instead of an error. See ChatContent for the full description.
+    enableQuerySuggestions: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,
     initialNetworkColumnConfig: PropTypes.shape({
@@ -449,6 +452,7 @@ export class QueryOutput extends React.Component {
     useInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
+    enableQuerySuggestions: false,
     onNoneOfTheseClick: undefined,
     initialAxisSorts: undefined,
     onAxisSortChange: undefined,
@@ -1963,6 +1967,11 @@ export class QueryOutput extends React.Component {
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           sourceQuery,
+          // The query util defaults this on, and the autoQLConfig spread above
+          // does not set it - it reads `allowSuggestions`, not
+          // `enableQuerySuggestions`. Without it a failed re-run answers with a
+          // related-queries list even for integrators who turned suggestions off.
+          allowSuggestions: this.props.enableQuerySuggestions,
           ...args,
           tableFilters: allFilters,
         })

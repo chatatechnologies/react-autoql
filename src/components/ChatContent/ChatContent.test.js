@@ -272,7 +272,7 @@ describe('enableSessions', () => {
 // A thread scroll already underway keeps the wheel when it passes over a table, but
 // only for one idle window after the user's last scroll of the thread itself.
 describe('wheel handling over a nested table', () => {
-  const setupWheel = ({ threadScrollTop = 500 } = {}) => {
+  const setupWheel = ({ threadScrollTop = 500, tableScrollTop = 0 } = {}) => {
     const wrapper = setup()
 
     const container = document.createElement('div')
@@ -284,12 +284,17 @@ describe('wheel handling over a nested table', () => {
 
     const table = document.createElement('div')
     table.className = 'tabulator-tableholder'
+    Object.defineProperties(table, {
+      scrollHeight: { value: 1000, configurable: true },
+      clientHeight: { value: 300, configurable: true },
+    })
+    table.scrollTop = tableScrollTop
     container.appendChild(table)
 
     wrapper.instance().messengerScrollComponent = { getContainer: () => container }
 
-    const wheel = (target, deltaY = 100) => {
-      const event = { target, deltaY, deltaMode: 0, preventDefault: jest.fn(), stopPropagation: jest.fn() }
+    const wheel = (target, deltaY = 100, deltaX = 0) => {
+      const event = { target, deltaY, deltaX, deltaMode: 0, preventDefault: jest.fn(), stopPropagation: jest.fn() }
       wrapper.instance().handleThreadWheel(event)
       return event
     }
@@ -341,6 +346,35 @@ describe('wheel handling over a nested table', () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  // PerfectScrollbar reads a table that is still at scrollTop 0 as having nothing to
+  // scroll, so it scrolled the thread on top of the browser scrolling the table. The
+  // event has to be kept away from it while the table still has room.
+  test('keeps the event away from the thread scrollbar while the table can scroll', () => {
+    const { container, table, wheel } = setupWheel()
+
+    const event = wheel(table)
+
+    expect(event.stopPropagation).toHaveBeenCalled()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(container.scrollTop).toBe(500)
+  })
+
+  test('lets the event through once the table is at its bottom', () => {
+    const { table, wheel } = setupWheel({ tableScrollTop: 700 })
+
+    const event = wheel(table)
+
+    expect(event.stopPropagation).not.toHaveBeenCalled()
+  })
+
+  test('lets a horizontal wheel through so the table can block back-navigation', () => {
+    const { table, wheel } = setupWheel()
+
+    const event = wheel(table, 10, -120)
+
+    expect(event.stopPropagation).not.toHaveBeenCalled()
   })
 
   test('lets the table take over at the end of the thread', () => {

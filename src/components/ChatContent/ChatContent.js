@@ -148,6 +148,12 @@ export default class ChatContent extends React.Component {
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
+    // Whether a failed query may fall back to related queries. When a query comes
+    // back with a "no results for this phrasing" or 5xx reference id, the backend
+    // is asked for queries close to what was typed and the answer is replaced by
+    // that list. Off unless the integrator asks for it. Also gates the topics
+    // dropdown in the input (see QueryInput). Default false.
+    enableQuerySuggestions: PropTypes.bool,
     // Headline and supporting line for the centred message shown while the
     // thread has no messages. Fall back to the defaults in Localization.
     emptyStateTitle: PropTypes.node,
@@ -208,6 +214,7 @@ export default class ChatContent extends React.Component {
     enableBillingGate: false,
     onQuotaExceeded: undefined,
     enableFollowOnQuery: false,
+    enableQuerySuggestions: false,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
     showFilterLockButton: false,
@@ -629,6 +636,16 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // Whether el has room left to scroll in the direction of a DOM-sign deltaY.
+  canScrollVertically = (el, deltaY) => {
+    const maxScrollTop = el.scrollHeight - el.clientHeight
+    if (maxScrollTop <= 0) {
+      return false
+    }
+
+    return deltaY < 0 ? el.scrollTop > 0 : el.scrollTop < maxScrollTop - 1
+  }
+
   // Scrolling the thread past a table used to stop dead: the wheel event lands on
   // whatever is under the cursor, so the table's own scroller swallowed it
   // mid-flick. So a thread scroll already underway keeps the wheel when it passes
@@ -675,6 +692,26 @@ export default class ChatContent extends React.Component {
 
     // The thread is not mid-scroll, so the user means the thing under the cursor.
     if (Date.now() - (this.lastThreadWheelTime ?? 0) >= THREAD_WHEEL_IDLE_MS) {
+      // PerfectScrollbar's wheel handler has to decide whether a nested scroller is
+      // taking the delta, and it gets vertical backwards: it negates deltaY into
+      // wheel-delta sign but then tests it with the DOM-sign conditions. A table
+      // sitting at scrollTop 0 therefore reads as "nothing to scroll here", so PS
+      // scrolls the thread on top of the browser scrolling the table - which is what
+      // the user sees, since the table barely moves and the thread jumps. (Once the
+      // table is off its top edge the inverted test happens to come out true again,
+      // which is why only the first scroll of an untouched table misbehaves.)
+      //
+      // Stopping the event here keeps PS from ever seeing it. Nothing is prevented,
+      // so the browser still scrolls the table natively, momentum and all.
+      // A mostly-horizontal wheel is left alone so ChataTable's own handler still
+      // gets to block Safari's two-finger back/forward gesture at the table's edge.
+      if (this.canScrollVertically(nested, e.deltaY) && Math.abs(e.deltaY) >= Math.abs(e.deltaX ?? 0)) {
+        e.stopPropagation()
+      }
+
+      // Nested scroller at its edge: left alone on purpose. PS bails out of those
+      // (its inverted test reads them as consumed), and the browser's own scroll
+      // chaining carries the delta up to the thread.
       return
     }
 
@@ -1796,6 +1833,7 @@ export default class ChatContent extends React.Component {
                       enableBillingGate={this.props.enableBillingGate}
                       onQuotaExceeded={this.props.onQuotaExceeded}
                       enableFollowOnQuery={this.props.enableFollowOnQuery}
+                      enableQuerySuggestions={this.props.enableQuerySuggestions}
                     />
                   )
                 })}
@@ -1867,6 +1905,7 @@ export default class ChatContent extends React.Component {
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
               executeQuery={this.props.executeQuery}
               enableQueryInputTopics={this.props.enableQueryInputTopics}
+              enableQuerySuggestions={this.props.enableQuerySuggestions}
               // The filter lock sits at the head of the input pill. A consumer's own
               // left content wins — the Data Messenger passes its lock down this way,
               // and only one control fits there.

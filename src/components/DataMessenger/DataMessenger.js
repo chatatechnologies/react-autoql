@@ -177,6 +177,10 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
+    // Turns on query suggestions: the Data Explorer's suggestion list, the input's
+    // topics dropdown, and the related-queries fallback that answers a failed query
+    // with a list of close queries instead of an error. Off by default.
+    enableQuerySuggestions: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
@@ -260,6 +264,7 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
     enableQueryInputTopics: true,
+    enableQuerySuggestions: false,
     enableDPRTab: false,
     enableAgentTab: false,
     agentInputPlaceholder: undefined,
@@ -1036,6 +1041,7 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
+          enableQuerySuggestions={this.props.enableQuerySuggestions}
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
@@ -1074,6 +1080,9 @@ export class DataMessenger extends React.Component {
           // different service and already has its own session id below, so keep
           // the tab bar out of it even when the integrator turns sessions on.
           enableSessions={false}
+          // The DPR service has no related-queries endpoint behind it, so the
+          // suggestion fallback never applies here regardless of the prop.
+          enableQuerySuggestions={false}
           sessionId={this.COMPONENT_KEY}
           autoQLConfig={{
             enableAutocomplete: false,

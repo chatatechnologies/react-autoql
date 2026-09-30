@@ -133,7 +133,7 @@ class QueryInput extends React.Component {
     source: null,
     queryFilters: undefined,
     clearQueryOnSubmit: true,
-    enableQuerySuggestions: true,
+    enableQuerySuggestions: false,
     enableQueryInputTopics: true,
     placeholder: undefined,
     dataPageSize: undefined,
@@ -669,6 +669,13 @@ class QueryInput extends React.Component {
       pageSize: this.props.dataPageSize,
       cancelToken: this.axiosSource.token,
       sessionId: this.props.querySessionId,
+      // When a query fails with a "close but no match" or 5xx reference id, the
+      // query util falls back to the related-queries endpoint and answers with a
+      // suggestion list instead of the error. That fallback is on by default in
+      // the util, so it has to be turned off explicitly — and the config spread
+      // above does not do it: the util reads `allowSuggestions`, not
+      // `enableQuerySuggestions`.
+      allowSuggestions: this.props.enableQuerySuggestions,
     }
 
     if (query.trim()) {
@@ -1014,15 +1021,10 @@ class QueryInput extends React.Component {
       leftControlWidths.push(collapsedIconWidth)
     }
 
-    const leftControlsWidth = leftControlWidths.reduce(
-      (total, width, index) => total + width + (index ? gap : 0),
-      0,
-    )
+    const leftControlsWidth = leftControlWidths.reduce((total, width, index) => total + width + (index ? gap : 0), 0)
     // The collapsed Quick Topics button follows anything before it.
     const collapsedIconLeft = controlsStart + (this.props.leftContent ? leftControlWidths[0] + gap : 0)
-    const inputPaddingLeft = leftControlsWidth
-      ? controlsStart + leftControlsWidth + textGap - inputMargin
-      : undefined
+    const inputPaddingLeft = leftControlsWidth ? controlsStart + leftControlsWidth + textGap - inputMargin : undefined
 
     const inputProps = {
       ref: this.setInputRef,
@@ -1168,9 +1170,9 @@ class QueryInput extends React.Component {
           >
             <div className='react-autoql-input-row'>
               <div
-                className={`react-autoql-chatbar-input-container${
-                  showCollapsedIcon ? ' has-collapsed-icon' : ''
-                }${this.props.leftContent ? ' has-left-content' : ''}${hasMicrophone ? ' has-microphone' : ''}`}
+                className={`react-autoql-chatbar-input-container${showCollapsedIcon ? ' has-collapsed-icon' : ''}${
+                  this.props.leftContent ? ' has-left-content' : ''
+                }${hasMicrophone ? ' has-microphone' : ''}`}
               >
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
