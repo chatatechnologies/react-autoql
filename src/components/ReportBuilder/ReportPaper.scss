@@ -363,11 +363,6 @@ $warn-rule: #f0dcb0;
       font-weight: 600;
       color: $ink-2;
     }
-
-    // Why nothing will print here: editor only.
-    &[data-missing] {
-      font-style: italic;
-    }
   }
 
   .#{$rb}-chart {

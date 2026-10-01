@@ -2,10 +2,12 @@ import React from 'react'
 import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { Icon } from './icons'
+import { FIT, ZOOM_LEVELS } from './ZoomFrame'
 
 // Run, preview and print are the builder's own; a host adds nothing to make a report work. Run shows only
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
-// `status` is the host's own element (toolbarStatus), set apart just before them.
+// `status` is the host's own element (toolbarStatus), set apart just before them. The zoom (ZoomFrame) is how
+// large the pages show, in the editor and the preview alike.
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -24,6 +26,9 @@ export const Toolbar = ({
   printing,
   onPrint,
   status,
+  zoom = FIT,
+  fitScale = 1,
+  onZoomChange,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
@@ -75,6 +80,23 @@ export const Toolbar = ({
           )}
           <span className={`${RB}-toolbar-separator`} aria-hidden='true' />
         </>
+      ) : null}
+      {onZoomChange ? (
+        <select
+          className={`${RB}-select ${RB}-zoom-select`}
+          aria-label={STRINGS.zoom.label}
+          title={STRINGS.zoom.title}
+          value={String(zoom)}
+          data-test='report-builder-zoom'
+          onChange={(e) => onZoomChange(e.target.value === FIT ? FIT : Number(e.target.value))}
+        >
+          <option value={FIT}>{STRINGS.zoom.fit(Math.round(fitScale * 100))}</option>
+          {ZOOM_LEVELS.map((level) => (
+            <option key={level} value={String(level)}>
+              {STRINGS.zoom.level(Math.round(level * 100))}
+            </option>
+          ))}
+        </select>
       ) : null}
       {previewOpen ? (
         <button

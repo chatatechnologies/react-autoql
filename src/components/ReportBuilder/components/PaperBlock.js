@@ -173,16 +173,14 @@ const EmptyDataContent = ({ mode, onAsk, canRun, canCapture, onPickTiles, pendin
   )
 }
 
-const Tail = ({ caption, interpretation, missingInterpretation }) => (
+// A result without an interpretation (a dashboard tile's answer has none) shows none, on the page as in
+// print; the properties panel's note on "Show how each question was read" says why.
+const Tail = ({ caption, interpretation }) => (
   <div className={`${RB}-flow`} data-measure-tail=''>
     {caption ? <div className={`${RB}-caption`}>{caption}</div> : null}
     {interpretation ? (
       <div className={`${RB}-interpretation`}>
         <b>{STRINGS.data.interpretedAs}</b> {interpretation}
-      </div>
-    ) : missingInterpretation ? (
-      <div className={`${RB}-interpretation`} data-missing=''>
-        {missingInterpretation}
       </div>
     ) : null}
   </div>
@@ -272,12 +270,6 @@ const DataContent = ({
   }
 
   const interpretation = showInterpretation ? view.interpretation : ''
-  // Editor only: say why nothing will print, so the setting doesn't look broken. A dashboard tile's
-  // answer comes without an interpretation.
-  const missingInterpretation =
-    mode === 'edit' && showInterpretation && !view.interpretation
-      ? STRINGS.data.noInterpretation[view.sourceType === 'query' ? 'query' : 'tile']
-      : null
 
   if (view.kind === 'table') {
     const from = piece ? piece.from : 0
@@ -295,15 +287,7 @@ const DataContent = ({
           total={isLast ? view.total : null}
           measure={mode === 'measure'}
         />
-        {isLast ? (
-          <Tail
-            caption={captionOf(view)}
-            interpretation={interpretation}
-            missingInterpretation={missingInterpretation}
-          />
-        ) : (
-          <Continued />
-        )}
+        {isLast ? <Tail caption={captionOf(view)} interpretation={interpretation} /> : <Continued />}
       </div>
     )
   }
@@ -317,7 +301,7 @@ const DataContent = ({
             ? '—'
             : formatElement({ element: view.value, column: view.column, config: getDataFormatting(dataFormatting) })}
         </div>
-        <Tail caption={captionOf(view)} interpretation={interpretation} missingInterpretation={missingInterpretation} />
+        <Tail caption={captionOf(view)} interpretation={interpretation} />
       </div>
     )
   }
@@ -337,7 +321,7 @@ const DataContent = ({
           onConfigChange={mode === 'edit' ? onChartChange : undefined}
         />
       )}
-      <Tail caption={captionOf(view)} interpretation={interpretation} missingInterpretation={missingInterpretation} />
+      <Tail caption={captionOf(view)} interpretation={interpretation} />
     </div>
   )
 }

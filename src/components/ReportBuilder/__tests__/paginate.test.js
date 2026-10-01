@@ -2,6 +2,7 @@ import {
   buildLayoutItems,
   estimateMeasurements,
   getHeadingPages,
+  getStartPages,
   groupIntoRows,
   isPrintable,
   paginate,
@@ -171,6 +172,22 @@ describe('getHeadingPages', () => {
       { cells: [{ kind: 'blocks', ids: ['h2'] }] },
     ]
     expect(getHeadingPages(pages, blocks)).toStrictEqual({ h1: 1, h2: 2 })
+  })
+})
+
+describe('getStartPages', () => {
+  it('gives the page each block starts on, a flowing table where it starts', () => {
+    const pages = paginate([atomic('a', 150), table('t', 30), atomic('b', 50)], opts)
+    expect(pages.length).toBeGreaterThan(2)
+    const starts = getStartPages(pages)
+    expect(starts.a).toBe(0)
+    expect(starts.t).toBe(pages.findIndex((page) => page.cells.some((cell) => cell.id === 't')))
+    expect(starts.b).toBe(pages.length - 1)
+  })
+
+  it('lists every block of a row, and nothing for blocks that aren’t on a page', () => {
+    const pages = [{ cells: [{ kind: 'blocks', ids: ['l', 'r'] }] }, { cells: [{ kind: 'blocks', ids: ['n'] }] }]
+    expect(getStartPages(pages)).toStrictEqual({ l: 0, r: 0, n: 1 })
   })
 })
 

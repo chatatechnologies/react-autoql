@@ -7,9 +7,6 @@ import { boxStyleOf, PaperBlock } from './PaperBlock'
 import { getAnalysisBlocker } from '../model/analysis'
 import { RunningFooter, RunningHeader } from './PageFurniture'
 
-// The editing surface. It reflows to the space it has (never wider than the page) and doesn't paginate:
-// the print preview, which lays out true Letter pages, is the source of truth for what prints.
-
 const BlockTools = ({ id, isFirst, isLast, onAction, onAnalyze }) => (
   <div className={`${RB}-block-tools`} role='toolbar' aria-label={STRINGS.panel.block}>
     {onAnalyze ? (
@@ -133,85 +130,245 @@ const frontMatterNote = (page) => {
   return null
 }
 
-export const Sheet = ({
-  report,
-  views,
-  selectedId,
-  geometry,
-  branding,
-  footerLeft,
-  onSelect,
-  onAction,
-  onText,
-  onAsk,
-  dataFormatting,
-  authentication,
-  autoQLConfig,
-  canRun,
-  canCapture,
-  onPickTiles,
-  onAnalyzeResult,
-  onChartChange,
-  pending,
-}) => {
-  const { page, blocks } = report
-  const stack = TYPEFACES[page.typeface]?.stack
-  const note = frontMatterNote(page)
-  const rows = groupIntoRows(blocks)
-  const lastIndex = blocks.length - 1
+// The page each row of blocks is on: the page its first printable block starts on in print. A row that
+// doesn't print (an empty heading, an unfilled Data block) stays on the page before it.
+export const rowPagesOf = (rows, startPages) => {
+  let current = 0
+  return rows.map((row) => {
+    const starts = row.map((block) => startPages[block.id]).filter((page) => page != null)
+    if (starts.length) {
+      current = Math.max(current, Math.min(...starts))
+    }
+    return current
+  })
+}
 
-  return (
-    <div
-      className={`${RB}-paper ${RB}-sheet`}
-      data-orientation={geometry.orientation}
-      style={{ maxWidth: `${geometry.widthIn}in`, padding: `${geometry.marginIn}in`, fontFamily: stack || undefined }}
-    >
-      {page.header ? <RunningHeader branding={branding} title={report.title} /> : null}
-      {note ? <div className={`${RB}-front-matter-note`}>{note}</div> : null}
+// The blank space that ends each page so that it's a page tall: `starts` and `ends` are where each page's
+// content begins and where its blocks end, in pixels down the sheet. A page whose blocks need more room (a
+// table kept whole here, though it flows on in print) just grows.
+export const pageFills = ({ starts, ends, contentHeight }) =>
+  ends.map((end, index) => Math.max(0, Math.floor(contentHeight - (end - (starts[index] ?? 0)))))
 
-      {blocks.length ? (
-        <div className={`${RB}-sheet-blocks`}>
-          {rows.map((row) => (
-            <div key={row[0].id} className={`${RB}-row`} data-count={row.length}>
-              {row.map((block) => {
-                const index = blocks.indexOf(block)
-                return (
-                  <EditorBlock
-                    key={block.id}
-                    block={block}
-                    view={views[block.id]}
-                    selected={block.id === selectedId}
-                    isFirst={index === 0}
-                    isLast={index === lastIndex}
-                    onSelect={onSelect}
-                    onAction={onAction}
-                    onText={onText}
-                    onAsk={onAsk}
-                    showInterpretation={page.showInterpretation}
-                    dataFormatting={dataFormatting}
-                    authentication={authentication}
-                    autoQLConfig={autoQLConfig}
-                    canRun={canRun}
-                    canCapture={canCapture}
-                    onPickTiles={onPickTiles}
-                    onAnalyzeResult={onAnalyzeResult}
-                    onChartChange={onChartChange}
-                    // Its own entry only: the block is memoized.
-                    pending={pending?.[block.id]}
-                  />
-                )
-              })}
-            </div>
-          ))}
+const offsetTopIn = (el, ancestor) => {
+  let top = 0
+  for (let node = el; node && node !== ancestor; node = node.offsetParent) {
+    top += node.offsetTop
+  }
+  return top
+}
+
+// Where one page ends and the next begins: the rest of the page left blank, its footer and bottom margin,
+// the desk between pages, then the next page's top margin and header.
+const PageGap = ({ fill, footer, header, marginIn }) => (
+  <div className={`${RB}-page-gap`} aria-hidden='true' data-test='report-builder-page-gap'>
+    <div className={`${RB}-page-fill`} data-page-fill='' style={{ height: fill || 0 }} />
+    {footer}
+    <div className={`${RB}-page-gap-band`} style={{ margin: `${marginIn}in calc(-${marginIn}in - 12px)` }} />
+    {header}
+    <div data-page-start='' />
+  </div>
+)
+
+// The editing surface, laid out at the page's true size (the builder's zoom fits it to the canvas). Once
+// EditorPagination has laid the report out (`startPages`), it's shown as pages that break where the PDF
+// breaks, each with its running header and footer; until then, and where nothing can be measured, it's
+// one sheet. Blocks stay in one list either way, so moving to another page never remounts one. The print
+// preview stays the source of truth for what prints.
+export class Sheet extends React.Component {
+  static defaultProps = {
+    // Block id → the content page it starts on (getStartPages), or null for one sheet.
+    startPages: null,
+    // How many content pages, and how many print before them (cover, contents), for the page numbers.
+    pageCount: 1,
+    frontPages: 0,
+  }
+
+  sheetRef = React.createRef()
+  blocksRef = React.createRef()
+  state = { fills: [] }
+
+  componentDidMount() {
+    this.measureFills()
+    if (typeof ResizeObserver !== 'undefined') {
+      this.observer = new ResizeObserver(() => this.measureFills())
+      if (this.blocksRef.current) {
+        this.observer.observe(this.blocksRef.current)
+        this.observed = this.blocksRef.current
+      }
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.blocksRef.current && this.observed !== this.blocksRef.current) {
+      this.observer?.disconnect()
+      this.observer?.observe(this.blocksRef.current)
+      this.observed = this.blocksRef.current
+    }
+    this.measureFills()
+  }
+
+  componentWillUnmount() {
+    this.observer?.disconnect()
+  }
+
+  // Sizes each page's blank end from where its content actually sits (layout sizes, which the zoom's
+  // transform doesn't change).
+  measureFills = () => {
+    const sheet = this.sheetRef.current
+    const blocksEl = this.blocksRef.current
+    if (!sheet || !blocksEl || !this.props.startPages) {
+      return
+    }
+    const starts = [
+      offsetTopIn(blocksEl, sheet),
+      ...Array.from(blocksEl.querySelectorAll('[data-page-start]'), (el) => offsetTopIn(el, sheet)),
+    ]
+    const ends = Array.from(blocksEl.querySelectorAll('[data-page-fill]'), (el) => offsetTopIn(el, sheet))
+    const fills = pageFills({ starts, ends, contentHeight: this.props.geometry.contentHeightPx })
+    const current = this.state.fills
+    if (fills.length !== current.length || fills.some((fill, index) => fill !== current[index])) {
+      this.setState({ fills })
+    }
+  }
+
+  render() {
+    const {
+      report,
+      views,
+      selectedId,
+      geometry,
+      branding,
+      footerLeft,
+      startPages,
+      pageCount,
+      frontPages,
+      onSelect,
+      onAction,
+      onText,
+      onAsk,
+      dataFormatting,
+      authentication,
+      autoQLConfig,
+      canRun,
+      canCapture,
+      onPickTiles,
+      onAnalyzeResult,
+      onChartChange,
+      pending,
+    } = this.props
+    const { fills } = this.state
+    const { page, blocks } = report
+    const stack = TYPEFACES[page.typeface]?.stack
+    const note = frontMatterNote(page)
+    const rows = groupIntoRows(blocks)
+    const lastIndex = blocks.length - 1
+    const paged = !!startPages && rows.length > 0
+    const rowPages = paged ? rowPagesOf(rows, startPages) : rows.map(() => 0)
+    const total = frontPages + Math.max(1, pageCount)
+
+    // The running header and footer as a page prints them, in boxes of their printed height.
+    const header =
+      geometry.headerIn > 0 ? (
+        <div className={`${RB}-page-header`} style={{ height: `${geometry.headerIn}in` }}>
+          <RunningHeader branding={branding} title={report.title} />
         </div>
-      ) : (
-        <div className={`${RB}-empty-report`}>
-          <div className={`${RB}-empty-report-title`}>{STRINGS.emptyReportTitle}</div>
-          <p>{STRINGS.emptyReportBody}</p>
+      ) : null
+    const footerOf = (contentPage) =>
+      geometry.footerIn > 0 ? (
+        <div className={`${RB}-page-footer`} style={{ height: `${geometry.footerIn}in` }}>
+          <RunningFooter
+            left={page.footer ? footerLeft : ''}
+            right={page.pageNumbers && paged ? STRINGS.preview.page(frontPages + contentPage + 1, total) : ''}
+          />
         </div>
-      )}
+      ) : null
 
-      {page.footer ? <RunningFooter left={footerLeft} right='' /> : null}
-    </div>
-  )
+    let pageIndex = 0
+
+    return (
+      <div
+        ref={this.sheetRef}
+        className={`${RB}-paper ${RB}-sheet`}
+        data-orientation={geometry.orientation}
+        data-paged={paged || undefined}
+        // Its true width in either orientation; the builder's zoom (ZoomFrame) fits it to the canvas.
+        style={{ width: `${geometry.widthIn}in`, padding: `${geometry.marginIn}in`, fontFamily: stack || undefined }}
+      >
+        {note ? (
+          <div
+            className={`${RB}-front-matter-note`}
+            style={{
+              top: `${geometry.marginIn / 2}in`,
+              left: `${geometry.marginIn}in`,
+              right: `${geometry.marginIn}in`,
+            }}
+          >
+            {note}
+          </div>
+        ) : null}
+        {header}
+
+        {blocks.length ? (
+          <div ref={this.blocksRef} className={`${RB}-sheet-blocks`}>
+            {rows.map((row, rowIndex) => {
+              const breaksBefore = paged && rowIndex > 0 && rowPages[rowIndex] > rowPages[rowIndex - 1]
+              const ending = breaksBefore ? pageIndex++ : null
+              return (
+                <React.Fragment key={row[0].id}>
+                  {breaksBefore ? (
+                    <PageGap
+                      fill={fills[ending]}
+                      footer={footerOf(rowPages[rowIndex - 1])}
+                      header={header}
+                      marginIn={geometry.marginIn}
+                    />
+                  ) : null}
+                  <div className={`${RB}-row`} data-count={row.length}>
+                    {row.map((block) => {
+                      const index = blocks.indexOf(block)
+                      return (
+                        <EditorBlock
+                          key={block.id}
+                          block={block}
+                          view={views[block.id]}
+                          selected={block.id === selectedId}
+                          isFirst={index === 0}
+                          isLast={index === lastIndex}
+                          onSelect={onSelect}
+                          onAction={onAction}
+                          onText={onText}
+                          onAsk={onAsk}
+                          showInterpretation={page.showInterpretation}
+                          dataFormatting={dataFormatting}
+                          authentication={authentication}
+                          autoQLConfig={autoQLConfig}
+                          canRun={canRun}
+                          canCapture={canCapture}
+                          onPickTiles={onPickTiles}
+                          onAnalyzeResult={onAnalyzeResult}
+                          onChartChange={onChartChange}
+                          // Its own entry only: the block is memoized.
+                          pending={pending?.[block.id]}
+                        />
+                      )
+                    })}
+                  </div>
+                </React.Fragment>
+              )
+            })}
+            {paged ? (
+              <div className={`${RB}-page-fill`} data-page-fill='' style={{ height: fills[pageIndex] || 0 }} />
+            ) : null}
+          </div>
+        ) : (
+          <div className={`${RB}-empty-report`}>
+            <div className={`${RB}-empty-report-title`}>{STRINGS.emptyReportTitle}</div>
+            <p>{STRINGS.emptyReportBody}</p>
+          </div>
+        )}
+
+        {footerOf(rowPages[rowPages.length - 1] ?? 0)}
+      </div>
+    )
+  }
 }

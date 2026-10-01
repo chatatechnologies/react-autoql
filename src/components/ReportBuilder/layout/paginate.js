@@ -161,6 +161,23 @@ export const paginate = (items, { contentHeight, repeatTableHeaders = true, minR
   return pages
 }
 
+// The content page each block starts on, counted from 0, for the editor's pages: a table that flows across
+// pages counts where it starts. Blocks that don't print aren't listed.
+export const getStartPages = (pages) => {
+  const result = {}
+  pages.forEach((page, index) => {
+    page.cells.forEach((cell) => {
+      const ids = cell.kind === 'table' ? (cell.from === 0 ? [cell.id] : []) : cell.ids || []
+      ids.forEach((id) => {
+        if (result[id] == null) {
+          result[id] = index
+        }
+      })
+    })
+  })
+  return result
+}
+
 // The content page each heading lands on, counted from 1.
 export const getHeadingPages = (pages, blocks) => {
   const headingIds = new Set(blocks.filter((block) => block.type === 'heading').map((block) => block.id))

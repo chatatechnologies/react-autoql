@@ -15,6 +15,12 @@ export const STRINGS = {
   print: 'Print…',
   printTitle: 'Opens your browser’s print dialog. Choose “Save as PDF” to download a file.',
   printing: 'Preparing…',
+  zoom: {
+    label: 'Zoom',
+    title: 'How large the pages show here. They always print at their true size.',
+    fit: (percent) => `Fit (${percent}%)`,
+    level: (percent) => `${percent}%`,
+  },
 
   addBlock: 'Add a block',
   paletteHint: 'Click a block to see what it does, then insert it.',
@@ -99,11 +105,6 @@ export const STRINGS = {
     continued: 'Continued on the next page',
     continuedTitle: '(continued)',
     interpretedAs: 'Interpreted as',
-    // In the editor only, when interpretations are on but this answer came without one.
-    noInterpretation: {
-      tile: 'No interpretation to print: dashboard tiles don’t come with one yet.',
-      query: 'No interpretation to print: AutoQL didn’t return one for this answer.',
-    },
     askedAs: 'Asked as',
     total: 'Total',
   },

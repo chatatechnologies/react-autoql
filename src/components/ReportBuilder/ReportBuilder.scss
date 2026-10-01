@@ -428,40 +428,66 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     flex: 1 1 auto;
     min-width: 0;
     overflow: auto;
+    // A scrollbar coming and going would change what fit comes to, and so the page's height, and so the
+    // scrollbar.
+    scrollbar-gutter: stable;
     padding: 1.625rem 1.25rem 3.75rem;
     background: $desk;
   }
 
-  .#{$rb}-sheet {
-    width: 100%;
+  // ZoomFrame: the frame takes the zoomed size, centred; its content keeps its true size and layout, scaled
+  // from its top-left corner by the transform the frame sets.
+  .#{$rb}-zoom-frame {
+    width: max-content;
     margin: 0 auto;
+  }
+
+  .#{$rb}-zoom-content {
+    width: max-content;
+    transform-origin: 0 0;
+  }
+
+  // The page at its true size, in either orientation (its width is set inline); the zoom shrinks or enlarges
+  // it. Fitted by laying it out narrower instead, a landscape page came out as wide as a portrait one on a
+  // laptop, and its text wrapped differently from the PDF.
+  .#{$rb}-sheet {
+    position: relative;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), 0 18px 40px -22px rgba(0, 0, 0, 0.5);
 
     // At least one page's shape; content longer than a page still grows the sheet.
     &[data-orientation='portrait'] {
       aspect-ratio: 8.5 / 11;
     }
-    // A landscape page keeps its true width, and the canvas scrolls sideways when it's narrower, as the
-    // preview's pages do. Fitted into a laptop's canvas it came out as wide as a portrait page, so
-    // switching orientation seemed to do nothing. (A portrait page loses only a little when fitted.)
-    // It can't be scaled down to fit instead: charts size themselves from their scaled box.
     &[data-orientation='landscape'] {
-      width: 11in;
       aspect-ratio: 11 / 8.5;
-    }
-
-    .#{$rb}-running-header {
-      height: auto;
-      margin: 0 0 10pt;
-    }
-    .#{$rb}-running-footer {
-      height: auto;
-      margin: 16pt 0 0;
     }
   }
 
+  // Between two of the editor's pages (Sheet): the desk shows through, across the page and its shadow, with
+  // a shadow along the page edges either side.
+  .#{$rb}-page-gap {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .#{$rb}-page-fill {
+    flex: none;
+  }
+
+  .#{$rb}-page-gap-band {
+    flex: none;
+    height: 1.375rem;
+    background: $desk;
+    box-shadow: inset 0 7px 7px -7px rgba(0, 0, 0, 0.28), inset 0 -7px 7px -7px rgba(0, 0, 0, 0.28);
+  }
+
+  // What prints before the first page (a cover, contents): said in the first page's top margin, so it takes
+  // none of the page's room.
   .#{$rb}-front-matter-note {
-    margin: 0 0 10pt;
+    position: absolute;
+    margin: 0;
+    transform: translateY(-50%);
     padding: 5pt 8pt;
     border: 0.75pt dashed #bcbeb8;
     border-radius: 2pt;
@@ -692,6 +718,14 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
 
   .#{$rb}-input {
     border-color: $accent;
+  }
+
+  // The toolbar's zoom, beside Preview: as compact as the toolbar's buttons.
+  .#{$rb}-zoom-select {
+    display: inline-block;
+    width: auto;
+    padding: 0.375rem 0.5rem;
+    font-weight: 550;
   }
 
   // An analysis's wording: grows with its text (AutoGrowTextarea) from a few lines up to under half the
@@ -958,6 +992,7 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     flex: 1 1 auto;
     min-width: 0;
     overflow: auto;
+    scrollbar-gutter: stable;
     background: $desk;
   }
 

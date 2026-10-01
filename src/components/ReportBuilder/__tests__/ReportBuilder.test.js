@@ -657,13 +657,13 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
     expect(interpretationOf(container).textContent).toBe('Interpreted as total aum by account')
   })
 
-  // A dashboard tile's answer arrives with an empty interpretation, so the setting printed nothing and
-  // looked broken. The editor says why; nothing is added to what prints.
-  it('says in the editor why a dashboard tile’s answer has no interpretation to print', () => {
+  // A dashboard tile's answer arrives with an empty interpretation. Nothing about it shows on the page (a
+  // note there read as if it were part of the report); the panel's note on the setting says why.
+  it('shows nothing on the page for an answer without an interpretation', () => {
     const { container } = setup(captured(captureOf({ rows: rowsOf(3), interpretation: '' })))
-    const note = interpretationOf(container)
-    expect(note.hasAttribute('data-missing')).toBe(true)
-    expect(note.textContent).toBe('No interpretation to print: dashboard tiles don’t come with one yet.')
+    expect(interpretationOf(container)).toBeNull()
+    expect(container.textContent).not.toMatch(/No interpretation/)
+    expect(within(panel()).getByText(/Answers added from a dashboard tile don’t have one yet\./)).toBeTruthy()
   })
 
   it('says nothing about interpretations once they are turned off', () => {
@@ -1559,5 +1559,47 @@ describe('the host’s toolbar status (toolbarStatus)', () => {
     fireEvent.click(preview)
     expect(within(toolbarOf(container)).getByRole('button', { name: 'Saved' })).toBeTruthy()
     expect(screen.getByTestId('report-builder-close-preview')).toBeTruthy()
+  })
+})
+
+describe('the pages’ zoom', () => {
+  afterEach(() => window.localStorage.clear())
+
+  it('shows the page in a zoom frame, at fit until another zoom is picked', () => {
+    const { container } = setup()
+    const frame = screen.getByTestId('report-builder-zoom-frame')
+    expect(frame.querySelector('.react-autoql-report-builder-sheet')).toBeTruthy()
+    expect(container.querySelector('.react-autoql-report-builder-sheet').style.width).toBe('8.5in')
+    const zoom = screen.getByTestId('report-builder-zoom')
+    expect(zoom.value).toBe('fit')
+    expect(Array.from(zoom.options).map((option) => option.textContent)).toEqual([
+      'Fit (100%)',
+      '50%',
+      '75%',
+      '100%',
+      '125%',
+      '150%',
+    ])
+  })
+
+  it('lays a landscape page out at its true width too', () => {
+    const { container } = setup(createEmptyReport({ page: { orientation: 'landscape' } }))
+    expect(container.querySelector('.react-autoql-report-builder-sheet').style.width).toBe('11in')
+  })
+
+  it('remembers the zoom picked in this browser, and uses it in the preview', () => {
+    const { unmount } = setup()
+    fireEvent.change(screen.getByTestId('report-builder-zoom'), { target: { value: '0.75' } })
+    expect(screen.getByTestId('report-builder-zoom').value).toBe('0.75')
+    expect(window.localStorage.getItem('react-autoql-report-builder-zoom')).toBe('0.75')
+    unmount()
+
+    setup()
+    expect(screen.getByTestId('report-builder-zoom').value).toBe('0.75')
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+    expect(screen.getByTestId('report-builder-zoom').value).toBe('0.75')
+    expect(
+      screen.getByTestId('report-builder-preview').querySelector('.react-autoql-report-builder-zoom-frame'),
+    ).toBeTruthy()
   })
 })

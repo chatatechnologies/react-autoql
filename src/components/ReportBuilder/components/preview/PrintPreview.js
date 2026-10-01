@@ -18,6 +18,7 @@ import { formatPrintedDate } from '../../run/reportRun'
 import { boxStyleOf, Continued, PaperBlock } from '../PaperBlock'
 import { footerText, hasDataBlocks, RunningFooter, RunningHeader } from '../PageFurniture'
 import { CoverPage, TableOfContents } from './FrontMatter'
+import { FIT, ZoomFrame } from '../ZoomFrame'
 
 // True Letter pages. Every printable block is first laid out offscreen at the page's content width
 // (after fonts load) and measured; paginate() turns the heights into pages, which are then drawn at full
@@ -42,8 +43,8 @@ const Cell = ({ block, children, measureId, split }) => (
 )
 
 // Every printable block, laid out as a page lays it out, for measuring. Charts are empty boxes of their
-// fixed height, so measuring never draws a chart.
-const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
+// fixed height, so measuring never draws a chart. The editor measures with it too (EditorPagination).
+export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
   { blocks, views, geometry, fontFamily, paperProps },
   ref,
 ) {
@@ -76,9 +77,33 @@ const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
   )
 })
 
+// Lays the report's printable blocks onto content pages from the measurer's heights, once the fonts it
+// uses have loaded. `measurer` reads the measurer's element; `isCurrent` is asked after the wait, and a
+// null result means a newer layout took over. With `estimate` false, there's no result where nothing can
+// be measured (jsdom, a hidden builder) rather than one from estimated heights.
+export const measureContentPages = async ({ report, views, measurer, isCurrent = () => true, estimate = true }) => {
+  const geometry = getPageGeometry(report.page)
+  await loadFontStack(TYPEFACES[report.page.typeface]?.stack || undefined)
+  await waitForFonts()
+  await nextFrame()
+  if (!isCurrent()) return null
+
+  const measured = readMeasurements(measurer())
+  if (!measured && !estimate) return null
+  const measurements =
+    measured || estimateMeasurements({ blocks: report.blocks, views, contentWidthPx: geometry.contentWidthPx })
+  const items = buildLayoutItems({ blocks: report.blocks, views, measurements })
+  return paginate(items, {
+    contentHeight: geometry.contentHeightPx,
+    repeatTableHeaders: report.page.repeatTableHeaders,
+  })
+}
+
 export class PrintPreview extends React.Component {
   static defaultProps = {
     onLayout: () => {},
+    zoom: FIT,
+    onFit: undefined,
   }
 
   measurerRef = React.createRef()
@@ -124,21 +149,13 @@ export class PrintPreview extends React.Component {
       this.readyPromise = new Promise((resolve) => (this.resolveReady = resolve))
     }
     this.setState({ measuring: true }, async () => {
-      await loadFontStack(this.getFontFamily())
-      await waitForFonts()
-      await nextFrame()
-      if (!this.mounted || token !== this.layoutToken) return
-
-      const { report, views } = this.props
-      const geometry = this.getGeometry()
-      const measurements =
-        readMeasurements(this.measurerRef.current) ||
-        estimateMeasurements({ blocks: report.blocks, views, contentWidthPx: geometry.contentWidthPx })
-      const items = buildLayoutItems({ blocks: report.blocks, views, measurements })
-      const contentPages = paginate(items, {
-        contentHeight: geometry.contentHeightPx,
-        repeatTableHeaders: report.page.repeatTableHeaders,
+      const contentPages = await measureContentPages({
+        report: this.props.report,
+        views: this.props.views,
+        measurer: () => this.measurerRef.current,
+        isCurrent: () => this.mounted && token === this.layoutToken,
       })
+      if (!contentPages) return
 
       this.setState({ measuring: false, contentPages }, () => {
         if (!this.mounted || token !== this.layoutToken) return
@@ -343,13 +360,16 @@ export class PrintPreview extends React.Component {
             }}
           />
         ) : null}
-        <div className={`${RB}-preview-pages`} ref={this.pagesRef} data-measuring={measuring || undefined}>
-          {contentPages ? (
-            this.renderPages()
-          ) : (
-            <div className={`${RB}-preview-status`}>{STRINGS.preview.measuring}</div>
-          )}
-        </div>
+        {/* At the builder's zoom; the measurer above stays at true size, so the pages break where they print. */}
+        <ZoomFrame zoom={this.props.zoom} onFit={this.props.onFit}>
+          <div className={`${RB}-preview-pages`} ref={this.pagesRef} data-measuring={measuring || undefined}>
+            {contentPages ? (
+              this.renderPages()
+            ) : (
+              <div className={`${RB}-preview-status`}>{STRINGS.preview.measuring}</div>
+            )}
+          </div>
+        </ZoomFrame>
       </div>
     )
   }

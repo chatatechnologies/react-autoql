@@ -6,6 +6,7 @@ import {
   authenticationDefault,
   autoQLConfigDefault,
   dataFormattingDefault,
+  deepEqual,
   REQUEST_CANCELLED_ERROR,
 } from 'autoql-fe-utils'
 
@@ -50,8 +51,11 @@ import { Toolbar } from './components/Toolbar'
 import { Palette } from './components/Palette'
 import { BlockDetails, defaultDraft } from './components/BlockDetails'
 import { Sheet } from './components/Sheet'
+import { EditorPagination } from './components/EditorPagination'
+import { getStartPages, isPrintable } from './layout/paginate'
 import { PropertiesPanel } from './components/PropertiesPanel'
 import { PanelResizer, readPanelWidth, storePanelWidth } from './components/PanelResizer'
+import { readZoom, storeZoom, ZoomFrame } from './components/ZoomFrame'
 import { PrintPreview } from './components/preview/PrintPreview'
 import { footerText, hasDataBlocks } from './components/PageFurniture'
 
@@ -180,6 +184,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
       pending: {},
       // The properties panel's width once it's been resized (PanelResizer), else null for its own.
       panelWidth: readPanelWidth(),
+      // The zoom the pages are shown at, in the editor and the preview (ZoomFrame), and what fit comes to
+      // where they're shown now.
+      zoom: readZoom(),
+      fitScale: 1,
+      // Where the editor's pages break (EditorPagination): { startPages, count }, or null for one sheet.
+      editorPages: null,
     }
     this.pendingSeq = 0
     this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
@@ -373,6 +383,20 @@ export class ReportBuilderWithoutTheme extends React.Component {
   onPanelResize = (panelWidth) => this.setState({ panelWidth })
 
   onPanelResizeEnd = (panelWidth) => storePanelWidth(panelWidth)
+
+  onZoomChange = (zoom) => {
+    this.setState({ zoom })
+    storeZoom(zoom)
+  }
+
+  onFit = (fitScale) => {
+    this.setState((state) => (state.fitScale === fitScale ? null : { fitScale }))
+  }
+
+  onEditorPages = (pages) => {
+    const editorPages = { startPages: getStartPages(pages), count: pages.length }
+    this.setState((state) => (deepEqual(state.editorPages, editorPages) ? null : { editorPages }))
+  }
 
   onPanelResizeReset = () => {
     this.setState({ panelWidth: null })
@@ -735,6 +759,13 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const canAnalyze = !!this.props.enableAnalysis
     const selected = report.blocks.find((block) => block.id === selectedId) || null
     const runAt = run && run.status !== 'running' ? run.runAt : null
+    const { editorPages } = this.state
+    // What prints before the content pages, for the editor's page numbers (as the preview counts them).
+    const frontPages =
+      (report.page.coverPage ? 1 : 0) +
+      (report.page.tableOfContents && report.blocks.some((block) => block.type === 'heading' && isPrintable(block))
+        ? 1
+        : 0)
     return (
       <>
         <Palette
@@ -755,30 +786,45 @@ export class ReportBuilderWithoutTheme extends React.Component {
           }
         />
         <main className={`${RB}-canvas`} onMouseDown={this.onCanvasMouseDown}>
-          <Sheet
+          {/* Outside the zoom, so it measures true sizes. */}
+          <EditorPagination
             report={report}
             views={views}
-            selectedId={selected?.id}
-            geometry={geometry}
-            branding={this.props.branding}
-            footerLeft={footerText({
-              dataAsOf: runAt ? formatPrintedDate(runAt, { time: true }) : null,
-              hasData: canRun && hasDataBlocks(report),
-            })}
-            onSelect={this.onSelect}
-            onAction={this.onBlockAction}
-            onText={this.onText}
-            onAsk={canCapture ? this.onAskCapture : this.onAsk}
             dataFormatting={this.props.dataFormatting}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             canRun={canRun}
-            canCapture={canCapture}
-            onPickTiles={onPickTiles}
-            onAnalyzeResult={canAnalyze ? this.onAnalyzeResult : undefined}
-            onChartChange={this.onChartChange}
-            pending={pending}
+            onPages={this.onEditorPages}
           />
+          <ZoomFrame zoom={this.state.zoom} onFit={this.onFit}>
+            <Sheet
+              report={report}
+              views={views}
+              selectedId={selected?.id}
+              geometry={geometry}
+              branding={this.props.branding}
+              footerLeft={footerText({
+                dataAsOf: runAt ? formatPrintedDate(runAt, { time: true }) : null,
+                hasData: canRun && hasDataBlocks(report),
+              })}
+              onSelect={this.onSelect}
+              onAction={this.onBlockAction}
+              onText={this.onText}
+              onAsk={canCapture ? this.onAskCapture : this.onAsk}
+              dataFormatting={this.props.dataFormatting}
+              authentication={this.props.authentication}
+              autoQLConfig={this.props.autoQLConfig}
+              canRun={canRun}
+              canCapture={canCapture}
+              onPickTiles={onPickTiles}
+              onAnalyzeResult={canAnalyze ? this.onAnalyzeResult : undefined}
+              onChartChange={this.onChartChange}
+              pending={pending}
+              startPages={editorPages?.startPages}
+              pageCount={editorPages?.count}
+              frontPages={frontPages}
+            />
+          </ZoomFrame>
         </main>
         <PanelResizer
           width={panelWidth}
@@ -859,6 +905,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
             printing={printing}
             onPrint={this.print}
             status={this.props.toolbarStatus}
+            zoom={this.state.zoom}
+            fitScale={this.state.fitScale}
+            onZoomChange={this.onZoomChange}
           />
           {notice || (previewOpen && layoutInfo?.overflowCount) ? (
             <div className={`${RB}-notice`} role='status'>
@@ -879,6 +928,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
                 autoQLConfig={this.props.autoQLConfig}
                 onLayout={this.onLayout}
                 canRun={this.props.enableRunReport}
+                zoom={this.state.zoom}
+                onFit={this.onFit}
               />
             ) : (
               this.renderEditor({ report, views, geometry })
