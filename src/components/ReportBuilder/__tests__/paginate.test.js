@@ -211,6 +211,16 @@ describe('estimateMeasurements', () => {
     expect(m.tables.t.rows).toHaveLength(40)
     expect(m.blocks.c).toBeGreaterThan(200)
   })
+
+  it('gives a heading a line for each of its line breaks', () => {
+    const { contentWidthPx } = getPageGeometry({ orientation: 'portrait', margins: 'normal' })
+    const blocks = [
+      { id: 'one', type: 'heading', level: 1, text: 'Hey You' },
+      { id: 'two', type: 'heading', level: 1, text: 'Hey\nYou' },
+    ]
+    const m = estimateMeasurements({ blocks, views: {}, contentWidthPx })
+    expect(m.blocks.two).toBe(m.blocks.one * 2)
+  })
 })
 
 describe('getPageGeometry', () => {

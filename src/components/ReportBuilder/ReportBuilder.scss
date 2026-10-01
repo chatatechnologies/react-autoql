@@ -192,6 +192,17 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     }
   }
 
+  // The toolbar's button for the properties panel: as tall as the others, square, its icon in the accent
+  // colour while the panel is open.
+  .#{$rb}-panel-toggle {
+    padding: 0.4375rem 0.5rem;
+    color: $text-2;
+
+    &[aria-expanded='true'] {
+      color: $accent;
+    }
+  }
+
   .#{$rb}-icon-button {
     display: inline-grid;
     place-items: center;
@@ -728,14 +739,18 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     font-weight: 550;
   }
 
-  // An analysis's wording: grows with its text (AutoGrowTextarea) from a few lines up to under half the
-  // window, then scrolls inside itself, so the panel doesn't become one long column.
+  // A field that wraps (AutoGrowTextarea): grows with its text up to under half the window, then scrolls
+  // inside itself, so the panel doesn't become one long column. An analysis's Focus starts one line tall,
+  // its wording a few lines.
   textarea.#{$rb}-input {
-    min-height: 6rem;
     max-height: 45vh;
     line-height: 1.45;
     resize: none;
     overflow-y: auto;
+
+    &[data-multiline] {
+      min-height: 6rem;
+    }
   }
 
   .#{$rb}-segmented {

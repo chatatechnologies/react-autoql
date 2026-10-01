@@ -216,7 +216,9 @@ export const estimateMeasurements = ({ blocks, views, contentWidthPx }) => {
         )
     switch (block.type) {
       case 'heading':
-        measurements.blocks[block.id] = HEADING_PX[block.level] || HEADING_PX[2]
+        // A line per line break in it.
+        measurements.blocks[block.id] =
+          (HEADING_PX[block.level] || HEADING_PX[2]) * (block.text || '').trim().split('\n').length
         break
       case 'text':
         measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 12

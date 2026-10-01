@@ -219,6 +219,51 @@ describe('the properties panel', () => {
   })
 })
 
+describe('line breaks in a heading', () => {
+  const withHeading = (text) =>
+    createEmptyReport({
+      page: { tableOfContents: true },
+      blocks: [
+        { id: 'h', type: 'heading', text, level: 1 },
+        { id: 'p', type: 'text', text: 'All regions grew.' },
+      ],
+    })
+
+  it('takes one with Shift+Enter, while Enter alone ends editing', () => {
+    const { lastReport } = setup(withHeading('Hey'))
+    const box = screen.getByRole('textbox', { name: 'Heading' })
+    box.focus()
+
+    // Shift+Enter is left to the box, which puts the line break in.
+    expect(fireEvent.keyDown(box, { key: 'Enter', shiftKey: true })).toBe(true)
+    expect(document.activeElement).toBe(box)
+    fireEvent.change(box, { target: { value: 'Hey\nYou' } })
+    expect(lastReport().blocks[0].text).toBe('Hey\nYou')
+
+    expect(fireEvent.keyDown(box, { key: 'Enter' })).toBe(false)
+    expect(document.activeElement).not.toBe(box)
+    expect(lastReport().blocks[0].text).toBe('Hey\nYou')
+  })
+
+  it('leaves Enter to an input method that is composing', () => {
+    setup(withHeading('Hey'))
+    const box = screen.getByRole('textbox', { name: 'Heading' })
+    box.focus()
+    expect(fireEvent.keyDown(box, { key: 'Enter', isComposing: true })).toBe(true)
+    expect(document.activeElement).toBe(box)
+  })
+
+  it('prints its lines, and lists it on one line in the contents', async () => {
+    const { container } = setup(withHeading('Hey\nYou'))
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+
+    await waitFor(() => expect(container.querySelectorAll('.react-autoql-report-builder-page')).toHaveLength(2))
+    const [contents, content] = container.querySelectorAll('.react-autoql-report-builder-page')
+    expect(within(contents).getByRole('navigation', { name: 'Contents' }).textContent).toContain('Hey You')
+    expect(content.querySelector('.react-autoql-report-builder-heading').textContent).toBe('Hey\nYou')
+  })
+})
+
 // jsdom measures nothing, so the panel starts from its own width (15rem, 240px) and may reach 40rem (640px).
 describe('the properties panel’s width', () => {
   const KEY = 'react-autoql-report-builder-panel-width'
@@ -341,6 +386,52 @@ describe('the properties panel’s width', () => {
     } finally {
       remove.mockRestore()
     }
+  })
+})
+
+describe('hiding the properties panel', () => {
+  const KEY = 'react-autoql-report-builder-panel-open'
+  const toggle = () => screen.getByTestId('report-builder-panel-toggle')
+  const withHeading = () =>
+    createEmptyReport({ blocks: [{ id: 'h', type: 'heading', text: 'Revenue', level: 2, width: 'full' }] })
+
+  afterEach(() => window.localStorage.removeItem(KEY))
+
+  it('hides and shows it with the toolbar’s button, remembering which in this browser', () => {
+    const { unmount } = setup(withHeading())
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    expect(toggle().getAttribute('aria-controls')).toBe(panel().id)
+
+    fireEvent.click(toggle())
+    expect(screen.queryByTestId('report-builder-panel')).toBeNull()
+    expect(screen.queryByTestId('report-builder-panel-resizer')).toBeNull()
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    expect(window.localStorage.getItem(KEY)).toBe('false')
+
+    // A builder opened later starts with it hidden.
+    unmount()
+    setup(withHeading())
+    expect(screen.queryByTestId('report-builder-panel')).toBeNull()
+
+    fireEvent.click(toggle())
+    expect(panel()).toBeTruthy()
+    expect(window.localStorage.getItem(KEY)).toBeNull()
+  })
+
+  it('stays hidden when a block is selected, until its button shows it', () => {
+    setup(withHeading())
+    fireEvent.click(toggle())
+    selectBlock('Heading')
+    expect(screen.queryByTestId('report-builder-panel')).toBeNull()
+
+    fireEvent.click(toggle())
+    expect(within(panel()).getByLabelText('Level').value).toBe('2')
+  })
+
+  it('has no button in the preview', () => {
+    setup(withHeading())
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+    expect(screen.queryByTestId('report-builder-panel-toggle')).toBeNull()
   })
 })
 
@@ -1283,6 +1374,18 @@ describe('analysis blocks (enableAnalysis)', () => {
     expect(fetchLLMSummary.mock.calls[0][0].data.additional_context.focus_prompt).toBe('growth')
     expect(analysisIn(lastReport()).focusUsed).toBe('growth')
     expect(screen.getByText('✦ Auto Analyze · from “aum by account” · focus: growth')).toBeTruthy()
+  })
+
+  it('wraps a long focus in a box that grows, keeping it one line of text', () => {
+    const { lastReport } = setup(reportOf(resultBlock(), analysisBlock()), { enableAnalysis: true })
+    selectBlock('Analysis')
+    const focus = within(panel()).getByTestId('report-builder-analysis-focus')
+    expect(focus.tagName).toBe('TEXTAREA')
+
+    // A pasted line break becomes a space, and Enter adds none.
+    fireEvent.change(focus, { target: { value: 'Focus on any larger\nthan expected moves' } })
+    expect(analysisIn(lastReport()).focus).toBe('Focus on any larger than expected moves')
+    expect(fireEvent.keyDown(focus, { key: 'Enter' })).toBe(false)
   })
 
   it('says why Auto Analyze didn’t write, and changes nothing', async () => {

@@ -57,6 +57,13 @@ const PATHS = {
     </>
   ),
   back: <path d='M9.5 3.5L5 8l4.5 4.5' />,
+  // The properties panel, at the right.
+  panel: (
+    <>
+      <rect x='2' y='3' width='12' height='10' rx='1.5' />
+      <path d='M10 3v10' />
+    </>
+  ),
   warning: <path d='M8 2.5l6 10.5H2zM8 6.5v3M8 11.2v.3' />,
 }
 

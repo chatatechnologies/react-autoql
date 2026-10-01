@@ -126,6 +126,8 @@ $warn-rule: #f0dcb0;
     letter-spacing: -0.01em;
     line-height: 1.25;
     color: $ink;
+    // Its line breaks (Shift+Enter) print as they show while it's edited.
+    white-space: pre-wrap;
     overflow-wrap: anywhere;
 
     &[data-level='1'] {

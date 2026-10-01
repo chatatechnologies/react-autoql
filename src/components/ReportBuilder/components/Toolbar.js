@@ -7,7 +7,8 @@ import { FIT, ZOOM_LEVELS } from './ZoomFrame'
 // Run, preview and print are the builder's own; a host adds nothing to make a report work. Run shows only
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
 // `status` is the host's own element (toolbarStatus), set apart just before them. The zoom (ZoomFrame) is how
-// large the pages show, in the editor and the preview alike.
+// large the pages show, in the editor and the preview alike. In the editor, the panel button beside Preview
+// hides and shows the properties panel (`panelId`).
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -29,6 +30,9 @@ export const Toolbar = ({
   zoom = FIT,
   fitScale = 1,
   onZoomChange,
+  panelOpen = true,
+  panelId,
+  onTogglePanel,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
@@ -97,6 +101,20 @@ export const Toolbar = ({
             </option>
           ))}
         </select>
+      ) : null}
+      {!previewOpen && onTogglePanel ? (
+        <button
+          type='button'
+          className={`${RB}-button ${RB}-panel-toggle`}
+          aria-label={STRINGS.panelToggle.label}
+          aria-expanded={panelOpen}
+          aria-controls={panelOpen ? panelId : undefined}
+          title={panelOpen ? STRINGS.panelToggle.hide : STRINGS.panelToggle.show}
+          data-test='report-builder-panel-toggle'
+          onClick={onTogglePanel}
+        >
+          <Icon name='panel' size={15} />
+        </button>
       ) : null}
       {previewOpen ? (
         <button

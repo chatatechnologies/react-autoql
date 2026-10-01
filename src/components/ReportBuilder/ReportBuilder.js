@@ -53,7 +53,7 @@ import { BlockDetails, defaultDraft } from './components/BlockDetails'
 import { Sheet } from './components/Sheet'
 import { EditorPagination } from './components/EditorPagination'
 import { getStartPages, isPrintable } from './layout/paginate'
-import { PropertiesPanel } from './components/PropertiesPanel'
+import { PropertiesPanel, readPanelOpen, storePanelOpen } from './components/PropertiesPanel'
 import { PanelResizer, readPanelWidth, storePanelWidth } from './components/PanelResizer'
 import { readZoom, storeZoom, ZoomFrame } from './components/ZoomFrame'
 import { PrintPreview } from './components/preview/PrintPreview'
@@ -184,6 +184,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
       pending: {},
       // The properties panel's width once it's been resized (PanelResizer), else null for its own.
       panelWidth: readPanelWidth(),
+      // Whether the properties panel shows: the toolbar's button hides it, giving the page its room, and shows
+      // it again. Selecting a block while it's hidden leaves it hidden.
+      panelOpen: readPanelOpen(),
       // The zoom the pages are shown at, in the editor and the preview (ZoomFrame), and what fit comes to
       // where they're shown now.
       zoom: readZoom(),
@@ -383,6 +386,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
   onPanelResize = (panelWidth) => this.setState({ panelWidth })
 
   onPanelResizeEnd = (panelWidth) => storePanelWidth(panelWidth)
+
+  onTogglePanel = () => {
+    const panelOpen = !this.state.panelOpen
+    this.setState({ panelOpen })
+    storePanelOpen(panelOpen)
+  }
 
   onZoomChange = (zoom) => {
     this.setState({ zoom })
@@ -826,34 +835,38 @@ export class ReportBuilderWithoutTheme extends React.Component {
             />
           </ZoomFrame>
         </main>
-        <PanelResizer
-          width={panelWidth}
-          controls={this.panelId}
-          onResize={this.onPanelResize}
-          onResizeEnd={this.onPanelResizeEnd}
-          onReset={this.onPanelResizeReset}
-        />
-        <PropertiesPanel
-          id={this.panelId}
-          width={panelWidth}
-          report={report}
-          block={selected}
-          view={selected ? views[selected.id] : null}
-          dashboards={this.props.dashboards}
-          onPageChange={this.onPageChange}
-          onBlockChange={this.onBlockChange}
-          onStyleChange={this.onStyleChange}
-          onStyleReset={this.onStyleReset}
-          onSourceChange={this.onSourceChange}
-          canRun={canRun}
-          canCapture={canCapture}
-          onPickTiles={onPickTiles}
-          onAskCapture={canCapture ? this.onAskCapture : undefined}
-          onRerun={canCapture ? this.onRerun : undefined}
-          targets={selected?.type === 'analysis' ? getAnalysisTargets(report.blocks, views) : undefined}
-          onAnalyze={canAnalyze ? this.onAnalyze : undefined}
-          pending={selected ? pending[selected.id] : undefined}
-        />
+        {this.state.panelOpen ? (
+          <>
+            <PanelResizer
+              width={panelWidth}
+              controls={this.panelId}
+              onResize={this.onPanelResize}
+              onResizeEnd={this.onPanelResizeEnd}
+              onReset={this.onPanelResizeReset}
+            />
+            <PropertiesPanel
+              id={this.panelId}
+              width={panelWidth}
+              report={report}
+              block={selected}
+              view={selected ? views[selected.id] : null}
+              dashboards={this.props.dashboards}
+              onPageChange={this.onPageChange}
+              onBlockChange={this.onBlockChange}
+              onStyleChange={this.onStyleChange}
+              onStyleReset={this.onStyleReset}
+              onSourceChange={this.onSourceChange}
+              canRun={canRun}
+              canCapture={canCapture}
+              onPickTiles={onPickTiles}
+              onAskCapture={canCapture ? this.onAskCapture : undefined}
+              onRerun={canCapture ? this.onRerun : undefined}
+              targets={selected?.type === 'analysis' ? getAnalysisTargets(report.blocks, views) : undefined}
+              onAnalyze={canAnalyze ? this.onAnalyze : undefined}
+              pending={selected ? pending[selected.id] : undefined}
+            />
+          </>
+        ) : null}
         {details ? (
           <BlockDetails
             type={details.type}
@@ -908,6 +921,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
             zoom={this.state.zoom}
             fitScale={this.state.fitScale}
             onZoomChange={this.onZoomChange}
+            panelOpen={this.state.panelOpen}
+            panelId={this.panelId}
+            onTogglePanel={this.onTogglePanel}
           />
           {notice || (previewOpen && layoutInfo?.overflowCount) ? (
             <div className={`${RB}-notice`} role='status'>

@@ -52,6 +52,11 @@ export const STRINGS = {
   previewSample: 'Preview · sample data',
   insert: 'Insert block',
   properties: 'Properties',
+  panelToggle: {
+    label: 'Properties panel',
+    hide: 'Hide the properties panel',
+    show: 'Show the properties panel',
+  },
   resizePanel: 'Resize the properties panel',
   resizePanelHint: 'Drag to resize. Double-click to reset.',
   close: 'Close',
@@ -147,7 +152,7 @@ export const STRINGS = {
     nothingSelected: 'Select a block to change it. Blocks follow the theme until you override them.',
 
     level: 'Level',
-    headingNote: 'Click the heading on the page to edit its words.',
+    headingNote: 'Click the heading on the page to edit its words. Shift+Enter starts a new line.',
     textNote: 'Click the paragraph on the page to edit it.',
     pageBreakNote: 'Everything after this starts on a new page. No settings.',
     unknownNote: 'This block was made by a newer version of the report builder. It’s kept as it is.',

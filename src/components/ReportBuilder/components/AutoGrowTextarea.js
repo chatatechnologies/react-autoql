@@ -41,7 +41,9 @@ export class AutoGrowTextarea extends React.Component {
     if (!el) return
     el.style.height = 'auto'
     if (el.scrollHeight) {
-      el.style.height = `${el.scrollHeight}px`
+      // scrollHeight leaves out the borders, which a border-box height includes: without them a bordered
+      // box (the panel's fields) comes out short and scrolls. The page's boxes have none.
+      el.style.height = `${el.scrollHeight + (el.offsetHeight - el.clientHeight)}px`
     }
   }
 

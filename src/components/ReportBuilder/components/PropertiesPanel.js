@@ -527,14 +527,15 @@ const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyz
       {view?.targetGone ? <Note tone='warning'>{STRINGS.analysis.targetGone}</Note> : null}
       {!targets.length ? <Note>{P.noResults}</Note> : null}
       <Field label={P.focus} htmlFor={focusId}>
-        <input
+        {/* Wraps and grows as it's typed in, so all of it can be read; one line of text, as it's sent. */}
+        <AutoGrowTextarea
           id={focusId}
-          type='text'
           className={`${RB}-input`}
           value={block.focus || ''}
           placeholder={P.focusPlaceholder}
+          singleLine
           data-test='report-builder-analysis-focus'
-          onChange={(e) => onBlockChange(block.id, { focus: e.target.value })}
+          onChange={(focus) => onBlockChange(block.id, { focus })}
         />
       </Field>
       {onAnalyze ? (
@@ -576,6 +577,26 @@ const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyz
       <WidthField block={block} onBlockChange={onBlockChange} />
     </>
   )
+}
+
+const PANEL_OPEN_KEY = 'react-autoql-report-builder-panel-open'
+
+// Whether the panel was left open in this browser: open unless it was hidden with the toolbar's button.
+export const readPanelOpen = () => {
+  try {
+    return window.localStorage.getItem(PANEL_OPEN_KEY) !== 'false'
+  } catch (error) {
+    return true
+  }
+}
+
+export const storePanelOpen = (open) => {
+  try {
+    if (open) window.localStorage.removeItem(PANEL_OPEN_KEY)
+    else window.localStorage.setItem(PANEL_OPEN_KEY, 'false')
+  } catch (error) {
+    // Blocked storage (a private window, say): it just isn't remembered.
+  }
 }
 
 export const PropertiesPanel = (props) => {

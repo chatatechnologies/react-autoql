@@ -21,13 +21,16 @@ export const CoverPage = ({ title, branding, generated, dataAsOf, hasData }) => 
   </div>
 )
 
+// A heading's lines, as one line of the contents.
+const oneLine = (text) => (text || '').replace(/\s*\n\s*/g, ' ')
+
 // entries: [{ id, text, level, page }] — page is the printed page number.
 export const TableOfContents = ({ entries }) => (
   <nav className={`${RB}-toc`} aria-label={STRINGS.preview.contents}>
     <div className={`${RB}-toc-title`}>{STRINGS.preview.contents}</div>
     {entries.map((entry) => (
       <div key={entry.id} className={`${RB}-toc-entry`} data-level={entry.level}>
-        <span>{entry.text}</span>
+        <span>{oneLine(entry.text)}</span>
         <i aria-hidden='true' />
         <b>{entry.page}</b>
       </div>

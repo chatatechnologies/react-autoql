@@ -37,6 +37,15 @@ export const boxStyleOf = (style) => {
   return Object.keys(css).length ? css : undefined
 }
 
+// Enter ends editing a heading, as in a one-line box; Shift+Enter puts a line break in it. Not while an input
+// method is composing, where Enter picks the characters.
+const endHeadingOnEnter = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent?.isComposing) {
+    e.preventDefault()
+    e.currentTarget.blur()
+  }
+}
+
 const HeadingContent = ({ block, mode, onTextChange }) => {
   const style = textStyleOf(block.style)
   if (mode === 'edit') {
@@ -47,9 +56,9 @@ const HeadingContent = ({ block, mode, onTextChange }) => {
         style={style}
         value={block.text}
         placeholder={STRINGS.headingPlaceholder}
-        singleLine
         aria-label={STRINGS.headingPlaceholder}
         onChange={onTextChange}
+        onKeyDown={endHeadingOnEnter}
       />
     )
   }
