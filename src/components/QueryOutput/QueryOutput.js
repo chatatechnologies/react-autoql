@@ -1768,6 +1768,96 @@ export class QueryOutput extends React.Component {
       this.chartRef.saveAsPNG()
     }
   }
+
+  // What this answer shows now, captured so a report can draw it as it was seen: the data and the settings
+  // that shape it (the same settings a dashboard tile saves). Plain JSON. A table keeps its rows in their
+  // current sort and filter order, up to maxTableRows; a chart keeps the rows it draws, up to maxChartRows.
+  // Returns { ok: true, capture } or { ok: false, reason: 'no-data' | 'unsupported' | 'too-large' }.
+  captureForReport = ({ maxTableRows = 100, maxChartRows = 2000 } = {}) => {
+    const data = this.queryResponse?.data?.data
+    const displayType = this.state.displayType
+    const responseRows = Array.isArray(data?.rows) ? data.rows : null
+    const columns = Array.isArray(data?.columns) ? data.columns : null
+    if (!responseRows || !columns?.length) {
+      return { ok: false, reason: 'no-data' }
+    }
+    if (!['table', 'single-value'].includes(displayType) && !isChartType(displayType)) {
+      return { ok: false, reason: 'unsupported' } // pivot tables, text answers
+    }
+    if (['network_graph', 'sankey'].includes(displayType)) {
+      return { ok: false, reason: 'unsupported' }
+    }
+
+    let rows = responseRows
+    let countRows = data.count_rows
+    let table
+    if (displayType === 'table') {
+      const view = this.tableRef?.getReportView?.(maxTableRows)
+      const byField = (field) => columns.findIndex((col) => String(col.field ?? col.index) === String(field))
+      rows = view ? view.rows : responseRows.slice(0, maxTableRows)
+      countRows = view ? view.total : data.count_rows
+      const sort = view
+        ? view.sort
+            .map(({ field, dir }) => ({ name: columns[byField(field)]?.name, sort: String(dir).toUpperCase() }))
+            .filter((order) => order.name)
+        : data.fe_req?.orders || []
+      table = {
+        columnIndices: view?.columnFields?.map(byField).filter((index) => index > -1),
+        sort,
+        // The header filters as typed ("Okafor", ">5000000"), so the report can say what was left out.
+        filters: (view?.filters || [])
+          .map(({ field, value }) => ({ name: columns[byField(field)]?.name, value: String(value ?? '') }))
+          .filter((filter) => filter.name && filter.value),
+        filtered: !!view?.filtered,
+      }
+    } else if (responseRows.length > maxChartRows) {
+      return { ok: false, reason: 'too-large', rowCount: responseRows.length }
+    }
+
+    const columnVisibility = {}
+    ;(this.state.columns || []).forEach((col) => {
+      if (col?.name) columnVisibility[col.name] = col.is_visible !== false
+    })
+
+    const capture = {
+      version: 1,
+      capturedAt: new Date().toISOString(),
+      displayType,
+      data: {
+        columns,
+        rows,
+        count_rows: countRows ?? rows.length,
+        text: data.text,
+        query_id: data.query_id,
+        interpretation: data.interpretation,
+        parsed_interpretation: data.parsed_interpretation,
+      },
+      table,
+      // Shaped like a dashboard tile's saved view, so it maps onto QueryOutput the way a tile does.
+      config: {
+        displayType,
+        dataConfig: {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+          columnOverrides: this.state.columnOverrides,
+        },
+        aggConfig: this.state.aggConfig,
+        columnVisibility,
+        legendFilterConfig: this.state.legendFilterConfig,
+        axisSorts: this.state.axisSorts,
+        chartControls: this.state.chartControls,
+        networkColumnConfig: this.state.networkColumnConfig,
+        bucketSize: this.chartRef?.bucketSize ?? this.props.bucketSize,
+        orders: data.fe_req?.orders,
+      },
+    }
+
+    try {
+      return { ok: true, capture: JSON.parse(JSON.stringify(capture)) }
+    } catch (error) {
+      return { ok: false, reason: 'unsupported' }
+    }
+  }
   handleQueryFnError = (error) => {
     if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
       return this.queryResponse

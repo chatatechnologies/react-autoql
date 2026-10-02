@@ -526,25 +526,34 @@ export class OptionsToolbar extends React.Component {
                     cols?.forEach((col) => {
                       if (col.name) columnVisibility[col.name] = col.is_visible
                     })
-                    option.callback?.({
-                      query: responseRef?.queryResponse?.data?.data?.text,
-                      queryId: responseRef?.queryResponse?.data?.data?.query_id,
-                      queryResponse: responseCopy,
-                      aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
-                      displayType: responseRef?.state?.displayType,
-                      columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
-                      displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
-                      filters: responseCopy?.data?.data?.fe_req?.session_filter_locks,
-                      tableFilters: responseRef?.getCombinedFilters?.(),
-                      orders: responseCopy?.data?.data?.fe_req?.orders,
-                      dataConfig: {
-                        tableConfig: _cloneDeep(responseRef?.tableConfig),
-                        pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
+                    // A second argument, which callbacks written before it ignore: a way to capture the
+                    // answer as it's shown now (QueryOutput.captureForReport), for "Add to Report…".
+                    const extra = {
+                      captureForReport: (options) =>
+                        responseRef?.captureForReport?.(options) ?? { ok: false, reason: 'unsupported' },
+                    }
+                    option.callback?.(
+                      {
+                        query: responseRef?.queryResponse?.data?.data?.text,
+                        queryId: responseRef?.queryResponse?.data?.data?.query_id,
+                        queryResponse: responseCopy,
+                        aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
+                        displayType: responseRef?.state?.displayType,
+                        columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
+                        displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
+                        filters: responseCopy?.data?.data?.fe_req?.session_filter_locks,
+                        tableFilters: responseRef?.getCombinedFilters?.(),
+                        orders: responseCopy?.data?.data?.fe_req?.orders,
+                        dataConfig: {
+                          tableConfig: _cloneDeep(responseRef?.tableConfig),
+                          pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
+                        },
+                        networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
+                        chartControls: _cloneDeep(responseRef?.state?.chartControls),
+                        columnVisibility,
                       },
-                      networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
-                      chartControls: _cloneDeep(responseRef?.state?.chartControls),
-                      columnVisibility,
-                    })
+                      extra,
+                    )
                   }}
                 >
                   <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type={option.icon} />

@@ -2130,6 +2130,60 @@ export default class ChataTable extends React.Component {
     }
   }
 
+  // Every row the table pages through, in the order it shows them: what getRows hands Tabulator 50 at a
+  // time. Tabulator itself only holds the pages scrolled to so far.
+  getShownRows = () => {
+    if (!this.useInfiniteScroll) {
+      const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+      const filterCount = this.filterCount
+      const rows = this.clientSortAndFilterData({
+        tableFilters: tableParamsFormatted?.filters,
+        orders: tableParamsFormatted?.sorters,
+      })?.data?.data?.rows
+      this.filterCount = filterCount // reading the rows must not change the row count the footer shows
+      return rows ?? []
+    }
+
+    return this.filteredResponseData ?? this.props.response?.data?.data?.rows ?? []
+  }
+
+  // The table as it's shown now, for a report to keep: its rows in the current sort and filter order (the
+  // first maxRows only), the visible columns in display order, the sort, the header filters, and how many
+  // rows the filters leave. A table holding its whole result sorts and filters it in place; a bigger one (over
+  // TABULATOR_LOCAL_ROW_LIMIT) re-queries the server. Either way the order and the count cover the result.
+  getReportView = (maxRows) => {
+    const tabulator = this.ref?.tabulator
+    const responseRows = this.props.response?.data?.data?.rows || []
+    let rows = responseRows
+    let columnFields
+    try {
+      rows = this.getShownRows()
+      columnFields = tabulator
+        ?.getColumns?.()
+        ?.filter((col) => col.isVisible())
+        .map((col) => col.getField())
+        .filter((field) => field !== undefined && field !== null)
+    } catch (error) {
+      rows = responseRows
+      columnFields = undefined
+    }
+
+    const filters = (this.tableParams?.filter || []).map(({ field, value }) => ({ field, value }))
+    const filtered = filters.length > 0
+    const serverCount = this.props.response?.data?.data?.count_rows
+    let total = serverCount ?? rows.length
+    if (filtered) total = this.useInfiniteScroll ? this.filterCount ?? rows.length : rows.length
+
+    return {
+      rows: rows.slice(0, maxRows),
+      columnFields: columnFields?.length ? columnFields : undefined,
+      sort: (this.tableParams?.sort || []).map(({ field, dir }) => ({ field, dir })),
+      filters,
+      total,
+      filtered,
+    }
+  }
+
   getCurrentRowCount = () => {
     let rowCount = this.ref?.tabulator?.getDataCount('active')
 
