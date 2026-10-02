@@ -24,6 +24,7 @@ import { Icon } from '../../Icon'
 import { formatPrintedDate } from '../run/reportRun'
 import { Divider, Field, Note, SectionLabel, Segmented, SelectField, Swatches, Toggle, useStableId } from './controls'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
+import { isMacKeyboard } from '../keyboard'
 
 const P = STRINGS.panel
 
@@ -618,7 +619,7 @@ export const PropertiesPanel = (props) => {
               testId='report-builder-level'
               onChange={(level) => props.onBlockChange(block.id, { level })}
             />
-            <Note>{P.headingNote}</Note>
+            <Note>{P.headingNote(isMacKeyboard())}</Note>
             <TextStyle {...props} />
           </>
         ) : null}

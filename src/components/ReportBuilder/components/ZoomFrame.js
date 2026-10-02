@@ -126,7 +126,8 @@ export class ZoomFrame extends React.Component {
         <div
           ref={this.contentRef}
           className={`${RB}-zoom-content`}
-          style={zoomed ? { transform: `scale(${scale})` } : undefined}
+          // The scale as a CSS variable too, for what's drawn on the pages at the builder's own size (a hint).
+          style={zoomed ? { transform: `scale(${scale})`, '--react-autoql-report-builder-zoom': scale } : undefined}
           {...scaleProps}
         >
           {this.props.children}

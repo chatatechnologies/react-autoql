@@ -573,6 +573,37 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     text-transform: uppercase;
   }
 
+  // A heading being typed in, and under it how to put a line break in. The hint is the builder's, not the paper's:
+  // drawn at the toolbar's size whatever the zoom (ZoomFrame's scale, undone), and only while the heading has focus.
+  .#{$rb}-heading-edit {
+    position: relative;
+  }
+
+  .#{$rb}-heading-hint {
+    --rb-zoom: var(--react-autoql-report-builder-zoom, 1);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 2;
+    margin-top: calc(3px / var(--rb-zoom));
+    padding: calc(2px / var(--rb-zoom)) calc(7px / var(--rb-zoom));
+    border-radius: calc(3px / var(--rb-zoom));
+    background: $text;
+    color: $surface;
+    font-family: var(--react-autoql-font-family, sans-serif);
+    font-size: calc(11px / var(--rb-zoom));
+    font-weight: 500;
+    line-height: 1.45;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .#{$rb}-heading-edit:focus-within .#{$rb}-heading-hint {
+    opacity: 1;
+  }
+
   .#{$rb}-block-tools {
     position: absolute;
     top: -0.9rem;

@@ -11,6 +11,7 @@ import { AutoGrowTextarea } from './AutoGrowTextarea'
 import { renderedTextBefore, sourceOffsetAfter } from './textCaret'
 import { formatPrintedDate } from '../run/reportRun'
 import { toAnalysisMarkdown } from '../model/analysis'
+import { isMacKeyboard } from '../keyboard'
 
 // The content of one block, on paper. The editor sheet, the offscreen measurer and the printed pages all
 // render blocks through this, so what is measured is what prints.
@@ -49,17 +50,26 @@ const endHeadingOnEnter = (e) => {
 const HeadingContent = ({ block, mode, onTextChange }) => {
   const style = textStyleOf(block.style)
   if (mode === 'edit') {
+    const hintId = `${RB}-heading-hint-${block.id}`
     return (
-      <AutoGrowTextarea
-        className={`${RB}-heading`}
-        data-level={block.level}
-        style={style}
-        value={block.text}
-        placeholder={STRINGS.headingPlaceholder}
-        aria-label={STRINGS.headingPlaceholder}
-        onChange={onTextChange}
-        onKeyDown={endHeadingOnEnter}
-      />
+      <div className={`${RB}-heading-edit`}>
+        <AutoGrowTextarea
+          className={`${RB}-heading`}
+          data-level={block.level}
+          style={style}
+          value={block.text}
+          placeholder={STRINGS.headingPlaceholder}
+          aria-label={STRINGS.headingPlaceholder}
+          aria-describedby={hintId}
+          onChange={onTextChange}
+          onKeyDown={endHeadingOnEnter}
+        />
+        {/* Under it while it's typed in, since nobody would guess it: how to put a line break in. Never printed;
+            read out as the heading box's description. */}
+        <div id={hintId} className={`${RB}-heading-hint`} aria-hidden='true' data-test='report-builder-heading-hint'>
+          {STRINGS.headingNewLine(isMacKeyboard())}
+        </div>
+      </div>
     )
   }
   return (

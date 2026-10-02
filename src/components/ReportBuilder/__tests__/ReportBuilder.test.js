@@ -245,6 +245,26 @@ describe('line breaks in a heading', () => {
     expect(lastReport().blocks[0].text).toBe('Hey\nYou')
   })
 
+  it('says how, under the heading while it’s typed in, and to screen readers', () => {
+    setup(withHeading('Hey'))
+    const box = screen.getByRole('textbox', { name: 'Heading' })
+    const hint = document.getElementById(box.getAttribute('aria-describedby'))
+    expect(hint.textContent).toBe('Shift + Enter for a new line')
+    expect(hint.getAttribute('aria-hidden')).toBe('true')
+    selectBlock('Heading')
+    expect(within(panel()).getByText(/Shift \+ Enter starts a new line\./)).toBeTruthy()
+  })
+
+  it('names the Return key on a Mac', () => {
+    jest.spyOn(window.navigator, 'platform', 'get').mockReturnValue('MacIntel')
+    try {
+      setup(withHeading('Hey'))
+      expect(screen.getByTestId('report-builder-heading-hint').textContent).toBe('Shift + Return for a new line')
+    } finally {
+      jest.restoreAllMocks()
+    }
+  })
+
   it('leaves Enter to an input method that is composing', () => {
     setup(withHeading('Hey'))
     const box = screen.getByRole('textbox', { name: 'Heading' })
@@ -261,6 +281,8 @@ describe('line breaks in a heading', () => {
     const [contents, content] = container.querySelectorAll('.react-autoql-report-builder-page')
     expect(within(contents).getByRole('navigation', { name: 'Contents' }).textContent).toContain('Hey You')
     expect(content.querySelector('.react-autoql-report-builder-heading').textContent).toBe('Hey\nYou')
+    // The hint is the editor's: never on a printed page.
+    expect(content.querySelector('[data-test="report-builder-heading-hint"]')).toBeNull()
   })
 })
 

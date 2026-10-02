@@ -70,6 +70,8 @@ export const STRINGS = {
   },
 
   headingPlaceholder: 'Heading',
+  // Under a heading while it's typed in: Return on a Mac's keyboard, Enter elsewhere.
+  headingNewLine: (mac) => `Shift + ${mac ? 'Return' : 'Enter'} for a new line`,
   textPlaceholder: 'Write anything here — context, a caveat, what the reader should take away.',
   pageBreak: 'Page break',
 
@@ -152,7 +154,8 @@ export const STRINGS = {
     nothingSelected: 'Select a block to change it. Blocks follow the theme until you override them.',
 
     level: 'Level',
-    headingNote: 'Click the heading on the page to edit its words. Shift+Enter starts a new line.',
+    headingNote: (mac) =>
+      `Click the heading on the page to edit its words. Shift + ${mac ? 'Return' : 'Enter'} starts a new line.`,
     textNote: 'Click the paragraph on the page to edit it.',
     pageBreakNote: 'Everything after this starts on a new page. No settings.',
     unknownNote: 'This block was made by a newer version of the report builder. It’s kept as it is.',
