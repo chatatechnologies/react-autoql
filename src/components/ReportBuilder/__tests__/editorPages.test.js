@@ -3,7 +3,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import { ReportBuilder } from '..'
 import { createEmptyReport } from '../model/reportSchema'
 import { getPageGeometry } from '../layout/pageGeometry'
-import { pageFills, rowPagesOf, Sheet } from '../components/Sheet'
+import { pageFills, pagePlates, rowPagesOf, Sheet } from '../components/Sheet'
 
 // The editor's pages: rows go on the page their blocks start on in print, each page is topped up to a
 // page's height, and pages are separated by a gap carrying the footer and the next page's header.
@@ -28,7 +28,31 @@ describe('pageFills', () => {
   })
 })
 
+describe('pagePlates', () => {
+  it('puts a white plate behind each page, from gap to gap, the last one to the sheet’s end', () => {
+    expect(
+      pagePlates({
+        gaps: [
+          { top: 1056, height: 22 },
+          { top: 2134, height: 22 },
+        ],
+        sheetHeight: 3212,
+      }),
+    ).toStrictEqual([
+      { top: 0, height: 1056 },
+      { top: 1078, height: 1056 },
+      { top: 2156, height: 1056 },
+    ])
+  })
+
+  it('puts none behind a single page, which is the sheet itself', () => {
+    expect(pagePlates({ gaps: [], sheetHeight: 1056 })).toStrictEqual([])
+  })
+})
+
 describe('Sheet as pages', () => {
+  afterEach(() => jest.restoreAllMocks())
+
   const report = createEmptyReport({
     title: 'Board pack',
     page: { header: true, footer: true, pageNumbers: true },
@@ -52,7 +76,21 @@ describe('Sheet as pages', () => {
   it('is one sheet until it knows where the pages break', () => {
     const { container } = sheet()
     expect(screen.queryByTestId('report-builder-page-gap')).toBeNull()
+    expect(screen.queryByTestId('report-builder-page-plate')).toBeNull()
     expect(container.querySelector('.react-autoql-report-builder-sheet').hasAttribute('data-paged')).toBe(false)
+  })
+
+  it('draws each page on a plate of its own once the sheet is laid out, and none before', () => {
+    const { container, unmount } = sheet({ startPages: { a: 0, b: 0, c: 1 }, pageCount: 2 })
+    // jsdom lays nothing out (every height is 0): the sheet stays one white sheet.
+    expect(screen.queryByTestId('report-builder-page-plate')).toBeNull()
+    expect(container.querySelector('.react-autoql-report-builder-sheet').hasAttribute('data-plated')).toBe(false)
+    unmount()
+
+    jest.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(500)
+    const laidOut = sheet({ startPages: { a: 0, b: 0, c: 1 }, pageCount: 2 })
+    expect(screen.getAllByTestId('report-builder-page-plate')).toHaveLength(2)
+    expect(laidOut.container.querySelector('.react-autoql-report-builder-sheet').hasAttribute('data-plated')).toBe(true)
   })
 
   it('breaks where print does, with each page’s footer and the next page’s header in between', () => {

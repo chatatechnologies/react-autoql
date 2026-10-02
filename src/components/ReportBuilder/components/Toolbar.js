@@ -86,21 +86,24 @@ export const Toolbar = ({
         </>
       ) : null}
       {onZoomChange ? (
-        <select
-          className={`${RB}-select ${RB}-zoom-select`}
-          aria-label={STRINGS.zoom.label}
-          title={STRINGS.zoom.title}
-          value={String(zoom)}
-          data-test='report-builder-zoom'
-          onChange={(e) => onZoomChange(e.target.value === FIT ? FIT : Number(e.target.value))}
-        >
-          <option value={FIT}>{STRINGS.zoom.fit(Math.round(fitScale * 100))}</option>
-          {ZOOM_LEVELS.map((level) => (
-            <option key={level} value={String(level)}>
-              {STRINGS.zoom.level(Math.round(level * 100))}
-            </option>
-          ))}
-        </select>
+        <span className={`${RB}-zoom`}>
+          <select
+            className={`${RB}-select ${RB}-zoom-select`}
+            aria-label={STRINGS.zoom.label}
+            title={STRINGS.zoom.title}
+            value={String(zoom)}
+            data-test='report-builder-zoom'
+            onChange={(e) => onZoomChange(e.target.value === FIT ? FIT : Number(e.target.value))}
+          >
+            <option value={FIT}>{STRINGS.zoom.fit(Math.round(fitScale * 100))}</option>
+            {ZOOM_LEVELS.map((level) => (
+              <option key={level} value={String(level)}>
+                {STRINGS.zoom.level(Math.round(level * 100))}
+              </option>
+            ))}
+          </select>
+          <Icon name='down' size={12} />
+        </span>
       ) : null}
       {!previewOpen && onTogglePanel ? (
         <button

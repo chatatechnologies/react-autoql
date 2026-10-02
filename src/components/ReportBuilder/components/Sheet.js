@@ -149,6 +149,26 @@ export const rowPagesOf = (rows, startPages) => {
 export const pageFills = ({ starts, ends, contentHeight }) =>
   ends.map((end, index) => Math.max(0, Math.floor(contentHeight - (end - (starts[index] ?? 0)))))
 
+// The white pages drawn behind the blocks, one per page: each from where the gap before it ends to where the
+// gap after it starts, the sheet's top and bottom at either end. `gaps` are the gaps' tops and heights, in
+// pixels down the sheet. None without a gap: one page is the sheet itself.
+export const pagePlates = ({ gaps, sheetHeight }) => {
+  if (!gaps.length) {
+    return []
+  }
+  const plates = []
+  let top = 0
+  gaps.forEach((gap) => {
+    plates.push({ top, height: Math.max(0, gap.top - top) })
+    top = gap.top + gap.height
+  })
+  plates.push({ top, height: Math.max(0, sheetHeight - top) })
+  return plates
+}
+
+const samePlates = (a, b) =>
+  a.length === b.length && a.every((plate, index) => plate.top === b[index].top && plate.height === b[index].height)
+
 const offsetTopIn = (el, ancestor) => {
   let top = 0
   for (let node = el; node && node !== ancestor; node = node.offsetParent) {
@@ -158,12 +178,12 @@ const offsetTopIn = (el, ancestor) => {
 }
 
 // Where one page ends and the next begins: the rest of the page left blank, its footer and bottom margin,
-// the desk between pages, then the next page's top margin and header.
+// the space between the pages, then the next page's top margin and header.
 const PageGap = ({ fill, footer, header, marginIn }) => (
   <div className={`${RB}-page-gap`} aria-hidden='true' data-test='report-builder-page-gap'>
     <div className={`${RB}-page-fill`} data-page-fill='' style={{ height: fill || 0 }} />
     {footer}
-    <div className={`${RB}-page-gap-band`} style={{ margin: `${marginIn}in calc(-${marginIn}in - 12px)` }} />
+    <div className={`${RB}-page-gap-band`} data-page-gap-band='' style={{ margin: `${marginIn}in 0` }} />
     {header}
     <div data-page-start='' />
   </div>
@@ -172,8 +192,9 @@ const PageGap = ({ fill, footer, header, marginIn }) => (
 // The editing surface, laid out at the page's true size (the builder's zoom fits it to the canvas). Once
 // EditorPagination has laid the report out (`startPages`), it's shown as pages that break where the PDF
 // breaks, each with its running header and footer; until then, and where nothing can be measured, it's
-// one sheet. Blocks stay in one list either way, so moving to another page never remounts one. The print
-// preview stays the source of truth for what prints.
+// one sheet. Blocks stay in one list either way, so moving to another page never remounts one: the pages
+// are white plates drawn behind them, apart from each other as the preview's are. The print preview stays
+// the source of truth for what prints.
 export class Sheet extends React.Component {
   static defaultProps = {
     // Block id → the content page it starts on (getStartPages), or null for one sheet.
@@ -185,7 +206,7 @@ export class Sheet extends React.Component {
 
   sheetRef = React.createRef()
   blocksRef = React.createRef()
-  state = { fills: [] }
+  state = { fills: [], plates: [] }
 
   componentDidMount() {
     this.measureFills()
@@ -211,8 +232,9 @@ export class Sheet extends React.Component {
     this.observer?.disconnect()
   }
 
-  // Sizes each page's blank end from where its content actually sits (layout sizes, which the zoom's
-  // transform doesn't change).
+  // Sizes each page's blank end from where its content actually sits, and the white plate behind each page
+  // from where the gaps between pages are (layout sizes, which the zoom's transform doesn't change). Nothing
+  // is plated where nothing is laid out.
   measureFills = () => {
     const sheet = this.sheetRef.current
     const blocksEl = this.blocksRef.current
@@ -225,9 +247,16 @@ export class Sheet extends React.Component {
     ]
     const ends = Array.from(blocksEl.querySelectorAll('[data-page-fill]'), (el) => offsetTopIn(el, sheet))
     const fills = pageFills({ starts, ends, contentHeight: this.props.geometry.contentHeightPx })
+    const gaps = Array.from(blocksEl.querySelectorAll('[data-page-gap-band]'), (el) => ({
+      top: offsetTopIn(el, sheet),
+      height: el.offsetHeight,
+    }))
+    const plates = sheet.offsetHeight > 0 ? pagePlates({ gaps, sheetHeight: sheet.offsetHeight }) : []
     const current = this.state.fills
-    if (fills.length !== current.length || fills.some((fill, index) => fill !== current[index])) {
-      this.setState({ fills })
+    const fillsChanged = fills.length !== current.length || fills.some((fill, index) => fill !== current[index])
+    const platesChanged = !samePlates(plates, this.state.plates)
+    if (fillsChanged || platesChanged) {
+      this.setState({ ...(fillsChanged ? { fills } : null), ...(platesChanged ? { plates } : null) })
     }
   }
 
@@ -256,13 +285,14 @@ export class Sheet extends React.Component {
       onChartChange,
       pending,
     } = this.props
-    const { fills } = this.state
+    const { fills, plates } = this.state
     const { page, blocks } = report
     const stack = TYPEFACES[page.typeface]?.stack
     const note = frontMatterNote(page)
     const rows = groupIntoRows(blocks)
     const lastIndex = blocks.length - 1
     const paged = !!startPages && rows.length > 0
+    const plated = paged && plates.length > 0
     const rowPages = paged ? rowPagesOf(rows, startPages) : rows.map(() => 0)
     const total = frontPages + Math.max(1, pageCount)
 
@@ -291,9 +321,21 @@ export class Sheet extends React.Component {
         className={`${RB}-paper ${RB}-sheet`}
         data-orientation={geometry.orientation}
         data-paged={paged || undefined}
+        data-plated={plated || undefined}
         // Its true width in either orientation; the builder's zoom (ZoomFrame) fits it to the canvas.
         style={{ width: `${geometry.widthIn}in`, padding: `${geometry.marginIn}in`, fontFamily: stack || undefined }}
       >
+        {plated
+          ? plates.map((plate, index) => (
+              <div
+                key={index}
+                className={`${RB}-page-plate`}
+                aria-hidden='true'
+                data-test='report-builder-page-plate'
+                style={{ top: plate.top, height: plate.height }}
+              />
+            ))
+          : null}
         {note ? (
           <div
             className={`${RB}-front-matter-note`}

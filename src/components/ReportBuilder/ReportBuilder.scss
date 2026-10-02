@@ -192,11 +192,16 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     }
   }
 
-  // The toolbar's button for the properties panel: as tall as the others, square, its icon in the accent
-  // colour while the panel is open.
+  // The toolbar's button for the properties panel: as tall as the others (its icon is the height of their
+  // line of text), its icon in the accent colour while the panel is open.
   .#{$rb}-panel-toggle {
     padding: 0.4375rem 0.5rem;
     color: $text-2;
+
+    > .#{$rb}-icon {
+      width: 1.2em;
+      height: 1.2em;
+    }
 
     &[aria-expanded='true'] {
       color: $accent;
@@ -472,10 +477,27 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     &[data-orientation='landscape'] {
       aspect-ratio: 11 / 8.5;
     }
+
+    // Shown as pages (Sheet): the sheet is only the blocks' frame, and each page is a white plate with its
+    // own shadow, behind the blocks, with the desk between plates.
+    &[data-plated] {
+      isolation: isolate;
+      background: transparent;
+      box-shadow: none;
+    }
   }
 
-  // Between two of the editor's pages (Sheet): the desk shows through, across the page and its shadow, with
-  // a shadow along the page edges either side.
+  .#{$rb}-page-plate {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18), 0 18px 40px -22px rgba(0, 0, 0, 0.5);
+  }
+
+  // Between two of the editor's pages (Sheet): the previous page's footer and bottom margin, the space
+  // between the plates, and the next page's top margin and header.
   .#{$rb}-page-gap {
     flex: none;
     display: flex;
@@ -486,11 +508,10 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     flex: none;
   }
 
+  // As far apart as the preview's pages.
   .#{$rb}-page-gap-band {
     flex: none;
     height: 1.375rem;
-    background: $desk;
-    box-shadow: inset 0 7px 7px -7px rgba(0, 0, 0, 0.28), inset 0 -7px 7px -7px rgba(0, 0, 0, 0.28);
   }
 
   // What prints before the first page (a cover, contents): said in the first page's top margin, so it takes
@@ -731,12 +752,34 @@ $danger: var(--react-autoql-danger-color, #ca0b00);
     border-color: $accent;
   }
 
-  // The toolbar's zoom, beside Preview: as compact as the toolbar's buttons.
+  // The toolbar's zoom, beside Preview: drawn like the toolbar's buttons, as tall and as compact, with the
+  // builder's own small chevron in place of the browser's, which sat far from the label and stood out.
+  .#{$rb}-zoom {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+
+    > .#{$rb}-icon {
+      position: absolute;
+      right: 0.5rem;
+      color: $text-2;
+      pointer-events: none;
+    }
+  }
+
   .#{$rb}-zoom-select {
     display: inline-block;
     width: auto;
-    padding: 0.375rem 0.5rem;
+    padding: 0.4375rem 1.625rem 0.4375rem 0.625rem;
+    -webkit-appearance: none;
+    appearance: none;
     font-weight: 550;
+    line-height: 1.2;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+    }
   }
 
   // A field that wraps (AutoGrowTextarea): grows with its text up to under half the window, then scrolls
