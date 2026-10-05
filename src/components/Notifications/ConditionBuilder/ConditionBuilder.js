@@ -34,6 +34,10 @@ export default class ConditionBuilder extends React.Component {
     baseDataAlertColumns: PropTypes.array,
     baseDataAlertQueryResponse: PropTypes.object,
     isLoadingBaseDataAlertQueryResponse: PropTypes.bool,
+    onRefreshBasePreview: PropTypes.func,
+    basePreviewError: PropTypes.bool,
+    hasBasePreview: PropTypes.bool,
+    onShowBasePreview: PropTypes.func,
     onCustomFiltersChange: PropTypes.func,
     customFilters: PropTypes.array,
     isPreviewMode: PropTypes.bool,
@@ -55,6 +59,10 @@ export default class ConditionBuilder extends React.Component {
     baseDataAlertColumns: [],
     baseDataAlertQueryResponse: {},
     isLoadingBaseDataAlertQueryResponse: false,
+    onRefreshBasePreview: undefined,
+    basePreviewError: false,
+    hasBasePreview: false,
+    onShowBasePreview: undefined,
     onCustomFiltersChange: () => {},
     customFilters: [],
     isPreviewMode: false,
@@ -241,6 +249,10 @@ export default class ConditionBuilder extends React.Component {
                   baseDataAlertColumns={this.props.baseDataAlertColumns}
                   baseDataAlertQueryResponse={this.props.baseDataAlertQueryResponse}
                   isLoadingBaseDataAlertQueryResponse={this.props.isLoadingBaseDataAlertQueryResponse}
+                  basePreviewError={this.props.basePreviewError}
+                  hasBasePreview={this.props.hasBasePreview}
+                  onShowBasePreview={this.props.onShowBasePreview}
+                  onRefreshBasePreview={this.props.onRefreshBasePreview}
                   onCustomFiltersChange={this.props.onCustomFiltersChange}
                   customFilters={this.props.customFilters}
                   isPreviewMode={this.props.isPreviewMode}

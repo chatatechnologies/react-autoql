@@ -42,6 +42,7 @@ import {
 import LoadingDots from '../../LoadingDots/LoadingDots'
 import JoinColumnSelectionTable from '../JoinColumnSelectionTable/JoinColumnSelectionTable'
 import { Icon } from '../../Icon'
+import { Button } from '../../Button'
 import { Chip } from '../../Chip'
 import { Input } from '../../Input'
 import { Select } from '../../Select'
@@ -197,8 +198,6 @@ export default class RuleSimple extends React.Component {
       firstQuerySecondValue: '',
       secondQueryFirstValue: '',
       secondQuerySecondValue: '',
-      isDisabledCustomList: true,
-      disabledReason: '',
     }
 
     if (initialData?.length) {
@@ -234,6 +233,10 @@ export default class RuleSimple extends React.Component {
     baseDataAlertColumns: PropTypes.array,
     baseDataAlertQueryResponse: PropTypes.object,
     isLoadingBaseDataAlertQueryResponse: PropTypes.bool,
+    onRefreshBasePreview: PropTypes.func,
+    basePreviewError: PropTypes.bool,
+    hasBasePreview: PropTypes.bool,
+    onShowBasePreview: PropTypes.func,
     isPreviewMode: PropTypes.bool,
   }
 
@@ -252,6 +255,10 @@ export default class RuleSimple extends React.Component {
     baseDataAlertColumns: [],
     baseDataAlertQueryResponse: {},
     isLoadingBaseDataAlertQueryResponse: false,
+    onRefreshBasePreview: undefined,
+    basePreviewError: false,
+    hasBasePreview: false,
+    onShowBasePreview: undefined,
     isPreviewMode: false,
   }
 
@@ -291,13 +298,6 @@ export default class RuleSimple extends React.Component {
 
       this.setState({ columnSelectValue })
     }
-    if (this.props.baseDataAlertQueryResponse !== prevProps.baseDataAlertQueryResponse) {
-      const isDisabled = this.isCustomListDisabled()
-      this.setState({
-        isDisabledCustomList: isDisabled,
-        disabledReason: isSingleValueResponse(this.props.baseDataAlertQueryResponse) ? this.showWarningMessage() : '',
-      })
-    }
     if (!_isEqual(this.state, prevState)) {
       this.props.onUpdate(this.props.ruleId, this.isComplete(), this.isValid())
     }
@@ -329,10 +329,13 @@ export default class RuleSimple extends React.Component {
       }))
     }
   }
+  /**
+   * Only a single-value base query leaves nothing to filter on. Loading the preview used to count
+   * here too, but picking filters no longer waits on it - the preview is optional and on demand,
+   * so a load in progress must not disable the list or claim there are no filterable columns.
+   */
   isCustomListDisabled = () => {
-    return (
-      isSingleValueResponse(this.props.baseDataAlertQueryResponse) || this.props.isLoadingBaseDataAlertQueryResponse
-    )
+    return isSingleValueResponse(this.props.baseDataAlertQueryResponse)
   }
   showWarningMessage = () => (
     <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -775,9 +778,13 @@ export default class RuleSimple extends React.Component {
       this.state.storedInitialData?.[0]?.additional_selects ||
       []
     const displayOverrides = this.props.queryResponse?.data?.data?.fe_req?.display_overrides || []
-    const firstQuerySelectedNumberColumnName = this.state.firstQuerySelectedColumns?.map(
-      (index) => this.state.firstQueryResult?.data?.data?.columns[index]?.name,
-    )[0]
+    // Until the first query resolves there are no columns to read a name from. Falling back to the
+    // saved compare_column keeps a save that happens mid-load from writing an expression without
+    // one - which produces an alert that looks saved but cannot evaluate.
+    const firstQuerySelectedNumberColumnName =
+      this.state.firstQuerySelectedColumns?.map(
+        (index) => this.state.firstQueryResult?.data?.data?.columns?.[index]?.name,
+      )[0] ?? this.state.storedInitialData?.[0]?.compare_column
     const firstTermQueryId = this.getTermQueryId(0)
     const expression = [
       {
@@ -1681,24 +1688,88 @@ export default class RuleSimple extends React.Component {
   shouldRenderValidationSection = () => {
     return this.allowOperators() && this.state.secondTermType === QUERY_TERM_TYPE
   }
-  renderPreviewGrid = () => {
+  renderPreviewRefreshBtn = () => {
+    if (!this.props.onRefreshBasePreview || !this.props.hasBasePreview) {
+      return null
+    }
+
+    const isLoading = this.props.isLoadingBaseDataAlertQueryResponse
+
+    return (
+      <Icon
+        type='refresh'
+        className='rule-simple-preview-refresh-btn'
+        onClick={isLoading ? undefined : this.props.onRefreshBasePreview}
+        spinning={isLoading}
+        disabled={isLoading}
+        data-tooltip-id={this.props.tooltipID}
+        data-tooltip-content={isLoading ? 'Running this query' : 'Run this query again for the latest data'}
+      />
+    )
+  }
+
+  renderPreviewGridContent = () => {
     if (this.props.isLoadingBaseDataAlertQueryResponse) {
       return <LoadingDots />
     }
-    if (!this.props.baseDataAlertQueryResponse) {
-      return <div className='error-message'>Error loading data alert data. Please try again.</div>
+
+    if (this.props.basePreviewError) {
+      return (
+        <div className='error-message'>
+          This query could not be run.{' '}
+          <Button type='default' onClick={this.props.onRefreshBasePreview} tooltipID={this.props.tooltipID}>
+            Try Again
+          </Button>
+        </div>
+      )
     }
-    const queryResponse = this.props.baseDataAlertQueryResponse
+
+    // Showing the preview means running the alert's query, so it waits to be asked for
+    if (!this.props.hasBasePreview) {
+      // Without a resolvable alert id there is nothing to preview, so say so rather than
+      // leaving an enabled button that does nothing when clicked
+      const canShowPreview = !!this.props.onShowBasePreview
+
+      return (
+        <div className='rule-simple-preview-grid-placeholder'>
+          <span>Selecting filters doesn't require this preview - load it if you want to see the data.</span>
+          <span
+            data-tooltip-id={this.props.tooltipID}
+            data-tooltip-content={canShowPreview ? undefined : 'A preview is not available for this Data Alert'}
+          >
+            <Button
+              type='default'
+              icon='table'
+              onClick={this.props.onShowBasePreview}
+              disabled={!canShowPreview}
+              tooltipID={this.props.tooltipID}
+            >
+              Show Preview
+            </Button>
+          </span>
+        </div>
+      )
+    }
+
     return (
       <SelectableTable
         dataFormatting={this.props.dataFormatting}
-        queryResponse={queryResponse}
+        queryResponse={this.props.baseDataAlertQueryResponse}
         radio={false}
         showEndOfPreviewMessage={true}
         tooltipID={this.props.tooltipID}
         rowLimit={PREVIEW_ROW_LIMIT}
         disableCheckboxes={true}
       />
+    )
+  }
+
+  renderPreviewGrid = () => {
+    return (
+      <div className='rule-simple-preview-grid'>
+        <div className='rule-simple-preview-grid-header'>{this.renderPreviewRefreshBtn()}</div>
+        {this.renderPreviewGridContent()}
+      </div>
     )
   }
 
@@ -2019,13 +2090,14 @@ export default class RuleSimple extends React.Component {
     )
   }
   renderCustomList = () => {
+    const isDisabled = this.isCustomListDisabled()
+
     return (
       <div>
-        <div className={`custom-list-container ${this.state.isDisabledCustomList ? 'disabled' : ''}`}>
+        <div className={`custom-list-container ${isDisabled ? 'disabled' : ''}`}>
           <CustomList
             authentication={this.props.authentication}
             initialFilters={this.state.initialFilters}
-            baseDataAlertColumns={this.props.baseDataAlertColumns}
             onCustomFiltersChange={this.props.onCustomFiltersChange}
             customFilters={this.props.customFilters}
             storedInitialData={this.state.storedInitialData}
@@ -2033,7 +2105,7 @@ export default class RuleSimple extends React.Component {
             isPreviewMode={this.props.isPreviewMode}
           />
         </div>
-        {this.state.isDisabledCustomList && <div>{this.state.disabledReason}</div>}
+        {isDisabled && <div>{this.showWarningMessage()}</div>}
       </div>
     )
   }

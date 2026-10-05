@@ -3,7 +3,8 @@ import LocalizedStrings from 'react-localization'
 export const lang = new LocalizedStrings({
   en: {
     introPrompt: 'Some things you can ask me: ',
-    llmEmptyStateTitle: 'What would you like to know?',
+    emptyStateTitle: 'What would you like to know?',
+    emptyStateSubtitle: 'Ask about your data in plain language.',
     use: 'Use',
     dataExplorer: 'Data Explorer',
     exploreQueries: 'Explore Queries',
@@ -13,6 +14,7 @@ export const lang = new LocalizedStrings({
     seeMore: 'See more',
     dataMessengerOptions: 'Options menu',
     openFilterLocking: 'Manage Filters',
+    filterSummaryTooltipTitle: 'Your queries are filtered by:',
     closeFilterLocking: 'Close filter menu',
     filterLockingTitle: 'Filter Locking',
     noFiltersLocked: 'No Filters are locked yet',
@@ -48,6 +50,7 @@ export const lang = new LocalizedStrings({
     cancel: 'Cancel',
     apply: 'Apply',
     education: 'Education',
+    agent: 'Data Agent',
   },
   sp: {
     introPrompt: 'Cosas que puedes preguntarme:',
@@ -60,6 +63,7 @@ export const lang = new LocalizedStrings({
     seeMore: 'Ver más',
     dataMessengerOptions: 'Menú de opciones',
     openFilterLocking: 'Administrar filtros',
+    filterSummaryTooltipTitle: 'Sus consultas están filtradas por:',
     closeFilterLocking: 'Cerrar menú de filtrar',
     filterLockingTitle: 'Menú de Filtro',
     noFiltersLocked: 'Ningún filtro está bloqueado todavía',
@@ -95,6 +99,7 @@ export const lang = new LocalizedStrings({
     cancel: 'Cancelar',
     apply: 'Aplicar',
     education: 'Educación',
+    agent: 'Agente de Datos',
   },
 })
 

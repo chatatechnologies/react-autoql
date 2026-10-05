@@ -28,6 +28,7 @@ class Modal extends React.Component {
     confirmText: PropTypes.string,
     confirmDisabled: PropTypes.bool,
     footer: PropTypes.element,
+    headerAction: PropTypes.element,
     confirmOnClose: PropTypes.bool,
     shouldRender: PropTypes.bool,
     onOpened: PropTypes.func,
@@ -47,6 +48,7 @@ class Modal extends React.Component {
     confirmLoading: false,
     confirmText: undefined,
     footer: undefined,
+    headerAction: undefined,
     confirmDisabled: false,
     confirmOnClose: false,
     shouldRender: true,
@@ -141,10 +143,25 @@ class Modal extends React.Component {
             <div className='react-autoql-modal-header'>
               <div className='react-autoql-modal-header-title-container'>
                 <div className='react-autoql-modal-header-title'>
-                  {this.props.titleIcon} {this.props.title}
+                  {this.props.titleIcon}{' '}
+                  {/* The text gets an element of its own so the ellipsis has
+                      something to hang on: text sitting directly in this flex row
+                      can only be clipped mid-word. Drilldown modals title
+                      themselves with the whole query and the alert details modal
+                      with the alert name, so on a narrow screen that clip used to
+                      lose most of it - hence the tooltip too. */}
+                  <span
+                    className='react-autoql-modal-header-title-text'
+                    title={typeof this.props.title === 'string' ? this.props.title : undefined}
+                  >
+                    {this.props.title}
+                  </span>
                 </div>
                 <div className='react-autoql-modal-header-subtitle'>{this.props.subtitle}</div>
               </div>
+              {!!this.props.headerAction && (
+                <div className='react-autoql-modal-header-action'>{this.props.headerAction}</div>
+              )}
               <Icon type='close' className='react-autoql-modal-close-btn' onClick={this.onClose} />
             </div>
             <div
@@ -168,7 +185,9 @@ class Modal extends React.Component {
               this.setState({ isConfirmCloseModalVisible: false })
             }}
           >
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>Are you sure you want to leave this page?</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>
+              Are you sure you want to leave this page?
+            </h3>
             <p style={{ fontSize: '0.9375rem', margin: 0 }}>All unsaved changes will be lost.</p>
           </ConfirmModal>
         )}

@@ -1,0 +1,349 @@
+// Design tokens for this component, all derived from the library's theme custom
+// properties so an integrator's theme override still lands.
+//
+// Radii and hover follow the rest of the library rather than the prototype's own
+// scale: pills at 24px like QueryInput's chat bar, cards at 8px, popovers at 4px like
+// Popover.scss, icon buttons circular, and hover always a hover-color background
+// rather than a border or transform change.
+.react-autoql-agent-messenger {
+  --am-accent: var(--react-autoql-accent-color);
+  --am-accent-2: var(--react-autoql-accent-color-secondary, var(--react-autoql-accent-color));
+  --am-b1: var(--react-autoql-background-color-primary);
+  --am-b2: var(--react-autoql-background-color-secondary);
+  --am-b3: var(--react-autoql-background-color-tertiary, var(--react-autoql-border-color));
+  --am-border: var(--react-autoql-border-color);
+  --am-hover: var(--react-autoql-hover-color, var(--react-autoql-background-color-tertiary));
+  --am-t1: var(--react-autoql-text-color-primary);
+  --am-t2: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-placeholder));
+  --am-danger: var(--react-autoql-danger-color);
+  --am-shadow: var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.25));
+  // configureTheme publishes the accent's channels separately; SelectableTable.scss
+  // tints the same way. Tracks a theme override, no color-mix support question.
+  --am-glow: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.18
+  );
+  --am-focus-ring: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.1
+  );
+  // Accent washes for the "+" - the one accent-tinted thing in the tab strip.
+  --am-accent-wash: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.12
+  );
+  --am-accent-wash-strong: rgba(
+    var(--react-autoql-accent-color-R),
+    var(--react-autoql-accent-color-G),
+    var(--react-autoql-accent-color-B),
+    0.28
+  );
+  --am-radius-pill: 24px;
+  --am-radius-card: 8px;
+  --am-radius-menu: 4px;
+  --am-transition: 0.2s ease;
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  // Matches the library's --react-autoql-font-size default (15px).
+  font-size: 0.9375rem;
+  font-family: var(--react-autoql-font-family), sans-serif;
+  color: var(--am-t1);
+  background-color: var(--am-b1);
+
+  // Hidden, not unmounted or display:none - the page keeps its real dimensions so
+  // SimpleTable's measured column widths survive the drawer being closed or another
+  // page being shown.
+  &.react-autoql-content-hidden {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // Children measure themselves; skip transitions mid-drag so a drawer resize stays cheap.
+  &.is-resizing * {
+    transition: none !important;
+  }
+}
+
+/* ---- Toolbar: thread tabs + new ---- */
+
+// Exactly .react-autoql-chat-session-tabs in the Data Messenger: a flat groove in the
+// flow, inset to the transcript's own 1.25rem so a tab's edges line up with the
+// messages below it. No blur - everything else in the drawer reads as a solid
+// surface, so a transparent strip stood out as an odd one.
+.react-autoql-agent-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin: 0.25rem 1.25rem 0.5rem;
+  padding: 6px;
+  border-radius: 23px;
+  background-color: var(--am-tab-track);
+  position: relative;
+  z-index: 12;
+  min-width: 0;
+}
+
+/* ---- Horizontal tabs ---- */
+
+// Chip tabs, matching the Data Messenger's session tabs: neutral washes rather than
+// --react-autoql-hover-color (tuned for menu rows, far too heavy here). Grey at these
+// alphas darkens a light theme and lightens a dark one, so one value covers both.
+.react-autoql-agent-messenger {
+  --am-tab-track: rgba(128, 134, 142, 0.08);
+  --am-tab-hover: rgba(128, 134, 142, 0.12);
+  --am-tab-close-hover: rgba(128, 134, 142, 0.22);
+}
+
+.react-autoql-agent-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  // Tabs keep their width and the strip scrolls, rather than every tab shrinking
+  // to nothing once there are a lot of threads.
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.react-autoql-agent-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  width: 148px;
+  height: 34px;
+  padding: 0 6px 0 14px;
+  box-sizing: border-box;
+  // Fully rounded, like the message bubbles and the composer below it.
+  border-radius: 17px;
+  background-color: transparent;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.875rem;
+  font-weight: 500;
+  // The drawer header's tracking - it was -0.004em, tighter than anything around it.
+  letter-spacing: -0.008em;
+  cursor: pointer;
+  // Width is in here so selecting a tab eases it wider instead of snapping.
+  transition: width 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+  // Hover is for tabs you could switch to - the selected one is already here, so
+  // it deliberately has no hover state of its own.
+  &:not(.is-active):hover {
+    color: var(--am-t1);
+    background-color: var(--am-tab-hover);
+  }
+
+  // The raised chip. A wider box plus the lift is what makes the selected thread
+  // read as selected; there is no accent rule or connecting flare.
+  &.is-active {
+    width: 188px;
+    // Same material as a message bubble: the theme's surface colour, a hairline
+    // border and the same flat ambient shadow.
+    background-color: var(--am-b2);
+    border: 1px solid var(--am-border);
+    padding: 0 5px 0 13px; // Absorbs the border, so the label doesn't shift.
+    color: var(--am-t1);
+    font-weight: 600;
+    box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+      0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
+
+    .react-autoql-agent-tab-dot {
+      background-color: var(--am-accent);
+      opacity: 1;
+    }
+  }
+
+  // Brief flash so opening a thread is visible even when the transcript below looks
+  // the same either way.
+  &.is-new {
+    animation: react-autoql-agent-tab-flash 0.9s ease;
+  }
+}
+
+// currentColor rather than a fixed grey, so the dot tracks whatever the tab label is
+// doing -- placeholder when idle, primary on hover -- and the accent on the active
+// tab is then the only colour in the strip.
+.react-autoql-agent-tab-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.45;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.react-autoql-agent-tab-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.react-autoql-agent-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+
+  // Flex + line-height:1, or an inherited line-height makes the glyph's box taller
+  // than the 18px circle and it sits low in it.
+  .react-autoql-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 0.625rem;
+  }
+
+  &:hover {
+    opacity: 1;
+    // A touch stronger than the tab's own hover, so the X still reads as a
+    // separate target once you're over it.
+    background-color: var(--am-tab-close-hover);
+  }
+}
+
+// The "+" while the strip is showing: same square-ish button as the Data Messenger's
+// new-session control, rather than the round icon button used in collapsed mode.
+// Pinned right rather than trailing the last tab - the strip scrolls at a fixed tab
+// width, so a "+" inside it would scroll out of reach with a lot of threads. It pays
+// for that with its own emphasis: accent glyph on a faint accent wash, and a hairline
+// separating it from the strip.
+.react-autoql-agent-icon-btn.react-autoql-agent-tab-new {
+  width: 30px;
+  height: 30px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background-color: var(--am-accent-wash);
+  color: var(--am-accent);
+
+  .react-autoql-icon {
+    font-size: 1.0625rem;
+    // The plus reads lighter than the tab labels beside it at the same size.
+    stroke-width: 2.5;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--am-accent);
+    background-color: var(--am-accent-wash-strong);
+  }
+}
+
+// Tints the tab without touching opacity: fading a brand new tab up from invisible
+// is the opposite of the point, which is to make it obvious one appeared.
+// A glow ring rather than a background tint: the active chip has a background of
+// its own, and animating that would blank the chip out mid-flash.
+@keyframes react-autoql-agent-tab-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+
+  30% {
+    box-shadow: 0 0 0 2px var(--am-glow);
+  }
+}
+
+.react-autoql-agent-toolbar-right {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+// Neutral beside the accent-washed "+": closing every thread is the destructive one
+// of the pair, and the accent is spent on the action worth inviting.
+.react-autoql-agent-icon-btn.is-close-all {
+  background-color: transparent;
+  color: var(--am-t2);
+
+  &:hover:not(:disabled) {
+    background-color: var(--am-tab-close-hover);
+    color: var(--am-t1);
+  }
+}
+
+// The click wrapper ConfirmPopover puts around its trigger: without this it lays out
+// as a block and the button loses its circle.
+.react-autoql-agent-close-all-wrapper {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.react-autoql-agent-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  border: none;
+  // Circular icon buttons, as in the QueryInput chat bar.
+  border-radius: 50%;
+  background-color: var(--am-accent-wash);
+  color: var(--am-accent);
+  font-size: 1rem;
+  cursor: pointer;
+  transition-property: color, background-color, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--am-accent-wash-strong);
+    color: var(--am-accent);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+/* ---- Threads ---- */
+
+.react-autoql-agent-threads {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-autoql-agent-messenger * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -24,6 +24,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { buildDashboardSource } from './dashboardSource'
+import { isSm, subscribeToScreenSize } from '../../js/breakpoints'
 
 import './Dashboard.scss'
 import 'react-grid-layout/css/styles.css'
@@ -101,6 +102,7 @@ class DashboardWithoutTheme extends React.Component {
       uneditedDashboardTiles: null,
       dashboardSlicers: getSlicersArray(),
       executingTileKeys: new Set(),
+      isSmallScreen: isSm(),
     }
   }
 
@@ -234,6 +236,16 @@ class DashboardWithoutTheme extends React.Component {
     }
     window.addEventListener('resize', this.onWindowResize)
     window.addEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
+
+    // Not onWindowResize: that returns early on the first event of a burst
+    // (currentWindowWidth is seeded from the already-resized innerWidth), so a
+    // single event - a phone rotating, a window being maximized - never reached
+    // the breakpoint check. matchMedia fires on the crossing itself instead.
+    this.unsubscribeFromScreenSize = subscribeToScreenSize('sm', (isSmallScreen) => {
+      if (this._isMounted && isSmallScreen !== this.state.isSmallScreen) {
+        this.setState({ isSmallScreen })
+      }
+    })
   }
 
   getSlicersArrayFromProps = (props) => {
@@ -358,6 +370,7 @@ class DashboardWithoutTheme extends React.Component {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
       window.removeEventListener('reactAutoQLDiscardDashboard', this.handleDiscardEvent)
+      this.unsubscribeFromScreenSize?.()
       clearTimeout(this.scrollToNewTileTimeout)
       clearTimeout(this.stopDraggingTimeout)
       clearTimeout(this.animationTimeout)
@@ -839,6 +852,15 @@ class DashboardWithoutTheme extends React.Component {
     }
   }
 
+  // The row below everything already placed - where ReactGridLayout's compaction
+  // would land a tile added at the bottom.
+  getNextAvailableY = (tiles) => {
+    return tiles.reduce((bottom, tile) => {
+      const tileBottom = (tile?.y ?? 0) + (tile?.h ?? 0)
+      return Number.isFinite(tileBottom) ? Math.max(bottom, tileBottom) : bottom
+    }, 0)
+  }
+
   addTile = (content) => {
     try {
       const tiles = _cloneDeep(this.getMostRecentTiles())
@@ -849,7 +871,12 @@ class DashboardWithoutTheme extends React.Component {
         w: 6,
         h: 5,
         x: (Object.keys(tiles).length * 6) % 12,
-        y: Number.MAX_VALUE,
+        // Number.MAX_VALUE is ReactGridLayout's "put it at the bottom", and its
+        // compaction echoes a real y back through updateTileLayout. That echo is
+        // skipped on a small screen (it would carry the stacked phone geometry, see
+        // renderTiles), so there the placeholder would survive into the tiles the
+        // consumer stores and saves - resolved here instead.
+        y: this.state.isSmallScreen ? this.getNextAvailableY(tiles) : Number.MAX_VALUE,
         query: '',
         title: '',
         // New tiles default to the dashboard's current project until explicitly reassigned (multi-project dashboards)
@@ -1341,7 +1368,8 @@ class DashboardWithoutTheme extends React.Component {
 
   renderTiles = (dirtyTileKeys, failedTileKeys) => {
     const tiles = this.getMostRecentTiles()
-    const tileLayout = tiles.map((tile) => {
+    const isSmallScreen = this.state.isSmallScreen
+    let tileLayout = tiles.map((tile) => {
       return {
         ...tile,
         i: tile.key,
@@ -1352,6 +1380,26 @@ class DashboardWithoutTheme extends React.Component {
       }
     })
 
+    // The stacked phone layout is display-only: it goes to ReactGridLayout as its
+    // `layout` and nowhere else. The tiles below keep their real geometry, because
+    // that is what DashboardTile resolves into `processTile`'s result, which is
+    // what executeDashboard hands back for the consumer to store and save -
+    // stacking them there would overwrite every tile's desktop position the first
+    // time a dashboard is opened on a narrow screen.
+    let gridLayout = tileLayout
+    if (isSmallScreen) {
+      // Stack tiles into a single full-width column, preserving their
+      // original visual order and fixed row height
+      let nextY = 0
+      gridLayout = [...tileLayout]
+        .sort((a, b) => a.y - b.y || a.x - b.x)
+        .map((tile) => {
+          const stackedTile = { ...tile, x: 0, y: nextY, w: 12, minW: 12, maxW: 12 }
+          nextY += tile.h
+          return stackedTile
+        })
+    }
+
     let dataPageSize = this.props.dataPageSize
     if (!dataPageSize) {
       dataPageSize = this.DEFAULT_AJAX_PAGE_SIZE
@@ -1361,7 +1409,9 @@ class DashboardWithoutTheme extends React.Component {
       <ReactGridLayout
         ref={(r) => (this.rglRef = r)}
         onLayoutChange={(layout) => {
-          this.updateTileLayout(layout)
+          if (!isSmallScreen) {
+            this.updateTileLayout(layout)
+          }
           this.setState({ layout })
         }}
         onDrag={this.onDrag}
@@ -1372,10 +1422,10 @@ class DashboardWithoutTheme extends React.Component {
         className='react-autoql-dashboard'
         rowHeight={60}
         cols={12}
-        isDraggable={this.props.isEditing}
-        isResizable={this.props.isEditing}
+        isDraggable={this.props.isEditing && !isSmallScreen}
+        isResizable={this.props.isEditing && !isSmallScreen}
         draggableHandle='.react-autoql-dashboard-tile-drag-handle'
-        layout={tileLayout}
+        layout={gridLayout}
         margin={[20, 20]}
       >
         {tileLayout.map((tile) => (

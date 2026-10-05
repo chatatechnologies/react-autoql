@@ -37,6 +37,7 @@ export default class DataAlertRow extends React.Component {
     onInitialize: PropTypes.func,
     shouldRenderCreateCustomFilteredAlert: PropTypes.bool,
     showActionsColumn: PropTypes.bool,
+    isNarrow: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -50,6 +51,7 @@ export default class DataAlertRow extends React.Component {
     onInitialize: () => {},
     shouldRenderCreateCustomFilteredAlert: false,
     showActionsColumn: true,
+    isNarrow: false,
   }
 
   state = {
@@ -93,15 +95,19 @@ export default class DataAlertRow extends React.Component {
     this.props.onDeleteClick()
   }
 
-  onEditClick = (e, step) => {
+  onEditClick = (e, step, options) => {
     e.stopPropagation()
     const { dataAlert } = this.props
     if (dataAlert.type !== CUSTOM_TYPE) return
     if (dataAlert?.project?.id === 'composite') {
       this.props.openCustomFilteredAlertModal(this.getDataAlertObj())
     } else {
-      this.props.openEditModal(this.getDataAlertObj(), step)
+      this.props.openEditModal(this.getDataAlertObj(), step, options)
     }
+  }
+
+  onSettingsClick = (e) => {
+    this.onEditClick(e, undefined, { startInEditMode: true })
   }
 
   onCustomFilteredAlertClick = (e) => {
@@ -268,9 +274,9 @@ export default class DataAlertRow extends React.Component {
           <span
             className='data-alert-action-btn'
             data-tooltip-id={this.props.tooltipID}
-            data-tooltip-content='Open Data Alert settings'
+            data-tooltip-content='Edit Data Alert settings'
           >
-            <Icon type='settings' onClick={this.onEditClick} />
+            <Icon type='settings' onClick={this.onSettingsClick} />
           </span>
         )}
         {isCustom && (
@@ -322,21 +328,22 @@ export default class DataAlertRow extends React.Component {
         </div>
 
         <div className='data-alert-card-meta'>
-          <div className='data-alert-card-meta-row'>
+          <div className='data-alert-card-meta-item'>
             <span className='data-alert-card-meta-label'>State</span>
             {this.renderState()}
           </div>
-          <div className='data-alert-card-meta-row'>
+          <div className='data-alert-card-meta-item'>
             <span className='data-alert-card-meta-label'>Frequency</span>
-            <span>{this.renderFrequency()}</span>
+            <span className='data-alert-card-meta-value'>{this.renderFrequency()}</span>
           </div>
-          <div className='data-alert-card-meta-row'>
+          <div className='data-alert-card-meta-item'>
             <span className='data-alert-card-meta-label'>Next check</span>
-            <span>{this.renderNextCheck()}</span>
+            <span className='data-alert-card-meta-value'>{this.renderNextCheck()}</span>
           </div>
         </div>
 
         <div className='data-alert-card-footer' onClick={(e) => e.stopPropagation()}>
+          <span className='data-alert-card-meta-label'>Status</span>
           <Switch
             disabled={isDisabled || isIDLEComposite}
             checked={isEnabled || isIDLEComposite}
@@ -345,7 +352,11 @@ export default class DataAlertRow extends React.Component {
             onText='Active'
             offText='Inactive'
             data-tooltip-content={
-              isEnabled ? 'Active' : isIDLEComposite ? 'To disable this alert, please disable its base alert.' : 'Inactive'
+              isEnabled
+                ? 'Active'
+                : isIDLEComposite
+                  ? 'To disable this alert, please disable its base alert.'
+                  : 'Inactive'
             }
             data-tooltip-id={this.props.tooltipID}
           />
@@ -354,7 +365,7 @@ export default class DataAlertRow extends React.Component {
     )
   }
 
-  render() {
+  renderTableRow = () => {
     const { dataAlert, showActionsColumn } = this.props
     const isEnabled = this.isEnabled()
     const isDisabled = this.isDisabled()
@@ -362,7 +373,6 @@ export default class DataAlertRow extends React.Component {
     const isIDLEComposite = dataAlert.status === 'IDLE' && dataAlert.evaluation_mode === 'COMPOSITE'
 
     return (
-      <>
       <div
         className={`data-alert-table-row${isEnabled ? ' data-alert-enabled' : ' data-alert-disabled'}${isCustom ? ' data-alert-row-clickable' : ''}${!showActionsColumn ? ' no-actions-column' : ''}`}
         onClick={isCustom ? this.onEditClick : undefined}
@@ -410,8 +420,10 @@ export default class DataAlertRow extends React.Component {
           </div>
         )}
       </div>
-      {this.renderMobileCard()}
-    </>
-  )
+    )
+  }
+
+  render() {
+    return this.props.isNarrow ? this.renderMobileCard() : this.renderTableRow()
   }
 }

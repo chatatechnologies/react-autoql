@@ -23,14 +23,12 @@ import {
   getAuthentication,
   getAutoQLConfig,
   parseJwt,
-  fetchSubjectList,
   fetchDataPreview,
   transformQueryResponse,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
 import { Tooltip } from '../Tooltip'
-import LoadingDots from '../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
@@ -39,6 +37,7 @@ import { CustomScrollbars } from '../CustomScrollbars'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
+import { fetchSubjectListCached } from '../../js/subjectListService'
 import { lang } from '../../js/Localization'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
@@ -72,6 +71,7 @@ class QueryInput extends React.Component {
       selectedTopic: null,
       isExpanded: false,
       topicsCollapsed: false,
+      leftContentWidth: 0,
       selectedColumns: [],
       dataPreview: undefined,
       isDataPreviewLoading: false,
@@ -90,13 +90,24 @@ class QueryInput extends React.Component {
     className: PropTypes.string,
     autoCompletePlacement: PropTypes.string,
     quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
-    showLoadingDots: PropTypes.bool,
     showChataIcon: PropTypes.bool,
+    // Rendered at the left end of the input, inside the pill. For controls that
+    // scope the query (the filter lock) rather than compose it.
+    leftContent: PropTypes.node,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
     placeholder: PropTypes.string,
     clearQueryOnSubmit: PropTypes.bool,
+    // DPR session — sent as the AutoAE-Session-ID header by dprQuery. Unrelated
+    // to querySessionId below: different service, different transport.
     sessionId: PropTypes.string,
+    // Chat session this input belongs to. Sent to the query endpoint as the
+    // AutoQL-Session-ID header, and ONLY from here — the subqueries QueryOutput
+    // fires for sorting/filtering/added columns/drilldowns deliberately don't
+    // carry it, since a session tracks what the user actually asked for.
+    // Undefined unless the consumer enables sessions (see ChatContent's
+    // enableSessions), and undefined omits the header entirely.
+    querySessionId: PropTypes.string,
     dataPageSize: PropTypes.number,
     shouldRender: PropTypes.bool,
     enableQuerySuggestions: PropTypes.bool,
@@ -104,7 +115,6 @@ class QueryInput extends React.Component {
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
     disableColumnSelection: PropTypes.bool,
-    isLLMEmptyState: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -116,8 +126,8 @@ class QueryInput extends React.Component {
     autoCompletePlacement: 'above',
     quickTopicsPlacement: 'above',
     className: null,
-    showLoadingDots: true,
     showChataIcon: true,
+    leftContent: undefined,
     isBackButtonClicked: false,
     inputValue: undefined,
     source: null,
@@ -133,17 +143,65 @@ class QueryInput extends React.Component {
     addResponseMessage: () => {},
     executeQuery: () => {},
     disableColumnSelection: false,
-    isLLMEmptyState: false,
   }
 
   componentDidMount = () => {
     this._isMounted = true
     document.addEventListener('keydown', this.onEscKeypress)
     document.addEventListener('mousedown', this.handleClickOutside)
+    this.observeLeftContent()
 
     // Fetch topics if enabled
     if (this.props.enableQueryInputTopics) {
       this.fetchTopics()
+    }
+  }
+
+  // The controls at the head of the pill (a consumer's leftContent — the Data
+  // Messenger's filter lock — and the collapsed Quick Topics button) are absolutely
+  // positioned, so the text has to be padded clear of them and each has to be
+  // offset past the one before it.
+  //
+  // Those numbers are computed here and applied inline rather than expressed in
+  // SCSS: the input's padding is set by several layout-specific ancestor rules (the
+  // LLM empty state's is four classes deep), so a class-based rule loses the cascade
+  // in exactly the layouts that need it most. leftContent's width is measured rather
+  // than assumed, because the filter lock widens when it holds filters.
+  observeLeftContent = () => {
+    const element = this.leftContentRef
+
+    if (!element) {
+      return
+    }
+
+    const measure = () => {
+      const width = element.offsetWidth ?? 0
+
+      if (this._isMounted && width !== this.state.leftContentWidth) {
+        this.setState({ leftContentWidth: width })
+      }
+    }
+
+    measure()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.leftContentObserver = new ResizeObserver(measure)
+      this.leftContentObserver.observe(element)
+    }
+  }
+
+  // Where the head-of-pill controls start, measured from the input CONTAINER's edge,
+  // and how far the input's own left edge is inside that container.
+  getLeftControlGeometry = () => {
+    return {
+      controlsStart: 18,
+      // .react-autoql-chatbar-input's own margin.
+      inputMargin: 10,
+      gap: 6,
+      // .topics-collapsed-icon's fixed size.
+      collapsedIconWidth: 24,
+      // Air between the last control and the first character.
+      textGap: 10,
     }
   }
 
@@ -167,10 +225,25 @@ class QueryInput extends React.Component {
     if (prevProps.isDisabled && !this.props.isDisabled) {
       this.focus()
     }
+
+    // leftContent can arrive after mount — a session tab that mounts in the
+    // background has none until it becomes the active tab — so the measurement has
+    // to be (re)started here as well, or the padding stays at the unmeasured default.
+    if (!!this.props.leftContent !== !!prevProps.leftContent) {
+      this.leftContentObserver?.disconnect()
+      this.leftContentObserver = undefined
+
+      if (this.props.leftContent) {
+        this.observeLeftContent()
+      } else if (this.state.leftContentWidth) {
+        this.setState({ leftContentWidth: 0 })
+      }
+    }
   }
 
   componentWillUnmount = () => {
     this._isMounted = false
+    this.leftContentObserver?.disconnect()
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)
@@ -180,7 +253,8 @@ class QueryInput extends React.Component {
   }
 
   fetchTopics = () => {
-    fetchSubjectList({ ...this.props.authentication })
+    // Cached: every session tab mounts its own QueryInput, all asking for the same list.
+    fetchSubjectListCached(this.props.authentication)
       .then((subjects) => {
         if (this._isMounted && subjects?.length) {
           // Filter out aggregate seed subjects, similar to DataExplorer
@@ -397,6 +471,13 @@ class QueryInput extends React.Component {
   }
 
   onEscKeypress = (event) => {
+    // The listener is on `document`, and with sessions on every tab keeps a
+    // QueryInput mounted - so without this, Escape anywhere on the page cancels
+    // the running query in every thread, not just the one being looked at.
+    if (!this.props.shouldRender) {
+      return
+    }
+
     if (event.key === 'Escape') {
       // If esc key was not pressed in combination with ctrl or alt or shift
       const isNotCombinedKey = !(event.ctrlKey || event.altKey || event.shiftKey)
@@ -493,10 +574,18 @@ class QueryInput extends React.Component {
         }, 100)
       })
       .catch((error) => {
-        if (error?.message !== REQUEST_CANCELLED_ERROR) {
-          console.error(error)
-          this.onResponse(error, queryText, id)
+        if (error?.message === REQUEST_CANCELLED_ERROR) {
+          // onSubmit above already put the host into its busy state (disabled
+          // input, thinking dots), and only onResponseCallback takes it back out.
+          // Report the cancel the shape runQuery's arrives in so the host's
+          // existing cancel handling runs - setting isQueryRunning here alone
+          // would clear the stop button but leave the chat input disabled.
+          this.onResponse({ data: { message: REQUEST_CANCELLED_ERROR } }, queryText, id)
+          return
         }
+
+        console.error(error)
+        this.onResponse(error, queryText, id)
       })
   }
   submitDprQuery = (query, id) => {
@@ -528,6 +617,10 @@ class QueryInput extends React.Component {
 
   cancelQuery = () => {
     this.axiosSource?.cancel(REQUEST_CANCELLED_ERROR)
+    // A data preview sets isQueryRunning just like a regular query, so the stop button
+    // has to reach its request too - otherwise the preview lands after the stop (or
+    // after the thread was cleared) and repopulates it.
+    this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
   submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
@@ -575,6 +668,7 @@ class QueryInput extends React.Component {
       filters: this.props.queryFilters,
       pageSize: this.props.dataPageSize,
       cancelToken: this.axiosSource.token,
+      sessionId: this.props.querySessionId,
     }
 
     if (query.trim()) {
@@ -899,6 +993,37 @@ class QueryInput extends React.Component {
   }
 
   render = () => {
+    const isQueryRunning = this.state.isQueryRunning
+    // Only the input on screen mounts a mic. react-speech-recognition shares one
+    // recogniser across every SpeechToTextButtonBrowser and hands the transcript
+    // to whichever mounted last, so a mic in a hidden session tab (or on a page
+    // that isn't showing) would swallow dictation meant for this one.
+    const hasMicrophone = !isMobile && this.props.enableVoiceRecord && this.props.shouldRender
+
+    const showTopics =
+      this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
+    const showCollapsedIcon = showTopics && this.state.topicsCollapsed
+    const { controlsStart, inputMargin, gap, collapsedIconWidth, textGap } = this.getLeftControlGeometry()
+
+    // Widths of the controls at the head of the pill, in the order they sit.
+    const leftControlWidths = []
+    if (this.props.leftContent) {
+      leftControlWidths.push(this.state.leftContentWidth || collapsedIconWidth)
+    }
+    if (showCollapsedIcon) {
+      leftControlWidths.push(collapsedIconWidth)
+    }
+
+    const leftControlsWidth = leftControlWidths.reduce(
+      (total, width, index) => total + width + (index ? gap : 0),
+      0,
+    )
+    // The collapsed Quick Topics button follows anything before it.
+    const collapsedIconLeft = controlsStart + (this.props.leftContent ? leftControlWidths[0] + gap : 0)
+    const inputPaddingLeft = leftControlsWidth
+      ? controlsStart + leftControlsWidth + textGap - inputMargin
+      : undefined
+
     const inputProps = {
       ref: this.setInputRef,
       id: this.UNIQUE_ID,
@@ -916,11 +1041,11 @@ class QueryInput extends React.Component {
       spellCheck: false,
       autoFocus: true,
       autoComplete: 'one-time-code',
+      // Inline, so no layout-specific ancestor rule can outrank it.
+      style: inputPaddingLeft ? { paddingLeft: `${inputPaddingLeft}px` } : undefined,
     }
 
-    const isTopicsBelow = this.props.isLLMEmptyState || this.props.quickTopicsPlacement === 'below'
-    const showTopics =
-      this.props.enableQuerySuggestions && this.props.enableQueryInputTopics && this.state.topics.length > 0
+    const isTopicsBelow = this.props.quickTopicsPlacement === 'below'
 
     const toggleTopicsCollapsed = () =>
       this.setState((s) => ({
@@ -954,7 +1079,9 @@ class QueryInput extends React.Component {
                   authentication={this.props.authentication}
                   dataFormatting={this.props.dataFormatting}
                   subject={this.state.selectedTopic}
-                  disableColumnSelection={true}
+                  // Columns are picked through the FieldSelector in the header
+                  // above, so this preview is only ever a table.
+                  selectable={false}
                   shouldRender={this.props.shouldRender}
                   tooltipID={this.props.tooltipID}
                 />
@@ -983,7 +1110,6 @@ class QueryInput extends React.Component {
     )
 
     const renderQuerySuggestions = () => {
-
       return (
         <div
           className={`react-autoql-input-query-suggestions ${this.state.isExpanded ? 'expanded' : ''} ${
@@ -994,7 +1120,14 @@ class QueryInput extends React.Component {
 
           <CustomScrollbars suppressScrollY className='query-suggestions-buttons-wrapper' style={{ width: '100%' }}>
             <div className='query-suggestions-buttons'>
-              <button className='query-suggestions-collapse-btn' onClick={toggleTopicsCollapsed} type='button'>
+              <button
+                className='query-suggestions-collapse-btn'
+                onClick={toggleTopicsCollapsed}
+                type='button'
+                data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                data-tooltip-content='Hide Quick Topics'
+                data-tooltip-place='top'
+              >
                 <Icon type='caret-down' />
                 <span className='query-suggestions-buttons-label'>
                   <Icon type='lightning' /> Quick Topics:{' '}
@@ -1021,9 +1154,7 @@ class QueryInput extends React.Component {
     return (
       <ErrorBoundary>
         <div
-          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'} ${
-            this.props.isLLMEmptyState ? 'llm-empty-state' : ''
-          }`}
+          className={`react-autoql-query-input-wrapper ${isTopicsBelow ? 'topics-below' : 'topics-above'}`}
           ref={(ref) => (this.queryInputWrapperRef = ref)}
         >
           {/* Query Suggestions - Render ABOVE input when placement is 'above' */}
@@ -1038,8 +1169,8 @@ class QueryInput extends React.Component {
             <div className='react-autoql-input-row'>
               <div
                 className={`react-autoql-chatbar-input-container${
-                  showTopics && this.state.topicsCollapsed ? ' has-collapsed-icon' : ''
-                }`}
+                  showCollapsedIcon ? ' has-collapsed-icon' : ''
+                }${this.props.leftContent ? ' has-left-content' : ''}${hasMicrophone ? ' has-microphone' : ''}`}
               >
                 {getAutoQLConfig(this.props.autoQLConfig).enableAutocomplete ? (
                   <Autosuggest
@@ -1059,10 +1190,19 @@ class QueryInput extends React.Component {
                 ) : (
                   <input {...inputProps} />
                 )}
+                {/* Controls that scope the query rather than compose it (the filter
+                    lock) sit at the head of the input, where you'd read them before
+                    typing. */}
+                {this.props.leftContent && (
+                  <div className='react-autoql-input-left-content' ref={(r) => (this.leftContentRef = r)}>
+                    {this.props.leftContent}
+                  </div>
+                )}
                 {/* Lightning bolt icon inside input when topics are collapsed */}
                 {showTopics && (
                   <button
                     className={`topics-collapsed-icon${this.state.topicsCollapsed ? ' visible' : ''}`}
+                    style={{ left: `${collapsedIconLeft}px` }}
                     onClick={toggleTopicsCollapsed}
                     type='button'
                     data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
@@ -1073,7 +1213,7 @@ class QueryInput extends React.Component {
                   </button>
                 )}
                 {/* Microphone button inside input */}
-                {!isMobile && this.props.enableVoiceRecord && (
+                {hasMicrophone && (
                   <div className='input-microphone-button'>
                     <SpeechToTextButtonBrowser
                       onTranscriptStart={this.onTranscriptStart}
@@ -1084,26 +1224,33 @@ class QueryInput extends React.Component {
                     />
                   </div>
                 )}
+                {/* Send, inside the pill at the right end - the same place the Data
+                    Agent composer puts it. While a query is running it becomes a
+                    stop button, cancelling the request exactly as Escape does; a
+                    greyed-out button in that moment offered nothing. */}
+                <button
+                  className={`react-autoql-input-send-button${isQueryRunning ? ' is-stop' : ''}`}
+                  onClick={() => (isQueryRunning ? this.cancelQuery() : this.submitQuery())}
+                  // isDisabled is set by the consumer while a query runs, so the
+                  // stop state deliberately ignores it - that is the one moment the
+                  // button has something to do.
+                  disabled={!isQueryRunning && (!this.state.inputValue || this.props.isDisabled)}
+                  type='button'
+                  aria-label={isQueryRunning ? 'Stop query' : 'Send query'}
+                  data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                  data-tooltip-content={isQueryRunning ? 'Stop query' : undefined}
+                >
+                  {isQueryRunning ? <span className='react-autoql-input-stop-glyph' /> : <Icon type='send' />}
+                </button>
               </div>
               {this.props.showChataIcon && (
                 <div className='chat-bar-input-icon'>
                   <Icon type='react-autoql-bubbles-outlined' />
                 </div>
               )}
-              {this.props.showLoadingDots && this.state.isQueryRunning && (
-                <div className='input-response-loading-container'>
-                  <LoadingDots />
-                </div>
-              )}
-              {/* Send button */}
-              <button
-                className='react-autoql-input-send-button'
-                onClick={() => this.submitQuery()}
-                disabled={!this.state.inputValue || this.props.isDisabled}
-                type='button'
-              >
-                <Icon type='send' />
-              </button>
+              {/* No loading dots here: the stop button occupies this corner while a
+                  query runs and already carries the "working on it" meaning, so the
+                  dots would be both redundant and on top of it. */}
             </div>
           </div>
 

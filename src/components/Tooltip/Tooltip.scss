@@ -12,6 +12,26 @@
   word-break: break-word;
 }
 
+.react-tooltip.react-autoql-tooltip {
+  // Multi-line tooltip content (the filter lock's summary) arrives as plain text
+  // with newlines - react-tooltip 5.22 has no per-anchor class attribute to hang
+  // this off, and pre-line is a no-op for the single-line tooltips everywhere else.
+  white-space: pre-line;
+}
+
+.react-tooltip.react-autoql-chart-tooltip {
+  // Not pre-line here: chart tooltips are built as one <div> per line, and the
+  // newlines and indentation between those tags would each render as a blank
+  // line, padding the tooltip out with gaps that aren't in the content.
+  white-space: normal;
+
+  div {
+    // The tags are laid out across lines in the source string, so let the block
+    // structure alone set the spacing.
+    margin: 0;
+  }
+}
+
 .react-tooltip.interpretation-tooltip {
   max-width: 400px;
   transition: none;

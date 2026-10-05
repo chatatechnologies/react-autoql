@@ -178,7 +178,15 @@ export default class DataAlertSettings extends React.Component {
   }
 
   onExpressionChange = (isConditionSectionComplete, isValid, expression) => {
-    this.setState({ expression, isConditionSectionComplete })
+    // ConditionBuilder reports an undefined expression until its rule is ready - it fires onChange
+    // from componentDidMount, and getJSON() returns undefined while ruleRef is unset. Letting that
+    // overwrite state.expression dropped `expression` from the save payload entirely, and nothing
+    // fired again to restore it unless the user happened to touch the builder after the query
+    // settled. Keep the last known expression instead; the saved one is the right fallback.
+    this.setState({
+      expression: expression ?? this.state.expression,
+      isConditionSectionComplete,
+    })
   }
 
   renderAlphaAlertsSettings = () => {

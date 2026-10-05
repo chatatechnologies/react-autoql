@@ -43,7 +43,7 @@ import { FiMoreHorizontal } from '@react-icons/all-files/fi/FiMoreHorizontal'
 import { FiMoreVertical } from '@react-icons/all-files/fi/FiMoreVertical'
 import { FiPauseCircle } from '@react-icons/all-files/fi/FiPauseCircle'
 import { FiPlus } from '@react-icons/all-files/fi/FiPlus'
-import { FiSend } from '@react-icons/all-files/fi/FiSend'
+import { FiArrowUp } from '@react-icons/all-files/fi/FiArrowUp'
 import { FiSettings } from '@react-icons/all-files/fi/FiSettings'
 import { FiTrash2 } from '@react-icons/all-files/fi/FiTrash2'
 import { FiMaximize } from '@react-icons/all-files/fi/FiMaximize'
@@ -543,7 +543,7 @@ export default class Icon extends React.Component {
         break
       }
       case 'send': {
-        icon = <FiSend />
+        icon = <FiArrowUp />
         break
       }
       case 'sparks':

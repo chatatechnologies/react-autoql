@@ -5,11 +5,21 @@
   font-family: inherit;
   flex-direction: row;
 
+  @media (max-width: 768px) {
+    padding: 12px 4px;
+  }
+
   .react-autoql-step-hoz-container {
     flex: 1;
+    min-width: 0;
     position: relative;
     padding-left: 8px;
     padding-right: 8px;
+
+    @media (max-width: 768px) {
+      padding-left: 2px;
+      padding-right: 2px;
+    }
 
     .react-autoql-step-hoz {
       display: flex;
@@ -28,6 +38,15 @@
           text-align: center;
           color: var(--react-autoql-accent-color);
           cursor: pointer;
+          overflow-wrap: break-word;
+        }
+
+        @media (max-width: 768px) {
+          font-size: 0.75rem;
+
+          .react-autoql-step-hoz-title {
+            margin-top: 10px;
+          }
         }
       }
     }

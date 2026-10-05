@@ -100,7 +100,10 @@ export default class NumberAxisSelector extends React.Component {
         key: `selectable-list-item-${this.COMPONENT_KEY}-${type}-${axisIndex}`,
         content: (
           <div className='agg-selector-column-item' key={`column-agg-type-symbol-${this.COMPONENT_KEY}`}>
-            {!this.props.isAggregation && col.aggType && (
+            {/* NOTE: this used to be gated on an `isAggregation` prop that nothing ever passed, so
+                the gate never applied. Left as-is to preserve behavior — switch to `isAggregated`
+                if the agg type selector should be hidden on pivot charts. */}
+            {col.aggType && (
               <Select
                 className='agg-type-symbol'
                 popupClassname='agg-type-symbol-select'

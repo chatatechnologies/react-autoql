@@ -105,7 +105,7 @@ export default class App extends Component {
     showMask: true,
     shiftScreen: false,
     userDisplayName: 'Nikki',
-    introMessage: undefined,
+    emptyStateTitle: undefined,
     enableAutocomplete: true,
     enableQueryInterpretation: true,
     enableFilterLocking: true,
@@ -114,6 +114,7 @@ export default class App extends Component {
     enableDrilldowns: true,
     enableExploreQueriesTab: false,
     enableDataExplorerTab: true,
+    enableSessions: false,
     enableNotificationsTab: true,
     enableNotifications: true,
     enableColumnVisibilityManager: true,
@@ -962,14 +963,13 @@ export default class App extends Component {
           }}
           value={this.state.userDisplayName}
         />
-        <h4>Intro Message</h4>
-        <h6>(Must click 'Reload Data Messenger' to apply this)</h6>
+        <h4>Empty State Title</h4>
         <Input
           type='text'
           onChange={(e) => {
-            this.setState({ introMessage: e.target.value })
+            this.setState({ emptyStateTitle: e.target.value })
           }}
-          value={this.state.introMessage}
+          value={this.state.emptyStateTitle}
         />
         <h4>Query Input Placeholder</h4>
         <Input
@@ -1086,6 +1086,7 @@ export default class App extends Component {
         {this.createBooleanRadioGroup('Enable Data Explorer Tab', 'enableDataExplorerTab', [true, false])}
         {this.createBooleanRadioGroup('Enable Notifications Tab', 'enableNotificationsTab', [true, false])}
         {this.createBooleanRadioGroup('Enable Speech to Text', 'enableVoiceRecord', [true, false])}
+        {this.createBooleanRadioGroup('Enable Sessions', 'enableSessions', [true, false])}
       </div>
     )
   }
@@ -1112,7 +1113,7 @@ export default class App extends Component {
             : 'bottom'
         }
         userDisplayName={this.state.userDisplayName}
-        introMessage={this.state.introMessage}
+        emptyStateTitle={this.state.emptyStateTitle}
         showMask={this.state.showMask}
         shiftScreen={this.state.shiftScreen}
         enableVoiceRecord={this.state.enableVoiceRecord}
@@ -1133,6 +1134,7 @@ export default class App extends Component {
         defaultTab={this.state.defaultTab}
         autoChartAggregations={this.state.autoChartAggregations}
         enableQueryQuickStartTopics={true}
+        enableSessions={this.state.enableSessions}
       />
     )
   }
@@ -1164,7 +1166,6 @@ export default class App extends Component {
             this.setState({ response })
           }}
           showChataIcon
-          showLoadingDots
         />
         <Button
           onClick={() => {

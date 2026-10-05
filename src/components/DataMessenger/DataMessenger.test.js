@@ -271,3 +271,57 @@ describe('performResizeDrawer clamps to the document max', () => {
     })
   })
 })
+
+describe('agent tab', () => {
+  // shallow() (no dive) gives the DataMessenger instance; dive() renders its
+  // ErrorBoundary's output, which is where the markup lives.
+  const setupAgent = (props = {}) => shallow(<DataMessenger {...defaultProps} {...props} />)
+
+  test('is absent by default', () => {
+    expect(findByTestAttr(setupAgent().dive(), 'data-messenger-agent-tab').exists()).toBe(false)
+  })
+
+  test('renders in the tab rail when enableAgentTab is set', () => {
+    expect(findByTestAttr(setupAgent({ enableAgentTab: true }).dive(), 'data-messenger-agent-tab').exists()).toBe(true)
+  })
+
+  test('switches the active page when clicked', () => {
+    const wrapper = setupAgent({ enableAgentTab: true })
+    findByTestAttr(wrapper.dive(), 'data-messenger-agent-tab').props().onClick()
+    expect(wrapper.instance().state.activePage).toBe('agent')
+  })
+
+  test('shows the agent title once the page is active', () => {
+    const wrapper = setupAgent({ enableAgentTab: true })
+    wrapper.instance().setState({ activePage: 'agent' })
+    expect(wrapper.dive().find('.header-title').text()).toBe('Data Agent')
+  })
+
+  test('renders the agent page only when the tab is enabled', () => {
+    expect(setupAgent().instance().renderAgentContent()).toBeNull()
+    expect(setupAgent({ enableAgentTab: true }).instance().renderAgentContent()).not.toBeNull()
+  })
+
+  // A thread is a live backend session, so "cleared" has to mean new threads -
+  // otherwise the next message resumes the session the user just cleared.
+  test('clearMessages remounts the agent when it is the page on screen', () => {
+    const wrapper = setupAgent({ enableAgentTab: true })
+    wrapper.instance().setState({ activePage: 'agent' })
+
+    const before = wrapper.instance().state.agentMessengerId
+    wrapper.instance().clearMessages()
+
+    expect(wrapper.instance().state.agentMessengerId).not.toBe(before)
+  })
+
+  // Whichever page is showing: a thread from the old project would otherwise
+  // resume its session id against the new project's credentials.
+  test('a project change remounts the agent', () => {
+    const wrapper = setupAgent({ enableAgentTab: true, selectedProjectId: 'project-a' })
+
+    const before = wrapper.instance().state.agentMessengerId
+    wrapper.setProps({ selectedProjectId: 'project-b' })
+
+    expect(wrapper.instance().state.agentMessengerId).not.toBe(before)
+  })
+})

@@ -1112,7 +1112,7 @@ export default class Legend extends React.Component {
         numberColumnIndices={this.props.numberColumnIndices}
         numberColumnIndices2={this.props.numberColumnIndices2}
         hasSecondAxis={this.props.hasSecondAxis}
-        isAggregation={this.props.isAggregation}
+        isAggregated={this.props.isAggregated}
         tooltipID={this.props.tooltipID}
         columns={this.props.originalColumns}
         align='center'

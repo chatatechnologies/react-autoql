@@ -45,6 +45,7 @@ class DataAlerts extends React.Component {
   state = {
     isFetchingList: true,
     isEditModalVisible: false,
+    startInEditMode: false,
     isCustomFilteredAlertModalVisible: false,
     activeDataAlert: undefined,
 
@@ -134,6 +135,7 @@ class DataAlerts extends React.Component {
         isVisible={this.state.isEditModalVisible}
         onClose={() => this.setState({ isEditModalVisible: false })}
         currentDataAlert={this.state.activeDataAlert}
+        startInEditMode={this.state.startInEditMode}
         onSave={this.onDataAlertSave}
         onErrorCallback={this.props.onErrorCallback}
         onSuccessAlert={this.props.onSuccessAlert}
@@ -171,10 +173,12 @@ class DataAlerts extends React.Component {
     </div>
   )
 
-  openEditModal = (activeDataAlert, step) => {
+  openEditModal = (activeDataAlert, step, { startInEditMode = false } = {}) => {
     this.setState({
       activeDataAlert,
       isEditModalVisible: true,
+      // Deep-linking to a step is a request to change that step, so skip the read-only view
+      startInEditMode: startInEditMode || !!step,
     })
 
     if (step === 'schedule') {

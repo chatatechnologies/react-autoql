@@ -77,7 +77,7 @@ export default class ConfirmPopover extends React.Component {
           <Button
             type={this.props.danger ? 'danger' : 'primary'}
             onClick={this.onConfirmClick}
-            loading={this.props.confirmLoading}
+            loading={this.props.confirmLoading ?? this.state.loading}
             tooltipID={this.props.tooltipID}
             size='medium'
             filled
@@ -95,7 +95,9 @@ export default class ConfirmPopover extends React.Component {
         <Popover
           isOpen={this.state.isOpen}
           content={this.renderContent}
-          className='react-autoql-confirm-popover'
+          // containerClassName, not className — Popover only forwards containerClassName
+          // and contentClassName, so the confirm styles need this to reach the container.
+          containerClassName='react-autoql-confirm-popover'
           // No parentElement: keeps the popover portaled out instead of clipped by drawer/fullscreen overflow.
           boundaryElement={this.props.popoverParentElement}
           positions={this.props.positions}

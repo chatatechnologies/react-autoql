@@ -1,0 +1,146 @@
+// Spacing carries the grouping: 32px when the speaker changes, 24px between two
+// turns from the same side, nothing before the first.
+.react-autoql-agent-message {
+  display: flex;
+  min-width: 0;
+  margin-top: 2rem;
+  // Longer and gentler than the original 0.16s, which read as a snap rather than a
+  // movement. transform/opacity only, so it stays off the layout path.
+  animation: react-autoql-agent-message-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+
+  &.follows-same-role {
+    margin-top: 1.5rem;
+  }
+
+  &.is-first {
+    margin-top: 0;
+  }
+
+  &.is-user {
+    justify-content: flex-end;
+  }
+
+  &.is-agent {
+    align-items: flex-start;
+    gap: 0.625rem;
+  }
+}
+
+// Rounded like the library's own chat bubbles (ChatMessage uses 25px), with a small
+// tail corner. Deliberately not accent-filled: the drawer header directly above is
+// accent, and two saturated blocks in one column fight each other.
+.react-autoql-agent-user-bubble {
+  max-width: 85%;
+  // Same interior padding as .chat-message-bubble in ChatMessage.scss.
+  padding: 0.6875rem 1.0625rem;
+  border: 1px solid var(--am-border);
+  border-radius: 20px 20px 6px 20px;
+  background-color: var(--am-b2);
+  color: var(--am-t1);
+  // Same type as .chat-message-bubble in ChatMessage.scss.
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// The same mark the Data Messenger's thinking indicator uses: the product logo in
+// an outlined circle, accent on a secondary background, rather than a gradient blob.
+.react-autoql-agent-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  box-sizing: border-box;
+  border: 1px solid var(--am-border);
+  border-radius: 50%;
+  background-color: var(--am-b2);
+  color: var(--am-accent);
+
+  .react-autoql-icon {
+    display: flex;
+    font-size: 0.875rem;
+
+    // Same reason as the Data Messenger's thinking avatar: the logo SVG carries only
+    // a viewBox, and a flex container sizing itself from that SVG while the SVG sizes
+    // itself from the container is what collapses the mark to nothing.
+    svg {
+      width: 1em;
+      height: 1em;
+    }
+  }
+}
+
+// The rule is the grouping device - every item in one answer hangs off it.
+.react-autoql-agent-message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--am-border);
+}
+
+/* Which step of the agent's workflow produced this answer (meta_data.phase). Quiet
+   by design - it sits above the answer as a caption, not as a status card. The dot
+   carries the colour so the label itself stays readable at this size. */
+.react-autoql-agent-phase-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.125rem;
+  color: var(--am-t2);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.react-autoql-agent-phase-dot {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.6;
+
+  // The summary is the end of the line, so it is the only phase that earns the accent;
+  // the working phases stay in the caption's own grey.
+  .react-autoql-agent-phase-label.is-summary & {
+    background-color: var(--am-accent);
+    opacity: 1;
+  }
+}
+
+.react-autoql-agent-model-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--am-t2);
+}
+
+.react-autoql-agent-item {
+  min-width: 0;
+}
+
+@keyframes react-autoql-agent-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-autoql-agent-message {
+    animation: none;
+  }
+}

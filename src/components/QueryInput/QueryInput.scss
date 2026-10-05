@@ -21,8 +21,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  padding-top: 0;
+  // 2px here plus the input's own 10px margin is a 12px gutter, matching the Data
+  // Agent composer's padding. It was 10px, for 20px - noticeably narrower than the
+  // agent's input at the same drawer width.
+  padding: 0 2px 10px;
 }
 
 .react-autoql-input-row {
@@ -32,18 +34,21 @@
 }
 
 .react-autoql-chatbar-input {
-  padding: 10px;
-  padding-left: 20px;
-  padding-right: 50px; /* Make room for microphone button */
+  padding: 8px;
+  padding-left: 16px;
+  /* Room for the send button inside the pill; .has-microphone adds the mic's */
+  padding-right: 38px;
   margin: 0px 10px 0 10px;
-  height: 42px;
+  height: 36px;
   width: calc(100% - 20px);
   transition: border-radius 0.3s ease, margin-left 0.3s ease, border-left-color 0.2s ease, width 0.3s ease,
     box-shadow 0.3s ease, border-color 0.2s ease, padding-left 0.3s ease;
   white-space: nowrap;
   box-sizing: border-box;
-  border-radius: 24px;
-  font-size: 1rem;
+  border-radius: 18px;
+  // Matches the 0.875rem the chat thread uses, so typed text is the same size as
+  // the message it becomes.
+  font-size: 0.875rem;
   font-family: inherit;
   letter-spacing: 0.04em;
   outline: none !important;
@@ -59,7 +64,8 @@
   color: #5d5d5d;
   position: relative;
   isolation: isolate;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
+    0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
 
   // Semi-transparent overlay for glass effect
   &::before {
@@ -68,7 +74,7 @@
     inset: 0;
     background-color: var(--react-autoql-background-color-secondary);
     opacity: 0.9;
-    border-radius: 24px;
+    border-radius: 18px;
     pointer-events: none;
     z-index: -1;
   }
@@ -80,22 +86,68 @@
       opacity: 0.95;
     }
   }
+
+  // Same focus treatment as the Data Agent composer: an accent border inside a soft
+  // accent ring. The native outline is suppressed above, so without this there was
+  // nothing at all marking the focused input. configureTheme publishes the accent's
+  // channels separately, which is how the ring tints with a theme override.
+  // :not(:disabled) so this outweighs the hover rule further down, which is what an
+  // input being both hovered and focused would otherwise land on.
+  &:not(:disabled):focus {
+    border-color: var(--react-autoql-accent-color);
+    box-shadow: 0 0 0 2px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0.1
+        ),
+      0 1px 2px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04));
+  }
 }
+
+// iOS WebKit auto-zooms the page when a focused input's text is under 16px, and
+// never zooms back out. Only there, so the bump is scoped to WebKit on iOS with
+// -webkit-touch-callout, which no other engine supports - the touch media query
+// alone also caught Android and Chrome's device emulation, where the text just
+// looked oversized for no reason. Chrome and Firefox on iOS are WebKit too, and
+// zoom the same way, so they're covered.
+// 16px, not 1rem: the threshold Safari checks is the computed pixel size, and an app
+// that sets its own html font-size would put 1rem under it.
+@supports (-webkit-touch-callout: none) {
+  @media (hover: none) and (pointer: coarse) {
+    .react-autoql-chatbar-input {
+      font-size: 16px;
+    }
+
+    // Safari's zoom heuristic reads the input's own font-size, not the placeholder's,
+    // so the prompt can stay at the thread's 0.875rem while the text you type keeps
+    // the 16px that stops the page zooming. Without this the placeholder is the
+    // largest text on the screen in an empty chat.
+    .react-autoql-chatbar-input::placeholder {
+      font-size: 0.875rem;
+    }
+  }
+}
+
 .react-autoql-chatbar-input.left-padding {
-  padding-left: 54px;
+  padding-left: 48px;
 }
 .react-autoql-chatbar-input:disabled {
   background: rgba(0, 0, 0, 0.03);
 }
+// Hover is a hint that the input is live, not an event in itself - the accent border
+// is enough, and the soft resting shadow stays put. The composer hovers the same way.
 .react-autoql-chatbar-input:not(:disabled):hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08),
-    0px 0px 5px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
   border-color: var(--react-autoql-accent-color, rgba(38, 167, 233, 0.3));
 }
 
+// The theme's placeholder colour, the same one the Data Agent composer uses. It was
+// a hardcoded #999 !important here, which ignored the theme and left the two inputs
+// looking different from each other.
 .react-autoql-chatbar-input::placeholder {
-  /* Default color outside of data messenger */
-  color: #999 !important;
+  color: var(--react-autoql-text-color-placeholder, #999);
+  opacity: 1;
 }
 
 /* autosuggest */
@@ -121,7 +173,7 @@
 }
 .react-autoql-bar-container .react-autosuggest__suggestions-container--open {
   position: absolute;
-  top: 45px;
+  top: 39px;
   bottom: unset;
   margin: 10px;
   padding-top: 5px;
@@ -144,11 +196,11 @@
 
 .react-autoql-bar-container.autosuggest-top .react-autosuggest__suggestions-container--open {
   top: unset;
-  bottom: 45px;
+  bottom: 39px;
 }
 
 .react-autoql-bar-container.autosuggest-bottom .react-autosuggest__suggestions-container--open {
-  top: 45px;
+  top: 39px;
   bottom: unset;
 }
 
@@ -192,12 +244,6 @@
   color: var(--react-autoql-text-color-placeholder);
 }
 
-.input-response-loading-container {
-  position: absolute;
-  right: 23px;
-  top: -2px;
-}
-
 .chat-bar-input-icon {
   position: absolute;
   display: flex;
@@ -205,9 +251,9 @@
   align-items: center;
   left: 0;
   top: 0;
-  width: 46px;
+  width: 40px;
   height: 100%;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   color: #28a8e0; // For chata logo
 }
 
@@ -331,37 +377,178 @@
 
 .react-autoql-chatbar-input-container {
   &.has-collapsed-icon .react-autoql-chatbar-input {
-    padding-left: 3rem;
+    padding-left: 2.625rem;
+  }
+
+  // The left slot sits inside the pill, so the text has to start after it: 8px of
+  // air, the 24px control, then 10px before the text.
+  &.has-left-content .react-autoql-chatbar-input {
+    padding-left: 2.625rem;
+  }
+
+  // The filter lock widens into a pill when it holds filters (icon + badge), so the
+  // text has to start further in. :has() rather than a class, because the state
+  // belongs to the control the consumer passed in - QueryInput never sees it.
+  &.has-left-content:has(.react-autoql-input-filter-lock-btn.has-filters) .react-autoql-chatbar-input {
+    padding-left: 3.375rem;
+  }
+
+  // Both at once: the two discs sit side by side (24px + 6px apart) and the text
+  // clears both.
+  &.has-left-content.has-collapsed-icon {
+    .react-autoql-chatbar-input {
+      padding-left: 4.5rem;
+    }
+
+    .topics-collapsed-icon {
+      left: 3rem;
+    }
   }
 }
 
+// Left end of the input pill, vertically centred in it. Absolute so it doesn't
+// change the input's own box - the input just pads its text out of the way.
+// Mic and send share the right end of the pill: the send button owns the corner and
+// the mic sits to its left, sized to match it, with the text clearing both.
+// The offsets count from the CONTAINER's edge, while the input sits 10px inside it
+// (its own margin) - hence 15px for a 5px inset, and so on.
+.react-autoql-chatbar-input-container.has-microphone {
+  .react-autoql-chatbar-input {
+    padding-right: 70px;
+  }
+
+  .input-microphone-button {
+    right: 47px;
+
+    .chat-voice-record-button {
+      width: 26px;
+      height: 26px;
+      margin: 0;
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+// The filter lock, at the head of the query input. It scopes the next query, so it
+// reads as part of asking a question rather than as window chrome. A disc with a
+// resting fill and a hairline, echoing the send button at the other end of the pill
+// - with no body at rest it read as decoration on the input rather than a control.
+.react-autoql-input-filter-lock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 24px in a 36px input: enough of a body to read as a control, with room left
+  // around it so the pill doesn't look packed. No border of its own - the input
+  // pill is already an outline, and a ring inside a ring inside the topic chips
+  // above is what made this corner look busy. The fill does the work instead.
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--react-autoql-dm-header-btn-hover, rgba(128, 134, 142, 0.16));
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  outline: none !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+
+  // The native outline is suppressed above, so focus needs a style of its own -
+  // STYLES.md's rule for inputs applies to a control you can tab to as well.
+  // box-shadow rather than `outline`, which that !important would beat, and
+  // :focus-visible so clicking the button doesn't leave a ring behind.
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--react-autoql-accent-color);
+  }
+
+  // The badge sits BESIDE the funnel here rather than on top of it - at 24px a dot
+  // pinned to the corner covered the icon it was meant to annotate. The button
+  // widens into a pill to make room, so both are legible.
+  .react-autoql-filter-lock-icon-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .react-autoql-filter-lock-icon-badge {
+    position: static;
+    width: 4px;
+    height: 4px;
+    border: none;
+    border-radius: 50%;
+    background: var(--react-autoql-warning-color);
+  }
+
+  &.has-filters {
+    width: auto;
+    padding: 0 6px;
+  }
+
+  // Open, or holding filters: the accent fill says the next query is scoped.
+  &.is-open,
+  &.has-filters {
+    background-color: rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.14
+    );
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+.react-autoql-input-left-content {
+  position: absolute;
+  // 18px = the input's own 10px margin + 8px inside the pill, the same air the send
+  // button has at the other end. getLeftControlGeometry's controlsStart mirrors it.
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+
+// Same control as the filter lock at the other end of the pill: a 24px disc on a
+// neutral wash, accent on hover. It was a bare accent glyph at a different size,
+// which read as two unrelated kinds of button inside one input.
 .topics-collapsed-icon {
   position: absolute;
-  left: 1.5rem;
+  // `left` is set inline - it follows whatever sits before it in the pill.
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
   cursor: pointer;
-  color: var(--react-autoql-accent-color, #28a8e0);
-  font-size: 1.25rem;
-  background: none;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.9375rem;
+  background-color: var(--react-autoql-dm-header-btn-hover, rgba(128, 134, 142, 0.16));
   border: none;
-  padding: 0.25rem;
-  border-radius: 50%;
+  padding: 0;
+  border-radius: 999px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s ease, color 0.2s ease, background-color 0.2s ease;
   z-index: 1;
 
-  &.visible {
-    opacity: 0.75;
-    pointer-events: auto;
+  &:hover {
+    color: var(--react-autoql-accent-color);
   }
 
-  &:hover {
+  // Full opacity once shown - the wash and the placeholder-grey glyph already make
+  // it quiet, and fading it as well made it look disabled next to the filter lock.
+  &.visible {
     opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -393,10 +580,25 @@
     }
   }
 
-  // Always show scrollbars on mobile
+  // No rail on touch: the row is swiped, not dragged, so a permanent bar under the
+  // topics is just a line of clutter on the smallest screen. Scrolling itself is
+  // untouched - only the rail is hidden, and it keeps out of the way of taps.
   @media (hover: none) and (pointer: coarse) {
-    .ps__rail-x {
-      opacity: 0.5 !important;
+    .ps__rail-x,
+    .ps__rail-y {
+      display: none !important;
+    }
+
+    // Safari and Chrome draw their own overlay bar on the scroll container too.
+    &::-webkit-scrollbar,
+    .ps::-webkit-scrollbar {
+      display: none;
+    }
+
+    scrollbar-width: none;
+
+    .ps {
+      scrollbar-width: none;
     }
   }
 }
@@ -512,6 +714,15 @@
     .react-autoql-selectable-table {
       flex: 1;
       min-height: 0;
+    }
+
+    // SimpleTable sizes itself to its content (width: fit-content, height: auto up
+    // to maxHeight). In this pane it should take the room it is given instead, so a
+    // narrow preview doesn't sit in a half-width box.
+    .simple-table-outer-container {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
     }
   }
 }
@@ -684,129 +895,20 @@
   z-index: 2;
 }
 
-// LLM empty state — input + topics are one unified rounded container
-.react-autoql-query-input-wrapper.llm-empty-state {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  border: 1px solid var(--react-autoql-border-color);
-  border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
-
-  // Bar container rounds all corners by default (no topics below)
-  .react-autoql-bar-container {
-    padding: 0;
-    border: none;
-    border-radius: 20px;
-    box-shadow: none;
-    background-color: var(--react-autoql-background-color-secondary);
-
-    .react-autoql-input-row {
-      align-items: center;
-    }
-
-    .react-autoql-chatbar-input {
-      margin: 0;
-      width: 100%;
-      border: none;
-      box-shadow: none;
-      background: transparent;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-      height: 60px;
-      padding-left: 20px;
-
-      &::before {
-        display: none;
-      }
-
-      &:hover {
-        box-shadow: none;
-        border-color: transparent;
-      }
-    }
-
-    .react-autosuggest__container {
-      flex: 1;
-    }
-
-    .input-microphone-button {
-      right: 0;
-    }
-
-    .chat-voice-record-button {
-      margin: 0;
-    }
-
-    &.autosuggest-top .react-autosuggest__suggestions-container--open {
-      bottom: 54px;
-    }
-
-    &.autosuggest-bottom .react-autosuggest__suggestions-container--open {
-      top: 54px;
-    }
-  }
-
-  // When topics are present, flatten bar-container bottom corners and round topics bottom
-  &:has(.react-autoql-input-query-suggestions.placement-below) {
-    .react-autoql-bar-container {
-      border-radius: 20px 20px 0 0;
-    }
-  }
-
-  .react-autoql-input-query-suggestions.placement-below {
-    background-color: var(--react-autoql-background-color-secondary);
-    border-top: 1px solid var(--react-autoql-border-color);
-    border-bottom: none;
-    border-radius: 0 0 20px 20px;
-    box-shadow: none;
-    padding: 8px 12px;
-
-    .query-suggestions-collapse-btn {
-      pointer-events: none;
-      cursor: default;
-
-      .react-autoql-icon:first-child {
-        display: none;
-      }
-    }
-  }
-
-  .react-autoql-input-send-button {
-    margin-right: 8px;
-  }
-
-  @media (max-width: 576px) {
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-
-    .react-autoql-bar-container {
-      border-radius: 16px;
-
-      .react-autoql-chatbar-input {
-        height: 52px;
-        font-size: 0.9375rem;
-      }
-    }
-
-    &:has(.react-autoql-input-query-suggestions.placement-below) {
-      .react-autoql-bar-container {
-        border-radius: 16px 16px 0 0;
-      }
-    }
-
-    .react-autoql-input-query-suggestions.placement-below {
-      border-radius: 0 0 16px 16px;
-      padding: 4px 8px;
-    }
-  }
-}
-
-/* Send button */
+/* Send button — a flat accent disc at the right end INSIDE the pill, the way the
+   Data Agent composer does it. The press feedback is a darkening wash rather than a
+   scale-up, so the disc keeps its footprint. */
 .react-autoql-input-send-button {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  position: absolute;
+  // 10px of this is the input's own margin - at 5px the disc hung off the pill's
+  // right edge, in the container's padding.
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
   border: none;
   background-color: var(--react-autoql-accent-color);
   color: var(--react-autoql-text-color-accent);
@@ -814,18 +916,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0px 2px;
+  padding: 0;
   flex-shrink: 0;
-  transition: all 0.2s ease;
-  font-size: 1.25rem;
+  box-shadow: none;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  font-size: 0.875rem;
+
+  // Stop: a neutral disc with a square glyph, so it reads as "halt" rather than as
+  // another way to send.
+  &.is-stop {
+    background-color: var(--react-autoql-text-color-placeholder);
+    color: var(--react-autoql-background-color-secondary);
+
+    &:hover {
+      background-color: var(--react-autoql-text-color-primary);
+    }
+  }
 
   &:hover:not(:disabled) {
-    transform: scale(1.05);
-    box-shadow: 0px 0px 4px 1px var(--react-autoql-box-shadow-color, rgba(0, 0, 0, 0.15));
+    box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.08);
   }
 
   &:active:not(:disabled) {
-    transform: scale(0.95);
+    box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.16);
   }
 
   &:disabled {
@@ -835,8 +948,14 @@
   }
 
   svg {
-    width: 20px;
-    height: 20px;
-    margin-left: -2px;
+    width: 13px;
+    height: 13px;
   }
+}
+
+.react-autoql-input-stop-glyph {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: currentColor;
 }
