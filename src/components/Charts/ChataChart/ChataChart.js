@@ -764,8 +764,7 @@ export default class ChataChart extends React.Component {
         // For stacked charts, calculate sorted column indices based on total aggregates
         const isStackedChart = this.isStackedChartType(props.type)
         if (isStackedChart) {
-          // Stacked charts have no second axis - only the primary series become segments.
-          // numberIndices also carries numberColumnIndices2, which would re-add deselected series.
+          // Stacked charts use only primary series; numberIndices also includes deselected secondary series.
           const columnTotals = indices1.map((colIndex) => {
             const total = aggregated.reduce((sum, row) => {
               const value = row[colIndex]
