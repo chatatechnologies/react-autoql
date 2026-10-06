@@ -14,6 +14,7 @@ import {
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 import { lang } from '../../js/Localization'
 import { fetchSubjectListCached } from '../../js/subjectListService'
+import { fetchQueryTitle } from '../../js/queryTitleService'
 import { scrollTabIntoView } from '../../js/scrollTabIntoView'
 import { isScreenSize, subscribeToScreenSize } from '../../js/breakpoints'
 import { NEW_THREAD_TITLE, getUntitledTitle } from '../AgentMessenger/threadsReducer'
@@ -167,8 +168,8 @@ export default class ChatContent extends React.Component {
     // The session a thread belongs to. Set by the host on its children; a
     // consumer can also pass its own id when it manages sessions itself.
     querySessionId: PropTypes.string,
-    // Internal. How a session tab reports the tab_display_name from a query
-    // response back to its host.
+    // Internal. How a session tab reports the name fetched for it from the query
+    // title endpoint back to its host.
     onSessionTitleChange: PropTypes.func,
     // Internal. The host's filter lock, handed to the visible session only: it is
     // one element with one ref and one set of locked filters, so mounting a copy in
@@ -436,7 +437,7 @@ export default class ChatContent extends React.Component {
   createSessionObject = (sessions) => {
     // Placeholder title, numbered the way the Data Agent numbers threads: plain
     // "New thread" unless that name is taken, then the lowest free suffix. Once a
-    // query in the session comes back with a tab_display_name, setSessionTitle
+    // the title endpoint names the session's first query, setSessionTitle
     // replaces it.
     return { id: uuid(), title: getUntitledTitle(sessions.map((session) => session.title)) }
   }
@@ -1170,7 +1171,35 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // The tab is named from its first query by a request of its own, made alongside
+  // the query rather than after it. A failed or empty answer lets the next query
+  // try again; the host keeps whichever title it accepts first.
+  requestSessionTitle = (query) => {
+    if (!this.props.onSessionTitleChange || this.isSessionTitleRequested || !query) {
+      return
+    }
+
+    this.isSessionTitleRequested = true
+
+    fetchQueryTitle({ query, authentication: this.props.authentication })
+      .then((title) => {
+        if (!title) {
+          this.isSessionTitleRequested = false
+          return
+        }
+
+        if (this._isMounted) {
+          this.props.onSessionTitleChange(title)
+        }
+      })
+      .catch((error) => {
+        this.isSessionTitleRequested = false
+        console.error('Unable to fetch the session title', error)
+      })
+  }
+
   onInputSubmit = (query, id) => {
+    this.requestSessionTitle(query)
     this.addRequestMessage(query, id)
     this.setState({ isInputDisabled: true })
     this.responseDelayTimeout = setTimeout(() => {
@@ -1181,13 +1210,6 @@ export default class ChatContent extends React.Component {
   onResponse = (response, query, queryMessageID) => {
     if (this._isMounted) {
       this.setState({ isQueryRunning: false, isInputDisabled: false })
-
-      // Names the session's tab off what was asked in it. Not returned by the
-      // backend yet — until it is, tabs keep their "New thread" placeholder.
-      // The host ignores everything after the first one it accepts.
-      if (response?.data?.data?.tab_display_name) {
-        this.props.onSessionTitleChange?.(response.data.data.tab_display_name)
-      }
 
       if (response?.data?.message === REQUEST_CANCELLED_ERROR && this.state.isClearingAllMessages) {
         this.setState({
