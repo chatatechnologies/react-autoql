@@ -218,8 +218,8 @@ export const useAgentSession = ({
     [],
   )
 
-  // The models prop bypasses the fetch entirely; otherwise fetch once, and again if
-  // the integrator swaps credentials on us. Depending on the flattened credentials
+  // The models prop bypasses the fetch entirely; otherwise, given a modelsEndpoint,
+  // fetch once, and again if the integrator swaps credentials on us. Depending on the flattened credentials
   // rather than the object keeps a new-but-equal prop from refetching every render.
   const authKey = useMemo(() => {
     const { domain, apiKey, token } = getAuthentication(authentication)
@@ -243,8 +243,9 @@ export const useAgentSession = ({
       return
     }
 
-    // Mock mode makes no requests, so don't call an endpoint that isn't live either.
-    if (enableMockResponses) {
+    // The models endpoint doesn't exist yet, so the fetch only runs when an
+    // endpoint is passed in explicitly. Mock mode makes no requests at all.
+    if (!modelsEndpoint || enableMockResponses) {
       dispatch({ type: Actions.MODELS_LOADED, models: FALLBACK_MODELS, defaultModelId })
       return
     }

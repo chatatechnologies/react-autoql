@@ -2,6 +2,7 @@ import axios from 'axios'
 import { getAuthentication, GENERAL_QUERY_ERROR, UNAUTHENTICATED_ERROR, REQUEST_CANCELLED_ERROR } from 'autoql-fe-utils'
 
 export const SESSIONS_ENDPOINT = '/autoql/api/v1/sessions'
+// Not live yet. useAgentSession only fetches models when given an endpoint explicitly.
 export const MODELS_ENDPOINT = '/autoql/api/v1/models'
 
 // Used when the models endpoint isn't available yet. The selector still renders from

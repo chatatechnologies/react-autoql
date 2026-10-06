@@ -470,6 +470,8 @@ AgentMessenger.propTypes = {
   enableVoiceRecord: PropTypes.bool,
   // Provide models to skip the fetch entirely.
   models: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, label: PropTypes.string })),
+  // Where to fetch the model list from. No request is made without one - the
+  // default endpoint isn't live yet - and the built-in list is used instead.
   modelsEndpoint: PropTypes.string,
   defaultModelId: PropTypes.string,
   maxThreads: PropTypes.number,

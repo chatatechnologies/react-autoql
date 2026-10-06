@@ -101,6 +101,9 @@ export class DataMessenger extends React.Component {
       isOptionsDropdownOpen: false,
       selectedValueLabel: undefined,
       isSizeMaximum: false,
+      // Whether the pointer is close to the drawer's outer edge while maximized,
+      // which is what reveals the restore pill there.
+      isNearRestoreEdge: false,
       // Whether the thread on screen has anything to clear. Reported by
       // ChatContent (per visible session tab), and all the header's
       // "Clear conversation" button goes on.
@@ -903,8 +906,6 @@ export class DataMessenger extends React.Component {
     if (isMobile && this.state.activePage === 'data-explorer') {
       return null
     }
-    const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
-    const isFullScreen = this.isEffectivelyMaximized()
     return (
       <>
         <div className={`react-autoql-header-left-container ${isMobile ? 'mobile-hidden' : ''}`}>
@@ -916,19 +917,9 @@ export class DataMessenger extends React.Component {
           {this.renderRightHeaderContent()}
           {isBrowser ? (
             <>
-              {/* Only maximized state gets a header control. Expanding is offered
-                  by the pill on the drawer's outer edge instead, so the header
-                  keeps just the one action that is relevant right now. */}
-              {isFullScreen && (
-                <button
-                  onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
-                  className='react-autoql-drawer-header-btn screen-mode'
-                  data-tooltip-content={lang.minimizeDataMessenger}
-                  data-tooltip-id={this.TOOLTIP_ID}
-                >
-                  <Icon type='caret-right' />
-                </button>
-              )}
+              {/* No full screen controls here: maximizing and restoring are both
+                  pills on the drawer's outer edge (renderMaximizeHandle and
+                  renderRestoreHandle). */}
               <button
                 onClick={this.closeDataMessenger}
                 className={'react-autoql-drawer-header-btn'}
@@ -1315,7 +1306,7 @@ export class DataMessenger extends React.Component {
 
   // A small pill straddling the drawer's outer edge that expands it to full
   // screen. It replaces the header's maximize button, and disappears once
-  // maximized — at that point the header's restore control is the way back.
+  // maximized — at that point renderRestoreHandle's pill is the way back.
   renderMaximizeHandle = () => {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
@@ -1331,6 +1322,83 @@ export class DataMessenger extends React.Component {
         data-tooltip-id={this.TOOLTIP_ID}
       >
         <Icon type='caret-left' />
+      </button>
+    )
+  }
+
+  // How close, in px, the pointer has to come to the maximized drawer's outer edge
+  // for the restore pill to show. Near rather than on the edge: that edge is the
+  // edge of the screen, and nobody aims for the last pixel of it.
+  RESTORE_EDGE_DISTANCE = 30
+
+  getDistanceFromOuterEdge = (e) => {
+    const rect = this.messengerDrawerRef?.getBoundingClientRect()
+
+    if (!rect) {
+      return Infinity
+    }
+
+    switch (this.getPlacementProp()) {
+      case 'left':
+        return rect.right - e.clientX
+      case 'top':
+        return rect.bottom - e.clientY
+      case 'bottom':
+        return e.clientY - rect.top
+      default:
+        return e.clientX - rect.left
+    }
+  }
+
+  onDrawerMouseMove = (e) => {
+    if (!isBrowser || !this.isEffectivelyMaximized()) {
+      return
+    }
+
+    // The pill reaches a little past the reveal distance, so being on it counts as
+    // near - otherwise it would vanish from under the pointer on its inner half.
+    const isNearRestoreEdge =
+      this.getDistanceFromOuterEdge(e) <= this.RESTORE_EDGE_DISTANCE || !!this.restoreHandleRef?.contains(e.target)
+
+    // Every mouse move lands here, so only re-render when the answer changes.
+    if (isNearRestoreEdge !== this.state.isNearRestoreEdge) {
+      this.setState({ isNearRestoreEdge })
+    }
+  }
+
+  onDrawerMouseLeave = () => {
+    if (this.state.isNearRestoreEdge) {
+      this.setState({ isNearRestoreEdge: false })
+    }
+  }
+
+  // The maximize pill's counterpart. Maximized, the outer edge is the edge of the
+  // screen, so this pill sits just inside it instead of straddling it, and stays
+  // out of the way until the pointer comes near. It replaced a header button
+  // customers weren't finding.
+  renderRestoreHandle = () => {
+    const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
+
+    if (!this.isEffectivelyMaximized() || !this.state.isVisible) {
+      return null
+    }
+
+    return (
+      <button
+        ref={(r) => (this.restoreHandleRef = r)}
+        className={`react-autoql-drawer-restore-handle ${this.getPlacementProp()}${
+          this.state.isNearRestoreEdge ? ' visible' : ''
+        }`}
+        onClick={() => {
+          this.setState({ isNearRestoreEdge: false })
+          this.toggleFullScreen(true, maxWidth, maxHeight)
+        }}
+        aria-label={lang.minimizeDataMessenger}
+        data-tooltip-content={lang.minimizeDataMessenger}
+        data-tooltip-id={this.TOOLTIP_ID}
+        data-test='data-messenger-restore-handle'
+      >
+        <Icon type='caret-right' />
       </button>
     )
   }
@@ -1377,7 +1445,10 @@ export class DataMessenger extends React.Component {
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
             className={`react-autoql-drawer-content-container ${this.state.activePage}`}
+            onMouseMove={this.onDrawerMouseMove}
+            onMouseLeave={this.onDrawerMouseLeave}
           >
+            {isBrowser && this.renderRestoreHandle()}
             {!shouldHideHeader && (
               <div
                 className={`chat-header-container ${isMobile ? 'mobile-hidden' : ''}`}

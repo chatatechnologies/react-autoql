@@ -486,6 +486,20 @@ describe('AgentMessenger', () => {
   })
 
   describe('model selection', () => {
+    it('does not call the models endpoint unless one is passed in', async () => {
+      renderMessenger({ models: undefined })
+
+      await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument())
+      expect(axios.get).not.toHaveBeenCalled()
+    })
+
+    it('fetches the model list from an endpoint that is passed in', async () => {
+      renderMessenger({ models: undefined, modelsEndpoint: '/autoql/api/v1/models' })
+
+      await waitFor(() => expect(axios.get).toHaveBeenCalledTimes(1))
+      expect(axios.get.mock.calls[0][0]).toContain('/autoql/api/v1/models')
+    })
+
     // The picker is turned off for now - the model is still chosen and sent, it
     // just isn't shown under the composer.
     it('does not show the picker', async () => {
