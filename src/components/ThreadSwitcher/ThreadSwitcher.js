@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
-import { ConfirmPopover } from '../ConfirmPopover'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './ThreadSwitcher.scss'
@@ -26,12 +25,8 @@ export const ThreadSwitcher = ({
   onSelect,
   onClose,
   onNew,
-  onCloseAll,
   canAddNew,
   newLabel,
-  closeAllLabel,
-  confirmTitle,
-  confirmText,
   tooltipID,
 }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -166,36 +161,6 @@ export const ThreadSwitcher = ({
                   )
                 })}
               </div>
-
-              {/* Close all lives down here rather than in the toolbar: on a phone
-                  the toolbar has room for the title and one button, and a
-                  destructive action is the last thing that should win that spot.
-                  Inside the menu it also sits next to the list it empties. */}
-              {!!onCloseAll && items.length > 1 && (
-                <div className='react-autoql-thread-switcher-footer'>
-                  <ConfirmPopover
-                    className='react-autoql-thread-switcher-close-all-wrapper'
-                    popoverParentElement={rootRef.current}
-                    title={confirmTitle}
-                    text={confirmText}
-                    confirmText='Close all'
-                    backText='Cancel'
-                    danger
-                    onConfirm={() => {
-                      onCloseAll()
-                      close()
-                    }}
-                    positions={['top', 'bottom', 'left', 'right']}
-                    align='center'
-                    tooltipID={tooltipID}
-                  >
-                    <button type='button' className='react-autoql-thread-switcher-close-all'>
-                      <Icon type='close-circle' />
-                      <span>{closeAllLabel}</span>
-                    </button>
-                  </ConfirmPopover>
-                </div>
-              )}
             </div>
           </>
         )}
@@ -219,13 +184,8 @@ ThreadSwitcher.propTypes = {
   onSelect: PropTypes.func,
   onClose: PropTypes.func,
   onNew: PropTypes.func,
-  // Omit to leave the close-all row out entirely.
-  onCloseAll: PropTypes.func,
   canAddNew: PropTypes.bool,
   newLabel: PropTypes.string,
-  closeAllLabel: PropTypes.string,
-  confirmTitle: PropTypes.string,
-  confirmText: PropTypes.string,
   tooltipID: PropTypes.string,
 }
 
@@ -235,12 +195,8 @@ ThreadSwitcher.defaultProps = {
   onSelect: () => {},
   onClose: () => {},
   onNew: () => {},
-  onCloseAll: undefined,
   canAddNew: true,
   newLabel: 'New chat',
-  closeAllLabel: 'Close all chats',
-  confirmTitle: 'Close all chats?',
-  confirmText: 'Your conversations will be cleared and a new chat will be started.',
   tooltipID: undefined,
 }
 

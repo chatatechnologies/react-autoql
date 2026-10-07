@@ -101,6 +101,9 @@ export class DataMessenger extends React.Component {
       isOptionsDropdownOpen: false,
       selectedValueLabel: undefined,
       isSizeMaximum: false,
+      // Whether the pointer is close to the drawer's outer edge while maximized,
+      // which is what reveals the restore pill there.
+      isNearRestoreEdge: false,
       // Whether the thread on screen has anything to clear. Reported by
       // ChatContent (per visible session tab), and all the header's
       // "Clear conversation" button goes on.
@@ -132,6 +135,14 @@ export class DataMessenger extends React.Component {
     enableVoiceRecord: PropTypes.bool,
     title: PropTypes.string,
     maxMessages: PropTypes.number,
+    // How much answer data is held in memory at once. Once an answer has been pushed
+    // back past `keepHydratedMessages` other answers, its rows are dropped to a preview
+    // and fetched again on request, so the history can be long without the data behind
+    // it growing without bound. Answers smaller than `truncateMinRows` are left alone,
+    // since fetching them again would cost more than holding them. Both are forwarded
+    // to ChatContent, which holds the defaults.
+    keepHydratedMessages: PropTypes.number,
+    truncateMinRows: PropTypes.number,
     // Headline and supporting line for the centred message shown while the chat is
     // empty. Forwarded to ChatContent, which falls back to its own defaults.
     emptyStateTitle: PropTypes.node,
@@ -169,6 +180,10 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
+    // Turns on query suggestions: the Data Explorer's suggestion list and the
+    // related-queries fallback that answers a failed query with a list of close
+    // queries instead of an error. Off by default.
+    enableQuerySuggestions: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
@@ -214,7 +229,7 @@ export class DataMessenger extends React.Component {
     placement: 'right',
     maskClosable: true,
     isVisible: true,
-    width: 600,
+    width: 800,
     height: 350,
     showHandle: true,
     handleImage: undefined,
@@ -224,7 +239,11 @@ export class DataMessenger extends React.Component {
     clearOnClose: false,
     enableVoiceRecord: true,
     title: 'Data Messenger',
-    maxMessages: 20,
+    // Raised from 20 now that the data behind older answers is dropped to a preview
+    // once they fall out of the recent history (see ChatContent's keepHydratedMessages).
+    // What a message costs to keep no longer scales with the size of its result, so the
+    // limit can be about how far back it is useful to scroll instead.
+    maxMessages: 50,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
     enableDataExplorerTab: false,
@@ -248,6 +267,7 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: false,
     enableQueryQuickStartTopics: true,
     enableQueryInputTopics: true,
+    enableQuerySuggestions: false,
     enableDPRTab: false,
     enableAgentTab: false,
     agentInputPlaceholder: undefined,
@@ -573,7 +593,7 @@ export class DataMessenger extends React.Component {
   onDrawerChange = (isOpen) => {
     if (!isOpen) {
       this.setState({
-          selectedValueLabel: undefined,
+        selectedValueLabel: undefined,
         isVisible: false,
       })
     } else {
@@ -903,8 +923,6 @@ export class DataMessenger extends React.Component {
     if (isMobile && this.state.activePage === 'data-explorer') {
       return null
     }
-    const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
-    const isFullScreen = this.isEffectivelyMaximized()
     return (
       <>
         <div className={`react-autoql-header-left-container ${isMobile ? 'mobile-hidden' : ''}`}>
@@ -916,19 +934,9 @@ export class DataMessenger extends React.Component {
           {this.renderRightHeaderContent()}
           {isBrowser ? (
             <>
-              {/* Only maximized state gets a header control. Expanding is offered
-                  by the pill on the drawer's outer edge instead, so the header
-                  keeps just the one action that is relevant right now. */}
-              {isFullScreen && (
-                <button
-                  onClick={() => this.toggleFullScreen(isFullScreen, maxWidth, maxHeight)}
-                  className='react-autoql-drawer-header-btn screen-mode'
-                  data-tooltip-content={lang.minimizeDataMessenger}
-                  data-tooltip-id={this.TOOLTIP_ID}
-                >
-                  <Icon type='caret-right' />
-                </button>
-              )}
+              {/* No full screen controls here: maximizing and restoring are both
+                  pills on the drawer's outer edge (renderMaximizeHandle and
+                  renderRestoreHandle). */}
               <button
                 onClick={this.closeDataMessenger}
                 className={'react-autoql-drawer-header-btn'}
@@ -1024,6 +1032,7 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
+          enableQuerySuggestions={this.props.enableQuerySuggestions}
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
@@ -1062,6 +1071,9 @@ export class DataMessenger extends React.Component {
           // different service and already has its own session id below, so keep
           // the tab bar out of it even when the integrator turns sessions on.
           enableSessions={false}
+          // The DPR service has no related-queries endpoint behind it, so the
+          // suggestion fallback never applies here regardless of the prop.
+          enableQuerySuggestions={false}
           sessionId={this.COMPONENT_KEY}
           autoQLConfig={{
             enableAutocomplete: false,
@@ -1315,7 +1327,7 @@ export class DataMessenger extends React.Component {
 
   // A small pill straddling the drawer's outer edge that expands it to full
   // screen. It replaces the header's maximize button, and disappears once
-  // maximized — at that point the header's restore control is the way back.
+  // maximized — at that point renderRestoreHandle's pill is the way back.
   renderMaximizeHandle = () => {
     const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
 
@@ -1331,6 +1343,83 @@ export class DataMessenger extends React.Component {
         data-tooltip-id={this.TOOLTIP_ID}
       >
         <Icon type='caret-left' />
+      </button>
+    )
+  }
+
+  // How close, in px, the pointer has to come to the maximized drawer's outer edge
+  // for the restore pill to show. Near rather than on the edge: that edge is the
+  // edge of the screen, and nobody aims for the last pixel of it.
+  RESTORE_EDGE_DISTANCE = 30
+
+  getDistanceFromOuterEdge = (e) => {
+    const rect = this.messengerDrawerRef?.getBoundingClientRect()
+
+    if (!rect) {
+      return Infinity
+    }
+
+    switch (this.getPlacementProp()) {
+      case 'left':
+        return rect.right - e.clientX
+      case 'top':
+        return rect.bottom - e.clientY
+      case 'bottom':
+        return e.clientY - rect.top
+      default:
+        return e.clientX - rect.left
+    }
+  }
+
+  onDrawerMouseMove = (e) => {
+    if (!isBrowser || !this.isEffectivelyMaximized()) {
+      return
+    }
+
+    // The pill reaches a little past the reveal distance, so being on it counts as
+    // near - otherwise it would vanish from under the pointer on its inner half.
+    const isNearRestoreEdge =
+      this.getDistanceFromOuterEdge(e) <= this.RESTORE_EDGE_DISTANCE || !!this.restoreHandleRef?.contains(e.target)
+
+    // Every mouse move lands here, so only re-render when the answer changes.
+    if (isNearRestoreEdge !== this.state.isNearRestoreEdge) {
+      this.setState({ isNearRestoreEdge })
+    }
+  }
+
+  onDrawerMouseLeave = () => {
+    if (this.state.isNearRestoreEdge) {
+      this.setState({ isNearRestoreEdge: false })
+    }
+  }
+
+  // The maximize pill's counterpart. Maximized, the outer edge is the edge of the
+  // screen, so this pill sits just inside it instead of straddling it, and stays
+  // out of the way until the pointer comes near. It replaced a header button
+  // customers weren't finding.
+  renderRestoreHandle = () => {
+    const { maxWidth, maxHeight } = this.getMaxWidthAndHeightFromDocument()
+
+    if (!this.isEffectivelyMaximized() || !this.state.isVisible) {
+      return null
+    }
+
+    return (
+      <button
+        ref={(r) => (this.restoreHandleRef = r)}
+        className={`react-autoql-drawer-restore-handle ${this.getPlacementProp()}${
+          this.state.isNearRestoreEdge ? ' visible' : ''
+        }`}
+        onClick={() => {
+          this.setState({ isNearRestoreEdge: false })
+          this.toggleFullScreen(true, maxWidth, maxHeight)
+        }}
+        aria-label={lang.minimizeDataMessenger}
+        data-tooltip-content={lang.minimizeDataMessenger}
+        data-tooltip-id={this.TOOLTIP_ID}
+        data-test='data-messenger-restore-handle'
+      >
+        <Icon type='caret-right' />
       </button>
     )
   }
@@ -1377,7 +1466,10 @@ export class DataMessenger extends React.Component {
           <div
             ref={(r) => (this.messengerDrawerRef = r)}
             className={`react-autoql-drawer-content-container ${this.state.activePage}`}
+            onMouseMove={this.onDrawerMouseMove}
+            onMouseLeave={this.onDrawerMouseLeave}
           >
+            {isBrowser && this.renderRestoreHandle()}
             {!shouldHideHeader && (
               <div
                 className={`chat-header-container ${isMobile ? 'mobile-hidden' : ''}`}

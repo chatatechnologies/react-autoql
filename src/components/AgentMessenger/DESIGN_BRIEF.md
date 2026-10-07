@@ -80,7 +80,7 @@ Also fixed by house style:
 
 Please cover all of these; several are what make the component feel unfinished today.
 
-1. **Empty thread** — logo mark, a "What would you like to know?" headline, and 3–4
+1. **Empty thread** — logo mark, a "What should we work out?" headline, and 3–4
    clickable suggestion chips. This is the first thing a user sees and currently reads as
    a centered stack of defaults.
 2. **Thread switcher** — a pill showing the active thread's title, opening a dropdown of
@@ -128,14 +128,13 @@ The markup is stable; write specs against these hooks.
 
 ```
 .react-autoql-agent-messenger            root, flex column, height 100%; defines the --am-* tokens
-├── .react-autoql-agent-toolbar          2.5rem row above the transcript
-│   ├── .react-autoql-agent-thread-pill  active thread (+ .is-open)
-│   │   ├── .react-autoql-agent-thread-dot
-│   │   ├── .react-autoql-agent-thread-pill-title
-│   │   └── .react-autoql-agent-thread-caret
-│   └── .react-autoql-agent-toolbar-right
-│       ├── .react-autoql-agent-thread-count
-│       └── .react-autoql-agent-icon-btn      the + button
+├── .react-autoql-session-tabs           the tab strip, shared with the Data Messenger
+│   ├── .react-autoql-session-tab-list   scrolls; the tabs keep their width
+│   │   └── .react-autoql-session-tab        (+ .is-active | .is-new)
+│   │       ├── .react-autoql-session-tab-dot
+│   │       ├── .react-autoql-session-tab-title
+│   │       └── .react-autoql-session-tab-close
+│   └── .react-autoql-session-tab-new        the + button, trailing the last tab
 ├── .react-autoql-agent-threads          positioned container, all threads mounted
 │   ├── .react-autoql-agent-menu-scrim
 │   ├── .react-autoql-agent-thread-menu       the thread dropdown

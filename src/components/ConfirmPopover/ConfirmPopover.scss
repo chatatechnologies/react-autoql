@@ -19,8 +19,7 @@
 
     // Sized like the small panel it is on a desktop. Not on mobile: there the
     // popover is a full-width sheet (see Popover.scss), and a 20rem cap left the
-    // text and buttons huddled in its left third - which is every confirm the
-    // ThreadSwitcher's "close all" shows, since that button only exists there.
+    // text and buttons huddled in its left third.
     .react-autoql-confirm-popover-content {
       min-width: 15rem;
       max-width: 20rem;

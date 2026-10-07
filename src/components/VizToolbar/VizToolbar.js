@@ -8,6 +8,7 @@ import { TABLE_TYPES, DisplayTypes, isChartType } from 'autoql-fe-utils'
 import { Icon } from '../Icon'
 import { Button } from '../Button'
 import { Tooltip, triggerGlobalTooltipClose } from '../Tooltip'
+import { getIconForDisplayType } from '../../js/displayTypeIcons'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 import './VizToolbar.scss'
@@ -86,28 +87,6 @@ class VizToolbar extends React.Component {
     }
   }
 
-  getIconForDisplayType = (displayType) => {
-    const map = {
-      [DisplayTypes.TABLE]: 'table',
-      [DisplayTypes.PIVOT_TABLE]: 'pivot-table',
-      [DisplayTypes.COLUMN]: 'column-chart',
-      [DisplayTypes.BAR]: 'bar-chart',
-      [DisplayTypes.LINE]: 'line-chart',
-      [DisplayTypes.PIE]: 'pie-chart',
-      [DisplayTypes.HEATMAP]: 'heatmap',
-      [DisplayTypes.BUBBLE]: 'bubble-chart',
-      [DisplayTypes.STACKED_BAR]: 'stacked-bar-chart',
-      [DisplayTypes.STACKED_COLUMN]: 'stacked-column-chart',
-      [DisplayTypes.STACKED_LINE]: 'stacked-line-chart',
-      [DisplayTypes.COLUMN_LINE]: 'column-line-chart',
-      [DisplayTypes.HISTOGRAM]: 'histogram-chart',
-      [DisplayTypes.SCATTERPLOT]: 'scatterplot',
-      [DisplayTypes.NETWORK_GRAPH]: 'network',
-      [DisplayTypes.SANKEY]: 'sankey',
-    }
-    return map[displayType] || 'column-chart'
-  }
-
   renderCompact = () => {
     const { displayType, isPopoverOpen } = this.state
 
@@ -124,7 +103,7 @@ class VizToolbar extends React.Component {
             title='Change Visualization'
           >
             <span className='viz-toolbar-compact-current-icon'>
-              <Icon type={this.getIconForDisplayType(displayType)} />
+              <Icon type={getIconForDisplayType(displayType)} />
             </span>
             <span className='viz-toolbar-compact-caret'>
               <Icon type='caret-right' />
