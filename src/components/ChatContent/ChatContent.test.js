@@ -3,6 +3,7 @@ import { shallow } from 'enzyme'
 import ChatContent from './ChatContent'
 import { QueryInput } from '../QueryInput'
 import { SessionTabs } from '../SessionTabs'
+import { fetchQueryTitle } from '../../js/queryTitleService'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
 jest.mock('react-tooltip', () => ({ Tooltip: () => null, __esModule: true }))
@@ -13,6 +14,10 @@ jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
   fetchSubjectList: () => Promise.resolve([]),
 }))
+
+jest.mock('../../js/queryTitleService', () => ({ fetchQueryTitle: jest.fn() }))
+
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const requiredProps = {
   authentication: { token: 'token', apiKey: 'key', domain: 'domain' },
@@ -502,5 +507,66 @@ describe('queryInputLeftContent', () => {
 
     expect(active.prop('queryInputLeftContent')).toBe(left)
     expect(background.prop('queryInputLeftContent')).toBeNull()
+  })
+})
+
+describe('session title', () => {
+  beforeEach(() => fetchQueryTitle.mockReset())
+
+  // A session tab as the host renders it: it only knows how to report a title up.
+  const setupTab = (props = {}) => setup({ isSessionTab: true, querySessionId: 'session-1', ...props })
+
+  test('the first query asks the title endpoint and reports the name', async () => {
+    fetchQueryTitle.mockResolvedValue('Revenue by region last quarter')
+    const onSessionTitleChange = jest.fn()
+    const wrapper = setupTab({ onSessionTitleChange })
+
+    wrapper.instance().onInputSubmit('total revenue by region last quarter', 'msg-1')
+    await flushPromises()
+
+    expect(fetchQueryTitle).toHaveBeenCalledWith({
+      query: 'total revenue by region last quarter',
+      authentication: requiredProps.authentication,
+    })
+    expect(onSessionTitleChange).toHaveBeenCalledWith('Revenue by region last quarter')
+
+    wrapper.instance().onInputSubmit('and the quarter before', 'msg-2')
+    await flushPromises()
+
+    expect(fetchQueryTitle).toHaveBeenCalledTimes(1)
+  })
+
+  test('a failed title request lets the next query try again', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    fetchQueryTitle.mockRejectedValueOnce(new Error('500')).mockResolvedValueOnce('Revenue by region')
+    const onSessionTitleChange = jest.fn()
+    const wrapper = setupTab({ onSessionTitleChange })
+
+    wrapper.instance().onInputSubmit('total revenue by region', 'msg-1')
+    await flushPromises()
+    expect(onSessionTitleChange).not.toHaveBeenCalled()
+
+    wrapper.instance().onInputSubmit('total revenue by region', 'msg-2')
+    await flushPromises()
+
+    expect(fetchQueryTitle).toHaveBeenCalledTimes(2)
+    expect(onSessionTitleChange).toHaveBeenCalledWith('Revenue by region')
+    console.error.mockRestore()
+  })
+
+  test('a thread outside of sessions never asks for a title, even given the callback', () => {
+    const wrapper = setup({ onSessionTitleChange: jest.fn() })
+
+    wrapper.instance().onInputSubmit('total revenue', 'msg-1')
+
+    expect(fetchQueryTitle).not.toHaveBeenCalled()
+  })
+
+  test('a thread outside of sessions never asks for a title', () => {
+    const wrapper = setup()
+
+    wrapper.instance().onInputSubmit('total revenue', 'msg-1')
+
+    expect(fetchQueryTitle).not.toHaveBeenCalled()
   })
 })
