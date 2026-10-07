@@ -141,3 +141,14 @@
   color: var(--react-autoql-danger-color);
   font-size: 0.75rem;
 }
+
+// The global `span .react-autoql-icon` rule nudges icons up with padding, which sits the
+// glyph off the text in a notice this small. Scoped here rather than changed globally,
+// where it would move every icon inside a span in host apps too.
+.react-autoql-data-truncated-banner,
+.react-autoql-data-truncated-card {
+  span .react-autoql-icon {
+    vertical-align: -0.125em;
+    padding-bottom: 0;
+  }
+}

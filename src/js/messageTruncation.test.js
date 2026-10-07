@@ -101,6 +101,39 @@ describe('truncateOldMessageData', () => {
     expect(rowsOf(result[5])).toBe(500)
   })
 
+  // One big table followed by a run of one-row answers is exactly the case the budget
+  // exists for - the small answers cost nothing and must not push the big one out.
+  test('small answers do not count towards the budget', () => {
+    const messages = [answer(500), answer(1), answer(1), answer(1)]
+
+    const result = truncateOldMessageData(messages, options)
+
+    expect(result).toBe(messages)
+    expect(rowsOf(result[0])).toBe(500)
+  })
+
+  // Built in the browser from the parent's rows, carrying the parent's fe_req: Restore
+  // would re-run the parent and store its full result as the drilldown.
+  test('leaves a client-side drilldown alone, and does not count it against the budget', () => {
+    const drilldown = answer(500)
+    drilldown.response.isClientSideFilter = true
+    const messages = [answer(500), drilldown, answer(500), answer(500)]
+
+    const result = truncateOldMessageData(messages, options)
+
+    expect(result[1].dataTruncated).toBeUndefined()
+    expect(rowsOf(result[1])).toBe(500)
+    expect(rowsOf(result[0])).toBe(10)
+  })
+
+  test('leaves an answer with no query text alone, since there is nothing to re-run', () => {
+    const noText = answer(500)
+    delete noText.response.data.data.fe_req
+    const messages = [noText, answer(500), answer(500)]
+
+    expect(truncateOldMessageData(messages, options)[0].dataTruncated).toBeUndefined()
+  })
+
   test('does not re-truncate an answer that is already a preview', () => {
     const messages = [answer(500), answer(500), answer(500)]
     const once = truncateOldMessageData(messages, options)
@@ -157,7 +190,9 @@ describe('truncateOldMessageData', () => {
 describe('defaults', () => {
   const answer = (rowCount, id) => ({
     id,
-    response: { data: { data: { rows: Array.from({ length: rowCount }, (_, i) => [i]) } } },
+    response: {
+      data: { data: { fe_req: { text: 'total revenue' }, rows: Array.from({ length: rowCount }, (_, i) => [i]) } },
+    },
   })
 
   test('keeps the three most recent data-bearing answers', () => {

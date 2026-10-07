@@ -1063,7 +1063,14 @@ export default class ChataTable extends React.Component {
     }
 
     let newRows
-    if (props.pivot) {
+    if (props.isDataTruncated) {
+      // The preview is the first rows of the answer as it came back, and the banner says
+      // so. The saved sort and filter still arrive in tableParams (they are what Restore
+      // re-runs the query with), but applied to ten rows they would turn "the first 10
+      // rows" into a sorted top 10 - or filter it to nothing - with the controls that
+      // would explain it withdrawn.
+      newRows = (props.response?.data?.data?.rows ?? []).slice(start, end)
+    } else if (props.pivot) {
       // For pivot tables, check if there are filters
       const hasFilters = tableParamsForAPI.tableFilters && tableParamsForAPI.tableFilters.length > 0
 
@@ -1177,10 +1184,15 @@ export default class ChataTable extends React.Component {
     this.props.onCellClick(cell)
   }
 
+  // Returns whether anything was copied: a table still waiting for a box to build into
+  // (see TableWrapper.observeFirstRealHeight) has no Tabulator to copy from.
   copyToClipboard = () => {
     if (this._isMounted && this.ref?.tabulator) {
       this.ref.tabulator.copyToClipboard('active', true)
+      return true
     }
+
+    return false
   }
 
   saveAsCSV = (delay) => {

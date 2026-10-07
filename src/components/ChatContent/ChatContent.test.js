@@ -418,12 +418,14 @@ describe('keeping the message response current when columns change', () => {
   // answer that just gained a column is exactly what should be truncated next time.
   test('does not mark the message restored or clear its truncated state', () => {
     const { wrapper, instance } = setupWithMessage()
+    const dataTruncated = { droppedRowCount: 500, wasDataLimited: false }
+    instance.setState({ messages: [{ ...wrapper.state('messages')[0], dataTruncated }] })
 
     instance.onMessageResponseUpdate('m1', responseWith(['a', 'b']))
 
     const message = wrapper.state('messages')[0]
     expect(message.isDataRestored).toBeUndefined()
-    expect(message.dataTruncated).toBeUndefined()
+    expect(message.dataTruncated).toBe(dataTruncated)
   })
 
   test('ignores an unknown message, a missing response, and a response it already holds', () => {
@@ -435,5 +437,70 @@ describe('keeping the message response current when columns change', () => {
     instance.onMessageResponseUpdate('m1', before[0].response)
 
     expect(wrapper.state('messages')).toBe(before)
+  })
+})
+
+// A background session tab ignores the host's props while it is hidden - so anything it
+// has to react to (authentication, here) can't be read off prevProps on the way back:
+// React has already assigned the skipped props by then.
+describe('a hidden session tab', () => {
+  const hiddenTab = () => setup({ isSessionTab: true, shouldRender: false, isActivePage: false })
+
+  test('does not re-render for prop changes while hidden', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+
+    expect(instance.shouldComponentUpdate({ ...instance.props, inputPlaceholder: 'x' }, instance.state)).toBe(false)
+  })
+
+  test('still re-renders for its own state while hidden', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+
+    expect(instance.shouldComponentUpdate(instance.props, { ...instance.state, messages: [{ id: 'm1' }] })).toBe(true)
+  })
+
+  test('fetches subjects on reveal when authentication changed while it was hidden', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+    instance.fetchAllSubjects = jest.fn()
+
+    wrapper.setProps({ authentication: { token: 'other', apiKey: 'key', domain: 'domain' } })
+    expect(instance.fetchAllSubjects).not.toHaveBeenCalled()
+
+    wrapper.setProps({ shouldRender: true, isActivePage: true })
+    expect(instance.fetchAllSubjects).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not refetch on reveal when authentication did not change', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+    instance.fetchAllSubjects = jest.fn()
+
+    wrapper.setProps({ shouldRender: true, isActivePage: true })
+    expect(instance.fetchAllSubjects).not.toHaveBeenCalled()
+  })
+})
+
+describe('queryInputLeftContent', () => {
+  const left = <span className='custom-left' />
+
+  test('takes the head of the input in a standalone thread', () => {
+    const wrapper = setup({ queryInputLeftContent: left })
+
+    expect(wrapper.find(QueryInput).prop('leftContent')).toBe(left)
+  })
+
+  test('goes to the tab on screen only, with sessions on', () => {
+    const wrapper = setup({ enableSessions: true, queryInputLeftContent: left })
+    wrapper.instance().addSession()
+    wrapper.update()
+
+    const threads = getThreads(wrapper)
+    const active = threads.filterWhere((t) => t.prop('isActivePage'))
+    const background = threads.filterWhere((t) => !t.prop('isActivePage'))
+
+    expect(active.prop('queryInputLeftContent')).toBe(left)
+    expect(background.prop('queryInputLeftContent')).toBeNull()
   })
 })

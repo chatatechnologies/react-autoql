@@ -64,7 +64,13 @@ const DataTruncatedNotice = ({
 
   // Sits with the control that failed rather than replacing the notice: the preview is
   // still valid and still worth reading, the fetch just didn't land.
-  const errorText = error ? <span className='react-autoql-data-truncated-error'>{error}</span> : null
+  // role='alert' so a screen reader hears the failure - the button's label changing to
+  // "Try again" is not announced on its own.
+  const errorText = error ? (
+    <span className='react-autoql-data-truncated-error' role='alert'>
+      {error}
+    </span>
+  ) : null
 
   if (variant === 'card') {
     // A pivot table aggregates the rows it is given, so like a chart it would present a

@@ -23,6 +23,17 @@ export const KEEP_HYDRATED_MESSAGES = 3
 export const TRUNCATE_MIN_ROWS = 200
 
 /**
+ * Whether Restore can get this answer's rows back. Restore re-runs the query from the
+ * response's own `fe_req`, so an answer with no query text has nothing to re-run, and
+ * one built in the browser from another answer's rows (a network graph's OR drilldown)
+ * carries its parent's `fe_req` - re-running it would store the parent's full result
+ * as the drilldown.
+ */
+export const canRestoreResponse = (response) => {
+  return !response?.isClientSideFilter && !!response?.data?.data?.fe_req?.text
+}
+
+/**
  * Drop the rows of answers that have been pushed far enough back in the history.
  *
  * History is cheap to keep; the data hanging off it is not - a few thousand rows sit in
@@ -30,10 +41,13 @@ export const TRUNCATE_MIN_ROWS = 200
  * are open. Past `keepHydratedMessages` answers back, the rows go and a preview stays,
  * which is what lets the history limit be raised at all.
  *
- * Two things are deliberately left alone:
+ * Three things are deliberately left alone:
  *
  *   Small answers. The round trip to fetch them again costs more than holding them ever
  *   did, and it would turn a scroll through recent history into a wait.
+ *
+ *   Answers that can't be re-run (see canRestoreResponse), which would have no way
+ *   back to their data.
  *
  *   Answers the user has explicitly restored. Having asked for the data once, they
  *   should not have to ask again every time they run another query. The cost of that is
@@ -57,16 +71,24 @@ export const truncateOldMessageData = (messages, options = {}) => {
   const next = [...messages].reverse().map((message) => {
     const rowCount = getResponseRowCount(message?.response)
 
-    // Requests, errors and already-truncated answers hold nothing worth taking, and a
-    // restored answer is being kept on purpose. None of them count towards the budget
-    // either - it is a budget of answers still holding their data.
-    if (!rowCount || message.dataTruncated || message.isDataRestored) {
+    // Requests, errors, small answers and already-truncated answers hold nothing worth
+    // taking, a restored answer is being kept on purpose, and one that can't be re-run
+    // could never be restored. None of them count towards the budget either - it is a
+    // budget of large answers still holding their data, so a big table followed by a
+    // few one-row answers keeps its rows.
+    if (
+      !rowCount ||
+      rowCount <= truncateMinRows ||
+      message.dataTruncated ||
+      message.isDataRestored ||
+      !canRestoreResponse(message.response)
+    ) {
       return message
     }
 
     hydratedSeen += 1
 
-    if (hydratedSeen <= keepHydratedMessages || rowCount <= truncateMinRows) {
+    if (hydratedSeen <= keepHydratedMessages) {
       return message
     }
 

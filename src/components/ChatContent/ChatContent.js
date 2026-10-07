@@ -151,8 +151,7 @@ export default class ChatContent extends React.Component {
     // Whether a failed query may fall back to related queries. When a query comes
     // back with a "no results for this phrasing" or 5xx reference id, the backend
     // is asked for queries close to what was typed and the answer is replaced by
-    // that list. Off unless the integrator asks for it. Also gates the topics
-    // dropdown in the input (see QueryInput). Default false.
+    // that list. Off unless the integrator asks for it. Default false.
     enableQuerySuggestions: PropTypes.bool,
     // Headline and supporting line for the centred message shown while the
     // thread has no messages. Fall back to the defaults in Localization.
@@ -182,6 +181,9 @@ export default class ChatContent extends React.Component {
     // one element with one ref and one set of locked filters, so mounting a copy in
     // every tab would have them fighting over it. Tabs never render their own.
     filterLockElement: PropTypes.node,
+    // Rendered at the head of the query input pill, in place of the filter lock. With
+    // sessions on, only the tab on screen mounts it.
+    queryInputLeftContent: PropTypes.node,
     // Internal. How a session tab tells its host it now has (or no longer has)
     // messages of its own, which decides whether its close button shows when it
     // is the only tab.
@@ -218,6 +220,7 @@ export default class ChatContent extends React.Component {
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
     showFilterLockButton: false,
+    queryInputLeftContent: undefined,
     filterLockButtonLabel: undefined,
     enableMessageDelete: true,
     enableSessions: false,
@@ -256,9 +259,11 @@ export default class ChatContent extends React.Component {
   // whole transcript. A hidden tab still has to render its own state (a response can
   // land in it while the user is reading another one); what it must not do is follow
   // the host's props. The transition renders in both directions still happen, so
-  // componentDidUpdate's shouldRender edges are untouched — and because prevProps is
-  // the props of the last *commit*, a change skipped while hidden (authentication,
-  // say) is still seen as a change on the render that brings the tab back.
+  // componentDidUpdate's shouldRender edges are untouched. What does not survive is a
+  // prevProps comparison: React assigns this.props even when this returns false, so a
+  // change skipped while hidden is already in prevProps by the render that brings the
+  // tab back. Anything that has to react to such a change compares against what it last
+  // handled instead - see subjectsAuthentication.
   shouldComponentUpdate = (nextProps, nextState) => {
     if (this.isSessionHost() || !this.props.isSessionTab) {
       return true
@@ -315,7 +320,10 @@ export default class ChatContent extends React.Component {
       this.closeFilterLockMenu()
     }
 
-    if (!_isEqual(this.props.authentication, prevProps.authentication)) {
+    // Against the authentication the subjects were last fetched with, not prevProps:
+    // a hidden session tab skips its updates (see shouldComponentUpdate), so by the time
+    // it is shown again prevProps already carries the new value.
+    if (!_isEqual(this.props.authentication, this.subjectsAuthentication)) {
       this.fetchAllSubjects()
     }
 
@@ -571,6 +579,8 @@ export default class ChatContent extends React.Component {
   }
 
   fetchAllSubjects = () => {
+    this.subjectsAuthentication = this.props.authentication
+
     // Cached: with sessions on, one of these runs per tab with the same answer.
     fetchSubjectListCached(this.props.authentication)
       .then((subjects) => {
@@ -1444,14 +1454,30 @@ export default class ChatContent extends React.Component {
     return !!this.props.showFilterLockButton || !!this.props.autoQLConfig?.enableFilterLocking
   }
 
-  // The lock for this thread's query input: the host's when this is a tab, its own
+  // What sits at the head of this thread's query input: the consumer's own content if
+  // they passed any, otherwise the lock - the host's when this is a tab, its own
   // otherwise.
-  getFilterLockElement = () => {
+  getQueryInputLeftContent = () => {
+    if (this.props.queryInputLeftContent !== undefined) {
+      return this.props.queryInputLeftContent
+    }
+
     if (this.props.isSessionTab) {
       return this.props.filterLockElement ?? null
     }
 
     return this.ownsFilterLock() ? this.renderFilterLockPopover() : null
+  }
+
+  // Same reason as the lock: one element, so only the tab on screen gets it. null rather
+  // than undefined for the others, so a background tab doesn't fall back to a lock of
+  // its own.
+  getSessionQueryInputLeftContent = (isActiveSession) => {
+    if (this.props.queryInputLeftContent === undefined) {
+      return undefined
+    }
+
+    return isActiveSession ? this.props.queryInputLeftContent : null
   }
 
   openFilterLockMenu = () => {
@@ -1689,6 +1715,7 @@ export default class ChatContent extends React.Component {
                   // One lock for the strip: the host holds the filters and the
                   // element, and only the tab on screen mounts it.
                   filterLockElement={isActiveSession && this.ownsFilterLock() ? this.renderFilterLockPopover() : null}
+                  queryInputLeftContent={this.getSessionQueryInputLeftContent(isActiveSession)}
                   queryFilters={this.ownsFilterLock() ? this.state.lockedFilters : this.props.queryFilters}
                   onRTValueLabelClick={
                     this.ownsFilterLock() ? this.onRTValueLabelClick : this.props.onRTValueLabelClick
@@ -1907,9 +1934,8 @@ export default class ChatContent extends React.Component {
               enableQueryInputTopics={this.props.enableQueryInputTopics}
               enableQuerySuggestions={this.props.enableQuerySuggestions}
               // The filter lock sits at the head of the input pill. A consumer's own
-              // left content wins — the Data Messenger passes its lock down this way,
-              // and only one control fits there.
-              leftContent={this.getFilterLockElement()}
+              // queryInputLeftContent wins - only one control fits there.
+              leftContent={this.getQueryInputLeftContent()}
               disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
             />
           </div>

@@ -149,22 +149,25 @@ export default class TableWrapper extends React.Component {
    * the table waits instead: no box, no build. `autoResize` is off in chat scope, which
    * is why nothing else was ever going to catch this.
    *
-   * The observer is how it learns it has a box. An element inside a `display: none`
-   * subtree generates none at all, so ResizeObserver reports nothing for it - the first
-   * callback it ever delivers is the one after the reveal, already carrying a real
-   * height. That single callback is the signal, which is why there is no zero to wait
-   * for. ChataTable.onBecameVisible drives the same method from the React update that
-   * reveals the tab, so the build doesn't depend on observer timing either.
+   * The observer is how it learns it has a box. It watches the container rather than
+   * this element: this element stays 0px tall until Tabulator builds into it, so it
+   * never reports a size change on the reveal and would leave the table deferred
+   * forever. The container has a min-height, so it does change size when it is shown.
+   * The callback doesn't trust the height it is given either - buildWhenVisible asks
+   * the DOM. ChataTable.onBecameVisible drives the same method from the React update
+   * that reveals the tab, but a consumer that hides the chat its own way (a `hidden`
+   * attribute, its own tab panel) never triggers that, so this has to work alone.
    */
   observeFirstRealHeight = () => {
-    if (typeof ResizeObserver === 'undefined' || !this.tableRef) {
+    if (typeof ResizeObserver === 'undefined' || !this.tableRef || !this.buildDeferred) {
       return
     }
 
-    this.heightObserver = new ResizeObserver((entries) => {
-      const height = entries[entries.length - 1]?.contentRect?.height ?? 0
+    const target =
+      this.tableRef.closest?.('.react-autoql-tabulator-container') ?? this.tableRef.parentElement ?? this.tableRef
 
-      if (!height || !this.buildDeferred) {
+    this.heightObserver = new ResizeObserver(() => {
+      if (!this.buildDeferred) {
         return
       }
 
@@ -177,7 +180,7 @@ export default class TableWrapper extends React.Component {
       })
     })
 
-    this.heightObserver.observe(this.tableRef)
+    this.heightObserver.observe(target)
   }
 
   // Also called directly by ChataTable.onBecameVisible.
@@ -192,6 +195,9 @@ export default class TableWrapper extends React.Component {
     }
 
     this.buildDeferred = false
+    // Its only job was this build.
+    this.heightObserver?.disconnect()
+    this.heightObserver = undefined
     this.instantiateTabulator()
   }
 

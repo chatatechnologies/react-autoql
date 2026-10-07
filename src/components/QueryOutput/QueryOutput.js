@@ -1451,7 +1451,10 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumnsAndData = (response) => {
+  // `keepTableConfig` is for Restore: the answer is the same one with its rows back, so
+  // the axes the user had (seeded from the message on mount) still apply. Every other
+  // route has changed the columns and starts the config over.
+  updateColumnsAndData = (response, { keepTableConfig = false } = {}) => {
     if (response && this._isMounted) {
       const wasTruncated = this.isDataTruncated()
       this._consecutiveConfigResets = 0
@@ -1479,7 +1482,12 @@ export class QueryOutput extends React.Component {
         this.captureQueryFilterBaseline(newColumns)
       }
 
-      this.resetTableConfig(newColumns)
+      if (keepTableConfig && this.isTableConfigValid(this.tableConfig, newColumns)) {
+        // Fills in anything derived from the columns, keeping the indices already set.
+        this.setTableConfig(newColumns)
+      } else {
+        this.resetTableConfig(newColumns)
+      }
 
       const aggConfig = this.getAggConfig(newColumns)
 
@@ -1499,8 +1507,10 @@ export class QueryOutput extends React.Component {
 
       // Every route into here - Restore, adding a custom column, changing the selected
       // columns from the reverse translation - has been to the server for the answer
-      // again, so the rows now on screen are not a preview any more.
-      const isNoLongerTruncated = wasTruncated && !!response?.data?.data?.rows?.length
+      // again, so the rows now on screen are not a preview any more. Zero rows included:
+      // that is the real answer now, and leaving the banner up would say "first 0 rows"
+      // with a Restore that only repeats itself.
+      const isNoLongerTruncated = wasTruncated && Array.isArray(response?.data?.data?.rows)
 
       this.setState((prevState) => ({
         columns: newColumns,
@@ -1528,7 +1538,11 @@ export class QueryOutput extends React.Component {
         // created with - and the first sweep that truncates it slices *that* one, so the
         // remount puts the answer back the way it was before the column existed, taking
         // any view that depended on it (a pivot table, most visibly) with it.
-        this.props.onResponseUpdate?.(this.queryResponse)
+        //
+        // A copy, not this.queryResponse itself: the message would otherwise hold this
+        // instance's working response, so later in-place edits here would slip past its
+        // identity check and it would keep references into this instance after a remount.
+        this.props.onResponseUpdate?.(cloneResponseSharingRows(this.queryResponse))
       }
     }
   }
@@ -1563,8 +1577,9 @@ export class QueryOutput extends React.Component {
         this.resetTableConfig(newColumns)
 
         // Same reasoning as updateColumnsAndData: what the user can see of this answer
-        // has changed, and the message is where that has to survive a remount.
-        this.props.onResponseUpdate?.(this.queryResponse)
+        // has changed, and the message is where that has to survive a remount. A copy,
+        // for the same reason as there.
+        this.props.onResponseUpdate?.(cloneResponseSharingRows(this.queryResponse))
       }
 
       // Determine appropriate display type based on column visibility
@@ -1842,11 +1857,9 @@ export class QueryOutput extends React.Component {
     }
 
     if (this.state.displayType === 'table' && this.tableRef?._isMounted) {
-      this.tableRef.copyToClipboard()
-      return true
+      return !!this.tableRef.copyToClipboard()
     } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef?._isMounted) {
-      this.pivotTableRef.copyToClipboard()
-      return true
+      return !!this.pivotTableRef.copyToClipboard()
     }
 
     return false
@@ -2069,7 +2082,7 @@ export class QueryOutput extends React.Component {
       }
 
       // Clears the truncated state as its last step, once the data is in place.
-      this.updateColumnsAndData(response)
+      this.updateColumnsAndData(response, { keepTableConfig: true })
     } catch (error) {
       console.error(error)
 
@@ -2109,6 +2122,9 @@ export class QueryOutput extends React.Component {
       const drilldownResponse = _cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
       drilldownResponse.data.data.count_rows = filteredRows.length
+      // Built here from this answer's rows, but carrying this answer's fe_req - so it
+      // can't be re-run as itself, and must never be truncated (see canRestoreResponse).
+      drilldownResponse.isClientSideFilter = true
       return drilldownResponse
     } catch (error) {
       console.error(error)
@@ -2128,6 +2144,9 @@ export class QueryOutput extends React.Component {
       const drilldownResponse = _cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
       drilldownResponse.data.data.count_rows = filteredRows.length
+      // Built here from this answer's rows, but carrying this answer's fe_req - so it
+      // can't be re-run as itself, and must never be truncated (see canRestoreResponse).
+      drilldownResponse.isClientSideFilter = true
       return drilldownResponse
     } catch (error) {
       console.error(error)

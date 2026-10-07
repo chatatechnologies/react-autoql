@@ -65,6 +65,27 @@ describe('SessionTabs', () => {
     expect(onSelect).not.toHaveBeenCalled()
   })
 
+  // With "Close all" gone, this is the only way to close a background thread from the
+  // keyboard - so it has to be a real, focusable button.
+  test('the close control is a keyboard-reachable button', () => {
+    renderTabs()
+
+    const close = screen.getByRole('button', { name: 'Close Second chat' })
+    expect(close.tagName).toBe('BUTTON')
+    expect(close).not.toHaveAttribute('tabindex', '-1')
+  })
+
+  // The tab's own handler takes Enter/Space and preventDefaults them, which would cancel
+  // the button's click and select the tab instead.
+  test('keys pressed on the close button do not reach the tab', () => {
+    const onSelect = jest.fn()
+    renderTabs({ onSelect })
+
+    fireEvent.keyDown(screen.getByLabelText('Close Second chat'), { key: 'Enter' })
+
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
   test('a tab with canClose false has no close button', () => {
     renderTabs({ items: [{ id: 'a', title: 'Only chat', canClose: false, closeLabel: 'Close Only chat' }] })
 

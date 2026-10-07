@@ -98,6 +98,8 @@ describe('DataTruncatedNotice', () => {
     const wrapper = setup({ error: 'Data could not be loaded.' })
 
     expect(wrapper.find('.react-autoql-data-truncated-error').text()).toBe('Data could not be loaded.')
+    // Announced: the button's label changing to "Try again" is not, on its own.
+    expect(wrapper.find('.react-autoql-data-truncated-error').prop('role')).toBe('alert')
     expect(wrapper.text()).toContain('Try again')
     expect(wrapper.text()).not.toContain('Restore data')
   })

@@ -192,11 +192,17 @@
         }
       }
 
-      &:hover {
+      &:hover,
+      &:focus-visible {
         opacity: 1;
         // A touch stronger than the tab's own hover, so the X still reads as a
         // separate target once you're over it.
         background-color: var(--react-autoql-session-tab-close-hover);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--react-autoql-accent-color);
+        outline-offset: 1px;
       }
     }
   }
@@ -249,4 +255,10 @@
   30% {
     box-shadow: 0 0 0 2px var(--react-autoql-session-tab-glow);
   }
+}
+
+// See DataTruncatedNotice.scss: the global span icon rule, scoped back out for the strip.
+.react-autoql-session-tabs span .react-autoql-icon {
+  vertical-align: -0.125em;
+  padding-bottom: 0;
 }

@@ -177,9 +177,9 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
-    // Turns on query suggestions: the Data Explorer's suggestion list, the input's
-    // topics dropdown, and the related-queries fallback that answers a failed query
-    // with a list of close queries instead of an error. Off by default.
+    // Turns on query suggestions: the Data Explorer's suggestion list and the
+    // related-queries fallback that answers a failed query with a list of close
+    // queries instead of an error. Off by default.
     enableQuerySuggestions: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,

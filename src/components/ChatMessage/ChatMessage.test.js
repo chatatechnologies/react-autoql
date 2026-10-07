@@ -5,6 +5,7 @@ import { fetchLLMSummary, fetchLLMSummaryQuote } from 'autoql-fe-utils'
 import { testAuthentication } from '../../../test/testData'
 import { findByTestAttr } from '../../../test/testUtils'
 import { ChatMessage } from './ChatMessage'
+import { QueryOutput } from '../QueryOutput'
 
 jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
@@ -338,5 +339,63 @@ describe('the QueryOutput ref handed to the toolbars', () => {
     instance.setResponseRef(null)
 
     expect(forceUpdate).not.toHaveBeenCalled()
+  })
+})
+
+// Truncating an answer remounts its QueryOutput, which is seeded back from the view state
+// held on the message. Both halves of the table params have to make the trip: the table
+// params put the filter back on screen, the formatted ones are what queries (CSV export,
+// Restore, custom options' tableFilters) are built from.
+describe('view state round trip', () => {
+  test('hands the saved table params, both halves, back to the output', () => {
+    const tableParams = { filter: [{ field: '0', type: 'like', value: 'x' }], sort: [] }
+    const formattedTableParams = { filters: [{ name: 'region', value: 'x', operator: 'like' }], sorters: [] }
+    const onViewStateChange = jest.fn()
+    const wrapper = setup({ onViewStateChange })
+    const instance = wrapper.instance()
+
+    instance.onTableParamsChange(tableParams, formattedTableParams)
+    const [id, patch] = onViewStateChange.mock.calls[0]
+    expect(id).toBe(defaultProps.id)
+
+    wrapper.setProps({ viewState: patch, dataVersion: 1 })
+    const output = wrapper.find(QueryOutput)
+
+    expect(output.prop('initialTableParams')).toBe(tableParams)
+    expect(output.prop('initialFormattedTableParams')).toBe(formattedTableParams)
+  })
+})
+
+// Every QueryOutput mount reports its display type - including the remount truncation
+// causes, which used to scroll an older charted answer into view.
+describe('display type reported by a remount', () => {
+  test('scrolls a newly charted answer into view, but not the same chart remounting', () => {
+    jest.useFakeTimers()
+    try {
+      const instance = setup().instance()
+      instance.getMessageVisibilityElement = () => ({})
+      instance.isScrolledIntoView = () => false
+      instance.animateScrollBubbleIntoContainer = jest.fn()
+
+      instance.onDisplayTypeChange('column')
+      jest.advanceTimersByTime(200)
+      expect(instance.animateScrollBubbleIntoContainer).toHaveBeenCalledTimes(1)
+
+      instance.onDisplayTypeChange('column')
+      jest.advanceTimersByTime(200)
+      expect(instance.animateScrollBubbleIntoContainer).toHaveBeenCalledTimes(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('updates while hidden', () => {
+  test('skips them, except the dataVersion bump that lets go of truncated rows', () => {
+    const instance = setup({ shouldRender: false }).instance()
+    const props = instance.props
+
+    expect(instance.shouldComponentUpdate({ ...props, isResizing: !props.isResizing }, instance.state)).toBe(false)
+    expect(instance.shouldComponentUpdate({ ...props, dataVersion: 1 }, instance.state)).toBe(true)
   })
 })

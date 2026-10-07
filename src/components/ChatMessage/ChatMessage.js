@@ -320,7 +320,11 @@ export class ChatMessage extends React.Component {
     // history that comparison alone is the expensive part of an unrelated render.
     // QueryOutput guards itself the same way (see its shouldComponentUpdate); this
     // stops the work one level higher, before the props are walked at all.
-    if (!this.props.shouldRender && !nextProps.shouldRender) {
+    //
+    // Except for a dataVersion bump: that is the remount that lets go of a truncated
+    // answer's rows, and skipping it would leave a hidden thread holding all of them
+    // until it is shown - then remount every truncated answer at once on the way back.
+    if (!this.props.shouldRender && !nextProps.shouldRender && this.props.dataVersion === nextProps.dataVersion) {
       return false
     }
 
@@ -733,6 +737,17 @@ export class ChatMessage extends React.Component {
 
   onDisplayTypeChange = (displayType) => {
     this.updateViewState({ displayType })
+
+    // Every QueryOutput mount reports its display type, including the remount that
+    // truncating or restoring this answer causes. That is not a change - the view is the
+    // one already on screen - so it must not reset the height or, for a chart, scroll an
+    // older answer into view while the user is reading a newer one.
+    const isSameDisplayType = displayType === this.lastDisplayType
+    this.lastDisplayType = displayType
+
+    if (isSameDisplayType) {
+      return
+    }
 
     // Reset resizable state when changing display types
     this.setState({
@@ -1532,6 +1547,9 @@ export class ChatMessage extends React.Component {
           // survives the remount that truncating and restoring the data causes.
           initialDisplayType={viewState.displayType}
           initialTableParams={viewState.tableParams}
+          // Both halves, or a remount keeps the table's filter on screen but queries
+          // (CSV export, Restore, custom options' tableFilters) fall back to fe_req's.
+          initialFormattedTableParams={viewState.formattedTableParams}
           onTableParamsChange={this.onTableParamsChange}
           initialChartControls={viewState.chartControls}
           onChartControlsChange={this.onChartControlsChange}

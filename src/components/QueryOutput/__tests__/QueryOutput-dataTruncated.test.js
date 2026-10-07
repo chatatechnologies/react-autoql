@@ -2,8 +2,15 @@ import React from 'react'
 import { mount } from 'enzyme'
 import _cloneDeep from 'lodash.clonedeep'
 
+import { runQueryOnly } from 'autoql-fe-utils'
+
 import { QueryOutput as QueryOutputWithoutTheme } from '../QueryOutput'
 import testCases from '../../../../test/responseTestCases'
+
+jest.mock('autoql-fe-utils', () => ({
+  ...jest.requireActual('autoql-fe-utils'),
+  runQueryOnly: jest.fn(() => Promise.resolve(undefined)),
+}))
 
 // A response with enough rows and columns to support both a table and a chart.
 const makeResponse = () => _cloneDeep(testCases[8])
@@ -238,6 +245,9 @@ describe('an answer whose rows have been dropped to a preview', () => {
     instance.updateColumnsAndData(makeResponse())
 
     expect(onResponseUpdate).toHaveBeenCalledWith(instance.queryResponse)
+    // A copy: holding this instance's working response would let later in-place edits
+    // slip past the message's identity check, and outlive this instance on a remount.
+    expect(onResponseUpdate.mock.calls[0][0]).not.toBe(instance.queryResponse)
   })
 
   // While truncated the restore path already hands the response up, and it says more:
@@ -255,5 +265,69 @@ describe('an answer whose rows have been dropped to a preview', () => {
 
     expect(onRestoreData).toHaveBeenCalledWith(full)
     expect(onResponseUpdate).not.toHaveBeenCalled()
+  })
+
+  // Zero rows is the real answer now. Left truncated, the banner said "first 0 rows" and
+  // Restore only repeated itself.
+  test('marks the data restored when the re-run comes back with no rows', async () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const onRestoreData = jest.fn()
+    output.setProps({ onRestoreData })
+
+    const empty = makeResponse()
+    empty.data.data.rows = []
+    instance.queryFn = async () => empty
+
+    await instance.restoreTruncatedData()
+
+    expect(onRestoreData).toHaveBeenCalledWith(empty)
+    expect(instance.isDataTruncated()).toBe(false)
+  })
+
+  // The card was mounted on the axes the message was left on; Restore brings back the
+  // same answer, so it has no reason to put the chart back on its defaults.
+  test('keeps the table config on Restore', async () => {
+    const output = mountOutput({ dataTruncated: { droppedRowCount: 4512 } })
+    const instance = output.instance()
+    const resetTableConfig = jest.spyOn(instance, 'resetTableConfig')
+    const tableConfig = _cloneDeep(instance.tableConfig)
+    instance.queryFn = async () => makeResponse()
+
+    await instance.restoreTruncatedData()
+
+    expect(resetTableConfig).not.toHaveBeenCalled()
+    expect(instance.tableConfig.stringColumnIndex).toBe(tableConfig.stringColumnIndex)
+    expect(instance.tableConfig.numberColumnIndex).toBe(tableConfig.numberColumnIndex)
+  })
+
+  test('still starts the config over for any other column change', () => {
+    const output = mountOutput()
+    const instance = output.instance()
+    const resetTableConfig = jest.spyOn(instance, 'resetTableConfig')
+
+    instance.updateColumnsAndData(makeResponse())
+
+    expect(resetTableConfig).toHaveBeenCalled()
+  })
+})
+
+// The util defaults the related-queries fallback on and reads `allowSuggestions`, which
+// the autoQLConfig spread never sets - so a re-run (Restore, a sort, a filter) has to
+// pass it, or integrators who left suggestions off would get them anyway.
+describe('enableQuerySuggestions on a re-run', () => {
+  beforeEach(() => runQueryOnly.mockClear())
+
+  test.each([
+    [true, true],
+    [false, false],
+    [undefined, false],
+  ])('enableQuerySuggestions=%p is sent as allowSuggestions=%p', async (enableQuerySuggestions, expected) => {
+    const props = enableQuerySuggestions === undefined ? {} : { enableQuerySuggestions }
+    const instance = mountOutput(props).instance()
+
+    await instance.queryFn()
+
+    expect(runQueryOnly).toHaveBeenCalledWith(expect.objectContaining({ allowSuggestions: expected }))
   })
 })

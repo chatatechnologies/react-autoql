@@ -106,9 +106,11 @@ export const SessionTabs = ({
                   {item.title}
                 </span>
                 {item.canClose && (
-                  <span
+                  // A real button, so it is in the tab order and Enter/Space close the
+                  // thread - otherwise only Alt+W on the active one can.
+                  <button
+                    type='button'
                     className='react-autoql-session-tab-close'
-                    role='button'
                     aria-label={item.closeLabel}
                     // Without this the click bubbles to the tab and activates the
                     // one we're about to unmount.
@@ -116,11 +118,14 @@ export const SessionTabs = ({
                       event.stopPropagation()
                       onClose?.(item.id)
                     }}
+                    // Same for the keyboard: the tab's own handler would take Enter/Space,
+                    // preventDefault them and select the tab instead of closing it.
+                    onKeyDown={(event) => event.stopPropagation()}
                     data-tooltip-content={closeItemTooltip}
                     data-tooltip-id={tooltipID}
                   >
                     <Icon type='close' />
-                  </span>
+                  </button>
                 )}
               </div>
             )

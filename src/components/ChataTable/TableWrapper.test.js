@@ -63,8 +63,12 @@ describe('deferring the build until the table has a box', () => {
         this.callback = callback
         observed.push(this)
       }
-      observe() {}
-      disconnect() {}
+      observe(target) {
+        this.target = target
+      }
+      disconnect() {
+        this.disconnected = true
+      }
       emit(height) {
         this.callback([{ contentRect: { height } }])
       }
@@ -166,6 +170,51 @@ describe('deferring the build until the table has a box', () => {
     instance.buildWhenVisible()
 
     expect(instance.instantiateTabulator).not.toHaveBeenCalled()
+  })
+
+  // The table's own element is 0px tall until Tabulator builds into it, so it never
+  // reports a resize on the reveal. The container has a min-height and does.
+  test('observes the container, not its own still-empty element', () => {
+    const container = document.createElement('div')
+    container.className = 'react-autoql-tabulator-container'
+    const instance = createInstance()
+    instance.tableRef = document.createElement('div')
+    container.appendChild(instance.tableRef)
+    setVisible(instance, false)
+    instance.instantiateTabulator = jest.fn()
+
+    instance.componentDidMount()
+
+    expect(observed[0].target).toBe(container)
+  })
+
+  // A consumer hiding the chat its own way never drives onBecameVisible, so the observer
+  // has to manage alone - and the height it reports is not the question, visibility is.
+  test('builds from the observer whatever height it reports, once visible', () => {
+    const instance = mountInstance({ visible: false })
+    setVisible(instance, true)
+
+    observed[0].emit(0)
+    flushFrame()
+
+    expect(instance.instantiateTabulator).toHaveBeenCalledTimes(1)
+  })
+
+  test('stops observing once built', () => {
+    const instance = mountInstance({ visible: false })
+    const observer = observed[0]
+    setVisible(instance, true)
+
+    instance.buildWhenVisible()
+
+    expect(observer.disconnected).toBe(true)
+    expect(instance.heightObserver).toBeUndefined()
+  })
+
+  test('does not observe a table that built straight away', () => {
+    mountInstance({ visible: true })
+
+    expect(observed).toHaveLength(0)
   })
 
   test('builds immediately when ResizeObserver is unavailable and the table is visible', () => {
