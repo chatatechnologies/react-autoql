@@ -1,3 +1,5 @@
+@import '../../styles/emptyState';
+
 // Possible bug in PerfectScrollbars putting scrollbar on the left side
 .popover-container-content,
 .chat-content-scroll-container {
@@ -38,241 +40,6 @@
     flex: 1;
     min-height: 0;
     position: relative;
-  }
-}
-
-// Sessions read as a segmented control: the whole strip is one sunken, rounded
-// track and the selected session is a raised chip floating inside it. Nothing
-// connects a tab to the thread below, so the bar can sit anywhere in the panel.
-.react-autoql-chat-session-tabs {
-  // Neutral washes rather than --react-autoql-hover-color, which is tuned for
-  // menu rows and reads far too heavy here. Grey at these alphas darkens a
-  // light theme and lightens a dark one, so one value covers both.
-  --react-autoql-session-tab-track: rgba(128, 134, 142, 0.08);
-  --react-autoql-session-tab-hover: rgba(128, 134, 142, 0.12);
-  --react-autoql-session-tab-close-hover: rgba(128, 134, 142, 0.22);
-  // The one accent-tinted thing in the strip, so the eye lands on it. configureTheme
-  // publishes the accent's channels separately, which is how SelectableTable tints.
-  --react-autoql-session-tab-new: rgba(
-    var(--react-autoql-accent-color-R),
-    var(--react-autoql-accent-color-G),
-    var(--react-autoql-accent-color-B),
-    0.12
-  );
-  --react-autoql-session-tab-new-hover: rgba(
-    var(--react-autoql-accent-color-R),
-    var(--react-autoql-accent-color-G),
-    var(--react-autoql-accent-color-B),
-    0.22
-  );
-
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  // A flat groove in the flow above the threads, not a floating glass panel. The
-  // drawer's other surfaces all sit behind a 0.9-0.95 overlay, so they read as
-  // solid; a genuinely transparent, blurred strip was the only thing here behaving
-  // differently, which is what made it look out of place. The 1.25rem inset is
-  // .chat-message-and-rt-container's, so the track's edges line up with the message
-  // bubbles below it.
-  margin: 0.25rem 1.25rem 0.5rem;
-  padding: 6px;
-  border-radius: 23px;
-  background-color: var(--react-autoql-session-tab-track);
-
-  .react-autoql-chat-session-tab-list {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
-    // Tabs keep their width and the strip scrolls, rather than every tab
-    // shrinking to nothing once there are a lot of sessions.
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .react-autoql-chat-session-tab {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: none;
-    // Widened alongside the font bump below so a title still shows about as many
-    // characters before it ellipsises as it did at the old 12.5px.
-    width: 148px;
-    height: 34px;
-    padding: 0 6px 0 14px;
-    box-sizing: border-box;
-    // Fully rounded, like the message bubbles and the query input below it - the
-    // page speaks in pills, so a squared-off tab read as a different kit.
-    border-radius: 17px;
-    background-color: transparent;
-    color: var(--react-autoql-text-color-placeholder);
-    font-size: 0.875rem; // Matches the chat thread
-    font-weight: 500;
-    // The header title's tracking. It was -0.004em, tighter than anything around
-    // it, which is part of why the strip read as a separate piece of design.
-    letter-spacing: -0.008em;
-    cursor: pointer;
-    // Width is in here so selecting a tab eases it wider instead of snapping.
-    transition: width 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-
-    // Hover is for tabs you could switch to — the selected one is already here,
-    // so it deliberately has no hover state of its own.
-    &:not(.active):hover {
-      color: var(--react-autoql-text-color-primary);
-      background-color: var(--react-autoql-session-tab-hover);
-    }
-
-    // The raised chip. A wider box plus the lift is what makes the selected
-    // session read as selected; there is no accent rule or connecting flare.
-    &.active {
-      width: 188px;
-      // Same material as a message bubble: the theme's surface colour, a hairline
-      // border and the same soft ambient shadow, so the selected tab and the
-      // thread below it read as one system.
-      background-color: var(--react-autoql-background-color-secondary);
-      border: 1px solid var(--react-autoql-border-color);
-      padding: 0 5px 0 13px; // Absorbs the border, so the label doesn't shift.
-      color: var(--react-autoql-text-color-primary);
-      font-weight: 600;
-      box-shadow: 0 1px 1px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.04)),
-        0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
-
-      .react-autoql-chat-session-tab-dot {
-        background-color: var(--react-autoql-accent-color);
-        opacity: 1;
-      }
-    }
-
-    // currentColor rather than a fixed grey, so the dot tracks whatever the tab
-    // label is doing -- placeholder when idle, primary on hover -- and the accent
-    // on the active tab is then the only colour in the strip.
-    .react-autoql-chat-session-tab-dot {
-      flex: none;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: currentColor;
-      opacity: 0.45;
-      transition: background-color 0.2s ease, opacity 0.2s ease;
-    }
-
-    .react-autoql-chat-session-tab-title {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .react-autoql-chat-session-tab-close {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      opacity: 0.6;
-      transition: opacity 0.2s ease, background-color 0.2s ease;
-
-      // Flex + line-height:1, or the drawer's inherited 22px line-height makes the
-      // glyph's box taller than the 18px circle and it sits low in it.
-      .react-autoql-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        font-size: 0.625rem;
-      }
-
-      &:hover {
-        opacity: 1;
-        // A touch stronger than the tab's own hover, so the X still reads as a
-        // separate target once you're over it.
-        background-color: var(--react-autoql-session-tab-close-hover);
-      }
-    }
-  }
-
-  // The click wrapper ConfirmPopover puts around its trigger - it would otherwise
-  // stretch and push the "+" off the strip.
-  .react-autoql-chat-session-close-all-wrapper {
-    flex: none;
-    display: flex;
-    margin-left: 8px;
-  }
-
-  // Neutral, beside the accent-washed "+": closing every tab is the destructive
-  // one of the pair, and the accent is spent on the action worth inviting.
-  .react-autoql-chat-session-tab-close-all {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 50%;
-    background-color: transparent;
-    color: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-placeholder));
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
-
-    &:hover {
-      background-color: var(--react-autoql-session-tab-close-hover);
-      color: var(--react-autoql-text-color-primary);
-    }
-
-    .react-autoql-icon {
-      font-size: 1.0625rem;
-    }
-  }
-
-  // Pinned to the right rather than trailing the last tab: the strip scrolls at a
-  // fixed tab width, so a "+" inside it would scroll out of reach exactly when
-  // there are the most sessions. Since it can't borrow the tabs' position for its
-  // meaning, it carries an accent glyph on a faint accent wash - circular, like the
-  // icon buttons in the header above it.
-  .react-autoql-chat-session-tab-new {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: none;
-    width: 30px;
-    height: 30px;
-    margin-left: 8px;
-    border: none;
-    border-radius: 50%;
-    background-color: var(--react-autoql-session-tab-new);
-    color: var(--react-autoql-accent-color);
-    cursor: pointer;
-    transition: background-color 0.2s ease, color 0.2s ease;
-
-    &:hover:not(:disabled) {
-      background-color: var(--react-autoql-session-tab-new-hover);
-    }
-
-    // At the tab ceiling. Left in place rather than hidden, so the row doesn't
-    // reflow on the eighth tab.
-    &:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-
-    .react-autoql-icon {
-      font-size: 1.0625rem;
-      // The plus reads lighter than the tab labels beside it at the same size.
-      stroke-width: 2.5;
-    }
   }
 }
 
@@ -497,40 +264,14 @@
 }
 
 .chat-content-empty-state {
+  @include empty-state-content('chat-content-empty-state');
+
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  // Optical centring: the logo gives the block a top-heavy silhouette, so geometric
-  // centre reads low. The extra bottom padding lifts the group by ~3rem against the
-  // flex centre, which is what makes it look centred.
-  padding: 1rem 2rem 7rem;
-  text-align: center;
   // The thread underneath is empty, so nothing here needs to intercept a scroll.
   pointer-events: none;
 
-  .chat-content-empty-state-logo {
-    font-size: 1.75rem;
-    color: var(--react-autoql-accent-color);
-  }
-
-  .chat-content-empty-state-title {
-    margin: 0;
-    font-size: 1.375rem;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    color: var(--react-autoql-text-color-primary);
-  }
-
   .chat-content-empty-state-subtitle {
-    margin: -0.625rem 0 0;
-    max-width: 24rem;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-    color: var(--react-autoql-text-color-placeholder);
     // The container ignores pointer events; the subtitle may hold a link.
     pointer-events: auto;
   }
@@ -569,4 +310,3 @@
     font-size: 1rem;
   }
 }
-

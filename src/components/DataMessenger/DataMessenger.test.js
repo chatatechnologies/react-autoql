@@ -325,3 +325,79 @@ describe('agent tab', () => {
     expect(wrapper.instance().state.agentMessengerId).not.toBe(before)
   })
 })
+
+describe('restore handle while maximized', () => {
+  // A 1000x800 drawer at the origin, so each placement's outer edge is easy to aim at.
+  const rect = { left: 0, top: 0, right: 1000, bottom: 800 }
+
+  const setupMaximized = (placement) => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement={placement} />)
+    const instance = wrapper.instance()
+    instance.messengerDrawerRef = { getBoundingClientRect: () => rect }
+    wrapper.setState({ isVisible: true, isSizeMaximum: true })
+    return { wrapper, instance }
+  }
+
+  const cases = [
+    { placement: 'right', near: { clientX: 30, clientY: 400 }, far: { clientX: 31, clientY: 400 } },
+    { placement: 'left', near: { clientX: 970, clientY: 400 }, far: { clientX: 969, clientY: 400 } },
+    { placement: 'top', near: { clientX: 500, clientY: 770 }, far: { clientX: 500, clientY: 769 } },
+    { placement: 'bottom', near: { clientX: 500, clientY: 30 }, far: { clientX: 500, clientY: 31 } },
+  ]
+
+  cases.forEach(({ placement, near, far }) => {
+    test(`${placement} placement shows it within 30px of the outer edge`, () => {
+      const { wrapper, instance } = setupMaximized(placement)
+
+      instance.onDrawerMouseMove(far)
+      expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+
+      instance.onDrawerMouseMove(near)
+      expect(wrapper.state('isNearRestoreEdge')).toBe(true)
+
+      instance.onDrawerMouseLeave()
+      expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+      wrapper.unmount()
+    })
+  })
+
+  test('stays shown while the pointer is on the pill, even past the reveal distance', () => {
+    const { wrapper, instance } = setupMaximized('right')
+    const pill = {}
+    instance.restoreHandleRef = { contains: (target) => target === pill }
+
+    instance.onDrawerMouseMove({ clientX: 33, clientY: 400, target: pill })
+    expect(wrapper.state('isNearRestoreEdge')).toBe(true)
+
+    instance.onDrawerMouseMove({ clientX: 33, clientY: 400, target: {} })
+    expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('is not tracked or rendered when the drawer is not maximized', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    instance.messengerDrawerRef = { getBoundingClientRect: () => rect }
+    wrapper.setState({ isVisible: true })
+
+    instance.onDrawerMouseMove({ clientX: 10, clientY: 400 })
+
+    expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+    expect(instance.renderRestoreHandle()).toBeNull()
+    wrapper.unmount()
+  })
+
+  test('clicking it exits full screen', () => {
+    const { wrapper, instance } = setupMaximized('right')
+
+    instance.onDrawerMouseMove({ clientX: 10, clientY: 400 })
+    const handle = shallow(<div>{instance.renderRestoreHandle()}</div>).find('button')
+    expect(handle.hasClass('visible')).toBe(true)
+
+    handle.simulate('click')
+
+    expect(wrapper.state('isSizeMaximum')).toBe(false)
+    expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+    wrapper.unmount()
+  })
+})

@@ -5,6 +5,7 @@ import { fetchLLMSummary, fetchLLMSummaryQuote } from 'autoql-fe-utils'
 import { testAuthentication } from '../../../test/testData'
 import { findByTestAttr } from '../../../test/testUtils'
 import { ChatMessage } from './ChatMessage'
+import { QueryOutput } from '../QueryOutput'
 
 jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
@@ -283,5 +284,118 @@ describe('billing gate (enableBillingGate)', () => {
     const popoverContentElement = button.props.splitButton.popoverContent({ closePopover: () => {} })
 
     expect(popoverContentElement.props.billingExecutionType).toBe('STRIPE')
+  })
+})
+
+// Both bubble actions reason over the answer's rows, so on a truncated answer they would
+// be reasoning over the ten-row preview without knowing it. They return once the user
+// restores the data, which clears `dataTruncated` on the message.
+describe('truncated data gating', () => {
+  const truncatedProps = {
+    enableMagicWand: true,
+    enableFollowOnQuery: true,
+    dataTruncated: { droppedRowCount: 4512 },
+  }
+
+  test('hides the Auto Analyze button and the follow-up button, leaving no footer at all', () => {
+    const instance = setup(truncatedProps).instance()
+
+    expect(instance.shouldShowFollowOnButton()).toBe(false)
+    expect(instance.renderSummaryFooter()).toBeNull()
+  })
+
+  test('shows both again on the same answer once its data is restored', () => {
+    const instance = setup({ ...truncatedProps, dataTruncated: undefined }).instance()
+
+    expect(instance.shouldShowFollowOnButton()).toBe(true)
+    expect(instance.renderSummaryFooter()).not.toBeNull()
+  })
+})
+
+// The toolbars hold the QueryOutput ref as a prop, so they go stale on the remount that
+// truncating and restoring an answer forces - which is how Show/Hide Columns ended up
+// opening nothing.
+describe('the QueryOutput ref handed to the toolbars', () => {
+  test('re-renders the message when the output remounts, so the toolbars get the live one', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const forceUpdate = jest.spyOn(instance, 'forceUpdate')
+
+    const remounted = { _isMounted: true }
+    instance.setResponseRef(remounted)
+
+    expect(instance.responseRef).toBe(remounted)
+    expect(forceUpdate).toHaveBeenCalled()
+  })
+
+  test('does not re-render for the same ref, or for the null the old instance leaves behind', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const output = { _isMounted: true }
+    instance.setResponseRef(output)
+
+    const forceUpdate = jest.spyOn(instance, 'forceUpdate')
+    instance.setResponseRef(output)
+    instance.setResponseRef(null)
+
+    expect(forceUpdate).not.toHaveBeenCalled()
+  })
+})
+
+// Truncating an answer remounts its QueryOutput, which is seeded back from the view state
+// held on the message. Both halves of the table params have to make the trip: the table
+// params put the filter back on screen, the formatted ones are what queries (CSV export,
+// Restore, custom options' tableFilters) are built from.
+describe('view state round trip', () => {
+  test('hands the saved table params, both halves, back to the output', () => {
+    const tableParams = { filter: [{ field: '0', type: 'like', value: 'x' }], sort: [] }
+    const formattedTableParams = { filters: [{ name: 'region', value: 'x', operator: 'like' }], sorters: [] }
+    const onViewStateChange = jest.fn()
+    const wrapper = setup({ onViewStateChange })
+    const instance = wrapper.instance()
+
+    instance.onTableParamsChange(tableParams, formattedTableParams)
+    const [id, patch] = onViewStateChange.mock.calls[0]
+    expect(id).toBe(defaultProps.id)
+
+    wrapper.setProps({ viewState: patch, dataVersion: 1 })
+    const output = wrapper.find(QueryOutput)
+
+    expect(output.prop('initialTableParams')).toBe(tableParams)
+    expect(output.prop('initialFormattedTableParams')).toBe(formattedTableParams)
+  })
+})
+
+// Every QueryOutput mount reports its display type - including the remount truncation
+// causes, which used to scroll an older charted answer into view.
+describe('display type reported by a remount', () => {
+  test('scrolls a newly charted answer into view, but not the same chart remounting', () => {
+    jest.useFakeTimers()
+    try {
+      const instance = setup().instance()
+      instance.getMessageVisibilityElement = () => ({})
+      instance.isScrolledIntoView = () => false
+      instance.animateScrollBubbleIntoContainer = jest.fn()
+
+      instance.onDisplayTypeChange('column')
+      jest.advanceTimersByTime(200)
+      expect(instance.animateScrollBubbleIntoContainer).toHaveBeenCalledTimes(1)
+
+      instance.onDisplayTypeChange('column')
+      jest.advanceTimersByTime(200)
+      expect(instance.animateScrollBubbleIntoContainer).toHaveBeenCalledTimes(1)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('updates while hidden', () => {
+  test('skips them, except the dataVersion bump that lets go of truncated rows', () => {
+    const instance = setup({ shouldRender: false }).instance()
+    const props = instance.props
+
+    expect(instance.shouldComponentUpdate({ ...props, isResizing: !props.isResizing }, instance.state)).toBe(false)
+    expect(instance.shouldComponentUpdate({ ...props, dataVersion: 1 }, instance.state)).toBe(true)
   })
 })

@@ -329,8 +329,12 @@ AgentThread.defaultProps = {
   tableMaxHeight: 400,
   enableTypewriter: true,
   showPhaseLabels: true,
-  emptyStateTitle: 'What would you like to know?',
-  emptyStateSubtitle: 'Ask about your data in plain language.',
+  // A thread is always rendered by AgentMessenger, which passes its own defaults
+  // down - these two only matter to a thread rendered on its own. Kept in step
+  // with AgentMessenger.defaultProps, where the reasoning behind the wording is.
+  emptyStateTitle: 'What are you trying to figure out?',
+  emptyStateSubtitle:
+    'Best for questions that need a few datasets, some calculations on top, or a comparison over time. Start rough and narrow it down from there.',
   suggestions: [],
   onSuggestionClick: () => {},
   onItemRevealed: undefined,

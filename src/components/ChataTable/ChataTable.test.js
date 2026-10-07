@@ -1678,3 +1678,175 @@ describe('clientSortAndFilterData with reordered columns', () => {
     expect(result.data.data.rows).toEqual([['Widget', 20.5, 'X']])
   })
 })
+
+// Sorting or filtering a preview is answered from the ten rows the table is holding,
+// and reports the result as the whole answer. Both are withdrawn until the data is back.
+describe('sorting and filtering a truncated table', () => {
+  test('strips header sort and filter from the column definitions', () => {
+    const wrapper = setup({ isDataTruncated: true })
+
+    wrapper
+      .instance()
+      .getFilteredTabulatorColumnDefinitions()
+      .forEach((col) => {
+        expect(col.headerSort).toBe(false)
+        expect(col.headerFilter).toBe(false)
+      })
+  })
+
+  test('leaves the column definitions alone when the data is all there', () => {
+    const wrapper = setup({ isDataTruncated: false })
+
+    wrapper
+      .instance()
+      .getFilteredTabulatorColumnDefinitions()
+      .forEach((col) => {
+        expect(col.headerSort).not.toBe(false)
+        expect(col.headerFilter).not.toBe(false)
+      })
+  })
+
+  // setSort() is programmatic, so `headerSort: false` doesn't stop it - it would replay
+  // the stored sort straight through the local path on mount.
+  test('does not replay the stored sort', () => {
+    const wrapper = setup({ isDataTruncated: true, initialTableParams: { sort: [{ field: '1', dir: 'asc' }] } })
+    const setSort = jest.fn()
+    wrapper.instance().ref = { tabulator: { setSort } }
+
+    wrapper.instance().setSorters()
+
+    expect(setSort).not.toHaveBeenCalled()
+  })
+
+  test('replays the stored sort once the data is back', () => {
+    const wrapper = setup({ isDataTruncated: false, initialTableParams: { sort: [{ field: '1', dir: 'asc' }] } })
+    const setSort = jest.fn()
+    wrapper.instance().ref = { tabulator: { setSort } }
+
+    wrapper.instance().setSorters()
+
+    expect(setSort).toHaveBeenCalledWith([{ column: '1', dir: 'asc' }])
+  })
+
+  test('does not open the filter row', () => {
+    const wrapper = setup({ isDataTruncated: true })
+
+    wrapper.instance().toggleIsFiltering(true)
+
+    expect(wrapper.state('isFiltering')).toBe(false)
+  })
+
+  // The flag changes the definitions Tabulator holds without changing `columns`, so a
+  // deep compare of the columns alone would leave the headers inert after a restore.
+  test('rebuilds the columns when the data is restored', () => {
+    const wrapper = setup({ isDataTruncated: true }, { tabulatorMounted: true })
+    const setColumns = jest.fn()
+    wrapper.instance().ref = { tabulator: { setColumns }, restoreRedraw: jest.fn() }
+    wrapper.instance().updateData = jest.fn(() => Promise.resolve())
+    wrapper.instance().setHeaderInputEventListeners = jest.fn()
+    wrapper.instance().setFilters = jest.fn()
+    wrapper.instance().clearLoadingIndicators = jest.fn()
+
+    wrapper.setProps({ isDataTruncated: false })
+
+    expect(setColumns).toHaveBeenCalled()
+    expect(setColumns.mock.calls[0][0].every((col) => col.headerFilter !== false)).toBe(true)
+  })
+})
+
+// A total or an average over ten preview rows is a wrong number, not a partial one, and
+// the header tooltip presents it with nothing to say it came from a fraction of the data.
+describe('summary stats for a truncated table', () => {
+  const amountColumns = [
+    { id: '1', field: '1', display_name: 'Name', type: 'STRING', index: 0 },
+    { id: '2', field: '2', display_name: 'Amount', type: 'QUANTITY', index: 1 },
+  ]
+
+  const amountResponse = {
+    data: {
+      data: {
+        rows: [
+          ['Widget', 10],
+          ['Gadget', 20],
+        ],
+        count_rows: 2,
+        query_id: 'test-query-stats',
+      },
+    },
+  }
+
+  const statsFor = (isDataTruncated) =>
+    setup({ columns: amountColumns, response: amountResponse, isDataTruncated }).instance().summaryStats
+
+  test('are withheld while the rows are a preview', () => {
+    expect(statsFor(true)).toEqual({})
+  })
+
+  test('come back once the data is restored', () => {
+    expect(statsFor(false)[1]).toEqual(expect.objectContaining({ sum: expect.anything(), avg: expect.anything() }))
+  })
+})
+
+// The preview notice already says what is and isn't on screen; the row limit is not what
+// is being hit while truncated. The non-pivot path already withheld this warning.
+describe('the data limit warning on a truncated pivot table', () => {
+  const pivotProps = { pivot: true, pivotTableDataLimited: true }
+
+  test('is withheld while the rows are a preview', () => {
+    expect(setup({ ...pivotProps, isDataTruncated: true }).instance().renderTableWarnings()).toBeNull()
+  })
+
+  test('is shown once the data is restored', () => {
+    const warnings = setup({ ...pivotProps, isDataTruncated: false }).instance().renderTableWarnings()
+
+    expect(warnings).not.toBeNull()
+    expect(shallow(warnings).find('.react-autoql-table-data-limit-icon').exists()).toBe(true)
+  })
+})
+
+// "Scrolled 50 / 3,000 rows" over a ten-row preview misstates both halves: nothing is
+// scrollable, and the total belongs to an answer that is no longer on screen.
+describe('the scrolled-rows count on a truncated table', () => {
+  test('is withheld while the rows are a preview', () => {
+    expect(setup({ isDataTruncated: true }).instance().renderTableRowCount()).toBeNull()
+  })
+
+  test('is shown once the data is restored', () => {
+    expect(setup({ isDataTruncated: false }).instance().renderTableRowCount()).not.toBeNull()
+  })
+})
+
+// The restore remounts the table (a column change regenerates QueryOutput's tableID), so
+// the flag can flip while Tabulator is still coming up. The rebuild in componentDidUpdate
+// requires it to be mounted, so without this the headers keep the definitions they were
+// built with and the filter row opens empty.
+describe('a truncation change that lands before Tabulator is mounted', () => {
+  test('rebuilds the columns as soon as it mounts', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const setColumns = jest.fn()
+    wrapper.instance().ref = { tabulator: { setColumns }, restoreRedraw: jest.fn() }
+
+    wrapper.setProps({ isDataTruncated: false })
+    expect(setColumns).not.toHaveBeenCalled()
+
+    wrapper.setState({ tabulatorMounted: true })
+
+    expect(setColumns).toHaveBeenCalled()
+    expect(setColumns.mock.calls[0][0].every((col) => col.headerFilter !== false)).toBe(true)
+  })
+
+  test('does not rebuild again on later mounts', () => {
+    const wrapper = setup({ isDataTruncated: true })
+    const setColumns = jest.fn()
+    wrapper.instance().ref = { tabulator: { setColumns }, restoreRedraw: jest.fn() }
+
+    wrapper.setProps({ isDataTruncated: false })
+    wrapper.setState({ tabulatorMounted: true })
+    setColumns.mockClear()
+
+    wrapper.setState({ tabulatorMounted: false })
+    wrapper.setState({ tabulatorMounted: true })
+
+    expect(setColumns).not.toHaveBeenCalled()
+  })
+})

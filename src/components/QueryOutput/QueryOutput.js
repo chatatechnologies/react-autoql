@@ -9,6 +9,8 @@ import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import { uniqueValues } from '../../js/arrayUtils'
+import { cloneResponseSharingRows } from '../../js/responseUtils'
+import { arePropsEqualByIdentity } from '../../js/propsEqual'
 
 import {
   AggTypes,
@@ -82,11 +84,25 @@ import { ChataChart } from '../Charts/ChataChart'
 import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { QueryValidationMessage } from '../QueryValidationMessage'
+import { DataTruncatedNotice } from '../DataTruncatedNotice'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
 
 import './QueryOutput.scss'
+
+// Props whose weight makes deep-comparing them the expensive part of an update, and
+// whose identity is the honest signal anyway: the response is held in ChatContent's
+// state and replaced wholesale rather than edited, and the rest are arrays built once
+// alongside it. See arePropsEqualByIdentity for why this matters on a tab switch.
+const OUTPUT_IDENTITY_PROPS = new Set([
+  'queryResponse',
+  'originalQueryResponse',
+  'appliedFilters',
+  'drilldownFilters',
+  'queryFilters',
+  'subjects',
+])
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -125,7 +141,7 @@ export class QueryOutput extends React.Component {
     this.initialFrozenColumns = props.initialFrozenColumns || []
 
     let response = props.queryResponse
-    this.queryResponse = _cloneDeep(response)
+    this.queryResponse = cloneResponseSharingRows(response)
     this.columnDateRanges = getColumnDateRanges(response)
     this.queryID = this.queryResponse?.data?.data?.query_id
     this.interpretation = this.queryResponse?.data?.data?.parsed_interpretation
@@ -155,9 +171,6 @@ export class QueryOutput extends React.Component {
     this.initialSupportedDisplayTypes = this.getCurrentSupportedDisplayTypes()
 
     const displayType = this.getDisplayTypeFromInitial(props)
-    if (props.onDisplayTypeChange) {
-      props.onDisplayTypeChange(displayType)
-    }
 
     // Set initial config if needed
     // If this config causes errors, it will be reset when the error occurs
@@ -232,6 +245,11 @@ export class QueryOutput extends React.Component {
       showCustomColumnModal: false,
       activeCustomColumn: undefined,
       isAddingColumn: false,
+      // Restoring truncated rows. `isDataRestored` is local to this mount; the caller
+      // records it on the message too, which is what makes it outlast a remount.
+      isRestoringData: false,
+      isDataRestored: false,
+      restoreError: null,
     }
     this.updateMaxConstraints()
   }
@@ -311,6 +329,18 @@ export class QueryOutput extends React.Component {
     queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
+    // Set once this answer's rows have been dropped to a preview to save memory. Holds
+    // the true row count, which is all that is needed to describe what is missing and
+    // to keep deciding display types against the real size of the result.
+    dataTruncated: PropTypes.shape({
+      droppedRowCount: PropTypes.number,
+      wasDataLimited: PropTypes.bool,
+    }),
+    // Called with the full response after a restore, so the caller can keep the rows.
+    onRestoreData: PropTypes.func,
+    // Called with the current response whenever the columns change under it - a custom
+    // column added, columns shown or hidden - so the caller's copy does not go stale.
+    onResponseUpdate: PropTypes.func,
     onQueryValidationSelectOption: PropTypes.func,
     autoSelectQueryValidationSuggestion: PropTypes.bool,
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
@@ -322,6 +352,9 @@ export class QueryOutput extends React.Component {
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
+    // Whether a failed re-run of this query may fall back to related queries
+    // instead of an error. See ChatContent for the full description.
+    enableQuerySuggestions: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,
     initialNetworkColumnConfig: PropTypes.shape({
@@ -406,6 +439,8 @@ export class QueryOutput extends React.Component {
     queryResponse: undefined,
     queryId: undefined,
     initialDisplayType: null,
+    dataTruncated: undefined,
+    onRestoreData: undefined,
     onSuggestionClick: undefined,
     autoSelectQueryValidationSuggestion: true,
     queryValidationSelections: undefined,
@@ -417,6 +452,7 @@ export class QueryOutput extends React.Component {
     useInfiniteScroll: undefined,
     isResizing: false,
     enableDynamicCharting: true,
+    enableQuerySuggestions: false,
     onNoneOfTheseClick: undefined,
     initialAxisSorts: undefined,
     onAxisSortChange: undefined,
@@ -499,6 +535,11 @@ export class QueryOutput extends React.Component {
       this._isMounted = true
       this.updateToolbars()
       this.props.onMount()
+
+      // Not in the constructor: the parent records this in its own state, and setting state
+      // on another component while this one is rendering is a React error.
+      this.props.onDisplayTypeChange?.(this.state.displayType)
+
       if (this.shouldEnableResize) {
         // Only the window resize listener belongs here. The drag listeners are registered by
         // handleResizeStart and torn down by handleMouseUp, so registering them up front would
@@ -550,7 +591,7 @@ export class QueryOutput extends React.Component {
       return false
     }
 
-    return !deepEqual(this.props, nextProps) || !deepEqual(this.state, nextState)
+    return !arePropsEqualByIdentity(this.props, nextProps, OUTPUT_IDENTITY_PROPS) || !deepEqual(this.state, nextState)
   }
 
   componentDidUpdate = (prevProps, prevState) => {
@@ -572,7 +613,7 @@ export class QueryOutput extends React.Component {
         if (propsHaveData && instanceVarIsStale) {
           // Full re-init: sync instance var and rebuild columns + data as if freshly mounted
           const prevQueryID = this.queryID
-          this.queryResponse = _cloneDeep(this.props.queryResponse)
+          this.queryResponse = cloneResponseSharingRows(this.props.queryResponse)
           this.columnDateRanges = getColumnDateRanges(this.props.queryResponse)
           this.queryID = this.queryResponse?.data?.data?.query_id
           if (this.queryID && this.queryID !== prevQueryID) {
@@ -594,6 +635,14 @@ export class QueryOutput extends React.Component {
         // closed, so Tabulator and the charts measured a real container on mount and their dimensions
         // are still valid. Remounting would reset table height and scroll position - the reason
         // reopening the DM used to jump.
+
+        // A table whose answer arrived while this was off screen deferred its build
+        // rather than size itself against a container with no height, and any window
+        // resize in the meantime skipped its cell alignment rather than measure a
+        // hidden table. Neither is visible to ChataTable, whose own `hidden` prop
+        // never moved - so this is where it gets told.
+        this.tableRef?.onBecameVisible()
+        this.pivotTableRef?.onBecameVisible()
       }
 
       // Keep local chartControls in sync if consumer updates initialChartControls prop
@@ -1132,6 +1181,15 @@ export class QueryOutput extends React.Component {
   }
 
   getDataLength = () => {
+    // While the rows are a preview, answer with the size of the real result. Every
+    // caller of this is deciding which display types the answer supports, and judging
+    // that on ten rows would quietly move a message off the chart the user left it on -
+    // then leave it there once the data came back. What the answer *is* hasn't changed;
+    // only how much of it we are currently holding.
+    if (this.isDataTruncated()) {
+      return this.props.dataTruncated?.droppedRowCount ?? this.tableData?.length
+    }
+
     return this.tableData?.length
   }
 
@@ -1229,7 +1287,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       preferredDisplayType,
-      isDataLimited(this.queryResponse),
+      this.getIsDataLimited(),
       this.props.preferRegularTableInitialDisplayType,
     )
   }
@@ -1258,7 +1316,7 @@ export class QueryOutput extends React.Component {
         this.tableData?.length,
         this.pivotTableData?.length,
         this.getColumns(),
-        isDataLimited(this.queryResponse),
+        this.getIsDataLimited(),
       )
     ) {
       displayType = defaultDisplayType
@@ -1393,8 +1451,12 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  updateColumnsAndData = (response) => {
+  // `keepTableConfig` is for Restore: the answer is the same one with its rows back, so
+  // the axes the user had (seeded from the message on mount) still apply. Every other
+  // route has changed the columns and starts the config over.
+  updateColumnsAndData = (response, { keepTableConfig = false } = {}) => {
     if (response && this._isMounted) {
+      const wasTruncated = this.isDataTruncated()
       this._consecutiveConfigResets = 0
       this.pivotTableID = uuid()
       this.isOriginalData = false
@@ -1404,7 +1466,7 @@ export class QueryOutput extends React.Component {
         this.hasUserSelectedStringAxis = false
       }
       this.queryID = nextQueryID || this.queryID
-      this.queryResponse = _cloneDeep(response)
+      this.queryResponse = cloneResponseSharingRows(response)
       this.tableData = response?.data?.data?.rows || []
 
       const additionalSelects = this.getAdditionalSelectsFromResponse(response)
@@ -1420,7 +1482,12 @@ export class QueryOutput extends React.Component {
         this.captureQueryFilterBaseline(newColumns)
       }
 
-      this.resetTableConfig(newColumns)
+      if (keepTableConfig && this.isTableConfigValid(this.tableConfig, newColumns)) {
+        // Fills in anything derived from the columns, keeping the indices already set.
+        this.setTableConfig(newColumns)
+      } else {
+        this.resetTableConfig(newColumns)
+      }
 
       const aggConfig = this.getAggConfig(newColumns)
 
@@ -1438,6 +1505,13 @@ export class QueryOutput extends React.Component {
         displayType = 'single-value'
       }
 
+      // Every route into here - Restore, adding a custom column, changing the selected
+      // columns from the reverse translation - has been to the server for the answer
+      // again, so the rows now on screen are not a preview any more. Zero rows included:
+      // that is the real answer now, and leaving the banner up would say "first 0 rows"
+      // with a Restore that only repeats itself.
+      const isNoLongerTruncated = wasTruncated && Array.isArray(response?.data?.data?.rows)
+
       this.setState((prevState) => ({
         columns: newColumns,
         columnChangeCount: prevState.columnChangeCount + 1,
@@ -1445,7 +1519,31 @@ export class QueryOutput extends React.Component {
         aggConfig,
         customColumnSelects,
         displayType,
+        // In the same update as the columns, not a second one after it. A column change
+        // remounts the table (componentDidUpdate regenerates tableID), and these two
+        // calls are past an await, so React does not batch them: split up, the table
+        // remounted on the first update - while the rows were still marked a preview -
+        // and Tabulator built its columns with the header filters stripped. The second
+        // update then found the table not yet mounted, so the rebuild that would have
+        // put them back was skipped, and the filter row opened empty.
+        ...(isNoLongerTruncated ? { isDataRestored: true, restoreError: null } : {}),
       }))
+
+      if (isNoLongerTruncated) {
+        // The rows have to live on the message or the next remount would lose them.
+        this.props.onRestoreData?.(response)
+      } else if (!wasTruncated) {
+        // Nobody else has told the message that its answer now has a column it did not
+        // have before. Left unsaid, the message goes on holding the response it was
+        // created with - and the first sweep that truncates it slices *that* one, so the
+        // remount puts the answer back the way it was before the column existed, taking
+        // any view that depended on it (a pivot table, most visibly) with it.
+        //
+        // A copy, not this.queryResponse itself: the message would otherwise hold this
+        // instance's working response, so later in-place edits here would slip past its
+        // identity check and it would keep references into this instance after a remount.
+        this.props.onResponseUpdate?.(cloneResponseSharingRows(this.queryResponse))
+      }
     }
   }
 
@@ -1477,6 +1575,11 @@ export class QueryOutput extends React.Component {
           this.queryResponse.data.data.columns = newColumns
         }
         this.resetTableConfig(newColumns)
+
+        // Same reasoning as updateColumnsAndData: what the user can see of this answer
+        // has changed, and the message is where that has to survive a remount. A copy,
+        // for the same reason as there.
+        this.props.onResponseUpdate?.(cloneResponseSharingRows(this.queryResponse))
       }
 
       // Determine appropriate display type based on column visibility
@@ -1738,15 +1841,37 @@ export class QueryOutput extends React.Component {
     )
   }
 
+  /**
+   * Returns whether anything was actually copied, so the caller can decide what to tell
+   * the user. The toolbar used to announce success unconditionally, which meant the
+   * truncated no-op below was reported as a successful copy.
+   */
   copyTableToClipboard = () => {
-    if (this.state.displayType === 'table' && this.tableRef?._isMounted) {
-      this.tableRef.copyToClipboard()
-    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef?._isMounted) {
-      this.pivotTableRef.copyToClipboard()
+    // This reads the rows that are actually on screen, so while those are a preview it
+    // would hand back ten rows dressed up as the whole answer. The toolbar withdraws the
+    // option entirely (see getShouldShowButtonObj); this covers direct callers. CSV
+    // export is deliberately not guarded - it is fetched server-side from the query id,
+    // so it still returns the full result.
+    if (this.isDataTruncated()) {
+      return false
     }
+
+    if (this.state.displayType === 'table' && this.tableRef?._isMounted) {
+      return !!this.tableRef.copyToClipboard()
+    } else if (this.state.displayType === 'pivot_table' && this.pivotTableRef?._isMounted) {
+      return !!this.pivotTableRef.copyToClipboard()
+    }
+
+    return false
   }
 
   getBase64Data = () => {
+    // Same reasoning as copyTableToClipboard: an image of the preview is not an image
+    // of the answer, and while truncated there is no chart rendered to capture anyway.
+    if (this.isDataTruncated()) {
+      return undefined
+    }
+
     if (this.chartRef && isChartType(this.state.displayType)) {
       return this.chartRef.getBase64Data().then((data) => {
         const trimmedData = data.split(',')[1]
@@ -1860,6 +1985,11 @@ export class QueryOutput extends React.Component {
   }
   handleQueryFnError = (error) => {
     if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
+      // Cancelling hands back the data already on screen, which is the right answer for
+      // every caller that just wants something to render - but it makes the cancellation
+      // indistinguishable from a successful fetch of the same rows. Callers that need to
+      // tell the difference read this flag; queryFn clears it on the way in.
+      this.wasQueryFnCancelled = true
       return this.queryResponse
     } else {
       return error
@@ -1867,6 +1997,8 @@ export class QueryOutput extends React.Component {
   }
 
   queryFn = async (args = {}) => {
+    this.wasQueryFnCancelled = false
+
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
 
     // Update formattedTableParams with current state from ChataTable before processing
@@ -1938,6 +2070,11 @@ export class QueryOutput extends React.Component {
           newColumns: queryRequestData?.additional_selects,
           displayOverrides: queryRequestData?.display_overrides,
           sourceQuery,
+          // The query util defaults this on, and the autoQLConfig spread above
+          // does not set it - it reads `allowSuggestions`, not
+          // `enableQuerySuggestions`. Without it a failed re-run answers with a
+          // related-queries list even for integrators who turned suggestions off.
+          allowSuggestions: this.props.enableQuerySuggestions,
           ...args,
           tableFilters: allFilters,
         })
@@ -1960,6 +2097,112 @@ export class QueryOutput extends React.Component {
     return result
   }
 
+  /**
+   * Was this answer limited by the backend?
+   *
+   * `isDataLimited` asks whether the rows we hold are fewer than `count_rows` - which,
+   * once the rows have been dropped to a preview, is true of every answer. Left alone
+   * it would start reporting unlimited answers as limited, which changes which display
+   * types they support and puts a "limited to N rows" warning under answers that were
+   * never limited. So while truncated, use the reading taken before the rows went.
+   */
+  getIsDataLimited = () => {
+    if (this.isDataTruncated()) {
+      return !!this.props.dataTruncated?.wasDataLimited
+    }
+
+    return isDataLimited(this.queryResponse)
+  }
+
+  isDataTruncated = () => {
+    // `this.state?` rather than `this.state.`: getDataLength calls this while deciding
+    // the initial display type, which happens in the constructor before state exists.
+    // Same reason usePivotDataForChart guards its own state access.
+    return !!this.props.dataTruncated && !this.state?.isDataRestored
+  }
+
+  // Data arrived from somewhere other than the Restore button - a sort, a filter, a page
+  // of infinite scroll. Whatever the route, the rows on screen are no longer a preview.
+  noticeDataIsNoLongerTruncated = (response) => {
+    if (!this.isDataTruncated() || !response?.data?.data?.rows?.length) {
+      return
+    }
+
+    this.setState({ isDataRestored: true, restoreError: null })
+    this.props.onRestoreData?.(response)
+  }
+
+  /**
+   * Fetch back the rows that were dropped when this answer fell out of the recent
+   * history, and put the message back the way the user left it.
+   *
+   * `queryFn` is the same path a table sort or filter already takes: it rebuilds the
+   * request from the response's own `fe_req` and this component's `formattedTableParams`
+   * - which were seeded on mount from the message's stored view state - so the rows come
+   * back in the order and under the filters they were last seen in, rather than in
+   * whatever order the backend happens to return.
+   *
+   * The result is handed up so the message keeps it; without that, the rows would be
+   * dropped again by the next remount.
+   */
+  restoreTruncatedData = async () => {
+    if (this.state.isRestoringData) {
+      return
+    }
+
+    this.setState({ isRestoringData: true })
+
+    try {
+      const response = await this.queryFn()
+
+      if (!this._isMounted) {
+        return
+      }
+
+      // A cancelled request resolves with the rows already on screen - which are the
+      // preview. Marking the message restored off the back of that would clear the
+      // banner and lose the only route back to the real data. Nothing failed either, so
+      // leave the notice exactly as it was and let the user press Restore again.
+      if (this.wasQueryFnCancelled) {
+        return
+      }
+
+      if (!response?.data?.data?.rows) {
+        throw new Error('Restoring the full data returned no rows')
+      }
+
+      // Clears the truncated state as its last step, once the data is in place.
+      this.updateColumnsAndData(response, { keepTableConfig: true })
+    } catch (error) {
+      console.error(error)
+
+      if (this._isMounted) {
+        // The button next to this already says "Try again", so the message only has to
+        // say what happened.
+        this.setState({ restoreError: 'Data could not be loaded.' })
+      }
+    } finally {
+      if (this._isMounted) {
+        this.setState({ isRestoringData: false })
+      }
+    }
+  }
+
+  renderDataTruncatedNotice = (variant) => {
+    return (
+      <DataTruncatedNotice
+        variant={variant}
+        previewRowCount={this.tableData?.length ?? 0}
+        displayType={this.state.displayType}
+        isRestoring={this.state.isRestoringData}
+        error={this.state.restoreError}
+        onRestore={this.restoreTruncatedData}
+        dataFormatting={this.props.dataFormatting}
+        tooltipID={this.props.tooltipID}
+      />
+    )
+  }
+
   getFilterDrilldown = ({ stringColumnIndex, row }) => {
     try {
       const filteredRows = this.tableData?.filter((origRow) => {
@@ -1969,6 +2212,9 @@ export class QueryOutput extends React.Component {
       const drilldownResponse = _cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
       drilldownResponse.data.data.count_rows = filteredRows.length
+      // Built here from this answer's rows, but carrying this answer's fe_req - so it
+      // can't be re-run as itself, and must never be truncated (see canRestoreResponse).
+      drilldownResponse.isClientSideFilter = true
       return drilldownResponse
     } catch (error) {
       console.error(error)
@@ -1988,6 +2234,9 @@ export class QueryOutput extends React.Component {
       const drilldownResponse = _cloneDeep(this.queryResponse)
       drilldownResponse.data.data.rows = filteredRows
       drilldownResponse.data.data.count_rows = filteredRows.length
+      // Built here from this answer's rows, but carrying this answer's fe_req - so it
+      // can't be re-run as itself, and must never be truncated (see canRestoreResponse).
+      drilldownResponse.isClientSideFilter = true
       return drilldownResponse
     } catch (error) {
       console.error(error)
@@ -2409,6 +2658,12 @@ export class QueryOutput extends React.Component {
   }
 
   toggleTableFilter = (filterOn, scrollToFirstFilteredColumn) => {
+    // Filtering is off while the rows are a preview - the toolbar hides the button, and
+    // this covers the callers that reach the method directly.
+    if (this.isDataTruncated()) {
+      return
+    }
+
     if (this.state.displayType === 'table') {
       return this.tableRef?._isMounted && this.tableRef.toggleIsFiltering(filterOn, scrollToFirstFilteredColumn)
     }
@@ -2501,8 +2756,14 @@ export class QueryOutput extends React.Component {
       this.queryID = nextQueryID
     }
 
+    // Sorting or filtering a preview table already goes to the server for a full page
+    // of rows, so the data is back whether or not anyone pressed Restore. Treat that as
+    // a restore rather than leaving the banner up over rows that are no longer a
+    // preview - and tell the message, so the rows survive the next remount.
+    this.noticeDataIsNoLongerTruncated(response)
+
     this.isOriginalData = false
-    this.queryResponse = _cloneDeep(response)
+    this.queryResponse = cloneResponseSharingRows(response)
     this.tableData = response?.data?.data?.rows || []
 
     if (this.shouldGeneratePivotData()) {
@@ -2983,10 +3244,14 @@ export class QueryOutput extends React.Component {
         this.tableConfig.numberColumnIndex === this.tableConfig.stringColumnIndex &&
         this.tableConfig.numberColumnIndices.length > 1
       ) {
-        this.tableConfig.numberColumnIndex = allNumberColumnIndices?.find(
-          (index) => !this.tableConfig.stringColumnIndices?.includes(index),
-        )
-        this.tableConfig.numberColumnIndices = [this.tableConfig.numberColumnIndex]
+        const replacementIndex =
+          allNumberColumnIndices?.find((index) => !this.tableConfig.stringColumnIndices?.includes(index)) ??
+          allNumberColumnIndices?.find((index) => index !== this.tableConfig.stringColumnIndex)
+
+        if (replacementIndex >= 0) {
+          this.tableConfig.numberColumnIndex = replacementIndex
+          this.tableConfig.numberColumnIndices = [replacementIndex]
+        }
       }
 
       if (
@@ -3120,7 +3385,7 @@ export class QueryOutput extends React.Component {
       columns: this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
-      isDataLimited: isDataLimited(this.queryResponse),
+      isDataLimited: this.getIsDataLimited(),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -3132,7 +3397,7 @@ export class QueryOutput extends React.Component {
       this.getDataLength(),
       this.getPivotDataLength(),
       this.getColumns(),
-      isDataLimited(this.queryResponse),
+      this.getIsDataLimited(),
     )
   }
 
@@ -3142,7 +3407,7 @@ export class QueryOutput extends React.Component {
       columns: newColumns ?? this.getColumns(),
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
-      isDataLimited: isDataLimited(this.queryResponse),
+      isDataLimited: this.getIsDataLimited(),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
     })
   }
@@ -3393,12 +3658,16 @@ export class QueryOutput extends React.Component {
       if (aggConfig?.[col?.name]) {
         aggType = aggConfig[col.name]
       }
-      if (isListQuery(columns)) {
-        if (isColumnNumberType(col)) {
+      if (isColumnNumberType(col)) {
+        if (isListQuery(columns)) {
           newCol.aggType = aggType || AggTypes.SUM
-        } else {
-          newCol.aggType = aggType || AggTypes.COUNT
         }
+      } else {
+        // A non-numeric column can only ever be aggregated by counting - summing labels yields 0 for
+        // every group, which draws an empty chart. List queries already tagged these COUNT; the same
+        // holds whenever a groupable column ends up on the number axis, e.g. once the only number
+        // column is hidden.
+        newCol.aggType = aggType || AggTypes.COUNT
       }
 
       // Check if a date range is available
@@ -4409,6 +4678,14 @@ export class QueryOutput extends React.Component {
   }
 
   renderAddColumnBtn = () => {
+    // Adding a column re-runs the query and comes back with the whole answer, so it
+    // quietly undoes the truncation - the message goes from a preview to a full result
+    // through a control that says nothing about either. Restore is the one way back to
+    // the data, and it is already sitting in the banner; the button returns with it.
+    if (this.isDataTruncated()) {
+      return null
+    }
+
     const isSingleValue = this.isSingleValueOrEmptyResponse(this.queryResponse)
     const allColumnsHidden = areAllColumnsHidden(this.getColumns())
     const isDrilldownResponse = isDrilldown(this.queryResponse)
@@ -4477,6 +4754,7 @@ export class QueryOutput extends React.Component {
           onCellClick={this.onTableCellClick}
           queryID={this.queryID}
           useInfiniteScroll={this.props.useInfiniteScroll}
+          isDataTruncated={this.isDataTruncated()}
           onTableParamsChange={this.onTableParamsChange}
           onNewData={this.onNewData}
           isAnimating={this.props.isAnimating}
@@ -4517,6 +4795,17 @@ export class QueryOutput extends React.Component {
   }
 
   renderPivotTable = (displayType = this.state.displayType) => {
+    // Same reasoning as renderChart: every cell of a pivot table is an aggregate, so one
+    // built from the preview rows shows totals that are wrong with nothing on screen to
+    // give that away. The card stands in for it until the data is back.
+    if (this.isDataTruncated()) {
+      if (displayType !== 'pivot_table') {
+        return null
+      }
+
+      return this.renderDataTruncatedNotice('card')
+    }
+
     if (areAllColumnsHidden(this.getColumns())) {
       return this.renderAllColumnsHiddenMessage()
     }
@@ -4541,6 +4830,7 @@ export class QueryOutput extends React.Component {
           isResizing={this.props.isResizing || this.state.isResizing}
           hidden={displayType !== 'pivot_table'}
           useInfiniteScroll={this.props.useInfiniteScroll}
+          isDataTruncated={this.isDataTruncated()}
           supportsDrilldowns={true}
           source={this.props.source}
           scope={this.props.scope}
@@ -4568,6 +4858,17 @@ export class QueryOutput extends React.Component {
   }
 
   renderChart = (displayType = this.state.displayType) => {
+    // A chart of the preview rows would look finished and be wrong, and unlike a table
+    // it gives the reader nothing to notice that by - no row count, no scrollbar that
+    // stops short. So the chart is not drawn at all until the data is back.
+    if (this.isDataTruncated()) {
+      if (!isChartType(displayType)) {
+        return null
+      }
+
+      return this.renderDataTruncatedNotice('card')
+    }
+
     if (!this.tableData || !this.state.columns || !this.tableConfig) {
       console.error('Required table data was missing for chart')
       // If the chart would be hidden (e.g., table view), avoid rendering the error message
@@ -4667,7 +4968,7 @@ export class QueryOutput extends React.Component {
     }
 
     const isPivotDataLimited = usePivotData && this.pivotTableDataLimited
-    const isDataLimitedResult = isDataLimited(this.queryResponse)
+    const isDataLimitedResult = this.getIsDataLimited()
     const rowLimitValue = this.queryResponse?.data?.data?.row_limit ?? MAX_DATA_PAGE_SIZE
     const countRows = this.queryResponse?.data?.data?.count_rows
 
@@ -4936,17 +5237,58 @@ export class QueryOutput extends React.Component {
     const tableConfig = usePivotData ? this.pivotTableConfig : this.tableConfig
     const tableConfigIsValid = this.isTableConfigValid(tableConfig, columns, displayType)
 
-    const shouldRenderChart = (allowsDisplayTypeChange || displayTypeIsChart) && supportsCharts && tableConfigIsValid
+    // With allowDisplayTypeChange on, all three of these used to mount for every
+    // response and two of them sat hidden — three heavy widgets per answer, times
+    // twenty answers, times eight session tabs. The chart and the pivot table now
+    // mount the first time they are actually asked for and stay mounted afterwards,
+    // so switching back and forth is still instant but a response the user only ever
+    // reads as a table never builds a chart at all.
+    //
+    // The table is deliberately exempt and mounts for every response: it owns
+    // progressive loading (ajaxRequestFunc, setPageLoading), the header filters and
+    // CSV/clipboard export, and this.tableData - which the chart reads - is kept
+    // current through it. Dropping it would break paging for a charted response.
+    this.hasMountedChart = this.hasMountedChart || displayTypeIsChart
+    this.hasMountedPivotTable = this.hasMountedPivotTable || displayTypeIsPivotTable
+
+    const chartIsWanted = allowsDisplayTypeChange ? this.hasMountedChart : displayTypeIsChart
+    const pivotTableIsWanted = allowsDisplayTypeChange ? this.hasMountedPivotTable : displayTypeIsPivotTable
+
+    const shouldRenderChart = chartIsWanted && supportsCharts && tableConfigIsValid
     const shouldRenderTable = allowsDisplayTypeChange || displayTypeIsTable
-    const shouldRenderPivotTable = (allowsDisplayTypeChange || displayTypeIsPivotTable) && supportsPivotTable
+    const shouldRenderPivotTable = pivotTableIsWanted && supportsPivotTable
 
     return (
       <>
+        {this.shouldShowTruncatedBanner(displayType) && this.renderDataTruncatedNotice('banner')}
         {shouldRenderTable && this.renderTable(displayType)}
         {shouldRenderChart && this.renderChart(displayType)}
         {shouldRenderPivotTable && this.renderPivotTable(displayType)}
       </>
     )
+  }
+
+  /**
+   * Above the table rather than around it: the rows below are real, so the answer still
+   * reads as an answer - what the banner adds is that there are more of them. A charted
+   * or pivoted message gets the card instead, never both.
+   */
+  shouldShowTruncatedBanner = (displayType = this.state.displayType) => {
+    return this.isDataTruncated() && !isChartType(displayType) && displayType !== 'pivot_table'
+  }
+
+  /**
+   * The other half of the same decision: whichever view the banner is not enough for is
+   * replaced by the card.
+   *
+   * The container has to know because it is what gives the card its height. A charted
+   * message got that for free - `.chart` sizes itself off the viewport, so the card
+   * standing in for the chart inherited a chart-sized box. A pivoted one is in table
+   * mode, where height comes from the content, so the same card came out a fraction of
+   * the height for no reason the reader can see. See .has-truncated-card.
+   */
+  shouldShowTruncatedCard = (displayType = this.state.displayType) => {
+    return this.isDataTruncated() && (isChartType(displayType) || displayType === 'pivot_table')
   }
 
   shouldRenderReverseTranslation = () => {
@@ -5031,7 +5373,8 @@ export class QueryOutput extends React.Component {
         ${!isChartType(this.state.displayType) && !isTableType(this.state.displayType) ? 'non-table-non-chart' : ''}
         ${this.state.displayType === 'single-value' ? 'single-value' : ''}
         ${this.shouldEnableResize ? 'resizable' : ''}
-        ${this.state.isResizing ? 'resizing' : ''}`}
+        ${this.state.isResizing ? 'resizing' : ''}
+        ${this.shouldShowTruncatedCard() ? 'has-truncated-card' : ''}`}
         >
           {this.props.reverseTranslationPlacement === 'top' && this.renderFooter()}
           {this.renderResponse()}

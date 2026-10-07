@@ -59,3 +59,18 @@ describe('validation call', () => {
 })
 
 // disable "enter" if no query or if only spaces
+
+describe('speech to text', () => {
+  test('typing works again after a voice session that produced no final transcript', () => {
+    const wrapper = setup({ autoQLConfig: { enableAutocomplete: false } })
+    const instance = wrapper.instance()
+
+    instance.onTranscriptStart()
+    instance.onInputChange({ target: { value: 'ignored' }, stopPropagation: () => {} })
+    expect(wrapper.state('inputValue')).not.toBe('ignored')
+
+    instance.onTranscriptEnd()
+    instance.onInputChange({ target: { value: 'typed' }, stopPropagation: () => {} })
+    expect(wrapper.state('inputValue')).toBe('typed')
+  })
+})

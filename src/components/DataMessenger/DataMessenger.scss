@@ -367,6 +367,96 @@
   }
 }
 
+// Shown while maximized. Same pill as the maximize handle, but inside the drawer
+// (its outer edge is the screen's edge) and hidden until the pointer comes near
+// that edge - DataMessenger toggles .visible. Keyboard focus shows it too, so it
+// is never a hidden stop in the tab order.
+.react-autoql-drawer .react-autoql-drawer-restore-handle {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  border-radius: 999px;
+  background-color: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-placeholder);
+  box-shadow: 0 2px 8px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.12));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+    box-shadow: 0 2px 10px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.2));
+  }
+
+  .react-autoql-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  // The caret points toward the side the drawer is docked to - the way it will
+  // shrink - and the pill slides in from the edge it sits against.
+  &.right,
+  &.left {
+    top: 50%;
+    width: 26px;
+    height: 44px;
+    margin-top: -22px;
+  }
+
+  &.top,
+  &.bottom {
+    left: 50%;
+    width: 44px;
+    height: 26px;
+    margin-left: -22px;
+  }
+
+  &.right {
+    left: 8px;
+    transform: translateX(-6px);
+  }
+
+  &.left {
+    right: 8px;
+    transform: translateX(6px);
+
+    .react-autoql-icon svg {
+      transform: rotate(180deg);
+    }
+  }
+
+  &.top {
+    bottom: 8px;
+    transform: translateY(6px);
+
+    .react-autoql-icon svg {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &.bottom {
+    top: 8px;
+    transform: translateY(-6px);
+
+    .react-autoql-icon svg {
+      transform: rotate(90deg);
+    }
+  }
+
+  // Last, so it overrides each placement's slide-in offset.
+  &.visible,
+  &:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+}
+
 .react-autoql-drawer .header-title {
   animation: fadeIn 0.3s;
   text-align: left;
