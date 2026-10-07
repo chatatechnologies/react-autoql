@@ -53,6 +53,7 @@ import ChataNetworkGraph from '../ChataNetworkGraph'
 import { ChataSankeyDiagram } from '../ChataSankeyDiagram'
 import { AverageLine } from '../AverageLine'
 import { RegressionLine } from '../RegressionLine'
+import { getUnscaledClientRect } from '../measureScale'
 import ChartHeaderToggle from '../ChartHeaderToggle/ChartHeaderToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
@@ -163,7 +164,7 @@ export default class ChataChart extends React.Component {
   }
 
   isContainerCollapsed = () => {
-    const rect = this.chartContainerRef?.getBoundingClientRect?.()
+    const rect = getUnscaledClientRect(this.chartContainerRef)
     const w = rect?.width ?? this.chartContainerRef?.clientWidth ?? 0
     const h = rect?.height ?? this.chartContainerRef?.clientHeight ?? 0
     return w <= 1 || h <= 1
@@ -856,11 +857,11 @@ export default class ChataChart extends React.Component {
   }
 
   getRenderedChartDimensions = () => {
-    const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
-    const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
-    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
-    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
-    const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
+    const leftAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.leftAxis?.ref)
+    const topAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.topAxis?.ref)
+    const bottomAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.bottomAxis)
+    const rightAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.rightAxis)
+    const clippedLegendBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer)
     const axesBBox = mergeBoundingClientRects([
       leftAxisBBox,
       bottomAxisBBox,
@@ -939,7 +940,7 @@ export default class ChataChart extends React.Component {
     if (!this.outerWidth || !this.outerHeight || this.shouldRecalculateDimensions) {
       this.shouldRecalculateDimensions = false
 
-      const containerBBox = this.chartContainerRef?.getBoundingClientRect()
+      const containerBBox = getUnscaledClientRect(this.chartContainerRef)
       const containerWidth = containerBBox?.width ?? 0
       const containerHeight = containerBBox?.height ?? 0
 
