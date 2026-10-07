@@ -288,6 +288,38 @@ describe('stacked chart sorting', () => {
     expect(dataResult.data).toBeDefined()
   })
 
+  test('excludes second-axis series from stacked segments when aggregating raw data', () => {
+    const columns = [
+      { display_name: 'Outcome', type: 'STRING', is_visible: true },
+      { display_name: 'Size', type: 'QUANTITY', is_visible: true },
+      { display_name: 'Total Value', type: 'QUANTITY', is_visible: true },
+    ]
+    const data = [
+      ['no', 10, 4],
+      ['no', 20, 6],
+      ['yes', 30, 2],
+    ]
+    const props = {
+      columns,
+      data,
+      type: 'stacked_column',
+      numberColumnIndices: [2],
+      numberColumnIndex: 2,
+      numberColumnIndices2: [1],
+      numberColumnIndex2: 1,
+      stringColumnIndex: 0,
+      isDataAggregated: false,
+    }
+
+    const wrapper = setup(props)
+    const instance = wrapper.instance()
+    const dataResult = instance.getData(props)
+
+    // Size lives only on the (unused) second axis, so it must not come back as a stacked segment
+    expect(instance.sortedNumberColumnIndicesForStacked).toEqual([2])
+    expect(dataResult.data).toBeDefined()
+  })
+
   test('does not sort non-stacked charts', () => {
     const wrapper = setup({
       ...listSampleProps,
