@@ -294,6 +294,7 @@ export interface DataMessengerProps {
   enableFilterLocking?: boolean
   enableQueryQuickStartTopics?: boolean
   enableQueryInputTopics?: boolean
+  enableQuerySuggestions?: boolean
   disableColumnSelectionForDataExplorer?: boolean
   enableMagicWand?: boolean
   showMagicWandQuoteButton?: boolean

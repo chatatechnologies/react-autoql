@@ -2,6 +2,8 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import ChatContent from './ChatContent'
 import { QueryInput } from '../QueryInput'
+import { SessionTabs } from '../SessionTabs'
+import { fetchQueryTitle } from '../../js/queryTitleService'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
 jest.mock('react-tooltip', () => ({ Tooltip: () => null, __esModule: true }))
@@ -12,6 +14,10 @@ jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
   fetchSubjectList: () => Promise.resolve([]),
 }))
+
+jest.mock('../../js/queryTitleService', () => ({ fetchQueryTitle: jest.fn() }))
+
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const requiredProps = {
   authentication: { token: 'token', apiKey: 'key', domain: 'domain' },
@@ -31,13 +37,18 @@ const requiredProps = {
 // tree it returns (ErrorBoundary and everything under it) is still findable.
 const setup = (props = {}) => shallow(<ChatContent {...requiredProps} {...props} />)
 
-const getTabs = (wrapper) => wrapper.find('.react-autoql-chat-session-tab')
+// The strip itself is SessionTabs' business (and its own test's); what ChatContent
+// owns is the list of sessions it hands over, so these read that rather than the
+// rendered chips.
+const getTabBar = (wrapper) => wrapper.find(SessionTabs)
+const getTabs = (wrapper) => getTabBar(wrapper).prop('items')
+const getTitles = (wrapper) => getTabs(wrapper).map((tab) => tab.title)
 const getThreads = (wrapper) => wrapper.find(ChatContent)
 
 describe('sessions disabled (default)', () => {
   test('renders a single thread with no tab bar', () => {
     const wrapper = setup()
-    expect(wrapper.find('.react-autoql-chat-session-tabs').exists()).toBe(false)
+    expect(wrapper.find(SessionTabs).exists()).toBe(false)
     expect(getThreads(wrapper).exists()).toBe(false)
     expect(wrapper.find('.chat-content-wrapper').exists()).toBe(true)
   })
@@ -54,7 +65,7 @@ describe('enableSessions', () => {
     const tabs = getTabs(wrapper)
 
     expect(tabs).toHaveLength(1)
-    expect(tabs.at(0).text()).toContain('New thread')
+    expect(tabs[0].title).toContain('New thread')
 
     const threads = getThreads(wrapper)
     expect(threads).toHaveLength(1)
@@ -90,13 +101,13 @@ describe('enableSessions', () => {
 
   test('the + button adds a tab and switches to it', () => {
     const wrapper = setup({ enableSessions: true })
-    wrapper.find('.react-autoql-chat-session-tab-new').simulate('click')
+    getTabBar(wrapper).prop('onNew')()
     wrapper.update()
 
     const tabs = getTabs(wrapper)
     expect(tabs).toHaveLength(2)
-    expect(tabs.at(1).text()).toContain('New thread 2')
-    expect(tabs.at(1).hasClass('active')).toBe(true)
+    expect(tabs[1].title).toContain('New thread 2')
+    expect(getTabBar(wrapper).prop('activeId')).toBe(tabs[1].id)
   })
 
   test('stops at 8 tabs, the same ceiling the Data Agent puts on threads', () => {
@@ -108,7 +119,7 @@ describe('enableSessions', () => {
     wrapper.update()
 
     expect(getTabs(wrapper)).toHaveLength(8)
-    expect(wrapper.find('.react-autoql-chat-session-tab-new').prop('disabled')).toBe(true)
+    expect(getTabBar(wrapper).prop('canAddNew')).toBe(false)
   })
 
   test('clicking a tab activates it', () => {
@@ -116,20 +127,20 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.update()
 
-    getTabs(wrapper).at(0).simulate('click')
+    const firstTabId = getTabs(wrapper)[0].id
+    getTabBar(wrapper).prop('onSelect')(firstTabId)
     wrapper.update()
 
-    expect(getTabs(wrapper).at(0).hasClass('active')).toBe(true)
-    expect(getTabs(wrapper).at(1).hasClass('active')).toBe(false)
+    expect(getTabBar(wrapper).prop('activeId')).toBe(firstTabId)
   })
 
   test('no close button on the last remaining session', () => {
     const wrapper = setup({ enableSessions: true })
-    expect(wrapper.find('.react-autoql-chat-session-tab-close').exists()).toBe(false)
+    expect(getTabs(wrapper).map((tab) => tab.canClose)).toEqual([false])
 
     wrapper.instance().addSession()
     wrapper.update()
-    expect(wrapper.find('.react-autoql-chat-session-tab-close')).toHaveLength(2)
+    expect(getTabs(wrapper).map((tab) => tab.canClose)).toEqual([true, true])
   })
 
   test('closing the active tab falls back to the one on its left', () => {
@@ -138,10 +149,7 @@ describe('enableSessions', () => {
     wrapper.update()
 
     const firstSessionId = wrapper.state('sessions')[0].id
-    wrapper
-      .find('.react-autoql-chat-session-tab-close')
-      .at(1)
-      .simulate('click', { stopPropagation: () => {} })
+    getTabBar(wrapper).prop('onClose')(getTabs(wrapper)[1].id)
     wrapper.update()
 
     expect(getTabs(wrapper)).toHaveLength(1)
@@ -154,40 +162,10 @@ describe('enableSessions', () => {
     wrapper.update()
 
     const activeSessionId = wrapper.state('activeSessionId')
-    wrapper
-      .find('.react-autoql-chat-session-tab-close')
-      .at(0)
-      .simulate('click', { stopPropagation: () => {} })
+    getTabBar(wrapper).prop('onClose')(getTabs(wrapper)[0].id)
     wrapper.update()
 
     expect(wrapper.state('activeSessionId')).toBe(activeSessionId)
-  })
-
-  test('the close-all button only appears once there are several tabs', () => {
-    const wrapper = setup({ enableSessions: true })
-    expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(false)
-
-    wrapper.instance().addSession()
-    wrapper.update()
-    expect(wrapper.find('.react-autoql-chat-session-tab-close-all').exists()).toBe(true)
-  })
-
-  test('closing all tabs leaves one empty new thread tab', () => {
-    const wrapper = setup({ enableSessions: true })
-    wrapper.instance().addSession()
-    wrapper.instance().addSession()
-    wrapper.update()
-
-    const closedIds = wrapper.state('sessions').map((session) => session.id)
-    wrapper.instance().closeAllSessions()
-    wrapper.update()
-
-    const sessions = wrapper.state('sessions')
-    expect(sessions).toHaveLength(1)
-    // A new tab, not one of the ones that was open - its thread remounts with it.
-    expect(closedIds).not.toContain(sessions[0].id)
-    expect(sessions[0].title).toBe('New thread')
-    expect(wrapper.state('activeSessionId')).toBe(sessions[0].id)
   })
 
   test('a new tab takes the lowest new thread number no open tab is using', () => {
@@ -195,7 +173,7 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.instance().addSession()
     wrapper.update()
-    expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
+    expect(getTitles(wrapper)).toEqual([
       expect.stringContaining('New thread'),
       expect.stringContaining('New thread 2'),
       expect.stringContaining('New thread 3'),
@@ -208,10 +186,7 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.update()
 
-    expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
-      expect.stringContaining('New thread'),
-      expect.stringContaining('New thread 2'),
-    ])
+    expect(getTitles(wrapper)).toEqual([expect.stringContaining('New thread'), expect.stringContaining('New thread 2')])
   })
 
   test('a tab the backend named frees its new thread number', () => {
@@ -224,7 +199,7 @@ describe('enableSessions', () => {
     wrapper.instance().addSession()
     wrapper.update()
 
-    expect(getTabs(wrapper).map((tab) => tab.text())).toEqual([
+    expect(getTitles(wrapper)).toEqual([
       expect.stringContaining('New thread'),
       expect.stringContaining('Sales by region'),
       expect.stringContaining('New thread 2'),
@@ -296,5 +271,302 @@ describe('enableSessions', () => {
     expect(sessions).toHaveLength(2)
     expect(sessions[0].id).toBe(firstSession.id)
     expect(sessions[1].id).not.toBe(secondSession.id)
+  })
+})
+
+// A thread scroll already underway keeps the wheel when it passes over a table, but
+// only for one idle window after the user's last scroll of the thread itself.
+describe('wheel handling over a nested table', () => {
+  const setupWheel = ({ threadScrollTop = 500, tableScrollTop = 0 } = {}) => {
+    const wrapper = setup()
+
+    const container = document.createElement('div')
+    Object.defineProperties(container, {
+      scrollHeight: { value: 2000, configurable: true },
+      clientHeight: { value: 400, configurable: true },
+    })
+    container.scrollTop = threadScrollTop
+
+    const table = document.createElement('div')
+    table.className = 'tabulator-tableholder'
+    Object.defineProperties(table, {
+      scrollHeight: { value: 1000, configurable: true },
+      clientHeight: { value: 300, configurable: true },
+    })
+    table.scrollTop = tableScrollTop
+    container.appendChild(table)
+
+    wrapper.instance().messengerScrollComponent = { getContainer: () => container }
+
+    const wheel = (target, deltaY = 100, deltaX = 0) => {
+      const event = { target, deltaY, deltaX, deltaMode: 0, preventDefault: jest.fn(), stopPropagation: jest.fn() }
+      wrapper.instance().handleThreadWheel(event)
+      return event
+    }
+
+    return { container, table, wheel }
+  }
+
+  test('leaves the table alone when the thread is at rest', () => {
+    const { container, table, wheel } = setupWheel()
+
+    const event = wheel(table)
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(container.scrollTop).toBe(500)
+  })
+
+  test('keeps a thread scroll going when it passes over a table', () => {
+    const { container, table, wheel } = setupWheel()
+
+    wheel(container)
+    const event = wheel(table)
+
+    expect(event.preventDefault).toHaveBeenCalled()
+    expect(container.scrollTop).toBe(600)
+  })
+
+  // The bug this replaced: every stolen event used to extend the window, so a mouse
+  // wheel - whose notches all report the same delta and keep arriving - held the
+  // thread's claim open forever and the table could never be scrolled.
+  test('hands the wheel back to the table rather than holding it open', () => {
+    jest.useFakeTimers()
+    try {
+      const { container, table, wheel } = setupWheel()
+
+      wheel(container)
+      wheel(table)
+
+      // Uniform mouse-wheel notches, arriving inside the window of each other but
+      // past it from the thread's own last scroll. The old version measured from the
+      // stolen events, so these kept the claim alive indefinitely.
+      jest.advanceTimersByTime(200)
+      wheel(table)
+      jest.advanceTimersByTime(200)
+      const event = wheel(table)
+
+      expect(event.preventDefault).not.toHaveBeenCalled()
+      // 600 from the first steal, 700 from the second - and nothing after.
+      expect(container.scrollTop).toBe(700)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  // PerfectScrollbar reads a table that is still at scrollTop 0 as having nothing to
+  // scroll, so it scrolled the thread on top of the browser scrolling the table. The
+  // event has to be kept away from it while the table still has room.
+  test('keeps the event away from the thread scrollbar while the table can scroll', () => {
+    const { container, table, wheel } = setupWheel()
+
+    const event = wheel(table)
+
+    expect(event.stopPropagation).toHaveBeenCalled()
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(container.scrollTop).toBe(500)
+  })
+
+  test('lets the event through once the table is at its bottom', () => {
+    const { table, wheel } = setupWheel({ tableScrollTop: 700 })
+
+    const event = wheel(table)
+
+    expect(event.stopPropagation).not.toHaveBeenCalled()
+  })
+
+  test('lets a horizontal wheel through so the table can block back-navigation', () => {
+    const { table, wheel } = setupWheel()
+
+    const event = wheel(table, 10, -120)
+
+    expect(event.stopPropagation).not.toHaveBeenCalled()
+  })
+
+  test('lets the table take over at the end of the thread', () => {
+    const { container, table, wheel } = setupWheel({ threadScrollTop: 1600 })
+
+    wheel(container)
+    const event = wheel(table)
+
+    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(container.scrollTop).toBe(1600)
+  })
+})
+
+// Adding a custom column re-runs the query, and the answer on screen from then on is the
+// one with the column in it. The message kept the response it was created with, so the
+// first sweep truncated *that* one and the remount rebuilt the answer without the column
+// - taking the pivot table the user had switched to with it.
+describe('keeping the message response current when columns change', () => {
+  const responseWith = (columns) => ({
+    data: { reference_id: '1.1.210', data: { columns, rows: [[1]], query_id: 'q1' } },
+  })
+
+  const setupWithMessage = () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    instance._isMounted = true
+    instance.setState({ messages: [{ id: 'm1', response: responseWith(['a']) }] })
+    return { wrapper, instance }
+  }
+
+  test('replaces the stored response', () => {
+    const { wrapper, instance } = setupWithMessage()
+    const withColumn = responseWith(['a', 'b'])
+
+    instance.onMessageResponseUpdate('m1', withColumn)
+
+    expect(wrapper.state('messages')[0].response).toBe(withColumn)
+  })
+
+  // A restore is the thing that exempts a message from the sweep. This is not one: the
+  // answer that just gained a column is exactly what should be truncated next time.
+  test('does not mark the message restored or clear its truncated state', () => {
+    const { wrapper, instance } = setupWithMessage()
+    const dataTruncated = { droppedRowCount: 500, wasDataLimited: false }
+    instance.setState({ messages: [{ ...wrapper.state('messages')[0], dataTruncated }] })
+
+    instance.onMessageResponseUpdate('m1', responseWith(['a', 'b']))
+
+    const message = wrapper.state('messages')[0]
+    expect(message.isDataRestored).toBeUndefined()
+    expect(message.dataTruncated).toBe(dataTruncated)
+  })
+
+  test('ignores an unknown message, a missing response, and a response it already holds', () => {
+    const { wrapper, instance } = setupWithMessage()
+    const before = wrapper.state('messages')
+
+    instance.onMessageResponseUpdate('nope', responseWith(['a', 'b']))
+    instance.onMessageResponseUpdate('m1', undefined)
+    instance.onMessageResponseUpdate('m1', before[0].response)
+
+    expect(wrapper.state('messages')).toBe(before)
+  })
+})
+
+// A background session tab ignores the host's props while it is hidden - so anything it
+// has to react to (authentication, here) can't be read off prevProps on the way back:
+// React has already assigned the skipped props by then.
+describe('a hidden session tab', () => {
+  const hiddenTab = () => setup({ isSessionTab: true, shouldRender: false, isActivePage: false })
+
+  test('does not re-render for prop changes while hidden', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+
+    expect(instance.shouldComponentUpdate({ ...instance.props, inputPlaceholder: 'x' }, instance.state)).toBe(false)
+  })
+
+  test('still re-renders for its own state while hidden', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+
+    expect(instance.shouldComponentUpdate(instance.props, { ...instance.state, messages: [{ id: 'm1' }] })).toBe(true)
+  })
+
+  test('fetches subjects on reveal when authentication changed while it was hidden', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+    instance.fetchAllSubjects = jest.fn()
+
+    wrapper.setProps({ authentication: { token: 'other', apiKey: 'key', domain: 'domain' } })
+    expect(instance.fetchAllSubjects).not.toHaveBeenCalled()
+
+    wrapper.setProps({ shouldRender: true, isActivePage: true })
+    expect(instance.fetchAllSubjects).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not refetch on reveal when authentication did not change', () => {
+    const wrapper = hiddenTab()
+    const instance = wrapper.instance()
+    instance.fetchAllSubjects = jest.fn()
+
+    wrapper.setProps({ shouldRender: true, isActivePage: true })
+    expect(instance.fetchAllSubjects).not.toHaveBeenCalled()
+  })
+})
+
+describe('queryInputLeftContent', () => {
+  const left = <span className='custom-left' />
+
+  test('takes the head of the input in a standalone thread', () => {
+    const wrapper = setup({ queryInputLeftContent: left })
+
+    expect(wrapper.find(QueryInput).prop('leftContent')).toBe(left)
+  })
+
+  test('goes to the tab on screen only, with sessions on', () => {
+    const wrapper = setup({ enableSessions: true, queryInputLeftContent: left })
+    wrapper.instance().addSession()
+    wrapper.update()
+
+    const threads = getThreads(wrapper)
+    const active = threads.filterWhere((t) => t.prop('isActivePage'))
+    const background = threads.filterWhere((t) => !t.prop('isActivePage'))
+
+    expect(active.prop('queryInputLeftContent')).toBe(left)
+    expect(background.prop('queryInputLeftContent')).toBeNull()
+  })
+})
+
+describe('session title', () => {
+  beforeEach(() => fetchQueryTitle.mockReset())
+
+  // A session tab as the host renders it: it only knows how to report a title up.
+  const setupTab = (props = {}) => setup({ isSessionTab: true, querySessionId: 'session-1', ...props })
+
+  test('the first query asks the title endpoint and reports the name', async () => {
+    fetchQueryTitle.mockResolvedValue('Revenue by region last quarter')
+    const onSessionTitleChange = jest.fn()
+    const wrapper = setupTab({ onSessionTitleChange })
+
+    wrapper.instance().onInputSubmit('total revenue by region last quarter', 'msg-1')
+    await flushPromises()
+
+    expect(fetchQueryTitle).toHaveBeenCalledWith({
+      query: 'total revenue by region last quarter',
+      authentication: requiredProps.authentication,
+    })
+    expect(onSessionTitleChange).toHaveBeenCalledWith('Revenue by region last quarter')
+
+    wrapper.instance().onInputSubmit('and the quarter before', 'msg-2')
+    await flushPromises()
+
+    expect(fetchQueryTitle).toHaveBeenCalledTimes(1)
+  })
+
+  test('a failed title request lets the next query try again', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    fetchQueryTitle.mockRejectedValueOnce(new Error('500')).mockResolvedValueOnce('Revenue by region')
+    const onSessionTitleChange = jest.fn()
+    const wrapper = setupTab({ onSessionTitleChange })
+
+    wrapper.instance().onInputSubmit('total revenue by region', 'msg-1')
+    await flushPromises()
+    expect(onSessionTitleChange).not.toHaveBeenCalled()
+
+    wrapper.instance().onInputSubmit('total revenue by region', 'msg-2')
+    await flushPromises()
+
+    expect(fetchQueryTitle).toHaveBeenCalledTimes(2)
+    expect(onSessionTitleChange).toHaveBeenCalledWith('Revenue by region')
+    console.error.mockRestore()
+  })
+
+  test('a thread outside of sessions never asks for a title, even given the callback', () => {
+    const wrapper = setup({ onSessionTitleChange: jest.fn() })
+
+    wrapper.instance().onInputSubmit('total revenue', 'msg-1')
+
+    expect(fetchQueryTitle).not.toHaveBeenCalled()
+  })
+
+  test('a thread outside of sessions never asks for a title', () => {
+    const wrapper = setup()
+
+    wrapper.instance().onInputSubmit('total revenue', 'msg-1')
+
+    expect(fetchQueryTitle).not.toHaveBeenCalled()
   })
 })

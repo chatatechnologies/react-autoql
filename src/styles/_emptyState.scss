@@ -1,0 +1,52 @@
+// The block a messenger shows before its first message: logo mark, a headline and a
+// line of prose under it. The Data Messenger and the Data Agent show the same block
+// with different words, so the type, colour and spacing are defined once here -
+// they had already drifted apart (two different subtitle colours and measures) when
+// only the copy was ever meant to differ.
+//
+// $prefix is the caller's own class stem, since the two name their hooks
+// differently: chat-content-empty-state, react-autoql-agent-empty-state.
+//
+// Positioning stays with the caller - the Data Messenger overlays its thread, the
+// Data Agent's is a flex child of the transcript.
+@mixin empty-state-content($prefix) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  // Optical centring: the logo gives the block a top-heavy silhouette, so the
+  // geometric centre reads low. The extra bottom padding lifts the group by ~3rem
+  // against the flex centre, which is what makes it look centred.
+  padding: 1rem 2rem 7rem;
+  text-align: center;
+
+  .#{$prefix}-logo {
+    font-size: 1.75rem;
+    color: var(--react-autoql-accent-color);
+  }
+
+  .#{$prefix}-title {
+    margin: 0;
+    max-width: 24rem;
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--react-autoql-text-color-primary);
+    // Splits a wrapped headline into even lines rather than leaving one word alone
+    // on the second. Ignored where unsupported, which gives the old greedy wrap.
+    text-wrap: balance;
+  }
+
+  // A drawer can be dragged out to most of the screen, and a line of prose set to
+  // that width is unreadable - hence a measure of its own.
+  .#{$prefix}-subtitle {
+    margin: -0.625rem 0 0;
+    max-width: 24rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--react-autoql-text-color-placeholder);
+    // Keeps the last line from being a single orphaned word.
+    text-wrap: pretty;
+  }
+}

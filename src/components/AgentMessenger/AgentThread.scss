@@ -1,3 +1,5 @@
+@import '../../styles/emptyState';
+
 .react-autoql-agent-thread {
   position: relative;
   flex: 1;
@@ -116,35 +118,9 @@
 /* ---- Empty state ---- */
 
 .react-autoql-agent-empty-state {
+  @include empty-state-content('react-autoql-agent-empty-state');
+
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  // Optical centring, same as ChatContent's empty state: the logo makes the block
-  // top-heavy, so the geometric centre reads low. The bottom padding lifts it ~3rem.
-  padding: 1rem 0 7rem;
-  text-align: center;
-}
-
-.react-autoql-agent-empty-state-logo {
-  font-size: 1.75rem;
-  color: var(--am-accent);
-}
-
-.react-autoql-agent-empty-state-title {
-  margin: 0;
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  color: var(--am-t1);
-}
-
-.react-autoql-agent-empty-state-subtitle {
-  margin: -0.625rem 0 0;
-  font-size: 0.9375rem;
-  color: var(--am-t2);
 }
 
 .react-autoql-agent-suggestions {

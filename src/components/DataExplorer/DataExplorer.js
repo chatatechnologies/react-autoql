@@ -79,7 +79,7 @@ export default class DataExplorer extends React.Component {
     shouldRender: true,
     inputPlaceholder: undefined,
     introMessage: undefined,
-    enableQuerySuggestions: true,
+    enableQuerySuggestions: false,
     disableColumnSelection: false,
     executeQuery: () => {},
     isSmallScreen: false,

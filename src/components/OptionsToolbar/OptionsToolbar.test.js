@@ -1084,3 +1084,83 @@ describe('billing gate (enableBillingGate)', () => {
     queryOutputComponent.unmount()
   })
 })
+
+// While an answer's rows are a preview, every option that reads them would hand ten
+// rows back as the whole result. They are withdrawn rather than left to no-op.
+describe('an answer whose rows have been dropped to a preview', () => {
+  const shouldShow = (props, queryOutputProps) => {
+    const { wrapper } = setup(props, queryOutputProps)
+    return wrapper.instance().getShouldShowButtonObj(wrapper.instance().props)
+  }
+
+  test('withdraws copy and filter on a table', () => {
+    expect(shouldShow({ isDataTruncated: true }).showCopyButton).toBe(false)
+    expect(shouldShow({ isDataTruncated: true }).showFilterButton).toBe(false)
+  })
+
+  test('withdraws PNG export on a chart', () => {
+    expect(shouldShow({ isDataTruncated: true }, { initialDisplayType: 'column' }).showSaveAsPNGButton).toBe(false)
+  })
+
+  test('offers them again once the data is back', () => {
+    expect(shouldShow({ isDataTruncated: false }).showCopyButton).toBe(true)
+    expect(shouldShow({ isDataTruncated: false }).showFilterButton).toBe(true)
+    expect(shouldShow({ isDataTruncated: false }, { initialDisplayType: 'column' }).showSaveAsPNGButton).toBe(true)
+  })
+
+  // CSV is fetched server-side from the query id, so it still returns the full result -
+  // it is the one export that stays. A pivot table's CSV is built in the browser.
+  test('keeps CSV export for a regular table but not a pivot table', () => {
+    expect(shouldShow({ isDataTruncated: true }).showSaveAsCSVButton).toBe(true)
+    expect(shouldShow({ isDataTruncated: true }, { initialDisplayType: 'pivot_table' }).showSaveAsCSVButton).toBe(false)
+  })
+
+  // A custom option is handed a deep clone of queryResponse, which while truncated is the
+  // preview - and the consumer's usual use for it is saving a dashboard tile.
+  test('withdraws the host app custom options', () => {
+    const customOptions = [{ name: 'Save to dashboard', icon: 'dashboard', callback: jest.fn() }]
+
+    expect(shouldShow({ isDataTruncated: true, customOptions }).showCustomOptions).toBe(false)
+    expect(shouldShow({ isDataTruncated: false, customOptions }).showCustomOptions).toBe(true)
+  })
+
+  // A data alert is built off the same response and then runs unattended afterwards.
+  test('withdraws Create a Data Alert', () => {
+    const autoQLConfig = { ...defaultProps.autoQLConfig, enableNotifications: true }
+
+    expect(shouldShow({ isDataTruncated: true, autoQLConfig }).showCreateNotificationIcon).toBe(false)
+    expect(shouldShow({ isDataTruncated: false, autoQLConfig }).showCreateNotificationIcon).toBe(true)
+  })
+
+  // With every other entry already withdrawn, custom options were the last thing keeping
+  // the menu open - so the button has to go with them rather than open an empty popover.
+  test('drops the more options button once nothing is left in the menu', () => {
+    const customOptions = [{ name: 'Save to dashboard', icon: 'dashboard', callback: jest.fn() }]
+
+    expect(
+      shouldShow({ isDataTruncated: true, customOptions }, { initialDisplayType: 'pivot_table' })
+        .showMoreOptionsButton,
+    ).toBe(false)
+  })
+})
+
+describe('copy table success alert', () => {
+  const setupWithCopyResult = (copied) => {
+    const { wrapper } = setup()
+    const onSuccessAlert = jest.fn()
+    wrapper.setProps({ onSuccessAlert })
+    wrapper.instance().props.responseRef.copyTableToClipboard = () => copied
+    wrapper.instance().copyTableToClipboard()
+    return onSuccessAlert
+  }
+
+  test('announces a copy that happened', () => {
+    expect(setupWithCopyResult(true)).toHaveBeenCalledWith('Successfully copied table to clipboard!')
+  })
+
+  // QueryOutput declines while the rows are a preview; announcing that as a success is
+  // how the silent no-op used to read to the user.
+  test('stays quiet when the copy was declined', () => {
+    expect(setupWithCopyResult(false)).not.toHaveBeenCalled()
+  })
+})
