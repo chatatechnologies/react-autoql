@@ -376,7 +376,9 @@ class DataAlertModal extends React.Component {
       ...getAuthentication(this.props.authentication),
     }
 
-    if (this.props?.autoQLConfig?.projectId) {
+    // Management endpoints are opt-in only - autoQLConfig.projectId is also set by regular
+    // (e.g. multi-project dashboard) integrations, so it must not imply management mode
+    if (this.props.isManagementPortal) {
       if (newDataAlert.id) {
         updateManagementDataAlert({
           ...requestParams,
