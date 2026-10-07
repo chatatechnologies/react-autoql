@@ -133,7 +133,7 @@ class CustomFilteredAlertModal extends React.Component {
     this.setState({ isLoadingBaseDataAlertQueryResponse: true, basePreviewError: false })
 
     const projectId = this.props.currentDataAlert?.projects?.[0]?.id
-    const previewRequest = this.props.autoQLConfig?.projectId
+    const previewRequest = this.props.isManagementPortal
       ? previewManagementDataAlert({
           dataAlertId,
           ...getAuthentication(this.props.authentication),
@@ -491,7 +491,9 @@ class CustomFilteredAlertModal extends React.Component {
       ...getAuthentication(this.props.authentication),
     }
 
-    if (this.props?.autoQLConfig?.projectId) {
+    // Management endpoints are opt-in only - autoQLConfig.projectId is also set by regular
+    // (e.g. multi-project dashboard) integrations, so it must not imply management mode
+    if (this.props.isManagementPortal) {
       if (newDataAlert.id) {
         updateManagementDataAlert({
           ...requestParams,
