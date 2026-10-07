@@ -719,6 +719,11 @@ class QueryInput extends React.Component {
     this.setState({ inputValue: transcript })
   }
 
+  // Unlock input on stop so typing works even without a final transcript.
+  onTranscriptEnd = () => {
+    this.setState({ listeningForTranscript: false })
+  }
+
   onFinalTranscript = (transcript) => {
     this.setState({ inputValue: transcript, listeningForTranscript: false }, () => {
       this.focus()
@@ -1220,6 +1225,7 @@ class QueryInput extends React.Component {
                   <div className='input-microphone-button'>
                     <SpeechToTextButtonBrowser
                       onTranscriptStart={this.onTranscriptStart}
+                      onTranscriptEnd={this.onTranscriptEnd}
                       onTranscriptChange={this.onTranscriptChange}
                       onFinalTranscript={this.onFinalTranscript}
                       authentication={this.props.authentication}

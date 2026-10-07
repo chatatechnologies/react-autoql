@@ -27,10 +27,12 @@ class Dictaphone extends React.Component {
     onTranscriptChange: PropTypes.func,
     onFinalTranscript: PropTypes.func,
     onTranscriptStart: PropTypes.func,
+    onTranscriptEnd: PropTypes.func,
   }
 
   static defaultProps = {
     onTranscriptStart: () => {},
+    onTranscriptEnd: () => {},
     onTranscriptChange: () => {},
     onFinalTranscript: () => {},
   }
@@ -42,6 +44,13 @@ class Dictaphone extends React.Component {
       this.props.onTranscriptChange(this.props.transcript)
     } else if (this.props.interimTranscript !== prevProps.interimTranscript) {
       this.props.onTranscriptChange(this.props.interimTranscript)
+    }
+
+    // A session that ends with no final transcript (silence, a denied mic, a
+    // recogniser error) never fires onFinalTranscript, so the end of listening
+    // is the only signal the consumer gets to release its input.
+    if (prevProps.listening && !this.props.listening) {
+      this.props.onTranscriptEnd()
     }
   }
 
