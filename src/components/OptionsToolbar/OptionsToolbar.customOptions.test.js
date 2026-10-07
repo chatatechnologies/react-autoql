@@ -16,8 +16,11 @@ const responseRef = (overrides = {}) => ({
   ...overrides,
 })
 
+// The menu is handed the toolbar's own visibility flags, as it is in render: custom
+// options only show when those say so.
 const clickCustomOption = (toolbar, name) => {
-  const menu = mount(<div>{toolbar.instance().renderMoreOptionsMenu({}, {})}</div>)
+  const instance = toolbar.instance()
+  const menu = mount(<div>{instance.renderMoreOptionsMenu({}, instance.getShouldShowButtonObj(toolbar.props()))}</div>)
   menu
     .find('li')
     .filterWhere((li) => li.text().includes(name))
