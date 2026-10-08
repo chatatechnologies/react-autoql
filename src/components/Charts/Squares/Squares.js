@@ -1,11 +1,14 @@
 import React, { PureComponent } from 'react'
 import { max, min } from 'd3-array'
 import { scaleLinear } from 'd3-scale'
-import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
+import { getChartColorVars, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter, createTooltipContentCache } from '../chartPropHelpers'
 
 export default class Squares extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   constructor(props) {
     super(props)
 
@@ -92,7 +95,7 @@ export default class Squares extends PureComponent {
         const fillColor = value >= 0 ? color0 : '#de3434'
         const activeFillColor = value >= 0 ? color1 : '#bb0606'
 
-        const tooltip = getTooltipContent({
+        const tooltip = this.getTooltipContent({
           row,
           columns,
           colIndex,

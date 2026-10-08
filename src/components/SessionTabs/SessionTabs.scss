@@ -118,6 +118,11 @@
         0 2px 6px -3px var(--react-autoql-box-shadow-color, rgba(16, 24, 40, 0.07));
     }
 
+    &:hover .react-autoql-session-tab-close,
+    &:focus-within .react-autoql-session-tab-close {
+      opacity: 0.6;
+    }
+
     // A result landed here while another tab was selected. The label lifts to
     // primary so the tab reads as "unread" without becoming the selected chip.
     &.has-update:not(.is-active) {
@@ -196,7 +201,14 @@
       // descender's worth of space.
       line-height: 0;
       font-size: 0;
-      opacity: 0.6;
+      // Inherit the tab's text colour rather than the UA's buttontext, which can
+      // vanish against the track in some themes.
+      color: inherit;
+      cursor: pointer;
+      // Hidden until the tab itself is hovered (or something in it has keyboard
+      // focus), so the strip stays quiet. Still in the layout, so the title
+      // doesn't reflow when it appears.
+      opacity: 0;
       transition: opacity 0.2s ease, background-color 0.2s ease;
 
       .react-autoql-icon {

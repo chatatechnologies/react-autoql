@@ -317,7 +317,7 @@ export default class Axis extends Component {
   }
 
   addTooltipsToLabels = () => {
-    const { scale } = this.props
+    const { scale, chartTooltipID } = this.props
     const maxLabelWidth = this.maxLabelWidth
 
     select(this.axisElement)
@@ -325,7 +325,15 @@ export default class Axis extends Component {
       .style('fill', 'currentColor')
       .style('fill-opacity', '1')
       .style('font-family', 'inherit')
-      .attr('data-tooltip-id', this.props.chartTooltipID)
+      // Only when it differs. react-tooltip watches data-tooltip-id across the whole document and
+      // re-binds listeners on every anchor of the tooltip each time it is written - even to the
+      // same value. Every redraw rewrote it on every tick label, so a window resize on a dashboard
+      // of charts set off thousands of full re-binds.
+      .each(function () {
+        if (this.getAttribute('data-tooltip-id') !== chartTooltipID) {
+          this.setAttribute('data-tooltip-id', chartTooltipID)
+        }
+      })
       .attr('data-tooltip-effect', 'float')
       .attr('data-tooltip-content', function (d) {
         if (select(this).text()?.slice(-3) === '...') {

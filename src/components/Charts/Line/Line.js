@@ -1,11 +1,14 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
-import { getThemeValue, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
+import { getThemeValue, getKey, getAutoQLConfig } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter, createTooltipContentCache } from '../chartPropHelpers'
 import { createSVGPath } from './lineFns'
 
 export default class Line extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   constructor(props) {
     super(props)
 
@@ -365,7 +368,7 @@ export default class Line extends PureComponent {
           const xy = [x, y]
           vertices.push(xy)
 
-          const tooltip = getTooltipContent({
+          const tooltip = this.getTooltipContent({
             row: d,
             columns,
             colIndex,

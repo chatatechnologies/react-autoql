@@ -2,12 +2,16 @@ import React, { PureComponent } from 'react'
 import {
   getAutoQLConfig,
   getKey,
-  getTooltipContent,
   formatElement,
   getThemeValue,
 } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  createDateDrilldownFilter,
+  createTooltipContentCache,
+} from '../chartPropHelpers'
 import { createSVGPath } from '../Line/lineFns'
 
 // Module-level helpers (pure, no dependencies on instance)
@@ -34,6 +38,9 @@ const getLabelThemeColors = (backgroundColor) => {
 const HOVER_LABEL_TEXT_STYLE = { fontWeight: 500 }
 
 export default class StackedLines extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 
@@ -68,7 +75,7 @@ export default class StackedLines extends PureComponent {
   }
 
   createPolygonVertexDot = (d, i, x, y, colIndex, index, color) => {
-    const tooltip = getTooltipContent({
+    const tooltip = this.getTooltipContent({
       row: d,
       columns: this.props.columns,
       colIndex,

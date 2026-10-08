@@ -85,6 +85,14 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { DataTruncatedNotice } from '../DataTruncatedNotice'
+import {
+  PIVOT_OTHER_COLUMN_NAME,
+  naturalCompare,
+  isOrdinalPivotHeader,
+  getPivotColumnMagnitudes,
+  selectPivotColumnHeaders,
+  canAggregateIntoOther,
+} from './pivotUtils'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -972,11 +980,17 @@ export class QueryOutput extends React.Component {
       this.chartRef?.adjustChartPosition()
     }
 
-    if (this.tableRef?._isMounted) {
+    // Only the table on screen. forceUpdate bypasses ChataTable's own skip for hidden tables,
+    // and its render deep-clones the rows - this runs on every mouse move of a resize drag,
+    // so each move was also cloning the data for the two tables hidden behind a chart.
+    // A hidden table lays itself out when it is shown (ChataTable's hidden -> visible path).
+    const { displayType } = this.state
+
+    if (this.tableRef?._isMounted && displayType === 'table') {
       this.tableRef.forceUpdate()
     }
 
-    if (this.pivotTableRef?._isMounted) {
+    if (this.pivotTableRef?._isMounted && displayType === 'pivot_table') {
       this.pivotTableRef.forceUpdate()
     }
   }
@@ -2317,7 +2331,10 @@ export class QueryOutput extends React.Component {
   }
 
   onTableCellClick = (cell) => {
-    if (cell?.getColumn()?.getDefinition()?.pivot) {
+    const columnDefinition = cell?.getColumn()?.getDefinition()
+    // "Other" stands for many legend values at once, none of which is its name - there is
+    // no single group to drill into.
+    if (columnDefinition?.pivot || columnDefinition?.isPivotOtherColumn) {
       return
     }
 
@@ -2384,6 +2401,11 @@ export class QueryOutput extends React.Component {
   }) => {
     const stringCol = columns?.[stringColumnIndex]
     if (stringCol?.isCyclical) {
+      return
+    }
+
+    // Same as onTableCellClick: a drilldown on "Other" would filter on a value that does not exist.
+    if (columns?.[columnIndex]?.isPivotOtherColumn) {
       return
     }
 
@@ -3290,14 +3312,43 @@ export class QueryOutput extends React.Component {
   }
 
   getPotentialDisplayTypes = () => {
-    return getSupportedDisplayTypes({
+    return this.getSupportedDisplayTypesMemoized(this.getColumns())
+  }
+
+  // getSupportedDisplayTypes scans every row (network graph and sankey support count unique
+  // values per column), and render reaches it several times over - usePivotDataForChart,
+  // potentiallySupportsPivot, the toolbars. A resize drag renders on every mouse move with
+  // none of its inputs changing, which on a large answer made the scan a large share of the
+  // drag. Keyed on everything it reads: the response, its rows and display_type (by identity
+  // or value - the response is replaced, not edited, when rows change), the columns, and the
+  // scalar arguments. Returns a copy so a caller can't alter the cached list.
+  getSupportedDisplayTypesMemoized = (columns) => {
+    const args = {
       response: this.queryResponse,
-      columns: this.getColumns(),
+      columns,
       dataLength: this.getDataLength(),
       pivotDataLength: this.getPivotDataLength(),
       isDataLimited: this.getIsDataLimited(),
       allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
-    })
+    }
+    const key = [
+      args.response,
+      args.response?.data?.data?.rows,
+      args.response?.data?.data?.display_type,
+      args.columns,
+      args.dataLength,
+      args.pivotDataLength,
+      args.isDataLimited,
+      args.allowNumericStringColumns,
+    ]
+
+    const cached = this.supportedDisplayTypesCache
+    if (!cached || cached.key.some((value, i) => value !== key[i])) {
+      this.supportedDisplayTypesCache = { key, value: getSupportedDisplayTypes(args) }
+    }
+
+    const value = this.supportedDisplayTypesCache.value
+    return Array.isArray(value) ? [...value] : value
   }
 
   isCurrentDisplayTypeValid = () => {
@@ -3312,14 +3363,7 @@ export class QueryOutput extends React.Component {
   }
 
   getCurrentSupportedDisplayTypes = (newColumns) => {
-    return getSupportedDisplayTypes({
-      response: this.queryResponse,
-      columns: newColumns ?? this.getColumns(),
-      dataLength: this.getDataLength(),
-      pivotDataLength: this.getPivotDataLength(),
-      isDataLimited: this.getIsDataLimited(),
-      allowNumericStringColumns: this.ALLOW_NUMERIC_STRING_COLUMNS,
-    })
+    return this.getSupportedDisplayTypesMemoized(newColumns ?? this.getColumns())
   }
 
   setFilterFunction = (col) => {
@@ -3795,7 +3839,15 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  limitPivotTableByColumns = (uniqueRowHeaders, uniqueColumnHeaders) => {
+  // The chart is drawn from the pivot, so whichever columns this drops are gone from the
+  // chart too. Cutting the alphabetical tail used to drop the biggest series whenever it
+  // sorted late; keep the largest instead (or the first, for ordinal headers like rounds),
+  // and fold the rest into "Other" when the values can be summed.
+  limitPivotTableByColumns = (
+    uniqueRowHeaders,
+    uniqueColumnHeaders,
+    { magnitudes, isOrdinal = false, allowOtherColumn = false } = {},
+  ) => {
     const originalRowCount = uniqueRowHeaders.length
     const originalColumnCount = uniqueColumnHeaders.length
 
@@ -3803,24 +3855,65 @@ export class QueryOutput extends React.Component {
       return {
         rowHeaders: uniqueRowHeaders,
         columnHeaders: uniqueColumnHeaders,
+        droppedColumnHeaders: [],
         isLimited: false,
       }
     }
 
-    const finalColumns = this.MAX_PIVOT_TABLE_COLUMNS
+    const { keptHeaders, droppedHeaders } = selectPivotColumnHeaders({
+      headers: uniqueColumnHeaders,
+      maxColumns: this.MAX_PIVOT_TABLE_COLUMNS,
+      magnitudes,
+      isOrdinal,
+      reserveOther: allowOtherColumn,
+    })
 
     return {
       rowHeaders: uniqueRowHeaders,
-      columnHeaders: uniqueColumnHeaders.slice(0, finalColumns),
+      columnHeaders: keptHeaders,
+      droppedColumnHeaders: droppedHeaders,
+      hasOtherColumn: allowOtherColumn && droppedHeaders.length > 0,
+      isOrdinal,
       isLimited: true,
       originalRowCount,
       originalColumnCount,
     }
   }
 
+  // One wording for the pivot column limit, shared by the pivot table and the chart drawn
+  // from it, so neither falls back to the row-limit message when the rows were never cut.
+  getPivotColumnLimitMessage = () => {
+    if (!this.pivotTableDataLimited) {
+      return undefined
+    }
+
+    const languageCode = getDataFormatting(this.props.dataFormatting).languageCode
+    const format = (n) => new Intl.NumberFormat(languageCode, {}).format(n ?? 0)
+    const shownCount = this.pivotTableShownColumnCount ?? this.MAX_PIVOT_TABLE_COLUMNS
+    const droppedCount = this.pivotTableDroppedColumnCount ?? 0
+
+    const intro = `To optimize performance, the pivot is limited to <em>${format(
+      this.MAX_PIVOT_TABLE_COLUMNS,
+    )}</em> columns, and this data has <em>${format(this.pivotTableTotalColumns)}</em>.`
+
+    const which = this.pivotTableColumnsKeptInOrder
+      ? `The first <em>${format(shownCount)}</em> are shown in order`
+      : `The <em>${format(shownCount)}</em> with the largest totals are shown`
+
+    const rest = this.pivotTableHasOtherColumn
+      ? `the other <em>${format(droppedCount)}</em> are combined into "Other".`
+      : `the other <em>${format(droppedCount)}</em> are left out.`
+
+    return `${intro} ${which}; ${rest} Try switching the axes or filtering to see every column.`
+  }
+
   generatePivotTableData = ({ isFirstGeneration } = {}) => {
     try {
       this.pivotTableDataLimited = false
+      this.pivotTableHasOtherColumn = false
+      this.pivotTableColumnsKeptInOrder = false
+      this.pivotTableShownColumnCount = undefined
+      this.pivotTableDroppedColumnCount = 0
       this.pivotTableID = uuid()
 
       let tableData = _cloneDeep(this.queryResponse?.data?.data?.rows) || []
@@ -4019,19 +4112,51 @@ export class QueryOutput extends React.Component {
         }
       }
 
-      if (isColumnStringType(columns[newLegendColumnIndex]) && !isColumnDateType(columns[newStringColumnIndex])) {
-        uniqueColumnHeaders.sort((a, b) => a?.localeCompare?.(b))
+      const legendColumn = columns[newLegendColumnIndex]
+      const isLegendDate = isColumnDateType(legendColumn)
+      const isOrdinalLegend = isOrdinalPivotHeader(uniqueColumnHeaders, isLegendDate)
+
+      // Display order. Dates keep the order the data is sorted in; other ordinal headers go
+      // in their natural order (Round 2 before Round 10); names go alphabetically so they
+      // are easy to find in the table.
+      if (isOrdinalLegend && !isLegendDate) {
+        uniqueColumnHeaders.sort(naturalCompare)
+      } else if (isColumnStringType(legendColumn) && !isColumnDateType(columns[newStringColumnIndex])) {
+        uniqueColumnHeaders.sort(naturalCompare)
       }
 
-      // Limit by number of columns
-      const limitResult = this.limitPivotTableByColumns(uniqueRowHeaders, uniqueColumnHeaders)
+      // Limit by number of columns. Which columns survive is decided by size (or order, for
+      // ordinal headers), not by where they land in the display order above.
+      const allowOtherColumn = canAggregateIntoOther(columns[nIdx])
+      const limitResult = this.limitPivotTableByColumns(uniqueRowHeaders, uniqueColumnHeaders, {
+        magnitudes:
+          uniqueColumnHeaders.length > this.MAX_PIVOT_TABLE_COLUMNS
+            ? getPivotColumnMagnitudes(sortedData, newLegendColumnIndex, nIdx)
+            : undefined,
+        isOrdinal: isOrdinalLegend,
+        allowOtherColumn,
+      })
       uniqueRowHeaders = limitResult.rowHeaders
       uniqueColumnHeaders = limitResult.columnHeaders
 
+      // Membership lookup for the "Other" column. Keyed like uniqueColumnHeadersObj below,
+      // so a header matches here exactly when it would have matched a column of its own.
+      let otherColumnHeadersObj
       if (limitResult.isLimited) {
         this.pivotTableDataLimited = true
         this.pivotTableTotalRows = limitResult.originalRowCount
         this.pivotTableTotalColumns = limitResult.originalColumnCount
+        this.pivotTableHasOtherColumn = !!limitResult.hasOtherColumn
+        this.pivotTableColumnsKeptInOrder = !!limitResult.isOrdinal
+        this.pivotTableShownColumnCount = uniqueColumnHeaders.length
+        this.pivotTableDroppedColumnCount = limitResult.droppedColumnHeaders.length
+
+        if (limitResult.hasOtherColumn) {
+          otherColumnHeadersObj = limitResult.droppedColumnHeaders.reduce((map, title) => {
+            map[title] = true
+            return map
+          }, {})
+        }
       }
 
       const uniqueRowHeadersObj = uniqueRowHeaders.reduce((map, title, i) => {
@@ -4099,11 +4224,37 @@ export class QueryOutput extends React.Component {
         pivotTableColumns.push(newPivotCol)
       })
 
-      const pivotTableData = this.makeEmptyArrayShared(
-        uniqueColumnHeaders.length + 1,
-        uniqueRowHeaders.length,
-        undefined,
-      )
+      let otherColIndex
+      if (otherColumnHeadersObj) {
+        otherColIndex = uniqueColumnHeaders.length + 1
+        const droppedCount = limitResult.droppedColumnHeaders.length
+        const otherTitle = `Other (${new Intl.NumberFormat(
+          getDataFormatting(this.props.dataFormatting).languageCode,
+          {},
+        ).format(droppedCount)})`
+
+        pivotTableColumns.push({
+          ...columns[nIdx],
+          id: `pivot-col-${otherColIndex}`,
+          index: otherColIndex,
+          origColumn: columns[nIdx],
+          origPivotColumn: legendColumn,
+          origValues: {},
+          name: PIVOT_OTHER_COLUMN_NAME,
+          title: otherTitle,
+          display_name: otherTitle,
+          tooltipTitle: `Combined total of the ${droppedCount} smaller columns that did not fit in the pivot`,
+          field: `${otherColIndex}`,
+          visible: true,
+          is_visible: true,
+          headerFilter: false,
+          headerFilterLiveFilter: false,
+          headerSort: true,
+          isPivotOtherColumn: true,
+        })
+      }
+
+      const pivotTableData = this.makeEmptyArrayShared(pivotTableColumns.length, uniqueRowHeaders.length, undefined)
 
       let aggregatedRowCount = 0
       let skippedRowCount = 0
@@ -4141,6 +4292,13 @@ export class QueryOutput extends React.Component {
                 value: pivotRowHeaderValue,
               }
             }
+            aggregatedRowCount += 1
+          }
+        } else if (otherColIndex !== undefined && otherColumnHeadersObj[row[newLegendColumnIndex]]) {
+          const val = Number(row[nIdx])
+          if (Number.isFinite(val)) {
+            const existing = Number(pivotTableData[pivotRowIndex][otherColIndex]) || 0
+            pivotTableData[pivotRowIndex][otherColIndex] = existing + val
             aggregatedRowCount += 1
           }
         }
@@ -4750,6 +4908,7 @@ export class QueryOutput extends React.Component {
           totalRows={this.pivotTableTotalRows}
           totalColumns={this.pivotTableTotalColumns}
           maxColumns={this.MAX_PIVOT_TABLE_COLUMNS}
+          pivotLimitTooltip={this.getPivotColumnLimitMessage()}
           initialTableParams={this.tableParams}
           lockedFilters={this.formattedLockedFilters}
           initialIsFiltering={!!this.wasFiltering}
@@ -4885,7 +5044,6 @@ export class QueryOutput extends React.Component {
     // Check if isDataLimited is working correctly and fix it if broken
     const expectedIsDataLimited = countRows != null && rowLimitValue != null && countRows > rowLimitValue
     const correctedIsDataLimited = expectedIsDataLimited || isDataLimitedResult
-    const isDataLimitedValue = correctedIsDataLimited || isPivotDataLimited
 
     return (
       <ErrorBoundary>
@@ -4938,7 +5096,11 @@ export class QueryOutput extends React.Component {
           onNewData={this.onNewData}
           isDrilldown={isDrilldown(this.queryResponse)}
           updateColumns={this.updateColumns}
-          isDataLimited={isDataLimitedValue}
+          // Kept apart so the chart can say which limit was hit: the pivot column limit used
+          // to ride in on isDataLimited and show the row-limit message for 10k-row answers.
+          isDataLimited={correctedIsDataLimited}
+          isPivotDataLimited={isPivotDataLimited}
+          pivotLimitTooltip={isPivotDataLimited ? this.getPivotColumnLimitMessage() : undefined}
           rowLimit={rowLimitValue}
           source={this.props.source}
           scope={this.props.scope}
