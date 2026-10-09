@@ -1164,3 +1164,32 @@ describe('copy table success alert', () => {
     expect(setupWithCopyResult(false)).not.toHaveBeenCalled()
   })
 })
+
+describe('data alert query id', () => {
+  const getModalQueryId = (responseRefOverrides) => {
+    const responseRef = {
+      state: { displayType: 'table', customColumnSelects: [] },
+      queryResponse: responseTestCases[8],
+      getCombinedFilters: () => [],
+      isFilteringTable: () => false,
+      ...responseRefOverrides,
+    }
+    const wrapper = shallow(<OptionsToolbar {...OptionsToolbar.defaultProps} responseRef={responseRef} />)
+    const modal = wrapper.instance().renderDataAlertModal().props.children
+    return modal.props.queryResponse?.data?.data?.query_id
+  }
+
+  test('uses the cached queryId prop over the response query_id, like drilldowns', () => {
+    expect(getModalQueryId({ props: { queryId: 'cached-tile-id' }, queryID: 'fresh-id' })).toBe('cached-tile-id')
+  })
+
+  test('falls back to the QueryOutput queryID when no queryId prop is set', () => {
+    expect(getModalQueryId({ props: {}, queryID: 'fresh-id' })).toBe('fresh-id')
+  })
+
+  test('does not mutate the response held by QueryOutput', () => {
+    const queryResponse = { data: { data: { ...responseTestCases[8].data.data, query_id: 'original-id' } } }
+    getModalQueryId({ queryResponse, props: { queryId: 'cached-tile-id' } })
+    expect(queryResponse.data.data.query_id).toBe('original-id')
+  })
+})
