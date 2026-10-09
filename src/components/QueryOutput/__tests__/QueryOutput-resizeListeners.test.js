@@ -137,6 +137,9 @@ describe('resize listener lifecycle', () => {
     const wrapper = mountQueryOutput()
     const inst = wrapper.instance()
 
+    // Only what the resize itself registers - mounting also adds other components' listeners
+    // (e.g. the tooltips' own window listeners), which are not the resize's to remove.
+    added = []
     inst.handleResizeStart({ preventDefault: () => {}, clientY: 100 })
     removed = []
     inst.handleMouseUp()

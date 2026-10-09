@@ -274,6 +274,68 @@ describe('enableSessions', () => {
   })
 })
 
+describe('result badge', () => {
+  // Two tabs, the second one on screen.
+  const twoTabs = () => {
+    const wrapper = setup({ enableSessions: true })
+    wrapper.instance().addSession()
+    wrapper.update()
+    return wrapper
+  }
+
+  const reportThinking = (wrapper, index, isThinking) => {
+    getThreads(wrapper).at(index).prop('onSessionThinkingChange')(isThinking)
+    wrapper.update()
+  }
+
+  test('a query finishing in a background tab badges it', () => {
+    const wrapper = twoTabs()
+    reportThinking(wrapper, 0, true)
+    expect(getTabs(wrapper)[0].hasUpdate).toBe(false)
+
+    reportThinking(wrapper, 0, false)
+    expect(getTabs(wrapper).map((tab) => tab.hasUpdate)).toEqual([true, false])
+  })
+
+  test('a tab is marked running while its query is out', () => {
+    const wrapper = twoTabs()
+    reportThinking(wrapper, 0, true)
+    expect(getTabs(wrapper)[0].isRunning).toBe(true)
+
+    reportThinking(wrapper, 0, false)
+    expect(getTabs(wrapper)[0].isRunning).toBe(false)
+  })
+
+  test('a query finishing in the tab on screen does not', () => {
+    const wrapper = twoTabs()
+    reportThinking(wrapper, 1, true)
+    reportThinking(wrapper, 1, false)
+
+    expect(getTabs(wrapper)[1].hasUpdate).toBe(false)
+  })
+
+  test('opening the badged tab clears it', () => {
+    const wrapper = twoTabs()
+    reportThinking(wrapper, 0, true)
+    reportThinking(wrapper, 0, false)
+
+    getTabBar(wrapper).prop('onSelect')(getTabs(wrapper)[0].id)
+    wrapper.update()
+
+    expect(getTabs(wrapper)[0].hasUpdate).toBe(false)
+  })
+
+  test('a session tab reports when it starts and stops thinking', () => {
+    const onSessionThinkingChange = jest.fn()
+    const wrapper = setup({ isSessionTab: true, onSessionThinkingChange })
+
+    wrapper.setState({ isQueryRunning: true })
+    wrapper.setState({ isQueryRunning: false })
+
+    expect(onSessionThinkingChange.mock.calls).toEqual([[true], [false]])
+  })
+})
+
 // A thread scroll already underway keeps the wheel when it passes over a table, but
 // only for one idle window after the user's last scroll of the thread itself.
 describe('wheel handling over a nested table', () => {

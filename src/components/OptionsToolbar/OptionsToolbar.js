@@ -360,6 +360,13 @@ export class OptionsToolbar extends React.Component {
     const queryResponse = _cloneDeep(this.props.responseRef?.queryResponse)
     const filters = this.props.responseRef?.getCombinedFilters()
 
+    // Pin the alert to the same query id drilldowns use. On a dashboard a cached-refresh response can
+    // carry a different query_id than the tile's cached one, and that id has no usable post-proc data.
+    const queryId = this.props.responseRef?.props?.queryId || this.props.responseRef?.queryID
+    if (queryId && queryResponse?.data?.data) {
+      queryResponse.data.data.query_id = queryId
+    }
+
     return (
       <ErrorBoundary>
         <DataAlertModal

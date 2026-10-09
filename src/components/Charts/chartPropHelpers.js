@@ -6,11 +6,47 @@ import {
   getPrecisionForDayJS,
   DisplayTypes,
   dataFormattingDefault,
+  getTooltipContent,
 } from 'autoql-fe-utils'
 
 import { dataFormattingType } from '../../props/types'
 
 /** Threshold for dense bar/column layout (zero band padding, zero series gaps). */
+// getTooltipContent formats every value a tooltip shows, and the chart elements build one per
+// mark on every render. A layout pass (resize, axis label rotation, legend changes) re-renders
+// every mark without changing any of that text - on a 100-series stacked chart those tooltips
+// alone kept the page busy for seconds after a resize. Make one cache per component instance;
+// it empties itself whenever an input other than the row stops being the same object or value.
+export const createTooltipContentCache = () => {
+  let deps = []
+  let byRow = new WeakMap()
+
+  return (params) => {
+    const { row, columns, legendColumn, dataFormatting, aggregated, colIndex, colIndex2 } = params
+    if (!row || typeof row !== 'object') {
+      return getTooltipContent(params)
+    }
+
+    const nextDeps = [columns, legendColumn, dataFormatting, aggregated]
+    if (nextDeps.some((dep, i) => dep !== deps[i])) {
+      deps = nextDeps
+      byRow = new WeakMap()
+    }
+
+    let forRow = byRow.get(row)
+    if (!forRow) {
+      forRow = new Map()
+      byRow.set(row, forRow)
+    }
+
+    const key = `${colIndex}|${colIndex2}`
+    if (!forRow.has(key)) {
+      forRow.set(key, getTooltipContent(params))
+    }
+    return forRow.get(key)
+  }
+}
+
 export const DENSE_CATEGORY_THRESHOLD = 300
 
 /** Opacity stops (low to high) for the 3-stop bar/column fill gradient. */

@@ -1,18 +1,14 @@
 import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
-import { getThemeValue, getKey, getTooltipContent, getAutoQLConfig } from 'autoql-fe-utils'
+import { getThemeValue, getKey, getAutoQLConfig } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter, createTooltipContentCache } from '../chartPropHelpers'
 import { createSVGPath } from './lineFns'
 
-// How close a click has to land to a vertex to count as clicking that vertex.
-// The hover overlay covers the whole plot, but a drilldown is a real navigation:
-// without this, dismissing a popover by clicking in the plot, or any tap on
-// mobile (where there is no hover preview to aim with), would start one.
-// Generous enough to forgive an imprecise aim at a dot ~5px across.
-const CLICK_HIT_RADIUS = 20
-
 export default class Line extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   constructor(props) {
     super(props)
 
@@ -266,17 +262,11 @@ export default class Line extends PureComponent {
     }, 150)
   }
 
+  // Drills down on the same vertex the hover snaps to, from anywhere in the plot
   onHoverAreaClick = (e) => {
-    const coords = this.getLocalCoords(e)
-    const point = this.getClosestPoint(coords)
+    const point = this.getClosestPoint(this.getLocalCoords(e))
 
     if (!point) {
-      return
-    }
-
-    // Hover snaps to the nearest vertex from anywhere; a click has to actually be
-    // aimed at one. See CLICK_HIT_RADIUS.
-    if (Math.hypot(point.x - coords.x, point.y - coords.y) > CLICK_HIT_RADIUS) {
       return
     }
 
@@ -298,7 +288,10 @@ export default class Line extends PureComponent {
         height={area.height}
         fill='transparent'
         stroke='none'
-        style={{ cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default' }}
+        style={{
+          cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default',
+          outline: 'none',
+        }}
         onMouseMove={this.onHoverAreaMouseMove}
         onMouseLeave={this.onHoverAreaMouseLeave}
         onClick={this.onHoverAreaClick}
@@ -375,7 +368,7 @@ export default class Line extends PureComponent {
           const xy = [x, y]
           vertices.push(xy)
 
-          const tooltip = getTooltipContent({
+          const tooltip = this.getTooltipContent({
             row: d,
             columns,
             colIndex,
