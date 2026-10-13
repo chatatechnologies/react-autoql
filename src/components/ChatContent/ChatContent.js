@@ -556,7 +556,14 @@ export default class ChatContent extends React.Component {
           newActiveSessionId = remainingSessions[Math.max(0, closingIndex - 1)]?.id
         }
 
-        return { sessions: remainingSessions, activeSessionId: newActiveSessionId }
+        // The tab we land on is now on screen, so its result is seen - the same as
+        // setActiveSession, which can't clear it later since it skips the active tab.
+        return {
+          sessions: remainingSessions.map((s) =>
+            s.id === newActiveSessionId && s.hasUnseenResult ? { ...s, hasUnseenResult: false } : s,
+          ),
+          activeSessionId: newActiveSessionId,
+        }
       },
       () => {
         !isMobile && this.getActiveSessionRef()?.focusInput()

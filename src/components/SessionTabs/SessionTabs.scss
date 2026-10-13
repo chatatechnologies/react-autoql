@@ -211,6 +211,11 @@
       opacity: 0;
       transition: opacity 0.2s ease, background-color 0.2s ease;
 
+      // Touch screens have no hover to reveal it, so keep it showing there.
+      @media (hover: none) {
+        opacity: 0.6;
+      }
+
       .react-autoql-icon {
         display: block;
         box-sizing: border-box;

@@ -115,11 +115,18 @@ describe('QueryOutput pivot column limit', () => {
       (_, i) => `A${String.fromCharCode(97 + Math.floor(i / 26))}${String.fromCharCode(97 + (i % 26))}`,
     )
 
-  const buildPivot = ({ legendValues, valueFor, numberColumn = {} }) => {
+  const buildPivot = ({ legendValues, valueFor, numberColumn = {}, legendColumn = {} }) => {
     const instance = new QueryOutput({})
     const columns = [
       { name: 'week', display_name: 'Week', is_visible: true, groupable: true, type: 'STRING' },
-      { name: 'participant', display_name: 'Participant', is_visible: true, groupable: true, type: 'STRING' },
+      {
+        name: 'participant',
+        display_name: 'Participant',
+        is_visible: true,
+        groupable: true,
+        type: 'STRING',
+        ...legendColumn,
+      },
       { name: 'trades', display_name: 'Trades', is_visible: true, type: 'QUANTITY', ...numberColumn },
     ]
 
@@ -183,6 +190,25 @@ describe('QueryOutput pivot column limit', () => {
     expect(titles).toContain('Round 99')
     expect(titles).not.toContain('Round 120')
     expect(instance.pivotTableColumnsKeptInOrder).toBe(true)
+  })
+
+  // Dates keep the order the data comes in. Sorting them as strings put epochs oldest first,
+  // so a data set sorted newest first lost its newest columns to the limit.
+  test('date legends keep the data order, so newest-first data keeps the newest dates', () => {
+    const DAY = 24 * 60 * 60
+    const newest = 1700000000
+    const epochs = Array.from({ length: 120 }, (_, i) => newest - i * DAY)
+    const instance = buildPivot({
+      legendValues: epochs,
+      valueFor: () => 1,
+      legendColumn: { name: 'trade_date', display_name: 'Trade Date', type: 'DATE' },
+    })
+    const kept = instance.pivotTableColumns
+      .slice(1)
+      .filter((col) => !col.isPivotOtherColumn)
+      .map((col) => col.name)
+
+    expect(kept[0]).toBe(newest)
   })
 
   test('no "Other" when the values do not add up', () => {

@@ -4121,7 +4121,11 @@ export class QueryOutput extends React.Component {
       // are easy to find in the table.
       if (isOrdinalLegend && !isLegendDate) {
         uniqueColumnHeaders.sort(naturalCompare)
-      } else if (isColumnStringType(legendColumn) && !isColumnDateType(columns[newStringColumnIndex])) {
+      } else if (
+        isColumnStringType(legendColumn) &&
+        !isLegendDate &&
+        !isColumnDateType(columns[newStringColumnIndex])
+      ) {
         uniqueColumnHeaders.sort(naturalCompare)
       }
 

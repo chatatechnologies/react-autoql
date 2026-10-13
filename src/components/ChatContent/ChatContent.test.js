@@ -168,6 +168,26 @@ describe('enableSessions', () => {
     expect(wrapper.state('activeSessionId')).toBe(activeSessionId)
   })
 
+  test('closing the active tab clears the unread badge on the tab it lands on', () => {
+    const wrapper = setup({ enableSessions: true })
+    wrapper.instance().addSession()
+    wrapper.update()
+    const [firstSession, secondSession] = wrapper.state('sessions')
+
+    // A result lands in the first tab while the second is on screen.
+    wrapper.instance().setSessionThinking(firstSession.id, true)
+    wrapper.instance().setSessionThinking(firstSession.id, false)
+    wrapper.update()
+    expect(getTabs(wrapper)[0].hasUpdate).toBe(true)
+
+    // Closing the second lands on the first. Clicking it again can't clear the badge
+    // (it's already active), so landing on it has to.
+    wrapper.instance().closeSession(secondSession.id)
+    wrapper.update()
+    expect(wrapper.state('activeSessionId')).toBe(firstSession.id)
+    expect(getTabs(wrapper)[0].hasUpdate).toBe(false)
+  })
+
   test('a new tab takes the lowest new thread number no open tab is using', () => {
     const wrapper = setup({ enableSessions: true })
     wrapper.instance().addSession()
