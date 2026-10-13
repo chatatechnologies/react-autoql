@@ -285,6 +285,10 @@
       fill-opacity: 1 !important; // Fully opaque on hover
     }
   }
+  .line-chart-hover-area {
+    outline: none !important;
+  }
+
   .line-dot {
     outline: none !important;
     stroke-linecap: round;

@@ -82,6 +82,8 @@ export const SessionTabs = ({
         <div className='react-autoql-session-tab-list' role='tablist' ref={listRef}>
           {items.map((item) => {
             const isActive = item.id === activeId
+            // The tab on screen shows its own thinking indicator in the thread.
+            const isRunningInBackground = !!item.isRunning && !isActive
 
             return (
               <div
@@ -91,11 +93,26 @@ export const SessionTabs = ({
                 aria-selected={isActive}
                 className={`react-autoql-session-tab${isActive ? ' is-active' : ''}${
                   item.id === highlightId ? ' is-new' : ''
-                }`}
+                }${item.hasUpdate ? ' has-update' : ''}`}
                 onClick={(event) => selectItem(event, item.id)}
                 onKeyDown={(event) => selectItem(event, item.id)}
               >
-                <span className='react-autoql-session-tab-dot' aria-hidden='true' />
+                {/* The unread badge: a result landed while this tab was in the
+                    background. The dot means only that, so no other tab has one. */}
+                {item.hasUpdate && !isRunningInBackground && (
+                  <>
+                    <span className='react-autoql-session-tab-dot' aria-hidden='true' />
+                    <span className='react-autoql-session-tab-sr-only'>, new result</span>
+                  </>
+                )}
+                {/* Same slot as the dot, so a background query's spinner turns into
+                    the unread dot in place when it finishes. */}
+                {isRunningInBackground && (
+                  <>
+                    <span className='react-autoql-session-tab-spinner' aria-hidden='true' />
+                    <span className='react-autoql-session-tab-sr-only'>, running</span>
+                  </>
+                )}
                 {/* Titles are ellipsised, so the full text has to be reachable
                     somewhere - react-tooltip reads it off the anchor. */}
                 <span
@@ -160,6 +177,10 @@ SessionTabs.propTypes = {
       title: PropTypes.string,
       canClose: PropTypes.bool,
       closeLabel: PropTypes.string,
+      // Badges the tab: something finished in it while another tab was selected.
+      hasUpdate: PropTypes.bool,
+      // A query is running in this tab; shown only while it's in the background.
+      isRunning: PropTypes.bool,
     }),
   ),
   activeId: PropTypes.string,
