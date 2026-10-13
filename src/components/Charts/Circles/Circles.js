@@ -1,9 +1,9 @@
 import React, { PureComponent } from 'react'
 import { scaleLinear } from 'd3-scale'
 import { max, min } from 'd3-array'
-import { getChartColorVars, getTooltipContent, getKey } from 'autoql-fe-utils'
+import { getChartColorVars, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter, createTooltipContentCache } from '../chartPropHelpers'
 
 /** Pivot null / empty cells must not become 0 — Number(null) === 0 in JS. */
 export const parseBubbleCellValue = (raw) => {
@@ -57,6 +57,9 @@ export const buildBubbleRadiusScale = (numericValues, xScale, yScale) => {
 }
 
 export default class Circles extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 
@@ -137,7 +140,7 @@ export default class Circles extends PureComponent {
           const xLabel = row[stringColumnIndex]
           const yLabel = legendLabels[i].label
 
-          const tooltip = getTooltipContent({
+          const tooltip = this.getTooltipContent({
             row,
             columns,
             colIndex,

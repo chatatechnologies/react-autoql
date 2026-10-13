@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react'
-import { getKey, getTooltipContent, isColumnNumberType, scaleZero } from 'autoql-fe-utils'
+import { getKey, isColumnNumberType, scaleZero } from 'autoql-fe-utils'
 
 import {
   chartElementDefaultProps,
@@ -7,12 +7,16 @@ import {
   createDateDrilldownFilter,
   getGradientOpacityStops,
   isDenseChartLayout,
+  createTooltipContentCache,
 } from '../chartPropHelpers'
 
 const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('vertical')
 const MIN_BAR_SIZE = 1
 
 export default class Columns extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 
@@ -101,7 +105,7 @@ export default class Columns extends PureComponent {
             const dX = visibleIndex * (this.barWidth + seriesGap)
             const finalBarXPosition = x0 + dX
 
-            const tooltip = getTooltipContent({
+            const tooltip = this.getTooltipContent({
               row: d,
               columns,
               colIndex,

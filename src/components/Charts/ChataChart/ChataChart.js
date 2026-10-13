@@ -59,6 +59,13 @@ import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPro
 
 import './ChataChart.scss'
 
+// Minimum time between chart position measurements. Each one forces a synchronous layout and
+// its setState redraws every mark, which for a large stacked chart (100 series x 128 bars)
+// takes longer than a frame. A drag asks for one on every mouse move, the resize loop and the
+// container observer ask too, and every redraw asks again through onAxesRenderComplete - with
+// no floor these queued faster than they could finish and froze the page.
+export const ADJUST_CHART_POSITION_THROTTLE_MS = 100
+
 let _hasWarnedAboutResizeObserverLoop = false
 
 // These two errors are the browser's only signal that a ResizeObserver feedback loop is running —
@@ -133,6 +140,9 @@ export default class ChataChart extends React.Component {
       columnLineStacked: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    isDataLimited: PropTypes.bool,
+    isPivotDataLimited: PropTypes.bool,
+    pivotLimitTooltip: PropTypes.string,
     canUsePivotData: PropTypes.bool,
     chartDataSource: PropTypes.oneOf(['pivoted', 'raw']),
     legendFilterConfig: PropTypes.shape({
@@ -274,6 +284,11 @@ export default class ChataChart extends React.Component {
       this.stopThrottledRefresh()
     }
 
+    // Live resize frames skip the rotated-label pass; take one full measurement at the final size.
+    if (prevProps.isResizing && !this.props.isResizing && !this.props.hidden) {
+      this.adjustChartPosition()
+    }
+
     // Re-process data if axis sorts changed
     // Use deepEqual to properly compare objects
     const axisSortsChanged = !deepEqual(this.props.axisSorts, prevProps.axisSorts)
@@ -395,6 +410,8 @@ export default class ChataChart extends React.Component {
     this._isMounted = false
     window.removeEventListener('error', this._suppressResizeObserverError)
     clearTimeout(this.adjustVerticalPositionTimeout)
+    clearTimeout(this.adjustPositionTimeout)
+    cancelAnimationFrame(this.liveResizeFrame)
     this.stopThrottledRefresh()
     if (this.cleanupObserve) {
       try {
@@ -818,23 +835,82 @@ export default class ChataChart extends React.Component {
     }
   }
 
-  adjustChartPosition = () => {
+  // Throttled (leading and trailing): the first call in a quiet period measures on the next
+  // tick, as before, and calls during the throttle window collapse into one measurement at its
+  // end. That measurement reads the layout when it runs, so it reflects the latest size.
+  // Pass { throttleMs: 0 } to opt out. Also used as onAxesRenderComplete, which passes nothing.
+  adjustChartPosition = (options) => {
     if (this.props.type === DisplayTypes.NETWORK_GRAPH || this.props.type === DisplayTypes.SANKEY) {
       return
     }
 
-    if (!this.props.hidden) {
-      clearTimeout(this.adjustPositionTimeout)
-      this.adjustPositionTimeout = setTimeout(() => {
-        if (this._isMounted) {
-          const { deltaX, deltaY } = this.getDeltas()
-          const { innerHeight, innerWidth } = this.getInnerDimensions()
-          this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
-            this.adjustVerticalPosition()
-          })
-        }
-      }, 0)
+    if (this.props.hidden) {
+      return
     }
+
+    if (this.props.isResizing) {
+      this.scheduleLiveResizeFrame()
+      return
+    }
+
+    const throttleMs = typeof options?.throttleMs === 'number' ? options.throttleMs : ADJUST_CHART_POSITION_THROTTLE_MS
+
+    // A measurement is already queued and will read the layout as it is when it runs.
+    if (this.adjustPositionTimeout && throttleMs > 0) {
+      return
+    }
+
+    clearTimeout(this.adjustPositionTimeout)
+    const sinceLast = Date.now() - (this.lastAdjustPositionTime ?? 0)
+    const wait = Math.max(0, throttleMs - sinceLast)
+
+    this.adjustPositionTimeout = setTimeout(() => {
+      this.adjustPositionTimeout = null
+      this.lastAdjustPositionTime = Date.now()
+      if (this._isMounted && !this.props.hidden) {
+        const { deltaX, deltaY } = this.getDeltas()
+        const { innerHeight, innerWidth } = this.getInnerDimensions()
+        this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
+          this.adjustVerticalPosition()
+        })
+      }
+    }, wait)
+  }
+
+  // While resizing, redraw as often as the chart can actually be drawn and no more: one redraw
+  // at a time, each on an animation frame, and any requests that arrive while one is in flight
+  // collapse into a single follow-up. Every source asks during a drag - each mouse move, the
+  // container observer, the refresh loop, and the axes after every redraw - and a large chart
+  // takes longer than a frame to draw, so letting those requests queue (or firing them on a
+  // fixed timer) built a backlog that froze the page on release. This way the chart follows
+  // the drag live and there is never more than one redraw left when it ends.
+  // Skips the rotated-label pass (adjustVerticalPosition); the end of the resize runs it.
+  scheduleLiveResizeFrame = () => {
+    if (this.liveResizeBusy) {
+      this.liveResizeDirty = true
+      return
+    }
+
+    this.liveResizeBusy = true
+    this.liveResizeDirty = false
+    this.liveResizeFrame = requestAnimationFrame(() => {
+      this.liveResizeFrame = null
+      if (!this._isMounted || this.props.hidden) {
+        this.liveResizeBusy = false
+        return
+      }
+
+      // Outer dimensions are cached between renders; this redraw is for a new size
+      this.shouldRecalculateDimensions = true
+      const { deltaX, deltaY } = this.getDeltas()
+      const { innerHeight, innerWidth } = this.getInnerDimensions()
+      this.setState({ deltaX, deltaY, innerHeight, innerWidth }, () => {
+        this.liveResizeBusy = false
+        if (this.liveResizeDirty && this.props.isResizing) {
+          this.scheduleLiveResizeFrame()
+        }
+      })
+    })
   }
 
   getDeltas = () => {
@@ -927,12 +1003,7 @@ export default class ChataChart extends React.Component {
       outerWidth: this.outerWidth,
     }
 
-    if (
-      this.props.hidden ||
-      this.props.isAnimating ||
-      this.firstRender ||
-      this.isContainerCollapsed()
-    ) {
+    if (this.props.hidden || this.props.isAnimating || this.firstRender || this.isContainerCollapsed()) {
       return defaultDimensions
     }
 
@@ -1058,9 +1129,7 @@ export default class ChataChart extends React.Component {
         ref={(r) => (this.sliderRef = r)}
         style={{ paddingLeft }}
         className={`react-autoql-chart-header-container ${
-          (this.state.isLoading || this.props.isResizing) && this.props.type !== DisplayTypes.NETWORK_GRAPH
-            ? 'react-autoql-chart-loading'
-            : ''
+          this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''
         }`}
       >
         {/* Chart Control Buttons and Data Limit Warning */}
@@ -1300,7 +1369,7 @@ export default class ChataChart extends React.Component {
 
     const isDataLimited = this.props.isDataLimited
 
-    return isDataLimited || isTruncated
+    return isDataLimited || this.props.isPivotDataLimited || isTruncated
   }
 
   renderDataLimitWarning = () => {
@@ -1329,9 +1398,18 @@ export default class ChataChart extends React.Component {
     } else if (isDataLimited) {
       // Only MAX_DATA_PAGE_SIZE exceeded
       tooltipContent = `To optimize performance, this chart is limited to the initial <em>${rowLimitFormatted}</em> rows.`
-    } else {
+    } else if (isTruncated) {
       // Only MAX_CHART_ELEMENTS exceeded
       tooltipContent = `To optimize performance, this chart is limited to <em>${chartElementLimitFormatted}</em> chart elements. Try switching the axis to reduce the number of elements.`
+    }
+
+    // The pivot column limit is its own cause: the rows all arrived, but some series did not
+    // make it into the pivot the chart is drawn from.
+    if (this.props.isPivotDataLimited) {
+      const pivotMessage =
+        this.props.pivotLimitTooltip ??
+        'To optimize performance, the pivoted data behind this chart is limited in its number of columns, so some series are not shown.'
+      tooltipContent = tooltipContent ? `${tooltipContent}<br /><br />${pivotMessage}` : pivotMessage
     }
 
     return (
@@ -1555,7 +1633,12 @@ export default class ChataChart extends React.Component {
                 : ''
             }
             ${this.props.hidden ? 'react-autoql-chart-hidden' : ''}
-            ${getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns && !this.props.columns?.[this.props.stringColumnIndex]?.isCyclical ? 'enable-drilldown' : 'disable-drilldown'}`}
+            ${
+              getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns &&
+              !this.props.columns?.[this.props.stringColumnIndex]?.isCyclical
+                ? 'enable-drilldown'
+                : 'disable-drilldown'
+            }`}
           >
             {!this.firstRender && !this.props.isAnimating && (
               <svg

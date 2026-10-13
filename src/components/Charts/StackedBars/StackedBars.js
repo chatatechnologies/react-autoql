@@ -1,16 +1,20 @@
 import React, { PureComponent } from 'react'
-import { getKey, getTooltipContent } from 'autoql-fe-utils'
+import { getKey } from 'autoql-fe-utils'
 
 import {
   chartElementDefaultProps,
   chartElementPropTypes,
   createDateDrilldownFilter,
   getGradientOpacityStops,
+  createTooltipContentCache,
 } from '../chartPropHelpers'
 
 const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('horizontal')
 
 export default class StackedBars extends PureComponent {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
 
@@ -116,7 +120,7 @@ export default class StackedBars extends PureComponent {
             return null
           }
 
-          const tooltip = getTooltipContent({
+          const tooltip = this.getTooltipContent({
             row: d,
             columns,
             colIndex,
