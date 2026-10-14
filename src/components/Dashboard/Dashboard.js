@@ -154,20 +154,20 @@ class DashboardWithoutTheme extends React.Component {
     onQuotaExceeded: PropTypes.func,
     enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
-    // List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown.
+    /** List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown. */
     projectSelectList: PropTypes.arrayOf(
       PropTypes.shape({
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
         displayName: PropTypes.string.isRequired,
       }),
     ),
-    // Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details.
+    /** Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details. */
     getAuthenticationForProject: PropTypes.func,
-    // Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange
+    /** Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange */
     onTileAuthExpired: PropTypes.func,
-    // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
+    /** Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards */
     showProjectIndicator: PropTypes.bool,
-    // Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard
+    /** Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard */
     isProjectDashboard: PropTypes.bool,
   }
 

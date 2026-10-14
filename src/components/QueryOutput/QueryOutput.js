@@ -333,21 +333,25 @@ export class QueryOutput extends React.Component {
         data: PropTypes.object,
       }),
     }),
-    // Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query
+    /** Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query */
     queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
-    // Set once this answer's rows have been dropped to a preview to save memory. Holds
-    // the true row count, which is all that is needed to describe what is missing and
-    // to keep deciding display types against the real size of the result.
+    /**
+     * Set once this answer's rows have been dropped to a preview to save memory. Holds
+     * the true row count, which is all that is needed to describe what is missing and
+     * to keep deciding display types against the real size of the result.
+     */
     dataTruncated: PropTypes.shape({
       droppedRowCount: PropTypes.number,
       wasDataLimited: PropTypes.bool,
     }),
-    // Called with the full response after a restore, so the caller can keep the rows.
+    /** Called with the full response after a restore, so the caller can keep the rows. */
     onRestoreData: PropTypes.func,
-    // Called with the current response whenever the columns change under it - a custom
-    // column added, columns shown or hidden - so the caller's copy does not go stale.
+    /**
+     * Called with the current response whenever the columns change under it - a custom
+     * column added, columns shown or hidden - so the caller's copy does not go stale.
+     */
     onResponseUpdate: PropTypes.func,
     onQueryValidationSelectOption: PropTypes.func,
     autoSelectQueryValidationSuggestion: PropTypes.bool,
@@ -360,8 +364,10 @@ export class QueryOutput extends React.Component {
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
-    // Whether a failed re-run of this query may fall back to related queries
-    // instead of an error. See ChatContent for the full description.
+    /**
+     * Whether a failed re-run of this query may fall back to related queries
+     * instead of an error. See ChatContent for the full description.
+     */
     enableQuerySuggestions: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,

@@ -91,22 +91,28 @@ class QueryInput extends React.Component {
     autoCompletePlacement: PropTypes.string,
     quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
     showChataIcon: PropTypes.bool,
-    // Rendered at the left end of the input, inside the pill. For controls that
-    // scope the query (the filter lock) rather than compose it.
+    /**
+     * Rendered at the left end of the input, inside the pill. For controls that
+     * scope the query (the filter lock) rather than compose it.
+     */
     leftContent: PropTypes.node,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
     placeholder: PropTypes.string,
     clearQueryOnSubmit: PropTypes.bool,
-    // DPR session — sent as the AutoAE-Session-ID header by dprQuery. Unrelated
-    // to querySessionId below: different service, different transport.
+    /**
+     * DPR session — sent as the AutoAE-Session-ID header by dprQuery. Unrelated
+     * to querySessionId below: different service, different transport.
+     */
     sessionId: PropTypes.string,
-    // Chat session this input belongs to. Sent to the query endpoint as the
-    // AutoQL-Session-ID header, and ONLY from here — the subqueries QueryOutput
-    // fires for sorting/filtering/added columns/drilldowns deliberately don't
-    // carry it, since a session tracks what the user actually asked for.
-    // Undefined unless the consumer enables sessions (see ChatContent's
-    // enableSessions), and undefined omits the header entirely.
+    /**
+     * Chat session this input belongs to. Sent to the query endpoint as the
+     * AutoQL-Session-ID header, and ONLY from here — the subqueries QueryOutput
+     * fires for sorting/filtering/added columns/drilldowns deliberately don't
+     * carry it, since a session tracks what the user actually asked for.
+     * Undefined unless the consumer enables sessions (see ChatContent's
+     * enableSessions), and undefined omits the header entirely.
+     */
     querySessionId: PropTypes.string,
     dataPageSize: PropTypes.number,
     shouldRender: PropTypes.bool,

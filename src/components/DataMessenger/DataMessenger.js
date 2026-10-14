@@ -135,39 +135,47 @@ export class DataMessenger extends React.Component {
     enableVoiceRecord: PropTypes.bool,
     title: PropTypes.string,
     maxMessages: PropTypes.number,
-    // How much answer data is held in memory at once. Once an answer has been pushed
-    // back past `keepHydratedMessages` other answers, its rows are dropped to a preview
-    // and fetched again on request, so the history can be long without the data behind
-    // it growing without bound. Answers smaller than `truncateMinRows` are left alone,
-    // since fetching them again would cost more than holding them. Both are forwarded
-    // to ChatContent, which holds the defaults.
+    /**
+     * How much answer data is held in memory at once. Once an answer has been pushed
+     * back past `keepHydratedMessages` other answers, its rows are dropped to a preview
+     * and fetched again on request, so the history can be long without the data behind
+     * it growing without bound. Answers smaller than `truncateMinRows` are left alone,
+     * since fetching them again would cost more than holding them. Both are forwarded
+     * to ChatContent, which holds the defaults.
+     */
     keepHydratedMessages: PropTypes.number,
     truncateMinRows: PropTypes.number,
-    // Headline and supporting line for the centred message shown while the chat is
-    // empty. Forwarded to ChatContent, which falls back to its own defaults.
+    /**
+     * Headline and supporting line for the centred message shown while the chat is
+     * empty. Forwarded to ChatContent, which falls back to its own defaults.
+     */
     emptyStateTitle: PropTypes.node,
     emptyStateSubtitle: PropTypes.node,
-    // Data Explorer is the supported way to browse topics and sample queries.
+    /** Data Explorer is the supported way to browse topics and sample queries. */
     enableDataExplorerTab: PropTypes.bool,
-    // Deprecated: superseded by Data Explorer. Off by default; only enable it for
-    // integrations that haven't migrated yet.
+    /**
+     * Deprecated: superseded by Data Explorer. Off by default; only enable it for
+     * integrations that haven't migrated yet.
+     */
     enableExploreQueriesTab: PropTypes.bool,
     enableNotificationsTab: PropTypes.bool,
     resizable: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
     enableDPRTab: PropTypes.bool,
-    // Session-based agent page. defaultTab accepts 'agent' when this is enabled, and
-    // openDataMessenger('agent') deep-links to it (including on mobile, where the tab
-    // rail isn't rendered).
+    /**
+     * Session-based agent page. defaultTab accepts 'agent' when this is enabled, and
+     * openDataMessenger('agent') deep-links to it (including on mobile, where the tab
+     * rail isn't rendered).
+     */
     enableAgentTab: PropTypes.bool,
     agentInputPlaceholder: PropTypes.string,
     agentSuggestions: PropTypes.arrayOf(PropTypes.string),
     agentModels: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, label: PropTypes.string })),
     agentModelsEndpoint: PropTypes.string,
     agentDefaultModelId: PropTypes.string,
-    // Development only: renders captured session payloads instead of calling the API.
+    /** Development only: renders captured session payloads instead of calling the API. */
     agentMockResponses: PropTypes.bool,
-    // Shows the session id above each thread so it can be copied into a bug report.
+    /** Shows the session id above each thread so it can be copied into a bug report. */
     agentDebug: PropTypes.bool,
     dataPageSize: PropTypes.number,
     notificationCount: PropTypes.number,
@@ -180,9 +188,11 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
-    // Turns on query suggestions: the Data Explorer's suggestion list and the
-    // related-queries fallback that answers a failed query with a list of close
-    // queries instead of an error. Off by default.
+    /**
+     * Turns on query suggestions: the Data Explorer's suggestion list and the
+     * related-queries fallback that answers a failed query with a list of close
+     * queries instead of an error. Off by default.
+     */
     enableQuerySuggestions: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
@@ -191,10 +201,12 @@ export class DataMessenger extends React.Component {
     onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
     enableFollowOnQuery: PropTypes.bool,
-    // Splits the Data Messenger chat into user sessions: a tab bar with a close
-    // button per tab and a "+" for a new one. Each session gets its own UUID,
-    // sent along with the queries the user types in it. Default false — no tabs
-    // and no session UUID, exactly as before.
+    /**
+     * Splits the Data Messenger chat into user sessions: a tab bar with a close
+     * button per tab and a "+" for a new one. Each session gets its own UUID,
+     * sent along with the queries the user types in it. Default false — no tabs
+     * and no session UUID, exactly as before.
+     */
     enableSessions: PropTypes.bool,
 
     // Projects
