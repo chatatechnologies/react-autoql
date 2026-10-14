@@ -127,15 +127,18 @@ export class DataMessenger extends React.Component {
     width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     showHandle: PropTypes.bool,
+    /** @internal */
     handleImage: PropTypes.string,
     handleStyles: PropTypes.shape({}),
     shiftScreen: PropTypes.bool,
     userDisplayName: PropTypes.string,
     clearOnClose: PropTypes.bool,
     enableVoiceRecord: PropTypes.bool,
+    /** @internal */
     title: PropTypes.string,
     maxMessages: PropTypes.number,
     /**
+     * @internal
      * How much answer data is held in memory at once. Once an answer has been pushed
      * back past `keepHydratedMessages` other answers, its rows are dropped to a preview
      * and fetched again on request, so the history can be long without the data behind
@@ -144,6 +147,7 @@ export class DataMessenger extends React.Component {
      * to ChatContent, which holds the defaults.
      */
     keepHydratedMessages: PropTypes.number,
+    /** @internal */
     truncateMinRows: PropTypes.number,
     /**
      * Headline and supporting line for the centred message shown while the chat is
@@ -154,39 +158,53 @@ export class DataMessenger extends React.Component {
     /** Data Explorer is the supported way to browse topics and sample queries. */
     enableDataExplorerTab: PropTypes.bool,
     /**
+     * @internal
      * Deprecated: superseded by Data Explorer. Off by default; only enable it for
      * integrations that haven't migrated yet.
      */
     enableExploreQueriesTab: PropTypes.bool,
     enableNotificationsTab: PropTypes.bool,
+    /** @internal */
     resizable: PropTypes.bool,
     inputPlaceholder: PropTypes.string,
+    /** @internal */
     enableDPRTab: PropTypes.bool,
     /**
+     * @internal
      * Session-based agent page. defaultTab accepts 'agent' when this is enabled, and
      * openDataMessenger('agent') deep-links to it (including on mobile, where the tab
      * rail isn't rendered).
      */
     enableAgentTab: PropTypes.bool,
+    /** @internal */
     agentInputPlaceholder: PropTypes.string,
+    /** @internal */
     agentSuggestions: PropTypes.arrayOf(PropTypes.string),
+    /** @internal */
     agentModels: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, label: PropTypes.string })),
+    /** @internal */
     agentModelsEndpoint: PropTypes.string,
+    /** @internal */
     agentDefaultModelId: PropTypes.string,
-    /** Development only: renders captured session payloads instead of calling the API. */
+    /** @internal Development only: renders captured session payloads instead of calling the API. */
     agentMockResponses: PropTypes.bool,
-    /** Shows the session id above each thread so it can be copied into a bug report. */
+    /** @internal Shows the session id above each thread so it can be copied into a bug report. */
     agentDebug: PropTypes.bool,
+    /** @internal */
     dataPageSize: PropTypes.number,
+    /** @internal */
     notificationCount: PropTypes.number,
     defaultOpen: PropTypes.bool,
+    /** @internal */
     popoverParentElement: PropTypes.element,
 
+    /** @internal */
     enableDynamicCharting: PropTypes.bool,
     defaultTab: PropTypes.string,
     autoChartAggregations: PropTypes.bool,
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
+    /** @internal */
     enableQueryInputTopics: PropTypes.bool,
     /**
      * Turns on query suggestions: the Data Explorer's suggestion list and the
@@ -194,14 +212,21 @@ export class DataMessenger extends React.Component {
      * queries instead of an error. Off by default.
      */
     enableQuerySuggestions: PropTypes.bool,
+    /** @internal */
     disableColumnSelectionForDataExplorer: PropTypes.bool,
+    /** @internal */
     enableMagicWand: PropTypes.bool,
+    /** @internal */
     showMagicWandQuoteButton: PropTypes.bool,
+    /** @internal */
     enableBillingGate: PropTypes.bool,
+    /** @internal */
     onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
+    /** @internal */
     enableFollowOnQuery: PropTypes.bool,
     /**
+     * @internal
      * Splits the Data Messenger chat into user sessions: a tab bar with a close
      * button per tab and a "+" for a new one. Each session gets its own UUID,
      * sent along with the queries the user types in it. Default false — no tabs
@@ -210,25 +235,35 @@ export class DataMessenger extends React.Component {
     enableSessions: PropTypes.bool,
 
     // Projects
+    /** @internal */
     projectSelectList: PropTypes.arrayOf(
       PropTypes.shape({
         projectId: PropTypes.string.isRequired,
         displayName: PropTypes.string.isRequired,
       }),
     ),
+    /** @internal */
     selectedProjectId: PropTypes.string,
 
     // Callbacks
+    /** @internal */
     onNotificationExpandCallback: PropTypes.func,
     onNewNotification: PropTypes.func,
+    /** @internal */
     onNotificationCount: PropTypes.func,
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,
+    /** @internal */
     setMobileActivePage: PropTypes.func,
+    /** @internal */
     onProjectSelectChange: PropTypes.func,
+    /** @internal */
     onCreateQueryEvaluationItem: PropTypes.func,
+    /** @internal */
     queryItemActionName: PropTypes.string,
+    /** @internal */
+    mobileActivePage: PropTypes.string,
   }
 
   static defaultProps = {

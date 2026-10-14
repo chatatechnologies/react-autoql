@@ -39,13 +39,16 @@ class NotificationIcon extends React.Component {
     overflowCount: PropTypes.number,
     style: PropTypes.shape({}),
     size: PropTypes.number,
+    /** @internal */
     useDot: PropTypes.bool,
     clearCountOnClick: PropTypes.bool,
     onNewNotification: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    /** @internal */
     pausePolling: PropTypes.bool,
     count: PropTypes.number,
     onCount: PropTypes.func,
+    /** @internal */
     enableFetchNotificationCountAcrossProjects: PropTypes.bool,
   }
 
