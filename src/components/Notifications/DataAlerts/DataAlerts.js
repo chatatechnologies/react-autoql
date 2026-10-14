@@ -24,6 +24,7 @@ class DataAlerts extends React.Component {
 
   static propTypes = {
     authentication: authenticationType,
+    /** @internal */
     tooltipID: PropTypes.string,
     onErrorCallback: PropTypes.func,
     onSuccessAlert: PropTypes.func,

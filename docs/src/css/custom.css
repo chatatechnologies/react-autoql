@@ -1,0 +1,20 @@
+/* AutoQL's default accent is #26A7E9; light mode uses a darker shade so links stay readable on white. */
+:root {
+  --ifm-color-primary: #1f8ec7;
+  --ifm-color-primary-dark: #1c80b3;
+  --ifm-color-primary-darker: #1a79a9;
+  --ifm-color-primary-darkest: #15638b;
+  --ifm-color-primary-light: #2b9cd8;
+  --ifm-color-primary-lighter: #36a2db;
+  --ifm-color-primary-lightest: #57b2e1;
+  --ifm-code-font-size: 92%;
+}
+[data-theme='dark'] {
+  --ifm-color-primary: #4fb3e6;
+  --ifm-color-primary-dark: #35a8e2;
+  --ifm-color-primary-darker: #28a2e0;
+  --ifm-color-primary-darkest: #1c88bf;
+  --ifm-color-primary-light: #69beea;
+  --ifm-color-primary-lighter: #76c4ec;
+  --ifm-color-primary-lightest: #9cd4f1;
+}

@@ -66,6 +66,7 @@ class NotificationFeed extends React.Component {
     authentication: authenticationType,
     onCollapseCallback: PropTypes.func,
     onExpandCallback: PropTypes.func,
+    /** @internal */
     showNotificationDetails: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
@@ -73,28 +74,52 @@ class NotificationFeed extends React.Component {
     onDeleteCallback: PropTypes.func,
     onChange: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    /** @internal */
     showCreateAlertBtn: PropTypes.bool,
     onModalOpen: PropTypes.func,
+    /** @internal */
     shouldRender: PropTypes.bool,
     onDataAlertChange: PropTypes.func,
+    /** @internal */
     tooltipID: PropTypes.string,
+    /** @internal */
     chartTooltipID: PropTypes.string,
     enableSettingsMenu: PropTypes.bool,
+    /** @internal */
     enableNotificationsMenu: PropTypes.bool,
+    /** @internal */
     displayProjectName: PropTypes.bool,
+    /** @internal */
     displayNotificationItemCheckbox: PropTypes.bool,
+    /** @internal */
     enableFilterBtn: PropTypes.bool,
+    /** @internal */
     enableFetchAllNotificationFeedAcrossProjects: PropTypes.bool,
+    /** @internal */
     selectedProjectId: PropTypes.string,
+    /** @internal */
     selectedProjectName: PropTypes.string,
+    /** @internal */
     notificationTitle: PropTypes.string,
+    /** @internal */
     showSelectNotificationsButton: PropTypes.bool,
     onConfirmCallback: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
+    /** @internal */
     enableMagicWand: PropTypes.bool,
+    /** @internal */
     showMagicWandQuoteButton: PropTypes.bool,
+    /** @internal */
     enableBillingGate: PropTypes.bool,
+    /** @internal */
     onQuotaExceeded: PropTypes.func,
+    /** @internal */
+    isMobile: PropTypes.bool,
+    /** @internal */
+    isMobileLandscape: PropTypes.bool,
+    /** @internal Shows a "Data Alerts" button in the feed header that opens the alert manager. */
+    showDataAlertsManager: PropTypes.bool,
+    onUnreadCallback: PropTypes.func,
   }
 
   static defaultProps = {

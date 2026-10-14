@@ -333,35 +333,49 @@ export class QueryOutput extends React.Component {
         data: PropTypes.object,
       }),
     }),
-    // Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query
+    /** @internal Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query */
     queryId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
-    // Set once this answer's rows have been dropped to a preview to save memory. Holds
-    // the true row count, which is all that is needed to describe what is missing and
-    // to keep deciding display types against the real size of the result.
+    /**
+     * @internal
+     * Set once this answer's rows have been dropped to a preview to save memory. Holds
+     * the true row count, which is all that is needed to describe what is missing and
+     * to keep deciding display types against the real size of the result.
+     */
     dataTruncated: PropTypes.shape({
       droppedRowCount: PropTypes.number,
       wasDataLimited: PropTypes.bool,
     }),
-    // Called with the full response after a restore, so the caller can keep the rows.
+    /** @internal Called with the full response after a restore, so the caller can keep the rows. */
     onRestoreData: PropTypes.func,
-    // Called with the current response whenever the columns change under it - a custom
-    // column added, columns shown or hidden - so the caller's copy does not go stale.
+    /**
+     * @internal
+     * Called with the current response whenever the columns change under it - a custom
+     * column added, columns shown or hidden - so the caller's copy does not go stale.
+     */
     onResponseUpdate: PropTypes.func,
     onQueryValidationSelectOption: PropTypes.func,
+    /** @internal */
     autoSelectQueryValidationSuggestion: PropTypes.bool,
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
+    /** @internal */
     renderSuggestionsAsDropdown: PropTypes.bool,
+    /** @internal */
     defaultSelectedSuggestion: PropTypes.string,
+    /** @internal */
     reverseTranslationPlacement: PropTypes.string,
+    /** @internal */
     reverseTranslationCompact: PropTypes.bool,
+    /** @internal */
     activeChartElementKey: PropTypes.string,
     preferredDisplayType: PropTypes.string,
     isResizing: PropTypes.bool,
     enableDynamicCharting: PropTypes.bool,
-    // Whether a failed re-run of this query may fall back to related queries
-    // instead of an error. See ChatContent for the full description.
+    /**
+     * Whether a failed re-run of this query may fall back to related queries
+     * instead of an error. See ChatContent for the full description.
+     */
     enableQuerySuggestions: PropTypes.bool,
     onTableConfigChange: PropTypes.func,
     onAggConfigChange: PropTypes.func,
@@ -371,6 +385,7 @@ export class QueryOutput extends React.Component {
       weightColumnIndex: PropTypes.number,
     }),
     onNetworkColumnChange: PropTypes.func,
+    /** @internal */
     legendFilterConfig: PropTypes.shape({
       filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
     }),
@@ -381,60 +396,90 @@ export class QueryOutput extends React.Component {
     onColumnOrderChange: PropTypes.func,
     initialFrozenColumns: PropTypes.arrayOf(PropTypes.string),
     onFrozenColumnsChange: PropTypes.func,
+    /** @internal */
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
+    /** @internal */
     onRTValueLabelClick: PropTypes.func,
+    /** @internal */
     isTaskModule: PropTypes.bool,
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
+    /** @internal */
     enableTableSorting: PropTypes.bool,
+    /** @internal */
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
+    /** @internal */
     showQueryInterpretation: PropTypes.bool,
+    /** @internal */
     useInfiniteScroll: PropTypes.bool,
+    /** @internal */
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
 
+    /** @internal */
     mutable: PropTypes.bool,
+    /** @internal */
     showSuggestionPrefix: PropTypes.bool,
     onDisplayTypeChange: PropTypes.func,
     onColumnChange: PropTypes.func,
+    /** @internal */
     shouldRender: PropTypes.bool,
+    /** @internal */
     dataPageSize: PropTypes.number,
+    /** @internal */
     onPageSizeChange: PropTypes.func,
     allowDisplayTypeChange: PropTypes.bool,
     onMount: PropTypes.func,
     onBucketSizeChange: PropTypes.func,
+    /** @internal */
     bucketSize: PropTypes.number,
     enableCyclicalDates: PropTypes.bool,
     onNewData: PropTypes.func,
     onCustomColumnUpdate: PropTypes.func,
+    /** @internal */
     enableTableContextMenu: PropTypes.bool,
     initialFormattedTableParams: PropTypes.shape({}),
     onUpdateFilterResponse: PropTypes.func,
+    /** @internal */
     enableResizing: PropTypes.bool,
+    /** @internal */
     isEditing: PropTypes.bool,
+    /** @internal */
     isDashboardEditing: PropTypes.bool,
+    /** @internal */
     onNewQueryId: PropTypes.func,
+    /** @internal */
     lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    /** @internal */
     skipInitialFilters: PropTypes.bool,
     initialIsFiltering: PropTypes.bool,
     minHeight: PropTypes.number,
     maxHeight: PropTypes.number,
+    /** @internal */
     resizeMultiplier: PropTypes.number,
     onResize: PropTypes.func,
+    /** @internal */
     localRTFilterResponse: PropTypes.shape({}),
     enableCustomColumns: PropTypes.bool,
+    /** @internal */
     disableAggregationMenu: PropTypes.bool,
+    /** @internal */
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     preferRegularTableInitialDisplayType: PropTypes.bool,
+    /** @internal */
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    /** @internal */
     enableChartControls: PropTypes.bool,
     initialChartControls: PropTypes.shape({
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
     }),
     onChartControlsChange: PropTypes.func,
+    height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    onTableParamsChange: PropTypes.func,
   }
 
   static defaultProps = {

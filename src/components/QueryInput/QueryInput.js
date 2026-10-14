@@ -86,35 +86,56 @@ class QueryInput extends React.Component {
     isDisabled: PropTypes.bool,
     onSubmit: PropTypes.func,
     onResponseCallback: PropTypes.func,
+    /** @internal */
     addResponseMessage: PropTypes.func,
+    /** @internal */
     className: PropTypes.string,
     autoCompletePlacement: PropTypes.string,
     quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
+    /** @internal */
     showChataIcon: PropTypes.bool,
-    // Rendered at the left end of the input, inside the pill. For controls that
-    // scope the query (the filter lock) rather than compose it.
+    /**
+     * @internal
+     * Rendered at the left end of the input, inside the pill. For controls that
+     * scope the query (the filter lock) rather than compose it.
+     */
     leftContent: PropTypes.node,
     inputValue: PropTypes.string,
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
     placeholder: PropTypes.string,
     clearQueryOnSubmit: PropTypes.bool,
-    // DPR session — sent as the AutoAE-Session-ID header by dprQuery. Unrelated
-    // to querySessionId below: different service, different transport.
+    /**
+     * @internal
+     * DPR session — sent as the AutoAE-Session-ID header by dprQuery. Unrelated
+     * to querySessionId below: different service, different transport.
+     */
     sessionId: PropTypes.string,
-    // Chat session this input belongs to. Sent to the query endpoint as the
-    // AutoQL-Session-ID header, and ONLY from here — the subqueries QueryOutput
-    // fires for sorting/filtering/added columns/drilldowns deliberately don't
-    // carry it, since a session tracks what the user actually asked for.
-    // Undefined unless the consumer enables sessions (see ChatContent's
-    // enableSessions), and undefined omits the header entirely.
+    /**
+     * @internal
+     * Chat session this input belongs to. Sent to the query endpoint as the
+     * AutoQL-Session-ID header, and ONLY from here — the subqueries QueryOutput
+     * fires for sorting/filtering/added columns/drilldowns deliberately don't
+     * carry it, since a session tracks what the user actually asked for.
+     * Undefined unless the consumer enables sessions (see ChatContent's
+     * enableSessions), and undefined omits the header entirely.
+     */
     querySessionId: PropTypes.string,
+    /** @internal */
     dataPageSize: PropTypes.number,
+    /** @internal */
     shouldRender: PropTypes.bool,
+    /** @internal */
     enableQuerySuggestions: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
+    /** @internal */
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
+    /** @internal */
     disableColumnSelection: PropTypes.bool,
+    /** @internal */
+    isBackButtonClicked: PropTypes.bool,
+    /** @internal */
+    source: PropTypes.oneOfType([PropTypes.string, PropTypes.arrayOf(PropTypes.string)]),
   }
 
   static defaultProps = {
