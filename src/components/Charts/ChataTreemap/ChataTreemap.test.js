@@ -93,9 +93,42 @@ describe('ChataTreemap', () => {
   })
 
   test('sizes boxes by row count when Count is the persisted value', () => {
-    const wrapper = setup({ initialChartControls: { treemapValueColumnIndex: TREEMAP_VALUE_COUNT_SENTINEL } })
+    const listColumns = columns.map((col) => ({ ...col, groupable: false }))
+    const wrapper = setup({
+      columns: listColumns,
+      initialChartControls: { treemapValueColumnIndex: TREEMAP_VALUE_COUNT_SENTINEL },
+    })
     // West/C and West/D have non-positive amounts but still count as rows
     expect(wrapper.find('g.treemap-leaf')).toHaveLength(5)
+  })
+
+  test('ignores a persisted Count and hides the option on grouped (aggregated) data', () => {
+    const wrapper = setup({ initialChartControls: { treemapValueColumnIndex: TREEMAP_VALUE_COUNT_SENTINEL } })
+    expect(wrapper.find('g.treemap-leaf')).toHaveLength(3) // Sized by Amount instead
+
+    const valueSelector = wrapper.find('SankeyColumnSelector').filterWhere((node) => node.prop('type') === 'value')
+    expect(valueSelector.prop('allowCount')).toBe(false)
+    expect(valueSelector.prop('disabled')).toBe(true) // Only one number column to choose from
+  })
+
+  test('resolves persisted columns by name first, then falls back to the saved index', () => {
+    // Columns reordered since the save: Product is now first. The name finds it; a stale index would not.
+    const reordered = [columns[1], columns[0], columns[2]]
+    const reorderedData = data.map(([region, product, amount]) => [product, region, amount])
+    const wrapper = setup({
+      columns: reordered,
+      data: reorderedData,
+      initialChartControls: { treemapGroupColumnIndices: [1], treemapGroupColumnNames: ['sales.product'] },
+    })
+    expect(wrapper.find('g.treemap-leaf')).toHaveLength(2) // A and B
+
+    // Unknown name: fall back to the saved index (1 = Region in the reordered columns)
+    const fallback = setup({
+      columns: reordered,
+      data: reorderedData,
+      initialChartControls: { treemapGroupColumnIndices: [1], treemapGroupColumnNames: ['renamed.column'] },
+    })
+    expect(fallback.find('g.treemap-leaf')).toHaveLength(2) // East and West
   })
 
   test('drills down with the clicked box group-by path', () => {

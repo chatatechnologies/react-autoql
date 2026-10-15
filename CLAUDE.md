@@ -34,3 +34,5 @@ Display types are defined in **autoql-fe-utils** (sibling repo `../autoql-fe-uti
 - **Drilldowns**: gate on `getAutoQLConfig(autoQLConfig).enableDrilldowns`; call `onChartClick({ groupBys: [{ name, drill_down, value }], activeKey })`.
 - **Tooltips**: `data-tooltip-id={chartTooltipID}` + `data-tooltip-html`, HTML-escaped, values formatted with `formatElement`.
 - **Persisted settings**: read from `initialChartControls`, save via `onChartControlsChange`; auto-corrections (e.g. hidden column) stay local so dashboards don't loop.
+- **Persisted column picks**: save both the index and the column name (`getPersistedColumnName`), and read them back with `resolvePersistedColumnIndex(es)` from `chartPropHelpers.js` — name first, saved index as fallback (indices shift when columns are added; names can change). When `columns` changes while mounted, re-map current picks by name too (see ChataTreemap / ChataSankeyDiagram).
+- **Count option**: only for list queries. On grouped data (`isAggregation(columns)`) hide it, and disable the value button with a tooltip when there's only one number column.

@@ -13,6 +13,7 @@ import {
   getThemeValue,
   isColumnNumberType,
   isColumnStringType,
+  isAggregation,
   findTreemapColumns,
   formatElement,
   getDataFormatting,
@@ -21,7 +22,13 @@ import {
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from '../ChataSankeyDiagram/SankeyColumnSelector'
-import { BAR_GRADIENT_OPACITY_STOPS, SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
+import {
+  BAR_GRADIENT_OPACITY_STOPS,
+  SANKEY_VALUE_COUNT_SENTINEL,
+  getPersistedColumnName,
+  resolvePersistedColumnIndex,
+  resolvePersistedColumnIndices,
+} from '../chartPropHelpers'
 
 import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
 import './ChataTreemap.scss'
@@ -170,8 +177,28 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   // Data-aware defaults: low-cardinality group columns first, Count for percent/ratio-only data
   const detectedColumns = useMemo(() => findTreemapColumns(columns, props.data), [props.columns, props.data])
 
+  // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
+  // not records - only offer it for list queries
+  const isAggregatedData = useMemo(() => isAggregation(columns), [props.columns])
+  const numberColumnCount = columns.filter((col) => col?.isNumberType).length
+
   const isValidValueColumnIndex = (index) =>
-    index === TREEMAP_VALUE_COUNT_SENTINEL || (index >= 0 && isColumnNumberType(columns[index]))
+    (index === TREEMAP_VALUE_COUNT_SENTINEL && !isAggregatedData) || (index >= 0 && isColumnNumberType(columns[index]))
+
+  // Saved selections are matched by column name first, falling back to the saved index
+  const getPersistedGroupColumnIndices = () =>
+    resolvePersistedColumnIndices({
+      names: props.initialChartControls?.treemapGroupColumnNames,
+      indices: props.initialChartControls?.treemapGroupColumnIndices,
+      columns,
+    })
+
+  const getPersistedValueColumnIndex = () =>
+    resolvePersistedColumnIndex({
+      name: props.initialChartControls?.treemapValueColumnName,
+      index: props.initialChartControls?.treemapValueColumnIndex,
+      columns,
+    })
 
   const getValidGroupColumnIndices = (indices) =>
     Array.from(new Set((indices || []).filter((index) => groupableColumnIndices.includes(index)))).slice(
@@ -180,7 +207,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     )
 
   const getDefaultGroupColumnIndices = () => {
-    const persisted = getValidGroupColumnIndices(props.initialChartControls?.treemapGroupColumnIndices)
+    const persisted = getValidGroupColumnIndices(getPersistedGroupColumnIndices())
     if (persisted.length) {
       return persisted
     }
@@ -194,18 +221,21 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   }
 
   const getDefaultValueColumnIndex = () => {
-    const persisted = props.initialChartControls?.treemapValueColumnIndex
+    const persisted = getPersistedValueColumnIndex()
     if (isValidValueColumnIndex(persisted)) {
       return persisted
     }
-    if (detectedColumns.countAsValue) {
+    if (detectedColumns.countAsValue && !isAggregatedData) {
       return TREEMAP_VALUE_COUNT_SENTINEL
     }
     if (detectedColumns.valueColumnIndex >= 0) {
       return detectedColumns.valueColumnIndex
     }
     const firstNumberColumnIndex = columns.findIndex((col) => isColumnNumberType(col))
-    return firstNumberColumnIndex >= 0 ? firstNumberColumnIndex : TREEMAP_VALUE_COUNT_SENTINEL
+    if (firstNumberColumnIndex >= 0) {
+      return firstNumberColumnIndex
+    }
+    return isAggregatedData ? -1 : TREEMAP_VALUE_COUNT_SENTINEL
   }
 
   const [groupColumnIndices, setGroupColumnIndices] = useState(getDefaultGroupColumnIndices)
@@ -216,6 +246,29 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   const [zoomTransform, setZoomTransform] = useState({ k: 1, x: 0, y: 0 })
   const zoomScale = zoomTransform.k
   const [activeKey, setActiveKey] = useState(null)
+
+  // When columns change (eg. a column is added and indices shift), follow the selected columns by
+  // name: translate the current indices to names using the previous columns, then find them again.
+  const prevColumnsRef = useRef(columns)
+  useEffect(() => {
+    const prevColumns = prevColumnsRef.current
+    prevColumnsRef.current = columns
+    if (prevColumns === columns) {
+      return
+    }
+
+    setGroupColumnIndices((prev) => {
+      const next = resolvePersistedColumnIndices({
+        names: prev.map((index) => getPersistedColumnName(index, prevColumns)),
+        indices: prev,
+        columns,
+      })
+      return areNumberArraysEqual(prev, next) ? prev : next
+    })
+    setValueColumnIndex((prev) =>
+      resolvePersistedColumnIndex({ name: getPersistedColumnName(prev, prevColumns), index: prev, columns }),
+    )
+  }, [props.columns])
 
   // Keep selections valid if columns change underneath us (eg. a column is hidden).
   // Auto-corrections are local only, so they don't trigger dashboard update loops.
@@ -248,7 +301,10 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
       return
     }
     setGroupColumnIndices(nextGroupColumnIndices)
-    persistTreemapControls({ treemapGroupColumnIndices: nextGroupColumnIndices })
+    persistTreemapControls({
+      treemapGroupColumnIndices: nextGroupColumnIndices,
+      treemapGroupColumnNames: nextGroupColumnIndices.map((index) => getPersistedColumnName(index, columns)),
+    })
   }
 
   const handleValueColumnChange = (nextValueColumnIndex) => {
@@ -256,7 +312,10 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
       return
     }
     setValueColumnIndex(nextValueColumnIndex)
-    persistTreemapControls({ treemapValueColumnIndex: nextValueColumnIndex })
+    persistTreemapControls({
+      treemapValueColumnIndex: nextValueColumnIndex,
+      treemapValueColumnName: getPersistedColumnName(nextValueColumnIndex, columns),
+    })
   }
 
   const closeDropdowns = () => {
@@ -717,6 +776,9 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
         selectedIndex={valueColumnIndex}
         onSelect={handleValueColumnChange}
         type='value'
+        allowCount={!isAggregatedData}
+        disabled={isAggregatedData && numberColumnCount <= 1}
+        disabledTooltip='Values are already aggregated by the query'
         showDropdown={showValueDropdown}
         setShowDropdown={setShowValueDropdown}
         buttonX={buttonX}
@@ -741,7 +803,9 @@ ChataTreemap.propTypes = {
   autoQLConfig: PropTypes.shape({}),
   initialChartControls: PropTypes.shape({
     treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
+    treemapGroupColumnNames: PropTypes.arrayOf(PropTypes.string),
     treemapValueColumnIndex: PropTypes.number,
+    treemapValueColumnName: PropTypes.string,
   }),
   onChartControlsChange: PropTypes.func,
   tooltipID: PropTypes.string,

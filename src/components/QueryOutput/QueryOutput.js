@@ -434,7 +434,13 @@ export class QueryOutput extends React.Component {
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
       treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      treemapGroupColumnNames: PropTypes.arrayOf(PropTypes.string),
       treemapValueColumnIndex: PropTypes.number,
+      treemapValueColumnName: PropTypes.string,
+      sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      sankeyPathColumnNames: PropTypes.arrayOf(PropTypes.string),
+      sankeyValueColumnIndex: PropTypes.number,
+      sankeyValueColumnName: PropTypes.string,
     }),
     onChartControlsChange: PropTypes.func,
   }

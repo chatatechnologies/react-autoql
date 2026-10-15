@@ -13,10 +13,16 @@ import {
   formatElement,
   getDataFormatting,
   getAutoQLConfig,
+  isAggregation,
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
-import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
+import {
+  SANKEY_VALUE_COUNT_SENTINEL,
+  getPersistedColumnName,
+  resolvePersistedColumnIndex,
+  resolvePersistedColumnIndices,
+} from '../chartPropHelpers'
 
 import './ChataSankeyDiagram.scss'
 
@@ -141,10 +147,32 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     targetColumnIndex: detectedTargetIndex,
     weightColumnIndex: detectedWeightIndex,
   } = useMemo(() => findNetworkColumns(props.columns || []), [props.columns])
-  const persistedPathColumnIndices = Array.isArray(props.initialChartControls?.sankeyPathColumnIndices)
-    ? props.initialChartControls.sankeyPathColumnIndices
-    : []
-  const persistedValueColumnIndex = props.initialChartControls?.sankeyValueColumnIndex
+  // Saved selections are matched by column name first, falling back to the saved index
+  const persistedPathColumnIndices = useMemo(
+    () =>
+      resolvePersistedColumnIndices({
+        names: props.initialChartControls?.sankeyPathColumnNames,
+        indices: Array.isArray(props.initialChartControls?.sankeyPathColumnIndices)
+          ? props.initialChartControls.sankeyPathColumnIndices
+          : [],
+        columns: props.columns,
+      }),
+    [
+      props.initialChartControls?.sankeyPathColumnIndices,
+      props.initialChartControls?.sankeyPathColumnNames,
+      props.columns,
+    ],
+  )
+  const persistedValueColumnIndex = resolvePersistedColumnIndex({
+    name: props.initialChartControls?.sankeyValueColumnName,
+    index: props.initialChartControls?.sankeyValueColumnIndex,
+    columns: props.columns,
+  })
+
+  // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
+  // not records - only offer it for list queries
+  const isAggregatedData = useMemo(() => isAggregation(props.columns), [props.columns])
+  const numberColumnCount = (props.columns || []).filter((col) => col?.isNumberType).length
 
   const categoricalColumnIndices = useMemo(
     () =>
@@ -182,7 +210,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     ),
   )
   const [valueColumnIndex, setValueColumnIndex] = useState(() => {
-    if (persistedValueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) {
+    if (persistedValueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL && !isAggregatedData) {
       return persistedValueColumnIndex
     }
     if (persistedValueColumnIndex >= 0 && isColumnNumberType(props.columns?.[persistedValueColumnIndex])) {
@@ -220,7 +248,10 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       return
     }
     setPathColumnIndices(nextPathColumnIndices)
-    persistSankeyControls({ sankeyPathColumnIndices: nextPathColumnIndices })
+    persistSankeyControls({
+      sankeyPathColumnIndices: nextPathColumnIndices,
+      sankeyPathColumnNames: nextPathColumnIndices.map((index) => getPersistedColumnName(index, props.columns)),
+    })
   }
 
   const handleValueColumnChange = (nextValueColumnIndex) => {
@@ -228,7 +259,10 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       return
     }
     setValueColumnIndex(nextValueColumnIndex)
-    persistSankeyControls({ sankeyValueColumnIndex: nextValueColumnIndex })
+    persistSankeyControls({
+      sankeyValueColumnIndex: nextValueColumnIndex,
+      sankeyValueColumnName: getPersistedColumnName(nextValueColumnIndex, props.columns),
+    })
   }
 
   // Same size and position as the network graph and treemap control buttons
@@ -241,6 +275,33 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
   // Keep Sankey drawing area clear of right-side controls.
   const chartRightBound = buttonStartX - 10
+
+  // When columns change (eg. a column is added and indices shift), follow the selected columns by
+  // name: translate the current indices to names using the previous columns, then find them again.
+  const prevColumnsRef = useRef(props.columns)
+  useEffect(() => {
+    const prevColumns = prevColumnsRef.current
+    prevColumnsRef.current = props.columns
+    if (prevColumns === props.columns) {
+      return
+    }
+
+    setPathColumnIndices((prev) => {
+      const next = resolvePersistedColumnIndices({
+        names: (prev || []).map((index) => getPersistedColumnName(index, prevColumns)),
+        indices: prev || [],
+        columns: props.columns,
+      })
+      return areNumberArraysEqual(prev || [], next) ? prev : next
+    })
+    setValueColumnIndex((prev) =>
+      resolvePersistedColumnIndex({
+        name: getPersistedColumnName(prev, prevColumns),
+        index: prev,
+        columns: props.columns,
+      }),
+    )
+  }, [props.columns])
 
   useEffect(() => {
     setPathColumnIndices((prev) => {
@@ -262,7 +323,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   }, [categoricalColumnIndices, detectedSourceIndex, detectedTargetIndex, persistedPathColumnIndices])
 
   useEffect(() => {
-    if (valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) return
+    if (valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL && !isAggregatedData) return
 
     const firstNumberColumnIndex = (props.columns || []).findIndex((col) => isColumnNumberType(col))
     if (
@@ -273,7 +334,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       // Auto-correct invalid value column locally without persisting (prevents dashboard update loops).
       setValueColumnIndex(firstNumberColumnIndex)
     }
-  }, [props.columns, valueColumnIndex])
+  }, [props.columns, valueColumnIndex, isAggregatedData])
 
   const processedData = useMemo(() => {
     const { data, columns } = props
@@ -427,14 +488,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       hasCircularLinks: circularCount > 0,
       circularLinksCount: circularCount,
     }
-  }, [
-    props.data,
-    props.columns,
-    pathColumnIndices,
-    valueColumnIndex,
-    props.dataFormatting,
-    props.autoQLConfig,
-  ])
+  }, [props.data, props.columns, pathColumnIndices, valueColumnIndex, props.dataFormatting, props.autoQLConfig])
 
   useEffect(() => {
     setIsDataTruncated(processedData.isDataTruncated)
@@ -548,12 +602,15 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           height: worldHeight,
         }
 
-        const hasOverlap = labelBounds.some((other) => !(
-          bounds.x + bounds.width + padding < other.x ||
-          bounds.x > other.x + other.width + padding ||
-          bounds.y + bounds.height + padding < other.y ||
-          bounds.y > other.y + other.height + padding
-        ))
+        const hasOverlap = labelBounds.some(
+          (other) =>
+            !(
+              bounds.x + bounds.width + padding < other.x ||
+              bounds.x > other.x + other.width + padding ||
+              bounds.y + bounds.height + padding < other.y ||
+              bounds.y > other.y + other.height + padding
+            ),
+        )
 
         if (hasOverlap) {
           select(element).style('display', 'none')
@@ -946,6 +1003,9 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         selectedIndex={valueColumnIndex}
         onSelect={handleValueColumnChange}
         type='value'
+        allowCount={!isAggregatedData}
+        disabled={isAggregatedData && numberColumnCount <= 1}
+        disabledTooltip='Values are already aggregated by the query'
         showDropdown={showValueDropdown}
         setShowDropdown={setShowValueDropdown}
         buttonX={buttonStartX}
@@ -980,7 +1040,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           <MdOutlineFitScreen className='sankey-reset-zoom-button-icon' size={buttonIconSize} style={{ opacity: 0 }} />
         </g>
       </g>
-
     </g>
   )
 })

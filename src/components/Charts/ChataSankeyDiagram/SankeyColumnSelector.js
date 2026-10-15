@@ -20,6 +20,8 @@ const SankeyColumnSelector = ({
   pathLabel,
   pathIconType,
   allowCount,
+  disabled,
+  disabledTooltip,
   showDropdown,
   setShowDropdown,
   buttonY,
@@ -296,7 +298,10 @@ const SankeyColumnSelector = ({
         align='center'
         padding={5}
       >
-        <g className={`sankey-${type}-button`} transform={`translate(${buttonX}, ${buttonY})`}>
+        <g
+          className={`sankey-${type}-button${disabled ? ' sankey-button-disabled' : ''}`}
+          transform={`translate(${buttonX}, ${buttonY})`}
+        >
           <rect
             className={`sankey-${type}-button-rect`}
             width={buttonSize}
@@ -306,11 +311,13 @@ const SankeyColumnSelector = ({
             opacity={0} // CSS opacity: 1 !important keeps it visible in browser; opacity=0 hides it in PNG export
             onClick={(e) => {
               e.stopPropagation()
-              setShowDropdown(!showDropdown)
+              if (!disabled) {
+                setShowDropdown(!showDropdown)
+              }
             }}
             data-tooltip-id={chartTooltipID}
-            data-tooltip-html={tooltipHtml}
-            style={{ cursor: 'pointer' }}
+            data-tooltip-html={disabled && disabledTooltip ? disabledTooltip : tooltipHtml}
+            style={{ cursor: disabled ? 'default' : 'pointer' }}
           />
           {type === 'value' ? (
             <text
@@ -360,6 +367,8 @@ SankeyColumnSelector.propTypes = {
   pathLabel: PropTypes.string,
   pathIconType: PropTypes.string,
   allowCount: PropTypes.bool,
+  disabled: PropTypes.bool,
+  disabledTooltip: PropTypes.string,
   showDropdown: PropTypes.bool.isRequired,
   setShowDropdown: PropTypes.func.isRequired,
   buttonY: PropTypes.number,
@@ -380,6 +389,8 @@ SankeyColumnSelector.defaultProps = {
   pathLabel: 'Path',
   pathIconType: 'sankey',
   allowCount: true,
+  disabled: false,
+  disabledTooltip: undefined,
   buttonY: 10,
   buttonX: 10,
   buttonSize: 35,
