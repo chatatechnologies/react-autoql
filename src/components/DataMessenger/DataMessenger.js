@@ -127,6 +127,7 @@ export class DataMessenger extends React.Component {
     // UI
     /** Which edge of the screen the drawer opens from: `'right'`, `'left'`, `'top'` or `'bottom'`. */
     placement: PropTypes.string,
+    /** @internal Has no effect: the drawer always closes when the backdrop is clicked. */
     maskClosable: PropTypes.bool,
     /** Width of the drawer in pixels or as a CSS value, used when it opens from the left or right. On phones the drawer is always full width. Only read when the component mounts. */
     width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -140,6 +141,7 @@ export class DataMessenger extends React.Component {
     handleStyles: PropTypes.shape({}),
     /** Pushes the rest of the page aside when the drawer opens, instead of covering it. */
     shiftScreen: PropTypes.bool,
+    /** @internal Has no effect: never read. */
     userDisplayName: PropTypes.string,
     /** Clears the conversation each time the drawer is closed. */
     clearOnClose: PropTypes.bool,
@@ -217,7 +219,9 @@ export class DataMessenger extends React.Component {
     defaultTab: PropTypes.string,
     /** Shows grouped results, such as totals by month or by category, as a chart instead of a table. */
     autoChartAggregations: PropTypes.bool,
+    /** @internal Has no effect here. The filter lock is turned on with autoQLConfig.enableFilterLocking. */
     enableFilterLocking: PropTypes.bool,
+    /** @internal Has no effect: never read. */
     enableQueryQuickStartTopics: PropTypes.bool,
     /** @internal */
     enableQueryInputTopics: PropTypes.bool,
@@ -238,11 +242,9 @@ export class DataMessenger extends React.Component {
     /** @internal */
     enableFollowOnQuery: PropTypes.bool,
     /**
-     * @internal
-     * Splits the Data Messenger chat into user sessions: a tab bar with a close
-     * button per tab and a "+" for a new one. Each session gets its own UUID,
-     * sent along with the queries the user types in it. Default false — no tabs
-     * and no session UUID, exactly as before.
+     * Splits the chat into tabs, one per conversation. Users add a tab with the + button (up to 8) and close
+     * tabs with ×. Each tab keeps its own answers, and the questions asked in a tab are sent with that tab's
+     * session ID. The header's clear-conversation button is hidden while tabs are on.
      */
     enableSessions: PropTypes.bool,
 
@@ -264,6 +266,7 @@ export class DataMessenger extends React.Component {
     onNewNotification: PropTypes.func,
     /** @internal */
     onNotificationCount: PropTypes.func,
+    /** @internal Has no effect: never called. */
     onVisibleChange: PropTypes.func,
     /** Called when something goes wrong, so you can show your own message. Receives either a message string or an Error object. */
     onErrorCallback: PropTypes.func,
@@ -279,6 +282,8 @@ export class DataMessenger extends React.Component {
     queryItemActionName: PropTypes.string,
     /** @internal */
     mobileActivePage: PropTypes.string,
+    /** @internal Has no effect: has a default value but is never read. */
+    isVisible: PropTypes.bool,
   }
 
   static defaultProps = {
