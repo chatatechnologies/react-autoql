@@ -41,3 +41,23 @@ export { ReportBuilder } from './components/ReportBuilder'
 export { createEmptyReport, REPORT_SCHEMA_VERSION } from './components/ReportBuilder/model/reportSchema'
 export { captureQuestion } from './components/ReportBuilder/run/captureRun'
 export { rowsForCapture } from './components/ReportBuilder/model/capture'
+export {
+  REPORT_ERROR_CODES,
+  ReportsApiError,
+  appendReportBlock,
+  createReport,
+  createReportFolder,
+  createReportTag,
+  deleteReport,
+  deleteReportFolder,
+  deleteReports,
+  deleteReportTag,
+  fetchReport,
+  fetchReportFolders,
+  fetchReports,
+  fetchReportTags,
+  organizeReports,
+  renameReportFolder,
+  saveReport,
+  updateReportTag,
+} from './components/ReportBuilder/run/reportsApi'

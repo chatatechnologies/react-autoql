@@ -710,6 +710,121 @@ export declare function captureQuestion(options: {
 // else 25.
 export declare function rowsForCapture(capture: ReportCapture | null | undefined): ReportTableRows
 
+// ─── Reports, kept by AutoQL ─────────────────────────────────────────────────
+// A user's own reports on the token's data source, through AutoQL's report service
+// (/autoql/api/v1/reports), with their folders and tags.
+
+// The service's message ids (the number its reference_id ends with) by name.
+export declare const REPORT_ERROR_CODES: Record<number, string>
+
+export declare class ReportsApiError extends Error {
+  // 0 when the service couldn't be reached.
+  status: number
+  // The message id's name, e.g. 'REPORT_VERSION_CONFLICT', when the service sent one.
+  code?: string
+  messageId?: number
+  referenceId?: string
+  // The answer's data in camelCase: { version, updatedAt } on a version conflict, { reason } on an invalid
+  // report or block, { id } of the folder or tag that holds a name.
+  details?: Record<string, any>
+}
+
+export interface StoredReportSummary {
+  id: string
+  title: string
+  sizeBytes: number
+  version: number
+  folderId: string | null
+  tagIds: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface StoredReport extends StoredReportSummary {
+  projectId: string
+  report: Report
+}
+
+export interface StoredReportStamp {
+  id: string
+  version: number
+  updatedAt: string
+}
+
+export interface ReportFolder {
+  id: string
+  name: string
+  reportCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReportTag extends ReportFolder {
+  color: string
+}
+
+export interface ReportPlacement {
+  id: string
+  folderId: string | null
+  tagIds: string[]
+}
+
+interface ReportsCall {
+  authentication: Authentication
+}
+
+export declare function fetchReports(
+  options: ReportsCall & {
+    page?: number
+    pageSize?: number
+    q?: string
+    folderId?: string
+    tagIds?: string[]
+    orderBy?: 'updated_at' | 'created_at' | 'title'
+    order?: 'asc' | 'desc'
+    signal?: AbortSignal
+  },
+): Promise<{ reports: StoredReportSummary[]; page: number; pageSize: number; totalPages: number; totalItems: number }>
+export declare function fetchReport(options: ReportsCall & { id: string; signal?: AbortSignal }): Promise<StoredReport>
+export declare function createReport(
+  options: ReportsCall & { id: string; report: Report; folderId?: string; tagIds?: string[]; keepalive?: boolean },
+): Promise<StoredReport & { created: boolean }>
+export declare function saveReport(
+  options: ReportsCall & { id: string; report: Report; version: number; keepalive?: boolean },
+): Promise<StoredReportStamp>
+export declare function deleteReport(options: ReportsCall & { id: string }): Promise<void>
+export declare function deleteReports(
+  options: ReportsCall & { ids: string[] },
+): Promise<{ deleted: string[]; notFound: string[] }>
+export declare function appendReportBlock(
+  options: ReportsCall & { id: string; block: ReportBlock },
+): Promise<StoredReportStamp & { appended: boolean }>
+export declare function organizeReports(
+  options: ReportsCall & {
+    reportIds: string[]
+    // null unfiles; leaving it out leaves the reports' folders as they are.
+    folderId?: string | null
+    addTagIds?: string[]
+    removeTagIds?: string[]
+  },
+): Promise<ReportPlacement[]>
+
+export declare function fetchReportFolders(options: ReportsCall & { signal?: AbortSignal }): Promise<ReportFolder[]>
+export declare function createReportFolder(
+  options: ReportsCall & { id: string; name: string },
+): Promise<ReportFolder & { created: boolean }>
+export declare function renameReportFolder(options: ReportsCall & { id: string; name: string }): Promise<ReportFolder>
+export declare function deleteReportFolder(options: ReportsCall & { id: string }): Promise<void>
+
+export declare function fetchReportTags(options: ReportsCall & { signal?: AbortSignal }): Promise<ReportTag[]>
+export declare function createReportTag(
+  options: ReportsCall & { id: string; name: string; color: string },
+): Promise<ReportTag & { created: boolean }>
+export declare function updateReportTag(
+  options: ReportsCall & { id: string; name?: string; color?: string },
+): Promise<ReportTag>
+export declare function deleteReportTag(options: ReportsCall & { id: string }): Promise<void>
+
 // ─── Miscellaneous components ─────────────────────────────────────────────────
 
 export declare const Icon: React.FC<{ type: string; className?: string; [key: string]: any }>
