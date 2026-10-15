@@ -1,6 +1,6 @@
 import React from 'react'
 import { deepEqual } from 'autoql-fe-utils'
-import { TYPEFACES } from '../constants'
+import { paperFontStyle, sameBrandFonts } from '../model/branding'
 import { getPageGeometry } from '../layout/pageGeometry'
 import { LayoutMeasurer, measureContentPages } from './preview/PrintPreview'
 
@@ -45,13 +45,14 @@ export class EditorPagination extends React.Component {
     return true
   }
 
-  // The measurer only changes with the report.
+  // The measurer only changes with the report, and with the organisation's fonts.
   shouldComponentUpdate(nextProps, nextState) {
     return (
       nextState.active !== this.state.active ||
       nextProps.report !== this.props.report ||
       nextProps.views !== this.props.views ||
       nextProps.canRun !== this.props.canRun ||
+      !sameBrandFonts(nextProps.branding, this.props.branding) ||
       !deepEqual(nextProps.dataFormatting, this.props.dataFormatting)
     )
   }
@@ -63,6 +64,7 @@ export class EditorPagination extends React.Component {
     if (
       prevProps.report !== this.props.report ||
       prevProps.views !== this.props.views ||
+      !sameBrandFonts(prevProps.branding, this.props.branding) ||
       !deepEqual(prevProps.dataFormatting, this.props.dataFormatting)
     ) {
       this.schedule(this.props.debounceMs)
@@ -86,6 +88,7 @@ export class EditorPagination extends React.Component {
     const pages = await measureContentPages({
       report: this.props.report,
       views: this.props.views,
+      branding: this.props.branding,
       measurer: () => this.measurerRef.current,
       isCurrent: () => this.mounted && token === this.token,
       estimate: false,
@@ -96,7 +99,7 @@ export class EditorPagination extends React.Component {
   }
 
   render() {
-    const { report, views, dataFormatting, authentication, autoQLConfig, canRun } = this.props
+    const { report, views, branding, dataFormatting, authentication, autoQLConfig, canRun } = this.props
     if (!this.state.active) {
       return <span ref={this.anchorRef} hidden />
     }
@@ -106,7 +109,7 @@ export class EditorPagination extends React.Component {
         blocks={report.blocks}
         views={views}
         geometry={getPageGeometry(report.page)}
-        fontFamily={TYPEFACES[report.page.typeface]?.stack || undefined}
+        fontStyle={paperFontStyle(report.page, branding)}
         paperProps={{
           showInterpretation: report.page.showInterpretation,
           dataFormatting,

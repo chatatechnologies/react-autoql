@@ -1,7 +1,8 @@
 import React from 'react'
 import { deepEqual } from 'autoql-fe-utils'
-import { RB, TYPEFACES } from '../../constants'
+import { RB } from '../../constants'
 import { STRINGS } from '../../strings'
+import { paperFontFamilies, paperFontStyle, sameBrandFonts } from '../../model/branding'
 import { getPageGeometry } from '../../layout/pageGeometry'
 import {
   buildLayoutItems,
@@ -45,7 +46,7 @@ const Cell = ({ block, children, measureId, split }) => (
 // Every printable block, laid out as a page lays it out, for measuring. Charts are empty boxes of their
 // fixed height, so measuring never draws a chart. The editor measures with it too (EditorPagination).
 export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
-  { blocks, views, geometry, fontFamily, paperProps },
+  { blocks, views, geometry, fontStyle, paperProps },
   ref,
 ) {
   const rows = groupIntoRows(blocks.filter(isPrintable))
@@ -54,7 +55,7 @@ export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
       ref={ref}
       className={`${RB}-paper ${RB}-measurer`}
       aria-hidden='true'
-      style={{ width: geometry.contentWidthPx, fontFamily }}
+      style={{ width: geometry.contentWidthPx, ...fontStyle }}
     >
       {rows.map((row) => (
         <div key={row[0].id} className={`${RB}-row`} data-count={row.length}>
@@ -78,12 +79,19 @@ export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
 })
 
 // Lays the report's printable blocks onto content pages from the measurer's heights, once the fonts it
-// uses have loaded. `measurer` reads the measurer's element; `isCurrent` is asked after the wait, and a
-// null result means a newer layout took over. With `estimate` false, there's no result where nothing can
-// be measured (jsdom, a hidden builder) rather than one from estimated heights.
-export const measureContentPages = async ({ report, views, measurer, isCurrent = () => true, estimate = true }) => {
+// uses (the organisation's among them, from `branding`) have loaded. `measurer` reads the measurer's element;
+// `isCurrent` is asked after the wait, and a null result means a newer layout took over. With `estimate` false,
+// there's no result where nothing can be measured (jsdom, a hidden builder) rather than one from estimated heights.
+export const measureContentPages = async ({
+  report,
+  views,
+  branding,
+  measurer,
+  isCurrent = () => true,
+  estimate = true,
+}) => {
   const geometry = getPageGeometry(report.page)
-  await loadFontStack(TYPEFACES[report.page.typeface]?.stack || undefined)
+  await Promise.all(paperFontFamilies(report.page, branding).map((stack) => loadFontStack(stack)))
   await waitForFonts()
   await nextFrame()
   if (!isCurrent()) return null
@@ -121,6 +129,7 @@ export class PrintPreview extends React.Component {
     if (
       prevProps.report !== this.props.report ||
       prevProps.views !== this.props.views ||
+      !sameBrandFonts(prevProps.branding, this.props.branding) ||
       !deepEqual(prevProps.dataFormatting, this.props.dataFormatting)
     ) {
       this.layout()
@@ -134,7 +143,7 @@ export class PrintPreview extends React.Component {
 
   getGeometry = () => getPageGeometry(this.props.report.page)
 
-  getFontFamily = () => TYPEFACES[this.props.report.page.typeface]?.stack || undefined
+  getFontStyle = () => paperFontStyle(this.props.report.page, this.props.branding)
 
   // Resolves once the latest layout has been drawn as pages.
   whenReady = () => this.readyPromise
@@ -152,6 +161,7 @@ export class PrintPreview extends React.Component {
       const contentPages = await measureContentPages({
         report: this.props.report,
         views: this.props.views,
+        branding: this.props.branding,
         measurer: () => this.measurerRef.current,
         isCurrent: () => this.mounted && token === this.layoutToken,
       })
@@ -211,7 +221,7 @@ export class PrintPreview extends React.Component {
             width: inches(geometry.widthIn),
             height: inches(geometry.heightIn),
             padding: inches(geometry.marginIn),
-            fontFamily: this.getFontFamily(),
+            ...this.getFontStyle(),
           }}
         >
           {showHeader ? (
@@ -350,7 +360,7 @@ export class PrintPreview extends React.Component {
             blocks={report.blocks}
             views={views}
             geometry={geometry}
-            fontFamily={this.getFontFamily()}
+            fontStyle={this.getFontStyle()}
             paperProps={{
               showInterpretation: report.page.showInterpretation,
               dataFormatting,

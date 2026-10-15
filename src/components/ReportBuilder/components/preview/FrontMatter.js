@@ -6,7 +6,7 @@ import { BrandMark, dataAgeText } from '../PageFurniture'
 // The cover has no running header or footer. The table of contents gets a page of its own after it.
 
 export const CoverPage = ({ title, branding, generated, dataAsOf, hasData }) => (
-  <div className={`${RB}-cover`}>
+  <div className={`${RB}-cover`} data-brand-position={branding?.position || undefined}>
     <BrandMark branding={branding} size='large' />
     <div className={`${RB}-cover-middle`}>
       <div className={`${RB}-cover-title`} role='heading' aria-level={1}>

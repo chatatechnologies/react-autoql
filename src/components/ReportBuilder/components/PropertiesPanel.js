@@ -29,10 +29,22 @@ import { isMacKeyboard } from '../keyboard'
 const P = STRINGS.panel
 
 const TYPEFACE_OPTIONS = Object.keys(TYPEFACES).map((key) => [key, TYPEFACES[key].label])
+// Where the organisation has fonts of its own, the theme's typeface is them.
+const BRAND_TYPEFACE_OPTIONS = TYPEFACE_OPTIONS.map(([key, label]) => [
+  key,
+  key === 'theme' ? P.themeBrandFonts : label,
+])
 const SIZE_OPTIONS = [['', P.default], ...Object.keys(TEXT_SIZES).map((key) => [key, TEXT_SIZES[key].label])]
 const WEIGHT_OPTIONS = [['', P.default], ...Object.keys(TEXT_WEIGHTS).map((key) => [key, TEXT_WEIGHTS[key].label])]
 
-const PageSetup = ({ page, onPageChange }) => (
+// The organisation's colours first (Branding), then the product's that aren't among them.
+const withBrandSwatches = (swatches, branding) => {
+  const brand = (branding?.colors || []).map((hex, i) => [hex, P.brandSwatch(i + 1, hex)])
+  const taken = new Set(brand.map(([hex]) => hex.toLowerCase()))
+  return [...brand, ...swatches.filter(([hex]) => !taken.has(hex.toLowerCase()))]
+}
+
+const PageSetup = ({ page, onPageChange, brandFonts }) => (
   <>
     <SectionLabel>{P.pageSetup}</SectionLabel>
     <Segmented
@@ -50,7 +62,7 @@ const PageSetup = ({ page, onPageChange }) => (
     <SelectField
       label={P.typeface}
       value={page.typeface}
-      options={TYPEFACE_OPTIONS}
+      options={brandFonts ? BRAND_TYPEFACE_OPTIONS : TYPEFACE_OPTIONS}
       onChange={(typeface) => onPageChange({ typeface })}
     />
     <Note>{P.typefaceNote}</Note>
@@ -98,7 +110,7 @@ const WidthField = ({ block, onBlockChange }) => (
   />
 )
 
-const TextStyle = ({ block, onBlockChange, onStyleChange, onStyleReset }) => {
+const TextStyle = ({ block, branding, onBlockChange, onStyleChange, onStyleReset }) => {
   const style = block.style || {}
   const change = (patch) => onStyleChange(block.id, patch)
   return (
@@ -128,7 +140,7 @@ const TextStyle = ({ block, onBlockChange, onStyleChange, onStyleReset }) => {
       <Swatches
         label={P.textColour}
         value={style.color}
-        swatches={INK_SWATCHES}
+        swatches={withBrandSwatches(INK_SWATCHES, branding)}
         onChange={(color) => change({ color })}
       />
       <Divider />
@@ -143,7 +155,7 @@ const TextStyle = ({ block, onBlockChange, onStyleChange, onStyleReset }) => {
       <Swatches
         label={P.background}
         value={style.background}
-        swatches={BG_SWATCHES}
+        swatches={withBrandSwatches(BG_SWATCHES, branding)}
         noneLabel={P.none}
         onChange={(background) => change({ background })}
       />
@@ -604,7 +616,13 @@ export const PropertiesPanel = (props) => {
   const { report, block, view, onPageChange } = props
   let content
   if (!block) {
-    content = <PageSetup page={report.page} onPageChange={onPageChange} />
+    content = (
+      <PageSetup
+        page={report.page}
+        onPageChange={onPageChange}
+        brandFonts={!!(props.branding?.headingFont || props.branding?.bodyFont)}
+      />
+    )
   } else {
     const info = BLOCK_INFO[block.type]
     content = (

@@ -65,6 +65,14 @@ const PATHS = {
     </>
   ),
   warning: <path d='M8 2.5l6 10.5H2zM8 6.5v3M8 11.2v.3' />,
+  // The report options menu: three dots, one above the other.
+  more: (
+    <>
+      <circle cx='8' cy='3.5' r='1.15' fill='currentColor' stroke='none' />
+      <circle cx='8' cy='8' r='1.15' fill='currentColor' stroke='none' />
+      <circle cx='8' cy='12.5' r='1.15' fill='currentColor' stroke='none' />
+    </>
+  ),
 }
 
 export const Icon = ({ name, size = 15, title }) => (

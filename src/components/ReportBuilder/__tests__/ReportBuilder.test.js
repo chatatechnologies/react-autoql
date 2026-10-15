@@ -4,6 +4,7 @@ import { fetchLLMSummary, runQuery } from 'autoql-fe-utils'
 import { ReportBuilder } from '..'
 import { createEmptyReport } from '../model/reportSchema'
 import { printFrame } from '../print/printFrame'
+import { fetchBranding, saveBranding } from '../run/brandingApi'
 
 jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
@@ -21,6 +22,9 @@ jest.mock('../../QueryOutput', () => {
   }
   return { QueryOutput, __calls: calls }
 })
+
+// The organisation's branding, as AutoQL has it (enableBranding).
+jest.mock('../run/brandingApi', () => ({ fetchBranding: jest.fn(), saveBranding: jest.fn() }))
 
 jest.mock('../print/printFrame', () => {
   const actual = jest.requireActual('../print/printFrame')
@@ -1684,6 +1688,261 @@ describe('the host’s toolbar status (toolbarStatus)', () => {
     fireEvent.click(preview)
     expect(within(toolbarOf(container)).getByRole('button', { name: 'Saved' })).toBeTruthy()
     expect(screen.getByTestId('report-builder-close-preview')).toBeTruthy()
+  })
+})
+
+describe('the report options menu, and the organisation’s branding (enableBranding)', () => {
+  const PANEL_KEY = 'react-autoql-report-builder-panel-open'
+  const HOST = { name: 'Acme Wealth', color: '#26a7df' }
+  const FONT = 'data:font/woff2;base64,d09GMgABAAAAAA=='
+  const LOGO = 'data:image/png;base64,iVBORw0KGgo='
+  const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="10"/>'
+  const options = () => screen.getByTestId('report-builder-options')
+  const menuItems = () => screen.getAllByRole('menuitem').map((item) => item.textContent)
+  // A host that lets this user change the branding, with what the organisation set in AutoQL (fetchBranding).
+  const setupBranding = async (org = {}, props = {}, report = createEmptyReport({ title: 'Q3 review' })) => {
+    fetchBranding.mockResolvedValue(org)
+    const utils = setup(report, { branding: HOST, enableBranding: true, canEditBranding: true, ...props })
+    await act(async () => {})
+    return utils
+  }
+  const openBranding = () => {
+    fireEvent.click(options())
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Branding…' }))
+    return screen.getByTestId('report-builder-branding')
+  }
+  const statusOf = (dialog) => within(dialog).getByTestId('report-builder-branding-status').textContent
+  const pageHeader = (container) =>
+    container.querySelector('.react-autoql-report-builder-sheet .react-autoql-report-builder-running-header')
+  const upload = (dialog, testId, file) =>
+    fireEvent.change(within(dialog).getByTestId(`${testId}-file`), { target: { files: [file] } })
+
+  beforeEach(() => {
+    fetchBranding.mockReset()
+    saveBranding.mockReset()
+  })
+  afterEach(() => window.localStorage.removeItem(PANEL_KEY))
+
+  it('offers Page setup, and Branding… only where AutoQL answers and the host lets this user change it', async () => {
+    const { unmount } = setup()
+    fireEvent.click(options())
+    expect(menuItems()).toEqual(['Page setup'])
+    expect(options().getAttribute('aria-expanded')).toBe('true')
+    // Escape closes only the menu, and focus goes back to its button.
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(document.activeElement).toBe(options())
+    expect(fetchBranding).not.toHaveBeenCalled()
+    unmount()
+
+    let view = await setupBranding({}, { canEditBranding: false })
+    fireEvent.click(options())
+    expect(menuItems()).toEqual(['Page setup'])
+    view.unmount()
+
+    fetchBranding.mockRejectedValue({ response: { status: 404 } })
+    view = setup(createEmptyReport(), { branding: HOST, enableBranding: true, canEditBranding: true })
+    await act(async () => {})
+    fireEvent.click(options())
+    expect(menuItems()).toEqual(['Page setup'])
+    view.unmount()
+
+    await setupBranding()
+    expect(fetchBranding).toHaveBeenLastCalledWith({ authentication: AUTH })
+    fireEvent.click(options())
+    expect(menuItems()).toEqual(['Page setup', 'Branding…'])
+    expect(document.activeElement.textContent).toBe('Page setup')
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' })
+    expect(document.activeElement.textContent).toBe('Branding…')
+    fireEvent.mouseDown(document.body)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('shows Page setup in the panel with nothing selected, showing a hidden panel', () => {
+    setup(createEmptyReport({ blocks: [{ id: 'h', type: 'heading', text: 'Revenue', level: 2, width: 'full' }] }))
+    selectBlock('Heading')
+    fireEvent.click(screen.getByTestId('report-builder-panel-toggle'))
+    expect(screen.queryByTestId('report-builder-panel')).toBeNull()
+
+    fireEvent.click(options())
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Page setup' }))
+    expect(panel().getAttribute('aria-label')).toBe('Page setup')
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(window.localStorage.getItem(PANEL_KEY)).toBeNull()
+  })
+
+  it('has no menu in the preview', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+    expect(screen.queryByTestId('report-builder-options')).toBeNull()
+  })
+
+  it('draws what the organisation set over the host’s branding, and offers its colours in the pickers', async () => {
+    const report = createEmptyReport({
+      title: 'Q3 review',
+      blocks: [{ id: 'h', type: 'heading', text: 'Revenue', level: 2, width: 'full' }],
+    })
+    const { container } = await setupBranding(
+      { wordmarkUrl: LOGO, position: 'center', colors: ['#0bbfad', '#1b4d8f'] },
+      {},
+      report,
+    )
+    const head = pageHeader(container)
+    expect(head.getAttribute('data-brand-position')).toBe('center')
+    // The wordmark takes the name's place, and with no logo there's no badge either.
+    expect(within(head).getByRole('img', { name: 'Acme Wealth' }).getAttribute('src')).toBe(LOGO)
+    expect(head.querySelector('.react-autoql-report-builder-brand-chip')).toBeNull()
+
+    selectBlock('Heading')
+    expect(within(panel()).getAllByRole('button', { name: 'Brand colour 1 (#0BBFAD)' })).toHaveLength(2)
+    expect(within(panel()).getAllByRole('button', { name: 'Brand colour 2 (#1B4D8F)' })).toHaveLength(2)
+  })
+
+  it('edits the branding with the page’s own header as its sample, and saves the whole of it to AutoQL', async () => {
+    let finishSave
+    saveBranding.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishSave = resolve
+        }),
+    )
+    const { container } = await setupBranding()
+    const dialog = openBranding()
+    expect(within(dialog).getByRole('heading', { name: 'Branding' })).toBeTruthy()
+    const name = within(dialog).getByLabelText('Organisation name')
+    expect(document.activeElement).toBe(name)
+    expect(name.value).toBe('Acme Wealth')
+    expect(statusOf(dialog)).toBe('Saved for your organisation.')
+    expect(within(dialog).getByTestId('report-builder-branding-save').disabled).toBe(true)
+
+    const sample = within(dialog).getByTestId('report-builder-branding-sample')
+    expect(sample.textContent).toContain('Q3 review')
+    fireEvent.change(name, { target: { value: 'Northwind Wealth ' } })
+    expect(within(sample).getByText('NW')).toBeTruthy()
+    const position = within(dialog).getByTestId('report-builder-branding-position')
+    fireEvent.click(within(position).getByRole('button', { name: 'Right' }))
+    expect(sample.querySelector('[data-brand-position]').getAttribute('data-brand-position')).toBe('right')
+
+    // A colour typed as HEX or RGB; one that can't be read holds the save.
+    fireEvent.click(within(dialog).getByTestId('report-builder-branding-add-colour'))
+    fireEvent.change(within(dialog).getByLabelText('Brand colour 1'), { target: { value: 'teal' } })
+    expect(within(dialog).getByText('Use HEX, like #1B4D8F, or RGB, like 27, 77, 143.')).toBeTruthy()
+    expect(within(dialog).getByTestId('report-builder-branding-save').disabled).toBe(true)
+    fireEvent.change(within(dialog).getByLabelText('Brand colour 1'), { target: { value: 'rgb(27, 77, 143)' } })
+    expect(within(dialog).getByLabelText('Pick brand colour 1').value).toBe('#1b4d8f')
+    expect(statusOf(dialog)).toBe('Unsaved changes.')
+
+    fireEvent.click(within(dialog).getByTestId('report-builder-branding-save'))
+    expect(saveBranding).toHaveBeenCalledWith({
+      authentication: AUTH,
+      branding: { name: 'Northwind Wealth', position: 'right', colors: ['#1b4d8f'] },
+    })
+    expect(within(dialog).getByTestId('report-builder-branding-save').textContent).toBe('Saving…')
+    await act(async () => finishSave({ name: 'Northwind Wealth', position: 'right', colors: ['#1b4d8f'] }))
+    expect(screen.queryByTestId('report-builder-branding')).toBeNull()
+    expect(document.activeElement).toBe(options())
+    // The pages take what was saved.
+    expect(pageHeader(container).getAttribute('data-brand-position')).toBe('right')
+    expect(within(pageHeader(container)).getByText('Northwind Wealth')).toBeTruthy()
+  })
+
+  it('stays open with what was typed, and says so, when the save fails', async () => {
+    saveBranding.mockRejectedValue(new Error('403'))
+    await setupBranding()
+    const dialog = openBranding()
+    fireEvent.change(within(dialog).getByLabelText('Organisation name'), { target: { value: 'Acme' } })
+    await act(async () => {
+      fireEvent.click(within(dialog).getByTestId('report-builder-branding-save'))
+    })
+    expect(statusOf(dialog)).toBe('Your branding wasn’t saved. Try again.')
+    expect(within(dialog).getByLabelText('Organisation name').value).toBe('Acme')
+    expect(within(dialog).getByTestId('report-builder-branding-save').disabled).toBe(false)
+  })
+
+  it('reads a logo, a wordmark and fonts, and turns away files it can’t use', async () => {
+    saveBranding.mockResolvedValue({})
+    await setupBranding()
+    const dialog = openBranding()
+
+    upload(dialog, 'report-builder-branding-logo', new File(['GIF89a'], 'logo.gif', { type: 'image/gif' }))
+    expect(await within(dialog).findByText('Use a PNG, JPEG, SVG or WebP image.')).toBeTruthy()
+    const big = new File([new Uint8Array(256 * 1024 + 1)], 'big.png', { type: 'image/png' })
+    upload(dialog, 'report-builder-branding-logo', big)
+    expect(await within(dialog).findByText('That image is 257 KB. Use one of 256 KB or less.')).toBeTruthy()
+    upload(dialog, 'report-builder-branding-logo', new File([SVG], 'mark.svg', { type: 'image/svg+xml' }))
+    const logo = await within(dialog).findByTestId('report-builder-branding-logo-image')
+    upload(dialog, 'report-builder-branding-wordmark', new File([SVG], 'name.svg', { type: 'image/svg+xml' }))
+    const wordmark = await within(dialog).findByTestId('report-builder-branding-wordmark-image')
+    // In the header the logo takes the badge's place, and the wordmark the name's.
+    const sample = within(dialog).getByTestId('report-builder-branding-sample')
+    expect(sample.querySelector('.react-autoql-report-builder-brand-logo').getAttribute('src')).toBe(
+      logo.getAttribute('src'),
+    )
+    expect(within(sample).getByRole('img', { name: 'Acme Wealth' }).getAttribute('src')).toBe(
+      wordmark.getAttribute('src'),
+    )
+    expect(within(sample).queryByText('Acme Wealth')).toBeNull()
+
+    upload(dialog, 'report-builder-branding-heading-font', new File(['x'], 'Acme.png', { type: 'image/png' }))
+    expect(await within(dialog).findByText('Use a WOFF2, WOFF, TTF or OTF font file.')).toBeTruthy()
+    const bigFont = new File([new Uint8Array(500 * 1024 + 1)], 'Big.woff2', { type: '' })
+    upload(dialog, 'report-builder-branding-body-font', bigFont)
+    expect(await within(dialog).findByText('That font is 501 KB. Use one of 500 KB or less.')).toBeTruthy()
+    upload(dialog, 'report-builder-branding-heading-font', new File(['wOF2font'], 'Acme-Sans_Bold.woff2', { type: '' }))
+    expect(await within(dialog).findByText('Acme Sans Bold')).toBeTruthy()
+    // Previewed under families of the dialog's own, so the pages keep theirs until it's saved.
+    expect(dialog.querySelector('style[data-report-brand-fonts]').textContent).toContain(
+      "font-family:'react-autoql-brand-heading-draft';src:url(\"data:font/woff2;base64,",
+    )
+
+    fireEvent.click(within(dialog).getByTestId('report-builder-branding-save'))
+    expect(saveBranding.mock.calls[0][0].branding).toEqual({
+      name: 'Acme Wealth',
+      position: 'left',
+      colors: [],
+      logoUrl: logo.getAttribute('src'),
+      wordmarkUrl: wordmark.getAttribute('src'),
+      headingFont: { name: 'Acme Sans Bold', url: expect.stringMatching(/^data:font\/woff2;base64,/) },
+    })
+  })
+
+  it('sets reports on the theme’s typeface in the organisation’s fonts, and a chosen typeface as it is', async () => {
+    const { container } = await setupBranding({
+      headingFont: { name: 'Acme Serif', url: FONT },
+      bodyFont: { name: 'Acme Sans', url: FONT },
+    })
+    const css = container.querySelector('style[data-report-brand-fonts]').textContent
+    expect(css).toContain("font-family:'react-autoql-brand-heading'")
+    expect(css).toContain("font-family:'react-autoql-brand-body'")
+    const sheet = container.querySelector('.react-autoql-report-builder-sheet')
+    expect(sheet.style.getPropertyValue('--react-autoql-report-builder-body-font')).toMatch(
+      /^'react-autoql-brand-body'/,
+    )
+    const typeface = within(panel()).getByLabelText('Typeface')
+    expect(within(typeface).getByRole('option', { name: 'Theme default (brand fonts)' }).selected).toBe(true)
+
+    fireEvent.change(typeface, { target: { value: 'newsreader' } })
+    expect(sheet.style.getPropertyValue('--react-autoql-report-builder-body-font')).toBe('')
+    expect(sheet.style.fontFamily).toContain('Newsreader')
+  })
+
+  it('removes a logo, puts back what was saved with Discard, and closes on Escape', async () => {
+    await setupBranding({ logoUrl: LOGO })
+    const dialog = openBranding()
+    fireEvent.click(within(dialog).getByTestId('report-builder-branding-logo-remove'))
+    expect(within(dialog).queryByTestId('report-builder-branding-logo-image')).toBeNull()
+    fireEvent.change(within(dialog).getByLabelText('Organisation name'), { target: { value: ' ' } })
+    expect(within(dialog).getByText('Add your organisation’s name.')).toBeTruthy()
+    expect(within(dialog).getByTestId('report-builder-branding-save').disabled).toBe(true)
+
+    fireEvent.click(within(dialog).getByTestId('report-builder-branding-discard'))
+    expect(within(dialog).getByLabelText('Organisation name').value).toBe('Acme Wealth')
+    expect(within(dialog).getByTestId('report-builder-branding-logo-image')).toBeTruthy()
+    expect(within(dialog).getByTestId('report-builder-branding-discard').disabled).toBe(true)
+
+    fireEvent.keyDown(within(dialog).getByLabelText('Organisation name'), { key: 'Escape' })
+    expect(screen.queryByTestId('report-builder-branding')).toBeNull()
+    expect(saveBranding).not.toHaveBeenCalled()
   })
 })
 

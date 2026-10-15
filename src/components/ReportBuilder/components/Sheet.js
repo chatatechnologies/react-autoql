@@ -1,5 +1,6 @@
 import React from 'react'
-import { BLOCK_INFO, RB, TYPEFACES } from '../constants'
+import { BLOCK_INFO, RB } from '../constants'
+import { paperFontStyle } from '../model/branding'
 import { STRINGS } from '../strings'
 import { groupIntoRows } from '../layout/paginate'
 import { Icon } from './icons'
@@ -287,7 +288,7 @@ export class Sheet extends React.Component {
     } = this.props
     const { fills, plates } = this.state
     const { page, blocks } = report
-    const stack = TYPEFACES[page.typeface]?.stack
+    const fontStyle = paperFontStyle(page, branding)
     const note = frontMatterNote(page)
     const rows = groupIntoRows(blocks)
     const lastIndex = blocks.length - 1
@@ -323,7 +324,7 @@ export class Sheet extends React.Component {
         data-paged={paged || undefined}
         data-plated={plated || undefined}
         // Its true width in either orientation; the builder's zoom (ZoomFrame) fits it to the canvas.
-        style={{ width: `${geometry.widthIn}in`, padding: `${geometry.marginIn}in`, fontFamily: stack || undefined }}
+        style={{ width: `${geometry.widthIn}in`, padding: `${geometry.marginIn}in`, ...fontStyle }}
       >
         {plated
           ? plates.map((plate, index) => (

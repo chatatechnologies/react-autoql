@@ -594,10 +594,27 @@ export interface ReportDashboard {
   slicers?: Array<{ type?: string; data: any }>
 }
 
+// A font the organisation uploaded: its name as shown, and the file as a data: URL.
+export interface ReportBrandFont {
+  name?: string
+  url: string
+}
+
 export interface ReportBranding {
   name?: string
+  // The organisation's mark (it takes the place of the initials badge) and its name set as an image (it takes
+  // the place of the name); URLs, or data: URLs as uploaded.
   logoUrl?: string
+  wordmarkUrl?: string
+  // Where the logo and wordmark sit, in each page's header and on the cover. Left by default.
+  position?: 'left' | 'center' | 'right'
+  // Brand colours, '#rrggbb', up to 6: offered in the colour pickers; the first fills the initials badge.
+  colors?: string[]
+  // The initials badge's colour where there are no brand colours.
   color?: string
+  // Set in by reports on the theme's typeface, on screen and in print.
+  headingFont?: ReportBrandFont
+  bodyFont?: ReportBrandFont
 }
 
 export interface ReportRunSummary {
@@ -622,8 +639,15 @@ export interface ReportBuilderProps {
   // Controlled: the builder stores nothing itself.
   report?: Report
   onChange?: (report: Report) => void
-  // Organisation-level; there is no editor for it in the builder.
+  // The branding the pages are drawn with. With enableBranding, what the organisation set in AutoQL wins and this
+  // fills in the rest (the organisation's name, say).
   branding?: ReportBranding
+  // The organisation's branding is kept by AutoQL (/autoql/api/v1/reports/branding): the builder loads it and
+  // draws it over `branding`. Off by default.
+  enableBranding?: boolean
+  // With enableBranding: adds "Branding…" to the report options menu (⋮) once AutoQL has answered, to change the
+  // organisation's branding. Saving takes AutoQL's organisation-admin grant, so say who may.
+  canEditBranding?: boolean
   onRunComplete?: (summary: ReportRunSummary) => void
   onErrorCallback?: (error: any) => void
   getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined

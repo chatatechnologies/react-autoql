@@ -30,7 +30,11 @@ $warn-rule: #f0dcb0;
   box-sizing: border-box;
   background: #ffffff;
   color: $ink;
-  font-family: var(--react-autoql-font-family, 'Helvetica Neue', Arial, sans-serif);
+  // On the theme's typeface, the organisation's body font where it has one (model/branding.js paperFontStyle).
+  font-family: var(
+    --react-autoql-report-builder-body-font,
+    var(--react-autoql-font-family, 'Helvetica Neue', Arial, sans-serif)
+  );
   font-size: 10.5pt;
   line-height: 1.45;
   text-align: left;
@@ -121,7 +125,7 @@ $warn-rule: #f0dcb0;
     display: block;
     margin: 0;
     padding: 0;
-    font-family: inherit;
+    font-family: var(--react-autoql-report-builder-heading-font, inherit);
     font-weight: 650;
     letter-spacing: -0.01em;
     line-height: 1.25;
@@ -494,14 +498,40 @@ $warn-rule: #f0dcb0;
 
   // ---------------------------------------------------------------- page furniture
 
+  // Three slots: the organisation's lockup left, centred or right (data-brand-position), the title clear of it.
   .#{$rb}-running-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
-    gap: 12pt;
+    column-gap: 12pt;
     height: 100%;
     padding: 0 0 6pt;
     border-bottom: 0.75pt solid $rule;
+
+    > .#{$rb}-running-title {
+      grid-row: 1;
+      grid-column: 1;
+    }
+    > .#{$rb}-brand {
+      grid-row: 1;
+      grid-column: 3;
+      justify-self: end;
+      max-width: 100%;
+    }
+    &[data-brand-position='center'] > .#{$rb}-brand {
+      grid-column: 2;
+      justify-self: center;
+    }
+    &[data-brand-position='left'] {
+      > .#{$rb}-brand {
+        grid-column: 1;
+        justify-self: start;
+      }
+      > .#{$rb}-running-title {
+        grid-column: 3;
+        text-align: right;
+      }
+    }
   }
 
   .#{$rb}-running-title {
@@ -509,6 +539,7 @@ $warn-rule: #f0dcb0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    font-family: var(--react-autoql-report-builder-heading-font, inherit);
     font-size: 11pt;
     font-weight: 650;
     letter-spacing: -0.01em;
@@ -541,12 +572,19 @@ $warn-rule: #f0dcb0;
     color: $ink;
   }
 
-  .#{$rb}-brand-logo {
+  .#{$rb}-brand-logo,
+  .#{$rb}-brand-wordmark {
     display: block;
+    flex: none;
     max-width: 100%;
     height: 18pt;
     width: auto;
     object-fit: contain;
+  }
+
+  .#{$rb}-brand-wordmark {
+    flex: 0 1 auto;
+    min-width: 0;
   }
 
   .#{$rb}-brand-chip {
@@ -573,7 +611,8 @@ $warn-rule: #f0dcb0;
   }
 
   .#{$rb}-brand[data-size='large'] {
-    .#{$rb}-brand-logo {
+    .#{$rb}-brand-logo,
+    .#{$rb}-brand-wordmark {
       height: 34pt;
     }
     .#{$rb}-brand-chip {
@@ -594,6 +633,17 @@ $warn-rule: #f0dcb0;
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
+
+    // The lockup sits where the organisation put it (data-brand-position), as in the running header.
+    > .#{$rb}-brand {
+      align-self: flex-start;
+    }
+    &[data-brand-position='center'] > .#{$rb}-brand {
+      align-self: center;
+    }
+    &[data-brand-position='right'] > .#{$rb}-brand {
+      align-self: flex-end;
+    }
   }
 
   .#{$rb}-cover-middle {
@@ -602,6 +652,7 @@ $warn-rule: #f0dcb0;
 
   .#{$rb}-cover-title {
     margin: 0 0 8pt;
+    font-family: var(--react-autoql-report-builder-heading-font, inherit);
     font-size: 26pt;
     font-weight: 700;
     line-height: 1.1;
@@ -626,6 +677,7 @@ $warn-rule: #f0dcb0;
 
   .#{$rb}-toc-title {
     padding: 0 0 10pt;
+    font-family: var(--react-autoql-report-builder-heading-font, inherit);
     font-size: 13pt;
     font-weight: 650;
     color: $ink;

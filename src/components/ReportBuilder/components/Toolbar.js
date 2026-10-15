@@ -3,12 +3,13 @@ import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { Icon } from './icons'
 import { FIT, ZOOM_LEVELS } from './ZoomFrame'
+import { ReportOptions } from './ReportOptions'
 
 // Run, preview and print are the builder's own; a host adds nothing to make a report work. Run shows only
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
 // `status` is the host's own element (toolbarStatus), set apart just before them. The zoom (ZoomFrame) is how
 // large the pages show, in the editor and the preview alike. In the editor, the panel button beside Preview
-// hides and shows the properties panel (`panelId`).
+// hides and shows the properties panel (`panelId`), and the report options menu (⋮) ends the row.
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -33,6 +34,9 @@ export const Toolbar = ({
   panelOpen = true,
   panelId,
   onTogglePanel,
+  optionsRef,
+  onPageSetup,
+  onBranding,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
@@ -152,6 +156,9 @@ export const Toolbar = ({
         <Icon name='printer' size={13} />
         {printing ? STRINGS.printing : STRINGS.print}
       </button>
+      {!previewOpen && onPageSetup ? (
+        <ReportOptions ref={optionsRef} onPageSetup={onPageSetup} onBranding={onBranding} />
+      ) : null}
     </div>
   </div>
 )

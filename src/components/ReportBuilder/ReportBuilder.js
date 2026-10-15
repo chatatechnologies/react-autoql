@@ -50,6 +50,7 @@ import { printFrame } from './print/printFrame'
 import { Toolbar } from './components/Toolbar'
 import { Palette } from './components/Palette'
 import { BlockDetails, defaultDraft } from './components/BlockDetails'
+import { BrandingDialog } from './components/BrandingDialog'
 import { Sheet } from './components/Sheet'
 import { EditorPagination } from './components/EditorPagination'
 import { getStartPages, isPrintable } from './layout/paginate'
@@ -57,7 +58,9 @@ import { PropertiesPanel, readPanelOpen, storePanelOpen } from './components/Pro
 import { PanelResizer, readPanelWidth, storePanelWidth } from './components/PanelResizer'
 import { readZoom, storeZoom, ZoomFrame } from './components/ZoomFrame'
 import { PrintPreview } from './components/preview/PrintPreview'
-import { footerText, hasDataBlocks } from './components/PageFurniture'
+import { BrandFonts, footerText, hasDataBlocks } from './components/PageFurniture'
+import { mergeBranding } from './model/branding'
+import { fetchBranding, saveBranding as saveOrgBranding } from './run/brandingApi'
 
 import './ReportBuilder.scss'
 import './ReportPaper.scss'
@@ -109,11 +112,26 @@ export class ReportBuilderWithoutTheme extends React.Component {
       blocks: PropTypes.arrayOf(PropTypes.object),
     }),
     onChange: PropTypes.func,
+    // The branding the pages are drawn with (model/branding.js). With enableBranding, what the organisation set in
+    // AutoQL wins and this fills in the rest — the organisation's name, say.
     branding: PropTypes.shape({
       name: PropTypes.string,
       logoUrl: PropTypes.string,
+      wordmarkUrl: PropTypes.string,
+      position: PropTypes.oneOf(['left', 'center', 'right']),
+      colors: PropTypes.arrayOf(PropTypes.string),
+      // The initials badge's colour where there are no brand colours.
       color: PropTypes.string,
+      headingFont: PropTypes.shape({ name: PropTypes.string, url: PropTypes.string }),
+      bodyFont: PropTypes.shape({ name: PropTypes.string, url: PropTypes.string }),
     }),
+    // The organisation's branding is kept by AutoQL (`/autoql/api/v1/reports/branding`): the builder loads it and
+    // draws it over `branding`. Off by default: only `branding` is drawn.
+    enableBranding: PropTypes.bool,
+    // With enableBranding: adds "Branding…" to the report options menu (⋮), once AutoQL has answered, to change
+    // the organisation's branding. Saving takes AutoQL's organisation-admin grant, so say who may: an app's
+    // owners and admins, say.
+    canEditBranding: PropTypes.bool,
     onRunComplete: PropTypes.func,
     onErrorCallback: PropTypes.func,
     getAuthenticationForProject: PropTypes.func,
@@ -148,6 +166,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     report: undefined,
     onChange: () => {},
     branding: undefined,
+    enableBranding: false,
+    canEditBranding: false,
     onRunComplete: () => {},
     onErrorCallback: () => {},
     getAuthenticationForProject: undefined,
@@ -166,6 +186,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     this.rootRef = React.createRef()
     this.bodyRef = React.createRef()
     this.previewRef = React.createRef()
+    this.optionsRef = React.createRef()
     this.blockCache = new WeakMap()
     this.runId = 0
     panelIds += 1
@@ -193,14 +214,34 @@ export class ReportBuilderWithoutTheme extends React.Component {
       fitScale: 1,
       // Where the editor's pages break (EditorPagination): { startPages, count }, or null for one sheet.
       editorPages: null,
+      // The organisation's branding as AutoQL has it (enableBranding), and whether AutoQL has answered; the
+      // Branding dialog, from the report options menu.
+      orgBranding: null,
+      brandingReady: false,
+      brandingOpen: false,
     }
     this.pendingSeq = 0
     this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
     this.pendingAborts = {} // blockId → the AbortController of a question on its way
+    this.brandingSeq = 0
   }
 
   componentDidMount() {
     this.mounted = true
+    this.loadBranding()
+  }
+
+  componentDidUpdate(prevProps) {
+    const before = prevProps.authentication || {}
+    const now = this.props.authentication || {}
+    if (
+      prevProps.enableBranding !== this.props.enableBranding ||
+      before.token !== now.token ||
+      before.domain !== now.domain ||
+      before.apiKey !== now.apiKey
+    ) {
+      this.loadBranding()
+    }
   }
 
   componentWillUnmount() {
@@ -391,6 +432,50 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const panelOpen = !this.state.panelOpen
     this.setState({ panelOpen })
     storePanelOpen(panelOpen)
+  }
+
+  // Report options › Page setup: the panel with nothing selected, as a click off the blocks gives, shown if it
+  // was hidden and scrolled to its top.
+  onPageSetup = () => {
+    if (!this.state.panelOpen) storePanelOpen(true)
+    this.setState({ selectedId: null, details: null, panelOpen: true }, () => {
+      const panel = this.rootRef.current?.querySelector(`#${this.panelId}`)
+      if (panel) panel.scrollTop = 0
+    })
+  }
+
+  // ---------------------------------------------------------------- the organisation's branding
+
+  // From AutoQL, where enableBranding asks for it; until it answers (or where it can't), `branding` alone.
+  loadBranding = () => {
+    const seq = ++this.brandingSeq
+    if (!this.props.enableBranding) {
+      if (this.state.orgBranding || this.state.brandingReady) this.setState({ orgBranding: null, brandingReady: false })
+      return
+    }
+    fetchBranding({ authentication: this.props.authentication }).then(
+      (orgBranding) => {
+        if (this.mounted && seq === this.brandingSeq) this.setState({ orgBranding, brandingReady: true })
+      },
+      () => {
+        if (this.mounted && seq === this.brandingSeq) this.setState({ orgBranding: null, brandingReady: false })
+      },
+    )
+  }
+
+  getBranding = memoize((host, org) => mergeBranding(host, org))
+
+  canEditBranding = () => !!(this.props.enableBranding && this.props.canEditBranding && this.state.brandingReady)
+
+  openBranding = () => this.setState({ brandingOpen: true, details: null })
+
+  // Focus goes back to the menu's button, where the dialog was opened from.
+  closeBranding = () => this.setState({ brandingOpen: false }, () => this.optionsRef.current?.focusButton?.())
+
+  // Saves it for the organisation; the dialog says so if this rejects.
+  saveBranding = async (branding) => {
+    const saved = await saveOrgBranding({ authentication: this.props.authentication, branding })
+    if (this.mounted) this.setState({ orgBranding: saved, brandingReady: true })
   }
 
   onZoomChange = (zoom) => {
@@ -757,7 +842,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     return parts.join(' · ')
   }
 
-  renderEditor = ({ report, views, geometry }) => {
+  renderEditor = ({ report, views, geometry, branding }) => {
     const { selectedId, details, run, pending, panelWidth } = this.state
     const canRun = this.props.enableRunReport
     // Data blocks made here keep what they're given. Running keeps its own Data block, which fetches.
@@ -799,6 +884,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
           <EditorPagination
             report={report}
             views={views}
+            branding={branding}
             dataFormatting={this.props.dataFormatting}
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
@@ -811,7 +897,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
               views={views}
               selectedId={selected?.id}
               geometry={geometry}
-              branding={this.props.branding}
+              branding={branding}
               footerLeft={footerText({
                 dataAsOf: runAt ? formatPrintedDate(runAt, { time: true }) : null,
                 hasData: canRun && hasDataBlocks(report),
@@ -848,6 +934,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
               id={this.panelId}
               width={panelWidth}
               report={report}
+              branding={branding}
               block={selected}
               view={selected ? views[selected.id] : null}
               dashboards={this.props.dashboards}
@@ -884,6 +971,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   render() {
     const { report, plan, requestKeys, views } = this.derive()
+    const branding = this.getBranding(this.props.branding, this.state.orgBranding)
     const geometry = getPageGeometry(report.page)
     const { run, previewOpen, printing, notice, layoutInfo } = this.state
     const isStale = this.isStale(requestKeys)
@@ -900,6 +988,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
           data-test='report-builder'
         >
           {this.props.fontStylesheetUrl ? <link rel='stylesheet' href={this.props.fontStylesheetUrl} /> : null}
+          <BrandFonts branding={branding} />
           <Toolbar
             title={report.title}
             onTitleChange={this.onTitleChange}
@@ -924,6 +1013,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
             panelOpen={this.state.panelOpen}
             panelId={this.panelId}
             onTogglePanel={this.onTogglePanel}
+            optionsRef={this.optionsRef}
+            onPageSetup={this.onPageSetup}
+            onBranding={this.canEditBranding() ? this.openBranding : undefined}
           />
           {notice || (previewOpen && layoutInfo?.overflowCount) ? (
             <div className={`${RB}-notice`} role='status'>
@@ -936,7 +1028,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
                 ref={this.previewRef}
                 report={report}
                 views={views}
-                branding={this.props.branding}
+                branding={branding}
                 runAt={run && run.status !== 'running' ? run.runAt : null}
                 generatedAt={new Date().toISOString()}
                 dataFormatting={this.props.dataFormatting}
@@ -948,9 +1040,17 @@ export class ReportBuilderWithoutTheme extends React.Component {
                 onFit={this.onFit}
               />
             ) : (
-              this.renderEditor({ report, views, geometry })
+              this.renderEditor({ report, views, geometry, branding })
             )}
           </div>
+          {this.state.brandingOpen && this.canEditBranding() ? (
+            <BrandingDialog
+              branding={branding}
+              reportTitle={report.title}
+              onSave={this.saveBranding}
+              onClose={this.closeBranding}
+            />
+          ) : null}
         </div>
       </ErrorBoundary>
     )
