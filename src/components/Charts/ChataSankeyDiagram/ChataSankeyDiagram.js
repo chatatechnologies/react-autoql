@@ -231,10 +231,11 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     persistSankeyControls({ sankeyValueColumnIndex: nextValueColumnIndex })
   }
 
-  const buttonSize = 35
+  // Same size and position as the network graph and treemap control buttons
+  const buttonSize = 30
   const buttonGap = 5
   const totalChartWidth = props.width || 600
-  const buttonStartX = totalChartWidth - buttonSize - 10
+  const buttonStartX = totalChartWidth - buttonSize - 7
   const buttonIconSize = 20
   const buttonIconOffset = (buttonSize - buttonIconSize) / 2
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
@@ -936,7 +937,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         showDropdown={showPathDropdown}
         setShowDropdown={setShowPathDropdown}
         buttonX={buttonStartX}
-        buttonY={10}
+        buttonY={10 + (buttonSize + buttonGap) * 1}
         buttonSize={buttonSize}
         chartTooltipID={props.chartTooltipID}
       />
@@ -948,15 +949,15 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         showDropdown={showValueDropdown}
         setShowDropdown={setShowValueDropdown}
         buttonX={buttonStartX}
-        buttonY={10 + (buttonSize + buttonGap) * 1}
+        buttonY={10 + (buttonSize + buttonGap) * 2}
         buttonSize={buttonSize}
         chartTooltipID={props.chartTooltipID}
       />
 
-      {/* Reset Zoom Button */}
+      {/* Reset Zoom Button - first, matching the network graph and treemap */}
       <g
         className='sankey-reset-zoom-button'
-        transform={`translate(${buttonStartX}, ${10 + (buttonSize + buttonGap) * 2})`}
+        transform={`translate(${buttonStartX}, 10)`}
         style={{ cursor: 'pointer' }}
         onClick={(e) => {
           e.stopPropagation()
