@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { Authentication } from 'autoql-fe-utils'
+import type { Authentication, PushMessageData } from 'autoql-fe-utils'
 
 export * from 'autoql-fe-utils'
 
@@ -410,6 +410,57 @@ export interface DataExplorerProps {
 }
 
 export declare class DataExplorer extends React.Component<DataExplorerProps> {}
+
+// ─── Push notifications ───────────────────────────────────────────────────────
+
+export type PushNotificationStatus = 'unsupported' | 'checking' | 'on' | 'off' | 'blocked'
+
+export declare const PUSH_NOTIFICATION_STATUS: {
+  UNSUPPORTED: 'unsupported'
+  CHECKING: 'checking'
+  ON: 'on'
+  OFF: 'off'
+  BLOCKED: 'blocked'
+}
+
+export interface PushNotificationsProviderProps {
+  authentication?: Authentication
+  /** Where the app serves push-sw.js. Defaults to '/push-sw.js'. Pass null when the app's own service worker imports it. */
+  serviceWorkerUrl?: string | null
+  /** Service worker scope. Defaults to the scope of the current page. */
+  scope?: string
+  /** Called with the notification's URL when the user clicks a notification. Defaults to a full page load. */
+  onNotificationClick?: (url: string, data: PushMessageData) => void
+  /** Called when an alert arrives while the app is open. */
+  onPushReceived?: (data: PushMessageData) => void
+  children?: React.ReactNode
+}
+
+export interface UsePushNotificationsResult {
+  isSupported: boolean
+  status: PushNotificationStatus
+  isEnabled: boolean
+  isBusy: boolean
+  error: unknown
+  /** Asks for permission if needed and subscribes. Call it from a click. Resolves true when push is on. */
+  enable: () => Promise<boolean>
+  /** Unsubscribes this browser. Call it on logout too. */
+  disable: () => Promise<void>
+  /** Saves this browser's subscription to the server again. */
+  sync: () => Promise<void>
+}
+
+export interface PushNotificationsToggleProps {
+  label?: string
+  description?: string
+  blockedMessage?: string
+  errorMessage?: string
+  className?: string
+}
+
+export declare const PushNotificationsProvider: React.FC<PushNotificationsProviderProps>
+export declare function usePushNotifications(): UsePushNotificationsResult
+export declare const PushNotificationsToggle: React.FC<PushNotificationsToggleProps>
 
 // ─── Miscellaneous components ─────────────────────────────────────────────────
 
