@@ -51,6 +51,7 @@ import { ChataStackedLineChart } from '../ChataStackedLineChart'
 import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import ChataNetworkGraph from '../ChataNetworkGraph'
 import { ChataSankeyDiagram } from '../ChataSankeyDiagram'
+import { ChataTreemap } from '../ChataTreemap'
 import { AverageLine } from '../AverageLine'
 import { RegressionLine } from '../RegressionLine'
 import ChartHeaderToggle from '../ChartHeaderToggle/ChartHeaderToggle'
@@ -696,7 +697,8 @@ export default class ChataChart extends React.Component {
           data?.length > MAX_CHART_ELEMENTS &&
           !this.dataIsBinned() &&
           props.type !== DisplayTypes.NETWORK_GRAPH &&
-          props.type !== DisplayTypes.SANKEY
+          props.type !== DisplayTypes.SANKEY &&
+          props.type !== DisplayTypes.TREEMAP
         ) {
           data = data.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
@@ -772,7 +774,8 @@ export default class ChataChart extends React.Component {
           aggregated?.length > MAX_CHART_ELEMENTS &&
           !this.dataIsBinned() &&
           props.type !== DisplayTypes.NETWORK_GRAPH &&
-          props.type !== DisplayTypes.SANKEY
+          props.type !== DisplayTypes.SANKEY &&
+          props.type !== DisplayTypes.TREEMAP
         ) {
           aggregated = aggregated.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
@@ -840,7 +843,11 @@ export default class ChataChart extends React.Component {
   // end. That measurement reads the layout when it runs, so it reflects the latest size.
   // Pass { throttleMs: 0 } to opt out. Also used as onAxesRenderComplete, which passes nothing.
   adjustChartPosition = (options) => {
-    if (this.props.type === DisplayTypes.NETWORK_GRAPH || this.props.type === DisplayTypes.SANKEY) {
+    if (
+      this.props.type === DisplayTypes.NETWORK_GRAPH ||
+      this.props.type === DisplayTypes.SANKEY ||
+      this.props.type === DisplayTypes.TREEMAP
+    ) {
       return
     }
 
@@ -1129,7 +1136,11 @@ export default class ChataChart extends React.Component {
         ref={(r) => (this.sliderRef = r)}
         style={{ paddingLeft }}
         className={`react-autoql-chart-header-container ${
-          this.state.isLoading && this.props.type !== DisplayTypes.NETWORK_GRAPH ? 'react-autoql-chart-loading' : ''
+          this.state.isLoading &&
+          this.props.type !== DisplayTypes.NETWORK_GRAPH &&
+          this.props.type !== DisplayTypes.TREEMAP
+            ? 'react-autoql-chart-loading'
+            : ''
         }`}
       >
         {/* Chart Control Buttons and Data Limit Warning */}
@@ -1365,7 +1376,8 @@ export default class ChataChart extends React.Component {
     const isTruncated =
       this.state.isDataTruncated &&
       this.props.type !== DisplayTypes.PIE &&
-      this.props.type !== DisplayTypes.NETWORK_GRAPH
+      this.props.type !== DisplayTypes.NETWORK_GRAPH &&
+      this.props.type !== DisplayTypes.TREEMAP
 
     const isDataLimited = this.props.isDataLimited
 
@@ -1381,7 +1393,8 @@ export default class ChataChart extends React.Component {
       this.state.isDataTruncated &&
       this.props.type !== DisplayTypes.PIE &&
       this.props.type !== DisplayTypes.NETWORK_GRAPH &&
-      this.props.type !== DisplayTypes.SANKEY
+      this.props.type !== DisplayTypes.SANKEY &&
+      this.props.type !== DisplayTypes.TREEMAP
 
     const isDataLimited = this.props.isDataLimited
 
@@ -1595,6 +1608,9 @@ export default class ChataChart extends React.Component {
       case DisplayTypes.SANKEY: {
         return <ChataSankeyDiagram {...commonChartProps} />
       }
+      case DisplayTypes.TREEMAP: {
+        return <ChataTreemap {...commonChartProps} />
+      }
       default: {
         return 'Unknown Display Type'
       }
@@ -1628,7 +1644,8 @@ export default class ChataChart extends React.Component {
             ${
               this.state.isLoading &&
               this.props.type !== DisplayTypes.NETWORK_GRAPH &&
-              this.props.type !== DisplayTypes.SANKEY
+              this.props.type !== DisplayTypes.SANKEY &&
+              this.props.type !== DisplayTypes.TREEMAP
                 ? 'react-autoql-chart-loading'
                 : ''
             }

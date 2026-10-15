@@ -433,6 +433,14 @@ export class QueryOutput extends React.Component {
     initialChartControls: PropTypes.shape({
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
+      treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      treemapGroupColumnNames: PropTypes.arrayOf(PropTypes.string),
+      treemapValueColumnIndex: PropTypes.number,
+      treemapValueColumnName: PropTypes.string,
+      sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      sankeyPathColumnNames: PropTypes.arrayOf(PropTypes.string),
+      sankeyValueColumnIndex: PropTypes.number,
+      sankeyValueColumnName: PropTypes.string,
     }),
     onChartControlsChange: PropTypes.func,
   }
@@ -1388,8 +1396,12 @@ export class QueryOutput extends React.Component {
   }
 
   usePivotDataForChart = () => {
-    // Network graphs and sankey diagrams always use original data, never pivot data
-    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH || this.state?.displayType === DisplayTypes.SANKEY) {
+    // Network graphs, sankey diagrams and treemaps always use original data, never pivot data
+    if (
+      this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
+      this.state?.displayType === DisplayTypes.SANKEY ||
+      this.state?.displayType === DisplayTypes.TREEMAP
+    ) {
       return false
     }
 
@@ -4953,7 +4965,8 @@ export class QueryOutput extends React.Component {
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
       displayType !== DisplayTypes.NETWORK_GRAPH &&
-      displayType !== DisplayTypes.SANKEY
+      displayType !== DisplayTypes.SANKEY &&
+      displayType !== DisplayTypes.TREEMAP
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 

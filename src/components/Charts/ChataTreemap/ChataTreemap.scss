@@ -1,0 +1,48 @@
+.react-autoql-treemap {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  .react-autoql-treemap-viz {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs */
+  .treemap-leaf-rect {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 1;
+    outline: none !important;
+
+    &:hover,
+    &.active {
+      fill-opacity: 0.7;
+    }
+  }
+
+  .treemap-parent-rect {
+    transition: fill-opacity 0.3s ease;
+    outline: none !important;
+    vector-effect: non-scaling-stroke;
+
+    &:hover,
+    &.active {
+      fill-opacity: 0.18;
+    }
+  }
+
+  &.enable-drilldown {
+    .treemap-leaf-rect,
+    .treemap-parent-rect {
+      cursor: pointer;
+    }
+  }
+
+  &:focus,
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
+}

@@ -62,6 +62,34 @@ export const getGradientOpacityStops = (direction) =>
 /** Persisted in Sankey's `sankeyValueColumnIndex` to weight flows by row count (not a column value). */
 export const SANKEY_VALUE_COUNT_SENTINEL = -1
 
+/**
+ * Resolves a persisted column selection against the current columns. Selections are saved with both
+ * the column name and its index: indices shift when columns are added or removed (eg. additional
+ * selects), and names can change between saves, so neither is reliable alone. The name wins when it
+ * still exists; otherwise the saved index is used (callers still validate type/visibility). Non-column
+ * values such as SANKEY_VALUE_COUNT_SENTINEL have no name and pass through unchanged.
+ */
+export const resolvePersistedColumnIndex = ({ name, index, columns }) => {
+  if (name) {
+    const nameIndex = (columns || []).findIndex((col) => col?.name === name)
+    if (nameIndex >= 0) {
+      return nameIndex
+    }
+  }
+  return index
+}
+
+/** Array form of resolvePersistedColumnIndex, pairing names[i] with indices[i]. */
+export const resolvePersistedColumnIndices = ({ names, indices, columns }) => {
+  const length = Math.max(names?.length ?? 0, indices?.length ?? 0)
+  return Array.from({ length }, (_, i) =>
+    resolvePersistedColumnIndex({ name: names?.[i], index: indices?.[i], columns }),
+  ).filter((index) => index !== undefined && index !== null)
+}
+
+/** Column names to save alongside persisted indices (undefined for sentinels like Count). */
+export const getPersistedColumnName = (index, columns) => (index >= 0 ? columns?.[index]?.name : undefined)
+
 /** True when the category axis alone is crowded (many rows). */
 export const isDenseCategoryChart = (data) => Array.isArray(data) && data.length > DENSE_CATEGORY_THRESHOLD
 
@@ -85,8 +113,7 @@ export const getVisibleLegendSeriesSlotCount = (props) => {
     return 1
   }
 
-  const countVisible = (indices) =>
-    indices.filter((i) => columns[i] && !columns[i].isSeriesHidden).length
+  const countVisible = (indices) => indices.filter((i) => columns[i] && !columns[i].isSeriesHidden).length
 
   let total = countVisible(resolveSeriesColumnIndices({ visibleSeriesIndices, numberColumnIndices }))
 
@@ -109,9 +136,7 @@ export const getVisibleLegendSeriesSlotCount = (props) => {
 export const isDenseChartLayout = (data, chartProps) => {
   const n = Array.isArray(data) ? data.length : 0
   const props = chartProps || {}
-  const seriesSlots = isStackedBarOrColumnDisplayType(props.type)
-    ? 1
-    : getVisibleLegendSeriesSlotCount(props)
+  const seriesSlots = isStackedBarOrColumnDisplayType(props.type) ? 1 : getVisibleLegendSeriesSlotCount(props)
   return n > DENSE_CATEGORY_THRESHOLD || n * seriesSlots > DENSE_CATEGORY_THRESHOLD
 }
 
@@ -195,7 +220,7 @@ export const chartElementDefaultProps = {
 /**
  * Creates a "between" filter for date drilldowns when the string axis is a DATE column.
  * Returns null if the column is not a DATE type or if the date value is invalid.
- * 
+ *
  * @param {Object} params - Parameters object
  * @param {Object} params.stringColumn - The column object for the string axis
  * @param {*} params.dateValue - The date value from the row data

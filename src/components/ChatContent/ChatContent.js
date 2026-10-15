@@ -422,6 +422,7 @@ export default class ChatContent extends React.Component {
     this.removeScrollListener()
     this.composerObserver?.disconnect()
     this.composerObserver = undefined
+    cancelAnimationFrame(this.composerMetricsFrame)
     window.removeEventListener('resize', this.publishComposerMetrics)
     window.removeEventListener('orientationchange', this.publishComposerMetrics)
     window.visualViewport?.removeEventListener('resize', this.publishComposerMetrics)
@@ -465,7 +466,13 @@ export default class ChatContent extends React.Component {
     this.publishComposerMetrics()
 
     if (typeof ResizeObserver !== 'undefined') {
-      this.composerObserver = new ResizeObserver(this.publishComposerMetrics)
+      // Publish on the next frame rather than inside the observer callback: writing the CSS variable
+      // restyles the document while the browser is still delivering resize notifications, which
+      // trips "ResizeObserver loop completed with undelivered notifications".
+      this.composerObserver = new ResizeObserver(() => {
+        cancelAnimationFrame(this.composerMetricsFrame)
+        this.composerMetricsFrame = requestAnimationFrame(this.publishComposerMetrics)
+      })
       this.composerObserver.observe(element)
     }
 
