@@ -1,17 +1,114 @@
 ---
 title: Data Messenger
+description: A chat drawer where users ask questions of their data in plain language and get answers as tables and charts.
 ---
 
 import PropsTable from '@site/src/components/PropsTable'
 
 # Data Messenger
 
-A chat drawer where users ask questions of their data and get answers as tables and charts.
+Data Messenger is a chat drawer that slides in from the edge of your app. Users type a question in plain language, such as "total sales by month this year", and get the answer as a table or chart they can sort, filter, drill into and download.
+
+Use it when you want to give users open-ended access to their data without building a page for every question.
+
+![Data Messenger open on the right of an app, answering "sales per customer" with a table of total sales by customer and a plain-language interpretation of the query](/img/data-messenger.jpg)
+
+## Quick start
+
+Data Messenger needs one prop, `authentication`. It renders a button on the right edge of the page; clicking it opens the drawer.
 
 ```jsx
 import { DataMessenger } from 'react-autoql'
+import 'react-autoql/dist/autoql.esm.css'
+
+export default function App() {
+  return (
+    <DataMessenger
+      authentication={{
+        domain: 'https://your-autoql-domain.com',
+        apiKey: 'your-api-key',
+        token: userJwt, // the signed-in user's token
+      }}
+    />
+  )
+}
 ```
+
+All three `authentication` fields are required. Requests without a `token` are rejected.
+
+## Examples
+
+### Open it from your own button
+
+Hide the built-in button with `showHandle={false}` and call methods on a ref instead.
+
+```jsx
+import { useRef } from 'react'
+import { DataMessenger } from 'react-autoql'
+
+export default function App() {
+  const messenger = useRef(null)
+
+  return (
+    <>
+      <button onClick={() => messenger.current?.openDataMessenger()}>Ask a question</button>
+      <DataMessenger ref={messenger} authentication={authentication} showHandle={false} />
+    </>
+  )
+}
+```
+
+The ref also has `closeDataMessenger()`, `isOpen()` and `clearMessages()`. `openDataMessenger` takes an optional page to open, such as `'data-explorer'`.
+
+### Match your brand
+
+Colors and fonts come from a theme you set once with `configureTheme`. Call it before Data Messenger first renders.
+
+```jsx
+import { configureTheme, DataMessenger } from 'react-autoql'
+
+configureTheme({
+  theme: 'dark',
+  accentColor: '#7c3aed',
+  fontFamily: 'Inter, sans-serif',
+})
+
+export default function App() {
+  return <DataMessenger authentication={authentication} placement='left' width={600} />
+}
+```
+
+`width` and `placement` control the drawer's size and position. `width` only applies when the drawer opens from the left or right, and it's read once, when the component mounts.
+
+### Add Data Explorer and notifications
+
+Data Explorer lets users browse the topics and sample questions available to them. Notifications lists the alerts sent by their data alerts.
+
+```jsx
+<DataMessenger
+  authentication={authentication}
+  autoQLConfig={{ enableNotifications: true }}
+  enableDataExplorerTab
+  enableNotificationsTab
+  enableQuerySuggestions
+  onNewNotification={(unread) => setBadge(unread)}
+/>
+```
+
+The Notifications button needs both `enableNotificationsTab` and `autoQLConfig.enableNotifications`. `enableQuerySuggestions` answers questions it can't match with a list of related questions instead of an error.
+
+### Show errors and confirmations in your own UI
+
+```jsx
+<DataMessenger
+  authentication={authentication}
+  onErrorCallback={(error) => toast.error(typeof error === 'string' ? error : error.message)}
+  onSuccessAlert={(message) => toast.success(message)}
+/>
+```
+
+`onErrorCallback` receives either a message string or an `Error`, so check which before using it.
 
 ## Props
 
-<PropsTable component="DataMessenger" />
+<PropsTable component='DataMessenger' />
