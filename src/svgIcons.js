@@ -458,6 +458,15 @@ export const networkIcon = (
   </svg>
 )
 
+export const treemapIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    <rect className='chart-icon-svg-0' fill='currentColor' x='0.5' y='0.5' width='8.5' height='15' rx='1' />
+    <rect className='chart-icon-svg-0' fill='currentColor' x='10' y='0.5' width='5.5' height='8' rx='1' opacity='0.65' />
+    <rect className='chart-icon-svg-0' fill='currentColor' x='10' y='9.5' width='2.5' height='6' rx='0.75' opacity='0.4' />
+    <rect className='chart-icon-svg-0' fill='currentColor' x='13.5' y='9.5' width='2' height='6' rx='0.75' opacity='0.25' />
+  </svg>
+)
+
 export const sankeyIcon = (
   <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
     {/* Left nodes */}

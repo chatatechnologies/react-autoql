@@ -116,6 +116,7 @@ import {
   magicWandIcon,
   thinkingBubbleIcon,
   sankeyIcon,
+  treemapIcon,
 } from '../../svgIcons.js'
 
 import './Icon.scss'
@@ -443,6 +444,10 @@ export default class Icon extends React.Component {
       }
       case 'sankey': {
         icon = sankeyIcon
+        break
+      }
+      case 'treemap': {
+        icon = treemapIcon
         break
       }
       case 'more-vertical': {
