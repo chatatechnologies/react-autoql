@@ -1,0 +1,488 @@
+// The reports workspace (<Reports>) and its dialogs, drawn the way the builder draws itself: the same tokens
+// (../_tokens.scss), rem units, and every rule under a root class so a host's unprefixed element and attribute
+// selectors don't reach in. Two roots: the workspace itself, and the layer its dialogs render into at the end of
+// the page (ReportModal), which a host's layout can't clip. Each part has a partial of its own, imported last.
+
+@import '../tokens';
+
+$rs: 'react-autoql-reports';
+
+@keyframes #{$rs}-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@mixin rs-base {
+  color: $text;
+  font-family: var(--react-autoql-font-family, sans-serif);
+  font-size: 0.875rem;
+  line-height: 1.45;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+// The controls both roots use: buttons, fields, notes, lists of choices, and a centred message.
+@mixin rs-controls {
+  .#{$rb}-icon {
+    display: inline-block;
+    flex: none;
+    vertical-align: middle;
+  }
+
+  // An icon that turns while something is on its way.
+  .#{$rs}-spin {
+    display: inline-flex;
+    flex: none;
+
+    > .#{$rb}-icon {
+      animation: #{$rs}-spin 0.9s linear infinite;
+    }
+  }
+
+  .#{$rs}-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.4375rem 0.75rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 550;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $hover;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    &[data-variant='primary'] {
+      border-color: $accent;
+      background: $accent;
+      color: $on-accent;
+
+      &:hover:not(:disabled) {
+        background: $accent;
+        filter: brightness(0.94);
+      }
+    }
+  }
+
+  .#{$rs}-icon-button {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.625rem;
+    height: 1.625rem;
+    margin: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: $text-2;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background: $hover;
+      color: $text;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .#{$rs}-label {
+    display: block;
+    margin: 0 0 0.3125rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $text-2;
+  }
+
+  .#{$rs}-input,
+  .#{$rs}-select {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    color: $text;
+    font: inherit;
+    font-size: 0.875rem;
+
+    &:focus {
+      border-color: $accent;
+      outline: none;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--react-autoql-accent-color, #28a8e0) 22%, transparent);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    &::placeholder {
+      color: $text-2;
+      opacity: 1;
+    }
+  }
+
+  .#{$rs}-note {
+    margin: 0.375rem 0 0;
+    font-size: 0.6875rem;
+    line-height: 1.45;
+    color: $text-2;
+  }
+
+  .#{$rs}-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    margin: 0;
+    font-size: 0.75rem;
+    color: $danger;
+
+    > .#{$rb}-icon {
+      margin-top: 0.0625rem;
+    }
+  }
+
+  // Options to choose one of, each a row with its radio button; the chosen one can open a little more under it.
+  .#{$rs}-choices {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+    list-style: none;
+  }
+
+  .#{$rs}-choice + .#{$rs}-choice {
+    border-top: 1px solid $border;
+  }
+
+  .#{$rs}-choice-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    color: $text;
+    font-size: 0.875rem;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+    }
+
+    > input[type='radio'] {
+      flex: none;
+      width: 1rem;
+      height: 1rem;
+      margin: 0;
+      accent-color: $accent;
+    }
+
+    > .#{$rb}-icon {
+      opacity: 0.7;
+    }
+  }
+
+  .#{$rs}-choice[data-checked] > .#{$rs}-choice-row {
+    @include accent-soft;
+    color: $accent;
+  }
+
+  .#{$rs}-choice-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 550;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .#{$rs}-choice-aside {
+    flex: none;
+    font-size: 0.6875rem;
+    color: $text-2;
+    white-space: nowrap;
+  }
+
+  .#{$rs}-choice-more {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid $border;
+  }
+
+  // A message in the middle of an area: something loading, something that went wrong, nothing there yet.
+  .#{$rs}-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    min-height: 100%;
+    padding: 1.5rem;
+    color: $text-2;
+    font-size: 0.8125rem;
+    text-align: center;
+
+    > p {
+      max-width: 26rem;
+      margin: 0;
+    }
+
+    &[data-tone='error'] {
+      color: $text;
+
+      > .#{$rb}-icon {
+        color: $danger;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- the workspace
+
+.#{$rs} {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: $bg;
+  @include rs-base;
+  @include rs-controls;
+
+  // What shows under the tabs: the home page, or the report open in a tab.
+  .#{$rs}-home,
+  .#{$rs}-editor {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  // A line over the builder: why a change isn't saved, why the report can't be changed here.
+  .#{$rs}-editor-notice {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.4375rem 1rem;
+    border-bottom: 1px solid $border;
+    background: $surface;
+    color: $danger;
+    font-size: 0.75rem;
+  }
+
+  .#{$rs}-editor-body {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  // The home page a host doesn't draw its own of: every report, newest edit first.
+  .#{$rs}-home-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background: $surface;
+  }
+
+  .#{$rs}-home-title {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .#{$rs}-home-items {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid $border;
+    list-style: none;
+  }
+
+  .#{$rs}-home-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.75rem 0.5rem;
+    border: 0 solid transparent;
+    border-bottom: 1px solid $border;
+    background: transparent;
+    color: $text;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+    }
+    &:focus-visible {
+      @include focus-ring;
+      outline-offset: -2px;
+    }
+  }
+
+  .#{$rs}-home-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 550;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .#{$rs}-home-edited {
+    flex: none;
+    font-size: 0.75rem;
+    color: $text-2;
+  }
+}
+
+// ---------------------------------------------------------------- dialogs (ReportModal)
+
+.#{$rs}-layer {
+  @include rs-base;
+  @include rs-controls;
+
+  .#{$rs}-modal-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 9000;
+    background: rgba(12, 14, 16, 0.45);
+  }
+
+  .#{$rs}-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 9001;
+    display: flex;
+    flex-direction: column;
+    width: 30rem;
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+    transform: translate(-50%, -50%);
+    border: 1px solid $border;
+    border-radius: 6px;
+    background: $surface;
+    box-shadow: 0 18px 50px -14px rgba(0, 0, 0, 0.5);
+    outline: none;
+
+    &[data-size='large'] {
+      width: 75rem;
+      max-width: calc(100vw - 3rem);
+      height: 85vh;
+    }
+  }
+
+  .#{$rs}-modal-header {
+    flex: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.125rem 1.25rem 0.75rem;
+  }
+
+  .#{$rs}-modal[data-size='large'] > .#{$rs}-modal-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $border;
+  }
+
+  .#{$rs}-modal-heading {
+    min-width: 0;
+  }
+
+  .#{$rs}-modal-title {
+    margin: 0;
+    color: $text;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .#{$rs}-modal-what {
+    margin: 0.375rem 0 0;
+    color: $text-2;
+    font-size: 0.8125rem;
+  }
+
+  .#{$rs}-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.25rem 1.25rem 0.5rem;
+  }
+
+  .#{$rs}-modal[data-size='large'] > .#{$rs}-modal-body {
+    display: flex;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .#{$rs}-modal-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    padding: 0.875rem 1.25rem 1.125rem;
+  }
+
+  .#{$rs}-modal[data-size='large'] > .#{$rs}-modal-actions {
+    padding-top: 0.875rem;
+    padding-bottom: 0.875rem;
+    border-top: 1px solid $border;
+  }
+
+  .#{$rs}-modal-status {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    color: $text-2;
+    font-size: 0.75rem;
+
+    &[data-tone='error'] {
+      color: $danger;
+    }
+  }
+}
+
+@import 'tabs';
+@import 'save-status';
+@import 'new-report';
+@import 'tile-picker';
+@import 'add-to-report';

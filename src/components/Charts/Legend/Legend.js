@@ -23,6 +23,7 @@ import {
 } from 'autoql-fe-utils'
 
 import safeGetBBox from '../../../utils/safeGetBBox'
+import { getUnscaledClientRect } from '../measureScale'
 
 // Module-level storage for filtered labels to persist across component remounts
 const legendFilterStore = new Map()
@@ -498,7 +499,7 @@ export default class Legend extends React.Component {
     // Remove red arrow if it has been rendered already
     select(legendElement).select('.legend-hidden-field-arrow').remove()
 
-    const legendContainerBBox = this.legendBorder?.getBoundingClientRect()
+    const legendContainerBBox = getUnscaledClientRect(this.legendBorder)
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.BORDER_PADDING
 
     let hasRemovedElement = false
@@ -511,7 +512,7 @@ export default class Legend extends React.Component {
         if (hasRemovedElement) {
           select(this).remove()
         } else {
-          const cellBBox = this.getBoundingClientRect()
+          const cellBBox = getUnscaledClientRect(this)
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
 
           if (cellBottom > legendBottom) {
@@ -844,7 +845,7 @@ export default class Legend extends React.Component {
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBoundingClientRects(
-          this.legendElements.filter((el, i) => el && i < sectionIndex).map((el) => el.getBoundingClientRect()),
+          this.legendElements.filter((el, i) => el && i < sectionIndex).map((el) => getUnscaledClientRect(el)),
         )
 
         if (this.props.orientation === 'vertical') {
@@ -884,7 +885,7 @@ export default class Legend extends React.Component {
             const labelObj = legendLabelsForSection.find((l) => l.label === cellData)
             if (labelObj?.hidden) return
 
-            const cellBBox = this.getBoundingClientRect()
+            const cellBBox = getUnscaledClientRect(this)
             if (cellBBox) {
               visibleCellBBoxes.push(cellBBox)
             }
@@ -900,7 +901,7 @@ export default class Legend extends React.Component {
         if (!el) return
         const titleElement = select(el).select('.legendTitle').node()
         if (titleElement) {
-          const titleClientRect = titleElement.getBoundingClientRect()
+          const titleClientRect = getUnscaledClientRect(titleElement)
           if (titleClientRect && titleClientRect.width > 0 && titleClientRect.height > 0) {
             // Use the minimum of actual width and maxSectionWidth (title should wrap)
             const titleWidth = Math.min(titleClientRect.width, maxSectionWidth)
@@ -916,7 +917,7 @@ export default class Legend extends React.Component {
 
         // Also include the entire legend element's bounding box to ensure we capture everything
         // This is a fallback in case individual elements don't capture the full extent
-        const legendElementRect = el.getBoundingClientRect()
+        const legendElementRect = getUnscaledClientRect(el)
         if (legendElementRect && legendElementRect.width > 0 && legendElementRect.height > 0) {
           allBBoxes.push(legendElementRect)
         }
@@ -927,7 +928,7 @@ export default class Legend extends React.Component {
         if (!el) return
         const btn = select(el).select('.legend-filter-button-d3').node()
         if (btn) {
-          const bbox = btn.getBoundingClientRect()
+          const bbox = getUnscaledClientRect(btn)
           if (bbox) allBBoxes.push(bbox)
         }
       })

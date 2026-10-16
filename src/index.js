@@ -37,3 +37,30 @@ export { ChatContent } from './components/ChatContent'
 export { SimpleTable } from './components/SimpleTable'
 export { AppearanceSection } from './components/Notifications/DataAlertSettings/AppearanceSection'
 export { SlicerChip } from './components/DashboardToolbar'
+export { ReportBuilder } from './components/ReportBuilder'
+export { createEmptyReport, REPORT_SCHEMA_VERSION } from './components/ReportBuilder/model/reportSchema'
+export { captureQuestion } from './components/ReportBuilder/run/captureRun'
+export { rowsForCapture } from './components/ReportBuilder/model/capture'
+export {
+  REPORT_ERROR_CODES,
+  ReportsApiError,
+  appendReportBlock,
+  createReport,
+  createReportFolder,
+  createReportTag,
+  deleteReport,
+  deleteReportFolder,
+  deleteReports,
+  deleteReportTag,
+  fetchReport,
+  fetchReportFolders,
+  fetchReports,
+  fetchReportTags,
+  organizeReports,
+  renameReportFolder,
+  saveReport,
+  updateReportTag,
+} from './components/ReportBuilder/run/reportsApi'
+export { Reports } from './components/ReportBuilder/workspace/Reports'
+export { AddToReportDialog } from './components/ReportBuilder/workspace/AddToReportDialog'
+export { captureReportBlock } from './components/ReportBuilder/workspace/reportBlocks'
