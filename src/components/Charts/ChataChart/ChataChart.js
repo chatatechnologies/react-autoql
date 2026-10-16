@@ -1247,7 +1247,15 @@ export default class ChataChart extends React.Component {
     // (e.g. "Quantity Fields", "Currency Fields") instead of the legend/groupable column name.
     // Column line combo charts always use raw data, so use generic labels for axis selectors.
     const isRawDataSource = this.state.chartDataSource === 'raw' || this.props.type === DisplayTypes.COLUMN_LINE
-    const legendColumnForChart = isRawDataSource ? undefined : updatedLegendColumn
+    const isSplit = !!this.props.splitBy?.isActive
+    const legendColumnForChart = isRawDataSource && !isSplit ? undefined : updatedLegendColumn
+
+    // A split chart always shows its legend, even with one series: the legend title is where
+    // the split is changed or removed
+    let legendLocation = getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation)
+    if (isSplit && !legendLocation) {
+      legendLocation = this.props.legendLocation ?? 'right'
+    }
 
     // For stacked charts, use sorted column indices so chart components render in sorted order
     // This ensures colors match the sorted order (biggest to smallest)
@@ -1325,7 +1333,7 @@ export default class ChataChart extends React.Component {
       // Allow multi-series selection on numeric axis. AxisSelector will still render
       // a single selector when this.props.isAggregated is true.
       allowMultipleSeries: true,
-      legendLocation: getLegendLocation(numberColumnIndices, this.props.type, this.props.legendLocation),
+      legendLocation,
       onLabelRotation: this.adjustVerticalPosition,
       visibleSeriesIndices, // Used by chart components for scale calculation (excludes hidden series, maintains original order)
       visibleSeriesIndicesForDisplay, // Used for legend/display (can be sorted for stacked charts)

@@ -497,6 +497,30 @@ export const sankeyIcon = (
   </svg>
 )
 
+export const splitSeriesIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    {/* One line forking into three series */}
+    <path className='chart-icon-svg-0' d='M1.5,8 L6,8' strokeWidth='1.5' strokeLinecap='round' fill='none' stroke='currentColor' />
+    <path
+      className='chart-icon-svg-0'
+      d='M6,8 C9,8 9,3 14.5,3'
+      strokeWidth='1.5'
+      strokeLinecap='round'
+      fill='none'
+      stroke='currentColor'
+    />
+    <path className='chart-icon-svg-0' d='M6,8 L14.5,8' strokeWidth='1.5' strokeLinecap='round' fill='none' stroke='currentColor' />
+    <path
+      className='chart-icon-svg-0'
+      d='M6,8 C9,8 9,13 14.5,13'
+      strokeWidth='1.5'
+      strokeLinecap='round'
+      fill='none'
+      stroke='currentColor'
+    />
+  </svg>
+)
+
 export const sourceColumnIcon = (
   <svg x='0px' y='0px' width='20px' height='20px' viewBox='0 0 20 20'>
     <g className='source-button-icon'>
