@@ -590,6 +590,8 @@ export interface Report {
 export interface ReportDashboard {
   id: string | number
   name?: string
+  // 'PROJECT' for a dashboard the whole project shares, as AutoQL lists it.
+  type?: string
   tiles?: DashboardTile[]
   slicers?: Array<{ type?: string; data: any }>
 }
@@ -824,6 +826,120 @@ export declare function updateReportTag(
   options: ReportsCall & { id: string; name?: string; color?: string },
 ): Promise<ReportTag>
 export declare function deleteReportTag(options: ReportsCall & { id: string }): Promise<void>
+
+// ─── Reports workspace ───────────────────────────────────────────────────────
+// A user's reports on the token's data source, each open in a tab with its own ReportBuilder and saved to AutoQL
+// as it's edited: the tab strip, New report (from a question, a dashboard or a blank page), autosave with its
+// save control, and the dashboard-tiles picker. The host draws the home page.
+
+export interface ReportsNotice {
+  tone: 'error' | 'info'
+  text: string
+}
+
+// What renderHome draws the home page from.
+export interface ReportsHomeProps {
+  // The user's reports on the data source, most recently saved first; null while they load.
+  reports: StoredReportSummary[] | null
+  // Why they couldn't be listed.
+  listError: string | null
+  retryList: () => void
+  // Shows the report in its tab (opening one if it isn't open).
+  openReport: (id: string) => void
+  // Deletes the report for good (ask first); its tab closes. Resolves with whether it was deleted — why not is in
+  // notices.
+  deleteReport: (id: string) => Promise<boolean>
+  deletingId: string | null
+  // What happened meanwhile: a report deleted in another tab, a delete that failed.
+  notices: ReportsNotice[]
+  // Opens New report.
+  newReport: () => void
+}
+
+export interface ReportsProps {
+  authentication?: Authentication
+  autoQLConfig?: AutoQLConfig
+  dataFormatting?: DataFormatting
+  // Which data source the reports are on. The token's project by default.
+  dataSourceId?: string | number
+  // The dashboards a report can take tiles from (New report from a dashboard, an empty Data block's "Pick
+  // dashboard tiles…"). Null while they load; leave it out where there are none. Tiles may carry their answers.
+  dashboards?: ReportDashboard[] | null
+  // Why the dashboards couldn't be loaded, said over the open report.
+  dashboardsError?: string | null
+  // A dashboard's tiles as the tiles picker answered them, for a host that keeps answers between views.
+  onDashboardTilesChange?: (dashboardId: string, tiles: DashboardTile[]) => void
+  // The report shown (null: the home page), for a host that keeps it in its address: when it changes, that report
+  // shows (once the list is in, and if it's there). onShowReport hears every change made in the workspace.
+  shownReportId?: string | null
+  onShowReport?: (id: string | null) => void
+  // Draws the home page. A plain list of the reports by default.
+  renderHome?: (home: ReportsHomeProps) => React.ReactNode
+  // Where the open tabs are remembered in this browser (localStorage keys start with it); null remembers nothing.
+  // 'react-autoql.' by default.
+  storageKeyPrefix?: string | null
+  // AutoQL turned the token away (401): pass in a new authentication, and what failed is tried again with it.
+  onUnauthorized?: () => void
+  // How long a pause in editing is before a report saves (ms). 2000 by default.
+  saveDelay?: number
+  // Passed on to each report's ReportBuilder.
+  branding?: ReportBranding
+  enableBranding?: boolean
+  canEditBranding?: boolean
+  enableDataBlocks?: boolean
+  enableAnalysis?: boolean
+  enableRunReport?: boolean
+  fontStylesheetUrl?: string | null
+  getAuthenticationForProject?: (projectId: string | number) => Authentication | undefined
+  onRunComplete?: (summary: ReportRunSummary) => void
+  onErrorCallback?: (error: any) => void
+  className?: string
+}
+
+export declare class Reports extends React.Component<ReportsProps> {
+  // Saves everything waiting, now (before signing out, say); keepalive when the page is going away. Resolves with
+  // whether each report reached the server.
+  flushAll(options?: { keepalive?: boolean }): Promise<boolean[]>
+  // Whether any report has edits AutoQL doesn't have yet.
+  hasUnsavedChanges(): boolean
+  // Saves the report shown, now.
+  saveNow(): void
+  // Lists the reports again.
+  reload(): void
+}
+
+// What a toolbar's custom option hands its callback: the answer's payload, and from react-autoql's toolbars a
+// capture of what it shows now.
+export interface ReportToolbarOptionData {
+  query?: string
+  tileKey?: string | number
+  dashboardId?: string | number
+  [key: string]: unknown
+}
+
+export interface ReportToolbarOptionExtra {
+  captureForReport?: (options?: { maxTableRows?: number; maxChartRows?: number }) => ReportCaptureResult
+}
+
+// The Data block "Add to Report…" adds: the answer or tile as it's shown now, and where it came from (the tile,
+// when there is one, else the question). A message to show when it can't be kept.
+export declare function captureReportBlock(options: {
+  data: ReportToolbarOptionData | null | undefined
+  extra: ReportToolbarOptionExtra | null | undefined
+  dashboard?: { id: string; name?: string; tiles?: DashboardTile[] } | null
+}): { ok: true; block: ReportDataBlock } | { ok: false; message: string }
+
+export interface AddToReportDialogProps {
+  authentication?: Authentication
+  // The block to add at the end of the chosen report (captureReportBlock).
+  block: ReportBlock
+  onClose: () => void
+  // After it's added (before onClose): which report, and whether it was made for this.
+  onAdded?: (added: { id: string; title: string; created: boolean }) => void
+}
+
+// "Add to Report…": adds a block to the end of one of the user's reports, or to a new one.
+export declare class AddToReportDialog extends React.Component<AddToReportDialogProps> {}
 
 // ─── Miscellaneous components ─────────────────────────────────────────────────
 

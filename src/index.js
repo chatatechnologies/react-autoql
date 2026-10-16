@@ -61,3 +61,6 @@ export {
   saveReport,
   updateReportTag,
 } from './components/ReportBuilder/run/reportsApi'
+export { Reports } from './components/ReportBuilder/workspace/Reports'
+export { AddToReportDialog } from './components/ReportBuilder/workspace/AddToReportDialog'
+export { captureReportBlock } from './components/ReportBuilder/workspace/reportBlocks'

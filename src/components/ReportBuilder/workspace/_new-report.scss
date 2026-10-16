@@ -1,0 +1,20 @@
+// New report (NewReportDialog), under the dialogs' layer: .#{$rs}-layer { ... }
+//
+// The choices themselves are the shared list of choices (Reports.scss); here, what goes under them.
+
+.#{$rs}-layer {
+  // In place of the dashboard select: the dashboards still loading, or none to choose from.
+  .#{$rs}-new-report-wait {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: $text-2;
+    font-size: 0.75rem;
+  }
+
+  // Why the question didn't start a report, under the choices.
+  .#{$rs}-new-report-error {
+    margin-top: 0.75rem;
+  }
+}

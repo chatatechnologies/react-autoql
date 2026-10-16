@@ -73,6 +73,38 @@ const PATHS = {
       <circle cx='8' cy='12.5' r='1.15' fill='currentColor' stroke='none' />
     </>
   ),
+  // The reports workspace (workspace/): its home tab, a report's tab, New report, saving, and starting points.
+  home: <path d='M2.5 7.5L8 3l5.5 4.5M4 6.5V13h3V9.5h2V13h3V6.5' />,
+  file: (
+    <>
+      <path d='M4 2.5h5l3 3v8H4z' />
+      <path d='M9 2.5v3h3M6 8.5h4M6 11h4' />
+    </>
+  ),
+  plus: <path d='M8 3.5v9M3.5 8h9' />,
+  spinner: <path d='M8 2.5a5.5 5.5 0 1 1-5.5 5.5' />,
+  check: <path d='M3.5 8.5l3 3 6-7' />,
+  refresh: (
+    <>
+      <path d='M13 8a5 5 0 1 1-1.5-3.6' />
+      <path d='M13 2.5v3h-3' />
+    </>
+  ),
+  alert: (
+    <>
+      <circle cx='8' cy='8' r='5.5' />
+      <path d='M8 5v3.5M8 10.8v.2' />
+    </>
+  ),
+  question: <path d='M3 3.5h10v7H7l-3 2.5v-2.5H3z' />,
+  dashboard: (
+    <>
+      <rect x='2.5' y='2.5' width='4.5' height='4.5' rx='1' />
+      <rect x='9' y='2.5' width='4.5' height='4.5' rx='1' />
+      <rect x='2.5' y='9' width='4.5' height='4.5' rx='1' />
+      <rect x='9' y='9' width='4.5' height='4.5' rx='1' />
+    </>
+  ),
 }
 
 export const Icon = ({ name, size = 15, title }) => (

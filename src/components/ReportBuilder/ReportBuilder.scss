@@ -4,29 +4,7 @@
 // No @page and no @media print: this CSS ships to every host in autoql.esm.css, and printing happens in
 // a frame of its own (print/printFrame.js).
 
-$rb: 'react-autoql-report-builder';
-
-$text: var(--react-autoql-text-color-primary, #343434);
-$text-2: var(--react-autoql-text-color-secondary, #8b8b8b);
-$bg: var(--react-autoql-background-color-primary, #f8f8f8);
-$surface: var(--react-autoql-background-color-secondary, #ffffff);
-$desk: var(--react-autoql-background-color-tertiary, #e8e8e8);
-$border: var(--react-autoql-border-color, #d8d8d8);
-$hover: var(--react-autoql-hover-color, #f7f7f7);
-$accent: var(--react-autoql-accent-color, #28a8e0);
-$on-accent: var(--react-autoql-text-color-accent, #ffffff);
-$warning: var(--react-autoql-warning-color, #ffb600);
-$danger: var(--react-autoql-danger-color, #ca0b00);
-
-@mixin accent-soft {
-  background: $hover;
-  background: color-mix(in srgb, var(--react-autoql-accent-color, #28a8e0) 14%, transparent);
-}
-
-@mixin focus-ring {
-  outline: 2px solid $accent;
-  outline-offset: 1px;
-}
+@import 'tokens';
 
 .#{$rb} {
   position: relative;
