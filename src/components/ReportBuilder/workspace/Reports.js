@@ -6,7 +6,21 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import { ReportBuilder } from '../ReportBuilder'
 import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
-import { deleteReport as deleteStoredReport, fetchReport, fetchReports } from '../run/reportsApi'
+import {
+  createReportFolder,
+  createReportTag,
+  deleteReport as deleteStoredReport,
+  deleteReportFolder,
+  deleteReportTag,
+  fetchReport,
+  fetchReportFolders,
+  fetchReports,
+  fetchReportTags,
+  organizeReports as organizeStoredReports,
+  renameReportFolder,
+  ReportsApiError,
+  updateReportTag,
+} from '../run/reportsApi'
 import { DEFAULT_STORAGE_PREFIX, REPORTS_PAGE_SIZE, RS, SAVE_DELAY_MS } from './constants'
 import { REPORTS_STRINGS } from './strings'
 import {
@@ -61,6 +75,31 @@ const without = (ids, id) => {
   next.delete(id)
   return next
 }
+
+// Folders and tags as the home page lists them: A to Z, whatever case they're in.
+const byName = (list) =>
+  [...list].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }))
+
+// The folder or tag with this name, whatever its case: making one twice finds the first.
+const named = (list, name) => (list || []).find((item) => item.name.toLowerCase() === name.toLowerCase()) || null
+
+const withoutCreated = ({ created, ...stored }) => stored
+
+// A failed change to folders, tags or where reports are filed, as one line the host can show: its message says
+// what happened, and `code` and `status` are the service's.
+const failure = (error, action) => {
+  const failed = new Error(describeReportError(error, action).message)
+  failed.code = error?.code
+  failed.status = error?.status
+  return failed
+}
+
+const nameOf = (name) => (typeof name === 'string' ? name.trim() : '')
+const NAME_MAX = 80
+
+// A name the service would turn down (empty, or over 80 characters once trimmed), refused before asking it.
+const BAD_NAME = () => new ReportsApiError({ status: 422, code: 'REPORT_NAME_INVALID' })
+const isBadName = (name) => !name || Array.from(name).length > NAME_MAX
 
 // When a report was last saved, for the plain home page: minutes for the last hour, then the date.
 const editedLabel = (iso, now = new Date()) => {
@@ -161,6 +200,8 @@ export class ReportsWithoutTheme extends React.Component {
     onUnauthorized: PropTypes.func,
     // How long a pause in editing is before a report saves (ms).
     saveDelay: PropTypes.number,
+    // The folder New report makes reports in: the one the host's home page shows, say. None by default.
+    newReportFolderId: PropTypes.string,
     // Passed on to each report's ReportBuilder.
     branding: PropTypes.object,
     enableBranding: PropTypes.bool,
@@ -189,6 +230,7 @@ export class ReportsWithoutTheme extends React.Component {
     storageKeyPrefix: DEFAULT_STORAGE_PREFIX,
     onUnauthorized: undefined,
     saveDelay: SAVE_DELAY_MS,
+    newReportFolderId: null,
     branding: undefined,
     enableBranding: false,
     canEditBranding: false,
@@ -219,6 +261,7 @@ export class ReportsWithoutTheme extends React.Component {
     // What the host's address last said was shown, as far as this knows, so its changes can be told from ours.
     this.reported = props.shownReportId
     this.listRequest = 0
+    this.organizersRequest = 0
     this.openRequest = 0
     this.unauthorizedSaid = false
 
@@ -237,6 +280,10 @@ export class ReportsWithoutTheme extends React.Component {
       deletingId: null,
       tilePicker: null,
       newReportOpen: false,
+      // The user's folders and tags on the data source, A to Z; null while they load.
+      folders: null,
+      tags: null,
+      organizersError: null,
     }
   }
 
@@ -246,6 +293,7 @@ export class ReportsWithoutTheme extends React.Component {
     window.addEventListener('beforeunload', this.onBeforeUnload)
     window.addEventListener('keydown', this.onKeyDown)
     this.loadList()
+    this.loadOrganizers()
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -349,9 +397,20 @@ export class ReportsWithoutTheme extends React.Component {
   resetList = () => {
     this.tabsSource = null
     this.tabs = []
-    this.setState({ reports: null, listError: null, notice: null, actionError: null, tabs: [], tabWidths: {} })
+    this.setState({
+      reports: null,
+      listError: null,
+      notice: null,
+      actionError: null,
+      tabs: [],
+      tabWidths: {},
+      folders: null,
+      tags: null,
+      organizersError: null,
+    })
     this.select(null)
     this.loadList()
+    this.loadOrganizers()
   }
 
   // The report the host's address names opens (as a tab) if it's in the list; otherwise the home page shows.
@@ -394,6 +453,182 @@ export class ReportsWithoutTheme extends React.Component {
     )
   }
 
+  // ---------------------------------------------------------------- folders and tags
+
+  // The user's folders and tags on this data source, beside the list.
+  loadOrganizers = () => {
+    const sourceId = this.sourceId
+    const authentication = this.credentialsFor(sourceId)
+    this.organizersRequest += 1
+    const request = this.organizersRequest
+    const current = () => this.mounted && request === this.organizersRequest
+    this.setState({ organizersError: null })
+    Promise.all([fetchReportFolders({ authentication }), fetchReportTags({ authentication })]).then(
+      ([folders, tags]) => {
+        if (current()) {
+          this.setState({ folders: byName(folders), tags: byName(tags), organizersError: null })
+        }
+      },
+      (error) => {
+        if (current()) {
+          this.unauthorized(error)
+          this.setState({ folders: [], tags: [], organizersError: describeReportError(error, 'organizers').message })
+        }
+      },
+    )
+  }
+
+  // A change to folders or tags lands only on the data source it was made on.
+  stillOn = (sourceId) => this.mounted && sourceId === this.sourceId
+
+  // Where each report now is, as organizing answered or a deleted folder or tag left it.
+  placeReports = (place) =>
+    this.setState(({ reports }) => (reports ? { reports: reports.map((report) => place(report) || report) } : null))
+
+  // A new folder, or the one with that name already (making one twice finds it). Resolves with the folder.
+  createFolder = async (name) => this.makeOrganizer('folder', name)
+
+  // A new tag in a colour the host picked, or the one with that name already. Resolves with the tag.
+  createTag = async (name, color) => this.makeOrganizer('tag', name, color)
+
+  makeOrganizer = async (kind, rawName, color) => {
+    const list = kind === 'folder' ? 'folders' : 'tags'
+    const name = nameOf(rawName)
+    if (isBadName(name)) {
+      throw failure(BAD_NAME(), kind)
+    }
+    const existing = named(this.state[list], name)
+    if (existing) {
+      return existing
+    }
+    const sourceId = this.sourceId
+    const authentication = this.credentialsFor(sourceId)
+    const add = (item) => {
+      if (this.stillOn(sourceId)) {
+        this.setState((state) => ({ [list]: byName([...(state[list] || []).filter((i) => i.id !== item.id), item]) }))
+      }
+      return item
+    }
+    try {
+      const made =
+        kind === 'folder'
+          ? await createReportFolder({ authentication, id: newReportId(), name })
+          : await createReportTag({ authentication, id: newReportId(), name, color })
+      return add(withoutCreated(made))
+    } catch (error) {
+      // Made meanwhile somewhere else: that one's it.
+      const taken = kind === 'folder' ? 'REPORT_FOLDER_NAME_TAKEN' : 'REPORT_TAG_NAME_TAKEN'
+      if (error?.code === taken && error.details?.id) {
+        const all = await (kind === 'folder' ? fetchReportFolders : fetchReportTags)({ authentication }).catch(() => [])
+        const holder = all.find((item) => item.id === error.details.id)
+        if (holder) {
+          return add(holder)
+        }
+      }
+      this.unauthorized(error)
+      throw failure(error, kind)
+    }
+  }
+
+  renameFolder = async (id, rawName) => {
+    const name = nameOf(rawName)
+    if (isBadName(name)) {
+      throw failure(BAD_NAME(), 'folder')
+    }
+    const sourceId = this.sourceId
+    try {
+      const folder = await renameReportFolder({ authentication: this.credentialsFor(sourceId), id, name })
+      if (this.stillOn(sourceId)) {
+        this.setState(({ folders }) => ({ folders: byName((folders || []).map((f) => (f.id === id ? folder : f))) }))
+      }
+      return folder
+    } catch (error) {
+      this.unauthorized(error)
+      throw failure(error, 'folder')
+    }
+  }
+
+  // Renames a tag, recolours it, or both: { name, color }.
+  updateTag = async (id, { name: rawName, color } = {}) => {
+    const name = rawName === undefined ? undefined : nameOf(rawName)
+    if (name !== undefined && isBadName(name)) {
+      throw failure(BAD_NAME(), 'tag')
+    }
+    const sourceId = this.sourceId
+    try {
+      const tag = await updateReportTag({ authentication: this.credentialsFor(sourceId), id, name, color })
+      if (this.stillOn(sourceId)) {
+        this.setState(({ tags }) => ({ tags: byName((tags || []).map((t) => (t.id === id ? tag : t))) }))
+      }
+      return tag
+    } catch (error) {
+      this.unauthorized(error)
+      throw failure(error, 'tag')
+    }
+  }
+
+  // Deletes a folder: its reports become unfiled; none is deleted. One already gone counts as deleted.
+  deleteFolder = async (id) => {
+    const sourceId = this.sourceId
+    try {
+      await deleteReportFolder({ authentication: this.credentialsFor(sourceId), id })
+    } catch (error) {
+      if (error?.code !== 'REPORT_FOLDER_NOT_FOUND') {
+        this.unauthorized(error)
+        throw failure(error, 'deleteFolder')
+      }
+    }
+    if (this.stillOn(sourceId)) {
+      this.setState(({ folders }) => ({ folders: (folders || []).filter((f) => f.id !== id) }))
+      this.placeReports((report) => (report.folderId === id ? { ...report, folderId: null } : null))
+    }
+  }
+
+  // Deletes a tag, taking it off every report that had it; none is deleted. One already gone counts as deleted.
+  deleteTag = async (id) => {
+    const sourceId = this.sourceId
+    try {
+      await deleteReportTag({ authentication: this.credentialsFor(sourceId), id })
+    } catch (error) {
+      if (error?.code !== 'REPORT_TAG_NOT_FOUND') {
+        this.unauthorized(error)
+        throw failure(error, 'deleteTag')
+      }
+    }
+    if (this.stillOn(sourceId)) {
+      this.setState(({ tags }) => ({ tags: (tags || []).filter((t) => t.id !== id) }))
+      this.placeReports((report) =>
+        report.tagIds?.includes(id) ? { ...report, tagIds: report.tagIds.filter((t) => t !== id) } : null,
+      )
+    }
+  }
+
+  // Files reports in a folder (null: no folder; left out: as they are), and adds or takes off tags, all at once or
+  // not at all: { reportIds, folderId, addTagIds, removeTagIds }. Resolves with where each report now is.
+  organizeReports = async ({ reportIds, folderId, addTagIds, removeTagIds }) => {
+    const sourceId = this.sourceId
+    try {
+      const placements = await organizeStoredReports({
+        authentication: this.credentialsFor(sourceId),
+        reportIds,
+        folderId,
+        addTagIds,
+        removeTagIds,
+      })
+      if (this.stillOn(sourceId)) {
+        const placed = new Map(placements.map((p) => [p.id, p]))
+        this.placeReports((report) => {
+          const p = placed.get(report.id)
+          return p ? { ...report, folderId: p.folderId, tagIds: p.tagIds } : null
+        })
+      }
+      return placements
+    } catch (error) {
+      this.unauthorized(error)
+      throw failure(error, 'organize')
+    }
+  }
+
   // New credentials for the data source shown: what failed because the old ones were turned away goes again.
   credentialsRenewed = (sourceId) => {
     this.savers.forEach((saver, id) => {
@@ -403,8 +638,13 @@ export class ReportsWithoutTheme extends React.Component {
     })
     if (this.state.listError) {
       this.resetList()
-    } else if (this.state.openError) {
+      return
+    }
+    if (this.state.openError) {
       this.loadShown()
+    }
+    if (this.state.organizersError) {
+      this.loadOrganizers()
     }
   }
 
@@ -426,10 +666,11 @@ export class ReportsWithoutTheme extends React.Component {
 
   // ---------------------------------------------------------------- saving
 
-  makeSaver = (id, sourceId, report, stored) => {
+  makeSaver = (id, sourceId, report, stored, folderId = null) => {
     this.savers.get(id)?.dispose()
     const saver = new ReportSaver({
       id,
+      folderId,
       stored,
       report,
       delayMs: this.props.saveDelay,
@@ -633,6 +874,12 @@ export class ReportsWithoutTheme extends React.Component {
     }
   }
 
+  // The folder the host says a new report goes in, while it's one of the user's.
+  newReportFolder = () => {
+    const id = this.props.newReportFolderId
+    return id && this.state.folders?.some((folder) => folder.id === id) ? id : null
+  }
+
   // A new report, started as New report chose: its title and first blocks, or blank. It opens in a tab, and is
   // created on the server right away (it opens from its saver meanwhile).
   startReport = ({ title = '', blocks = [] } = {}) => {
@@ -642,9 +889,11 @@ export class ReportsWithoutTheme extends React.Component {
     this.saveNow()
     const id = newReportId()
     const report = createEmptyReport({ title, blocks: stripQueryResponses(blocks) })
-    const saver = this.makeSaver(id, this.sourceId, report, null)
+    // Made from the home page while it shows a folder: it's made in that folder.
+    const folderId = this.newReportFolder()
+    const saver = this.makeSaver(id, this.sourceId, report, null, folderId)
     const now = new Date().toISOString()
-    const summary = { id, title, sizeBytes: 0, version: 0, folderId: null, tagIds: [], createdAt: now, updatedAt: now }
+    const summary = { id, title, sizeBytes: 0, version: 0, folderId, tagIds: [], createdAt: now, updatedAt: now }
     this.setState(({ reports }) => ({ newReportOpen: false, notice: null, reports: [summary, ...(reports || [])] }))
     saver.flush()
     this.setTabs((tabs) => withTabOpen(tabs, id))
@@ -682,6 +931,16 @@ export class ReportsWithoutTheme extends React.Component {
         this.setState({ deletingId: null })
       }
     }
+  }
+
+  // Deletes several reports from the home page, one after another as deleteReport does each. Resolves with whether
+  // every one was deleted.
+  deleteReports = async (ids) => {
+    let all = true
+    for (const id of ids) {
+      all = (await this.deleteReport(id)) && all
+    }
+    return all
   }
 
   // Changed in another tab too: drop what's here and open the stored copy.
@@ -724,14 +983,26 @@ export class ReportsWithoutTheme extends React.Component {
   // ---------------------------------------------------------------- drawing
 
   renderHome = () => {
-    const { reports, listError, deletingId, actionError, notice } = this.state
+    const { reports, listError, deletingId, actionError, notice, folders, tags, organizersError } = this.state
     const home = {
       reports,
       listError,
       retryList: this.resetList,
       openReport: this.openReport,
       deleteReport: this.deleteReport,
+      deleteReports: this.deleteReports,
       deletingId,
+      folders,
+      tags,
+      organizersError,
+      retryOrganizers: this.loadOrganizers,
+      createFolder: this.createFolder,
+      renameFolder: this.renameFolder,
+      deleteFolder: this.deleteFolder,
+      createTag: this.createTag,
+      updateTag: this.updateTag,
+      deleteTag: this.deleteTag,
+      organizeReports: this.organizeReports,
       notices: [
         ...(actionError ? [{ tone: 'error', text: actionError }] : []),
         ...(notice ? [{ tone: 'info', text: notice }] : []),

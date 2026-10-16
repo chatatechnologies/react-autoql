@@ -190,6 +190,14 @@ describe('ReportSaver', () => {
     expect(api.saveReport).toHaveBeenCalledWith({ authentication: AUTH, id: ID, report: doc('Named'), version: 1 })
   })
 
+  it('creates a new report in the folder it was given, and names no folder otherwise', async () => {
+    api.createReport.mockImplementation(async ({ report }) => detail(1, report))
+    const { saver } = saverFor({ stored: null, report: doc(''), folderId: 'f1' })
+    await saver.flush()
+    expect(api.createReport).toHaveBeenCalledWith({ authentication: AUTH, id: ID, report: doc(''), folderId: 'f1' })
+    expect(requests(api.createReport)[0]).toHaveProperty('folderId', 'f1')
+  })
+
   it('saves again when a retried create returns the first, older copy', async () => {
     api.createReport.mockResolvedValue(detail(1, doc('')))
     api.saveReport.mockResolvedValue(saved(2))

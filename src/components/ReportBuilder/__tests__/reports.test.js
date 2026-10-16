@@ -2,7 +2,22 @@ import React from 'react'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { Reports } from '../workspace/Reports'
-import { createReport, deleteReport, fetchReport, fetchReports, ReportsApiError, saveReport } from '../run/reportsApi'
+import {
+  createReport,
+  createReportFolder,
+  createReportTag,
+  deleteReport,
+  deleteReportFolder,
+  deleteReportTag,
+  fetchReport,
+  fetchReportFolders,
+  fetchReports,
+  fetchReportTags,
+  organizeReports,
+  renameReportFolder,
+  ReportsApiError,
+  saveReport,
+} from '../run/reportsApi'
 
 jest.mock('../run/reportsApi', () => {
   const actual = jest.requireActual('../run/reportsApi')
@@ -14,6 +29,15 @@ jest.mock('../run/reportsApi', () => {
     saveReport: jest.fn(),
     deleteReport: jest.fn(),
     appendReportBlock: jest.fn(),
+    fetchReportFolders: jest.fn(),
+    fetchReportTags: jest.fn(),
+    createReportFolder: jest.fn(),
+    renameReportFolder: jest.fn(),
+    deleteReportFolder: jest.fn(),
+    createReportTag: jest.fn(),
+    updateReportTag: jest.fn(),
+    deleteReportTag: jest.fn(),
+    organizeReports: jest.fn(),
   }
 })
 
@@ -128,6 +152,8 @@ beforeEach(() => {
     created: true,
   }))
   deleteReport.mockResolvedValue(undefined)
+  fetchReportFolders.mockResolvedValue([])
+  fetchReportTags.mockResolvedValue([])
 })
 
 describe('Reports', () => {
@@ -505,5 +531,199 @@ describe('Reports', () => {
     window.dispatchEvent(leaving)
     expect(leaving.defaultPrevented).toBe(true)
     await waitFor(() => expect(saveReport).toHaveBeenCalledWith(expect.objectContaining({ keepalive: true })))
+  })
+
+  describe('folders and tags', () => {
+    const folder = (id, name, reportCount = 0) => ({ id, name, reportCount, createdAt: '', updatedAt: '' })
+    const tag = (id, name, color = 'blue') => ({ ...folder(id, name), color })
+    const filed = (id, title, folderId, tagIds) => ({ ...summary(id, title), folderId, tagIds })
+    const home = () => homeProps.current
+
+    it('loads them beside the list, A to Z whatever their case, with the token it was given', async () => {
+      fetchReportFolders.mockResolvedValue([folder('f2', 'prospects'), folder('f1', 'Households')])
+      fetchReportTags.mockResolvedValue([tag('t2', 'Q3'), tag('t1', 'client-facing', 'teal')])
+      setup()
+      await waitFor(() => expect(home().folders).not.toBeNull())
+      expect(home().folders.map((f) => f.name)).toEqual(['Households', 'prospects'])
+      expect(home().tags.map((t) => t.name)).toEqual(['client-facing', 'Q3'])
+      expect(fetchReportFolders).toHaveBeenCalledWith(expect.objectContaining({ authentication: authFor('p1') }))
+      expect(home().organizersError).toBeNull()
+    })
+
+    it('says why they couldn’t be loaded, and tries again', async () => {
+      fetchReportFolders.mockRejectedValueOnce(new ReportsApiError({ status: 503 }))
+      setup()
+      await waitFor(() =>
+        expect(home().organizersError).toBe('Folders and tags couldn’t be loaded: the server had a problem.'),
+      )
+      expect(home().folders).toEqual([])
+      act(() => home().retryOrganizers())
+      await waitFor(() => expect(home().organizersError).toBeNull())
+    })
+
+    it('makes a folder, and finds the one with that name instead of making it twice', async () => {
+      createReportFolder.mockImplementation(async ({ id, name }) => ({ ...folder(id, name), created: true }))
+      setup()
+      await waitFor(() => expect(home().folders).toEqual([]))
+      let made
+      await act(async () => {
+        made = await home().createFolder('  Households ')
+      })
+      expect(createReportFolder).toHaveBeenCalledWith(
+        expect.objectContaining({ authentication: authFor('p1'), name: 'Households', id: expect.any(String) }),
+      )
+      expect(made).toEqual(expect.objectContaining({ name: 'Households' }))
+      expect(made).not.toHaveProperty('created')
+      expect(home().folders.map((f) => f.name)).toEqual(['Households'])
+
+      let again
+      await act(async () => {
+        again = await home().createFolder('households')
+      })
+      expect(again.id).toBe(made.id)
+      expect(createReportFolder).toHaveBeenCalledTimes(1)
+    })
+
+    it('takes the folder made meanwhile in another tab when the name turns out to be taken', async () => {
+      createReportFolder.mockRejectedValue(
+        new ReportsApiError({ status: 409, code: 'REPORT_FOLDER_NAME_TAKEN', details: { id: 'f9' } }),
+      )
+      setup()
+      await waitFor(() => expect(home().folders).toEqual([]))
+      fetchReportFolders.mockResolvedValueOnce([folder('f9', 'Households')])
+      let made
+      await act(async () => {
+        made = await home().createFolder('Households')
+      })
+      expect(made.id).toBe('f9')
+      expect(home().folders.map((f) => f.id)).toEqual(['f9'])
+    })
+
+    it('turns down a name that’s empty or over 80 characters without asking the service', async () => {
+      setup()
+      await waitFor(() => expect(home().tags).toEqual([]))
+      await expect(home().createFolder('   ')).rejects.toThrow(
+        'The folder wasn’t saved: a name can be 1 to 80 characters.',
+      )
+      await expect(home().createTag('x'.repeat(81), 'blue')).rejects.toThrow(
+        'The tag wasn’t saved: a name can be 1 to 80 characters.',
+      )
+      expect(createReportFolder).not.toHaveBeenCalled()
+      expect(createReportTag).not.toHaveBeenCalled()
+    })
+
+    it('makes a tag in the colour asked for, and renames a folder', async () => {
+      fetchReportFolders.mockResolvedValue([folder('f1', 'Households')])
+      createReportTag.mockImplementation(async ({ id, name, color }) => ({ ...tag(id, name, color), created: true }))
+      renameReportFolder.mockImplementation(async ({ id, name }) => folder(id, name))
+      setup()
+      await waitFor(() => expect(home().folders).toHaveLength(1))
+      await act(async () => {
+        await home().createTag('Draft', 'amber')
+        await home().renameFolder('f1', 'Clients')
+      })
+      expect(createReportTag).toHaveBeenCalledWith(expect.objectContaining({ name: 'Draft', color: 'amber' }))
+      expect(home().tags.map((t) => [t.name, t.color])).toEqual([['Draft', 'amber']])
+      expect(home().folders.map((f) => f.name)).toEqual(['Clients'])
+    })
+
+    it('unfiles a deleted folder’s reports and takes a deleted tag off its reports, deleting none', async () => {
+      fetchReports.mockResolvedValue({
+        reports: [filed(A, 'Q3 book', 'f1', ['t1', 't2']), filed(B, 'Fees', 'f2', ['t1'])],
+      })
+      fetchReportFolders.mockResolvedValue([folder('f1', 'Households'), folder('f2', 'Reviews')])
+      fetchReportTags.mockResolvedValue([tag('t1', 'Draft'), tag('t2', 'Q3')])
+      deleteReportFolder.mockResolvedValue(undefined)
+      deleteReportTag.mockRejectedValue(new ReportsApiError({ status: 404, code: 'REPORT_TAG_NOT_FOUND' }))
+      setup()
+      await waitFor(() => expect(home().tags).toHaveLength(2))
+      await act(async () => {
+        await home().deleteFolder('f1')
+        // Already gone (deleted in another tab): it counts as deleted.
+        await home().deleteTag('t1')
+      })
+      expect(home().folders.map((f) => f.id)).toEqual(['f2'])
+      expect(home().tags.map((t) => t.id)).toEqual(['t2'])
+      expect(home().reports.map((r) => [r.id, r.folderId, r.tagIds])).toEqual([
+        [A, null, ['t2']],
+        [B, 'f2', []],
+      ])
+      expect(deleteReport).not.toHaveBeenCalled()
+    })
+
+    it('files and tags reports all at once, and the list follows where the service says they are', async () => {
+      organizeReports.mockResolvedValue([
+        { id: A, folderId: 'f1', tagIds: ['t1'] },
+        { id: B, folderId: 'f1', tagIds: ['t1'] },
+      ])
+      setup()
+      await waitFor(() => expect(home().reports).toHaveLength(2))
+      let placements
+      await act(async () => {
+        placements = await home().organizeReports({ reportIds: [A, B], folderId: 'f1', addTagIds: ['t1'] })
+      })
+      expect(organizeReports).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authentication: authFor('p1'),
+          reportIds: [A, B],
+          folderId: 'f1',
+          addTagIds: ['t1'],
+        }),
+      )
+      expect(placements).toHaveLength(2)
+      expect(home().reports.map((r) => [r.folderId, r.tagIds])).toEqual([
+        ['f1', ['t1']],
+        ['f1', ['t1']],
+      ])
+    })
+
+    it('turns down a change the service refused with the line to show, leaving the list as it was', async () => {
+      organizeReports.mockRejectedValue(new ReportsApiError({ status: 422, code: 'REPORT_TAGS_INVALID' }))
+      setup()
+      await waitFor(() => expect(home().reports).toHaveLength(2))
+      await expect(home().organizeReports({ reportIds: [A], addTagIds: ['t1'] })).rejects.toThrow(
+        'Nothing was changed: a report can carry up to 20 tags.',
+      )
+      expect(home().reports.map((r) => r.tagIds)).toEqual([[], []])
+    })
+
+    it('makes a new report in the folder the host’s home page shows, while that folder is the user’s', async () => {
+      fetchReportFolders.mockResolvedValue([folder('f1', 'Households')])
+      const view = setup({ newReportFolderId: 'f1' })
+      await waitFor(() => expect(home().folders).toHaveLength(1))
+      fireEvent.click(screen.getByRole('button', { name: 'New report' }))
+      act(() => mockDialogs.newReport.onStart({ title: 'Filed', blocks: [] }))
+      await waitFor(() => expect(createReport).toHaveBeenCalledTimes(1))
+      expect(createReport.mock.calls[0][0]).toEqual(expect.objectContaining({ folderId: 'f1' }))
+      fireEvent.click(screen.getByRole('button', { name: 'All reports' }))
+      expect(home().reports.find((r) => r.title === 'Filed').folderId).toBe('f1')
+
+      // A folder that isn't one of theirs (deleted meanwhile, say) files nothing.
+      view.rerender(
+        <Reports
+          authentication={authFor('p1')}
+          renderHome={renderHome}
+          storageKeyPrefix='test.'
+          saveDelay={0}
+          newReportFolderId='gone'
+        />,
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'New report' }))
+      act(() => mockDialogs.newReport.onStart({ title: 'Loose', blocks: [] }))
+      await waitFor(() => expect(createReport).toHaveBeenCalledTimes(2))
+      expect(createReport.mock.calls[1][0]).not.toHaveProperty('folderId')
+    })
+
+    it('deletes several reports for the home page, each as one is deleted', async () => {
+      setup()
+      await waitFor(() => expect(home().reports).toHaveLength(2))
+      let deleted
+      await act(async () => {
+        deleted = await home().deleteReports([A, B])
+      })
+      expect(deleted).toBe(true)
+      expect(deleteReport.mock.calls.map(([call]) => call.id)).toEqual([A, B])
+      expect(home().reports).toEqual([])
+    })
   })
 })

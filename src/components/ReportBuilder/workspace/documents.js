@@ -137,8 +137,12 @@ export const describeBlock = (block) => {
 
 // ---------------------------------------------------------------- what went wrong
 
-// The one line to show for a failed call ('load', 'open', 'save', 'add' or 'delete'), and whether trying again
-// later can help: it can when the service couldn't be reached or failed, not when it turned the request down.
+// What's done to folders and tags, rather than to reports.
+const ORGANIZER_ACTIONS = ['organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag']
+
+// The one line to show for a failed call ('load', 'open', 'save', 'add' or 'delete'; for folders and tags
+// 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'), and whether trying again later can
+// help: it can when the service couldn't be reached or failed, not when it turned the request down.
 export const describeReportError = (error, action) => {
   const known = error instanceof ReportsApiError
   const status = known ? error.status : 0
@@ -159,6 +163,22 @@ export const describeReportError = (error, action) => {
     reason = E.titleTooLong(REPORT_TITLE_MAX)
   } else if (code === 'REPORT_ID_CONFLICT') {
     reason = E.otherDataSource
+  } else if (code === 'REPORT_FOLDER_NOT_FOUND') {
+    reason = E.folderGone
+  } else if (code === 'REPORT_TAG_NOT_FOUND') {
+    reason = E.tagGone
+  } else if (code === 'REPORT_FOLDER_NAME_TAKEN') {
+    reason = E.folderNameTaken
+  } else if (code === 'REPORT_TAG_NAME_TAKEN') {
+    reason = E.tagNameTaken
+  } else if (code === 'REPORT_NAME_INVALID') {
+    reason = E.nameInvalid
+  } else if (code === 'REPORT_TAGS_INVALID') {
+    reason = E.tooManyTags
+  } else if (code === 'REPORT_LIMIT_EXCEEDED') {
+    reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
+  } else if (code === 'REPORT_BULK_REQUEST_INVALID') {
+    reason = E.tooManyReports
   } else if (status === 0) {
     reason = E.unreachable
     retry = true

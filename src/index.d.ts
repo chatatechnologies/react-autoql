@@ -849,11 +849,41 @@ export interface ReportsHomeProps {
   // Deletes the report for good (ask first); its tab closes. Resolves with whether it was deleted — why not is in
   // notices.
   deleteReport: (id: string) => Promise<boolean>
+  // Deletes several, one after another as deleteReport does each. Resolves with whether every one was deleted.
+  deleteReports: (ids: string[]) => Promise<boolean>
   deletingId: string | null
   // What happened meanwhile: a report deleted in another tab, a delete that failed.
   notices: ReportsNotice[]
   // Opens New report.
   newReport: () => void
+
+  // The user's folders and tags on the data source, A to Z; null while they load. Each report in `reports` says its
+  // folder (folderId, null for none) and its tags (tagIds).
+  folders: ReportFolder[] | null
+  tags: ReportTag[] | null
+  // Why they couldn't be loaded.
+  organizersError: string | null
+  retryOrganizers: () => void
+  // The changes below resolve once AutoQL has them, the lists following, and reject with an Error whose message is
+  // the line to show (`code` and `status` are the service's).
+  // A new folder or tag, or the one with that name already, whatever its case. Names are 1 to 80 characters.
+  createFolder: (name: string) => Promise<ReportFolder>
+  renameFolder: (id: string, name: string) => Promise<ReportFolder>
+  // Its reports become unfiled; none is deleted.
+  deleteFolder: (id: string) => Promise<void>
+  // `color` is a short key the host picks (`blue`, `amber`…), kept as it's sent.
+  createTag: (name: string, color: string) => Promise<ReportTag>
+  updateTag: (id: string, change: { name?: string; color?: string }) => Promise<ReportTag>
+  // Taken off every report that had it; none is deleted.
+  deleteTag: (id: string) => Promise<void>
+  // Files reports in a folder (null: none; left out: as they are) and adds or takes off tags, all at once or not at
+  // all. Resolves with where each report now is.
+  organizeReports: (change: {
+    reportIds: string[]
+    folderId?: string | null
+    addTagIds?: string[]
+    removeTagIds?: string[]
+  }) => Promise<ReportPlacement[]>
 }
 
 export interface ReportsProps {
@@ -882,6 +912,8 @@ export interface ReportsProps {
   onUnauthorized?: () => void
   // How long a pause in editing is before a report saves (ms). 2000 by default.
   saveDelay?: number
+  // The folder New report makes reports in, while it's one of the user's: the one the host's home page shows, say.
+  newReportFolderId?: string | null
   // Passed on to each report's ReportBuilder.
   branding?: ReportBranding
   enableBranding?: boolean

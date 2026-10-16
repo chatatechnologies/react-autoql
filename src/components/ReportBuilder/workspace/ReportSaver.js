@@ -28,8 +28,8 @@ import { REPORTS_STRINGS } from './strings'
 // yet); report (as the page has it: the stored copy, or a new report's first draft); delayMs (the pause);
 // getAuthentication (the AutoQL authentication for the report's data source, asked for on every request because the
 // host re-mints tokens); onState(state); onMerged(report), when blocks added elsewhere were merged in and the page
-// should show this copy; onUnauthorized(), when the service turned the token away; api (the service's calls, for
-// tests).
+// should show this copy; onUnauthorized(), when the service turned the token away; folderId (the folder a report the
+// service doesn't have yet is created in; none by default); api (the service's calls, for tests).
 //
 // A state is { status, error, savedAt }: status one of SAVE_STATUSES, error the line to show while it's failed or in
 // conflict, savedAt when the service last stored the report (ISO), null until it has.
@@ -220,6 +220,7 @@ export class ReportSaver {
           authentication: this.authentication(),
           id: this.id,
           report: body,
+          ...(this.options.folderId ? { folderId: this.options.folderId } : {}),
           ...sendOptions,
         })
         this.version = created.version
