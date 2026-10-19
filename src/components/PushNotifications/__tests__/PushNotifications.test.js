@@ -1,5 +1,5 @@
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import * as feUtils from 'autoql-fe-utils'
 
@@ -45,6 +45,21 @@ const renderToggle = (providerProps = {}) =>
   )
 
 const getSwitch = () => screen.getByRole('checkbox', { name: 'Browser notifications' })
+const getToggleMessage = () => screen.getByTestId('react-autoql-push-toggle-message')
+
+// jsdom has no Permissions API. This stands in for navigator.permissions and returns the PermissionStatus it hands out
+const mockPermissionsApi = () => {
+  const permissionStatus = { state: 'denied', onchange: null }
+  Object.defineProperty(navigator, 'permissions', {
+    value: { query: jest.fn().mockResolvedValue(permissionStatus) },
+    configurable: true,
+  })
+  return permissionStatus
+}
+
+afterEach(() => {
+  delete navigator.permissions
+})
 
 describe('PushNotificationsToggle', () => {
   test('renders nothing in browsers without web push', () => {
@@ -80,6 +95,45 @@ describe('PushNotificationsToggle', () => {
 
     await waitFor(() => expect(getSwitch()).not.toBeChecked())
     expect(feUtils.disablePushNotifications).toHaveBeenCalledWith(expect.objectContaining({ authentication }))
+  })
+
+  test('the slider takes clicks once the status check finishes', async () => {
+    // Real users click the slider: the input is hidden. jsdom delivers clicks whatever the CSS says, so check the
+    // style the browser goes by
+    const { container } = renderToggle()
+    const slider = container.querySelector('.toggle-switch-slider')
+    await waitFor(() => expect(slider).toHaveStyle({ pointerEvents: 'auto' }))
+
+    fireEvent.click(slider)
+
+    await waitFor(() => expect(feUtils.enablePushNotifications).toHaveBeenCalled())
+  })
+
+  test('clears a browser block when the permission changes in site settings', async () => {
+    const permissionStatus = mockPermissionsApi()
+    feUtils.getPushPermission.mockReturnValue('denied')
+    renderToggle()
+    await waitFor(() => expect(getToggleMessage()).toHaveTextContent('blocked'))
+    await waitFor(() => expect(permissionStatus.onchange).toEqual(expect.any(Function)))
+
+    feUtils.getPushPermission.mockReturnValue('default')
+    act(() => permissionStatus.onchange())
+
+    await waitFor(() => expect(getSwitch()).toBeEnabled())
+    expect(getToggleMessage()).not.toHaveTextContent('blocked')
+  })
+
+  test('clears a browser block when the user comes back to the tab', async () => {
+    feUtils.getPushPermission.mockReturnValue('denied')
+    renderToggle()
+    await waitFor(() => expect(getToggleMessage()).toHaveTextContent('blocked'))
+
+    feUtils.getPushPermission.mockReturnValue('granted')
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+
+    await waitFor(() => expect(getSwitch()).toBeEnabled())
   })
 
   test('explains a browser block and disables the switch', async () => {

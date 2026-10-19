@@ -26,11 +26,14 @@ export default class Switch extends React.Component {
   }
 
   toggleChecked = () => {
+    // The input is hidden, so the slider takes the clicks. Ignore them while disabled
+    if (this.props.disabled) {
+      return
+    }
+
     this.props.onChange(!this.props.checked)
   }
-  spanStyle = {
-    pointerEvents: this.props.disabled ? 'none' : 'auto',
-  }
+
   render = () => {
     const { type, hasError, style, onChange, checked, offText, onText, displaySwitchText, ...nativeProps } = this.props
     const switchText = this.props.checked ? this.props.onText : this.props.offText
@@ -56,7 +59,12 @@ export default class Switch extends React.Component {
               onClick={(e) => e.stopPropagation()}
               onChange={this.toggleChecked}
             />
-            <span style={this.spanStyle} className='toggle-switch-slider' onClick={this.toggleChecked}>
+            {/* Computed on every render: disabled often changes after mount, e.g. once a status check finishes */}
+            <span
+              style={{ pointerEvents: this.props.disabled ? 'none' : 'auto' }}
+              className='toggle-switch-slider'
+              onClick={this.toggleChecked}
+            >
               <span className='toggle-switch-text'>{this.props.displaySwitchText ? switchText : null}</span>
             </span>
           </div>

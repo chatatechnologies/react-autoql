@@ -99,6 +99,50 @@ export const PushNotificationsProvider = ({
     updateStatus()
   }, [updateStatus])
 
+  // People unblock (or block) notifications in the browser's site settings, outside the app. Check again when the
+  // Permissions API reports a change, and whenever the tab becomes visible, so the toggle doesn't stay blocked
+  // until a reload.
+  useEffect(() => {
+    if (!isSupported) {
+      return undefined
+    }
+
+    let isActive = true
+    let permissionStatus
+    const onPermissionChange = () => updateStatus()
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateStatus()
+      }
+    }
+
+    try {
+      navigator.permissions
+        ?.query({ name: 'notifications' })
+        .then((result) => {
+          if (isActive) {
+            permissionStatus = result
+            permissionStatus.onchange = onPermissionChange
+          }
+        })
+        .catch(() => {
+          // Not every browser can query this permission. The visibility check still covers it
+        })
+    } catch (permissionError) {
+      // Same, for browsers that throw instead of rejecting
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      isActive = false
+      if (permissionStatus) {
+        permissionStatus.onchange = null
+      }
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [isSupported, updateStatus])
+
   // Once per sign-in, make the server match this browser
   const isSignedIn = hasAuthentication(authentication)
   const hasSyncedRef = useRef(false)
