@@ -30,23 +30,23 @@ describe('brand colours', () => {
 })
 
 describe('the branding the pages draw', () => {
-  it('sits on the left unless told otherwise, keeps six distinct colours, and badges in the first', () => {
+  it('sits on the left unless told otherwise, and keeps six distinct colours', () => {
     const colors = ['#111', '#111111', 'teal', '#222', '#333', '#444', '#555', '#666', '#777']
-    expect(normalizeBranding({ name: 'Acme', colors, color: '#999' })).toMatchObject({
+    expect(normalizeBranding({ name: 'Acme', colors })).toMatchObject({
       name: 'Acme',
       position: 'left',
       colors: ['#111111', '#222222', '#333333', '#444444', '#555555', '#666666'],
-      color: '#111111',
     })
-    expect(normalizeBranding({ color: '#26A7DF' }).color).toBe('#26a7df')
+    // There's no initials badge, so a colour of its own isn't kept.
+    expect(normalizeBranding({ name: 'Acme', color: '#26A7DF' })).not.toHaveProperty('color')
   })
 
   it('takes what the organisation set over the host’s, and the host’s for the rest', () => {
-    const host = { name: 'TestFirm', color: '#26a7df' }
-    expect(mergeBranding(host, {})).toMatchObject({ name: 'TestFirm', color: '#26a7df', colors: [] })
+    const host = { name: 'TestFirm' }
+    expect(mergeBranding(host, {})).toMatchObject({ name: 'TestFirm', colors: [] })
     expect(mergeBranding(host, { name: 'Acme Wealth', colors: ['#0bbfad'], position: 'center' })).toMatchObject({
       name: 'Acme Wealth',
-      color: '#0bbfad',
+      colors: ['#0bbfad'],
       position: 'center',
     })
     expect(mergeBranding(host, { name: '' }).name).toBe('TestFirm')

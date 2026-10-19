@@ -40,11 +40,28 @@ const readFile = (file, mime) =>
   })
 
 const extensionOf = (fileName) => ((String(fileName).match(/\.([a-z0-9]+)$/i) || [])[1] || '').toLowerCase()
-const fontNameOf = (fileName) =>
-  String(fileName)
+
+// What AutoQL keeps in a font's name, which ends up in CSS: letters, digits, spaces, - and _. Made at run time so
+// the build doesn't spell out every letter for browsers that can't read \p{…}; those keep to plain ASCII.
+const NOT_IN_FONT_NAME = (() => {
+  try {
+    return new RegExp('[^\\p{L}\\p{M}\\p{Nd} _-]+', 'gu')
+  } catch (error) {
+    return /[^A-Za-z0-9 _-]+/g
+  }
+})()
+
+// A font's name, from its file's: "Lato-Bold (1).ttf" → "Lato Bold 1". Anything AutoQL wouldn't keep becomes a
+// space, and it's cut to the 80 characters AutoQL allows.
+const fontNameOf = (fileName) => {
+  const name = String(fileName)
     .replace(/\.[a-z0-9]+$/i, '')
     .replace(/[-_]+/g, ' ')
+    .replace(NOT_IN_FONT_NAME, ' ')
+    .replace(/\s+/g, ' ')
     .trim()
+  return Array.from(name).slice(0, BRAND_NAME_MAX).join('').trim() || B.fontFallbackName
+}
 
 // Whether the browser can set type in it, where it can tell (FontFace); elsewhere it's taken on trust.
 const isUsableFont = async (url) => {
@@ -93,11 +110,8 @@ const brandingOf = (draft) => {
   }
 }
 
-// What counts as a change: everything but the badge colour a host passes on its own.
-const comparable = (branding) => {
-  const { color, ...rest } = normalizeBranding(branding)
-  return JSON.stringify(rest)
-}
+// What counts as a change.
+const comparable = (branding) => JSON.stringify(normalizeBranding(branding))
 
 // An image the organisation uploads: its preview, or none, with Upload/Replace and Remove.
 const ImageField = ({ label, note, url, error, testId, onFile, onRemove }) => {

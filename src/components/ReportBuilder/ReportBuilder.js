@@ -120,8 +120,6 @@ export class ReportBuilderWithoutTheme extends React.Component {
       wordmarkUrl: PropTypes.string,
       position: PropTypes.oneOf(['left', 'center', 'right']),
       colors: PropTypes.arrayOf(PropTypes.string),
-      // The initials badge's colour where there are no brand colours.
-      color: PropTypes.string,
       headingFont: PropTypes.shape({ name: PropTypes.string, url: PropTypes.string }),
       bodyFont: PropTypes.shape({ name: PropTypes.string, url: PropTypes.string }),
     }),

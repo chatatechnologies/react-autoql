@@ -1693,7 +1693,7 @@ describe('the host’s toolbar status (toolbarStatus)', () => {
 
 describe('the report options menu, and the organisation’s branding (enableBranding)', () => {
   const PANEL_KEY = 'react-autoql-report-builder-panel-open'
-  const HOST = { name: 'Acme Wealth', color: '#26a7df' }
+  const HOST = { name: 'Acme Wealth' }
   const FONT = 'data:font/woff2;base64,d09GMgABAAAAAA=='
   const LOGO = 'data:image/png;base64,iVBORw0KGgo='
   const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="10"/>'
@@ -1789,9 +1789,9 @@ describe('the report options menu, and the organisation’s branding (enableBran
     )
     const head = pageHeader(container)
     expect(head.getAttribute('data-brand-position')).toBe('center')
-    // The wordmark takes the name's place, and with no logo there's no badge either.
+    // The wordmark takes the name's place, and with no logo it stands alone.
     expect(within(head).getByRole('img', { name: 'Acme Wealth' }).getAttribute('src')).toBe(LOGO)
-    expect(head.querySelector('.react-autoql-report-builder-brand-chip')).toBeNull()
+    expect(head.querySelector('.react-autoql-report-builder-brand-logo')).toBeNull()
 
     selectBlock('Heading')
     expect(within(panel()).getAllByRole('button', { name: 'Brand colour 1 (#0BBFAD)' })).toHaveLength(2)
@@ -1818,7 +1818,9 @@ describe('the report options menu, and the organisation’s branding (enableBran
     const sample = within(dialog).getByTestId('report-builder-branding-sample')
     expect(sample.textContent).toContain('Q3 review')
     fireEvent.change(name, { target: { value: 'Northwind Wealth ' } })
-    expect(within(sample).getByText('NW')).toBeTruthy()
+    // With no logo the name stands alone: no badge of its initials.
+    expect(within(sample).getByText('Northwind Wealth')).toBeTruthy()
+    expect(sample.querySelector('.react-autoql-report-builder-brand').textContent).toBe('Northwind Wealth')
     const position = within(dialog).getByTestId('report-builder-branding-position')
     fireEvent.click(within(position).getByRole('button', { name: 'Right' }))
     expect(sample.querySelector('[data-brand-position]').getAttribute('data-brand-position')).toBe('right')
@@ -1873,7 +1875,7 @@ describe('the report options menu, and the organisation’s branding (enableBran
     const logo = await within(dialog).findByTestId('report-builder-branding-logo-image')
     upload(dialog, 'report-builder-branding-wordmark', new File([SVG], 'name.svg', { type: 'image/svg+xml' }))
     const wordmark = await within(dialog).findByTestId('report-builder-branding-wordmark-image')
-    // In the header the logo takes the badge's place, and the wordmark the name's.
+    // In the header the logo comes first, and the wordmark takes the name's place.
     const sample = within(dialog).getByTestId('report-builder-branding-sample')
     expect(sample.querySelector('.react-autoql-report-builder-brand-logo').getAttribute('src')).toBe(
       logo.getAttribute('src'),
@@ -1888,6 +1890,16 @@ describe('the report options menu, and the organisation’s branding (enableBran
     const bigFont = new File([new Uint8Array(500 * 1024 + 1)], 'Big.woff2', { type: '' })
     upload(dialog, 'report-builder-branding-body-font', bigFont)
     expect(await within(dialog).findByText('That font is 501 KB. Use one of 500 KB or less.')).toBeTruthy()
+    // Named from the file, keeping only what AutoQL keeps in a font's name (letters, digits, spaces, - and _).
+    upload(
+      dialog,
+      'report-builder-branding-body-font',
+      new File(['wOF2font'], 'Avenir Next (1) v2.0.woff2', { type: '' }),
+    )
+    expect(await within(dialog).findByText('Avenir Next 1 v2 0')).toBeTruthy()
+    upload(dialog, 'report-builder-branding-body-font', new File(['wOF2font'], '(★).woff2', { type: '' }))
+    expect(await within(dialog).findByText('Brand font')).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove Body text fonts' }))
     upload(dialog, 'report-builder-branding-heading-font', new File(['wOF2font'], 'Acme-Sans_Bold.woff2', { type: '' }))
     expect(await within(dialog).findByText('Acme Sans Bold')).toBeTruthy()
     // Previewed under families of the dialog's own, so the pages keep theirs until it's saved.

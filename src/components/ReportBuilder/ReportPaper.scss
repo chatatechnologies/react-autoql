@@ -587,20 +587,6 @@ $warn-rule: #f0dcb0;
     min-width: 0;
   }
 
-  .#{$rb}-brand-chip {
-    display: inline-grid;
-    place-items: center;
-    flex: none;
-    width: 18pt;
-    height: 18pt;
-    border-radius: 4pt;
-    background: var(--react-autoql-accent-color, #26a7e9);
-    color: #ffffff;
-    font-size: 7pt;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
   .#{$rb}-brand-name {
     min-width: 0;
     overflow: hidden;
@@ -614,12 +600,6 @@ $warn-rule: #f0dcb0;
     .#{$rb}-brand-logo,
     .#{$rb}-brand-wordmark {
       height: 34pt;
-    }
-    .#{$rb}-brand-chip {
-      width: 30pt;
-      height: 30pt;
-      border-radius: 6pt;
-      font-size: 11pt;
     }
     .#{$rb}-brand-name {
       font-size: 14pt;

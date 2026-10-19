@@ -604,16 +604,14 @@ export interface ReportBrandFont {
 
 export interface ReportBranding {
   name?: string
-  // The organisation's mark (it takes the place of the initials badge) and its name set as an image (it takes
-  // the place of the name); URLs, or data: URLs as uploaded.
+  // The organisation's mark (shown before the name, which stands alone without one) and its name set as an image
+  // (it takes the place of the name); URLs, or data: URLs as uploaded.
   logoUrl?: string
   wordmarkUrl?: string
   // Where the logo and wordmark sit, in each page's header and on the cover. Left by default.
   position?: 'left' | 'center' | 'right'
-  // Brand colours, '#rrggbb', up to 6: offered in the colour pickers; the first fills the initials badge.
+  // Brand colours, '#rrggbb', up to 6: offered in the colour pickers.
   colors?: string[]
-  // The initials badge's colour where there are no brand colours.
-  color?: string
   // Set in by reports on the theme's typeface, on screen and in print.
   headingFont?: ReportBrandFont
   bodyFont?: ReportBrandFont

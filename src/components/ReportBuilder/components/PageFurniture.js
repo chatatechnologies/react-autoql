@@ -5,32 +5,18 @@ import { brandFontFaceCss, DEFAULT_BRAND_POSITION } from '../model/branding'
 
 // The organisation's branding (model/branding.js), as the pages draw it.
 
-const initialsOf = (name) =>
-  String(name || '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
-    .join('')
-
 export const hasBranding = (branding) => !!(branding && (branding.name || branding.logoUrl || branding.wordmarkUrl))
 
-// The lockup: the logo — or, with no wordmark either, a badge of the initials in the brand colour — then the
-// wordmark, or else the name.
+// The lockup: the logo where there is one, then the wordmark, or else the name. Without a logo, the name stands
+// alone.
 export const BrandMark = ({ branding, size = 'small' }) => {
   if (!hasBranding(branding)) {
     return null
   }
-  const { name, logoUrl, wordmarkUrl, color } = branding
+  const { name, logoUrl, wordmarkUrl } = branding
   return (
     <div className={`${RB}-brand`} data-size={size}>
-      {logoUrl ? (
-        <img className={`${RB}-brand-logo`} src={logoUrl} alt='' />
-      ) : wordmarkUrl ? null : (
-        <span className={`${RB}-brand-chip`} style={color ? { background: color } : undefined} aria-hidden='true'>
-          {initialsOf(name)}
-        </span>
-      )}
+      {logoUrl ? <img className={`${RB}-brand-logo`} src={logoUrl} alt='' /> : null}
       {wordmarkUrl ? (
         <img className={`${RB}-brand-wordmark`} src={wordmarkUrl} alt={name || ''} />
       ) : name ? (

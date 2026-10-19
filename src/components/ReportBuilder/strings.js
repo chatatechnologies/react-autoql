@@ -76,7 +76,7 @@ export const STRINGS = {
     name: 'Organisation name',
     nameRequired: 'Add your organisation’s name.',
     logo: 'Logo',
-    logoNote: 'Your mark or symbol. It takes the place of the initials badge.',
+    logoNote: 'Your mark or symbol, shown before your name or wordmark.',
     wordmark: 'Wordmark',
     wordmarkNote: 'Your name set as an image, or your whole lockup. It takes the place of the name.',
     imageNote: 'A PNG, JPEG, SVG or WebP image of 256 KB or less.',
@@ -102,7 +102,7 @@ export const STRINGS = {
     removeColour: (n) => `Remove brand colour ${n}`,
     colourInvalid: 'Use HEX, like #1B4D8F, or RGB, like 27, 77, 143.',
     coloursNote: (max) =>
-      `Up to ${max}, as HEX or RGB. They’re offered in the colour pickers for text and backgrounds, and the first fills the initials badge.`,
+      `Up to ${max}, as HEX or RGB. They’re offered in the colour pickers for text and backgrounds.`,
     fonts: 'Fonts',
     headingFont: 'Headings',
     bodyFont: 'Body text',
@@ -112,6 +112,8 @@ export const STRINGS = {
     fontTooLarge: (kb) => `That font is ${kb} KB. Use one of 500 KB or less.`,
     fontWrongType: 'Use a WOFF2, WOFF, TTF or OTF font file.',
     fontUnreadable: 'That font couldn’t be read. Try another file.',
+    // A font whose file name has nothing AutoQL keeps in a name.
+    fontFallbackName: 'Brand font',
     unsaved: 'Unsaved changes.',
     saved: 'Saved for your organisation.',
     saving: 'Saving…',

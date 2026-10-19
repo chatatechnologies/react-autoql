@@ -60,8 +60,7 @@ const fontOf = (font) =>
     ? { name: isText(font.name) ? font.name : '', url: font.url }
     : undefined
 
-// The branding as the builder draws it. `color` is the initials badge's: the first brand colour, else the one
-// given on its own (the host's).
+// The branding as the builder draws it.
 export const normalizeBranding = (raw) => {
   const b = raw && typeof raw === 'object' ? raw : {}
   const colors = (Array.isArray(b.colors) ? b.colors : [])
@@ -75,7 +74,6 @@ export const normalizeBranding = (raw) => {
     wordmarkUrl: isText(b.wordmarkUrl) ? b.wordmarkUrl : undefined,
     position: BRAND_POSITIONS.includes(b.position) ? b.position : DEFAULT_BRAND_POSITION,
     colors,
-    color: colors[0] || parseColour(b.color) || undefined,
     headingFont: fontOf(b.headingFont),
     bodyFont: fontOf(b.bodyFont),
   }
@@ -89,8 +87,6 @@ export const mergeBranding = (host, org) => {
   Object.entries(org && typeof org === 'object' ? org : {}).forEach(([key, value]) => {
     if (isSet(value)) merged[key] = value
   })
-  // The host's own badge colour gives way to the organisation's colours.
-  if (isSet(org?.colors)) delete merged.color
   return normalizeBranding(merged)
 }
 
