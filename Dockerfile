@@ -19,7 +19,10 @@ ADD example .
 ENV NODE_ENV=ci
 ENV NODE_OPTIONS=--openssl-legacy-provider
 
-RUN npm i file:./react-autoql
+# --legacy-peer-deps, as the install below has: without it npm has crashed here on every branch since 15 Oct 2026
+# ("Cannot read properties of null (reading 'edgesOut')"). If it fails anyway, the end of npm's debug log, with the
+# stack, goes to the build log.
+RUN npm i --legacy-peer-deps file:./react-autoql || (tail -n 80 /root/.npm/_logs/*-debug-0.log; exit 1)
 RUN npm i --legacy-peer-deps && npm run build
 
 # final clean image
