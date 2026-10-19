@@ -39,7 +39,7 @@ export default class AxisSelector extends React.Component {
     if (scale.type === 'BIN') {
       return this.renderSingleNumberAxisSelector(props, true)
     } else if (scale.type === 'LINEAR') {
-      return scale.allowMultipleSeries && !this.props.isAggregated
+      return scale.allowMultipleSeries && !this.props.isAggregated && !this.props.splitBy?.isActive
         ? this.renderNumberAxisSelector(props)
         : this.renderSingleNumberAxisSelector(props)
     } else if (scale?.type === 'BAND' || scale?.type === 'TIME') {

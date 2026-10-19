@@ -12,8 +12,17 @@ const SankeyColumnSelector = ({
   onSelect,
   type, // 'path' or 'value'
   pathColumnIndices,
+  pathColumnOptionIndices, // optional: restrict path options to these column indices
   onPathChange,
+  minPathColumns,
   maxPathColumns,
+  pathTitle,
+  pathSubtitle,
+  pathLabel,
+  pathIconType,
+  allowCount,
+  disabled,
+  disabledTooltip,
   showDropdown,
   setShowDropdown,
   buttonY,
@@ -38,7 +47,7 @@ const SankeyColumnSelector = ({
   const getIcon = () => {
     switch (type) {
       case 'path':
-        return <Icon type='sankey' />
+        return <Icon type={pathIconType} />
       case 'value':
         return 'Σ'
       default:
@@ -49,7 +58,7 @@ const SankeyColumnSelector = ({
   const getLabel = () => {
     switch (type) {
       case 'path':
-        return 'Path'
+        return pathLabel
       case 'value':
         return 'Value'
       default:
@@ -66,8 +75,8 @@ const SankeyColumnSelector = ({
   const tooltipHtml =
     type === 'path'
       ? selectedPathNames.length
-        ? `<strong>Path Columns:</strong><br/>${selectedPathNames.join(' → ')}`
-        : 'Select path columns'
+        ? `<strong>${pathTitle}:</strong><br/>${selectedPathNames.join(' → ')}`
+        : `Select ${pathTitle.toLowerCase()}`
       : isCountSelected
       ? `<strong>${getLabel()} Column:</strong><br/><em>(Count)</em>`
       : selectedColumn
@@ -77,7 +86,9 @@ const SankeyColumnSelector = ({
   const numericColumns = columns.filter((col) => col.isNumberType)
   const categoricalColumns = columns
     .map((col, index) => ({ col, index }))
-    .filter(({ col }) => !col.isNumberType)
+    .filter(({ col, index }) =>
+      Array.isArray(pathColumnOptionIndices) ? pathColumnOptionIndices.includes(index) : !col.isNumberType,
+    )
 
   const filteredColumns = type === 'value' ? numericColumns : categoricalColumns.map(({ col }) => col)
 
@@ -121,12 +132,12 @@ const SankeyColumnSelector = ({
 
   const renderPathDropdownContent = () => {
     const availableColumns = categoricalColumns.filter(({ index }) => !pathColumnIndices.includes(index))
-    const hasMinPath = pathColumnIndices.length >= 2
+    const hasMinPath = pathColumnIndices.length >= minPathColumns
 
     return (
       <div className='sankey-path-dropdown-popover-content' ref={setPathPopoverElement}>
-        <div className='sankey-column-dropdown-title'>Path Columns</div>
-        <div className='sankey-path-dropdown-subtitle'>Order defines flow direction</div>
+        <div className='sankey-column-dropdown-title'>{pathTitle}</div>
+        <div className='sankey-path-dropdown-subtitle'>{pathSubtitle}</div>
         <CustomScrollbars className='sankey-path-selected-list' suppressScrollX maxHeight={240}>
           <div className='sankey-path-selected-list-inner'>
           {pathColumnIndices.map((columnIndex, listIndex) => {
@@ -182,7 +193,7 @@ const SankeyColumnSelector = ({
                     type='button'
                     className='sankey-path-control-btn danger'
                     onClick={() => removePathColumn(columnIndex)}
-                    disabled={pathColumnIndices.length <= 2}
+                    disabled={pathColumnIndices.length <= minPathColumns}
                   >
                     ×
                   </button>
@@ -192,13 +203,17 @@ const SankeyColumnSelector = ({
           })}
           </div>
         </CustomScrollbars>
-        {!hasMinPath && <div className='sankey-path-warning'>Select at least 2 columns to render a Sankey path.</div>}
+        {!hasMinPath && (
+          <div className='sankey-path-warning'>
+            Select at least {minPathColumns} column{minPathColumns === 1 ? '' : 's'} to render this chart.
+          </div>
+        )}
         <div className='sankey-path-add-title'>Add column</div>
         <CustomScrollbars className='sankey-column-dropdown-container' suppressScrollX>
           {availableColumns.length === 0 ? (
             <div className='sankey-column-dropdown-empty'>
               {pathColumnIndices.length >= maxPathColumns
-                ? `Maximum of ${maxPathColumns} path columns reached`
+                ? `Maximum of ${maxPathColumns} columns reached`
                 : 'No additional categorical columns available'}
             </div>
           ) : (
@@ -223,6 +238,10 @@ const SankeyColumnSelector = ({
       if (!filteredColumns.length) {
         return <div className='sankey-column-dropdown-empty'>No {type} columns available</div>
       }
+      return filteredColumns.map((col) => renderColumnDropdownItem(col))
+    }
+
+    if (!allowCount) {
       return filteredColumns.map((col) => renderColumnDropdownItem(col))
     }
 
@@ -282,7 +301,10 @@ const SankeyColumnSelector = ({
         align='center'
         padding={5}
       >
-        <g className={`sankey-${type}-button`} transform={`translate(${buttonX}, ${buttonY})`}>
+        <g
+          className={`sankey-${type}-button${disabled ? ' sankey-button-disabled' : ''}`}
+          transform={`translate(${buttonX}, ${buttonY})`}
+        >
           <rect
             className={`sankey-${type}-button-rect`}
             width={buttonSize}
@@ -292,11 +314,13 @@ const SankeyColumnSelector = ({
             opacity={0} // CSS opacity: 1 !important keeps it visible in browser; opacity=0 hides it in PNG export
             onClick={(e) => {
               e.stopPropagation()
-              setShowDropdown(!showDropdown)
+              if (!disabled) {
+                setShowDropdown(!showDropdown)
+              }
             }}
             data-tooltip-id={chartTooltipID}
-            data-tooltip-html={tooltipHtml}
-            style={{ cursor: 'pointer' }}
+            data-tooltip-html={disabled && disabledTooltip ? disabledTooltip : tooltipHtml}
+            style={{ cursor: disabled ? 'default' : 'pointer' }}
           />
           {type === 'value' ? (
             <text
@@ -338,8 +362,17 @@ SankeyColumnSelector.propTypes = {
   onSelect: PropTypes.func,
   type: PropTypes.oneOf(['path', 'value']).isRequired,
   pathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+  pathColumnOptionIndices: PropTypes.arrayOf(PropTypes.number),
   onPathChange: PropTypes.func,
+  minPathColumns: PropTypes.number,
   maxPathColumns: PropTypes.number,
+  pathTitle: PropTypes.string,
+  pathSubtitle: PropTypes.string,
+  pathLabel: PropTypes.string,
+  pathIconType: PropTypes.string,
+  allowCount: PropTypes.bool,
+  disabled: PropTypes.bool,
+  disabledTooltip: PropTypes.string,
   showDropdown: PropTypes.bool.isRequired,
   setShowDropdown: PropTypes.func.isRequired,
   buttonY: PropTypes.number,
@@ -352,8 +385,17 @@ SankeyColumnSelector.defaultProps = {
   selectedIndex: undefined,
   onSelect: () => {},
   pathColumnIndices: [],
+  pathColumnOptionIndices: undefined,
   onPathChange: () => {},
+  minPathColumns: 2,
   maxPathColumns: 6,
+  pathTitle: 'Path Columns',
+  pathSubtitle: 'Order defines flow direction',
+  pathLabel: 'Path',
+  pathIconType: 'sankey',
+  allowCount: true,
+  disabled: false,
+  disabledTooltip: undefined,
   buttonY: 10,
   buttonX: 10,
   buttonSize: 35,
