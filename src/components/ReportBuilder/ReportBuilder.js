@@ -61,7 +61,6 @@ import { readZoom, storeZoom, ZoomFrame } from './components/ZoomFrame'
 import { PrintPreview } from './components/preview/PrintPreview'
 import { BrandFonts, footerText, hasDataBlocks } from './components/PageFurniture'
 import { RichTextContext } from './components/RichText'
-import { FormattingBar } from './components/FormattingBar'
 import { mergeBranding } from './model/branding'
 import { fetchBranding, saveBranding as saveOrgBranding } from './run/brandingApi'
 
@@ -195,13 +194,19 @@ export class ReportBuilderWithoutTheme extends React.Component {
     this.runId = 0
     panelIds += 1
     this.panelId = `${RB}-panel-${panelIds}`
-    // How the text editors on the page (RichTextEditor) say which of them has the caret, for the formatting bar.
+    // How the text editors on the page (RichTextEditor) say which of them has the caret, and in which block,
+    // for the formatting bar on top of that block.
     this.richText = {
-      activate: (editor) => this.setState((state) => (state.richEditor === editor ? null : { richEditor: editor })),
+      activate: (editor, blockId = null) =>
+        this.setState((state) =>
+          state.richEditor === editor && state.richBlockId === blockId
+            ? null
+            : { richEditor: editor, richBlockId: blockId },
+        ),
       // Kept while the focus moves to the formatting bar (its link field, its style menu).
       deactivate: (editor, nextFocus) => {
         if (nextFocus?.closest?.('[data-formatting-bar]')) return
-        this.setState((state) => (state.richEditor === editor ? { richEditor: null } : null))
+        this.setState((state) => (state.richEditor === editor ? { richEditor: null, richBlockId: null } : null))
       },
     }
 
@@ -216,8 +221,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
       notice: null,
       // The block deleted last, and where it was, while it can still be put back: { block, index }.
       removed: null,
-      // The text editor with the caret, for the formatting bar (null: none).
+      // The text editor with the caret, and the block it's in, for the formatting bar (null: none).
       richEditor: null,
+      richBlockId: null,
       // blockId → { kind: 'tiles' | 'question' | 'analysis', seq, query?, error? } while a block waits (or failed)
       pending: {},
       // The properties panel's width once it's been resized (PanelResizer), else null for its own.
@@ -452,7 +458,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
   onSelect = (id) => this.setState({ selectedId: id })
 
   // The focus left the formatting bar for somewhere other than a text editor: there's no text to format.
-  onFormattingBarLeave = () => this.setState({ richEditor: null })
+  onFormattingBarLeave = () => this.setState({ richEditor: null, richBlockId: null })
 
   onCanvasMouseDown = (e) => {
     if (!e.target.closest?.(`.${RB}-block`)) {
@@ -984,6 +990,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
               onAnalyzeResult={canAnalyze ? this.onAnalyzeResult : undefined}
               onChartChange={this.onChartChange}
               pending={pending}
+              richEditor={this.state.richEditor}
+              richBlockId={this.state.richBlockId}
+              onFormattingLeave={this.onFormattingBarLeave}
               startPages={editorPages?.startPages}
               pageCount={editorPages?.count}
               frontPages={frontPages}
@@ -1087,7 +1096,6 @@ export class ReportBuilderWithoutTheme extends React.Component {
               onPageSetup={this.onPageSetup}
               onBranding={this.canEditBranding() ? this.openBranding : undefined}
             />
-            {previewOpen ? null : <FormattingBar editor={this.state.richEditor} onLeave={this.onFormattingBarLeave} />}
             {notice || (previewOpen && layoutInfo?.overflowCount) ? (
               <div className={`${RB}-notice`} role='status'>
                 {notice || STRINGS.preview.overflowNotice(layoutInfo.overflowCount)}

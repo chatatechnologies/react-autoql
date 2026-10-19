@@ -1729,14 +1729,14 @@ describe('formatting text (RW-346)', () => {
       editor.commands.setTextSelection(range)
     })
 
-  it('edits a paragraph where it is, formatted, and bolds and unbolds from the bar', () => {
+  it('edits a paragraph where it is, formatted, and bolds and unbolds from the bar on top of it', () => {
     const { lastReport } = setup(textReport('Plain **bold** words'))
     expect(paragraph().querySelector('strong').textContent).toBe('bold')
-    // Nothing to format until some text has the caret.
-    expect(barButton('Bold').disabled).toBe(true)
-    expect(within(bar()).getByText('Click into a paragraph or an analysis to format it.')).toBeTruthy()
+    // No bar until some text has the caret; then it's on that text's block.
+    expect(screen.queryByTestId('report-builder-format-bar')).toBeNull()
 
     startEditing(paragraph())
+    expect(paragraph().closest('[data-block-id]').contains(bar())).toBe(true)
     expect(barButton('Bold').disabled).toBe(false)
     select(1, 6) // "Plain"
     press('Bold')
@@ -1745,6 +1745,29 @@ describe('formatting text (RW-346)', () => {
     press('Bold')
     expect(textOf(lastReport())).toBe('Plain **bold** words')
     expect(barButton('Bold').getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('moves the bar to the block being edited, and takes it away when the text loses the caret', () => {
+    setup(
+      createEmptyReport({
+        blocks: [
+          { id: 'a', type: 'text', text: 'First', width: 'full' },
+          { id: 'b', type: 'text', text: 'Second', width: 'full' },
+        ],
+      }),
+    )
+    const [first, second] = screen.getAllByTestId('report-builder-text-input')
+    startEditing(first)
+    expect(first.closest('[data-block-id]').contains(bar())).toBe(true)
+
+    startEditing(second)
+    expect(screen.getAllByTestId('report-builder-format-bar')).toHaveLength(1)
+    expect(second.closest('[data-block-id]').contains(bar())).toBe(true)
+
+    act(() => {
+      fireEvent.blur(second)
+    })
+    expect(screen.queryByTestId('report-builder-format-bar')).toBeNull()
   })
 
   it('makes text italic, underlined or struck through, a list or a heading, and clears it again', () => {

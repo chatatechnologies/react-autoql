@@ -122,7 +122,7 @@ export const STRINGS = {
     save: 'Save branding',
   },
 
-  // The formatting bar under the toolbar (RW-346), for the text being edited.
+  // The formatting bar on top of the block whose text is being edited (RW-346).
   formatting: {
     toolbar: 'Text formatting',
     style: 'Text style',
@@ -306,7 +306,7 @@ export const STRINGS = {
       blocker === 'no-query-id' ? `${label} (kept without a query id)` : `${label} (too little to analyze)`,
     wording: 'Wording',
     wordingNote:
-      'Edit the wording on the page, formatting it with the bar above the page. It prints as written, and Analyze again replaces it.',
+      'Edit the wording on the page, formatting it with the bar that appears above it. It prints as written, and Analyze again replaces it.',
     questionNote: 'A question has no tile to inherit from, so it shows AutoQL’s default display.',
     changeSource: 'Change source',
     cancel: 'Cancel',

@@ -4,10 +4,10 @@ import { RB } from '../constants'
 import { richTextExtensions, richTextHtml } from '../model/richText'
 
 // A report's formatted text (model/richText.js): drawn on the page as HTML, and edited in place with
-// ProseMirror (TipTap), whose formatting bar is the builder's (FormattingBar). The editor being typed in is
-// handed to the builder through this context.
+// ProseMirror (TipTap), whose formatting bar is the builder's (FormattingBar, on top of the block being
+// edited). The editor being typed in, and its block, are handed to the builder through this context.
 
-// { activate(editor), deactivate(editor, nextFocus) } from the builder; absent outside it.
+// { activate(editor, blockId), deactivate(editor, nextFocus) } from the builder; absent outside it.
 export const RichTextContext = React.createContext(null)
 
 // The text as the page shows it, measures it and prints it. The HTML comes from the editor's own schema
@@ -57,7 +57,7 @@ export class RichTextEditor extends React.Component {
       },
       onUpdate: this.onUpdate,
       onFocus: () => {
-        this.context?.activate(this.editor)
+        this.context?.activate(this.editor, this.blockId())
         this.props.onFocus?.()
       },
       onBlur: ({ event }) => {
@@ -94,9 +94,14 @@ export class RichTextEditor extends React.Component {
     this.props.onChange?.(markdown)
   }
 
+  // The block the text is in, on the editor's page (Sheet's EditorBlock).
+  blockElement = () => this.host.current?.closest?.('[data-block-id]') || null
+
+  blockId = () => this.blockElement()?.getAttribute('data-block-id') || null
+
   onKeyDown = (event) => {
     if (event.key !== 'Escape') return false
-    const block = this.host.current?.closest?.('[data-block-id]')
+    const block = this.blockElement()
     if (block) block.focus()
     else this.editor?.commands.blur()
     return true

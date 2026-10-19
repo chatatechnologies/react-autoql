@@ -5,11 +5,11 @@ import { Icon } from './icons'
 import { LINK_REQUEST_EVENT, linkHref } from '../model/richText'
 import { isMacKeyboard } from '../keyboard'
 
-// The text formatting under the toolbar (RW-346), as Jira's editor has it, for the text being edited: a text
-// style, bold, italic, underline, strikethrough, bulleted and numbered lists, a link, and clearing it all.
-// `editor` is the TipTap editor that has the caret, or null (every control is then off). Its buttons never
-// take focus, so the selection they act on stays where it was; the link field does, and the builder keeps the
-// editor meanwhile (data-formatting-bar).
+// The text formatting (RW-346), as Jira's editor has it, on top of the block whose text is being edited (Sheet's
+// EditorBlock): a text style, bold, italic, underline, strikethrough, bulleted and numbered lists, a link, and
+// clearing it all. It's drawn at the builder's own size whatever the zoom. `editor` is the TipTap editor that
+// has the caret, or null (every control is then off). Its buttons never take focus, so the selection they act
+// on stays where it was; the link field does, and the builder keeps the editor meanwhile (data-formatting-bar).
 
 const F = STRINGS.formatting
 

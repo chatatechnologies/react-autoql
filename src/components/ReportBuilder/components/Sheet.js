@@ -7,6 +7,7 @@ import { Icon } from './icons'
 import { boxStyleOf, PaperBlock } from './PaperBlock'
 import { getAnalysisBlocker } from '../model/analysis'
 import { RunningFooter, RunningHeader } from './PageFurniture'
+import { FormattingBar } from './FormattingBar'
 
 const BlockTools = ({ id, isFirst, isLast, onAction, onAnalyze }) => (
   <div className={`${RB}-block-tools`} role='toolbar' aria-label={STRINGS.panel.block}>
@@ -76,6 +77,9 @@ export const EditorBlock = React.memo(function EditorBlock({
   onPickTiles,
   onAnalyzeResult,
   onChartChange,
+  // The editor of this block's text while it has the caret (RichTextEditor), for the formatting bar on top.
+  formattingEditor,
+  onFormattingLeave,
   ...paperProps
 }) {
   const label = BLOCK_INFO[block.type]?.label || block.type
@@ -110,6 +114,7 @@ export const EditorBlock = React.memo(function EditorBlock({
           onAnalyze={analyzable ? () => onAnalyzeResult(block.id) : undefined}
         />
       ) : null}
+      {formattingEditor ? <FormattingBar editor={formattingEditor} onLeave={onFormattingLeave} /> : null}
       <PaperBlock
         block={block}
         view={view}
@@ -285,6 +290,9 @@ export class Sheet extends React.Component {
       onAnalyzeResult,
       onChartChange,
       pending,
+      richEditor,
+      richBlockId,
+      onFormattingLeave,
     } = this.props
     const { fills, plates } = this.state
     const { page, blocks } = report
@@ -392,6 +400,8 @@ export class Sheet extends React.Component {
                           onChartChange={onChartChange}
                           // Its own entry only: the block is memoized.
                           pending={pending?.[block.id]}
+                          formattingEditor={richEditor && block.id === richBlockId ? richEditor : null}
+                          onFormattingLeave={onFormattingLeave}
                         />
                       )
                     })}

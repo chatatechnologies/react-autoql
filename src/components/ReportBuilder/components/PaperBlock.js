@@ -77,7 +77,7 @@ const HeadingContent = ({ block, mode, onTextChange }) => {
   )
 }
 
-// A paragraph's text, formatted (RW-346): edited in place, with the formatting bar under the toolbar.
+// A paragraph's text, formatted (RW-346): edited in place, with the formatting bar on top of its block.
 const TextContent = ({ block, mode, onTextChange }) => {
   const style = textStyleOf(block.style)
   if (mode === 'edit') {
