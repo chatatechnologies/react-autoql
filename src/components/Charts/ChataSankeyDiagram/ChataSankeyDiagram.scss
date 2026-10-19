@@ -99,6 +99,21 @@
   }
 }
 
+// Disabled selector button (eg. value selector when the query already aggregated the values)
+.sankey-button-disabled {
+  [class$='-button-rect'] {
+    cursor: default;
+
+    &:hover {
+      stroke: var(--react-autoql-border-color);
+    }
+  }
+
+  [class$='-button-icon'] {
+    opacity: 0.35 !important;
+  }
+}
+
 // Column dropdown styles
 .sankey-column-dropdown-popover-content {
   background: var(--react-autoql-background-color-secondary);

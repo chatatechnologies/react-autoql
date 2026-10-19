@@ -93,6 +93,13 @@ import {
   selectPivotColumnHeaders,
   canAggregateIntoOther,
 } from './pivotUtils'
+import {
+  SPLIT_SERIES_COUNT,
+  buildSplitSeriesData,
+  getSplitSeriesColumnIndices,
+  getSplitSeriesValueTitle,
+  supportsSplitSeriesDisplayType,
+} from './splitSeriesUtils'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -243,6 +250,7 @@ export class QueryOutput extends React.Component {
       resizeStartHeight: 0,
       isResizable: this.shouldEnableResize,
       hiddenLegendLabels: [],
+      hiddenSplitSeriesKeys: [],
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
@@ -433,6 +441,14 @@ export class QueryOutput extends React.Component {
     initialChartControls: PropTypes.shape({
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
+      treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      treemapValueColumnIndex: PropTypes.number,
+      sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      sankeyValueColumnIndex: PropTypes.number,
+      splitBy: PropTypes.shape({
+        columnIndex: PropTypes.number,
+        valueColumnIndex: PropTypes.number, // SPLIT_SERIES_COUNT for Count
+      }),
     }),
     onChartControlsChange: PropTypes.func,
   }
@@ -627,6 +643,7 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
             this.captureQueryFilterBaseline()
+            this.setState({ hiddenSplitSeriesKeys: [] })
           }
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -1051,6 +1068,19 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  // Memoized so charts get the same columns array across re-renders. A new array on every render
+  // would make charts rebuild everything derived from columns (eg. the treemap zoom resetting).
+  getChartColumnsWithOverrides = (columns) => {
+    const overrides = this.latestColumnOverrides
+    const cached = this.chartColumnsCache
+    if (cached?.columns === columns && cached?.overrides === overrides) {
+      return cached.result
+    }
+    const result = this.applyColumnOverrides(columns)
+    this.chartColumnsCache = { columns, overrides, result }
+    return result
+  }
+
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
     return this.tableConfig.allNumberColumnIndices?.find((index) => {
       return (
@@ -1387,9 +1417,176 @@ export class QueryOutput extends React.Component {
     return this.potentiallySupportsPivot() && getNumberOfGroupables(columns) === 1
   }
 
+  // "Split by" a column: list queries only - grouped data already gets series from its pivot.
+  // Everything here is resolved from the saved chartControls.splitBy each render, so a column
+  // that disappears just turns the split off locally instead of rewriting the saved setting.
+  getSplitSeriesConfig = (displayType = this.state?.displayType, columns = this.state?.columns) => {
+    const unavailable = { isAvailable: false, isActive: false }
+
+    if (!columns?.length || !this.tableConfig || !supportsSplitSeriesDisplayType(displayType)) {
+      return unavailable
+    }
+
+    if (!isListQuery(columns) || this.potentiallySupportsPivot()) {
+      return unavailable
+    }
+
+    const stringColumnIndex = this.tableConfig.stringColumnIndex
+    const eligibleColumnIndices = getSplitSeriesColumnIndices(columns, stringColumnIndex)
+    if (!eligibleColumnIndices.length) {
+      return unavailable
+    }
+
+    const saved = this.state?.chartControls?.splitBy
+    const savedSplitIndex = saved?.columnIndex
+    const splitColumnIndex = eligibleColumnIndices.includes(savedSplitIndex) ? savedSplitIndex : undefined
+
+    // With several series on the y-axis there is nothing to split into: the chart already has its
+    // series. A saved split still applies, since a split chart only ever has one value column.
+    const selectedNumberColumnCount = (this.tableConfig.numberColumnIndices ?? []).filter(
+      (index) => columns[index] && columns[index].is_visible !== false,
+    ).length
+    if (splitColumnIndex === undefined && selectedNumberColumnCount > 1) {
+      return unavailable
+    }
+
+    const numberColumnIndices = columns.reduce((indices, column, index) => {
+      if (column?.is_visible !== false && isColumnNumberType(column)) indices.push(index)
+      return indices
+    }, [])
+
+    let valueColumnIndex = SPLIT_SERIES_COUNT
+    if (saved?.valueColumnIndex !== SPLIT_SERIES_COUNT && numberColumnIndices.length) {
+      const savedValueIndex = saved?.valueColumnIndex
+      const currentNumberIndex = this.tableConfig.numberColumnIndex
+      if (numberColumnIndices.includes(savedValueIndex)) {
+        valueColumnIndex = savedValueIndex
+      } else if (numberColumnIndices.includes(currentNumberIndex)) {
+        valueColumnIndex = currentNumberIndex
+      } else {
+        valueColumnIndex = numberColumnIndices[0]
+      }
+    }
+
+    // The x-axis column is offered in the legend selector too (picking it swaps the two), but only
+    // when it could itself be a split column
+    const xColumn = columns[stringColumnIndex]
+    const canSwapWithXAxis =
+      !!xColumn && xColumn.is_visible !== false && !isColumnNumberType(xColumn) && !isColumnDateType(xColumn)
+
+    return {
+      isAvailable: true,
+      isActive: splitColumnIndex !== undefined,
+      splitColumnIndex,
+      valueColumnIndex,
+      eligibleColumnIndices,
+      selectableColumnIndices: canSwapWithXAxis
+        ? [...eligibleColumnIndices, stringColumnIndex].sort((a, b) => a - b)
+        : eligibleColumnIndices,
+      numberColumnIndices,
+      stringColumnIndex,
+    }
+  }
+
+  getSplitSeriesData = (config, columns) => {
+    const hiddenSeriesKeys = this.state.hiddenSplitSeriesKeys
+    const cacheKey = {
+      rows: this.tableData,
+      columns,
+      splitColumnIndex: config.splitColumnIndex,
+      valueColumnIndex: config.valueColumnIndex,
+      hiddenSeriesKeys,
+      dataFormatting: this.props.dataFormatting,
+    }
+
+    const cached = this.splitSeriesCache
+    const isCacheValid = cached && Object.keys(cacheKey).every((key) => cached.key[key] === cacheKey[key])
+    if (isCacheValid) {
+      return cached.result
+    }
+
+    const result = buildSplitSeriesData({
+      rows: this.tableData,
+      columns,
+      splitColumnIndex: config.splitColumnIndex,
+      valueColumnIndex: config.valueColumnIndex,
+      hiddenSeriesKeys,
+      dataFormatting: this.props.dataFormatting,
+    })
+
+    this.splitSeriesCache = { key: cacheKey, result }
+    return result
+  }
+
+  saveSplitSeriesControls = (splitBy) => {
+    this.splitSeriesCache = undefined
+    const chartControls = { ...(this.state.chartControls || {}) }
+    if (splitBy) {
+      chartControls.splitBy = splitBy
+    } else {
+      delete chartControls.splitBy
+    }
+
+    this.setState({ hiddenLegendLabels: [], hiddenSplitSeriesKeys: [], chartID: uuid() })
+    this.handleChartControlsChange(chartControls)
+  }
+
+  onSplitColumnChange = (columnIndex) => {
+    const config = this.getSplitSeriesConfig()
+    if (!config.isAvailable) {
+      return
+    }
+
+    if (columnIndex === null || columnIndex === undefined) {
+      this.saveSplitSeriesControls(undefined)
+      return
+    }
+
+    // Picking the x-axis column from the legend swaps the two
+    if (columnIndex === config.stringColumnIndex) {
+      const previousSplitIndex = config.splitColumnIndex
+      if (previousSplitIndex === undefined) {
+        return
+      }
+
+      this.tableConfig.stringColumnIndex = previousSplitIndex
+      this.hasUserSelectedStringAxis = true
+      this.onTableConfigChange()
+    }
+
+    this.saveSplitSeriesControls({ columnIndex, valueColumnIndex: config.valueColumnIndex })
+  }
+
+  onSplitValueChange = (valueColumnIndex) => {
+    const config = this.getSplitSeriesConfig()
+    if (!config.isActive) {
+      return
+    }
+
+    if (valueColumnIndex !== SPLIT_SERIES_COUNT) {
+      this.tableConfig.numberColumnIndex = valueColumnIndex
+      this.tableConfig.numberColumnIndices = [valueColumnIndex]
+      this.onTableConfigChange()
+    }
+
+    this.saveSplitSeriesControls({ columnIndex: config.splitColumnIndex, valueColumnIndex })
+  }
+
+  toggleSplitSeriesVisibility = (seriesKey) => {
+    this.setState(({ hiddenSplitSeriesKeys: hidden }) => ({
+      hiddenSplitSeriesKeys: hidden.includes(seriesKey)
+        ? hidden.filter((key) => key !== seriesKey)
+        : [...hidden, seriesKey],
+    }))
+  }
+
   usePivotDataForChart = () => {
-    // Network graphs and sankey diagrams always use original data, never pivot data
-    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH || this.state?.displayType === DisplayTypes.SANKEY) {
+    // Network graphs, sankey diagrams and treemaps always use original data, never pivot data
+    if (
+      this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
+      this.state?.displayType === DisplayTypes.SANKEY ||
+      this.state?.displayType === DisplayTypes.TREEMAP
+    ) {
       return false
     }
 
@@ -1478,6 +1675,7 @@ export class QueryOutput extends React.Component {
       const isDifferentQuery = !!nextQueryID && nextQueryID !== this.queryID
       if (isDifferentQuery) {
         this.hasUserSelectedStringAxis = false
+        this.setState({ hiddenSplitSeriesKeys: [] })
       }
       this.queryID = nextQueryID || this.queryID
       this.queryResponse = cloneResponseSharingRows(response)
@@ -2409,6 +2607,28 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    // A split series is the x value and the split value together
+    const splitSeriesColumn = columns?.[columnIndex]?.isSplitSeries ? columns[columnIndex] : undefined
+    if (splitSeriesColumn) {
+      const splitConfig = this.getSplitSeriesConfig()
+      const splitColumn = this.state.columns?.[splitConfig.splitColumnIndex]
+      const xColumn = this.state.columns?.[stringColumnIndex]
+      if (!splitConfig.isActive || !splitColumn || !xColumn) {
+        return
+      }
+
+      const xFilters = filter
+        ? [].concat(filter)
+        : [this.constructFilter({ column: xColumn, value: row?.[stringColumnIndex] })]
+      const splitFilter = this.constructFilter({ column: splitColumn, value: splitSeriesColumn.splitSeriesValue })
+
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter: [...xFilters, splitFilter],
+      })
+    }
+
     if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
       return this.processDrilldown({
         supportedByAPI: true,
@@ -2686,6 +2906,7 @@ export class QueryOutput extends React.Component {
     if (nextQueryID && nextQueryID !== this.queryID) {
       this.hasUserSelectedStringAxis = false
       this.queryID = nextQueryID
+      this.setState({ hiddenSplitSeriesKeys: [] })
     }
 
     // Sorting or filtering a preview table already goes to the server for a full page
@@ -2788,6 +3009,14 @@ export class QueryOutput extends React.Component {
     if (!d) return
 
     const columnIndex = d?.columnIndex
+
+    // Split series columns only exist in the chart's copy of the columns
+    const splitSeriesKey = d?.column?.isSplitSeries ? d.column.splitSeriesKey : undefined
+    if (splitSeriesKey !== undefined) {
+      this.toggleSplitSeriesVisibility(splitSeriesKey)
+      return
+    }
+
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
     if (!newColumns?.length) {
@@ -2814,6 +3043,22 @@ export class QueryOutput extends React.Component {
     }
 
     this.hasUserSelectedStringAxis = true
+
+    // Moving the split column onto the x-axis swaps the two, or turns the split off when the old
+    // x-axis column can't be split by (a date or number)
+    const splitConfig = this.getSplitSeriesConfig()
+    if (splitConfig.isActive && index === splitConfig.splitColumnIndex) {
+      const previousStringColumnIndex = this.tableConfig.stringColumnIndex
+      const canSwap = splitConfig.selectableColumnIndices.includes(previousStringColumnIndex)
+      this.tableConfig.stringColumnIndex = index
+      this.onTableConfigChange()
+      this.saveSplitSeriesControls(
+        canSwap
+          ? { columnIndex: previousStringColumnIndex, valueColumnIndex: splitConfig.valueColumnIndex }
+          : undefined,
+      )
+      return
+    }
 
     if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
@@ -2961,6 +3206,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
+    // A split chart has one value column, picked from the original columns
+    if (this.getSplitSeriesConfig().isActive && indices?.length) {
+      this.onSplitValueChange(indices[0])
+      return
+    }
+
     const isUsingPivotData = this.usePivotDataForChart()
 
     if (isUsingPivotData) {
@@ -4953,7 +5204,8 @@ export class QueryOutput extends React.Component {
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
       displayType !== DisplayTypes.NETWORK_GRAPH &&
-      displayType !== DisplayTypes.SANKEY
+      displayType !== DisplayTypes.SANKEY &&
+      displayType !== DisplayTypes.TREEMAP
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
@@ -5020,14 +5272,41 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
-    const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+    let data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const baseColumns = usePivotData ? this.pivotTableColumns : this.state.columns
     // Apply column overrides (e.g., date precision) for charts only - don't mutate original queryResponse
     // Don't apply overrides when using pivot data - pivot columns have different structure
-    const columns = usePivotData ? baseColumns : this.applyColumnOverrides(baseColumns)
+    let columns = usePivotData ? baseColumns : this.getChartColumnsWithOverrides(baseColumns)
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
+
+    const splitConfig = usePivotData ? { isAvailable: false } : this.getSplitSeriesConfig(displayType, columns)
+    const splitData = splitConfig.isActive ? this.getSplitSeriesData(splitConfig, columns) : undefined
+    if (splitData) {
+      data = splitData.rows
+      columns = splitData.columns
+      tableConfig.numberColumnIndices = splitData.seriesColumnIndices
+      tableConfig.numberColumnIndex = splitData.seriesColumnIndices[0]
+      tableConfig.numberColumnIndices2 = []
+      tableConfig.numberColumnIndex2 = undefined
+    }
+
+    const splitBy = splitConfig.isAvailable
+      ? {
+          isActive: !!splitData,
+          columnIndex: splitData ? splitConfig.splitColumnIndex : undefined,
+          column: splitData ? this.state.columns?.[splitConfig.splitColumnIndex] : undefined,
+          eligibleColumnIndices: splitConfig.eligibleColumnIndices,
+          selectableColumnIndices: splitConfig.selectableColumnIndices,
+          valueColumnIndex: splitConfig.valueColumnIndex,
+          valueTitle: splitData ? getSplitSeriesValueTitle(this.state.columns, splitConfig.valueColumnIndex) : undefined,
+          numberColumnIndices: splitConfig.numberColumnIndices,
+          columns: this.state.columns,
+          onColumnChange: this.onSplitColumnChange,
+          onValueChange: this.onSplitValueChange,
+        }
+      : undefined
 
     // Disable cyclical dates if any column has groupable: true
     const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
@@ -5079,8 +5358,13 @@ export class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           currentLegendState={this.state.hiddenLegendLabels}
           legendColumn={
-            usePivotData ? originalColumns?.[tableConfig?.legendColumnIndex] : columns?.[tableConfig?.legendColumnIndex]
+            splitBy?.isActive
+              ? splitBy.column
+              : usePivotData
+              ? originalColumns?.[tableConfig?.legendColumnIndex]
+              : columns?.[tableConfig?.legendColumnIndex]
           }
+          splitBy={splitBy}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}

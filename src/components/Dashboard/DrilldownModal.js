@@ -257,6 +257,8 @@ export default class DrilldownModal extends React.Component {
                           key={`dashboard-drilldown-chart-${this.props.activeDrilldownRef?.queryResponse?.query_id}`}
                           activeChartElementKey={this.props.activeDrilldownChartElementKey}
                           initialDisplayType={this.props.activeDrilldownRef?.state?.displayType}
+                          // The chart as it is now (e.g. split by a column), not as the tile last saved it
+                          initialChartControls={this.props.activeDrilldownRef?.state?.chartControls}
                           initialTableConfigs={{
                             tableConfig: this.props.activeDrilldownRef.tableConfig,
                             pivotTableConfig: this.props.activeDrilldownRef.pivotTableConfig,

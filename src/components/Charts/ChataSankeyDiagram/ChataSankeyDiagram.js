@@ -13,6 +13,7 @@ import {
   formatElement,
   getDataFormatting,
   getAutoQLConfig,
+  isAggregation,
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
@@ -146,6 +147,11 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     : []
   const persistedValueColumnIndex = props.initialChartControls?.sankeyValueColumnIndex
 
+  // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
+  // not records - only offer it for list queries
+  const isAggregatedData = useMemo(() => isAggregation(props.columns), [props.columns])
+  const numberColumnCount = (props.columns || []).filter((col) => isColumnNumberType(col)).length
+
   const categoricalColumnIndices = useMemo(
     () =>
       (props.columns || [])
@@ -182,7 +188,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     ),
   )
   const [valueColumnIndex, setValueColumnIndex] = useState(() => {
-    if (persistedValueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) {
+    if (persistedValueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL && !isAggregatedData) {
       return persistedValueColumnIndex
     }
     if (persistedValueColumnIndex >= 0 && isColumnNumberType(props.columns?.[persistedValueColumnIndex])) {
@@ -231,10 +237,11 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     persistSankeyControls({ sankeyValueColumnIndex: nextValueColumnIndex })
   }
 
-  const buttonSize = 35
+  // Same size and position as the network graph and treemap control buttons
+  const buttonSize = 30
   const buttonGap = 5
   const totalChartWidth = props.width || 600
-  const buttonStartX = totalChartWidth - buttonSize - 10
+  const buttonStartX = totalChartWidth - buttonSize - 7
   const buttonIconSize = 20
   const buttonIconOffset = (buttonSize - buttonIconSize) / 2
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
@@ -261,7 +268,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   }, [categoricalColumnIndices, detectedSourceIndex, detectedTargetIndex, persistedPathColumnIndices])
 
   useEffect(() => {
-    if (valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL) return
+    if (valueColumnIndex === SANKEY_VALUE_COUNT_SENTINEL && !isAggregatedData) return
 
     const firstNumberColumnIndex = (props.columns || []).findIndex((col) => isColumnNumberType(col))
     if (
@@ -272,7 +279,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       // Auto-correct invalid value column locally without persisting (prevents dashboard update loops).
       setValueColumnIndex(firstNumberColumnIndex)
     }
-  }, [props.columns, valueColumnIndex])
+  }, [props.columns, valueColumnIndex, isAggregatedData])
 
   const processedData = useMemo(() => {
     const { data, columns } = props
@@ -426,14 +433,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       hasCircularLinks: circularCount > 0,
       circularLinksCount: circularCount,
     }
-  }, [
-    props.data,
-    props.columns,
-    pathColumnIndices,
-    valueColumnIndex,
-    props.dataFormatting,
-    props.autoQLConfig,
-  ])
+  }, [props.data, props.columns, pathColumnIndices, valueColumnIndex, props.dataFormatting, props.autoQLConfig])
 
   useEffect(() => {
     setIsDataTruncated(processedData.isDataTruncated)
@@ -547,12 +547,15 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           height: worldHeight,
         }
 
-        const hasOverlap = labelBounds.some((other) => !(
-          bounds.x + bounds.width + padding < other.x ||
-          bounds.x > other.x + other.width + padding ||
-          bounds.y + bounds.height + padding < other.y ||
-          bounds.y > other.y + other.height + padding
-        ))
+        const hasOverlap = labelBounds.some(
+          (other) =>
+            !(
+              bounds.x + bounds.width + padding < other.x ||
+              bounds.x > other.x + other.width + padding ||
+              bounds.y + bounds.height + padding < other.y ||
+              bounds.y > other.y + other.height + padding
+            ),
+        )
 
         if (hasOverlap) {
           select(element).style('display', 'none')
@@ -936,7 +939,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         showDropdown={showPathDropdown}
         setShowDropdown={setShowPathDropdown}
         buttonX={buttonStartX}
-        buttonY={10}
+        buttonY={10 + (buttonSize + buttonGap) * 1}
         buttonSize={buttonSize}
         chartTooltipID={props.chartTooltipID}
       />
@@ -945,18 +948,21 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         selectedIndex={valueColumnIndex}
         onSelect={handleValueColumnChange}
         type='value'
+        allowCount={!isAggregatedData}
+        disabled={isAggregatedData && numberColumnCount <= 1}
+        disabledTooltip='Values are already aggregated by the query'
         showDropdown={showValueDropdown}
         setShowDropdown={setShowValueDropdown}
         buttonX={buttonStartX}
-        buttonY={10 + (buttonSize + buttonGap) * 1}
+        buttonY={10 + (buttonSize + buttonGap) * 2}
         buttonSize={buttonSize}
         chartTooltipID={props.chartTooltipID}
       />
 
-      {/* Reset Zoom Button */}
+      {/* Reset Zoom Button - first, matching the network graph and treemap */}
       <g
         className='sankey-reset-zoom-button'
-        transform={`translate(${buttonStartX}, ${10 + (buttonSize + buttonGap) * 2})`}
+        transform={`translate(${buttonStartX}, 10)`}
         style={{ cursor: 'pointer' }}
         onClick={(e) => {
           e.stopPropagation()
@@ -979,7 +985,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
           <MdOutlineFitScreen className='sankey-reset-zoom-button-icon' size={buttonIconSize} style={{ opacity: 0 }} />
         </g>
       </g>
-
     </g>
   )
 })
