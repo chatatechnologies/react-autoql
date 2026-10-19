@@ -25,9 +25,6 @@ import SankeyColumnSelector from '../ChataSankeyDiagram/SankeyColumnSelector'
 import {
   BAR_GRADIENT_OPACITY_STOPS,
   SANKEY_VALUE_COUNT_SENTINEL,
-  getPersistedColumnName,
-  resolvePersistedColumnIndex,
-  resolvePersistedColumnIndices,
 } from '../chartPropHelpers'
 
 import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
@@ -185,21 +182,6 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   const isValidValueColumnIndex = (index) =>
     (index === TREEMAP_VALUE_COUNT_SENTINEL && !isAggregatedData) || (index >= 0 && isColumnNumberType(columns[index]))
 
-  // Saved selections are matched by column name first, falling back to the saved index
-  const getPersistedGroupColumnIndices = () =>
-    resolvePersistedColumnIndices({
-      names: props.initialChartControls?.treemapGroupColumnNames,
-      indices: props.initialChartControls?.treemapGroupColumnIndices,
-      columns,
-    })
-
-  const getPersistedValueColumnIndex = () =>
-    resolvePersistedColumnIndex({
-      name: props.initialChartControls?.treemapValueColumnName,
-      index: props.initialChartControls?.treemapValueColumnIndex,
-      columns,
-    })
-
   const getValidGroupColumnIndices = (indices) =>
     Array.from(new Set((indices || []).filter((index) => groupableColumnIndices.includes(index)))).slice(
       0,
@@ -207,7 +189,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     )
 
   const getDefaultGroupColumnIndices = () => {
-    const persisted = getValidGroupColumnIndices(getPersistedGroupColumnIndices())
+    const persisted = getValidGroupColumnIndices(props.initialChartControls?.treemapGroupColumnIndices)
     if (persisted.length) {
       return persisted
     }
@@ -221,7 +203,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   }
 
   const getDefaultValueColumnIndex = () => {
-    const persisted = getPersistedValueColumnIndex()
+    const persisted = props.initialChartControls?.treemapValueColumnIndex
     if (isValidValueColumnIndex(persisted)) {
       return persisted
     }
@@ -246,29 +228,6 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   const [zoomTransform, setZoomTransform] = useState({ k: 1, x: 0, y: 0 })
   const zoomScale = zoomTransform.k
   const [activeKey, setActiveKey] = useState(null)
-
-  // When columns change (eg. a column is added and indices shift), follow the selected columns by
-  // name: translate the current indices to names using the previous columns, then find them again.
-  const prevColumnsRef = useRef(columns)
-  useEffect(() => {
-    const prevColumns = prevColumnsRef.current
-    prevColumnsRef.current = columns
-    if (prevColumns === columns) {
-      return
-    }
-
-    setGroupColumnIndices((prev) => {
-      const next = resolvePersistedColumnIndices({
-        names: prev.map((index) => getPersistedColumnName(index, prevColumns)),
-        indices: prev,
-        columns,
-      })
-      return areNumberArraysEqual(prev, next) ? prev : next
-    })
-    setValueColumnIndex((prev) =>
-      resolvePersistedColumnIndex({ name: getPersistedColumnName(prev, prevColumns), index: prev, columns }),
-    )
-  }, [props.columns])
 
   // Keep selections valid if columns change underneath us (eg. a column is hidden).
   // Auto-corrections are local only, so they don't trigger dashboard update loops.
@@ -301,10 +260,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
       return
     }
     setGroupColumnIndices(nextGroupColumnIndices)
-    persistTreemapControls({
-      treemapGroupColumnIndices: nextGroupColumnIndices,
-      treemapGroupColumnNames: nextGroupColumnIndices.map((index) => getPersistedColumnName(index, columns)),
-    })
+    persistTreemapControls({ treemapGroupColumnIndices: nextGroupColumnIndices })
   }
 
   const handleValueColumnChange = (nextValueColumnIndex) => {
@@ -312,10 +268,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
       return
     }
     setValueColumnIndex(nextValueColumnIndex)
-    persistTreemapControls({
-      treemapValueColumnIndex: nextValueColumnIndex,
-      treemapValueColumnName: getPersistedColumnName(nextValueColumnIndex, columns),
-    })
+    persistTreemapControls({ treemapValueColumnIndex: nextValueColumnIndex })
   }
 
   const closeDropdowns = () => {
@@ -757,6 +710,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
         columns={columns}
         type='path'
         pathColumnIndices={groupColumnIndices}
+        pathColumnOptionIndices={groupableColumnIndices}
         onPathChange={handleGroupColumnsChange}
         minPathColumns={1}
         maxPathColumns={MAX_GROUP_LEVELS}
@@ -803,9 +757,7 @@ ChataTreemap.propTypes = {
   autoQLConfig: PropTypes.shape({}),
   initialChartControls: PropTypes.shape({
     treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
-    treemapGroupColumnNames: PropTypes.arrayOf(PropTypes.string),
     treemapValueColumnIndex: PropTypes.number,
-    treemapValueColumnName: PropTypes.string,
   }),
   onChartControlsChange: PropTypes.func,
   tooltipID: PropTypes.string,

@@ -12,6 +12,7 @@ const SankeyColumnSelector = ({
   onSelect,
   type, // 'path' or 'value'
   pathColumnIndices,
+  pathColumnOptionIndices, // optional: restrict path options to these column indices
   onPathChange,
   minPathColumns,
   maxPathColumns,
@@ -85,7 +86,9 @@ const SankeyColumnSelector = ({
   const numericColumns = columns.filter((col) => col.isNumberType)
   const categoricalColumns = columns
     .map((col, index) => ({ col, index }))
-    .filter(({ col }) => !col.isNumberType)
+    .filter(({ col, index }) =>
+      Array.isArray(pathColumnOptionIndices) ? pathColumnOptionIndices.includes(index) : !col.isNumberType,
+    )
 
   const filteredColumns = type === 'value' ? numericColumns : categoricalColumns.map(({ col }) => col)
 
@@ -359,6 +362,7 @@ SankeyColumnSelector.propTypes = {
   onSelect: PropTypes.func,
   type: PropTypes.oneOf(['path', 'value']).isRequired,
   pathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+  pathColumnOptionIndices: PropTypes.arrayOf(PropTypes.number),
   onPathChange: PropTypes.func,
   minPathColumns: PropTypes.number,
   maxPathColumns: PropTypes.number,
@@ -381,6 +385,7 @@ SankeyColumnSelector.defaultProps = {
   selectedIndex: undefined,
   onSelect: () => {},
   pathColumnIndices: [],
+  pathColumnOptionIndices: undefined,
   onPathChange: () => {},
   minPathColumns: 2,
   maxPathColumns: 6,

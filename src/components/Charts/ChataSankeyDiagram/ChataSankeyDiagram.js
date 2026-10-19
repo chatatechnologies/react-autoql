@@ -17,12 +17,7 @@ import {
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
-import {
-  SANKEY_VALUE_COUNT_SENTINEL,
-  getPersistedColumnName,
-  resolvePersistedColumnIndex,
-  resolvePersistedColumnIndices,
-} from '../chartPropHelpers'
+import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 import './ChataSankeyDiagram.scss'
 
@@ -147,27 +142,10 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     targetColumnIndex: detectedTargetIndex,
     weightColumnIndex: detectedWeightIndex,
   } = useMemo(() => findNetworkColumns(props.columns || []), [props.columns])
-  // Saved selections are matched by column name first, falling back to the saved index
-  const persistedPathColumnIndices = useMemo(
-    () =>
-      resolvePersistedColumnIndices({
-        names: props.initialChartControls?.sankeyPathColumnNames,
-        indices: Array.isArray(props.initialChartControls?.sankeyPathColumnIndices)
-          ? props.initialChartControls.sankeyPathColumnIndices
-          : [],
-        columns: props.columns,
-      }),
-    [
-      props.initialChartControls?.sankeyPathColumnIndices,
-      props.initialChartControls?.sankeyPathColumnNames,
-      props.columns,
-    ],
-  )
-  const persistedValueColumnIndex = resolvePersistedColumnIndex({
-    name: props.initialChartControls?.sankeyValueColumnName,
-    index: props.initialChartControls?.sankeyValueColumnIndex,
-    columns: props.columns,
-  })
+  const persistedPathColumnIndices = Array.isArray(props.initialChartControls?.sankeyPathColumnIndices)
+    ? props.initialChartControls.sankeyPathColumnIndices
+    : []
+  const persistedValueColumnIndex = props.initialChartControls?.sankeyValueColumnIndex
 
   // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
   // not records - only offer it for list queries
@@ -248,10 +226,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       return
     }
     setPathColumnIndices(nextPathColumnIndices)
-    persistSankeyControls({
-      sankeyPathColumnIndices: nextPathColumnIndices,
-      sankeyPathColumnNames: nextPathColumnIndices.map((index) => getPersistedColumnName(index, props.columns)),
-    })
+    persistSankeyControls({ sankeyPathColumnIndices: nextPathColumnIndices })
   }
 
   const handleValueColumnChange = (nextValueColumnIndex) => {
@@ -259,10 +234,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
       return
     }
     setValueColumnIndex(nextValueColumnIndex)
-    persistSankeyControls({
-      sankeyValueColumnIndex: nextValueColumnIndex,
-      sankeyValueColumnName: getPersistedColumnName(nextValueColumnIndex, props.columns),
-    })
+    persistSankeyControls({ sankeyValueColumnIndex: nextValueColumnIndex })
   }
 
   // Same size and position as the network graph and treemap control buttons
@@ -275,33 +247,6 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
   // Keep Sankey drawing area clear of right-side controls.
   const chartRightBound = buttonStartX - 10
-
-  // When columns change (eg. a column is added and indices shift), follow the selected columns by
-  // name: translate the current indices to names using the previous columns, then find them again.
-  const prevColumnsRef = useRef(props.columns)
-  useEffect(() => {
-    const prevColumns = prevColumnsRef.current
-    prevColumnsRef.current = props.columns
-    if (prevColumns === props.columns) {
-      return
-    }
-
-    setPathColumnIndices((prev) => {
-      const next = resolvePersistedColumnIndices({
-        names: (prev || []).map((index) => getPersistedColumnName(index, prevColumns)),
-        indices: prev || [],
-        columns: props.columns,
-      })
-      return areNumberArraysEqual(prev || [], next) ? prev : next
-    })
-    setValueColumnIndex((prev) =>
-      resolvePersistedColumnIndex({
-        name: getPersistedColumnName(prev, prevColumns),
-        index: prev,
-        columns: props.columns,
-      }),
-    )
-  }, [props.columns])
 
   useEffect(() => {
     setPathColumnIndices((prev) => {

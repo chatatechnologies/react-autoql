@@ -111,24 +111,20 @@ describe('ChataTreemap', () => {
     expect(valueSelector.prop('disabled')).toBe(true) // Only one number column to choose from
   })
 
-  test('resolves persisted columns by name first, then falls back to the saved index', () => {
-    // Columns reordered since the save: Product is now first. The name finds it; a stale index would not.
-    const reordered = [columns[1], columns[0], columns[2]]
-    const reorderedData = data.map(([region, product, amount]) => [product, region, amount])
-    const wrapper = setup({
-      columns: reordered,
-      data: reorderedData,
-      initialChartControls: { treemapGroupColumnIndices: [1], treemapGroupColumnNames: ['sales.product'] },
-    })
+  test('uses the persisted group column indices', () => {
+    const wrapper = setup({ initialChartControls: { treemapGroupColumnIndices: [1] } })
     expect(wrapper.find('g.treemap-leaf')).toHaveLength(2) // A and B
+  })
 
-    // Unknown name: fall back to the saved index (1 = Region in the reordered columns)
-    const fallback = setup({
-      columns: reordered,
-      data: reorderedData,
-      initialChartControls: { treemapGroupColumnIndices: [1], treemapGroupColumnNames: ['renamed.column'] },
-    })
-    expect(fallback.find('g.treemap-leaf')).toHaveLength(2) // East and West
+  test('only offers visible string columns in the Group By picker', () => {
+    const extraColumns = [
+      ...columns,
+      { name: 'sales.hidden', display_name: 'Hidden', type: 'STRING', is_visible: false, groupable: true },
+    ]
+    const wrapper = setup({ columns: extraColumns, data: data.map((row) => [...row, 'x']) })
+
+    const groupSelector = wrapper.find('SankeyColumnSelector').filterWhere((node) => node.prop('type') === 'path')
+    expect(groupSelector.prop('pathColumnOptionIndices')).toEqual([0, 1])
   })
 
   test('drills down with the clicked box group-by path', () => {

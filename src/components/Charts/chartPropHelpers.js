@@ -62,34 +62,6 @@ export const getGradientOpacityStops = (direction) =>
 /** Persisted in Sankey's `sankeyValueColumnIndex` to weight flows by row count (not a column value). */
 export const SANKEY_VALUE_COUNT_SENTINEL = -1
 
-/**
- * Resolves a persisted column selection against the current columns. Selections are saved with both
- * the column name and its index: indices shift when columns are added or removed (eg. additional
- * selects), and names can change between saves, so neither is reliable alone. The name wins when it
- * still exists; otherwise the saved index is used (callers still validate type/visibility). Non-column
- * values such as SANKEY_VALUE_COUNT_SENTINEL have no name and pass through unchanged.
- */
-export const resolvePersistedColumnIndex = ({ name, index, columns }) => {
-  if (name) {
-    const nameIndex = (columns || []).findIndex((col) => col?.name === name)
-    if (nameIndex >= 0) {
-      return nameIndex
-    }
-  }
-  return index
-}
-
-/** Array form of resolvePersistedColumnIndex, pairing names[i] with indices[i]. */
-export const resolvePersistedColumnIndices = ({ names, indices, columns }) => {
-  const length = Math.max(names?.length ?? 0, indices?.length ?? 0)
-  return Array.from({ length }, (_, i) =>
-    resolvePersistedColumnIndex({ name: names?.[i], index: indices?.[i], columns }),
-  ).filter((index) => index !== undefined && index !== null)
-}
-
-/** Column names to save alongside persisted indices (undefined for sentinels like Count). */
-export const getPersistedColumnName = (index, columns) => (index >= 0 ? columns?.[index]?.name : undefined)
-
 /** True when the category axis alone is crowded (many rows). */
 export const isDenseCategoryChart = (data) => Array.isArray(data) && data.length > DENSE_CATEGORY_THRESHOLD
 
