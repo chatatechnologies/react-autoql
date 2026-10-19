@@ -98,7 +98,6 @@ import {
   buildSplitSeriesData,
   getSplitSeriesColumnIndices,
   getSplitSeriesValueTitle,
-  resolveSplitColumnIndex,
   supportsSplitSeriesDisplayType,
 } from './splitSeriesUtils'
 
@@ -251,6 +250,7 @@ export class QueryOutput extends React.Component {
       resizeStartHeight: 0,
       isResizable: this.shouldEnableResize,
       hiddenLegendLabels: [],
+      hiddenSplitSeriesKeys: [],
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
@@ -446,8 +446,8 @@ export class QueryOutput extends React.Component {
       sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
       sankeyValueColumnIndex: PropTypes.number,
       splitBy: PropTypes.shape({
-        column: PropTypes.shape({ name: PropTypes.string, index: PropTypes.number }),
-        value: PropTypes.shape({ name: PropTypes.string, index: PropTypes.number, isCount: PropTypes.bool }),
+        columnIndex: PropTypes.number,
+        valueColumnIndex: PropTypes.number, // SPLIT_SERIES_COUNT for Count
       }),
     }),
     onChartControlsChange: PropTypes.func,
@@ -643,6 +643,7 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
             this.captureQueryFilterBaseline()
+            this.setState({ hiddenSplitSeriesKeys: [] })
           }
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -1067,6 +1068,19 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  // Memoized so charts get the same columns array across re-renders. A new array on every render
+  // would make charts rebuild everything derived from columns (eg. the treemap zoom resetting).
+  getChartColumnsWithOverrides = (columns) => {
+    const overrides = this.latestColumnOverrides
+    const cached = this.chartColumnsCache
+    if (cached?.columns === columns && cached?.overrides === overrides) {
+      return cached.result
+    }
+    const result = this.applyColumnOverrides(columns)
+    this.chartColumnsCache = { columns, overrides, result }
+    return result
+  }
+
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
     return this.tableConfig.allNumberColumnIndices?.find((index) => {
       return (
@@ -1424,7 +1438,7 @@ export class QueryOutput extends React.Component {
     }
 
     const saved = this.state?.chartControls?.splitBy
-    const savedSplitIndex = resolveSplitColumnIndex(columns, saved?.column)
+    const savedSplitIndex = saved?.columnIndex
     const splitColumnIndex = eligibleColumnIndices.includes(savedSplitIndex) ? savedSplitIndex : undefined
 
     // With several series on the y-axis there is nothing to split into: the chart already has its
@@ -1442,8 +1456,8 @@ export class QueryOutput extends React.Component {
     }, [])
 
     let valueColumnIndex = SPLIT_SERIES_COUNT
-    if (!saved?.value?.isCount && numberColumnIndices.length) {
-      const savedValueIndex = resolveSplitColumnIndex(columns, saved?.value)
+    if (saved?.valueColumnIndex !== SPLIT_SERIES_COUNT && numberColumnIndices.length) {
+      const savedValueIndex = saved?.valueColumnIndex
       const currentNumberIndex = this.tableConfig.numberColumnIndex
       if (numberColumnIndices.includes(savedValueIndex)) {
         valueColumnIndex = savedValueIndex
@@ -1475,7 +1489,7 @@ export class QueryOutput extends React.Component {
   }
 
   getSplitSeriesData = (config, columns) => {
-    const hiddenSeriesKeys = this.splitHiddenSeriesKeys ?? []
+    const hiddenSeriesKeys = this.state.hiddenSplitSeriesKeys
     const cacheKey = {
       rows: this.tableData,
       columns,
@@ -1486,9 +1500,7 @@ export class QueryOutput extends React.Component {
     }
 
     const cached = this.splitSeriesCache
-    const isCacheValid =
-      cached &&
-      Object.keys(cacheKey).every((key) => cached.key[key] === cacheKey[key] || _isEqual(cached.key[key], cacheKey[key]))
+    const isCacheValid = cached && Object.keys(cacheKey).every((key) => cached.key[key] === cacheKey[key])
     if (isCacheValid) {
       return cached.result
     }
@@ -1507,7 +1519,6 @@ export class QueryOutput extends React.Component {
   }
 
   saveSplitSeriesControls = (splitBy) => {
-    this.splitHiddenSeriesKeys = []
     this.splitSeriesCache = undefined
     const chartControls = { ...(this.state.chartControls || {}) }
     if (splitBy) {
@@ -1516,20 +1527,8 @@ export class QueryOutput extends React.Component {
       delete chartControls.splitBy
     }
 
-    this.setState({ hiddenLegendLabels: [], chartID: uuid() })
+    this.setState({ hiddenLegendLabels: [], hiddenSplitSeriesKeys: [], chartID: uuid() })
     this.handleChartControlsChange(chartControls)
-  }
-
-  getPersistedSplitColumn = (index) => {
-    const column = this.state.columns?.[index]
-    return column ? { name: column.name, index } : undefined
-  }
-
-  getPersistedSplitValue = (valueColumnIndex) => {
-    if (valueColumnIndex === SPLIT_SERIES_COUNT) {
-      return { isCount: true }
-    }
-    return this.getPersistedSplitColumn(valueColumnIndex)
   }
 
   onSplitColumnChange = (columnIndex) => {
@@ -1555,10 +1554,7 @@ export class QueryOutput extends React.Component {
       this.onTableConfigChange()
     }
 
-    this.saveSplitSeriesControls({
-      column: this.getPersistedSplitColumn(columnIndex),
-      value: this.getPersistedSplitValue(config.valueColumnIndex),
-    })
+    this.saveSplitSeriesControls({ columnIndex, valueColumnIndex: config.valueColumnIndex })
   }
 
   onSplitValueChange = (valueColumnIndex) => {
@@ -1573,18 +1569,15 @@ export class QueryOutput extends React.Component {
       this.onTableConfigChange()
     }
 
-    this.saveSplitSeriesControls({
-      column: this.state.chartControls?.splitBy?.column,
-      value: this.getPersistedSplitValue(valueColumnIndex),
-    })
+    this.saveSplitSeriesControls({ columnIndex: config.splitColumnIndex, valueColumnIndex })
   }
 
   toggleSplitSeriesVisibility = (seriesKey) => {
-    const hidden = this.splitHiddenSeriesKeys ?? []
-    this.splitHiddenSeriesKeys = hidden.includes(seriesKey)
-      ? hidden.filter((key) => key !== seriesKey)
-      : [...hidden, seriesKey]
-    this.forceUpdate()
+    this.setState(({ hiddenSplitSeriesKeys: hidden }) => ({
+      hiddenSplitSeriesKeys: hidden.includes(seriesKey)
+        ? hidden.filter((key) => key !== seriesKey)
+        : [...hidden, seriesKey],
+    }))
   }
 
   usePivotDataForChart = () => {
@@ -1682,6 +1675,7 @@ export class QueryOutput extends React.Component {
       const isDifferentQuery = !!nextQueryID && nextQueryID !== this.queryID
       if (isDifferentQuery) {
         this.hasUserSelectedStringAxis = false
+        this.setState({ hiddenSplitSeriesKeys: [] })
       }
       this.queryID = nextQueryID || this.queryID
       this.queryResponse = cloneResponseSharingRows(response)
@@ -2912,6 +2906,7 @@ export class QueryOutput extends React.Component {
     if (nextQueryID && nextQueryID !== this.queryID) {
       this.hasUserSelectedStringAxis = false
       this.queryID = nextQueryID
+      this.setState({ hiddenSplitSeriesKeys: [] })
     }
 
     // Sorting or filtering a preview table already goes to the server for a full page
@@ -3059,10 +3054,7 @@ export class QueryOutput extends React.Component {
       this.onTableConfigChange()
       this.saveSplitSeriesControls(
         canSwap
-          ? {
-              column: this.getPersistedSplitColumn(previousStringColumnIndex),
-              value: this.getPersistedSplitValue(splitConfig.valueColumnIndex),
-            }
+          ? { columnIndex: previousStringColumnIndex, valueColumnIndex: splitConfig.valueColumnIndex }
           : undefined,
       )
       return
@@ -5284,7 +5276,7 @@ export class QueryOutput extends React.Component {
     const baseColumns = usePivotData ? this.pivotTableColumns : this.state.columns
     // Apply column overrides (e.g., date precision) for charts only - don't mutate original queryResponse
     // Don't apply overrides when using pivot data - pivot columns have different structure
-    let columns = usePivotData ? baseColumns : this.applyColumnOverrides(baseColumns)
+    let columns = usePivotData ? baseColumns : this.getChartColumnsWithOverrides(baseColumns)
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()

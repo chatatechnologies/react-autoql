@@ -52,23 +52,6 @@ export const getSplitSeriesColumnIndices = (columns, stringColumnIndex) => {
   }, [])
 }
 
-// Saved picks carry both the name and the index. The name wins because indices shift when
-// columns are added; the index is the fallback for when a column has been renamed.
-export const resolveSplitColumnIndex = (columns, saved) => {
-  if (!saved || !columns?.length) return undefined
-
-  if (saved.name) {
-    const byName = columns.findIndex((column) => column?.name === saved.name)
-    if (byName >= 0) return byName
-  }
-
-  if (Number.isInteger(saved.index) && columns[saved.index]) {
-    return saved.index
-  }
-
-  return undefined
-}
-
 export const getSplitSeriesValueTitle = (columns, valueColumnIndex) => {
   if (valueColumnIndex === SPLIT_SERIES_COUNT) return 'Count'
 

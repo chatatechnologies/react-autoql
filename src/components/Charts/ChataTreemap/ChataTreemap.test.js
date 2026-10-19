@@ -111,6 +111,12 @@ describe('ChataTreemap', () => {
     expect(valueSelector.prop('disabled')).toBe(true) // Only one number column to choose from
   })
 
+  test('explains an empty chart when there is no number column to size by', () => {
+    const noNumbers = columns.slice(0, 2)
+    const wrapper = setup({ columns: noNumbers, data: data.map((row) => row.slice(0, 2)) })
+    expect(wrapper.find('text.treemap-empty-message').text()).toBe('No number column to size boxes by')
+  })
+
   test('uses the persisted group column indices', () => {
     const wrapper = setup({ initialChartControls: { treemapGroupColumnIndices: [1] } })
     expect(wrapper.find('g.treemap-leaf')).toHaveLength(2) // A and B

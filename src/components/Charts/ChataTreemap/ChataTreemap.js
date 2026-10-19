@@ -22,10 +22,7 @@ import {
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from '../ChataSankeyDiagram/SankeyColumnSelector'
-import {
-  BAR_GRADIENT_OPACITY_STOPS,
-  SANKEY_VALUE_COUNT_SENTINEL,
-} from '../chartPropHelpers'
+import { BAR_GRADIENT_OPACITY_STOPS, SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
 import './ChataTreemap.scss'
@@ -177,7 +174,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
   // not records - only offer it for list queries
   const isAggregatedData = useMemo(() => isAggregation(columns), [props.columns])
-  const numberColumnCount = columns.filter((col) => col?.isNumberType).length
+  const numberColumnCount = columns.filter((col) => isColumnNumberType(col)).length
 
   const isValidValueColumnIndex = (index) =>
     (index === TREEMAP_VALUE_COUNT_SENTINEL && !isAggregatedData) || (index >= 0 && isColumnNumberType(columns[index]))
@@ -281,14 +278,21 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     [props.dataFormatting, props.autoQLConfig],
   )
 
-  const { tree, totalLeaves, isDataTruncated } = useMemo(() => {
+  const { tree, totalLeaves, totalValue, excludedRowCount, isDataTruncated } = useMemo(() => {
     if (!props.data?.length || !groupColumnIndices.length || !isValidValueColumnIndex(valueColumnIndex)) {
-      return { tree: null, totalLeaves: 0, isDataTruncated: false }
+      return { tree: null, totalLeaves: 0, totalValue: 0, excludedRowCount: 0, isDataTruncated: false }
     }
 
     const allLeaves = aggregateTreemapLeaves(props.data, groupColumnIndices, valueColumnIndex)
     const truncated = allLeaves.length > MAX_TREEMAP_LEAVES
     const leaves = truncated ? allLeaves.slice(0, MAX_TREEMAP_LEAVES) : allLeaves
+
+    // Rows without a positive value can't be sized, so aggregateTreemapLeaves drops them. Count them
+    // so the tooltip can say the totals leave them out.
+    const excluded =
+      valueColumnIndex === TREEMAP_VALUE_COUNT_SENTINEL
+        ? 0
+        : props.data.filter((row) => row && !(Number(row[valueColumnIndex]) > 0)).length
 
     const getDisplayValue = (rawValue, columnIndex) =>
       formatElement({ element: rawValue, column: columns[columnIndex], config: formattingConfig })
@@ -296,6 +300,9 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     return {
       tree: leaves.length ? buildTreemapTree(leaves, groupColumnIndices, getDisplayValue) : null,
       totalLeaves: allLeaves.length,
+      // % of Total is out of every group, not just the ones still shown after truncation
+      totalValue: allLeaves.reduce((sum, leaf) => sum + leaf.value, 0),
+      excludedRowCount: excluded,
       isDataTruncated: truncated,
     }
   }, [props.data, props.columns, groupColumnIndices, valueColumnIndex, formattingConfig])
@@ -343,9 +350,12 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   // Zoom and pan: wheel to zoom, drag to pan, bounded to the treemap so it can't be lost off-screen.
   // The transform is applied directly to the DOM; React only re-renders when a gesture ends so
   // labels can re-fit to the new scale (zooming in reveals labels for smaller boxes).
+  // Only reset when the data, picks or size change - not on every rebuild of the tree, since parents
+  // can pass new (but equal) columns or formatting objects on unrelated re-renders.
+  const hasTree = !!hierarchyRoot
   useEffect(() => {
     const svgElement = zoomSvgRef.current
-    if (!svgElement || !hierarchyRoot || chartWidth <= 0 || chartHeight <= 0) {
+    if (!svgElement || !hasTree || chartWidth <= 0 || chartHeight <= 0) {
       return
     }
 
@@ -385,7 +395,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     zoomBehaviorRef.current = zoomBehavior
     svg.style('touch-action', 'none').call(zoomBehavior).on('dblclick.zoom', null)
 
-    // New layout (data, columns or size changed): start from the fitted view
+    // New layout (data, picks or size changed): start from the fitted view
     committedTransformRef.current = zoomIdentity
     svg.call(zoomBehavior.transform, zoomIdentity)
     setZoomTransform({ k: 1, x: 0, y: 0 })
@@ -393,7 +403,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     return () => {
       svg.on('.zoom', null)
     }
-  }, [hierarchyRoot, chartWidth, chartHeight])
+  }, [hasTree, props.data, groupColumnIndices, valueColumnIndex, chartWidth, chartHeight])
 
   // Labels were just re-rendered for the committed transform, so drop the interim gesture transform
   // before the browser paints
@@ -451,12 +461,18 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
 
     const valueLabel = isCountValue ? 'Count' : valueColumn?.display_name || valueColumn?.name || 'Value'
     let html = `${pathRows}<br/><strong>${escapeHtml(valueLabel)}:</strong> ${escapeHtml(formatValue(node.value))}`
-    html += `<br/><strong>% of Total:</strong> ${formatPercent(node.value, layoutRoot.value)}`
+    html += `<br/><strong>% of Total:</strong> ${formatPercent(node.value, totalValue)}`
     if (node.depth > 1 && node.parent) {
       html += `<br/><strong>% of ${escapeHtml(node.parent.data.name)}:</strong> ${formatPercent(
         node.value,
         node.parent.value,
       )}`
+    }
+    if (excludedRowCount > 0) {
+      const rowLabel = excludedRowCount === 1 ? 'row' : 'rows'
+      html += `<br/><em>${excludedRowCount} ${rowLabel} with zero, negative or empty ${escapeHtml(
+        valueLabel,
+      )} not included</em>`
     }
     return html
   }
@@ -632,6 +648,16 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     )
   }
 
+  const getEmptyMessage = () => {
+    if (!groupableColumnIndices.length) {
+      return 'No columns to group by'
+    }
+    if (!isValidValueColumnIndex(valueColumnIndex)) {
+      return 'No number column to size boxes by'
+    }
+    return 'No positive values to display'
+  }
+
   const renderWarning = () => {
     if (!isDataTruncated) {
       return null
@@ -674,7 +700,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
             textAnchor='middle'
             fill={themeTextColor}
           >
-            No positive values to display
+            {getEmptyMessage()}
           </text>
         )}
       </svg>

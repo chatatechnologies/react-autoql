@@ -150,7 +150,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
   // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
   // not records - only offer it for list queries
   const isAggregatedData = useMemo(() => isAggregation(props.columns), [props.columns])
-  const numberColumnCount = (props.columns || []).filter((col) => col?.isNumberType).length
+  const numberColumnCount = (props.columns || []).filter((col) => isColumnNumberType(col)).length
 
   const categoricalColumnIndices = useMemo(
     () =>

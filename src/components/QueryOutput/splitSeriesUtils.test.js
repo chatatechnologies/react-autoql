@@ -2,7 +2,6 @@ import {
   buildSplitSeriesData,
   getSplitSeriesColumnIndices,
   getSplitSeriesValueTitle,
-  resolveSplitColumnIndex,
   SPLIT_SERIES_BLANK_KEY,
   SPLIT_SERIES_COUNT,
   SPLIT_SERIES_OTHER_KEY,
@@ -31,21 +30,6 @@ describe('getSplitSeriesColumnIndices', () => {
   test('skips hidden columns', () => {
     const withHidden = columns.map((col, i) => (i === 2 ? { ...col, is_visible: false } : col))
     expect(getSplitSeriesColumnIndices(withHidden, 0)).toEqual([1])
-  })
-})
-
-describe('resolveSplitColumnIndex', () => {
-  test('prefers the saved name over the saved index', () => {
-    expect(resolveSplitColumnIndex(columns, { name: 'product', index: 1 })).toBe(2)
-  })
-
-  test('falls back to the saved index when the name is gone', () => {
-    expect(resolveSplitColumnIndex(columns, { name: 'renamed', index: 1 })).toBe(1)
-  })
-
-  test('returns undefined when nothing matches', () => {
-    expect(resolveSplitColumnIndex(columns, { name: 'renamed', index: 9 })).toBeUndefined()
-    expect(resolveSplitColumnIndex(columns, undefined)).toBeUndefined()
   })
 })
 

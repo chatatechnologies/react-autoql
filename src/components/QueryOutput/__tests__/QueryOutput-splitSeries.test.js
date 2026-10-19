@@ -61,10 +61,7 @@ const getChartProps = (wrapper) => {
   return wrapper.find(ChataChart).props()
 }
 
-const splitByRegion = {
-  column: { name: columnNames[regionIndex], index: regionIndex },
-  value: { name: columnNames[salesIndex], index: salesIndex },
-}
+const splitByRegion = { columnIndex: regionIndex, valueColumnIndex: salesIndex }
 
 describe('split series on a list query chart', () => {
   test('offers the split button when no split is saved', () => {
@@ -88,7 +85,7 @@ describe('split series on a list query chart', () => {
     options.first().simulate('click')
     expect(onChartControlsChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        splitBy: { column: { name: 'region', index: regionIndex }, value: { name: 'sales', index: salesIndex } },
+        splitBy: { columnIndex: regionIndex, valueColumnIndex: salesIndex },
       }),
     )
     expect(getChartProps(wrapper).splitBy.isActive).toBe(true)
@@ -117,7 +114,7 @@ describe('split series on a list query chart', () => {
 
     inst.onSplitValueChange(SPLIT_SERIES_COUNT)
     expect(onChartControlsChange).toHaveBeenLastCalledWith({
-      splitBy: { column: splitByRegion.column, value: { isCount: true } },
+      splitBy: { columnIndex: regionIndex, valueColumnIndex: SPLIT_SERIES_COUNT },
     })
     expect(getChartProps(wrapper).splitBy.valueTitle).toBe('Count')
 
@@ -148,6 +145,20 @@ describe('split series on a list query chart', () => {
 
     expect(after.columns[numberColumnIndices[0]].isSeriesHidden).toBe(true)
     expect(after.columns[numberColumnIndices[1]].isSeriesHidden).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('hidden series are shown again when a different query comes in', () => {
+    const { wrapper, inst } = setup({ initialChartControls: { splitBy: splitByRegion } })
+    const { columns, numberColumnIndices } = getChartProps(wrapper)
+    const firstSeries = columns[numberColumnIndices[0]]
+
+    inst.onLegendClick({ label: firstSeries.display_name, columnIndex: numberColumnIndices[0], column: firstSeries })
+    expect(inst.state.hiddenSplitSeriesKeys).toHaveLength(1)
+
+    const nextResponse = { ...response, data: { ...response.data, data: { ...response.data.data, query_id: 'next' } } }
+    inst.onNewData(nextResponse)
+    expect(inst.state.hiddenSplitSeriesKeys).toEqual([])
     wrapper.unmount()
   })
 
