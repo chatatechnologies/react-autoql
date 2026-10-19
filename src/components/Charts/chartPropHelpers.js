@@ -156,6 +156,15 @@ export const chartContainerPropTypes = {
   legendColumnIndex: PropTypes.number,
   enableDynamicCharting: PropTypes.bool,
   legendLocation: PropTypes.string,
+  // List queries only: one series per value of a column (see QueryOutput/splitSeriesUtils)
+  splitBy: PropTypes.shape({
+    isActive: PropTypes.bool,
+    columnIndex: PropTypes.number,
+    valueColumnIndex: PropTypes.number,
+    valueTitle: PropTypes.string,
+    onColumnChange: PropTypes.func,
+    onValueChange: PropTypes.func,
+  }),
   isResizing: PropTypes.bool,
   onLegendClick: PropTypes.func,
   onLabelChange: PropTypes.func,
