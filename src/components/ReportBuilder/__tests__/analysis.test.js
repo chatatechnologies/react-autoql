@@ -247,15 +247,16 @@ describe('an analysis on paper', () => {
   const paper = (props) =>
     render(<PaperBlock block={{ id: 'a', type: 'analysis', text: 'x' }} mode='page' view={view()} {...props} />)
 
-  it('prints its Markdown as prose, lists and emphasis, with where it came from', () => {
+  it('prints its Markdown as prose, lists, headings, emphasis and links, with where it came from', () => {
     const { container } = paper()
     const text = container.querySelector('.react-autoql-report-builder-analysis-text')
     expect(text.querySelector('strong').textContent).toBe('South')
     expect(text.querySelector('br')).not.toBeNull()
     expect(text.querySelectorAll('ul li')).toHaveLength(2)
-    expect(text.querySelector('h4').textContent).toBe('Small')
-    expect(text.querySelector('a')).toBeNull()
-    expect(text.textContent).toContain('the site')
+    expect(text.querySelector('h5').textContent).toBe('Small')
+    expect(text.querySelector('a').getAttribute('href')).toBe('https://x.test')
+    expect(text.querySelector('a').textContent).toBe('the site')
+    // Raw HTML isn't let through.
     expect(text.querySelector('b')).toBeNull()
     expect(container.querySelector('.react-autoql-report-builder-analysis-meta').textContent).toBe(
       '✦ Auto Analyze · from “aum by account” · focus: growth',

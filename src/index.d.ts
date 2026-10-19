@@ -463,6 +463,8 @@ export interface ReportHeadingBlock {
 export interface ReportTextBlock {
   id: string
   type: 'text'
+  // Markdown: **bold**, *italic*, ++underline++, ~~strikethrough~~, [links](https://…), lists and ### headings.
+  // A single line break is a line break, so plain text reads as typed.
   text: string
   width?: ReportBlockWidth
   style?: ReportTextStyle

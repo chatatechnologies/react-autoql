@@ -105,6 +105,31 @@ const PATHS = {
       <rect x='9' y='9' width='4.5' height='4.5' rx='1' />
     </>
   ),
+  // The formatting bar's.
+  'list-bulleted': (
+    <>
+      <path d='M6.5 4h7M6.5 8h7M6.5 12h7' />
+      <path d='M3 4h.01M3 8h.01M3 12h.01' strokeWidth='2.2' />
+    </>
+  ),
+  'list-numbered': (
+    <>
+      <path d='M7 4h6.5M7 8h6.5M7 12h6.5' />
+      <path d='M2.6 3.2l1-.7v3M2.4 7.6c.3-.5 1.7-.6 1.7.3 0 .7-1.7 1.4-1.7 2.1h1.8' strokeWidth='1.1' />
+    </>
+  ),
+  link: (
+    <>
+      <path d='M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2.2-2.2a2.6 2.6 0 0 0-3.7-3.7l-.9.9' />
+      <path d='M9.2 6.8a2.6 2.6 0 0 0-3.7 0L3.3 9a2.6 2.6 0 0 0 3.7 3.7l.9-.9' />
+    </>
+  ),
+  'clear-format': (
+    <>
+      <path d='M4 3.5h8M8 3.5l-2 9M5 12.5h3' />
+      <path d='M10 9.5l3.5 3.5M13.5 9.5L10 13' />
+    </>
+  ),
 }
 
 export const Icon = ({ name, size = 15, title }) => (

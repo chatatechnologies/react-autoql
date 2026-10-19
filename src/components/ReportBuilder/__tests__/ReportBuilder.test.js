@@ -90,6 +90,19 @@ const setup = (initial = createEmptyReport(), props = {}) => {
 const setupRunning = (initial, props = {}) => setup(initial, { enableRunReport: true, ...props })
 
 const panel = () => screen.getByTestId('report-builder-panel')
+// The formatting bar (RW-346), a text editor's TipTap editor (ProseMirror's element carries it), and giving it the
+// caret: jsdom can't focus an editable element, so its focus event stands in.
+const bar = () => screen.getByTestId('report-builder-format-bar')
+const barButton = (name) => within(bar()).getByRole('button', { name })
+const press = (name) => {
+  fireEvent.mouseDown(barButton(name))
+  fireEvent.click(barButton(name))
+}
+const editorOf = (el) => el.editor
+const startEditing = (el) =>
+  act(() => {
+    fireEvent.focus(el)
+  })
 const selectBlock = (label, index = 0) => fireEvent.mouseDown(screen.getAllByRole('group', { name: label })[index])
 
 beforeEach(() => {
@@ -1633,104 +1646,189 @@ describe('analysis blocks (enableAnalysis)', () => {
   })
 
   describe('editing the wording on the page', () => {
-    // As some answers come back: with the characters "\n" rather than a line break.
+    // As some answers come back: with the characters "\\n" rather than a line break.
     const written = (text = 'Up **18%** on Q2.\\n- one') =>
       reportOf(resultBlock(), analysisBlock({ text, targetTitle: 'aum by account', targetAsOf: CAPTURED_AT }))
-    const wording = () => screen.getByTestId('report-builder-analysis-wording')
-    const editor = () => screen.queryByTestId('report-builder-analysis-edit')
+    const wording = () => screen.queryByTestId('report-builder-analysis-edit')
 
-    it('edits its Markdown in place, and shows it printed again once left', () => {
+    it('edits it where it is, formatted, with the formatting bar; the panel only points there', () => {
       const { lastReport } = setup(written())
       selectBlock('Analysis')
-      expect(within(panel()).getByTestId('report-builder-analysis-text').value).toBe('Up **18%** on Q2.\n- one')
+      expect(within(panel()).queryByTestId('report-builder-analysis-text')).toBeNull()
+      expect(within(panel()).getByText(/Edit the wording on the page/)).toBeTruthy()
+      expect(wording().querySelector('strong').textContent).toBe('18%')
+      expect(wording().querySelectorAll('li')).toHaveLength(1)
 
-      fireEvent.click(wording())
-      expect(editor().value).toBe('Up **18%** on Q2.\n- one')
-      expect(document.activeElement).toBe(editor())
-      // jsdom can't say where a click fell, so the caret goes to the end.
-      expect(editor().selectionStart).toBe(editor().value.length)
-      expect(screen.getByText(/Click away or press Esc/)).toBeTruthy()
-
-      fireEvent.change(editor(), { target: { value: 'Up **20%** on Q2.' } })
-      expect(analysisIn(lastReport()).text).toBe('Up **20%** on Q2.')
-      fireEvent.blur(editor())
-      expect(editor()).toBeNull()
-      expect(screen.getByText('20%').tagName).toBe('STRONG')
+      startEditing(wording())
+      act(() => editorOf(wording()).commands.selectAll())
+      press('Italic')
+      expect(analysisIn(lastReport()).text).toContain('*Up **18%** on Q2.*')
     })
 
-    it('puts the caret where the wording was clicked', () => {
-      setup(written('Up **18%** on Q2.'))
-      const node = wording().querySelector('p').lastChild // " on Q2."
-      document.caretRangeFromPoint = jest.fn(() => {
-        const range = document.createRange()
-        range.setStart(node, 4)
-        range.collapse(true)
-        return range
+    it('stays while it’s emptied, and gives the keyboard back to the block on Esc', () => {
+      const { lastReport } = setup(written())
+      startEditing(wording())
+      act(() => {
+        editorOf(wording()).commands.clearContent(true)
       })
-      try {
-        fireEvent.click(wording(), { clientX: 40, clientY: 12 })
-        expect(editor().selectionStart).toBe('Up **18%** on '.length)
-      } finally {
-        delete document.caretRangeFromPoint
-      }
-    })
-
-    it('stays open while the wording is emptied, and closes on Esc', () => {
-      setup(written())
-      fireEvent.click(wording())
-      fireEvent.change(editor(), { target: { value: '' } })
-      expect(editor()).not.toBeNull()
+      expect(analysisIn(lastReport()).text).toBe('')
+      expect(wording()).not.toBeNull()
       expect(screen.queryByText('Nothing written yet')).toBeNull()
 
-      fireEvent.keyDown(editor(), { key: 'Escape' })
-      expect(editor()).toBeNull()
-      expect(screen.getByText('Nothing written yet')).toBeTruthy()
+      fireEvent.keyDown(wording(), { key: 'Escape' })
       expect(document.activeElement).toBe(screen.getByRole('group', { name: 'Analysis' }))
+      fireEvent.blur(wording())
+      expect(wording()).toBeNull()
+      expect(screen.getByText('Nothing written yet')).toBeTruthy()
     })
 
-    it('edits from the keyboard', () => {
-      setup(written())
-      wording().focus()
-      fireEvent.keyDown(wording(), { key: 'Enter' })
-      expect(document.activeElement).toBe(editor())
-    })
-
-    it('leaves alone a drag that selected some of the wording', () => {
-      setup(written())
-      const getSelection = jest
-        .spyOn(window, 'getSelection')
-        .mockReturnValue({ isCollapsed: false, toString: () => 'Up 18%' })
-      try {
-        fireEvent.click(wording())
-        expect(editor()).toBeNull()
-      } finally {
-        getSelection.mockRestore()
-      }
-    })
-
-    it('closes, and can’t be opened, while Auto Analyze rewrites it', async () => {
+    it('goes back to the page while Auto Analyze rewrites it', async () => {
       let answer
       fetchLLMSummary.mockReturnValue(new Promise((resolve) => (answer = resolve)))
       setup(written(), { enableAnalysis: true })
       selectBlock('Analysis')
-      fireEvent.click(wording())
-      expect(editor()).not.toBeNull()
+      expect(wording()).not.toBeNull()
 
       fireEvent.click(within(panel()).getByTestId('report-builder-analyze'))
-      expect(editor()).toBeNull()
-      expect(screen.queryByTestId('report-builder-analysis-wording')).toBeNull()
+      expect(wording()).toBeNull()
 
-      await act(async () => answer({ data: { data: { summary: 'New words.' } } }))
+      await act(async () => answer({ data: { data: { summary: 'New **words**.' } } }))
       expect(wording().textContent).toBe('New words.')
+      expect(wording().querySelector('strong').textContent).toBe('words')
     })
 
     it('can’t be edited in the preview', async () => {
       const { container } = setup(written())
       fireEvent.click(screen.getByTestId('report-builder-open-preview'))
       await waitFor(() => expect(container.querySelector('.react-autoql-report-builder-page')).not.toBeNull())
-      expect(container.querySelector('[data-editable]')).toBeNull()
-      expect(editor()).toBeNull()
+      expect(container.querySelector('[contenteditable]')).toBeNull()
+      expect(wording()).toBeNull()
+      expect(screen.queryByTestId('report-builder-format-bar')).toBeNull()
     })
+  })
+})
+
+describe('formatting text (RW-346)', () => {
+  const textReport = (text = 'Plain words here') =>
+    createEmptyReport({ blocks: [{ id: 't', type: 'text', text, width: 'full' }] })
+  const paragraph = () => screen.getByTestId('report-builder-text-input')
+  const textOf = (report) => report.blocks[0].text
+  // Selects some of the paragraph: ProseMirror counts from 1, at the start of its first paragraph.
+  const select = (from, to) => act(() => editorOf(paragraph()).commands.setTextSelection({ from, to }))
+  // Selects a word wherever it is now (in a list, a heading), as someone would before pressing a button.
+  const selectText = (word) =>
+    act(() => {
+      const editor = editorOf(paragraph())
+      let range = null
+      editor.state.doc.descendants((node, pos) => {
+        if (!range && node.isText && node.text.includes(word)) {
+          const from = pos + node.text.indexOf(word)
+          range = { from, to: from + word.length }
+        }
+      })
+      editor.commands.setTextSelection(range)
+    })
+
+  it('edits a paragraph where it is, formatted, and bolds and unbolds from the bar', () => {
+    const { lastReport } = setup(textReport('Plain **bold** words'))
+    expect(paragraph().querySelector('strong').textContent).toBe('bold')
+    // Nothing to format until some text has the caret.
+    expect(barButton('Bold').disabled).toBe(true)
+    expect(within(bar()).getByText('Click into a paragraph or an analysis to format it.')).toBeTruthy()
+
+    startEditing(paragraph())
+    expect(barButton('Bold').disabled).toBe(false)
+    select(1, 6) // "Plain"
+    press('Bold')
+    expect(textOf(lastReport())).toBe('**Plain** **bold** words')
+    expect(barButton('Bold').getAttribute('aria-pressed')).toBe('true')
+    press('Bold')
+    expect(textOf(lastReport())).toBe('Plain **bold** words')
+    expect(barButton('Bold').getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('makes text italic, underlined or struck through, a list or a heading, and clears it again', () => {
+    const { lastReport } = setup(textReport('Note'))
+    startEditing(paragraph())
+    const toggles = [
+      ['Italic', '*Note*'],
+      ['Underline', '++Note++'],
+      ['Strikethrough', '~~Note~~'],
+      ['Bulleted list', '- Note'],
+      ['Numbered list', '1. Note'],
+    ]
+    toggles.forEach(([name, markdown]) => {
+      selectText('Note')
+      press(name)
+      expect(textOf(lastReport())).toBe(markdown)
+      selectText('Note')
+      press(name)
+      expect(textOf(lastReport())).toBe('Note')
+    })
+
+    const style = within(bar()).getByLabelText('Text style')
+    fireEvent.change(style, { target: { value: 'heading' } })
+    expect(textOf(lastReport())).toBe('### Note')
+    expect(style.value).toBe('heading')
+    fireEvent.change(style, { target: { value: 'subheading' } })
+    expect(textOf(lastReport())).toBe('#### Note')
+    fireEvent.change(style, { target: { value: 'paragraph' } })
+    expect(textOf(lastReport())).toBe('Note')
+
+    selectText('Note')
+    press('Bold')
+    press('Italic')
+    expect(textOf(lastReport())).toBe('***Note***')
+    press('Clear formatting')
+    expect(textOf(lastReport())).toBe('Note')
+  })
+
+  it('links the selection from the bar, and takes the link off again', () => {
+    const { lastReport } = setup(textReport('See the site'))
+    startEditing(paragraph())
+    select(5, 13) // "the site"
+    press('Link')
+    fireEvent.change(within(bar()).getByLabelText('Link address'), { target: { value: 'example.com' } })
+    fireEvent.click(within(bar()).getByRole('button', { name: 'Apply' }))
+    expect(textOf(lastReport())).toBe('See [the site](https://example.com)')
+    expect(within(bar()).queryByLabelText('Link address')).toBeNull()
+
+    select(7, 7)
+    press('Link')
+    expect(within(bar()).getByLabelText('Link address').value).toBe('https://example.com')
+    fireEvent.click(within(bar()).getByRole('button', { name: 'Remove link' }))
+    expect(textOf(lastReport())).toBe('See the site')
+  })
+
+  it('opens the link field on ⌘K / Ctrl+K, and turns down what isn’t a link', () => {
+    const { spy } = setup(textReport('See the site'))
+    startEditing(paragraph())
+    select(5, 13)
+    // jsdom isn't a Mac, so the shortcut is Ctrl+K.
+    fireEvent.keyDown(paragraph(), { key: 'k', ctrlKey: true })
+    const field = within(bar()).getByLabelText('Link address')
+    fireEvent.change(field, { target: { value: 'javascript:alert(1)' } })
+    fireEvent.submit(field.closest('form'))
+    expect(within(bar()).getByRole('alert').textContent).toBe(
+      'Use a web address, like example.com, or an email address.',
+    )
+    expect(spy).not.toHaveBeenCalled()
+
+    fireEvent.click(within(bar()).getByRole('button', { name: 'Cancel' }))
+    expect(within(bar()).queryByLabelText('Link address')).toBeNull()
+  })
+
+  it('prints a paragraph formatted, and shows no bar in the preview', async () => {
+    const { container } = setup(textReport('**Bold**, ++under++ and [a link](https://example.com)\n\n- one\n- two'))
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+    await waitFor(() => expect(container.querySelector('.react-autoql-report-builder-page')).not.toBeNull())
+    const text = container.querySelector('.react-autoql-report-builder-page .react-autoql-report-builder-text')
+    expect(text.querySelector('strong').textContent).toBe('Bold')
+    expect(text.querySelector('u').textContent).toBe('under')
+    expect(text.querySelector('a').getAttribute('href')).toBe('https://example.com')
+    expect(text.querySelectorAll('li')).toHaveLength(2)
+    expect(text.hasAttribute('contenteditable')).toBe(false)
+    expect(screen.queryByTestId('report-builder-format-bar')).toBeNull()
   })
 })
 

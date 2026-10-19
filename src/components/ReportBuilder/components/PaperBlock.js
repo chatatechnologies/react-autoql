@@ -1,6 +1,4 @@
 import React from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkBreaks from 'remark-breaks'
 import { formatElement, getDataFormatting } from 'autoql-fe-utils'
 import { RB, TEXT_SIZES, TEXT_WEIGHTS, TYPEFACES } from '../constants'
 import { STRINGS } from '../strings'
@@ -8,7 +6,7 @@ import { LoadingDots } from '../../LoadingDots'
 import { ReportTable } from './ReportTable'
 import { ReportChart } from './ReportChart'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
-import { renderedTextBefore, sourceOffsetAfter } from './textCaret'
+import { RichTextEditor, RichTextView } from './RichText'
 import { formatPrintedDate } from '../run/reportRun'
 import { toAnalysisMarkdown } from '../model/analysis'
 import { isMacKeyboard } from '../keyboard'
@@ -79,25 +77,23 @@ const HeadingContent = ({ block, mode, onTextChange }) => {
   )
 }
 
+// A paragraph's text, formatted (RW-346): edited in place, with the formatting bar under the toolbar.
 const TextContent = ({ block, mode, onTextChange }) => {
   const style = textStyleOf(block.style)
   if (mode === 'edit') {
     return (
-      <AutoGrowTextarea
+      <RichTextEditor
         className={`${RB}-text`}
         style={style}
         value={block.text}
         placeholder={STRINGS.textPlaceholder}
-        aria-label={STRINGS.textPlaceholder}
+        label={STRINGS.textPlaceholder}
+        testId='report-builder-text-input'
         onChange={onTextChange}
       />
     )
   }
-  return (
-    <p className={`${RB}-text`} style={style}>
-      {block.text}
-    </p>
-  )
+  return <RichTextView className={`${RB}-text`} style={style} markdown={block.text} />
 }
 
 const Placeholder = ({ title, children, tone }) => (
@@ -345,108 +341,22 @@ const DataContent = ({
   )
 }
 
-// What Auto Analyze's Markdown may print as: prose, lists and emphasis. Links and images are dropped (paper
-// can't follow them), raw HTML is skipped, and headings past h4 read as h4.
-const ANALYSIS_ELEMENTS = [
-  'p',
-  'br',
-  'strong',
-  'em',
-  'ul',
-  'ol',
-  'li',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'blockquote',
-  'code',
-]
-const ANALYSIS_COMPONENTS = { h5: 'h4', h6: 'h4' }
-
-const AnalysisText = React.memo(function AnalysisText({ text }) {
-  const markdown = toAnalysisMarkdown(text)
-  return (
-    <ReactMarkdown
-      className={`${RB}-analysis-text`}
-      remarkPlugins={[remarkBreaks]}
-      allowedElements={ANALYSIS_ELEMENTS}
-      unwrapDisallowed
-      skipHtml
-      components={ANALYSIS_COMPONENTS}
-    >
-      {markdown}
-    </ReactMarkdown>
-  )
-})
-
-// In the editor, clicking the wording edits it in place, as headings and text are edited: its Markdown in a
-// textarea, the caret where the click was, until the textarea loses focus or Esc is pressed. The textarea
-// stays while the wording is emptied, and closes while Auto Analyze rewrites it.
+// An analysis's wording: Auto Analyze's Markdown, formatted as it prints. In the editor it's edited where it
+// sits, as a paragraph is, with the formatting bar; it stays in edit while it's being emptied, and goes back to
+// the page while Auto Analyze rewrites it.
 class AnalysisContent extends React.Component {
   state = { editing: false }
-  input = React.createRef()
-  caret = null
-
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.editing && this.isWriting()) {
-      this.setState({ editing: false })
-      return
-    }
-    if (this.state.editing && !prevState.editing) {
-      const el = this.input.current?.ref?.current
-      if (el) {
-        el.focus()
-        const at = Math.min(this.caret ?? el.value.length, el.value.length)
-        el.setSelectionRange?.(at, at)
-      }
-    }
-  }
 
   isWriting = () => this.props.pending?.kind === 'analysis' && !this.props.pending.error
 
   canEdit = () => this.props.mode === 'edit' && typeof this.props.onTextChange === 'function' && !this.isWriting()
 
-  startEditing = (caret) => {
-    if (!this.canEdit()) return
-    this.caret = caret
-    this.setState({ editing: true })
-  }
-
-  stopEditing = () => this.setState({ editing: false })
-
-  onWordingClick = (e) => {
-    // A drag that selected some of the wording is someone copying it.
-    const selection = window.getSelection?.()
-    if (selection && !selection.isCollapsed && String(selection)) return
-    const markdown = toAnalysisMarkdown(this.props.block.text)
-    const before = renderedTextBefore(e.currentTarget, e.clientX, e.clientY)
-    this.startEditing(before == null ? markdown.length : sourceOffsetAfter(markdown, before))
-  }
-
-  onWordingKeyDown = (e) => {
-    if (e.key === 'Enter' && e.target === e.currentTarget) {
-      e.preventDefault()
-      this.startEditing(null)
-    }
-  }
-
-  onInputKeyDown = (e) => {
-    if (e.key !== 'Escape') return
-    e.preventDefault()
-    // Back to the block, so the keyboard carries on from there; leaving the textarea ends the editing.
-    const block = e.currentTarget.closest?.('[data-block-id]')
-    if (block) block.focus()
-    else e.currentTarget.blur()
-  }
-
   render() {
     const { block, view, mode } = this.props
     const writing = this.isWriting()
-    const editing = this.state.editing && mode === 'edit'
-    if (!editing && (!view || view.state !== 'written')) {
+    const written = view?.state === 'written'
+    const editing = this.canEdit() && (written || this.state.editing)
+    if (!editing && !written) {
       if (mode !== 'edit') {
         return null
       }
@@ -469,47 +379,27 @@ class AnalysisContent extends React.Component {
     ]
       .filter(Boolean)
       .join(' · ')
-    let wording
-    if (editing) {
-      wording = (
-        <AutoGrowTextarea
-          ref={this.input}
-          className={`${RB}-analysis-input`}
-          value={toAnalysisMarkdown(block.text)}
-          aria-label={STRINGS.panel.wording}
-          data-test='report-builder-analysis-edit'
-          onChange={this.props.onTextChange}
-          onBlur={this.stopEditing}
-          onKeyDown={this.onInputKeyDown}
-        />
-      )
-    } else if (this.canEdit()) {
-      wording = (
-        <div
-          className={`${RB}-analysis-body`}
-          data-editable=''
-          tabIndex={0}
-          title={STRINGS.analysis.edit}
-          data-test='report-builder-analysis-wording'
-          onClick={this.onWordingClick}
-          onKeyDown={this.onWordingKeyDown}
-        >
-          <AnalysisText text={view.text} />
-        </div>
-      )
-    } else {
-      wording = <AnalysisText text={view.text} />
-    }
     return (
       <div
         className={`${RB}-analysis`}
         style={textStyleOf(block.style)}
         data-writing={writing || undefined}
-        data-editing={editing || undefined}
+        data-editing={(editing && this.state.editing) || undefined}
       >
-        {wording}
+        {editing ? (
+          <RichTextEditor
+            className={`${RB}-analysis-text`}
+            value={toAnalysisMarkdown(block.text)}
+            label={STRINGS.panel.wording}
+            testId='report-builder-analysis-edit'
+            onChange={this.props.onTextChange}
+            onFocus={() => this.setState({ editing: true })}
+            onBlur={() => this.setState({ editing: false })}
+          />
+        ) : (
+          <RichTextView className={`${RB}-analysis-text`} markdown={toAnalysisMarkdown(view.text)} />
+        )}
         <div className={`${RB}-analysis-meta`}>✦ {meta}</div>
-        {editing ? <div className={`${RB}-analysis-hint`}>{STRINGS.analysis.editingNote}</div> : null}
         {mode === 'edit' && view && (view.targetGone || view.targetChanged) ? (
           <div className={`${RB}-analysis-note`}>
             {view.targetGone ? STRINGS.analysis.targetGone : STRINGS.analysis.targetChanged}

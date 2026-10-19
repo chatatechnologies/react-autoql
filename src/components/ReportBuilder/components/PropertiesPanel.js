@@ -17,7 +17,6 @@ import {
 } from '../constants'
 import { STRINGS } from '../strings'
 import { getRowOptions } from '../model/dataBlock'
-import { toAnalysisMarkdown } from '../model/analysis'
 import { getTileKey, getTileSupport, tileSource } from '../model/tiles'
 import { getTileLabel } from '../../Dashboard/tileQueryConfig'
 import { Icon } from '../../Icon'
@@ -510,11 +509,10 @@ class DataProperties extends React.Component {
   }
 }
 
-// Auto Analyze's wording about one result: which result, an optional focus, Analyze (when the builder can run
-// it), and the wording itself, which prints as written.
+// Auto Analyze's wording about one result: which result, an optional focus, and Analyze (when the builder can
+// run it). The wording itself is edited on the page, with the formatting bar, and prints as written.
 const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyze, pending }) => {
   const focusId = useStableId('focus')
-  const wordingId = useStableId('wording')
   const writing = pending?.kind === 'analysis' && !pending.error
   const written = view?.state === 'written'
   // Results Auto Analyze can't write about are listed, greyed, with why.
@@ -573,17 +571,6 @@ const AnalysisProperties = ({ block, view, targets = [], onBlockChange, onAnalyz
         </>
       ) : null}
       {view?.targetChanged ? <Note tone='warning'>{STRINGS.analysis.targetChanged}</Note> : null}
-      <Divider />
-      <Field label={P.wording} htmlFor={wordingId}>
-        <AutoGrowTextarea
-          id={wordingId}
-          className={`${RB}-input`}
-          data-multiline=''
-          data-test='report-builder-analysis-text'
-          value={toAnalysisMarkdown(block.text)}
-          onChange={(text) => onBlockChange(block.id, { text })}
-        />
-      </Field>
       <Note>{P.wordingNote}</Note>
       <Divider />
       <SectionLabel>{P.block}</SectionLabel>

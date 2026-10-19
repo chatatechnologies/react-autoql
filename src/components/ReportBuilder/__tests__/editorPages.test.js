@@ -100,9 +100,9 @@ describe('Sheet as pages', () => {
     expect(within(gaps[0]).getByText('Page 1 of 2')).toBeTruthy()
     expect(within(gaps[0]).getByText('Board pack')).toBeTruthy()
     // The gap sits between the rows of "Second" and "Third".
-    const order = Array.from(container.querySelectorAll('[data-test="report-builder-page-gap"], textarea')).map((el) =>
-      el.tagName === 'TEXTAREA' ? el.value : 'gap',
-    )
+    const order = Array.from(
+      container.querySelectorAll('[data-test="report-builder-page-gap"], [data-test="report-builder-text-input"]'),
+    ).map((el) => (el.getAttribute('data-test') === 'report-builder-text-input' ? el.textContent : 'gap'))
     expect(order).toStrictEqual(['First', 'Second', 'gap', 'Third'])
     // The last page's footer ends the sheet.
     const footers = container.querySelectorAll('.react-autoql-report-builder-page-footer')

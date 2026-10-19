@@ -60,6 +60,8 @@ import { PanelResizer, readPanelWidth, storePanelWidth } from './components/Pane
 import { readZoom, storeZoom, ZoomFrame } from './components/ZoomFrame'
 import { PrintPreview } from './components/preview/PrintPreview'
 import { BrandFonts, footerText, hasDataBlocks } from './components/PageFurniture'
+import { RichTextContext } from './components/RichText'
+import { FormattingBar } from './components/FormattingBar'
 import { mergeBranding } from './model/branding'
 import { fetchBranding, saveBranding as saveOrgBranding } from './run/brandingApi'
 
@@ -193,6 +195,15 @@ export class ReportBuilderWithoutTheme extends React.Component {
     this.runId = 0
     panelIds += 1
     this.panelId = `${RB}-panel-${panelIds}`
+    // How the text editors on the page (RichTextEditor) say which of them has the caret, for the formatting bar.
+    this.richText = {
+      activate: (editor) => this.setState((state) => (state.richEditor === editor ? null : { richEditor: editor })),
+      // Kept while the focus moves to the formatting bar (its link field, its style menu).
+      deactivate: (editor, nextFocus) => {
+        if (nextFocus?.closest?.('[data-formatting-bar]')) return
+        this.setState((state) => (state.richEditor === editor ? { richEditor: null } : null))
+      },
+    }
 
     this.state = {
       selectedId: null,
@@ -205,6 +216,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
       notice: null,
       // The block deleted last, and where it was, while it can still be put back: { block, index }.
       removed: null,
+      // The text editor with the caret, for the formatting bar (null: none).
+      richEditor: null,
       // blockId → { kind: 'tiles' | 'question' | 'analysis', seq, query?, error? } while a block waits (or failed)
       pending: {},
       // The properties panel's width once it's been resized (PanelResizer), else null for its own.
@@ -438,6 +451,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   onSelect = (id) => this.setState({ selectedId: id })
 
+  // The focus left the formatting bar for somewhere other than a text editor: there's no text to format.
+  onFormattingBarLeave = () => this.setState({ richEditor: null })
+
   onCanvasMouseDown = (e) => {
     if (!e.target.closest?.(`.${RB}-block`)) {
       this.setState({ selectedId: null })
@@ -448,7 +464,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
     if (e.key !== 'Escape') return
     if (this.state.details) {
       this.closeDetails()
-    } else if (this.state.selectedId && !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) {
+    } else if (
+      this.state.selectedId &&
+      !/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) &&
+      !e.target.isContentEditable
+    ) {
       this.setState({ selectedId: null })
     }
   }
@@ -1029,91 +1049,94 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
     return (
       <ErrorBoundary>
-        <div
-          ref={this.rootRef}
-          className={`${RB}${this.props.className ? ` ${this.props.className}` : ''}`}
-          data-mode={previewOpen ? 'preview' : 'edit'}
-          onKeyDown={this.onKeyDown}
-          data-test='report-builder'
-        >
-          {this.props.fontStylesheetUrl ? <link rel='stylesheet' href={this.props.fontStylesheetUrl} /> : null}
-          <BrandFonts branding={branding} />
-          <Toolbar
-            title={report.title}
-            onTitleChange={this.onTitleChange}
-            runLabel={this.getRunLabel({ report, requestKeys, isStale })}
-            running={running}
-            highlightRun={hasRunnable && !running && (!run || isStale || run.status === 'cancelled')}
-            hasRun={!!run && !running}
-            canRun={hasRunnable}
-            onRun={this.runReport}
-            onCancelRun={this.cancelRun}
-            showRun={this.props.enableRunReport}
-            previewOpen={previewOpen}
-            previewMeta={previewOpen ? this.getPreviewMeta(report) : null}
-            onOpenPreview={this.openPrintPreview}
-            onClosePreview={this.closePrintPreview}
-            printing={printing}
-            onPrint={this.print}
-            status={this.props.toolbarStatus}
-            zoom={this.state.zoom}
-            fitScale={this.state.fitScale}
-            onZoomChange={this.onZoomChange}
-            panelOpen={this.state.panelOpen}
-            panelId={this.panelId}
-            onTogglePanel={this.onTogglePanel}
-            optionsRef={this.optionsRef}
-            onPageSetup={this.onPageSetup}
-            onBranding={this.canEditBranding() ? this.openBranding : undefined}
-          />
-          {notice || (previewOpen && layoutInfo?.overflowCount) ? (
-            <div className={`${RB}-notice`} role='status'>
-              {notice || STRINGS.preview.overflowNotice(layoutInfo.overflowCount)}
-            </div>
-          ) : null}
-          {this.state.removed && !previewOpen ? (
-            <div className={`${RB}-notice`} data-tone='info' role='status' data-test='report-builder-removed'>
-              <span>{STRINGS.blockRemoved}</span>
-              <button
-                type='button'
-                className={`${RB}-notice-action`}
-                data-test='report-builder-undo-remove'
-                onClick={this.undoRemove}
-              >
-                {STRINGS.undoRemove}
-              </button>
-            </div>
-          ) : null}
-          <div className={`${RB}-body`} ref={this.bodyRef}>
-            {previewOpen ? (
-              <PrintPreview
-                ref={this.previewRef}
-                report={report}
-                views={views}
-                branding={branding}
-                runAt={run && run.status !== 'running' ? run.runAt : null}
-                generatedAt={new Date().toISOString()}
-                dataFormatting={this.props.dataFormatting}
-                authentication={this.props.authentication}
-                autoQLConfig={this.props.autoQLConfig}
-                onLayout={this.onLayout}
-                canRun={this.props.enableRunReport}
-                zoom={this.state.zoom}
-                onFit={this.onFit}
-              />
-            ) : (
-              this.renderEditor({ report, views, geometry, branding })
-            )}
-          </div>
-          {this.state.brandingOpen && this.canEditBranding() ? (
-            <BrandingDialog
-              branding={branding}
-              reportTitle={report.title}
-              onSave={this.saveBranding}
-              onClose={this.closeBranding}
+        <RichTextContext.Provider value={this.richText}>
+          <div
+            ref={this.rootRef}
+            className={`${RB}${this.props.className ? ` ${this.props.className}` : ''}`}
+            data-mode={previewOpen ? 'preview' : 'edit'}
+            onKeyDown={this.onKeyDown}
+            data-test='report-builder'
+          >
+            {this.props.fontStylesheetUrl ? <link rel='stylesheet' href={this.props.fontStylesheetUrl} /> : null}
+            <BrandFonts branding={branding} />
+            <Toolbar
+              title={report.title}
+              onTitleChange={this.onTitleChange}
+              runLabel={this.getRunLabel({ report, requestKeys, isStale })}
+              running={running}
+              highlightRun={hasRunnable && !running && (!run || isStale || run.status === 'cancelled')}
+              hasRun={!!run && !running}
+              canRun={hasRunnable}
+              onRun={this.runReport}
+              onCancelRun={this.cancelRun}
+              showRun={this.props.enableRunReport}
+              previewOpen={previewOpen}
+              previewMeta={previewOpen ? this.getPreviewMeta(report) : null}
+              onOpenPreview={this.openPrintPreview}
+              onClosePreview={this.closePrintPreview}
+              printing={printing}
+              onPrint={this.print}
+              status={this.props.toolbarStatus}
+              zoom={this.state.zoom}
+              fitScale={this.state.fitScale}
+              onZoomChange={this.onZoomChange}
+              panelOpen={this.state.panelOpen}
+              panelId={this.panelId}
+              onTogglePanel={this.onTogglePanel}
+              optionsRef={this.optionsRef}
+              onPageSetup={this.onPageSetup}
+              onBranding={this.canEditBranding() ? this.openBranding : undefined}
             />
-          ) : null}
-        </div>
+            {previewOpen ? null : <FormattingBar editor={this.state.richEditor} onLeave={this.onFormattingBarLeave} />}
+            {notice || (previewOpen && layoutInfo?.overflowCount) ? (
+              <div className={`${RB}-notice`} role='status'>
+                {notice || STRINGS.preview.overflowNotice(layoutInfo.overflowCount)}
+              </div>
+            ) : null}
+            {this.state.removed && !previewOpen ? (
+              <div className={`${RB}-notice`} data-tone='info' role='status' data-test='report-builder-removed'>
+                <span>{STRINGS.blockRemoved}</span>
+                <button
+                  type='button'
+                  className={`${RB}-notice-action`}
+                  data-test='report-builder-undo-remove'
+                  onClick={this.undoRemove}
+                >
+                  {STRINGS.undoRemove}
+                </button>
+              </div>
+            ) : null}
+            <div className={`${RB}-body`} ref={this.bodyRef}>
+              {previewOpen ? (
+                <PrintPreview
+                  ref={this.previewRef}
+                  report={report}
+                  views={views}
+                  branding={branding}
+                  runAt={run && run.status !== 'running' ? run.runAt : null}
+                  generatedAt={new Date().toISOString()}
+                  dataFormatting={this.props.dataFormatting}
+                  authentication={this.props.authentication}
+                  autoQLConfig={this.props.autoQLConfig}
+                  onLayout={this.onLayout}
+                  canRun={this.props.enableRunReport}
+                  zoom={this.state.zoom}
+                  onFit={this.onFit}
+                />
+              ) : (
+                this.renderEditor({ report, views, geometry, branding })
+              )}
+            </div>
+            {this.state.brandingOpen && this.canEditBranding() ? (
+              <BrandingDialog
+                branding={branding}
+                reportTitle={report.title}
+                onSave={this.saveBranding}
+                onClose={this.closeBranding}
+              />
+            ) : null}
+          </div>
+        </RichTextContext.Provider>
       </ErrorBoundary>
     )
   }

@@ -122,6 +122,30 @@ export const STRINGS = {
     save: 'Save branding',
   },
 
+  // The formatting bar under the toolbar (RW-346), for the text being edited.
+  formatting: {
+    toolbar: 'Text formatting',
+    style: 'Text style',
+    paragraph: 'Normal text',
+    heading: 'Heading',
+    subheading: 'Subheading',
+    bold: 'Bold',
+    italic: 'Italic',
+    underline: 'Underline',
+    strike: 'Strikethrough',
+    bulletList: 'Bulleted list',
+    orderedList: 'Numbered list',
+    link: 'Link',
+    clear: 'Clear formatting',
+    linkAddress: 'Link address',
+    linkPlaceholder: 'Paste or type a link',
+    linkApply: 'Apply',
+    linkRemove: 'Remove link',
+    linkCancel: 'Cancel',
+    linkInvalid: 'Use a web address, like example.com, or an email address.',
+    hint: 'Click into a paragraph or an analysis to format it.',
+  },
+
   // The bar shown for a while after a block is deleted, to put it back.
   blockRemoved: 'Block deleted.',
   undoRemove: 'Undo',
@@ -194,8 +218,6 @@ export const STRINGS = {
     targetGone: 'The result this was written about has been removed from the report.',
     targetChanged: 'Its result has changed since this was written. Analyze again to update the wording.',
     failed: 'Auto Analyze couldn’t write this.',
-    edit: 'Click to edit the wording',
-    editingNote: 'Markdown: “- ” starts a list item, **text** is bold. Click away or press Esc when you’re done.',
   },
 
   panel: {
@@ -274,7 +296,7 @@ export const STRINGS = {
     analyzeAgain: 'Analyze again',
     analyzing: 'Analyzing…',
     analyzeNote: 'The same Auto Analyze an answer has. Each run uses one Auto Analyze credit.',
-    analyzeAgainNote: 'Replaces the wording below. Each run uses one Auto Analyze credit.',
+    analyzeAgainNote: 'Replaces the wording on the page. Each run uses one Auto Analyze credit.',
     cantAnalyze:
       'This result can’t be analyzed: it was kept without the query id Auto Analyze needs. Add it again to analyze it.',
     cantAnalyzeTooLittle:
@@ -283,7 +305,8 @@ export const STRINGS = {
     cantAnalyzeOption: (label, blocker) =>
       blocker === 'no-query-id' ? `${label} (kept without a query id)` : `${label} (too little to analyze)`,
     wording: 'Wording',
-    wordingNote: 'Edit it here or click it on the page. It prints as written, and Analyze again replaces it.',
+    wordingNote:
+      'Edit the wording on the page, formatting it with the bar above the page. It prints as written, and Analyze again replaces it.',
     questionNote: 'A question has no tile to inherit from, so it shows AutoQL’s default display.',
     changeSource: 'Change source',
     cancel: 'Cancel',
