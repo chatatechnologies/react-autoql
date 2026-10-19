@@ -194,7 +194,7 @@ export const getEffectiveDisplay = (response, savedDisplayType) => {
 }
 
 // What a block can be shown as on paper, in the order the answer's chart toolbar lists them. Pivot tables,
-// network graphs and Sankey charts can't be printed yet.
+// network graphs, Sankey charts and treemaps can't be printed yet.
 export const PRINTABLE_DISPLAY_TYPES = [
   'table',
   'column',

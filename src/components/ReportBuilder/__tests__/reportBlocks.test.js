@@ -196,7 +196,7 @@ describe('captureReportBlock', () => {
       return result.message
     }
     const unsupported =
-      'This kind of answer can’t be added to a report yet (pivot tables, network graphs and Sankey charts).'
+      'This kind of answer can’t be added to a report yet (pivot tables, network graphs, Sankey charts and treemaps).'
 
     // An older react-autoql passes no way to capture the answer.
     expect(messageOf(undefined)).toBe(unsupported)

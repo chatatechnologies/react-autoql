@@ -84,8 +84,8 @@ export const CHART_HEIGHT_PX = { full: 280, half: 220 }
 export const QUERY_CONCURRENCY = 6
 
 // Display types v1 can't print faithfully: pivots need a second layout pass, network and sankey
-// charts never report that they've finished drawing.
-export const UNSUPPORTED_DISPLAY_TYPES = ['pivot_table', 'network_graph', 'sankey']
+// charts never report that they've finished drawing, and treemaps haven't been tried on paper yet.
+export const UNSUPPORTED_DISPLAY_TYPES = ['pivot_table', 'network_graph', 'sankey', 'treemap']
 
 export const TILE_SOURCE = 'report_builder.tile'
 export const QUESTION_SOURCE = 'report_builder.question'

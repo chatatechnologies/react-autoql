@@ -125,7 +125,7 @@ export const REPORTS_STRINGS = {
     noTiles: 'This dashboard has no tiles.',
     untitledTile: 'Untitled',
     noQuestion: 'No question',
-    unsupported: 'Pivot tables, network graphs and Sankey charts can’t be added yet',
+    unsupported: 'Pivot tables, network graphs, Sankey charts and treemaps can’t be added yet',
     noData: 'No data to add',
     loading: 'Loading…',
     stillLoading: (n) => (n === 1 ? '1 tile is still loading.' : `${n} tiles are still loading.`),
@@ -140,7 +140,7 @@ export const REPORTS_STRINGS = {
     tooLarge: (rows, max) =>
       `This chart draws ${rows} rows — more than a report keeps (${max}). Narrow the question, or show it as a table first.`,
     tooManyRows: 'too many',
-    unsupported: 'This kind of answer can’t be added to a report yet (pivot tables, network graphs and Sankey charts).',
+    unsupported: 'This kind of answer can’t be added to a report yet (pivot tables, network graphs, Sankey charts and treemaps).',
     noData: 'This answer has no data to add.',
     loading: 'This tile hasn’t finished loading.',
     notFound: 'This tile isn’t on the dashboard any more.',

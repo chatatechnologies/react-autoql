@@ -11,7 +11,7 @@ import { getEffectiveDisplay } from './dataBlock'
 export const MAX_CHART_ROWS = 2000
 
 // Shown as a table on paper instead: the builder can't print these yet.
-const UNPRINTABLE_TYPES = ['pivot_table', 'network_graph', 'sankey']
+const UNPRINTABLE_TYPES = ['pivot_table', 'network_graph', 'sankey', 'treemap']
 
 // How many rows a new block's table prints: all of it when one of the row options holds it, else the default.
 export const rowsForCapture = (capture) => {

@@ -2121,7 +2121,7 @@ export class QueryOutput extends React.Component {
     if (!['table', 'single-value'].includes(displayType) && !isChartType(displayType)) {
       return { ok: false, reason: 'unsupported' } // pivot tables, text answers
     }
-    if (['network_graph', 'sankey'].includes(displayType)) {
+    if (['network_graph', 'sankey', 'treemap'].includes(displayType)) {
       return { ok: false, reason: 'unsupported' }
     }
 

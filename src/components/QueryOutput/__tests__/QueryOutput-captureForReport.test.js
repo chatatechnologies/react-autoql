@@ -114,4 +114,13 @@ describe('QueryOutput.captureForReport', () => {
     expect(empty.instance().captureForReport()).toStrictEqual({ ok: false, reason: 'no-data' })
     empty.unmount()
   })
+
+  it('has nothing to capture for a chart a report can’t print yet', () => {
+    ;['network_graph', 'sankey', 'treemap'].forEach((displayType) => {
+      const wrapper = mountOutput({ queryResponse: responseOf(6), initialDisplayType: 'table' })
+      wrapper.instance().setState({ displayType })
+      expect(wrapper.instance().captureForReport()).toStrictEqual({ ok: false, reason: 'unsupported' })
+      wrapper.unmount()
+    })
+  })
 })

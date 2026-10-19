@@ -186,6 +186,7 @@ describe('tiles', () => {
   it('says which tiles v1 can print', () => {
     expect(getTileSupport(dashboards[0].tiles[0])).toStrictEqual({ supported: true })
     expect(getTileSupport(dashboards[1].tiles[0])).toStrictEqual({ supported: false, reason: 'unsupported' })
+    expect(getTileSupport({ query: 'x', displayType: 'treemap' })).toStrictEqual({ supported: false, reason: 'unsupported' })
     expect(getTileSupport({ displayType: 'table' })).toStrictEqual({ supported: false, reason: 'no-query' })
   })
 

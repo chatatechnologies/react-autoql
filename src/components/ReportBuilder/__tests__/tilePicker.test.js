@@ -120,7 +120,7 @@ describe('DashboardTilesDialog', () => {
     expect(labels()).toEqual([
       'AUM',
       'Sales',
-      'FlowsPivot tables, network graphs and Sankey charts can’t be added yet',
+      'FlowsPivot tables, network graphs, Sankey charts and treemaps can’t be added yet',
       'UntitledNo question',
     ])
     expect(boxes().map((box) => box.disabled)).toEqual([false, false, true, true])
@@ -250,7 +250,7 @@ describe('DashboardTilesDialog', () => {
     expect(labels()).toEqual([
       'AUMLoading…',
       'SalesLoading…',
-      'FlowsPivot tables, network graphs and Sankey charts can’t be added yet',
+      'FlowsPivot tables, network graphs, Sankey charts and treemaps can’t be added yet',
       'UntitledNo question',
     ])
     expect(boxes().map((box) => box.disabled)).toEqual([true, true, true, true])

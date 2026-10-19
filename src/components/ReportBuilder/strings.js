@@ -296,7 +296,7 @@ export const STRINGS = {
     hiddenTiles: (n) =>
       `${n} ${
         n === 1 ? 'tile isn’t' : 'tiles aren’t'
-      } listed: pivot tables, network graphs and Sankey charts can’t be printed yet.`,
+      } listed: pivot tables, network graphs, Sankey charts and treemaps can’t be printed yet.`,
 
     showAs: 'Show as',
     // The names the answer's chart toolbar uses.

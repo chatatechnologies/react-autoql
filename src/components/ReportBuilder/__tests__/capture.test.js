@@ -104,7 +104,7 @@ describe('captureFromResponse', () => {
     const { capture } = captureFromResponse(
       answer({ columns: TWO_GROUPS, rows: grouped(12).map(([r, v], i) => [r, `2026-0${(i % 9) + 1}-01`, v]) }),
     )
-    expect(['pivot_table', 'network_graph', 'sankey']).not.toContain(capture.displayType)
+    expect(['pivot_table', 'network_graph', 'sankey', 'treemap']).not.toContain(capture.displayType)
   })
 
   it('says why when the answer has no data', () => {
