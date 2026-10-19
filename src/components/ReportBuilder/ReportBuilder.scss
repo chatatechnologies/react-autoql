@@ -14,6 +14,8 @@
   height: 100%;
   min-height: 30rem;
   overflow: hidden;
+  // Never scrolled either, even by a block scrolled into view: only the canvas and the panel scroll.
+  overflow: clip;
   background: $bg;
   color: $text;
   font-family: var(--react-autoql-font-family, sans-serif);
@@ -216,6 +218,34 @@
     background: $hover;
     background: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 16%, transparent);
     font-size: 0.8125rem;
+
+    // Not a warning: what just happened, and a way back.
+    &[data-tone='info'] {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: $hover;
+    }
+  }
+
+  .#{$rb}-notice-action {
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: none;
+    color: var(--react-autoql-accent-color, #26a7e9);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--react-autoql-accent-color, #26a7e9);
+      outline-offset: 2px;
+    }
   }
 
   // ---------------------------------------------------------------- body
@@ -1375,6 +1405,19 @@
     position: absolute;
     top: 0;
     left: -10000px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  // The measurer's box: no size, clipping what's in it, so a report's height never adds to what the builder
+  // can scroll. Clipping leaves the measurer's layout, and so its measurements, as they were.
+  .#{$rb}-measurer-clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
     visibility: hidden;
     pointer-events: none;
   }

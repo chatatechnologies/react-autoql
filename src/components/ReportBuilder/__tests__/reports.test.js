@@ -301,6 +301,22 @@ describe('Reports', () => {
     await waitFor(() => expect(screen.getByTestId('reports-save-status')).toHaveAttribute('data-state', 'saved'))
   })
 
+  it('gives the home page when each report was last stored, as its saves come back', async () => {
+    setup()
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))
+    await screen.findByTestId('builder')
+
+    act(() => mockBuilder.props.onChange(documentOf('Q3 book, final')))
+    await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(screen.getByTestId('reports-save-status')).toHaveAttribute('data-state', 'saved'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'All reports' }))
+    const listed = (id) => homeProps.current.reports.find((report) => report.id === id)
+    expect(listed(A)).toMatchObject({ title: 'Q3 book, final', updatedAt: '2026-10-16T10:00:00Z' })
+    // The one not edited is as it was.
+    expect(listed(B).updatedAt).toBe('2026-10-15T10:00:00Z')
+  })
+
   it('saves at once on ⌘S / Ctrl+S', async () => {
     setup({ saveDelay: 60000 })
     fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))

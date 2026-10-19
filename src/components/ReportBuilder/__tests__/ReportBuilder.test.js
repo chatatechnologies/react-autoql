@@ -147,6 +147,58 @@ describe('the palette and its details layer', () => {
   })
 })
 
+describe('deleting a block', () => {
+  const ids = (report) => report.blocks.map((block) => block.id)
+  const threeBlocks = () =>
+    createEmptyReport({
+      blocks: [
+        { id: 'a', type: 'heading', text: 'One', level: 2, width: 'full' },
+        { id: 'b', type: 'text', text: 'Two', width: 'full' },
+        { id: 'c', type: 'heading', text: 'Three', level: 2, width: 'full' },
+      ],
+    })
+  const removedBar = () => screen.queryByTestId('report-builder-removed')
+
+  afterEach(() => jest.useRealTimers())
+
+  it('can be put back where it was, from the bar that says it was deleted', () => {
+    const { lastReport } = setup(threeBlocks())
+    selectBlock('Text')
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(ids(lastReport())).toStrictEqual(['a', 'c'])
+    expect(removedBar().getAttribute('role')).toBe('status')
+    expect(removedBar().textContent).toContain('Block deleted.')
+
+    fireEvent.click(within(removedBar()).getByRole('button', { name: 'Undo' }))
+    expect(ids(lastReport())).toStrictEqual(['a', 'b', 'c'])
+    expect(lastReport().blocks[1]).toMatchObject({ type: 'text', text: 'Two' })
+    expect(removedBar()).toBeNull()
+    // Back, and selected.
+    expect(screen.getByRole('group', { name: 'Text' }).getAttribute('data-selected')).toBe('true')
+  })
+
+  it('offers only the last one deleted, and only for a while', () => {
+    jest.useFakeTimers()
+    const { lastReport } = setup(threeBlocks())
+    selectBlock('Text')
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    selectBlock('Heading', 1)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(ids(lastReport())).toStrictEqual(['a'])
+
+    fireEvent.click(within(removedBar()).getByRole('button', { name: 'Undo' }))
+    expect(ids(lastReport())).toStrictEqual(['a', 'c'])
+
+    selectBlock('Heading', 1)
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(removedBar()).not.toBeNull()
+    act(() => {
+      jest.advanceTimersByTime(10000)
+    })
+    expect(removedBar()).toBeNull()
+  })
+})
+
 describe('the properties panel', () => {
   it('shows page setup when nothing is selected, with no paper picker', () => {
     setup()
@@ -1354,6 +1406,35 @@ describe('analysis blocks (enableAnalysis)', () => {
     setup(createEmptyReport(), { enableAnalysis: true })
     fireEvent.click(screen.getByRole('button', { name: 'Analysis' }))
     expect(within(screen.getByRole('dialog')).getByText('Each run uses one Auto Analyze credit.')).toBeTruthy()
+  })
+
+  it('puts a new Analysis about the result just above where it goes, or the report’s only one', () => {
+    const heading = { id: 'h', type: 'heading', text: 'Assets', level: 2, width: 'full' }
+    const fees = resultBlock({ id: 'e', source: { type: 'query', query: 'fees by month' } })
+    const insertAnalysis = () => {
+      selectBlock('Heading')
+      fireEvent.click(screen.getByRole('button', { name: 'Analysis' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Insert block' }))
+    }
+
+    const above = setup(reportOf(resultBlock(), heading, fees), { enableAnalysis: true })
+    insertAnalysis()
+    // After the heading, about the result above it.
+    expect(above.lastReport().blocks.map((block) => block.type)).toStrictEqual(['data', 'heading', 'analysis', 'data'])
+    expect(analysisIn(above.lastReport()).target).toBe('d')
+    expect(within(panel()).getByTestId('report-builder-analysis-target').value).toBe('d')
+    above.unmount()
+
+    // Nothing above it, and two results below: the panel asks which.
+    const none = setup(reportOf(heading, resultBlock(), fees), { enableAnalysis: true })
+    insertAnalysis()
+    expect(analysisIn(none.lastReport()).target).toBeNull()
+    none.unmount()
+
+    // The report's only result, wherever it is.
+    const only = setup(reportOf(heading, resultBlock()), { enableAnalysis: true })
+    insertAnalysis()
+    expect(analysisIn(only.lastReport()).target).toBe('d')
   })
 
   it('writes about the chosen result, from the rows the block shows', async () => {

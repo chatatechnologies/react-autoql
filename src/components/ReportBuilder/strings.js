@@ -122,6 +122,10 @@ export const STRINGS = {
     save: 'Save branding',
   },
 
+  // The bar shown for a while after a block is deleted, to put it back.
+  blockRemoved: 'Block deleted.',
+  undoRemove: 'Undo',
+
   emptyReportTitle: 'This report is empty',
   emptyReportBody: 'Add a block from the left. A Data block reads a dashboard tile, or asks a question of its own.',
   frontMatter: {

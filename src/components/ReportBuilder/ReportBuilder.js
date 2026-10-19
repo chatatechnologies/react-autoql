@@ -20,6 +20,7 @@ import { createBlock, normalizeBlock, normalizeReport } from './model/reportSche
 import {
   duplicateBlock,
   insertBlock,
+  insertBlockAt,
   moveBlock,
   removeBlock,
   replaceBlock,
@@ -72,6 +73,9 @@ import './ReportPaper.scss'
 // properties panel was left, in this browser.)
 
 let panelIds = 0
+
+// How long a deleted block can be put back for.
+const UNDO_REMOVE_MS = 10000
 
 const memoize = (fn) => {
   let lastArgs = null
@@ -199,6 +203,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
       results: {},
       printing: false,
       notice: null,
+      // The block deleted last, and where it was, while it can still be put back: { block, index }.
+      removed: null,
       // blockId → { kind: 'tiles' | 'question' | 'analysis', seq, query?, error? } while a block waits (or failed)
       pending: {},
       // The properties panel's width once it's been resized (PanelResizer), else null for its own.
@@ -244,6 +250,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   componentWillUnmount() {
     this.mounted = false
+    clearTimeout(this.removedTimer)
     this.cancelRequests()
     Object.values(this.pendingAborts).forEach((controller) => controller?.abort())
     this.printJob?.remove()
@@ -399,9 +406,34 @@ export class ReportBuilderWithoutTheme extends React.Component {
       this.change(next)
       if (copyId) this.setState({ selectedId: copyId })
     } else if (action === 'remove') {
+      const index = report.blocks.findIndex((block) => block.id === id)
+      if (index < 0) return
       this.change(removeBlock(report, id))
+      this.offerUndoRemove(report.blocks[index], index)
       if (this.state.selectedId === id) this.setState({ selectedId: null })
     }
+  }
+
+  // A deleted block can be put back for a while, from the bar under the toolbar; deleting another takes its place.
+  offerUndoRemove = (block, index) => {
+    clearTimeout(this.removedTimer)
+    this.setState({ removed: { block, index } })
+    this.removedTimer = setTimeout(() => {
+      if (this.mounted) this.setState({ removed: null })
+    }, UNDO_REMOVE_MS)
+  }
+
+  undoRemove = () => {
+    const { removed } = this.state
+    clearTimeout(this.removedTimer)
+    if (!removed) return
+    const report = this.getLatestReport()
+    if (report.blocks.some((block) => block.id === removed.block.id)) {
+      this.setState({ removed: null })
+      return
+    }
+    this.change(insertBlockAt(report, removed.block, removed.index))
+    this.setState({ removed: null, selectedId: removed.block.id }, () => this.scrollToBlock(removed.block.id))
   }
 
   onSelect = (id) => this.setState({ selectedId: id })
@@ -699,12 +731,31 @@ export class ReportBuilderWithoutTheme extends React.Component {
   insertFromDetails = () => {
     const { details, selectedId } = this.state
     if (!details) return
-    const block = createBlock(details.type, details.draft)
-    if (!block) return
     const report = this.getReport()
     const anchor = report.blocks.some((b) => b.id === selectedId) ? selectedId : undefined
+    const draft =
+      details.type === 'analysis' && !details.draft?.target
+        ? { ...details.draft, target: this.analysisTargetFor(report, anchor) }
+        : details.draft
+    const block = createBlock(details.type, draft)
+    if (!block) return
     this.change(insertBlock(report, block, anchor))
     this.setState({ details: null, selectedId: block.id }, () => this.scrollToBlock(block.id))
+  }
+
+  // What a new Analysis is about: the nearest result above where it goes that Auto Analyze can write about, or
+  // the report's only one. Otherwise none, for the panel to choose.
+  analysisTargetFor = (report, anchorId) => {
+    const ids = new Set(
+      getAnalysisTargets(report.blocks, this.derive().views)
+        .filter((target) => !target.blocker)
+        .map((target) => target.id),
+    )
+    const end = anchorId ? report.blocks.findIndex((b) => b.id === anchorId) : report.blocks.length - 1
+    for (let i = end; i >= 0; i -= 1) {
+      if (ids.has(report.blocks[i].id)) return report.blocks[i].id
+    }
+    return ids.size === 1 ? [...ids][0] : undefined
   }
 
   // ---------------------------------------------------------------- running
@@ -1018,6 +1069,19 @@ export class ReportBuilderWithoutTheme extends React.Component {
           {notice || (previewOpen && layoutInfo?.overflowCount) ? (
             <div className={`${RB}-notice`} role='status'>
               {notice || STRINGS.preview.overflowNotice(layoutInfo.overflowCount)}
+            </div>
+          ) : null}
+          {this.state.removed && !previewOpen ? (
+            <div className={`${RB}-notice`} data-tone='info' role='status' data-test='report-builder-removed'>
+              <span>{STRINGS.blockRemoved}</span>
+              <button
+                type='button'
+                className={`${RB}-notice-action`}
+                data-test='report-builder-undo-remove'
+                onClick={this.undoRemove}
+              >
+                {STRINGS.undoRemove}
+              </button>
             </div>
           ) : null}
           <div className={`${RB}-body`} ref={this.bodyRef}>

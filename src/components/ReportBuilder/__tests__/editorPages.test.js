@@ -135,6 +135,11 @@ describe('the builder’s pages', () => {
     render(<ReportBuilder report={report} />)
     await waitFor(() => expect(screen.getByTestId('report-builder-page-gap')).toBeTruthy(), { timeout: 3000 })
     expect(screen.getAllByTestId('report-builder-page-gap')).toHaveLength(1)
+    // It measures in a box of no size that clips it, so the whole report's height never adds to what the builder
+    // can scroll: scrolling a block into view must not take the toolbar out of sight.
+    const measurer = document.querySelector('.react-autoql-report-builder-measurer')
+    expect(measurer.parentElement.className).toBe('react-autoql-report-builder-measurer-clip')
+    expect(measurer.parentElement.getAttribute('aria-hidden')).toBe('true')
     await act(async () => {})
   })
 

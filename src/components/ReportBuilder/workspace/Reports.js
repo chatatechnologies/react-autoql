@@ -76,6 +76,12 @@ const without = (ids, id) => {
   return next
 }
 
+// Whether an ISO time is after another (one that can't be read is before anything).
+const isLater = (iso, than) => {
+  const time = Date.parse(iso)
+  return !Number.isNaN(time) && time > (Date.parse(than) || 0)
+}
+
 // Folders and tags as the home page lists them: A to Z, whatever case they're in.
 const byName = (list) =>
   [...list].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }))
@@ -691,7 +697,7 @@ export class ReportsWithoutTheme extends React.Component {
   }
 
   // The shown report's save control follows its saver; a report whose last save failed or was refused gets a dot
-  // on its tab.
+  // on its tab; and the home page's list has when each report was last stored, as each save comes back.
   onSaverState = (id, saverState) => {
     if (!this.mounted) {
       return
@@ -700,13 +706,18 @@ export class ReportsWithoutTheme extends React.Component {
       this.unauthorizedSaid = false
     }
     const failing = saverState.status === 'failed' || saverState.status === 'conflict'
-    this.setState(({ notSaved }) => {
+    const { savedAt } = saverState
+    this.setState(({ notSaved, reports }) => {
       const patch = {}
       if (this.shownId === id) {
         patch.saveState = saverState
       }
       if (notSaved.has(id) !== failing) {
         patch.notSaved = failing ? new Set(notSaved).add(id) : without(notSaved, id)
+      }
+      const listed = savedAt && reports ? reports.find((report) => report.id === id) : null
+      if (listed && isLater(savedAt, listed.updatedAt)) {
+        patch.reports = reports.map((report) => (report.id === id ? { ...report, updatedAt: savedAt } : report))
       }
       return Object.keys(patch).length ? patch : null
     })

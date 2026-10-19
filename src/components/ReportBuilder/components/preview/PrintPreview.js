@@ -45,34 +45,33 @@ const Cell = ({ block, children, measureId, split }) => (
 
 // Every printable block, laid out as a page lays it out, for measuring. Charts are empty boxes of their
 // fixed height, so measuring never draws a chart. The editor measures with it too (EditorPagination).
+// It sits in a box of no size that clips it: a whole report's height would otherwise add to what the builder
+// can scroll, and scrolling a block into view would scroll the builder, toolbar and all, out of sight.
 export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
   { blocks, views, geometry, fontStyle, paperProps },
   ref,
 ) {
   const rows = groupIntoRows(blocks.filter(isPrintable))
   return (
-    <div
-      ref={ref}
-      className={`${RB}-paper ${RB}-measurer`}
-      aria-hidden='true'
-      style={{ width: geometry.contentWidthPx, ...fontStyle }}
-    >
-      {rows.map((row) => (
-        <div key={row[0].id} className={`${RB}-row`} data-count={row.length}>
-          {row.map((block) => (
-            <Cell
-              key={block.id}
-              block={block}
-              measureId={block.id}
-              split={row.length === 1 && !!views[block.id]?.split}
-            >
-              <PaperBlock block={block} view={views[block.id]} mode='measure' {...paperProps} />
-            </Cell>
-          ))}
+    <div className={`${RB}-measurer-clip`} aria-hidden='true'>
+      <div ref={ref} className={`${RB}-paper ${RB}-measurer`} style={{ width: geometry.contentWidthPx, ...fontStyle }}>
+        {rows.map((row) => (
+          <div key={row[0].id} className={`${RB}-row`} data-count={row.length}>
+            {row.map((block) => (
+              <Cell
+                key={block.id}
+                block={block}
+                measureId={block.id}
+                split={row.length === 1 && !!views[block.id]?.split}
+              >
+                <PaperBlock block={block} view={views[block.id]} mode='measure' {...paperProps} />
+              </Cell>
+            ))}
+          </div>
+        ))}
+        <div className={`${RB}-flow`} data-measure-continued=''>
+          <Continued />
         </div>
-      ))}
-      <div className={`${RB}-flow`} data-measure-continued=''>
-        <Continued />
       </div>
     </div>
   )

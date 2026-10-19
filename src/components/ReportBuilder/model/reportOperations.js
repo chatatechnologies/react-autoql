@@ -15,6 +15,13 @@ export const insertBlock = (report, block, afterId) => {
   return withBlocks(report, blocks)
 }
 
+// Puts a block back at `index` (where it was), or at the end if the report has fewer blocks now.
+export const insertBlockAt = (report, block, index) => {
+  const blocks = report.blocks.slice()
+  blocks.splice(Math.max(0, Math.min(index, blocks.length)), 0, block)
+  return withBlocks(report, blocks)
+}
+
 export const updateBlock = (report, id, patch) =>
   withBlocks(
     report,
