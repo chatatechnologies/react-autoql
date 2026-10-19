@@ -1,7 +1,7 @@
 // Deliberately the same kit as the tab strips this replaces on a phone, so the
 // switch across the breakpoint reads as the same control laid out differently
 // rather than as a second design: the same neutral washes, the same pill radii,
-// the same accent dot, and a trigger built out of the active tab's exact material.
+// the same unread dot, and a trigger built out of the active tab's exact material.
 .react-autoql-thread-switcher {
   // Copied from .react-autoql-session-tabs, the strip this stands in for.
   // Grey at these alphas darkens a light theme and lightens a dark one, so one
@@ -68,16 +68,6 @@
   // than swapping it for plain text stops the bar from changing shape.
   &:disabled {
     cursor: default;
-  }
-
-  // The dot the tabs use, in the accent — the one coloured thing in the bar.
-  &::before {
-    content: '';
-    flex: none;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--react-autoql-accent-color);
   }
 
   &.is-open .react-autoql-thread-switcher-caret {
@@ -203,11 +193,11 @@
     background-color: var(--ts-accent-wash);
     color: var(--react-autoql-text-color-primary);
     font-weight: 600;
+  }
 
-    .react-autoql-thread-switcher-item-dot {
-      background-color: var(--react-autoql-accent-color);
-      opacity: 1;
-    }
+  // Unread, as on the tab strip.
+  &.has-update {
+    color: var(--react-autoql-text-color-primary);
   }
 
   &:not(.is-active):active {
@@ -216,16 +206,16 @@
   }
 }
 
-// currentColor, so the dot tracks the label and the accent on the selected row is
-// the only colour in the list.
+// The unread dot - on a row, and on the closed trigger when another chat has a
+// result waiting. It means only that; the selected chat gets no dot.
+.react-autoql-thread-switcher-badge,
 .react-autoql-thread-switcher-item-dot {
   flex: none;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background-color: currentColor;
-  opacity: 0.45;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  background-color: var(--react-autoql-accent-color);
+  box-shadow: 0 0 0 3px var(--ts-accent-wash);
 }
 
 .react-autoql-thread-switcher-item-title {
@@ -271,7 +261,29 @@
   }
 }
 
+// A query running in another chat - the tab strip's ring, in the dot's slot.
+.react-autoql-thread-switcher-spinner {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--ts-accent-wash-hover);
+  border-top-color: var(--react-autoql-accent-color);
+  animation: react-autoql-thread-switcher-spin 0.8s linear infinite;
+}
+
+@keyframes react-autoql-thread-switcher-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .react-autoql-thread-switcher-spinner {
+    animation-duration: 2.4s;
+  }
+
   .react-autoql-thread-switcher-trigger,
   .react-autoql-thread-switcher-caret,
   .react-autoql-thread-switcher-new,

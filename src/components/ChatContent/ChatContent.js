@@ -189,6 +189,10 @@ export default class ChatContent extends React.Component {
     // messages of its own, which decides whether its close button shows when it
     // is the only tab.
     onSessionContentChange: PropTypes.func,
+    // Internal. How a session tab tells its host it started or finished thinking
+    // (a query, drilldown or summary), so a tab that finishes while another one is
+    // on screen can be badged.
+    onSessionThinkingChange: PropTypes.func,
     // Called with whether there is a conversation to clear — for a session host,
     // in whichever tab is on screen. The Data Messenger uses it to show its
     // header's "Clear conversation" button only when it has something to do.
@@ -339,6 +343,15 @@ export default class ChatContent extends React.Component {
       }
     }
 
+    if (this.props.onSessionThinkingChange) {
+      const wasThinking = this.isThinkingState(prevState)
+      const isThinking = this.isChataThinking()
+
+      if (wasThinking !== isThinking) {
+        this.props.onSessionThinkingChange(isThinking)
+      }
+    }
+
     this.notifyContentChange()
 
     // Check if a new message was added (user request or system response) and scroll to it
@@ -409,6 +422,7 @@ export default class ChatContent extends React.Component {
     this.removeScrollListener()
     this.composerObserver?.disconnect()
     this.composerObserver = undefined
+    cancelAnimationFrame(this.composerMetricsFrame)
     window.removeEventListener('resize', this.publishComposerMetrics)
     window.removeEventListener('orientationchange', this.publishComposerMetrics)
     window.visualViewport?.removeEventListener('resize', this.publishComposerMetrics)
@@ -452,7 +466,13 @@ export default class ChatContent extends React.Component {
     this.publishComposerMetrics()
 
     if (typeof ResizeObserver !== 'undefined') {
-      this.composerObserver = new ResizeObserver(this.publishComposerMetrics)
+      // Publish on the next frame rather than inside the observer callback: writing the CSS variable
+      // restyles the document while the browser is still delivering resize notifications, which
+      // trips "ResizeObserver loop completed with undelivered notifications".
+      this.composerObserver = new ResizeObserver(() => {
+        cancelAnimationFrame(this.composerMetricsFrame)
+        this.composerMetricsFrame = requestAnimationFrame(this.publishComposerMetrics)
+      })
       this.composerObserver.observe(element)
     }
 
@@ -501,11 +521,20 @@ export default class ChatContent extends React.Component {
       return
     }
 
-    this.setState({ activeSessionId: sessionId }, () => {
-      // The tab that just became visible has been mounted all along, so its own
-      // mount-time focus already happened; focus it again on the way in.
-      !isMobile && this.getActiveSessionRef()?.focusInput()
-    })
+    // Opening the tab is what "sees" a result that landed in it in the background.
+    this.setState(
+      (state) => ({
+        activeSessionId: sessionId,
+        sessions: state.sessions.map((s) =>
+          s.id === sessionId && s.hasUnseenResult ? { ...s, hasUnseenResult: false } : s,
+        ),
+      }),
+      () => {
+        // The tab that just became visible has been mounted all along, so its own
+        // mount-time focus already happened; focus it again on the way in.
+        !isMobile && this.getActiveSessionRef()?.focusInput()
+      },
+    )
   }
 
   closeSession = (sessionId) => {
@@ -534,7 +563,14 @@ export default class ChatContent extends React.Component {
           newActiveSessionId = remainingSessions[Math.max(0, closingIndex - 1)]?.id
         }
 
-        return { sessions: remainingSessions, activeSessionId: newActiveSessionId }
+        // The tab we land on is now on screen, so its result is seen - the same as
+        // setActiveSession, which can't clear it later since it skips the active tab.
+        return {
+          sessions: remainingSessions.map((s) =>
+            s.id === newActiveSessionId && s.hasUnseenResult ? { ...s, hasUnseenResult: false } : s,
+          ),
+          activeSessionId: newActiveSessionId,
+        }
       },
       () => {
         !isMobile && this.getActiveSessionRef()?.focusInput()
@@ -575,6 +611,28 @@ export default class ChatContent extends React.Component {
 
       return {
         sessions: state.sessions.map((s) => (s.id === sessionId ? { ...s, hasContent } : s)),
+      }
+    })
+  }
+
+  // A tab whose query finishes while another tab is selected gets a badge, so the
+  // user knows there is an answer waiting there. Finishing on the tab on screen
+  // needs no badge - the answer is right in front of them.
+  setSessionThinking = (sessionId, isThinking) => {
+    this.setState((state) => {
+      const session = state.sessions.find((s) => s.id === sessionId)
+      if (!session || !!session.isThinking === isThinking) {
+        return null
+      }
+
+      const finishedInBackground = !isThinking && sessionId !== state.activeSessionId
+
+      return {
+        sessions: state.sessions.map((s) =>
+          s.id === sessionId
+            ? { ...s, isThinking, hasUnseenResult: finishedInBackground || (!!s.hasUnseenResult && !isThinking) }
+            : s,
+        ),
       }
     })
   }
@@ -1683,6 +1741,8 @@ export default class ChatContent extends React.Component {
           // click did nothing.
           canClose: sessions.length > 1 || !!session.hasContent,
           closeLabel: `Close ${session.title}`,
+          hasUpdate: !!session.hasUnseenResult,
+          isRunning: !!session.isThinking,
         }))}
         activeId={activeSessionId}
         onSelect={this.setActiveSession}
@@ -1739,6 +1799,7 @@ export default class ChatContent extends React.Component {
                   onContentChange={undefined}
                   onSessionTitleChange={(title) => this.setSessionTitle(session.id, title)}
                   onSessionContentChange={(hasContent) => this.setSessionHasContent(session.id, hasContent)}
+                  onSessionThinkingChange={(isThinking) => this.setSessionThinking(session.id, isThinking)}
                   // One lock for the strip: the host holds the filters and the
                   // element, and only the tab on screen mounts it.
                   filterLockElement={isActiveSession && this.ownsFilterLock() ? this.renderFilterLockPopover() : null}

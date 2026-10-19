@@ -1,7 +1,7 @@
 import React from 'react'
 import { currentEventLoopEnd, getTooltipContent } from 'autoql-fe-utils'
 import { shallow, mount } from 'enzyme'
-import ChataChart from './ChataChart'
+import ChataChart, { ADJUST_CHART_POSITION_THROTTLE_MS } from './ChataChart'
 import StringAxisSelector from '../Axes/StringAxisSelector'
 import { findByTestAttr } from '../../../../test/testUtils'
 import sampleProps from '../chartTestData'
@@ -363,6 +363,42 @@ describe('data limit warning', () => {
     const instance = wrapper.instance()
     expect(instance.shouldShowDataLimitWarning()).toBe(false)
   })
+
+  // A 10k-row answer whose pivot dropped columns used to show the 50k-row message, which
+  // sent people looking for a row limit they never hit.
+  describe('when only the pivot column limit was hit', () => {
+    const pivotLimitTooltip = 'Pivot is limited to <em>100</em> columns.'
+    const getTooltip = (props) => {
+      const instance = setup({
+        ...listSampleProps,
+        type: 'column',
+        isDataLimited: false,
+        isPivotDataLimited: true,
+        pivotLimitTooltip,
+        enableChartControls: true,
+        ...props,
+      }).instance()
+      instance.setState({ isDataTruncated: false })
+      return shallow(instance.renderDataLimitWarning()).prop('data-tooltip-html')
+    }
+
+    test('shows the warning', () => {
+      const instance = setup({ ...listSampleProps, type: 'column', isPivotDataLimited: true }).instance()
+      expect(instance.shouldShowDataLimitWarning()).toBe(true)
+    })
+
+    test('explains the pivot limit, not the row limit', () => {
+      const tooltip = getTooltip()
+      expect(tooltip).toBe(pivotLimitTooltip)
+      expect(tooltip).not.toMatch(/rows/)
+    })
+
+    test('mentions both when the row limit was hit too', () => {
+      const tooltip = getTooltip({ isDataLimited: true, rowLimit: 50000 })
+      expect(tooltip).toMatch(/rows/)
+      expect(tooltip).toContain(pivotLimitTooltip)
+    })
+  })
 })
 
 describe('getAllStringColumnIndices for pivot data', () => {
@@ -563,7 +599,10 @@ describe('ResizeObserver error suppression', () => {
   test('stops propagation for ResizeObserver loop completed message', () => {
     const inst = setup({ ...listSampleProps, type: 'bar' }).instance()
     inst.componentDidMount()
-    const fakeEvent = { message: 'ResizeObserver loop completed with undelivered notifications.', stopImmediatePropagation: jest.fn() }
+    const fakeEvent = {
+      message: 'ResizeObserver loop completed with undelivered notifications.',
+      stopImmediatePropagation: jest.fn(),
+    }
     inst._suppressResizeObserverError(fakeEvent)
     expect(fakeEvent.stopImmediatePropagation).toHaveBeenCalled()
     inst.componentWillUnmount()
@@ -585,6 +624,141 @@ describe('ResizeObserver error suppression', () => {
     inst._suppressResizeObserverError(fakeEvent)
     expect(fakeEvent.stopImmediatePropagation).not.toHaveBeenCalled()
     inst.componentWillUnmount()
+  })
+})
+
+// Each measurement forces a layout and redraws every mark. A drag of a large stacked chart
+// asked for one every ~16ms and froze Data Messenger.
+describe('adjustChartPosition throttle', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => {
+    jest.clearAllTimers()
+    jest.useRealTimers()
+  })
+
+  const setupMeasuring = () => {
+    const inst = setup({ ...listSampleProps, type: 'bar', hidden: false }).instance()
+    inst._isMounted = true
+    inst.getDeltas = jest.fn(() => ({ deltaX: 0, deltaY: 0 }))
+    inst.getInnerDimensions = jest.fn(() => ({ innerHeight: 100, innerWidth: 100 }))
+    inst.lastAdjustPositionTime = 0
+    // Each measurement's own follow-up pass; counted here as part of that measurement
+    inst.adjustVerticalPosition = jest.fn()
+    return inst
+  }
+
+  test('measures on the next tick when idle', () => {
+    const inst = setupMeasuring()
+    inst.adjustChartPosition()
+    jest.advanceTimersByTime(0)
+    expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+  })
+
+  test('collapses a burst of calls into one measurement per window', () => {
+    const inst = setupMeasuring()
+    inst.adjustChartPosition()
+    jest.advanceTimersByTime(0)
+    inst.getDeltas.mockClear()
+
+    // A drag: one call every 16ms for one window
+    for (let t = 0; t < ADJUST_CHART_POSITION_THROTTLE_MS; t += 16) {
+      inst.adjustChartPosition()
+      jest.advanceTimersByTime(16)
+    }
+    jest.advanceTimersByTime(ADJUST_CHART_POSITION_THROTTLE_MS)
+
+    expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+  })
+
+  test('still measures after the last call of a burst', () => {
+    const inst = setupMeasuring()
+    inst.adjustChartPosition()
+    jest.advanceTimersByTime(0)
+    inst.getDeltas.mockClear()
+
+    inst.adjustChartPosition()
+    expect(inst.getDeltas).not.toHaveBeenCalled()
+    jest.advanceTimersByTime(ADJUST_CHART_POSITION_THROTTLE_MS)
+    expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+  })
+
+  test('throttleMs: 0 opts out', () => {
+    const inst = setupMeasuring()
+    inst.adjustChartPosition()
+    jest.advanceTimersByTime(0)
+    inst.getDeltas.mockClear()
+
+    inst.adjustChartPosition({ throttleMs: 0 })
+    jest.advanceTimersByTime(0)
+    expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+  })
+
+  // A drag asks for a measurement on every mouse move, and a large chart takes longer than a
+  // frame to redraw. Requests made while a redraw is in flight must collapse into one follow-up,
+  // or they queue up and freeze the page when the mouse is released.
+  describe('while resizing', () => {
+    const setupResizingChart = () => {
+      const wrapper = setup({ ...listSampleProps, type: 'bar', hidden: false, isResizing: true })
+      const inst = wrapper.instance()
+      inst._isMounted = true
+      inst.getDeltas = jest.fn(() => ({ deltaX: 0, deltaY: 0 }))
+      inst.getInnerDimensions = jest.fn(() => ({ innerHeight: 100, innerWidth: 100 }))
+      inst.adjustVerticalPosition = jest.fn()
+      return { wrapper, inst }
+    }
+
+    test('redraws on the next animation frame, without the throttle delay', () => {
+      const { inst } = setupResizingChart()
+      inst.adjustChartPosition()
+      jest.advanceTimersByTime(16)
+      expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+    })
+
+    test('requests made while a redraw is in flight collapse into one follow-up', () => {
+      const { inst } = setupResizingChart()
+      let finishRedraw
+      inst.setState = jest.fn((state, callback) => {
+        finishRedraw = callback
+      })
+
+      inst.adjustChartPosition()
+      jest.advanceTimersByTime(16)
+      expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+
+      // The redraw is still in progress: many mouse moves' worth of requests
+      for (let i = 0; i < 20; i++) inst.adjustChartPosition()
+      jest.advanceTimersByTime(200)
+      expect(inst.getDeltas).toHaveBeenCalledTimes(1)
+
+      finishRedraw()
+      jest.advanceTimersByTime(16)
+      expect(inst.getDeltas).toHaveBeenCalledTimes(2)
+    })
+
+    test('skips the rotated-label pass until the resize ends', () => {
+      const { wrapper, inst } = setupResizingChart()
+      inst.adjustChartPosition()
+      jest.advanceTimersByTime(16)
+      expect(inst.adjustVerticalPosition).not.toHaveBeenCalled()
+
+      wrapper.setProps({ isResizing: false })
+      jest.advanceTimersByTime(ADJUST_CHART_POSITION_THROTTLE_MS)
+      expect(inst.adjustVerticalPosition).toHaveBeenCalled()
+    })
+
+    test('does not hide the chart header', () => {
+      const { wrapper } = setupResizingChart()
+      wrapper.setState({ isLoading: false })
+      expect(wrapper.find('.react-autoql-chart-header-container').hasClass('react-autoql-chart-loading')).toBe(false)
+    })
+  })
+
+  test('does not measure once unmounted', () => {
+    const inst = setupMeasuring()
+    inst.adjustChartPosition()
+    inst.componentWillUnmount()
+    jest.advanceTimersByTime(ADJUST_CHART_POSITION_THROTTLE_MS)
+    expect(inst.getDeltas).not.toHaveBeenCalled()
   })
 })
 

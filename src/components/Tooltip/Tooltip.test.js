@@ -72,3 +72,22 @@ describe('Tooltip portalling', () => {
     wrapper.unmount()
   })
 })
+
+// Hovering any tooltip and then resizing the window froze the page for good: without `resize`,
+// react-tooltip tracks the last anchor with autoUpdate, which looped on every render.
+describe('Tooltip global close events', () => {
+  it('closes on window resize as well as scroll', () => {
+    const wrapper = mount(<Tooltip tooltipId='close-events-test-id' {...openTooltipProps} />)
+    expect(wrapper.find(ReactTooltip).prop('globalCloseEvents')).toEqual({ scroll: true, resize: true })
+    wrapper.unmount()
+  })
+
+  it('passes the same object on every render', () => {
+    // Closed: an open tooltip needs ResizeObserver to update, which jsdom lacks
+    const wrapper = mount(<Tooltip tooltipId='close-events-identity-id' />)
+    const first = wrapper.find(ReactTooltip).prop('globalCloseEvents')
+    wrapper.setProps({ className: 'changed' })
+    expect(wrapper.find(ReactTooltip).prop('globalCloseEvents')).toBe(first)
+    wrapper.unmount()
+  })
+})

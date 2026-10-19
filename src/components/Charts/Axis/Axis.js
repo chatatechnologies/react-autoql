@@ -18,6 +18,7 @@ import safeGetBBox from '../../../utils/safeGetBBox'
 import { getUnscaledClientRect } from '../measureScale'
 
 import { Legend } from '../Legend'
+import { SPLIT_SERIES_BUTTON_SPACE } from '../SplitSeriesButton'
 import AxisScaler from './AxisScaler'
 import AxisSelector from '../Axes/AxisSelector'
 import AxisSortPopover from '../Axes/AxisSortPopover'
@@ -318,7 +319,7 @@ export default class Axis extends Component {
   }
 
   addTooltipsToLabels = () => {
-    const { scale } = this.props
+    const { scale, chartTooltipID } = this.props
     const maxLabelWidth = this.maxLabelWidth
 
     select(this.axisElement)
@@ -326,7 +327,15 @@ export default class Axis extends Component {
       .style('fill', 'currentColor')
       .style('fill-opacity', '1')
       .style('font-family', 'inherit')
-      .attr('data-tooltip-id', this.props.chartTooltipID)
+      // Only when it differs. react-tooltip watches data-tooltip-id across the whole document and
+      // re-binds listeners on every anchor of the tooltip each time it is written - even to the
+      // same value. Every redraw rewrote it on every tick label, so a window resize on a dashboard
+      // of charts set off thousands of full re-binds.
+      .each(function () {
+        if (this.getAttribute('data-tooltip-id') !== chartTooltipID) {
+          this.setAttribute('data-tooltip-id', chartTooltipID)
+        }
+      })
       .attr('data-tooltip-effect', 'float')
       .attr('data-tooltip-content', function (d) {
         if (select(this).text()?.slice(-3) === '...') {
@@ -473,6 +482,10 @@ export default class Axis extends Component {
     const legendOrientation = this.getLegendOrientation()
 
     let legendPadding = { top: 0, bottom: 0, left: 20, right: 0 }
+    if (this.props.hasSplitSeriesButton) {
+      // The split button sits between the plot and the legend
+      legendPadding.left += SPLIT_SERIES_BUTTON_SPACE
+    }
     if (legendOrientation === 'horizontal') {
       legendPadding.right = legendPadding.left = this.props.chartPadding
     }
@@ -546,7 +559,7 @@ export default class Axis extends Component {
     // Always use originalColumns for display names to avoid duplicates from pivoted columns
     let column = null
     let valueColumn = null
-    let columnDisplayName = this.props.scale?.title || 'column'
+    let columnDisplayName = this.getScaleTitle() || 'column'
     let valueColumnDisplayName = 'values'
 
     // Always try to find column by name in originalColumns (works for both aggregated and non-aggregated)
@@ -729,7 +742,14 @@ export default class Axis extends Component {
   }
 
   renderAxisSelector = ({ positions, isSecondAxis, childProps = {} }) => {
-    const columnsForSelector = this.props.isAggregated ? this.props.originalColumns : this.props.columns
+    // Split charts list the original columns, not their per-series copies, and their number axis
+    // is the split's value column
+    const { splitBy } = this.props
+    const isSplit = !!splitBy?.isActive
+    const columnsForSelector = this.props.isAggregated || isSplit ? this.props.originalColumns : this.props.columns
+    const numberColumnIndicesForSelector = isSplit
+      ? [splitBy.valueColumnIndex].filter((index) => index >= 0)
+      : this.props.numberColumnIndices
 
     // For heatmap/bubble Y-axis, use legend (pivot) handler instead of string handler
     const changeStringColumnIndexHandler = this.isHeatmapOrBubbleYAxis
@@ -743,7 +763,7 @@ export default class Axis extends Component {
         changeStringColumnIndex={changeStringColumnIndexHandler}
         legendColumn={this.props.legendColumn}
         popoverParentElement={this.props.popoverParentElement}
-        numberColumnIndices={this.props.numberColumnIndices}
+        numberColumnIndices={numberColumnIndicesForSelector}
         numberColumnIndices2={this.props.numberColumnIndices2}
         stringColumnIndices={this.props.stringColumnIndices}
         stringColumnIndex={this.props.stringColumnIndex}
@@ -763,6 +783,7 @@ export default class Axis extends Component {
         axisSelectorRef={(r) => (this.axisSelector = r)}
         isOpen={this.state.isAxisSelectorOpen}
         originalColumns={this.props.originalColumns}
+        splitBy={this.props.splitBy}
         closeSelector={this.closeSelector}
         isSecondAxis={isSecondAxis}
         enableCyclicalDates={this.props.enableCyclicalDates}
@@ -792,9 +813,19 @@ export default class Axis extends Component {
     return option?.label ?? null
   }
 
+  // A split chart's series are all one value column, so the number axis is titled after it
+  // ("Sales (Sum)", "Count") instead of the series
+  getScaleTitle = () => {
+    const { scale, splitBy } = this.props
+    if (splitBy?.isActive && splitBy.valueTitle && scale?.type === 'LINEAR') {
+      return splitBy.valueTitle
+    }
+    return scale?.title
+  }
+
   renderAxisTitleText = () => {
     const { scale, columnOverrides, originalColumns } = this.props
-    const title = scale?.title ?? ''
+    const title = this.getScaleTitle() ?? ''
 
     // Check if there's a column override for this axis
     // For pivot tables, scale.column.index might be 0, so we need to find the original column by name
@@ -1150,6 +1181,10 @@ export default class Axis extends Component {
 
     // For numeric (LINEAR) axes
     if (!isStringAxis) {
+      // A split chart can always switch between Count and its number columns
+      if (this.props.splitBy?.isActive && this.props.enableAxisDropdown !== false) {
+        return true
+      }
       return scale?.allFields?.length > 1 || scale?.hasDropdown
     }
 

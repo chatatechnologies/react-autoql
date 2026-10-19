@@ -218,6 +218,7 @@ export default class ChataTable extends React.Component {
     originalColumns: PropTypes.arrayOf(PropTypes.shape({})),
     // Pivot table sizing info
     maxColumns: PropTypes.number,
+    pivotLimitTooltip: PropTypes.string,
   }
 
   static defaultProps = {
@@ -2025,11 +2026,20 @@ export default class ChataTable extends React.Component {
         const totalPivotColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.totalColumns)
         const maxColumnsFormatted = new Intl.NumberFormat(languageCode, {}).format(this.props.maxColumns)
 
+        // Both limits can apply at once; say each one that does.
+        const messages = []
         if (this.useInfiniteScroll && isDataLimited(this.props.response)) {
-          dataLimitTooltip = `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`
-        } else if (this.props.pivotTableDataLimited) {
-          dataLimitTooltip = `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`
+          messages.push(
+            `To optimize performance, this pivot table is limited to the initial <em>${rowLimitFormatted}/${totalRowsFormatted}</em> rows of the original dataset.`,
+          )
         }
+        if (this.props.pivotTableDataLimited) {
+          messages.push(
+            this.props.pivotLimitTooltip ??
+              `To optimize performance, this pivot table has been limited to <em>${maxColumnsFormatted}</em> columns. The original table would have had <em>${totalPivotColumnsFormatted}</em> columns.`,
+          )
+        }
+        dataLimitTooltip = messages.join('<br /><br />')
       }
 
       return (

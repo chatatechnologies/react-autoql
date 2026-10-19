@@ -1,11 +1,14 @@
 import React from 'react'
 import { max, min } from 'd3-array'
 import { scaleLinear } from 'd3-scale'
-import { deepEqual, getChartColorVars, getKey, getTooltipContent } from 'autoql-fe-utils'
+import { deepEqual, getChartColorVars, getKey } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes } from '../chartPropHelpers'
+import { chartElementDefaultProps, chartElementPropTypes, createTooltipContentCache } from '../chartPropHelpers'
 
 export default class Points extends React.Component {
+  // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
+  getTooltipContent = createTooltipContentCache()
+
   constructor(props) {
     super(props)
 
@@ -69,7 +72,7 @@ export default class Points extends React.Component {
       const valueNumberY = Number(rawValueY)
       const valueY = !isNaN(valueNumberY) ? valueNumberY : 0
 
-      const tooltip = getTooltipContent({
+      const tooltip = this.getTooltipContent({
         row,
         columns,
         colIndex: numberColumnIndex,

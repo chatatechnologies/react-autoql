@@ -104,6 +104,47 @@ describe('SessionTabs', () => {
     expect(tabs()[1]).toHaveClass('is-new')
   })
 
+  test('hasUpdate badges just that tab and announces it', () => {
+    renderTabs({ items: [items[0], { ...items[1], hasUpdate: true }] })
+
+    expect(tabs()[0]).not.toHaveClass('has-update')
+    expect(tabs()[1]).toHaveClass('has-update')
+    expect(tabs()[1]).toHaveTextContent('new result')
+  })
+
+  test('the dot means unread only - the active tab gets none', () => {
+    renderTabs({ items: [items[0], { ...items[1], hasUpdate: true }] })
+
+    expect(tabs()[0].querySelector('.react-autoql-session-tab-dot')).toBeNull()
+    expect(tabs()[1].querySelector('.react-autoql-session-tab-dot')).toBeTruthy()
+  })
+
+  test('a query running in a background tab shows a spinner instead of the dot', () => {
+    renderTabs({ items: [items[0], { ...items[1], isRunning: true, hasUpdate: true }] })
+
+    expect(tabs()[1].querySelector('.react-autoql-session-tab-spinner')).toBeTruthy()
+    expect(tabs()[1].querySelector('.react-autoql-session-tab-dot')).toBeNull()
+    expect(tabs()[1]).toHaveTextContent('running')
+  })
+
+  test('the tab on screen gets no spinner - its thread shows its own', () => {
+    renderTabs({ items: [{ ...items[0], isRunning: true }, items[1]] })
+
+    expect(document.querySelector('.react-autoql-session-tab-spinner')).toBeNull()
+  })
+
+  test('on a small screen, a query running elsewhere shows on the closed switcher', () => {
+    renderTabs({ isSmallScreen: true, items: [items[0], { ...items[1], isRunning: true }] })
+
+    expect(screen.getByLabelText('Query running in another chat')).toBeInTheDocument()
+  })
+
+  test('on a small screen, a background update badges the closed switcher', () => {
+    renderTabs({ isSmallScreen: true, items: [items[0], { ...items[1], hasUpdate: true }] })
+
+    expect(screen.getByLabelText('New result in another chat')).toBeInTheDocument()
+  })
+
   test('a small screen gets the dropdown instead of the strip', () => {
     renderTabs({ isSmallScreen: true })
 

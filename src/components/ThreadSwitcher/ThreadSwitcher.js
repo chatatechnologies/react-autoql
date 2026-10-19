@@ -19,16 +19,7 @@ import './ThreadSwitcher.scss'
  * Both messengers keep their strip above the breakpoint and render this below it;
  * the strip is still the better UI when there is room for it.
  */
-export const ThreadSwitcher = ({
-  items,
-  activeId,
-  onSelect,
-  onClose,
-  onNew,
-  canAddNew,
-  newLabel,
-  tooltipID,
-}) => {
+export const ThreadSwitcher = ({ items, activeId, onSelect, onClose, onNew, canAddNew, newLabel, tooltipID }) => {
   const [isOpen, setIsOpen] = useState(false)
   const rootRef = useRef(null)
   const triggerRef = useRef(null)
@@ -71,6 +62,11 @@ export const ThreadSwitcher = ({
 
   const activeItem = items.find((item) => item.id === activeId) ?? items[0]
 
+  // The menu is closed most of the time, so a chat that finished in the background
+  // has to be flagged on the trigger too or nothing on screen would say so.
+  const hasHiddenUpdate = items.some((item) => item.hasUpdate && item.id !== activeItem?.id)
+  const hasHiddenRunning = items.some((item) => item.isRunning && item.id !== activeItem?.id)
+
   const selectItem = (id) => {
     onSelect(id)
     close()
@@ -97,6 +93,21 @@ export const ThreadSwitcher = ({
           disabled={!canOpenMenu}
         >
           <span className='react-autoql-thread-switcher-trigger-title'>{activeItem?.title}</span>
+          {hasHiddenUpdate && (
+            <span
+              className='react-autoql-thread-switcher-badge'
+              role='status'
+              aria-label='New result in another chat'
+            />
+          )}
+          {/* A result waiting outranks one still on its way. */}
+          {!hasHiddenUpdate && hasHiddenRunning && (
+            <span
+              className='react-autoql-thread-switcher-spinner'
+              role='status'
+              aria-label='Query running in another chat'
+            />
+          )}
           {canOpenMenu && <Icon type='caret-down' className='react-autoql-thread-switcher-caret' />}
         </button>
 
@@ -129,7 +140,9 @@ export const ThreadSwitcher = ({
                       role='option'
                       tabIndex={0}
                       aria-selected={isActive}
-                      className={`react-autoql-thread-switcher-item${isActive ? ' is-active' : ''}`}
+                      className={`react-autoql-thread-switcher-item${isActive ? ' is-active' : ''}${
+                        item.hasUpdate && !isActive ? ' has-update' : ''
+                      }`}
                       onClick={() => selectItem(item.id)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
@@ -138,7 +151,13 @@ export const ThreadSwitcher = ({
                         }
                       }}
                     >
-                      <span className='react-autoql-thread-switcher-item-dot' aria-hidden='true' />
+                      {/* Unread only, the same as the tab strip's dot. */}
+                      {item.hasUpdate && !isActive && !item.isRunning && (
+                        <span className='react-autoql-thread-switcher-item-dot' aria-label='New result' />
+                      )}
+                      {item.isRunning && !isActive && (
+                        <span className='react-autoql-thread-switcher-spinner' aria-label='Running' />
+                      )}
                       {/* A full row is wide enough that most titles fit outright,
                           which is the whole point of the vertical list. */}
                       <span className='react-autoql-thread-switcher-item-title'>{item.title}</span>
@@ -178,6 +197,10 @@ ThreadSwitcher.propTypes = {
       title: PropTypes.string,
       canClose: PropTypes.bool,
       closeLabel: PropTypes.string,
+      // Something finished in this chat while another one was selected.
+      hasUpdate: PropTypes.bool,
+      // A query is running in this chat.
+      isRunning: PropTypes.bool,
     }),
   ),
   activeId: PropTypes.string,
