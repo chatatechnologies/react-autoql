@@ -68,6 +68,36 @@ describe('the editor’s Markdown', () => {
     expect(roundTrip('One\nTwo')).toBe('One  \nTwo')
     expect(richTextHtml(roundTrip('One\nTwo'))).toBe(richTextHtml('One\nTwo'))
   })
+
+  // Formatting from the middle of one word to the middle of another, with any mix of the bar's buttons, as
+  // someone selects and formats: it used to come back as "revie**++w" in plain asterisks (bold and underline).
+  it('keeps formatting that starts and ends inside a word, with any mix of marks', () => {
+    const text = 'This review summarises the holding today.'
+    const from = 1 + text.indexOf('review') + 5 // before the "w"
+    const to = 1 + text.indexOf('holding') + 5 // before the "ng"
+    const marksOn = (editor, word) => {
+      let names = null
+      editor.state.doc.descendants((node) => {
+        if (names === null && node.isText && node.text.includes(word)) names = node.marks.map((m) => m.type.name)
+      })
+      return (names || []).sort()
+    }
+    const toggles = { bold: 'toggleBold', italic: 'toggleItalic', underline: 'toggleUnderline', strike: 'toggleStrike' }
+    const names = Object.keys(toggles)
+    for (let mask = 1; mask < 1 << names.length; mask++) {
+      const mix = names.filter((name, index) => mask & (1 << index))
+      const editor = new Editor({ extensions: richTextExtensions(), content: text, contentType: 'markdown' })
+      mix.reduce((chain, name) => chain[toggles[name]](), editor.chain().setTextSelection({ from, to })).run()
+      const markdown = editor.getMarkdown()
+      editor.destroy()
+
+      const reloaded = new Editor({ extensions: richTextExtensions(), content: markdown, contentType: 'markdown' })
+      expect({ mix, text: reloaded.state.doc.textContent }).toStrictEqual({ mix, text })
+      expect({ mix, marks: marksOn(reloaded, 'summarises') }).toStrictEqual({ mix, marks: [...mix].sort() })
+      expect({ mix, before: marksOn(reloaded, 'revie') }).toStrictEqual({ mix, before: [] })
+      reloaded.destroy()
+    }
+  })
 })
 
 describe('linkHref', () => {

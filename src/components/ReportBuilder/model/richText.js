@@ -30,9 +30,23 @@ const LinkShortcut = Extension.create({
   },
 })
 
+// The order formatting is written in, outermost first (the schema's mark order: a higher priority is further
+// out), so that formatting which starts or ends inside a word comes back. Markdown reads ++ anywhere, ** and *
+// beside ~~ but not beside ++, and ~~ only against the letters: underline goes outside, then bold and italic,
+// then strikethrough. "revie++**~~w" comes back formatted, where "revie**++w" came back as asterisks.
+const MARK_PRIORITY = { underline: 102, strike: 99 }
+
+const OrderedStarterKit = StarterKit.extend({
+  addExtensions() {
+    return this.parent().map((extension) =>
+      MARK_PRIORITY[extension.name] ? extension.extend({ priority: MARK_PRIORITY[extension.name] }) : extension,
+    )
+  },
+})
+
 // The schema and its Markdown: everything a report's text can hold. `placeholder` is shown in an empty editor.
 export const richTextExtensions = ({ placeholder } = {}) => [
-  StarterKit.configure({
+  OrderedStarterKit.configure({
     link: {
       openOnClick: false,
       autolink: true,
