@@ -2,6 +2,7 @@ import React from 'react'
 import { Dashboard } from '../../Dashboard'
 import { UNSUPPORTED_DISPLAY_TYPES } from '../constants'
 import { Icon } from '../components/icons'
+import { SelectBox } from '../components/controls'
 import { getTileKey } from '../model/tiles'
 import { RS } from './constants'
 import { REPORT_ADD_MAX_BYTES, reportBytes, stripQueryResponses } from './documents'
@@ -204,19 +205,21 @@ export class DashboardTilesDialog extends React.Component {
     return (
       <label className={`${RS}-tile-picker-dashboard`}>
         {T.dashboard}
-        <select
-          ref={this.selectRef}
-          className={`${RS}-select`}
-          value={dashboard ? String(dashboard.id) : ''}
-          data-test='reports-tile-picker-dashboard'
-          onChange={(e) => this.choose(e.target.value)}
-        >
-          {dashboards.filter(Boolean).map((d) => (
-            <option key={d.id} value={String(d.id)}>
-              {d.name || S.untitledDashboard}
-            </option>
-          ))}
-        </select>
+        <SelectBox prefix={RS} inline>
+          <select
+            ref={this.selectRef}
+            className={`${RS}-select`}
+            value={dashboard ? String(dashboard.id) : ''}
+            data-test='reports-tile-picker-dashboard'
+            onChange={(e) => this.choose(e.target.value)}
+          >
+            {dashboards.filter(Boolean).map((d) => (
+              <option key={d.id} value={String(d.id)}>
+                {d.name || S.untitledDashboard}
+              </option>
+            ))}
+          </select>
+        </SelectBox>
       </label>
     )
   }

@@ -2,6 +2,7 @@ import React from 'react'
 import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { Icon } from './icons'
+import { SelectBox } from './controls'
 import { LINK_REQUEST_EVENT, linkHref } from '../model/richText'
 import { isMacKeyboard } from '../keyboard'
 
@@ -221,17 +222,19 @@ export class FormattingBar extends React.Component {
         data-active={usable || undefined}
         onBlur={this.onBarBlur}
       >
-        <select
-          className={`${RB}-format-style`}
-          aria-label={F.style}
-          value={styleOf(usable ? editor : null)}
-          disabled={!usable}
-          onChange={(e) => this.setStyle(e.target.value)}
-        >
-          <option value='paragraph'>{F.paragraph}</option>
-          <option value='heading'>{F.heading}</option>
-          <option value='subheading'>{F.subheading}</option>
-        </select>
+        <SelectBox inline>
+          <select
+            className={`${RB}-format-style`}
+            aria-label={F.style}
+            value={styleOf(usable ? editor : null)}
+            disabled={!usable}
+            onChange={(e) => this.setStyle(e.target.value)}
+          >
+            <option value='paragraph'>{F.paragraph}</option>
+            <option value='heading'>{F.heading}</option>
+            <option value='subheading'>{F.subheading}</option>
+          </select>
+        </SelectBox>
         <span className={`${RB}-format-sep`} aria-hidden='true' />
         {MARKS.map((mark) => button({ ...mark, pressed: active(mark.name), onPress: () => this.run(mark.toggle) }))}
         <span className={`${RB}-format-sep`} aria-hidden='true' />

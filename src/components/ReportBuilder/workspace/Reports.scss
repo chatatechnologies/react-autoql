@@ -149,6 +149,30 @@ $rs: 'react-autoql-reports';
     }
   }
 
+  // A select with the builder's chevron, set in from the edge, in place of the browser's (SelectBox).
+  .#{$rs}-select-box {
+    position: relative;
+    display: block;
+
+    &[data-inline] {
+      display: inline-block;
+    }
+    > select {
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 2rem;
+      cursor: pointer;
+    }
+    > .#{$rb}-icon {
+      position: absolute;
+      top: 50%;
+      right: 0.625rem;
+      margin-top: -6px;
+      color: $text-2;
+      pointer-events: none;
+    }
+  }
+
   .#{$rs}-note {
     margin: 0.375rem 0 0;
     font-size: 0.6875rem;

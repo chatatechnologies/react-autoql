@@ -12,10 +12,10 @@
     color: $text-2;
     font-size: 0.8125rem;
 
-    > .#{$rs}-select {
+    .#{$rs}-select {
       width: auto;
       max-width: 20rem;
-      padding: 0.375rem 0.625rem;
+      padding: 0.375rem 2rem 0.375rem 0.625rem;
       font-size: 0.8125rem;
     }
   }

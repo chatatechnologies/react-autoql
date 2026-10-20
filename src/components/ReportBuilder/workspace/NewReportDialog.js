@@ -1,5 +1,6 @@
 import React from 'react'
 import { Icon } from '../components/icons'
+import { SelectBox } from '../components/controls'
 import { createEmptyReport } from '../model/reportSchema'
 import { captureQuestion } from '../run/captureRun'
 import { RS } from './constants'
@@ -229,20 +230,22 @@ export class NewReportDialog extends React.Component {
     }
     const dashboard = this.dashboard()
     return (
-      <select
-        ref={this.dashboardSelectRef}
-        className={`${RS}-select`}
-        value={dashboard ? String(dashboard.id) : ''}
-        aria-label={N.dashboardLabel}
-        data-test='reports-new-report-dashboard-select'
-        onChange={(e) => this.setState({ dashboardId: e.target.value })}
-      >
-        {dashboards.filter(Boolean).map((d) => (
-          <option key={d.id} value={String(d.id)}>
-            {N.dashboardOption(d.name || S.untitledDashboard, tileCount(d))}
-          </option>
-        ))}
-      </select>
+      <SelectBox prefix={RS}>
+        <select
+          ref={this.dashboardSelectRef}
+          className={`${RS}-select`}
+          value={dashboard ? String(dashboard.id) : ''}
+          aria-label={N.dashboardLabel}
+          data-test='reports-new-report-dashboard-select'
+          onChange={(e) => this.setState({ dashboardId: e.target.value })}
+        >
+          {dashboards.filter(Boolean).map((d) => (
+            <option key={d.id} value={String(d.id)}>
+              {N.dashboardOption(d.name || S.untitledDashboard, tileCount(d))}
+            </option>
+          ))}
+        </select>
+      </SelectBox>
     )
   }
 

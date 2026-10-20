@@ -1220,6 +1220,36 @@
     }
   }
 
+  // Every other select gets the builder's chevron the same way (controls.js SelectBox), set in from the edge.
+  .#{$rb}-select-box {
+    position: relative;
+    display: block;
+
+    &[data-inline] {
+      display: inline-block;
+    }
+    > select {
+      -webkit-appearance: none;
+      appearance: none;
+      padding-right: 1.875rem;
+      cursor: pointer;
+    }
+    > select:disabled {
+      cursor: not-allowed;
+    }
+    > .#{$rb}-icon {
+      position: absolute;
+      top: 50%;
+      right: 0.625rem;
+      margin-top: -6px;
+      color: $text-2;
+      pointer-events: none;
+    }
+    > select:disabled + .#{$rb}-icon {
+      opacity: 0.5;
+    }
+  }
+
   // A field that wraps (AutoGrowTextarea): grows with its text up to under half the window, then scrolls
   // inside itself, so the panel doesn't become one long column. An analysis's Focus starts one line tall,
   // its wording a few lines.

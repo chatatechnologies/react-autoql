@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
 import { RB } from '../constants'
 import { STRINGS } from '../strings'
+import { Icon } from './icons'
 
 // Native form controls with prefixed classes. The library's own Select renders its menu in a portal,
 // whose stacking a host app controls; a native <select> has no such dependency.
@@ -38,30 +39,42 @@ export const Field = ({ label, htmlFor, children }) => (
   </div>
 )
 
+// A native <select> with the builder's own chevron in place of the browser's, which sits against the edge
+// whatever the padding (the toolbar's zoom draws its own the same way). `prefix` is the stylesheet's: the
+// builder's, or the reports workspace's.
+export const SelectBox = ({ prefix = RB, inline = false, children }) => (
+  <span className={`${prefix}-select-box`} data-inline={inline || undefined}>
+    {children}
+    <Icon name='down' size={12} />
+  </span>
+)
+
 // options: [[value, label], ...]. Values are compared as strings, as a <select> reports them.
 export const SelectField = ({ label, value, options, onChange, disabled, testId }) => {
   const id = useStableId('select')
   const current = value == null ? '' : String(value)
   return (
     <Field label={label} htmlFor={id}>
-      <select
-        id={id}
-        className={`${RB}-select`}
-        value={current}
-        disabled={disabled}
-        data-test={testId}
-        onChange={(e) => {
-          const match = options.find(([optionValue]) => String(optionValue) === e.target.value)
-          onChange(match ? match[0] : e.target.value)
-        }}
-      >
-        {/* An option may be listed but not chosen: [value, label, true]. */}
-        {options.map(([optionValue, optionLabel, optionDisabled]) => (
-          <option key={String(optionValue)} value={String(optionValue)} disabled={!!optionDisabled}>
-            {optionLabel}
-          </option>
-        ))}
-      </select>
+      <SelectBox>
+        <select
+          id={id}
+          className={`${RB}-select`}
+          value={current}
+          disabled={disabled}
+          data-test={testId}
+          onChange={(e) => {
+            const match = options.find(([optionValue]) => String(optionValue) === e.target.value)
+            onChange(match ? match[0] : e.target.value)
+          }}
+        >
+          {/* An option may be listed but not chosen: [value, label, true]. */}
+          {options.map(([optionValue, optionLabel, optionDisabled]) => (
+            <option key={String(optionValue)} value={String(optionValue)} disabled={!!optionDisabled}>
+              {optionLabel}
+            </option>
+          ))}
+        </select>
+      </SelectBox>
     </Field>
   )
 }
