@@ -318,16 +318,41 @@ export class QueryOutput extends React.Component {
   }
 
   static propTypes = {
+    /**
+     * Credentials for the follow-up requests QueryOutput makes: drilldowns, added columns, loading more rows, and
+     * sorting or filtering large results. Not needed just to show an answer.
+     */
     authentication: authenticationType,
+    /**
+     * Turns AutoQL features on or off. For example, `enableDrilldowns: false` stops clicks on rows and chart points
+     * from drilling down. Each field has its own default.
+     */
     autoQLConfig: autoQLConfigType,
+    /**
+     * How numbers, currency and dates are shown in tables, chart axes and tooltips, such as the currency code,
+     * locale and number of decimals. Each field has its own default.
+     */
     dataFormatting: dataFormattingType,
+    /**
+     * Saved chart column choices and column settings to restore, as `{ tableConfig, pivotTableConfig,
+     * columnOverrides }`. Pass back what `onTableConfigChange` gave you. Ignored if it no longer fits the columns.
+     * Only read when the component mounts.
+     */
     initialTableConfigs: PropTypes.shape({
       tableConfig: PropTypes.shape({}),
       pivotTableConfig: PropTypes.shape({}),
       columnOverrides: PropTypes.object,
     }),
+    /**
+     * Saved aggregation per column to restore, such as `{ Sales: 'AVG' }`. Pass back what `onAggConfigChange` gave
+     * you. Only read when the component mounts.
+     */
     initialAggConfig: PropTypes.shape({}),
 
+    /**
+     * The answer to show: the full response from QueryInput's `onResponseCallback` (or `runQuery`), not just its
+     * `data`. Only read when the component mounts, so give each new answer a new `key`.
+     */
     queryResponse: PropTypes.shape({
       data: PropTypes.shape({
         data: PropTypes.object,
@@ -335,7 +360,15 @@ export class QueryOutput extends React.Component {
     }),
     /** @internal Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query */
     queryId: PropTypes.string,
+    /**
+     * Called with `{ query, userSelection, ... }` when the user picks a suggested question or confirms a clarified
+     * one. Run the query you receive.
+     */
     onSuggestionClick: PropTypes.func,
+    /**
+     * How to show the answer first, such as `'table'`, `'column'`, `'line'` or `'pie'`. If the data can't be shown
+     * that way, the best-fitting type is used instead. Only read when the component mounts.
+     */
     initialDisplayType: PropTypes.string,
     /**
      * @internal
@@ -355,9 +388,11 @@ export class QueryOutput extends React.Component {
      * column added, columns shown or hidden - so the caller's copy does not go stale.
      */
     onResponseUpdate: PropTypes.func,
+    /** Called with the question text and the chosen options when the user picks an option to clarify their question. */
     onQueryValidationSelectOption: PropTypes.func,
     /** @internal */
     autoSelectQueryValidationSuggestion: PropTypes.bool,
+    /** Options to pre-select when the answer asks the user to clarify unclear terms in their question. */
     queryValidationSelections: PropTypes.arrayOf(PropTypes.shape({})),
     /** @internal */
     renderSuggestionsAsDropdown: PropTypes.bool,
@@ -369,47 +404,111 @@ export class QueryOutput extends React.Component {
     reverseTranslationCompact: PropTypes.bool,
     /** @internal */
     activeChartElementKey: PropTypes.string,
+    /**
+     * A display type to use when `initialDisplayType` isn't set or doesn't fit the data, as long as the data
+     * supports it. Only read when the component mounts.
+     */
     preferredDisplayType: PropTypes.string,
+    /**
+     * Set to true while the container is being resized, so the table and chart pause their layout work, and back to
+     * false when it's done.
+     */
     isResizing: PropTypes.bool,
+    /** Shows dropdowns on chart axes so users can pick which columns are plotted. */
     enableDynamicCharting: PropTypes.bool,
     /**
-     * Whether a failed re-run of this query may fall back to related queries
-     * instead of an error. See ChatContent for the full description.
+     * When a re-run after sorting, filtering or adding a column can't be answered, shows a list of related questions
+     * instead of an error.
      */
     enableQuerySuggestions: PropTypes.bool,
+    /**
+     * Called with `{ tableConfig, pivotTableConfig, columnOverrides }` when the chart's columns or column settings
+     * change. Save it to restore with `initialTableConfigs`.
+     */
     onTableConfigChange: PropTypes.func,
+    /** Called with the aggregation per column when the user changes one. Save it to restore with `initialAggConfig`. */
     onAggConfigChange: PropTypes.func,
+    /**
+     * Saved column mapping for network and Sankey charts, as `{ sourceColumnIndex, targetColumnIndex,
+     * weightColumnIndex }`. Pass back what `onNetworkColumnChange` gave you.
+     */
     initialNetworkColumnConfig: PropTypes.shape({
       sourceColumnIndex: PropTypes.number,
       targetColumnIndex: PropTypes.number,
       weightColumnIndex: PropTypes.number,
     }),
+    /**
+     * Called with `{ sourceColumnIndex, targetColumnIndex, weightColumnIndex }` when the user remaps a network or
+     * Sankey chart. Save it to restore with `initialNetworkColumnConfig`.
+     */
     onNetworkColumnChange: PropTypes.func,
     /** @internal */
     legendFilterConfig: PropTypes.shape({
       filteredOutLabels: PropTypes.arrayOf(PropTypes.string),
     }),
+    /** Called with the hidden legend items per column when the user filters a chart's legend. */
     onLegendFilterChange: PropTypes.func,
+    /**
+     * Saved chart axis sorting to restore. Pass back what `onAxisSortChange` gave you. Only read when the component
+     * mounts.
+     */
     initialAxisSorts: PropTypes.object,
+    /** Called with all chart axis sorts when the user sorts an axis. Save it to restore with `initialAxisSorts`. */
     onAxisSortChange: PropTypes.func,
+    /**
+     * Saved table column order to restore, as a list of column names. Pass back what `onColumnOrderChange` gave you.
+     */
     initialColumnOrder: PropTypes.arrayOf(PropTypes.string),
+    /**
+     * Called with the column names in their new order when the user drags a table column. Save it to restore with
+     * `initialColumnOrder`.
+     */
     onColumnOrderChange: PropTypes.func,
+    /**
+     * Saved frozen (pinned) table columns to restore, as a list of column names. Pass back what
+     * `onFrozenColumnsChange` gave you.
+     */
     initialFrozenColumns: PropTypes.arrayOf(PropTypes.string),
+    /**
+     * Called with the names of the frozen columns when the user freezes or unfreezes one. Save it to restore with
+     * `initialFrozenColumns`.
+     */
     onFrozenColumnsChange: PropTypes.func,
     /** @internal */
     onNoneOfTheseClick: PropTypes.func,
+    /**
+     * Shows grouped results, such as totals by month or by category, as a chart instead of a table. Only applies
+     * when no `initialDisplayType` is used.
+     */
     autoChartAggregations: PropTypes.bool,
     /** @internal */
     onRTValueLabelClick: PropTypes.func,
     /** @internal */
     isTaskModule: PropTypes.bool,
+    /**
+     * Called when the user clicks a row or chart point to drill down. Needs `autoQLConfig.enableDrilldowns`, which
+     * is on by default.
+     */
     onDrilldownStart: PropTypes.func,
+    /**
+     * Called when a drilldown finishes, with `{ response, originalQueryID, drilldownFilters }`, or with `{ response
+     * }` holding the error if it failed. QueryOutput doesn't show the result itself; render `response` in another
+     * QueryOutput.
+     */
     onDrilldownEnd: PropTypes.func,
     /** @internal */
     enableTableSorting: PropTypes.bool,
     /** @internal */
     showSingleValueResponseTitle: PropTypes.bool,
+    /**
+     * Shows a + button on tables for adding columns to the result. Adding a column runs the query again, so
+     * `authentication` is needed.
+     */
     allowColumnAddition: PropTypes.bool,
+    /**
+     * Called with an Error when a chart can't be built from the data. Errors from the query itself are shown in the
+     * component instead.
+     */
     onErrorCallback: PropTypes.func,
     /** @internal */
     showQueryInterpretation: PropTypes.bool,
@@ -422,7 +521,15 @@ export class QueryOutput extends React.Component {
     mutable: PropTypes.bool,
     /** @internal */
     showSuggestionPrefix: PropTypes.bool,
+    /**
+     * Called with the display type string once after mount, then each time the user switches view. Save it to
+     * restore with `initialDisplayType`.
+     */
     onDisplayTypeChange: PropTypes.func,
+    /**
+     * Called when columns are shown, hidden, added or frozen. Receives the column overrides, the columns, the added
+     * selects, the updated response, the column config and the filter locks.
+     */
     onColumnChange: PropTypes.func,
     /** @internal */
     shouldRender: PropTypes.bool,
@@ -430,17 +537,40 @@ export class QueryOutput extends React.Component {
     dataPageSize: PropTypes.number,
     /** @internal */
     onPageSizeChange: PropTypes.func,
+    /**
+     * Keeps the table loaded under the chart so switching between views is instant. When false, only the current
+     * view is loaded, and a chart can't load more rows.
+     */
     allowDisplayTypeChange: PropTypes.bool,
+    /** Called once, with no arguments, when the component mounts. */
     onMount: PropTypes.func,
+    /** Called with the new bucket size when the user changes it on a histogram. */
     onBucketSizeChange: PropTypes.func,
     /** @internal */
     bucketSize: PropTypes.number,
+    /**
+     * Adds cyclical date groupings to chart axes, such as month of year, day of week and hour of day. On unless set
+     * to false.
+     */
     enableCyclicalDates: PropTypes.bool,
+    /**
+     * Called, with no arguments, after the table or chart loads more or different rows, such as after sorting,
+     * filtering or scrolling to the next page.
+     */
     onNewData: PropTypes.func,
+    /** @internal Has no effect: never called. */
     onCustomColumnUpdate: PropTypes.func,
     /** @internal */
     enableTableContextMenu: PropTypes.bool,
+    /**
+     * Table filters and sorting to apply when the component mounts, as `{ filters, sorters }`. Pass back the second
+     * argument of `onTableParamsChange` to restore a saved view.
+     */
     initialFormattedTableParams: PropTypes.shape({}),
+    /**
+     * Called with an updated interpretation response after the user filters the table, so the plain-language
+     * interpretation can be refreshed.
+     */
     onUpdateFilterResponse: PropTypes.func,
     /** @internal */
     enableResizing: PropTypes.bool,
@@ -454,31 +584,51 @@ export class QueryOutput extends React.Component {
     lockedFilters: PropTypes.arrayOf(PropTypes.shape({})),
     /** @internal */
     skipInitialFilters: PropTypes.bool,
+    /** Opens the table's filter row when the component mounts. */
     initialIsFiltering: PropTypes.bool,
+    /** @internal Has no effect: the minimum height is fixed at 300px. */
     minHeight: PropTypes.number,
+    /** @internal Only used when the internal enableResizing prop is on. */
     maxHeight: PropTypes.number,
     /** @internal */
     resizeMultiplier: PropTypes.number,
+    /** @internal Only called when the internal enableResizing prop is on. */
     onResize: PropTypes.func,
     /** @internal */
     localRTFilterResponse: PropTypes.shape({}),
+    /** Lets users create their own calculated columns from the + button. Needs `allowColumnAddition`. */
     enableCustomColumns: PropTypes.bool,
     /** @internal */
     disableAggregationMenu: PropTypes.bool,
     /** @internal */
     allowCustomColumnsOnDrilldown: PropTypes.bool,
+    /** Opens results that could be a pivot table as a regular table instead. */
     preferRegularTableInitialDisplayType: PropTypes.bool,
     /** @internal */
     drilldownFilters: PropTypes.arrayOf(PropTypes.shape({})),
     /** @internal */
     enableChartControls: PropTypes.bool,
+    /**
+     * Chart overlays to show, such as `{ showAverageLine: true, showRegressionLine: false }`. Pass back what
+     * `onChartControlsChange` gave you. Changes after mount are applied.
+     */
     initialChartControls: PropTypes.shape({
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
     }),
+    /**
+     * Called with the full chart controls object when the user turns the average or trend line on or off. Save it to
+     * restore with `initialChartControls`.
+     */
     onChartControlsChange: PropTypes.func,
+    /** Height of charts in pixels. Only numbers are used, and tables aren't affected. */
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    /** Width of charts in pixels. Only numbers are used, and tables aren't affected. */
     width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    /**
+     * Called each time the table's sorting or filters change, with the table's own format first and `{ filters,
+     * sorters }` second. Save the second to restore with `initialFormattedTableParams`.
+     */
     onTableParamsChange: PropTypes.func,
   }
 

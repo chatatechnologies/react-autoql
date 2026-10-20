@@ -79,18 +79,49 @@ class QueryInput extends React.Component {
   }
 
   static propTypes = {
+    /**
+     * Credentials for the AutoQL API, used to run questions, autocomplete and load the quick topics. All three
+     * fields are required. The topics are loaded once, when the component mounts, so mount it after you have
+     * credentials.
+     */
     authentication: authenticationType,
+    /**
+     * Turns AutoQL features on or off. Query Input uses `enableAutocomplete` (suggestions while typing) and
+     * `enableQueryValidation` (asks the user to clarify unclear terms). Each field has its own default.
+     */
     autoQLConfig: autoQLConfigType,
+    /**
+     * Only used by the topic data preview, which isn't shown by default. Format answers with Query Output's
+     * `dataFormatting` instead.
+     */
     dataFormatting: dataFormattingType,
+    /**
+     * Shows a microphone button so users can speak their question. The text is filled in but not submitted. Not
+     * shown on phones.
+     */
     enableVoiceRecord: PropTypes.bool,
+    /**
+     * Disables the box and its buttons. It isn't set for you while a question runs; set it in `onSubmit` and clear
+     * it in `onResponseCallback`.
+     */
     isDisabled: PropTypes.bool,
+    /**
+     * Called with the question text and an id just before a question is sent. The same id is passed to
+     * `onResponseCallback`.
+     */
     onSubmit: PropTypes.func,
+    /**
+     * Called once per question with the response, the question text and the id from `onSubmit`. Errors and cancelled
+     * questions arrive here too. Pass the response to Query Output's `queryResponse`.
+     */
     onResponseCallback: PropTypes.func,
     /** @internal */
     addResponseMessage: PropTypes.func,
     /** @internal */
     className: PropTypes.string,
+    /** Opens autocomplete suggestions `'above'` or `'below'` the box. */
     autoCompletePlacement: PropTypes.string,
+    /** Shows the quick topic chips `'above'` or `'below'` the box. */
     quickTopicsPlacement: PropTypes.oneOf(['above', 'below']),
     /** @internal */
     showChataIcon: PropTypes.bool,
@@ -100,9 +131,16 @@ class QueryInput extends React.Component {
      * scope the query (the filter lock) rather than compose it.
      */
     leftContent: PropTypes.node,
+    /**
+     * Fills the box with this text when the value changes after mount. A value passed on the first render isn't
+     * used, and the user's typing isn't reported back.
+     */
     inputValue: PropTypes.string,
+    /** Filter locks applied to every question asked from this box. */
     queryFilters: PropTypes.arrayOf(PropTypes.shape({})),
+    /** Placeholder text in the box. Defaults to "Start a new query...". */
     placeholder: PropTypes.string,
+    /** Empties the box when a question is submitted. Set to false to keep the text. */
     clearQueryOnSubmit: PropTypes.bool,
     /**
      * @internal
@@ -126,9 +164,17 @@ class QueryInput extends React.Component {
     shouldRender: PropTypes.bool,
     /** @internal */
     enableQuerySuggestions: PropTypes.bool,
+    /**
+     * Shows a row of quick topic chips, one per data subject. Clicking a chip lists sample questions for it. Only
+     * read when the component mounts.
+     */
     enableQueryInputTopics: PropTypes.bool,
     /** @internal */
     columns: PropTypes.array,
+    /**
+     * Called with `{ query, userSelection }` when the user sends a sample question from a quick topic. Query Input
+     * doesn't run it for you: pass it to the ref's `animateInputTextAndSubmit()`.
+     */
     executeQuery: PropTypes.func,
     /** @internal */
     disableColumnSelection: PropTypes.bool,
