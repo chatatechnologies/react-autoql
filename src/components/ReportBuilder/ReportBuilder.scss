@@ -76,7 +76,8 @@
     line-height: normal;
     letter-spacing: normal;
     text-align: left;
-    transform: scale(calc(1 / var(--rb-zoom)));
+    // Moved down (FormattingBar's stickyShift) to stay in view while the canvas scrolls past the block's top.
+    transform: translateY(var(--react-autoql-report-builder-bar-shift, 0px)) scale(calc(1 / var(--rb-zoom)));
     transform-origin: left bottom;
     cursor: default;
   }

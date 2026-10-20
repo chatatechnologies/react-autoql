@@ -5,6 +5,7 @@ import { Icon } from './icons'
 import { SelectBox } from './controls'
 import { LINK_REQUEST_EVENT, linkHref } from '../model/richText'
 import { isMacKeyboard } from '../keyboard'
+import { getMeasureScale } from '../../Charts/measureScale'
 
 // The text formatting (RW-346), as Jira's editor has it, on top of the block whose text is being edited (Sheet's
 // EditorBlock): a text style, bold, italic, underline, strikethrough, bulleted and numbered lists, a link, and
@@ -44,6 +45,19 @@ const LISTS = [
   },
 ]
 
+// The bar stays in view while its block is (stickyShift): this far under the top of the scrolled canvas.
+const STICKY_GAP = 6
+const SHIFT_VAR = '--react-autoql-report-builder-bar-shift'
+
+// How far down the bar moves, in the page's own pixels, so that it stays in view as the canvas scrolls: from its
+// place above the block to just under the top of what's in view, but never past the block's bottom. The rest are
+// screen pixels; `zoom` is the page's (ZoomFrame).
+export const stickyShift = ({ naturalTop, viewTop, blockBottom, barHeight, zoom = 1 }) => {
+  if (!(naturalTop < viewTop)) return 0
+  const top = Math.min(viewTop, blockBottom - barHeight)
+  return Math.max(0, top - naturalTop) / (zoom > 0 ? zoom : 1)
+}
+
 // Headings within text: two sizes, Heading (h3) and Subheading (h4); Auto Analyze's bigger ones read as Heading.
 const styleOf = (editor) => {
   if (!editor) return 'paragraph'
@@ -55,9 +69,11 @@ const styleOf = (editor) => {
 export class FormattingBar extends React.Component {
   state = { tick: 0, link: null }
   linkInput = React.createRef()
+  bar = React.createRef()
 
   componentDidMount() {
     this.listen(this.props.editor)
+    this.follow()
   }
 
   componentDidUpdate(prevProps) {
@@ -66,10 +82,60 @@ export class FormattingBar extends React.Component {
       this.listen(this.props.editor)
       if (this.state.link) this.setState({ link: null })
     }
+    this.place()
   }
 
   componentWillUnmount() {
     this.unlisten(this.props.editor)
+    this.unfollow()
+  }
+
+  // Kept in view as the canvas scrolls, the window or the zoom changes, or the block grows (stickyShift).
+  follow() {
+    const bar = this.bar.current
+    this.scroller = bar?.closest?.(`.${RB}-canvas`) || null
+    if (!bar || !this.scroller) return
+    this.scroller.addEventListener('scroll', this.place, { passive: true })
+    window.addEventListener('resize', this.place)
+    if (typeof ResizeObserver !== 'undefined') {
+      this.observer = new ResizeObserver(this.place)
+      if (bar.parentElement) this.observer.observe(bar.parentElement)
+      const zoomFrame = bar.closest(`.${RB}-zoom-frame`)
+      if (zoomFrame) this.observer.observe(zoomFrame)
+    }
+    this.place()
+  }
+
+  unfollow() {
+    this.scroller?.removeEventListener('scroll', this.place)
+    window.removeEventListener('resize', this.place)
+    this.observer?.disconnect()
+    if (this.frame) window.cancelAnimationFrame(this.frame)
+    this.scroller = null
+  }
+
+  place = () => {
+    if (!this.scroller || typeof window.requestAnimationFrame !== 'function') return
+    if (this.frame) window.cancelAnimationFrame(this.frame)
+    this.frame = window.requestAnimationFrame(this.position)
+  }
+
+  position = () => {
+    this.frame = null
+    const bar = this.bar.current
+    const block = bar?.parentElement
+    if (!bar || !block || !this.scroller) return
+    const zoom = getMeasureScale(block)
+    const applied = parseFloat(bar.style.getPropertyValue(SHIFT_VAR)) || 0
+    const barRect = bar.getBoundingClientRect()
+    const shift = stickyShift({
+      naturalTop: barRect.top - applied * zoom,
+      viewTop: this.scroller.getBoundingClientRect().top + STICKY_GAP,
+      blockBottom: block.getBoundingClientRect().bottom,
+      barHeight: barRect.height,
+      zoom,
+    })
+    if (Math.abs(shift - applied) >= 0.5) bar.style.setProperty(SHIFT_VAR, `${Math.round(shift * 10) / 10}px`)
   }
 
   listen(editor) {
@@ -214,6 +280,7 @@ export class FormattingBar extends React.Component {
     )
     return (
       <div
+        ref={this.bar}
         className={`${RB}-format-bar`}
         role='toolbar'
         aria-label={F.toolbar}
