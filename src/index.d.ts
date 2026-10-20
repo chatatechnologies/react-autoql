@@ -253,6 +253,7 @@ export interface DashboardProps {
   onTileAuthExpired?: (projectId: string | number) => void
   showProjectIndicator?: boolean
   isProjectDashboard?: boolean
+  enableResetQuery?: boolean
   [key: string]: any
 }
 
@@ -311,6 +312,7 @@ export interface DataMessengerProps {
   onSuccessAlert?: (message: string) => void
   onProjectSelectChange?: (projectId: string) => void
   source?: string | string[]
+  enableDataExplorerTab?: boolean
   [key: string]: any
 }
 
@@ -362,6 +364,34 @@ export interface QueryOutputProps {
   onDrilldownStart?: (params: any) => void
   onDrilldownEnd?: () => void
   onErrorCallback?: (error: any) => void
+  enableCustomColumns?: boolean
+  enableCyclicalDates?: boolean
+  enableQuerySuggestions?: boolean
+  initialAxisSorts?: Record<string, any>
+  initialChartControls?: { showAverageLine?: boolean; showRegressionLine?: boolean }
+  initialColumnOrder?: string[]
+  initialFormattedTableParams?: Record<string, any>
+  initialFrozenColumns?: string[]
+  initialIsFiltering?: boolean
+  initialNetworkColumnConfig?: { sourceColumnIndex?: number; targetColumnIndex?: number; weightColumnIndex?: number }
+  maxHeight?: number
+  minHeight?: number
+  preferredDisplayType?: string
+  preferRegularTableInitialDisplayType?: boolean
+  onAxisSortChange?: (...args: any[]) => void
+  onBucketSizeChange?: (...args: any[]) => void
+  onChartControlsChange?: (...args: any[]) => void
+  onColumnOrderChange?: (...args: any[]) => void
+  onCustomColumnUpdate?: (...args: any[]) => void
+  onFrozenColumnsChange?: (...args: any[]) => void
+  onLegendFilterChange?: (...args: any[]) => void
+  onMount?: (...args: any[]) => void
+  onNetworkColumnChange?: (...args: any[]) => void
+  onNewData?: (...args: any[]) => void
+  onQueryValidationSelectOption?: (...args: any[]) => void
+  onResize?: (...args: any[]) => void
+  onTableParamsChange?: (...args: any[]) => void
+  onUpdateFilterResponse?: (...args: any[]) => void
   [key: string]: any
 }
 
@@ -390,6 +420,10 @@ export interface QueryInputProps {
   dataPageSize?: number
   shouldRender?: boolean
   source?: string | string[]
+  autoCompletePlacement?: string
+  executeQuery?: (...args: any[]) => void
+  queryFilters?: Array<Record<string, any>>
+  quickTopicsPlacement?: 'above' | 'below'
   [key: string]: any
 }
 
@@ -466,6 +500,53 @@ export declare const PushNotificationsToggle: React.FC<PushNotificationsTogglePr
 
 export declare const Icon: React.FC<{ type: string; className?: string; [key: string]: any }>
 export declare const LoadingDots: React.FC<{ [key: string]: any }>
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+// Public props of the notification components, as documented on the docs site. The components
+// below are still typed as ComponentType<any>, so existing apps keep compiling; type your own
+// props with these interfaces if you want checking.
+
+export interface DataAlertsProps {
+  authentication?: Authentication
+  onDashboardLinkClick?: (...args: any[]) => void
+  onDataAlertStatusChange?: (...args: any[]) => void
+  onDMLinkClick?: (...args: any[]) => void
+  onErrorCallback?: (error: any) => void
+  onSuccessAlert?: (message: string) => void
+  [key: string]: any
+}
+
+export interface NotificationIconProps {
+  authentication?: Authentication
+  clearCountOnClick?: boolean
+  count?: number
+  onCount?: (count: number) => void
+  onErrorCallback?: (error: any) => void
+  onNewNotification?: (...args: any[]) => void
+  overflowCount?: number
+  size?: number
+  style?: React.CSSProperties
+  [key: string]: any
+}
+
+export interface NotificationFeedProps {
+  authentication?: Authentication
+  autoChartAggregations?: boolean
+  enableCyclicalDates?: boolean
+  enableSettingsMenu?: boolean
+  onChange?: (...args: any[]) => void
+  onCollapseCallback?: (...args: any[]) => void
+  onConfirmCallback?: (...args: any[]) => void
+  onDataAlertChange?: (...args: any[]) => void
+  onDeleteCallback?: (...args: any[]) => void
+  onDismissCallback?: (...args: any[]) => void
+  onErrorCallback?: (error: any) => void
+  onExpandCallback?: (...args: any[]) => void
+  onModalOpen?: (...args: any[]) => void
+  onSuccessCallback?: (...args: any[]) => void
+  onUnreadCallback?: (...args: any[]) => void
+  [key: string]: any
+}
 
 export declare const DataAlerts: React.ComponentType<any>
 export declare const DataAlertsTabbed: React.ComponentType<any>
