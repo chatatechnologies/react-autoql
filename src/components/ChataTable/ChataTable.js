@@ -350,12 +350,6 @@ export default class ChataTable extends React.Component {
     }
 
     if (!this.props.hidden && prevProps.hidden) {
-      // Any window resize that happened while this table was hidden left its cell
-      // alignment unmeasured (see TableWrapper.handleWindowResizeForAlignment). The
-      // height is handled by the getSnapshotBeforeUpdate branch above, which does see
-      // this particular transition.
-      this.ref?.flushPendingAlignment()
-
       if (this.state.subscribedData) {
         this.updateData(this.state.subscribedData)
         this.setState({ subscribedData: undefined })
@@ -363,6 +357,12 @@ export default class ChataTable extends React.Component {
         // Restore Tabulator redraw after hidden->visible transition so the table can reflow and update columns/headers.
         this.ref?.restoreRedraw()
       }
+
+      // Any layout pass or window resize that happened while this table was hidden left
+      // its column widths and cell alignment wrong (see TableWrapper.flushPendingAlignment).
+      // After the restore above, so the re-fit isn't blocked. The height is handled by the
+      // getSnapshotBeforeUpdate branch above, which does see this particular transition.
+      this.ref?.flushPendingAlignment()
     }
 
     // The truncation flag changes the definitions Tabulator holds (see

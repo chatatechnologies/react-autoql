@@ -206,8 +206,17 @@ export default class TableWrapper extends React.Component {
   // clientWidth in there costs one per cell and answers 0 anyway.
   isVisible = () => !!this.tableRef?.offsetParent
 
-  // Alignment skipped while hidden, replayed by ChataTable on the way back on screen.
+  // Layout and alignment skipped while hidden, replayed by ChataTable on the way back on screen.
   flushPendingAlignment = () => {
+    if (this.needsLayoutOnShow && this.tabulator && this.isVisible()) {
+      this.needsLayoutOnShow = false
+      // Unforced: re-fits the columns but renders in position, so the scroll is kept.
+      // redraw(true) would reset it to the top-left.
+      this.tabulator.redraw()
+      // The cell widths the alignment below reads have just changed.
+      this.needsAlignmentOnShow = true
+    }
+
     if (!this.needsAlignmentOnShow) {
       return
     }
@@ -406,7 +415,15 @@ export default class TableWrapper extends React.Component {
           // Two rAF frames ensure react-grid-layout has applied final tile dimensions before fitColumns runs.
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              if (this._isMounted && this.tabulator) {
+              if (!this._isMounted || !this.tabulator) {
+                return
+              }
+
+              // The user switched tabs while the first page loaded - redrawing now would
+              // just lay the table out hidden (see needsLayoutOnShow).
+              if (!this.isVisible()) {
+                this.needsLayoutOnShow = true
+              } else {
                 this.tabulator.redraw(true)
               }
             })
@@ -464,6 +481,15 @@ export default class TableWrapper extends React.Component {
 
   attachTabulatorEventHandlers = (tabulator) => {
     tabulator.on('renderComplete', () => {
+      // A fitData/fitColumns layout pass in a `display: none` subtree clears every cell's
+      // width, measures 0, and never sets them again - Tabulator skips the set on a 0 width.
+      // The cells then size to their own content, each row differently, out of line with
+      // the header. Nothing re-fits afterwards (autoResize is switched off below), so the
+      // layout is redone when the table is back on screen. See flushPendingAlignment.
+      if (!this.isVisible()) {
+        this.needsLayoutOnShow = true
+      }
+
       // Leave autoResize enabled when clientWidth === 0 so tabulator reflows once the container reaches its final size.
       if (!this.tableRef || this.tableRef.clientWidth > 0) {
         tabulator.modules.layout.autoResize = false

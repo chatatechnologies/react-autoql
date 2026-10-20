@@ -226,6 +226,80 @@ describe('deferring the build until the table has a box', () => {
   })
 })
 
+// A fitData/fitColumns layout pass inside a `display: none` subtree clears every cell's
+// width, measures 0, and never sets them again, so each row sizes its cells to its own
+// content and the columns stop lining up with the header. A table that rendered while
+// hidden re-fits on the way back on screen.
+describe('re-fitting a table that was laid out while hidden', () => {
+  const setVisible = (instance, visible) => {
+    Object.defineProperty(instance.tableRef, 'offsetParent', {
+      configurable: true,
+      get: () => (visible ? document.body : null),
+    })
+  }
+
+  const createBuiltInstance = ({ visible }) => {
+    const instance = createInstance()
+    instance.tableRef = document.createElement('div')
+    setVisible(instance, visible)
+
+    const handlers = {}
+    instance.tabulator = {
+      on: (event, handler) => (handlers[event] = handler),
+      redraw: jest.fn(),
+      getColumns: () => [],
+      modules: { layout: {} },
+    }
+    instance.attachTabulatorEventHandlers(instance.tabulator)
+
+    return { instance, renderComplete: () => handlers.renderComplete() }
+  }
+
+  test('redraws on the way back on screen after rendering hidden, keeping the scroll', () => {
+    const { instance, renderComplete } = createBuiltInstance({ visible: false })
+
+    renderComplete()
+    setVisible(instance, true)
+    instance.flushPendingAlignment()
+
+    expect(instance.tabulator.redraw).toHaveBeenCalledTimes(1)
+    // redraw(true) resets the scroll to the top-left.
+    expect(instance.tabulator.redraw).toHaveBeenCalledWith()
+  })
+
+  test('redraws only once', () => {
+    const { instance, renderComplete } = createBuiltInstance({ visible: false })
+
+    renderComplete()
+    setVisible(instance, true)
+    instance.flushPendingAlignment()
+    instance.flushPendingAlignment()
+
+    expect(instance.tabulator.redraw).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not redraw a table that only rendered while visible', () => {
+    const { instance, renderComplete } = createBuiltInstance({ visible: true })
+
+    renderComplete()
+    instance.flushPendingAlignment()
+
+    expect(instance.tabulator.redraw).not.toHaveBeenCalled()
+  })
+
+  test('waits if flushed while still off screen', () => {
+    const { instance, renderComplete } = createBuiltInstance({ visible: false })
+
+    renderComplete()
+    instance.flushPendingAlignment()
+    expect(instance.tabulator.redraw).not.toHaveBeenCalled()
+
+    setVisible(instance, true)
+    instance.flushPendingAlignment()
+    expect(instance.tabulator.redraw).toHaveBeenCalledTimes(1)
+  })
+})
+
 // The handlers bind to Tabulator's own `.tabulator-tableholder`, so a table that defers
 // its build has nothing for them to find. Waiting for it on an unbounded 100ms loop meant
 // one timer per never-revealed table, running for as long as the session stayed open.
