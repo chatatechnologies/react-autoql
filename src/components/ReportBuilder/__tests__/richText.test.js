@@ -1,5 +1,11 @@
 import { Editor } from '@tiptap/core'
-import { linkHref, richTextExtensions, richTextHtml } from '../model/richText'
+import {
+  linkHref,
+  richTextPieces,
+  richTextExtensions,
+  richTextHtml,
+  richTextSliceHtml,
+} from '../model/richText'
 
 // A report's formatted text (RW-346): Markdown in, the page's HTML out, and back to Markdown from the editor.
 
@@ -97,6 +103,49 @@ describe('the editor’s Markdown', () => {
       expect({ mix, before: marksOn(reloaded, 'revie') }).toStrictEqual({ mix, before: [] })
       reloaded.destroy()
     }
+  })
+})
+
+// A text taller than a page goes on over the next, between its pieces (layout/paginate).
+describe('a text in pieces', () => {
+  const text = '### Notes\n\nFirst **point**.\n\n- one\n- two\n\n1. alpha\n2. beta\n3. gamma\n\nLast.'
+
+  it('breaks between its blocks and its list items', () => {
+    expect(richTextPieces(text).map((piece) => piece.text)).toStrictEqual([
+      'Notes',
+      'First point.',
+      'one',
+      'two',
+      'alpha',
+      'beta',
+      'gamma',
+      'Last.',
+    ])
+    expect(richTextPieces(text).map((piece) => piece.heading)).toStrictEqual([true, false, false, false, false, false, false, false])
+    expect(richTextPieces('')).toStrictEqual([])
+  })
+
+  it('draws a share of it, a numbered list counting on where it was cut', () => {
+    const share = document.createElement('div')
+    share.innerHTML = richTextSliceHtml(text, 5, 8)
+    const list = share.querySelector('ol')
+    expect(list.getAttribute('start')).toBe('2')
+    expect([...list.querySelectorAll('li')].map((li) => li.textContent)).toStrictEqual(['beta', 'gamma'])
+    expect(share.lastElementChild.outerHTML).toBe('<p>Last.</p>')
+
+    share.innerHTML = richTextSliceHtml(text, 1, 3)
+    expect(share.querySelector('strong').textContent).toBe('point')
+    expect([...share.querySelectorAll('ul li')].map((li) => li.textContent)).toStrictEqual(['one'])
+  })
+
+  it('draws all of it the same as the whole, from its shares put together', () => {
+    expect(richTextSliceHtml(text, 0, 8)).toBe(richTextHtml(text))
+    const parts = [richTextSliceHtml(text, 0, 3), richTextSliceHtml(text, 3, 6), richTextSliceHtml(text, 6, 8)]
+    const together = document.createElement('div')
+    together.innerHTML = parts.join('')
+    const whole = document.createElement('div')
+    whole.innerHTML = richTextHtml(text)
+    expect(together.textContent).toBe(whole.textContent)
   })
 })
 

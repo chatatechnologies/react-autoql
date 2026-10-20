@@ -1,4 +1,6 @@
 import { CHART_HEIGHT_PX } from '../constants'
+import { richTextPieces } from '../model/richText'
+import { toAnalysisMarkdown } from '../model/analysis'
 
 // Lays a report out onto pages from measured heights. Pure: the preview measures real DOM, and falls
 // back to estimateMeasurements when there's no layout (tests, or a builder hidden with display:none).
@@ -36,7 +38,8 @@ export const groupIntoRows = (blocks) => {
   return rows
 }
 
-// views[id].split marks a full-width table that may flow across pages.
+// views[id].split marks a full-width table that may flow across pages; a full-width text or analysis may go on
+// over the next page too, where it's taller than one, between its pieces (measurements.flows).
 export const buildLayoutItems = ({ blocks, views, measurements }) =>
   groupIntoRows(blocks.filter(isPrintable)).map((row) => {
     const [first] = row
@@ -45,6 +48,9 @@ export const buildLayoutItems = ({ blocks, views, measurements }) =>
     }
     if (row.length === 1 && views?.[first.id]?.split && measurements.tables?.[first.id]) {
       return { type: 'table', id: first.id, ...measurements.tables[first.id] }
+    }
+    if (row.length === 1 && measurements.flows?.[first.id]?.chunks?.length) {
+      return { type: 'flow', id: first.id, height: measurements.blocks?.[first.id] || 0, ...measurements.flows[first.id] }
     }
     return {
       type: 'atomic',
@@ -71,7 +77,31 @@ const fitRows = (item, at, room, header) => {
   return fit
 }
 
-export const paginate = (items, { contentHeight, repeatTableHeaders = true, minRows = 3, safety = 4 }) => {
+// How many of a text's remaining pieces fit in `room`, leaving space for what ends this share of it: the block's
+// end (an analysis's Auto Analyze line) if it's the last, otherwise just padding.
+const fitChunks = (item, at, room) => {
+  let height = item.head
+  let fit = 0
+  while (at + fit < item.chunks.length) {
+    const withChunk = height + item.chunks[at + fit]
+    const end = at + fit + 1 === item.chunks.length ? item.tail : item.end
+    if (withChunk + end > room) {
+      break
+    }
+    height = withChunk
+    fit += 1
+  }
+  // A heading in the text goes on to the next page with what follows it, rather than end this one.
+  while (fit > 1 && at + fit < item.chunks.length && item.keep?.[at + fit - 1]) {
+    fit -= 1
+  }
+  return fit
+}
+
+export const paginate = (
+  items,
+  { contentHeight, repeatTableHeaders = true, minRows = 3, minChunks = 2, safety = 4 },
+) => {
   const capacity = Math.max(1, contentHeight - safety)
   const pages = []
   let page = { cells: [], overflow: false }
@@ -85,10 +115,12 @@ export const paginate = (items, { contentHeight, repeatTableHeaders = true, minR
     }
   }
 
-  // What must share a page with a heading: the next block, or a table's first few rows.
+  // What must share a page with a heading: the next block, or a table's first few rows, or the first pieces of a
+  // text that goes on over the next page.
   const leadHeight = (item) => {
     if (!item || item.type === 'break') return 0
     if (item.type === 'table') return item.chrome + item.header + sum(item.rows.slice(0, minRows))
+    if (item.type === 'flow' && item.height > capacity) return item.head + sum(item.chunks.slice(0, minChunks))
     return item.height
   }
 
@@ -98,12 +130,41 @@ export const paginate = (items, { contentHeight, repeatTableHeaders = true, minR
       return
     }
 
-    if (item.type === 'atomic') {
+    // A text that fits on a page stays whole, as any block does; one taller than a page goes on over the next,
+    // between its paragraphs and list items, rather than being cut off.
+    if (item.type === 'flow' && item.height > capacity) {
+      const n = item.chunks.length
+      let at = 0
+      while (at < n) {
+        let fit = fitChunks(item, at, capacity - used)
+        // Too little room here for a useful share: start it on a fresh page instead.
+        if (fit < Math.min(minChunks, n - at) && used > 0) {
+          breakPage()
+          continue
+        }
+        if (fit === 0) {
+          fit = 1 // a single paragraph taller than a page
+          page.overflow = true
+        }
+        const to = at + fit
+        const isLast = to >= n
+        page.cells.push({ kind: 'flow', id: item.id, from: at, to, isLast })
+        used += item.head + sum(item.chunks.slice(at, to)) + (isLast ? item.tail : item.end)
+        at = to
+        if (!isLast) {
+          breakPage()
+        }
+      }
+      return
+    }
+
+    if (item.type === 'atomic' || item.type === 'flow') {
+      const ids = item.type === 'flow' ? [item.id] : item.ids
       const need = item.height + (item.keepWithNext ? leadHeight(items[index + 1]) : 0)
       if (used > 0 && need > capacity - used) {
         breakPage()
       }
-      page.cells.push({ kind: 'blocks', ids: item.ids })
+      page.cells.push({ kind: 'blocks', ids })
       used += item.height
       if (item.height > capacity) {
         page.overflow = true
@@ -161,13 +222,13 @@ export const paginate = (items, { contentHeight, repeatTableHeaders = true, minR
   return pages
 }
 
-// The content page each block starts on, counted from 0, for the editor's pages: a table that flows across
-// pages counts where it starts. Blocks that don't print aren't listed.
+// The content page each block starts on, counted from 0, for the editor's pages: a table or a text that goes on
+// across pages counts where it starts. Blocks that don't print aren't listed.
 export const getStartPages = (pages) => {
   const result = {}
   pages.forEach((page, index) => {
     page.cells.forEach((cell) => {
-      const ids = cell.kind === 'table' ? (cell.from === 0 ? [cell.id] : []) : cell.ids || []
+      const ids = cell.kind === 'table' || cell.kind === 'flow' ? (cell.from === 0 ? [cell.id] : []) : cell.ids || []
       ids.forEach((id) => {
         if (result[id] == null) {
           result[id] = index
@@ -202,7 +263,18 @@ const TABLE = { chrome: 30, header: 26, row: 22, tail: 40, continued: 20 }
 // estimate costs white space, a too-short one clips content off the page.
 export const estimateMeasurements = ({ blocks, views, contentWidthPx }) => {
   const charsPerLine = Math.max(20, Math.floor(contentWidthPx / 7))
-  const measurements = { blocks: {}, tables: {} }
+  const measurements = { blocks: {}, tables: {}, flows: {} }
+  // A full-width text's pieces (model/richText), a line or more each, should it go on over the next page.
+  const flowOf = (markdown, { head, tail }) => {
+    const pieces = richTextPieces(markdown)
+    const chunks = pieces.map(
+      ({ text }) =>
+        text.split('\n').reduce((total, line) => total + Math.max(1, Math.ceil(line.length / charsPerLine)), 0) *
+          TEXT_LINE_PX +
+        6,
+    )
+    return chunks.length ? { head, chunks, tail, end: head, keep: pieces.map((piece) => piece.heading) } : null
+  }
 
   blocks.forEach((block) => {
     const view = views?.[block.id]
@@ -220,13 +292,19 @@ export const estimateMeasurements = ({ blocks, views, contentWidthPx }) => {
         measurements.blocks[block.id] =
           (HEADING_PX[block.level] || HEADING_PX[2]) * (block.text || '').trim().split('\n').length
         break
-      case 'text':
+      case 'text': {
         measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 12
+        const flow = half ? null : flowOf(block.text, { head: 6, tail: 6 })
+        if (flow) measurements.flows[block.id] = flow
         break
-      case 'analysis':
+      }
+      case 'analysis': {
         // Its wording, plus the Auto Analyze line under it.
         measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 34
+        const flow = half ? null : flowOf(toAnalysisMarkdown(block.text), { head: 6, tail: 28 })
+        if (flow) measurements.flows[block.id] = flow
         break
+      }
       case 'data': {
         if (view?.kind === 'table' && view.state === 'ready') {
           const rows = new Array(view.rows.length).fill(TABLE.row)

@@ -25,17 +25,21 @@ import { FIT, ZoomFrame } from '../ZoomFrame'
 // (after fonts load) and measured; paginate() turns the heights into pages, which are then drawn at full
 // size. Where there's no layout to measure (jsdom, a hidden container), estimated heights are used.
 
+// What may go on over the next page, between its paragraphs and list items, where it's taller than a page.
+const FLOWING_TYPES = ['text', 'analysis']
+
 const nextFrame = () =>
   new Promise((resolve) =>
     typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => resolve()) : setTimeout(resolve, 0),
   )
 
-const Cell = ({ block, children, measureId, split }) => (
+const Cell = ({ block, children, measureId, split, flow }) => (
   <div
     className={`${RB}-cell`}
     data-width={block.type === 'pagebreak' ? 'full' : block.width}
     data-measure-id={measureId}
     data-measure-split={split ? '' : undefined}
+    data-measure-flow={flow ? '' : undefined}
   >
     <div className={`${RB}-block-box`} data-type={block.type} style={boxStyleOf(block.style)}>
       {children}
@@ -63,6 +67,7 @@ export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
                 block={block}
                 measureId={block.id}
                 split={row.length === 1 && !!views[block.id]?.split}
+                flow={row.length === 1 && FLOWING_TYPES.includes(block.type)}
               >
                 <PaperBlock block={block} view={views[block.id]} mode='measure' {...paperProps} />
               </Cell>
@@ -268,7 +273,7 @@ export class PrintPreview extends React.Component {
     }
 
     return page.cells.map((cell) => {
-      if (cell.kind === 'table') {
+      if (cell.kind === 'table' || cell.kind === 'flow') {
         const block = byId[cell.id]
         if (!block) return null
         return (

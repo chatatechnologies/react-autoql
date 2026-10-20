@@ -89,6 +89,79 @@ export const richTextHtml = (markdown) => {
   return html
 }
 
+// A text taller than a page goes on over the next (layout/paginate): it breaks between its pieces, each block of
+// it (a paragraph, a heading) and each item of a list. In order: { node } for a block, { list, node, index } for
+// a list item, `list` being its list and `index` its place in it. The page's HTML has the same pieces: the root's
+// children, a list's items in place of the list (layout/measure).
+const LIST_TYPES = ['bulletList', 'orderedList']
+const chunkCache = new Map()
+
+const chunksOf = (text) => {
+  let chunks = chunkCache.get(text)
+  if (chunks === undefined) {
+    chunks = []
+    ;(markdownManager().parse(text).content || []).forEach((node) => {
+      if (LIST_TYPES.includes(node.type)) {
+        ;(node.content || []).forEach((item, index) => chunks.push({ list: node, node: item, index }))
+      } else {
+        chunks.push({ node })
+      }
+    })
+    if (chunkCache.size >= HTML_CACHE_MAX) chunkCache.clear()
+    chunkCache.set(text, chunks)
+  }
+  return chunks
+}
+
+const plainTextOf = (node) =>
+  node.type === 'text' ? node.text || '' : (node.content || []).map(plainTextOf).join(node.type === 'paragraph' ? '' : '\n')
+
+// Each piece's words, for estimating heights where nothing can be measured, and whether it's a heading (which
+// goes on to the next page with what follows it).
+export const richTextPieces = (markdown) => {
+  const text = textOf(markdown)
+  return text
+    ? chunksOf(text).map((chunk) => ({ text: plainTextOf(chunk.node), heading: chunk.node.type === 'heading' }))
+    : []
+}
+
+const sliceCache = new Map()
+
+// The page's HTML for pieces `from` to `to` (not included) of some Markdown: one page's share of a text split
+// across pages. A list cut in two goes on as the same list, a numbered one counting on from where it stopped.
+export const richTextSliceHtml = (markdown, from, to) => {
+  const text = textOf(markdown)
+  if (!text) return ''
+  const key = `${from}:${to}\u0000${text}`
+  let html = sliceCache.get(key)
+  if (html === undefined) {
+    const content = []
+    let open = null
+    chunksOf(text)
+      .slice(from, to)
+      .forEach((chunk) => {
+        if (!chunk.list) {
+          open = null
+          content.push(chunk.node)
+          return
+        }
+        if (!open || open.list !== chunk.list) {
+          const attrs =
+            chunk.list.type === 'orderedList'
+              ? { ...chunk.list.attrs, start: (chunk.list.attrs?.start ?? 1) + chunk.index }
+              : chunk.list.attrs
+          open = { list: chunk.list, node: { ...chunk.list, attrs, content: [] } }
+          content.push(open.node)
+        }
+        open.node.content.push(chunk.node)
+      })
+    html = content.length ? generateHTML({ type: 'doc', content }, STATIC_EXTENSIONS) : ''
+    if (sliceCache.size >= HTML_CACHE_MAX) sliceCache.clear()
+    sliceCache.set(key, html)
+  }
+  return html
+}
+
 const EMAIL = /^[^\s@/:]+@[^\s@/:]+\.[^\s@/:]+$/
 // Another scheme (javascript:, ftp:), but not an address with a port (example.com:8080).
 const OTHER_SCHEME = /^[a-z][a-z0-9+.-]*:(?!\d)/i

@@ -16,7 +16,8 @@ import { isMacKeyboard } from '../keyboard'
 //   mode 'edit'     headings, text and an analysis's wording are editable; empty and unfinished blocks explain
 //                   themselves
 //   mode 'measure'  charts are empty boxes of their final height (their height is fixed, so nothing is lost)
-//   mode 'page'     a table may be one piece of a table split across pages
+//   mode 'page'     a table may be one piece of a table split across pages, and a text or an analysis one
+//                   piece of a text taller than a page
 
 export const textStyleOf = (style) => {
   if (!style) return undefined
@@ -77,8 +78,9 @@ const HeadingContent = ({ block, mode, onTextChange }) => {
   )
 }
 
-// A paragraph's text, formatted (RW-346): edited in place, with the formatting bar on top of its block.
-const TextContent = ({ block, mode, onTextChange }) => {
+// A paragraph's text, formatted (RW-346): edited in place, with the formatting bar on top of its block. On a page,
+// `piece` is the share of a text taller than a page that this page shows (layout/paginate).
+const TextContent = ({ block, mode, onTextChange, piece }) => {
   const style = textStyleOf(block.style)
   if (mode === 'edit') {
     return (
@@ -93,7 +95,9 @@ const TextContent = ({ block, mode, onTextChange }) => {
       />
     )
   }
-  return <RichTextView className={`${RB}-text`} style={style} markdown={block.text} />
+  return (
+    <RichTextView className={`${RB}-text`} style={style} markdown={block.text} from={piece?.from} to={piece?.to} />
+  )
 }
 
 const Placeholder = ({ title, children, tone }) => (
@@ -352,7 +356,7 @@ class AnalysisContent extends React.Component {
   canEdit = () => this.props.mode === 'edit' && typeof this.props.onTextChange === 'function' && !this.isWriting()
 
   render() {
-    const { block, view, mode } = this.props
+    const { block, view, mode, piece } = this.props
     const writing = this.isWriting()
     const written = view?.state === 'written'
     const editing = this.canEdit() && (written || this.state.editing)
@@ -397,9 +401,15 @@ class AnalysisContent extends React.Component {
             onBlur={() => this.setState({ editing: false })}
           />
         ) : (
-          <RichTextView className={`${RB}-analysis-text`} markdown={toAnalysisMarkdown(view.text)} />
+          <RichTextView
+            className={`${RB}-analysis-text`}
+            markdown={toAnalysisMarkdown(view.text)}
+            from={piece?.from}
+            to={piece?.to}
+          />
         )}
-        <div className={`${RB}-analysis-meta`}>✦ {meta}</div>
+        {/* An analysis split across pages says where it's from once, at its end. */}
+        {!piece || piece.isLast ? <div className={`${RB}-analysis-meta`}>✦ {meta}</div> : null}
         {mode === 'edit' && view && (view.targetGone || view.targetChanged) ? (
           <div className={`${RB}-analysis-note`}>
             {view.targetGone ? STRINGS.analysis.targetGone : STRINGS.analysis.targetChanged}
@@ -422,7 +432,7 @@ export const PaperBlock = ({ block, mode = 'page', onTextChange, ...rest }) => {
     case 'heading':
       return <HeadingContent block={block} mode={mode} onTextChange={onTextChange} />
     case 'text':
-      return <TextContent block={block} mode={mode} onTextChange={onTextChange} />
+      return <TextContent block={block} mode={mode} onTextChange={onTextChange} piece={rest.piece} />
     case 'data':
       return <DataContent block={block} mode={mode} {...rest} />
     case 'analysis':
@@ -433,6 +443,7 @@ export const PaperBlock = ({ block, mode = 'page', onTextChange, ...rest }) => {
           mode={mode}
           pending={rest.pending}
           onTextChange={onTextChange}
+          piece={rest.piece}
         />
       )
     case 'pagebreak':

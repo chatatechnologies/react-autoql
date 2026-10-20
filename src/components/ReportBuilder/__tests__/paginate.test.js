@@ -19,6 +19,16 @@ const table = (id, n, { row = 10, header = 20, chrome = 10, tail = 20, continued
   continued,
   rows: new Array(n).fill(row),
 })
+// A text that may go on over the next page: its pieces' heights, and what's above and below them.
+const flow = (id, chunks, { head = 5, tail = 5, end = 5 } = {}) => ({
+  type: 'flow',
+  id,
+  head,
+  tail,
+  end,
+  chunks,
+  height: head + chunks.reduce((total, h) => total + h, 0) + tail,
+})
 const opts = { contentHeight: 204, safety: 4 } // capacity 200
 
 const cellsOf = (pages) => pages.map((page) => page.cells)
@@ -99,6 +109,57 @@ describe('paginate', () => {
     expect(covered).toStrictEqual(Array.from({ length: 200 }, (_, i) => i))
     expect(pages[pages.length - 1].cells[0].isLast).toBe(true)
     expect(pages.slice(0, -1).every((p) => !p.cells[0].isLast)).toBe(true)
+  })
+
+  it('keeps a text that fits on a page whole, moving it on as any block', () => {
+    const pages = paginate([atomic('a', 150), flow('t', [20, 20, 20])], opts)
+    expect(cellsOf(pages)).toStrictEqual([[{ kind: 'blocks', ids: ['a'] }], [{ kind: 'blocks', ids: ['t'] }]])
+  })
+
+  it('goes on over the next pages with a text taller than a page, between its pieces, rather than cut it off', () => {
+    const pages = paginate([atomic('a', 100), flow('t', new Array(12).fill(30))], opts)
+    expect(cellsOf(pages)).toStrictEqual([
+      [
+        { kind: 'blocks', ids: ['a'] },
+        { kind: 'flow', id: 't', from: 0, to: 3, isLast: false },
+      ],
+      [{ kind: 'flow', id: 't', from: 3, to: 9, isLast: false }],
+      [{ kind: 'flow', id: 't', from: 9, to: 12, isLast: true }],
+    ])
+    expect(pages.some((page) => page.overflow)).toBe(false)
+  })
+
+  it('starts a long text on a fresh page rather than leave a stub of it', () => {
+    const pages = paginate([atomic('a', 160), flow('t', new Array(10).fill(30))], opts)
+    expect(pages[0].cells).toStrictEqual([{ kind: 'blocks', ids: ['a'] }])
+    expect(pages[1].cells[0]).toMatchObject({ kind: 'flow', id: 't', from: 0 })
+  })
+
+  it('keeps a heading with the start of a long text after it', () => {
+    const pages = paginate([atomic('x', 170), atomic('h', 20, true), flow('t', new Array(10).fill(30))], opts)
+    expect(pages[0].cells).toStrictEqual([{ kind: 'blocks', ids: ['x'] }])
+    expect(pages[1].cells.slice(0, 2)).toStrictEqual([
+      { kind: 'blocks', ids: ['h'] },
+      { kind: 'flow', id: 't', from: 0, to: 5, isLast: false },
+    ])
+  })
+
+  it('takes a heading in the text on to the next page with what follows it', () => {
+    // The fourth piece would end page 1, but it's a heading.
+    const text = { ...flow('t', new Array(10).fill(30)), keep: [false, false, false, true] }
+    const pages = paginate([atomic('a', 50), text], opts) // room for four pieces
+    expect(pages[0].cells[1]).toStrictEqual({ kind: 'flow', id: 't', from: 0, to: 3, isLast: false })
+    expect(pages[1].cells[0]).toMatchObject({ kind: 'flow', id: 't', from: 3 })
+  })
+
+  it('flags a single paragraph taller than a page, and goes on after it', () => {
+    const pages = paginate([flow('t', [30, 300, 30])], opts)
+    expect(cellsOf(pages)).toStrictEqual([
+      [{ kind: 'flow', id: 't', from: 0, to: 1, isLast: false }],
+      [{ kind: 'flow', id: 't', from: 1, to: 2, isLast: false }],
+      [{ kind: 'flow', id: 't', from: 2, to: 3, isLast: true }],
+    ])
+    expect(pages.map((page) => page.overflow)).toStrictEqual([false, true, false])
   })
 
   it('places an empty table as one piece', () => {
@@ -188,6 +249,41 @@ describe('getStartPages', () => {
   it('lists every block of a row, and nothing for blocks that aren’t on a page', () => {
     const pages = [{ cells: [{ kind: 'blocks', ids: ['l', 'r'] }] }, { cells: [{ kind: 'blocks', ids: ['n'] }] }]
     expect(getStartPages(pages)).toStrictEqual({ l: 0, r: 0, n: 1 })
+  })
+})
+
+describe('a text taller than a page, laid out', () => {
+  it('becomes a text that may go on over the next page, from its measured pieces', () => {
+    const blocks = [
+      { id: 'p', type: 'text', text: 'One\n\nTwo', width: 'full' },
+      { id: 'l', type: 'text', text: 'Left', width: 'half' },
+      { id: 'r', type: 'text', text: 'Right', width: 'half' },
+    ]
+    const measurements = {
+      blocks: { p: 60, l: 20, r: 20 },
+      tables: {},
+      flows: { p: { head: 5, chunks: [25, 25], tail: 5, end: 5 } },
+    }
+    expect(buildLayoutItems({ blocks, views: {}, measurements })).toStrictEqual([
+      { type: 'flow', id: 'p', height: 60, head: 5, chunks: [25, 25], tail: 5, end: 5 },
+      { type: 'atomic', ids: ['l', 'r'], height: 20, keepWithNext: false },
+    ])
+  })
+
+  it('starts where its first piece is', () => {
+    const pages = paginate([atomic('a', 100), flow('t', new Array(12).fill(30)), atomic('b', 50)], opts)
+    expect(getStartPages(pages)).toStrictEqual({ a: 0, t: 0, b: 2 })
+  })
+
+  it('has its pieces estimated where nothing can be measured', () => {
+    const { contentWidthPx } = getPageGeometry({ orientation: 'portrait', margins: 'normal' })
+    const blocks = [
+      { id: 't', type: 'text', text: '### Notes\n\nFirst.\n\n- one\n- two\n\n1. a\n2. b', width: 'full' },
+      { id: 'h', type: 'text', text: 'Half.', width: 'half' },
+    ]
+    const m = estimateMeasurements({ blocks, views: {}, contentWidthPx })
+    expect(m.flows.t.chunks).toHaveLength(6)
+    expect(m.flows.h).toBeUndefined()
   })
 })
 

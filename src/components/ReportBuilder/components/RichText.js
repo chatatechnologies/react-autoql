@@ -1,7 +1,7 @@
 import React from 'react'
 import { Editor } from '@tiptap/core'
 import { RB } from '../constants'
-import { richTextExtensions, richTextHtml } from '../model/richText'
+import { richTextExtensions, richTextHtml, richTextSliceHtml } from '../model/richText'
 
 // A report's formatted text (model/richText.js): drawn on the page as HTML, and edited in place with
 // ProseMirror (TipTap), whose formatting bar is the builder's (FormattingBar, on top of the block being
@@ -11,14 +11,16 @@ import { richTextExtensions, richTextHtml } from '../model/richText'
 export const RichTextContext = React.createContext(null)
 
 // The text as the page shows it, measures it and prints it. The HTML comes from the editor's own schema
-// (richTextHtml), so it carries nothing but the formatting.
-export const RichTextView = React.memo(function RichTextView({ markdown, className, style, testId }) {
+// (richTextHtml), so it carries nothing but the formatting. With `from` and `to`, only those of its pieces: a
+// page's share of a text that goes on over the next (richTextSliceHtml).
+export const RichTextView = React.memo(function RichTextView({ markdown, className, style, testId, from, to }) {
+  const html = from == null ? richTextHtml(markdown) : richTextSliceHtml(markdown, from, to)
   return (
     <div
       className={`${RB}-rich${className ? ` ${className}` : ''}`}
       style={style}
       data-test={testId}
-      dangerouslySetInnerHTML={{ __html: richTextHtml(markdown) }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   )
 })
