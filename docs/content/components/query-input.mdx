@@ -1,17 +1,100 @@
 ---
 title: Query Input
+description: A question box with autocomplete, quick topics and voice input, for asking AutoQL questions in plain language.
 ---
 
 import PropsTable from '@site/src/components/PropsTable'
 
 # Query Input
 
-A text box where users type a question, with autocomplete and voice input.
+Query Input is the box where users type a question about their data in plain language. It suggests questions as they type, offers quick topic chips with sample questions, and can take spoken questions. It sends the question to AutoQL and gives you the response.
+
+Pair it with [Query Output](query-output) to show the answer in your own layout. [Data Messenger](data-messenger) uses both inside its drawer.
+
+![Query Input: a question box reading "Start a new query..." with a microphone button, and a row of quick topic chips above it such as Online transactions, Employee, Customer and Promotion](/img/query-input.jpg)
+
+## Quick start
+
+Query Input needs `authentication`. Keep each response in state and pass it to Query Output.
 
 ```jsx
-import { QueryInput } from 'react-autoql'
+import { useState } from 'react'
+import { QueryInput, QueryOutput } from 'react-autoql'
+import 'react-autoql/dist/autoql.esm.css'
+
+const authentication = { domain, apiKey, token }
+
+export default function Ask() {
+  const [response, setResponse] = useState(null)
+
+  return (
+    <>
+      <QueryInput authentication={authentication} onResponseCallback={setResponse} />
+      {response && (
+        <QueryOutput
+          key={response.data?.data?.query_id}
+          authentication={authentication}
+          queryResponse={response}
+        />
+      )}
+    </>
+  )
+}
+```
+
+`onResponseCallback` gets errors and cancelled questions too, and Query Output shows them as an error message. The quick topics load once, when Query Input mounts, so render it after you have credentials.
+
+## Examples
+
+### Show that a question is running
+
+Query Input doesn't disable itself while a question runs. Use `onSubmit` and `onResponseCallback` to track it.
+
+```jsx
+const [isAsking, setIsAsking] = useState(false)
+
+<QueryInput
+  authentication={authentication}
+  placeholder='Ask about your sales...'
+  isDisabled={isAsking}
+  onSubmit={() => setIsAsking(true)}
+  onResponseCallback={(response) => {
+    setIsAsking(false)
+    setResponse(response)
+  }}
+/>
+```
+
+Users can stop a running question with the stop button or the Escape key.
+
+### Run sample questions from quick topics
+
+Clicking a quick topic lists sample questions for it. When the user sends one, Query Input calls `executeQuery` instead of running it, so pass it back through the ref.
+
+```jsx
+const input = useRef(null)
+
+<QueryInput
+  ref={input}
+  authentication={authentication}
+  quickTopicsPlacement='below'
+  executeQuery={(params) => input.current?.animateInputTextAndSubmit(params)}
+  onResponseCallback={setResponse}
+/>
+```
+
+`animateInputTextAndSubmit` types the question into the box and submits it. The ref also has `submitQuery({ queryText })`, `focus()` and `cancelQuery()`.
+
+### Ask a question for the user
+
+To run a question from your own button, such as a list of suggested questions, call the ref.
+
+```jsx
+<button onClick={() => input.current?.animateInputTextAndSubmit({ query: 'total sales by month' })}>
+  Total sales by month
+</button>
 ```
 
 ## Props
 
-<PropsTable component="QueryInput" />
+<PropsTable component='QueryInput' />

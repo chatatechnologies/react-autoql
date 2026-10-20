@@ -117,25 +117,39 @@ export class DataMessenger extends React.Component {
 
   static propTypes = {
     // Global
+    /** Credentials for the AutoQL API. All three fields are required: `domain` is the API URL, `apiKey` identifies your integration, and `token` is the signed-in user's JWT. */
     authentication: authenticationType,
+    /** Turns AutoQL features on or off, such as autocomplete, drilldowns and CSV download. Each field has its own default, so pass only what you want to change. */
     autoQLConfig: autoQLConfigType,
+    /** How numbers, currency and dates are shown, such as the currency code, locale and number of decimals. Each field has its own default. */
     dataFormatting: dataFormattingType,
 
     // UI
+    /** Which edge of the screen the drawer opens from: `'right'`, `'left'`, `'top'` or `'bottom'`. */
     placement: PropTypes.string,
+    /** @internal Has no effect: the drawer always closes when the backdrop is clicked. */
     maskClosable: PropTypes.bool,
+    /** Width of the drawer in pixels or as a CSS value, used when it opens from the left or right. On phones the drawer is always full width. Only read when the component mounts. */
     width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    /** Height of the drawer in pixels or as a CSS value, used when it opens from the top or bottom. Only read when the component mounts. */
     height: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    /** Shows the floating button on the edge of the screen that opens the drawer. If you hide it, open the drawer yourself with `defaultOpen` or the `openDataMessenger()` method. */
     showHandle: PropTypes.bool,
     /** @internal */
     handleImage: PropTypes.string,
+    /** Inline styles for the floating button that opens the drawer. */
     handleStyles: PropTypes.shape({}),
+    /** Pushes the rest of the page aside when the drawer opens, instead of covering it. */
     shiftScreen: PropTypes.bool,
+    /** @internal Has no effect: never read. */
     userDisplayName: PropTypes.string,
+    /** Clears the conversation each time the drawer is closed. */
     clearOnClose: PropTypes.bool,
+    /** Shows a microphone button so users can speak their question. Not shown on phones. */
     enableVoiceRecord: PropTypes.bool,
     /** @internal */
     title: PropTypes.string,
+    /** The most messages kept in the conversation. Older messages are removed from the top. */
     maxMessages: PropTypes.number,
     /**
      * @internal
@@ -149,13 +163,11 @@ export class DataMessenger extends React.Component {
     keepHydratedMessages: PropTypes.number,
     /** @internal */
     truncateMinRows: PropTypes.number,
-    /**
-     * Headline and supporting line for the centred message shown while the chat is
-     * empty. Forwarded to ChatContent, which falls back to its own defaults.
-     */
+    /** Headline shown while the conversation is empty. Defaults to "What would you like to know?". */
     emptyStateTitle: PropTypes.node,
+    /** Line shown under the empty-state headline. Defaults to "Ask about your data in plain language.", with a link to Data Explorer when `enableDataExplorerTab` is on. */
     emptyStateSubtitle: PropTypes.node,
-    /** Data Explorer is the supported way to browse topics and sample queries. */
+    /** Adds a Data Explorer page, where users browse the topics and sample questions available to them. */
     enableDataExplorerTab: PropTypes.bool,
     /**
      * @internal
@@ -163,9 +175,11 @@ export class DataMessenger extends React.Component {
      * integrations that haven't migrated yet.
      */
     enableExploreQueriesTab: PropTypes.bool,
+    /** Adds a Notifications page listing the user's data alert notifications. The header button for it also needs `autoQLConfig.enableNotifications`. */
     enableNotificationsTab: PropTypes.bool,
     /** @internal */
     resizable: PropTypes.bool,
+    /** Placeholder text in the question box. Defaults to "Start a new query...". */
     inputPlaceholder: PropTypes.string,
     /** @internal */
     enableDPRTab: PropTypes.bool,
@@ -194,23 +208,24 @@ export class DataMessenger extends React.Component {
     dataPageSize: PropTypes.number,
     /** @internal */
     notificationCount: PropTypes.number,
+    /** Opens the drawer as soon as the component mounts. */
     defaultOpen: PropTypes.bool,
     /** @internal */
     popoverParentElement: PropTypes.element,
 
     /** @internal */
     enableDynamicCharting: PropTypes.bool,
+    /** The page shown when the drawer first opens: `'data-messenger'` (the chat), `'data-explorer'` or `'notifications'`. The matching page must be turned on. Only read when the component mounts. */
     defaultTab: PropTypes.string,
+    /** Shows grouped results, such as totals by month or by category, as a chart instead of a table. */
     autoChartAggregations: PropTypes.bool,
+    /** @internal Has no effect here. The filter lock is turned on with autoQLConfig.enableFilterLocking. */
     enableFilterLocking: PropTypes.bool,
+    /** @internal Has no effect: never read. */
     enableQueryQuickStartTopics: PropTypes.bool,
     /** @internal */
     enableQueryInputTopics: PropTypes.bool,
-    /**
-     * Turns on query suggestions: the Data Explorer's suggestion list and the
-     * related-queries fallback that answers a failed query with a list of close
-     * queries instead of an error. Off by default.
-     */
+    /** When a question can't be answered, shows a list of related questions the user can pick from instead of an error. Also adds suggestions to Data Explorer. */
     enableQuerySuggestions: PropTypes.bool,
     /** @internal */
     disableColumnSelectionForDataExplorer: PropTypes.bool,
@@ -222,15 +237,14 @@ export class DataMessenger extends React.Component {
     enableBillingGate: PropTypes.bool,
     /** @internal */
     onQuotaExceeded: PropTypes.func,
+    /** Adds cyclical date groupings to charts, such as month of year, day of week and hour of day. */
     enableCyclicalDates: PropTypes.bool,
     /** @internal */
     enableFollowOnQuery: PropTypes.bool,
     /**
-     * @internal
-     * Splits the Data Messenger chat into user sessions: a tab bar with a close
-     * button per tab and a "+" for a new one. Each session gets its own UUID,
-     * sent along with the queries the user types in it. Default false — no tabs
-     * and no session UUID, exactly as before.
+     * Splits the chat into tabs, one per conversation. Users add a tab with the + button (up to 8) and close
+     * tabs with ×. Each tab keeps its own answers, and the questions asked in a tab are sent with that tab's
+     * session ID. The header's clear-conversation button is hidden while tabs are on.
      */
     enableSessions: PropTypes.bool,
 
@@ -248,11 +262,15 @@ export class DataMessenger extends React.Component {
     // Callbacks
     /** @internal */
     onNotificationExpandCallback: PropTypes.func,
+    /** Called with the number of unread notifications when it changes. Checked every 90 seconds while the Notifications button is shown. */
     onNewNotification: PropTypes.func,
     /** @internal */
     onNotificationCount: PropTypes.func,
+    /** @internal Has no effect: never called. */
     onVisibleChange: PropTypes.func,
+    /** Called when something goes wrong, so you can show your own message. Receives either a message string or an Error object. */
     onErrorCallback: PropTypes.func,
+    /** Called with a confirmation message after an action succeeds, such as copying a table or creating a data alert, so you can show your own message. */
     onSuccessAlert: PropTypes.func,
     /** @internal */
     setMobileActivePage: PropTypes.func,
@@ -264,6 +282,8 @@ export class DataMessenger extends React.Component {
     queryItemActionName: PropTypes.string,
     /** @internal */
     mobileActivePage: PropTypes.string,
+    /** @internal Has no effect: has a default value but is never read. */
+    isVisible: PropTypes.bool,
   }
 
   static defaultProps = {

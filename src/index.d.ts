@@ -313,6 +313,7 @@ export interface DataMessengerProps {
   onProjectSelectChange?: (projectId: string) => void
   source?: string | string[]
   enableDataExplorerTab?: boolean
+  enableSessions?: boolean
   [key: string]: any
 }
 

@@ -1,17 +1,121 @@
 ---
 title: Query Output
+description: Shows the answer to a question as an interactive table or chart.
 ---
 
 import PropsTable from '@site/src/components/PropsTable'
 
 # Query Output
 
-Shows the answer to a question as a table or chart.
+Query Output shows the answer to a question as a table or chart. Users can switch between views, sort and filter tables, change what a chart plots, and click a row or chart point to drill into the data behind it.
+
+Use it with [Query Input](query-input) when you want a question box and its answer in your own layout, instead of the [Data Messenger](data-messenger) drawer.
+
+![Query Output showing total sales by store as a column chart, with buttons above it for switching to a table, bar, line or pie chart, and the plain-language interpretation of the question below it](/img/query-output.jpg)
+
+## Quick start
+
+Query Output shows a response from [Query Input](query-input). Keep the response in state and pass it to `queryResponse`.
 
 ```jsx
-import { QueryOutput } from 'react-autoql'
+import { useState } from 'react'
+import { QueryInput, QueryOutput } from 'react-autoql'
+import 'react-autoql/dist/autoql.esm.css'
+
+const authentication = { domain, apiKey, token }
+
+export default function Ask() {
+  const [response, setResponse] = useState(null)
+
+  return (
+    <>
+      <QueryInput authentication={authentication} onResponseCallback={setResponse} />
+      {response && (
+        <QueryOutput
+          key={response.data?.data?.query_id}
+          authentication={authentication}
+          queryResponse={response}
+        />
+      )}
+    </>
+  )
+}
 ```
+
+`queryResponse` is only read when Query Output mounts, so give it a new `key` for each answer. Without one, the first answer stays on screen.
+
+## Examples
+
+### Choose how the answer is shown
+
+```jsx
+<QueryOutput
+  key={queryId}
+  authentication={authentication}
+  queryResponse={response}
+  initialDisplayType='line'
+  onDisplayTypeChange={(type) => setDisplayType(type)}
+/>
+```
+
+If the data can't be shown as a line chart, Query Output picks the best-fitting view instead. Display types include `'table'`, `'pivot_table'`, `'column'`, `'bar'`, `'line'`, `'pie'`, `'stacked_column'`, `'scatterplot'` and `'histogram'`. Which ones are offered depends on the data.
+
+### Save and restore the user's view
+
+Each `on…Change` callback gives you the latest value of one setting, and the matching `initial…` prop puts it back. Save them with the question to reopen it exactly as the user left it.
+
+```jsx
+<QueryOutput
+  key={saved.queryId}
+  authentication={authentication}
+  queryResponse={response}
+  initialDisplayType={saved.displayType}
+  initialTableConfigs={saved.tableConfigs}
+  initialColumnOrder={saved.columnOrder}
+  initialFormattedTableParams={saved.tableParams}
+  onDisplayTypeChange={(displayType) => save({ displayType })}
+  onTableConfigChange={(tableConfigs) => save({ tableConfigs })}
+  onColumnOrderChange={(columnOrder) => save({ columnOrder })}
+  onTableParamsChange={(_, tableParams) => save({ tableParams })}
+/>
+```
+
+The same pattern works for aggregations, chart overlays, axis sorting, frozen columns and network charts. See the props below.
+
+### Show drilldowns
+
+When a user clicks a row or a chart point, Query Output fetches the data behind it but doesn't show it. Render the result yourself, for example in a second Query Output.
+
+```jsx
+const [drilldown, setDrilldown] = useState(null)
+
+<QueryOutput
+  key={queryId}
+  authentication={authentication}
+  queryResponse={response}
+  onDrilldownEnd={({ response }) => setDrilldown(response)}
+/>
+{drilldown && (
+  <QueryOutput key={drilldown.data?.data?.query_id} authentication={authentication} queryResponse={drilldown} />
+)}
+```
+
+To turn drilldowns off, pass `autoQLConfig={{ enableDrilldowns: false }}`.
+
+### Let users add columns
+
+```jsx
+<QueryOutput
+  key={queryId}
+  authentication={authentication}
+  queryResponse={response}
+  initialDisplayType='table'
+  allowColumnAddition
+/>
+```
+
+This adds a + button to the table for adding more columns to the result, or calculated columns of the user's own. Adding a column runs the query again.
 
 ## Props
 
-<PropsTable component="QueryOutput" />
+<PropsTable component='QueryOutput' />
