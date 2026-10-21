@@ -29,10 +29,15 @@ const EDITOR_PACKAGES =
   /node_modules\/(@tiptap|prosemirror-[a-z-]+|marked|linkifyjs|orderedmap|rope-sequence|w3c-keyname|crelt)\//
 
 // linkifyjs (the editor's links) has no "exports" map, so `mainFields` would take its CommonJS build, whose named
-// exports the commonjs plugin can't see: take its ES module instead.
+// exports the commonjs plugin can't see: take its ES module instead, beside the build resolution found, wherever
+// linkifyjs is installed (in a node_modules above this folder too, when an app installs this package from a folder).
 const linkifyEsm = {
   name: 'linkifyjs-esm',
-  resolveId: (source) => (source === 'linkifyjs' ? path.resolve('node_modules/linkifyjs/dist/linkify.mjs') : null),
+  async resolveId(source, importer) {
+    if (source !== 'linkifyjs') return null
+    const resolved = await this.resolve(source, importer, { skipSelf: true })
+    return resolved && !resolved.external ? path.join(path.dirname(resolved.id), 'linkify.mjs') : resolved
+  },
 }
 
 const external = [...Object.keys(pkg.peerDependencies || {}), ...Object.keys(pkg.dependencies || {})]
@@ -71,7 +76,11 @@ const common = {
     image(),
     svg(),
     babel({
-      exclude: 'node_modules/**',
+      // Every node_modules, not only this folder's: when an app installs this package from a folder (as the example
+      // app's Docker build does), its packages can sit in a node_modules above this one. A string pattern is resolved
+      // against this folder (even "**/…"), so it's a RegExp. Run over TipTap's files there, this config's React
+      // preset fails on their JSX runtime.
+      exclude: /node_modules/,
       ignore: ['./example'],
       babelHelpers: 'bundled',
     }),
