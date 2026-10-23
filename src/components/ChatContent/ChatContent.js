@@ -1935,6 +1935,7 @@ export default class ChatContent extends React.Component {
                       shouldRender={this.props.shouldRender}
                       source={this.props.source}
                       scope={this.props.scope}
+                      querySessionId={this.props.querySessionId}
                       tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
                       chartTooltipID={this.props.chartTooltipID}
                       subjects={this.state.subjects}
