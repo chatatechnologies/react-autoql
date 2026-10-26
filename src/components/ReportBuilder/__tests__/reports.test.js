@@ -448,6 +448,49 @@ describe('Reports', () => {
     expect(fetchReports).toHaveBeenCalledTimes(3)
     expect(homeProps.current.listError).toBeNull()
     expect(screen.queryByTestId('list-error')).not.toBeInTheDocument()
+    expect(screen.getByTestId('notice-error')).toHaveTextContent(
+      'Some reports couldn’t be listed: the server had a problem.',
+    )
+  })
+
+  it('keeps remembered tabs and the reports links name when a later page fails, as they may be on it', async () => {
+    const C = 'cccccccc-0000-4000-8000-000000000003'
+    const D = 'dddddddd-0000-4000-8000-000000000004'
+    const titles = { [A]: 'Q3 book', [B]: 'Fees', [C]: 'Q1 review', [D]: 'Older' }
+    localStorage.setItem('test.reportTabs', JSON.stringify({ p1: [C, A] }))
+    fetchReports.mockImplementation(async ({ page }) => {
+      if (page === 2) {
+        throw new ReportsApiError({ status: 503 })
+      }
+      return { reports: [summary(A, 'Q3 book'), summary(B, 'Fees')], page: 1, totalPages: 2 }
+    })
+    fetchReport.mockImplementation(async ({ id }) => stored(id, titles[id]))
+    const view = setup({ shownReportId: C })
+
+    // The report the address names opens, though the list doesn't have it, and its tab gets its title. The other
+    // remembered tab stays, and so does what's remembered.
+    await waitFor(() => expect(screen.getByTestId('builder-title')).toHaveTextContent('Q1 review'))
+    expect(tabButton('Q1 review')).toHaveAttribute('aria-current', 'page')
+    expect(tabButton('Q3 book')).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('test.reportTabs'))).toEqual({ p1: [C, A] })
+
+    // A link to another one the list doesn't have opens it, rather than the home page.
+    view.rerender(
+      <Reports
+        authentication={authFor('p1')}
+        renderHome={renderHome}
+        storageKeyPrefix='test.'
+        saveDelay={0}
+        shownReportId={D}
+      />,
+    )
+    await waitFor(() => expect(screen.getByTestId('builder-title')).toHaveTextContent('Older'))
+
+    // The home page says the list is incomplete.
+    fireEvent.click(screen.getByRole('button', { name: 'All reports' }))
+    expect(screen.getByTestId('notice-error')).toHaveTextContent(
+      'Some reports couldn’t be listed: the server had a problem.',
+    )
   })
 
   it('stops saving when the report changed elsewhere, and reloads the stored copy when asked', async () => {

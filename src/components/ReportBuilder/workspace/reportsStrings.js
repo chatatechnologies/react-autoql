@@ -58,6 +58,7 @@ export const REPORTS_STRINGS = {
   errors: {
     lead: {
       load: 'Reports couldn’t be loaded',
+      loadSome: 'Some reports couldn’t be listed',
       open: 'This report couldn’t be opened',
       save: 'This change isn’t saved yet',
       add: 'Nothing was added',

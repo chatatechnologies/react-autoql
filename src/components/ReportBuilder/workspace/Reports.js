@@ -82,19 +82,29 @@ const MAX_LIST_PAGES = 25
 
 // Every one of the user's reports on the data source, a page at a time: most recently saved first. A report saved
 // meanwhile moves up the list, so one that turns up on two pages is kept once. Only the first page failing fails the
-// list: a later page that fails leaves its reports out, and the rest are listed.
+// list. A later page that fails leaves its reports out, and `missing` is why: the list is known to be incomplete.
 const listReports = async (authentication) => {
   const first = await fetchReports({ authentication, pageSize: REPORTS_PAGE_SIZE })
   const more = []
   for (let page = 2; page <= Math.min(first.totalPages || 1, MAX_LIST_PAGES); page += 1) {
-    more.push(fetchReports({ authentication, page, pageSize: REPORTS_PAGE_SIZE }).catch(() => null))
+    more.push(fetchReports({ authentication, page, pageSize: REPORTS_PAGE_SIZE }).catch((error) => ({ error })))
   }
+  const pages = [first, ...(await Promise.all(more))]
   const seen = new Set()
-  return [first, ...(await Promise.all(more))]
-    .filter(Boolean)
-    .flatMap(({ reports }) => reports)
-    .filter((report) => !seen.has(report.id) && seen.add(report.id))
+  return {
+    reports: pages
+      .flatMap((page) => page.reports || [])
+      .filter((report) => !seen.has(report.id) && seen.add(report.id)),
+    missing: pages.find((page) => page.error)?.error || null,
+  }
 }
+
+// The list once a report is opened: with its title as stored, or with the report added if the list didn't have it
+// (it was on a page that failed to list), so its tab has its title.
+const withOpened = (reports, { id, title, sizeBytes, version, folderId, tagIds, createdAt, updatedAt }) =>
+  reports.some((report) => report.id === id)
+    ? reports.map((report) => (report.id === id ? { ...report, title } : report))
+    : [...reports, { id, title, sizeBytes, version, folderId, tagIds, createdAt, updatedAt }]
 
 // Whether an ISO time is after another (one that can't be read is before anything).
 const isLater = (iso, than) => {
@@ -297,6 +307,8 @@ export class ReportsWithoutTheme extends React.Component {
     this.state = {
       reports: null,
       listError: null,
+      // Why some of the list couldn't be loaded, when a later page failed: the list is incomplete.
+      listMissing: null,
       tabs: [],
       tabWidths: {},
       shownId: null,
@@ -342,9 +354,10 @@ export class ReportsWithoutTheme extends React.Component {
     if (shownReportId !== prevProps.shownReportId && shownReportId !== this.reported) {
       this.reported = shownReportId
       const reports = this.state.reports
-      // Still loading: the list reads it when it's in.
+      // Still loading: the list reads it when it's in. With some of the list missing, a report not in it may be on a
+      // page that failed: opening it finds out.
       if (reports && shownReportId !== undefined) {
-        if (shownReportId && reports.some((report) => report.id === shownReportId)) {
+        if (shownReportId && (this.state.listMissing || reports.some((report) => report.id === shownReportId))) {
           this.openReport(shownReportId)
         } else {
           this.goHome()
@@ -442,6 +455,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState({
       reports: null,
       listError: null,
+      listMissing: null,
       notice: null,
       actionError: null,
       tabs: [],
@@ -455,22 +469,29 @@ export class ReportsWithoutTheme extends React.Component {
     this.loadOrganizers()
   }
 
-  // The report the host's address names opens (as a tab) if it's in the list; otherwise the home page shows.
+  // The report the host's address names opens (as a tab) if it's in the list; otherwise the home page shows. With
+  // some of the list missing, the remembered tabs and the address keep reports it doesn't have, as they may be on a
+  // page that failed: opening one finds out (loadShown drops one that's gone), and the home page says the list is
+  // incomplete.
   loadList = () => {
     const sourceId = this.sourceId
     this.listRequest += 1
     const request = this.listRequest
     listReports(this.credentialsFor(sourceId)).then(
-      (reports) => {
+      ({ reports, missing }) => {
         if (!this.mounted || request !== this.listRequest) {
           return
         }
         this.unauthorizedSaid = false
+        if (missing) {
+          this.unauthorized(missing)
+        }
         const prefix = this.storagePrefix()
         const listed = new Set(reports.map((report) => report.id))
-        const kept = loadOpenTabs(prefix, sourceId).filter((id) => listed.has(id))
+        const mayHave = (id) => !!missing || listed.has(id)
+        const kept = loadOpenTabs(prefix, sourceId).filter(mayHave)
         const requested = this.props.shownReportId
-        const shown = requested && listed.has(requested) ? requested : null
+        const shown = requested && mayHave(requested) ? requested : null
         const tabs = shown ? withTabOpen(kept, shown) : kept
         this.tabsSource = sourceId
         this.tabs = tabs
@@ -479,6 +500,7 @@ export class ReportsWithoutTheme extends React.Component {
         this.setState({
           reports,
           listError: null,
+          listMissing: missing ? describeReportError(missing, 'loadSome').message : null,
           tabs,
           tabWidths: widthsFor(loadTabWidths(prefix, sourceId), tabs),
           shownId: shown,
@@ -678,7 +700,7 @@ export class ReportsWithoutTheme extends React.Component {
         saver.retry()
       }
     })
-    if (this.state.listError) {
+    if (this.state.listError || this.state.listMissing) {
       this.resetList()
       return
     }
@@ -856,9 +878,7 @@ export class ReportsWithoutTheme extends React.Component {
         this.setState(({ reports }) => ({
           opened: { id, report: detail.report },
           saveState: fresh.current,
-          reports: reports
-            ? reports.map((report) => (report.id === id ? { ...report, title: detail.title } : report))
-            : reports,
+          reports: reports && withOpened(reports, detail),
         }))
       },
       (error) => {
@@ -1060,7 +1080,8 @@ export class ReportsWithoutTheme extends React.Component {
   // ---------------------------------------------------------------- drawing
 
   renderHome = () => {
-    const { reports, listError, deletingId, actionError, notice, folders, tags, organizersError } = this.state
+    const { reports, listError, listMissing, deletingId, actionError, notice, folders, tags, organizersError } =
+      this.state
     const home = {
       reports,
       listError,
@@ -1082,6 +1103,7 @@ export class ReportsWithoutTheme extends React.Component {
       organizeReports: this.organizeReports,
       notices: [
         ...(actionError ? [{ tone: 'error', text: actionError }] : []),
+        ...(listMissing ? [{ tone: 'error', text: listMissing }] : []),
         ...(notice ? [{ tone: 'info', text: notice }] : []),
       ],
       newReport: this.openNewReport,
