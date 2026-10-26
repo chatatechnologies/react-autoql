@@ -434,6 +434,22 @@ describe('Reports', () => {
     expect(homeProps.current.reports.map((report) => report.id)).toEqual([A, B, C])
   })
 
+  it('lists what it could when a later page fails, rather than nothing', async () => {
+    fetchReports.mockImplementation(async ({ page }) => {
+      if (page === 3) {
+        throw new ReportsApiError({ status: 503 })
+      }
+      return page === 2
+        ? { reports: [summary('cccccccc-0000-4000-8000-000000000003', 'Older')], page: 2, totalPages: 3 }
+        : { reports: [summary(A, 'Q3 book'), summary(B, 'Fees')], page: 1, totalPages: 3 }
+    })
+    setup()
+    await waitFor(() => expect(homeProps.current.reports).toHaveLength(3))
+    expect(fetchReports).toHaveBeenCalledTimes(3)
+    expect(homeProps.current.listError).toBeNull()
+    expect(screen.queryByTestId('list-error')).not.toBeInTheDocument()
+  })
+
   it('stops saving when the report changed elsewhere, and reloads the stored copy when asked', async () => {
     setup()
     fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))

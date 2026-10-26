@@ -81,15 +81,17 @@ const without = (ids, id) => {
 const MAX_LIST_PAGES = 25
 
 // Every one of the user's reports on the data source, a page at a time: most recently saved first. A report saved
-// meanwhile moves up the list, so one that turns up on two pages is kept once.
+// meanwhile moves up the list, so one that turns up on two pages is kept once. Only the first page failing fails the
+// list: a later page that fails leaves its reports out, and the rest are listed.
 const listReports = async (authentication) => {
   const first = await fetchReports({ authentication, pageSize: REPORTS_PAGE_SIZE })
   const more = []
   for (let page = 2; page <= Math.min(first.totalPages || 1, MAX_LIST_PAGES); page += 1) {
-    more.push(fetchReports({ authentication, page, pageSize: REPORTS_PAGE_SIZE }))
+    more.push(fetchReports({ authentication, page, pageSize: REPORTS_PAGE_SIZE }).catch(() => null))
   }
   const seen = new Set()
   return [first, ...(await Promise.all(more))]
+    .filter(Boolean)
     .flatMap(({ reports }) => reports)
     .filter((report) => !seen.has(report.id) && seen.add(report.id))
 }

@@ -154,6 +154,31 @@ describe('AutoQL’s branding endpoints', () => {
     expect(axios.get).toHaveBeenCalledTimes(6)
   })
 
+  it('has the API key’s other data sources read it again once it’s saved, as they may be the same organisation', async () => {
+    const b64url = (value) => btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const authFor = (project, apiKey = AUTH.apiKey) => ({
+      ...AUTH,
+      apiKey,
+      token: `h.${b64url({ project_id: project })}.s`,
+    })
+    axios.get.mockResolvedValue({ data: { data: { name: 'Before' } } })
+    await fetchBranding({ authentication: authFor('p1') })
+    await fetchBranding({ authentication: authFor('p2') })
+    await fetchBranding({ authentication: authFor('p9', 'another key') })
+    expect(axios.get).toHaveBeenCalledTimes(3)
+
+    axios.put.mockResolvedValue({ data: { data: { name: 'After' } } })
+    await saveBranding({ authentication: authFor('p1'), branding: { name: 'After' } })
+    axios.get.mockResolvedValue({ data: { data: { name: 'After' } } })
+    await expect(fetchBranding({ authentication: authFor('p1') })).resolves.toEqual({ name: 'After' })
+    expect(axios.get).toHaveBeenCalledTimes(3)
+    await expect(fetchBranding({ authentication: authFor('p2') })).resolves.toEqual({ name: 'After' })
+    expect(axios.get).toHaveBeenCalledTimes(4)
+    // Another API key's is left alone.
+    await expect(fetchBranding({ authentication: authFor('p9', 'another key') })).resolves.toEqual({ name: 'Before' })
+    expect(axios.get).toHaveBeenCalledTimes(4)
+  })
+
   it('asks again after a failure, and not at all without a token', async () => {
     axios.get.mockRejectedValueOnce({ response: { status: 404 } })
     await expect(fetchBranding({ authentication: AUTH })).rejects.toBeTruthy()

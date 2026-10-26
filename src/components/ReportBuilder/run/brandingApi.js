@@ -29,10 +29,12 @@ const requestOf = (authentication, path) => {
   if (!domain || !token) {
     return null
   }
+  const scope = `${domain}|${apiKey}|`
   return {
     url: `${domain}${path}${apiKey ? `?key=${encodeURIComponent(apiKey)}` : ''}`,
     config: { headers: { Authorization: `Bearer ${token}` } },
-    key: `${domain}|${apiKey}|${projectOf(token)}`,
+    scope,
+    key: `${scope}${projectOf(token)}`,
   }
 }
 
@@ -76,6 +78,12 @@ export const saveBranding = async ({ authentication, branding }) => {
   }
   const response = await axios.put(request.url, brandingToApi(branding), request.config)
   const saved = brandingFromApi(response?.data?.data)
+  // The other data sources kept for this API key may be the same organisation's: they're read again when next asked.
+  for (const key of [...cache.keys()]) {
+    if (key.startsWith(request.scope)) {
+      cache.delete(key)
+    }
+  }
   remember(request.key, Promise.resolve(saved))
   return saved
 }
