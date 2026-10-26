@@ -98,10 +98,14 @@ export const measureContentPages = async ({
   await Promise.all(paperFontFamilies(report.page, branding).map((stack) => loadFontStack(stack)))
   await waitForFonts()
   await nextFrame()
-  if (!isCurrent()) return null
+  if (!isCurrent()) {
+    return null
+  }
 
   const measured = readMeasurements(measurer())
-  if (!measured && !estimate) return null
+  if (!measured && !estimate) {
+    return null
+  }
   const measurements =
     measured || estimateMeasurements({ blocks: report.blocks, views, contentWidthPx: geometry.contentWidthPx })
   const items = buildLayoutItems({ blocks: report.blocks, views, measurements })
@@ -169,10 +173,14 @@ export class PrintPreview extends React.Component {
         measurer: () => this.measurerRef.current,
         isCurrent: () => this.mounted && token === this.layoutToken,
       })
-      if (!contentPages) return
+      if (!contentPages) {
+        return
+      }
 
       this.setState({ measuring: false, contentPages }, () => {
-        if (!this.mounted || token !== this.layoutToken) return
+        if (!this.mounted || token !== this.layoutToken) {
+          return
+        }
         this.props.onLayout(this.getLayoutInfo())
         this.resolveReady()
       })
@@ -275,7 +283,9 @@ export class PrintPreview extends React.Component {
     return page.cells.map((cell) => {
       if (cell.kind === 'table' || cell.kind === 'flow') {
         const block = byId[cell.id]
-        if (!block) return null
+        if (!block) {
+          return null
+        }
         return (
           <div key={`${cell.id}:${cell.from}`} className={`${RB}-row`} data-count={1}>
             <Cell block={block}>

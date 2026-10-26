@@ -163,22 +163,31 @@ export const printFrame = ({
   let settle = () => {}
 
   const remove = () => {
-    if (removed) return
+    if (removed) {
+      return
+    }
     removed = true
     if (title && doc.title === title) {
       doc.title = hostTitle
     }
     frame.parentNode?.removeChild(frame)
-    if (!requested) settle(false) // removed before the dialog was asked for
+    if (!requested) {
+      settle(false)
+    } // removed before the dialog was asked for
   }
 
   const printed = new Promise((resolve, reject) => {
     let settled = false
     settle = (value, error) => {
-      if (settled) return
+      if (settled) {
+        return
+      }
       settled = true
-      if (error) reject(error)
-      else resolve(value)
+      if (error) {
+        reject(error)
+      } else {
+        resolve(value)
+      }
     }
 
     frame.addEventListener(
@@ -188,7 +197,9 @@ export const printFrame = ({
         const frameDoc = frame.contentDocument
         Promise.all([waitForImages(frameDoc, assetTimeout), waitForFonts(frameDoc, assetTimeout)])
           .then(() => {
-            if (removed) return
+            if (removed) {
+              return
+            }
             win.addEventListener('afterprint', remove, { once: true })
             if (title) {
               doc.title = title

@@ -53,16 +53,28 @@ const SHIFT_VAR = '--react-autoql-report-builder-bar-shift'
 // place above the block to just under the top of what's in view, but never past the block's bottom. The rest are
 // screen pixels; `zoom` is the page's (ZoomFrame).
 export const stickyShift = ({ naturalTop, viewTop, blockBottom, barHeight, zoom = 1 }) => {
-  if (!(naturalTop < viewTop)) return 0
+  if (!(naturalTop < viewTop)) {
+    return 0
+  }
   const top = Math.min(viewTop, blockBottom - barHeight)
   return Math.max(0, top - naturalTop) / (zoom > 0 ? zoom : 1)
 }
 
 // Headings within text: two sizes, Heading (h3) and Subheading (h4); Auto Analyze's bigger ones read as Heading.
 const styleOf = (editor) => {
-  if (!editor) return 'paragraph'
-  for (const level of [1, 2, 3]) if (editor.isActive('heading', { level })) return 'heading'
-  for (const level of [4, 5, 6]) if (editor.isActive('heading', { level })) return 'subheading'
+  if (!editor) {
+    return 'paragraph'
+  }
+  for (const level of [1, 2, 3]) {
+    if (editor.isActive('heading', { level })) {
+      return 'heading'
+    }
+  }
+  for (const level of [4, 5, 6]) {
+    if (editor.isActive('heading', { level })) {
+      return 'subheading'
+    }
+  }
   return 'paragraph'
 }
 
@@ -80,7 +92,9 @@ export class FormattingBar extends React.Component {
     if (prevProps.editor !== this.props.editor) {
       this.unlisten(prevProps.editor)
       this.listen(this.props.editor)
-      if (this.state.link) this.setState({ link: null })
+      if (this.state.link) {
+        this.setState({ link: null })
+      }
     }
     this.place()
   }
@@ -94,14 +108,20 @@ export class FormattingBar extends React.Component {
   follow() {
     const bar = this.bar.current
     this.scroller = bar?.closest?.(`.${RB}-canvas`) || null
-    if (!bar || !this.scroller) return
+    if (!bar || !this.scroller) {
+      return
+    }
     this.scroller.addEventListener('scroll', this.place, { passive: true })
     window.addEventListener('resize', this.place)
     if (typeof ResizeObserver !== 'undefined') {
       this.observer = new ResizeObserver(this.place)
-      if (bar.parentElement) this.observer.observe(bar.parentElement)
+      if (bar.parentElement) {
+        this.observer.observe(bar.parentElement)
+      }
       const zoomFrame = bar.closest(`.${RB}-zoom-frame`)
-      if (zoomFrame) this.observer.observe(zoomFrame)
+      if (zoomFrame) {
+        this.observer.observe(zoomFrame)
+      }
     }
     this.place()
   }
@@ -110,13 +130,19 @@ export class FormattingBar extends React.Component {
     this.scroller?.removeEventListener('scroll', this.place)
     window.removeEventListener('resize', this.place)
     this.observer?.disconnect()
-    if (this.frame) window.cancelAnimationFrame(this.frame)
+    if (this.frame) {
+      window.cancelAnimationFrame(this.frame)
+    }
     this.scroller = null
   }
 
   place = () => {
-    if (!this.scroller || typeof window.requestAnimationFrame !== 'function') return
-    if (this.frame) window.cancelAnimationFrame(this.frame)
+    if (!this.scroller || typeof window.requestAnimationFrame !== 'function') {
+      return
+    }
+    if (this.frame) {
+      window.cancelAnimationFrame(this.frame)
+    }
     this.frame = window.requestAnimationFrame(this.position)
   }
 
@@ -124,7 +150,9 @@ export class FormattingBar extends React.Component {
     this.frame = null
     const bar = this.bar.current
     const block = bar?.parentElement
-    if (!bar || !block || !this.scroller) return
+    if (!bar || !block || !this.scroller) {
+      return
+    }
     const zoom = getMeasureScale(block)
     const applied = parseFloat(bar.style.getPropertyValue(SHIFT_VAR)) || 0
     const barRect = bar.getBoundingClientRect()
@@ -135,7 +163,9 @@ export class FormattingBar extends React.Component {
       barHeight: barRect.height,
       zoom,
     })
-    if (Math.abs(shift - applied) >= 0.5) bar.style.setProperty(SHIFT_VAR, `${Math.round(shift * 10) / 10}px`)
+    if (Math.abs(shift - applied) >= 0.5) {
+      bar.style.setProperty(SHIFT_VAR, `${Math.round(shift * 10) / 10}px`)
+    }
   }
 
   listen(editor) {
@@ -156,7 +186,9 @@ export class FormattingBar extends React.Component {
   keepSelection = (e) => e.preventDefault()
 
   run = (command) => {
-    if (!this.usable()) return
+    if (!this.usable()) {
+      return
+    }
     command(this.props.editor.chain().focus()).run()
   }
 
@@ -168,7 +200,9 @@ export class FormattingBar extends React.Component {
   clearFormatting = () => this.run((chain) => chain.unsetAllMarks().clearNodes())
 
   openLink = () => {
-    if (!this.usable()) return
+    if (!this.usable()) {
+      return
+    }
     const href = this.props.editor.getAttributes('link').href || ''
     this.setState({ link: { text: href, error: null, editing: !!href } }, () => {
       this.linkInput.current?.focus()
@@ -178,7 +212,9 @@ export class FormattingBar extends React.Component {
 
   closeLink = () => {
     this.setState({ link: null })
-    if (this.usable()) this.props.editor.commands.focus()
+    if (this.usable()) {
+      this.props.editor.commands.focus()
+    }
   }
 
   applyLink = (e) => {
@@ -190,7 +226,9 @@ export class FormattingBar extends React.Component {
       this.setState(({ link }) => ({ link: { ...link, error: F.linkInvalid } }))
       return
     }
-    if (!this.usable()) return
+    if (!this.usable()) {
+      return
+    }
     const chain = editor.chain().focus()
     if (editor.state.selection.empty && !editor.isActive('link')) {
       // Nothing selected: the address goes in, as its own link.
@@ -210,8 +248,12 @@ export class FormattingBar extends React.Component {
   // The focus left the bar (its link field or style menu) for somewhere other than the text: nothing to format.
   onBarBlur = (e) => {
     const next = e.relatedTarget
-    if (next && (e.currentTarget.contains(next) || next.closest?.('.ProseMirror'))) return
-    if (this.state.link) this.setState({ link: null })
+    if (next && (e.currentTarget.contains(next) || next.closest?.('.ProseMirror'))) {
+      return
+    }
+    if (this.state.link) {
+      this.setState({ link: null })
+    }
     this.props.onLeave?.()
   }
 

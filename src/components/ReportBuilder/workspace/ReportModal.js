@@ -1,8 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { Icon } from '../components/icons'
-import { RS } from './constants'
-import { REPORTS_STRINGS } from './strings'
+import { RS } from './reportsConstants'
+import { REPORTS_STRINGS } from './reportsStrings'
 import './Reports.scss'
 
 // A dialog over the whole page, drawn the way the builder draws its own: the workspace's New report and dashboard

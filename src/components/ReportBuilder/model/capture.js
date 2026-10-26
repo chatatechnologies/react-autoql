@@ -49,7 +49,9 @@ export const captureFromResponse = (response, { capturedAt = new Date().toISOStr
   const orders = Array.isArray(data.fe_req?.orders) ? data.fe_req.orders : []
   const columnVisibility = {}
   columns.forEach((col) => {
-    if (col?.name) columnVisibility[col.name] = col.is_visible !== false
+    if (col?.name) {
+      columnVisibility[col.name] = col.is_visible !== false
+    }
   })
 
   const capture = {

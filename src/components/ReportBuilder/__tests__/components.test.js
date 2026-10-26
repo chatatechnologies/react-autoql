@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, within } from '@testing-library/react'
+import { render, within } from '@testing-library/react'
 import { ReportTable } from '../components/ReportTable'
 import { ReportChart, READ_ONLY_QUERY_OUTPUT_PROPS } from '../components/ReportChart'
 import { CHART_BOX_ATTRIBUTE } from '../print/waitForCharts'

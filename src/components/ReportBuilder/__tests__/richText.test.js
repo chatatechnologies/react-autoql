@@ -1,11 +1,5 @@
 import { Editor } from '@tiptap/core'
-import {
-  linkHref,
-  richTextPieces,
-  richTextExtensions,
-  richTextHtml,
-  richTextSliceHtml,
-} from '../model/richText'
+import { linkHref, richTextPieces, richTextExtensions, richTextHtml, richTextSliceHtml } from '../model/richText'
 
 // A report's formatted text (RW-346): Markdown in, the page's HTML out, and back to Markdown from the editor.
 
@@ -84,7 +78,9 @@ describe('the editor’s Markdown', () => {
     const marksOn = (editor, word) => {
       let names = null
       editor.state.doc.descendants((node) => {
-        if (names === null && node.isText && node.text.includes(word)) names = node.marks.map((m) => m.type.name)
+        if (names === null && node.isText && node.text.includes(word)) {
+          names = node.marks.map((m) => m.type.name)
+        }
       })
       return (names || []).sort()
     }
@@ -121,7 +117,16 @@ describe('a text in pieces', () => {
       'gamma',
       'Last.',
     ])
-    expect(richTextPieces(text).map((piece) => piece.heading)).toStrictEqual([true, false, false, false, false, false, false, false])
+    expect(richTextPieces(text).map((piece) => piece.heading)).toStrictEqual([
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+    ])
     expect(richTextPieces('')).toStrictEqual([])
   })
 

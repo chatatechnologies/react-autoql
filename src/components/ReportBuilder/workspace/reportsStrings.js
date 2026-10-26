@@ -78,6 +78,7 @@ export const REPORTS_STRINGS = {
     unreachable: 'couldn’t reach the server',
     serverFailed: 'the server had a problem',
     refused: 'the server didn’t accept it',
+    keptChanging: 'blocks kept being added to it in another tab or window while it saved',
     folderGone: 'the folder no longer exists (it may have been deleted in another tab)',
     tagGone: 'the tag no longer exists (it may have been deleted in another tab)',
     folderNameTaken: 'there’s already a folder with that name',
@@ -140,7 +141,8 @@ export const REPORTS_STRINGS = {
     tooLarge: (rows, max) =>
       `This chart draws ${rows} rows — more than a report keeps (${max}). Narrow the question, or show it as a table first.`,
     tooManyRows: 'too many',
-    unsupported: 'This kind of answer can’t be added to a report yet (pivot tables, network graphs, Sankey charts and treemaps).',
+    unsupported:
+      'This kind of answer can’t be added to a report yet (pivot tables, network graphs, Sankey charts and treemaps).',
     noData: 'This answer has no data to add.',
     loading: 'This tile hasn’t finished loading.',
     notFound: 'This tile isn’t on the dashboard any more.',

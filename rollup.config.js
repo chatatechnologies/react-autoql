@@ -111,14 +111,20 @@ const common = {
 
 const outputs = []
 
+// One file per format, plus the report builder's (ReportBuilder/onDemand.js), which apps fetch only when a report is
+// shown: its code goes in a file of its own beside the main one.
 outputs.push({
-  file: `${dist}/${bundle}.esm.js`,
+  dir: dist,
+  entryFileNames: `${bundle}.esm.js`,
+  chunkFileNames: `${bundle}-[name]-[hash].esm.js`,
   format: 'esm', // use ES modules to support tree-shaking
 })
 
 if (!development) {
   outputs.push({
-    file: `${dist}/${bundle}.cjs.js`,
+    dir: dist,
+    entryFileNames: `${bundle}.cjs.js`,
+    chunkFileNames: `${bundle}-[name]-[hash].cjs.js`,
     format: 'cjs',
   })
 }

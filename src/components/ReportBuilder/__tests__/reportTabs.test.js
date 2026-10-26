@@ -1,7 +1,7 @@
 import React from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { ReportTabs } from '../workspace/ReportTabs'
-import { DEFAULT_STORAGE_PREFIX, TAB_WIDTHS_STORAGE_KEY, TABS_STORAGE_KEY } from '../workspace/constants'
+import { DEFAULT_STORAGE_PREFIX, TAB_WIDTHS_STORAGE_KEY, TABS_STORAGE_KEY } from '../workspace/reportsConstants'
 import {
   loadOpenTabs,
   loadTabWidths,

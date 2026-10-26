@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { ReportsApiError } from '../run/reportsApi'
-import { REPORTS_STRINGS } from './strings'
+import { REPORTS_STRINGS } from './reportsStrings'
 
 // Reports as the workspace keeps them in AutoQL's report service: new ids, clean documents, comparing a report
 // with its stored copy, and the one line to show when something fails.
@@ -179,6 +179,10 @@ export const describeReportError = (error, action) => {
     reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
   } else if (code === 'REPORT_BULK_REQUEST_INVALID') {
     reason = E.tooManyReports
+  } else if (code === 'REPORT_VERSION_CONFLICT') {
+    // Blocks kept being added elsewhere while it saved (a conflict of any other kind isn't an error).
+    reason = E.keptChanging
+    retry = true
   } else if (status === 0) {
     reason = E.unreachable
     retry = true

@@ -953,14 +953,27 @@ export default class ChataTable extends React.Component {
 
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
-    let response = _cloneDeep(this.props.response)
+    const response = _cloneDeep(this.props.response)
     // For pivot tables, use the pivot data, not the original query data
-    let data = this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData)
+    const data = this.sortAndFilterRows(
+      this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData),
+      params,
+    )
 
+    // Update filterCount for local filtering
+    this.filterCount = data.length
+
+    response.data.data.rows = data
+    response.data.data.count_rows = data.length
+
+    return response
+  }
+
+  // The rows with params' filters and sort applied, as a new array: filterDataByColumn and sortDataByColumn copy
+  // the array they're given and leave its rows as they are.
+  sortAndFilterRows = (rows, params) => {
     // Ensure data is always an array
-    if (!data) {
-      data = []
-    }
+    let data = rows || []
 
     // filterDataByColumn/sortDataByColumn look up column metadata by array position, so they need
     // columns in data order — this.props.columns may be reordered for display (columnOrder).
@@ -974,9 +987,6 @@ export default class ChataTable extends React.Component {
         data = filterDataByColumn(data, dataOrderedColumns, filterColumnIndex, filter.value, filter.operator)
       })
     }
-
-    // Update filterCount for local filtering
-    this.filterCount = data?.length || 0
 
     // Sorters
     if (params.orders?.length) {
@@ -1001,10 +1011,7 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    response.data.data.rows = data
-    response.data.data.count_rows = data.length
-
-    return response
+    return data || []
   }
 
   queryFn = (params) => {
@@ -2269,17 +2276,15 @@ export default class ChataTable extends React.Component {
   }
 
   // Every row the table pages through, in the order it shows them: what getRows hands Tabulator 50 at a
-  // time. Tabulator itself only holds the pages scrolled to so far.
+  // time. Tabulator itself only holds the pages scrolled to so far. The rows are the table's own, not copies:
+  // whoever keeps some copies them.
   getShownRows = () => {
     if (!this.useInfiniteScroll) {
       const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
-      const filterCount = this.filterCount
-      const rows = this.clientSortAndFilterData({
+      return this.sortAndFilterRows(this.props.pivot ? this.props.data : this.originalQueryData, {
         tableFilters: tableParamsFormatted?.filters,
         orders: tableParamsFormatted?.sorters,
-      })?.data?.data?.rows
-      this.filterCount = filterCount // reading the rows must not change the row count the footer shows
-      return rows ?? []
+      })
     }
 
     return this.filteredResponseData ?? this.props.response?.data?.data?.rows ?? []
@@ -2313,7 +2318,7 @@ export default class ChataTable extends React.Component {
     if (filtered) total = this.useInfiniteScroll ? this.filterCount ?? rows.length : rows.length
 
     return {
-      rows: rows.slice(0, maxRows),
+      rows: _cloneDeep(rows.slice(0, maxRows)),
       columnFields: columnFields?.length ? columnFields : undefined,
       sort: (this.tableParams?.sort || []).map(({ field, dir }) => ({ field, dir })),
       filters,

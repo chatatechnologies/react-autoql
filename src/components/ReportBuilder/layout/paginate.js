@@ -50,7 +50,12 @@ export const buildLayoutItems = ({ blocks, views, measurements }) =>
       return { type: 'table', id: first.id, ...measurements.tables[first.id] }
     }
     if (row.length === 1 && measurements.flows?.[first.id]?.chunks?.length) {
-      return { type: 'flow', id: first.id, height: measurements.blocks?.[first.id] || 0, ...measurements.flows[first.id] }
+      return {
+        type: 'flow',
+        id: first.id,
+        height: measurements.blocks?.[first.id] || 0,
+        ...measurements.flows[first.id],
+      }
     }
     return {
       type: 'atomic',
@@ -118,9 +123,15 @@ export const paginate = (
   // What must share a page with a heading: the next block, or a table's first few rows, or the first pieces of a
   // text that goes on over the next page.
   const leadHeight = (item) => {
-    if (!item || item.type === 'break') return 0
-    if (item.type === 'table') return item.chrome + item.header + sum(item.rows.slice(0, minRows))
-    if (item.type === 'flow' && item.height > capacity) return item.head + sum(item.chunks.slice(0, minChunks))
+    if (!item || item.type === 'break') {
+      return 0
+    }
+    if (item.type === 'table') {
+      return item.chrome + item.header + sum(item.rows.slice(0, minRows))
+    }
+    if (item.type === 'flow' && item.height > capacity) {
+      return item.head + sum(item.chunks.slice(0, minChunks))
+    }
     return item.height
   }
 
@@ -295,14 +306,18 @@ export const estimateMeasurements = ({ blocks, views, contentWidthPx }) => {
       case 'text': {
         measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 12
         const flow = half ? null : flowOf(block.text, { head: 6, tail: 6 })
-        if (flow) measurements.flows[block.id] = flow
+        if (flow) {
+          measurements.flows[block.id] = flow
+        }
         break
       }
       case 'analysis': {
         // Its wording, plus the Auto Analyze line under it.
         measurements.blocks[block.id] = lineCount() * TEXT_LINE_PX + 34
         const flow = half ? null : flowOf(toAnalysisMarkdown(block.text), { head: 6, tail: 28 })
-        if (flow) measurements.flows[block.id] = flow
+        if (flow) {
+          measurements.flows[block.id] = flow
+        }
         break
       }
       case 'data': {

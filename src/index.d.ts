@@ -436,6 +436,9 @@ export declare class DataExplorer extends React.Component<DataExplorerProps> {}
 
 // A report is a template: plain, versioned JSON that says what to show, never the data itself. The
 // builder keeps blocks and fields it doesn't know (from a newer version) through a save.
+//
+// ReportBuilder and Reports fetch their code (a file of its own beside the package's main one) the first time one
+// is shown, saying they're loading meanwhile; a ref to either is null until then.
 
 export type ReportBlockWidth = 'full' | 'half'
 export type ReportHeadingLevel = 1 | 2 | 3

@@ -9,7 +9,6 @@ export const STRINGS = {
   runAgain: 'Run again',
   running: 'Running…',
   cancelRun: 'Stop',
-  runStopped: 'Run stopped · some data not loaded',
   openPreview: 'Preview',
   backToEditing: 'Back to editing',
   print: 'Print…',

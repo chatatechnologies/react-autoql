@@ -56,17 +56,3 @@ if (typeof document !== 'undefined' && !document.elementFromPoint) {
   document.elementFromPoint = () => null
 }
 
-// TipTap (the report builder's text editor) uses Array.prototype.findLast, which browsers have but Node 16, the
-// tests' Node, doesn't.
-if (!Array.prototype.findLast) {
-  Object.defineProperty(Array.prototype, 'findLast', {
-    value(predicate, thisArg) {
-      for (let i = this.length - 1; i >= 0; i -= 1) {
-        if (predicate.call(thisArg, this[i], i, this)) return this[i]
-      }
-      return undefined
-    },
-    writable: true,
-    configurable: true,
-  })
-}

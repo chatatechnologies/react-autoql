@@ -53,12 +53,24 @@ export const normalizeStyle = (style) => {
     return undefined
   }
   const out = {}
-  if (style.font && style.font !== 'theme' && TYPEFACES[style.font]) out.font = style.font
-  if (TEXT_SIZES[style.size]) out.size = style.size
-  if (TEXT_WEIGHTS[style.weight]) out.weight = style.weight
-  if (HEX.test(style.color || '')) out.color = style.color
-  if (HEX.test(style.background || '')) out.background = style.background
-  if (optionKeys(ALIGN_OPTIONS).includes(style.align) && style.align !== 'left') out.align = style.align
+  if (style.font && style.font !== 'theme' && TYPEFACES[style.font]) {
+    out.font = style.font
+  }
+  if (TEXT_SIZES[style.size]) {
+    out.size = style.size
+  }
+  if (TEXT_WEIGHTS[style.weight]) {
+    out.weight = style.weight
+  }
+  if (HEX.test(style.color || '')) {
+    out.color = style.color
+  }
+  if (HEX.test(style.background || '')) {
+    out.background = style.background
+  }
+  if (optionKeys(ALIGN_OPTIONS).includes(style.align) && style.align !== 'left') {
+    out.align = style.align
+  }
   return Object.keys(out).length ? out : undefined
 }
 

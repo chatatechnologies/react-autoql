@@ -98,7 +98,9 @@ const call = async ({ authentication, method = 'get', path = '', params = {}, da
   }
   const query = new URLSearchParams()
   Object.entries({ ...params, key: apiKey }).forEach(([name, value]) => {
-    if (value !== undefined && value !== null && value !== '') query.set(name, String(value))
+    if (value !== undefined && value !== null && value !== '') {
+      query.set(name, String(value))
+    }
   })
   const body = data === undefined ? undefined : JSON.stringify(data)
   const config = {

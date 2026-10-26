@@ -1,7 +1,7 @@
 import React from 'react'
 import { Icon } from '../components/icons'
-import { RS } from './constants'
-import { REPORTS_STRINGS } from './strings'
+import { RS } from './reportsConstants'
+import { REPORTS_STRINGS } from './reportsStrings'
 import { MIN_TAB_WIDTH } from './tabs'
 
 // The workspace's tab strip: the home page first, then a tab per report open here, then New report, the one way

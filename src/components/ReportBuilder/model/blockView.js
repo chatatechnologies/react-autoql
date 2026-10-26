@@ -24,7 +24,9 @@ import {
 const withOverrides = (columns, overrides) =>
   columns.map((col) => {
     const override = overrides?.[col.index]
-    if (!override) return col
+    if (!override) {
+      return col
+    }
     return {
       ...col,
       ...(override.type ? { type: override.type } : {}),
@@ -139,7 +141,9 @@ const captureTile = (capture) => {
     const shown = new Set(indices)
     columnVisibility = {}
     columns.forEach((col, i) => {
-      if (col?.name) columnVisibility[col.name] = shown.has(i)
+      if (col?.name) {
+        columnVisibility[col.name] = shown.has(i)
+      }
     })
     columnOrder = indices.map((i) => columns[i]?.name).filter(Boolean)
   }

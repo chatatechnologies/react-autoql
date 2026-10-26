@@ -200,9 +200,13 @@ export const summarizeRun = (results, skipped = []) => {
   const blocks = [...ran, ...skipped.map(({ blockId }) => ({ blockId, status: 'skipped' }))]
   const statuses = ran.map((block) => block.status)
   let status = 'success'
-  if (statuses.includes('cancelled')) status = 'cancelled'
-  else if (statuses.length && statuses.every((s) => s === 'error')) status = 'error'
-  else if (statuses.includes('error')) status = 'partial'
+  if (statuses.includes('cancelled')) {
+    status = 'cancelled'
+  } else if (statuses.length && statuses.every((s) => s === 'error')) {
+    status = 'error'
+  } else if (statuses.includes('error')) {
+    status = 'partial'
+  }
   return { status, blocks }
 }
 
@@ -233,9 +237,18 @@ export const formatPrintedDate = (iso, { time = false } = {}) => {
 
 // The one line that tells the author how old the report's data is.
 export const getRunLabel = ({ run, dataBlockCount, isStale }) => {
-  if (!dataBlockCount) return 'Nothing to run'
-  if (!run) return 'Never run'
-  if (run.status === 'running') return `Running ${run.done} of ${run.total}…`
+  if (run?.status === 'cancelled') {
+    return 'Run stopped · some data not loaded'
+  }
+  if (!dataBlockCount) {
+    return 'Nothing to run'
+  }
+  if (!run) {
+    return 'Never run'
+  }
+  if (run.status === 'running') {
+    return `Running ${run.done} of ${run.total}…`
+  }
   const age = `All data as of ${formatRunTime(run.runAt)}`
   return isStale ? `${age} · template edited since` : age
 }

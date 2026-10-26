@@ -233,6 +233,9 @@ describe('getRunLabel', () => {
     expect(getRunLabel({ dataBlockCount: 2, run, isStale: true })).toBe(
       'All data as of 23 Sep, 14:05 · template edited since',
     )
+    expect(getRunLabel({ dataBlockCount: 2, run: { ...run, status: 'cancelled' } })).toBe(
+      'Run stopped · some data not loaded',
+    )
   })
 })
 

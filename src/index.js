@@ -38,7 +38,8 @@ export { ChatContent } from './components/ChatContent'
 export { SimpleTable } from './components/SimpleTable'
 export { AppearanceSection } from './components/Notifications/DataAlertSettings/AppearanceSection'
 export { SlicerChip } from './components/DashboardToolbar'
-export { ReportBuilder } from './components/ReportBuilder'
+// The builder and the reports workspace fetch their code the first time one is shown (onDemand.js).
+export { ReportBuilder, Reports } from './components/ReportBuilder/onDemand'
 export { createEmptyReport, REPORT_SCHEMA_VERSION } from './components/ReportBuilder/model/reportSchema'
 export { captureQuestion } from './components/ReportBuilder/run/captureRun'
 export { rowsForCapture } from './components/ReportBuilder/model/capture'
@@ -62,6 +63,5 @@ export {
   saveReport,
   updateReportTag,
 } from './components/ReportBuilder/run/reportsApi'
-export { Reports } from './components/ReportBuilder/workspace/Reports'
 export { AddToReportDialog } from './components/ReportBuilder/workspace/AddToReportDialog'
 export { captureReportBlock } from './components/ReportBuilder/workspace/reportBlocks'

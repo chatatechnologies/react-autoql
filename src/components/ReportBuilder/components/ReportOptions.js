@@ -37,7 +37,9 @@ export class ReportOptions extends React.Component {
   focusButton = () => this.buttonRef.current?.focus?.()
 
   onDocumentMouseDown = (e) => {
-    if (!this.rootRef.current?.contains(e.target)) this.setState({ open: false })
+    if (!this.rootRef.current?.contains(e.target)) {
+      this.setState({ open: false })
+    }
   }
 
   toggle = () => this.setState(({ open }) => ({ open: !open }))

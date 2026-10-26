@@ -71,7 +71,9 @@ export class RichTextEditor extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { value, editable } = this.props
-    if (!this.editor) return
+    if (!this.editor) {
+      return
+    }
     if (value !== prevProps.value && (value || '') !== this.markdown) {
       this.markdown = value || ''
       this.editor.commands.setContent(this.markdown, { contentType: 'markdown', emitUpdate: false })
@@ -82,7 +84,9 @@ export class RichTextEditor extends React.Component {
   }
 
   componentWillUnmount() {
-    if (!this.editor) return
+    if (!this.editor) {
+      return
+    }
     this.context?.deactivate(this.editor, null)
     this.editor.destroy()
     this.editor = null
@@ -91,7 +95,9 @@ export class RichTextEditor extends React.Component {
   onUpdate = ({ editor }) => {
     // Without the blank lines a list leaves at the end: nothing that shows.
     const markdown = editor.getMarkdown().replace(/\s+$/, '')
-    if (markdown === this.markdown) return
+    if (markdown === this.markdown) {
+      return
+    }
     this.markdown = markdown
     this.props.onChange?.(markdown)
   }
@@ -102,10 +108,15 @@ export class RichTextEditor extends React.Component {
   blockId = () => this.blockElement()?.getAttribute('data-block-id') || null
 
   onKeyDown = (event) => {
-    if (event.key !== 'Escape') return false
+    if (event.key !== 'Escape') {
+      return false
+    }
     const block = this.blockElement()
-    if (block) block.focus()
-    else this.editor?.commands.blur()
+    if (block) {
+      block.focus()
+    } else {
+      this.editor?.commands.blur()
+    }
     return true
   }
 

@@ -4,7 +4,7 @@ import { authenticationType } from '../../../props/types'
 import { Icon } from '../components/icons'
 import { createEmptyReport } from '../model/reportSchema'
 import { appendReportBlock, createReport, fetchReports } from '../run/reportsApi'
-import { REPORTS_PAGE_SIZE, RS } from './constants'
+import { REPORTS_PAGE_SIZE, RS } from './reportsConstants'
 import {
   REPORT_TITLE_MAX,
   describeBlock,
@@ -15,7 +15,7 @@ import {
   titleOf,
 } from './documents'
 import { ReportModal } from './ReportModal'
-import { REPORTS_STRINGS } from './strings'
+import { REPORTS_STRINGS } from './reportsStrings'
 import './Reports.scss'
 
 // "Add to Report…": a host opens it from an answer's or a dashboard tile's More menu, with the block
@@ -115,7 +115,9 @@ export class AddToReportDialog extends React.Component {
     const current = () => this.mounted && seq === this.listSeq
     fetchReports({ authentication, pageSize: REPORTS_PAGE_SIZE }).then(
       (result) => {
-        if (!current()) return
+        if (!current()) {
+          return
+        }
         const reports = Array.isArray(result?.reports) ? result.reports : []
         const first = !this.listed
         this.listed = true
@@ -129,7 +131,9 @@ export class AddToReportDialog extends React.Component {
         }))
       },
       (error) => {
-        if (!current()) return
+        if (!current()) {
+          return
+        }
         // A new report may still be made. A report chosen before can't be seen now, so it isn't kept.
         const first = !this.listed
         this.listed = true
@@ -157,7 +161,9 @@ export class AddToReportDialog extends React.Component {
 
   // The block goes as plain JSON, without the live query response it may still carry.
   add = async () => {
-    if (!this.canAdd()) return
+    if (!this.canAdd()) {
+      return
+    }
     const { authentication, block } = this.props
     const { reports, chosenId, name } = this.state
     this.setState({ adding: true, error: null })
@@ -173,17 +179,25 @@ export class AddToReportDialog extends React.Component {
         added = { id: chosenId, title: titleOf(reports.find((report) => report.id === chosenId)), created: false }
       }
     } catch (error) {
-      if (!this.mounted) return
+      if (!this.mounted) {
+        return
+      }
       this.setState({ adding: false, error: describeReportError(error, 'add').message })
       // Deleted in the meantime: show the list as it is now.
-      if (isReportGone(error)) this.load()
+      if (isReportGone(error)) {
+        this.load()
+      }
       return
     }
-    if (!this.mounted) return
+    if (!this.mounted) {
+      return
+    }
     this.props.onAdded?.(added)
     this.props.onClose?.()
     // A host that keeps it open gets it back as it was, rather than stuck adding.
-    if (this.mounted) this.setState({ adding: false })
+    if (this.mounted) {
+      this.setState({ adding: false })
+    }
   }
 
   // Cancel, which is off while adding, as the close button is.

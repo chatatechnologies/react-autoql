@@ -1,7 +1,7 @@
 import React from 'react'
 import { Icon } from '../components/icons'
-import { RS } from './constants'
-import { REPORTS_STRINGS } from './strings'
+import { RS } from './reportsConstants'
+import { REPORTS_STRINGS } from './reportsStrings'
 
 // Where the open report stands, so it's clear when it's safe to leave: one control in the builder's toolbar (its
 // toolbarStatus), quiet while the report is saved or saving, and a button to press once it needs you. Edits save

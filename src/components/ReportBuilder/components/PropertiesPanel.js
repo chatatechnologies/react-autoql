@@ -199,7 +199,9 @@ const QuestionBox = ({ initial, onAsk, note = P.askNote, disabled = false }) => 
 }
 
 const isTableLike = (block, view) => {
-  if (view?.state === 'ready') return view.kind === 'table'
+  if (view?.state === 'ready') {
+    return view.kind === 'table'
+  }
   const displayType = view?.tile?.displayType
   return block.source?.type === 'tile' && !!view?.tile && !isChartType(displayType) && displayType !== 'single-value'
 }
@@ -265,13 +267,22 @@ const RowsField = ({ block, view, onBlockChange }) => {
   let which
   // A capture keeps the order its table had when it was added, whatever its source.
   if (view?.capturedAt) {
-    if (orderLabel) which = P.rowsCaptured(orderLabel)
-    else if (ordered) which = P.rowsCapturedUnnamed
-    else which = P.rowsCapturedUnsorted(block.rows)
-  } else if (block.source?.type === 'query') which = P.rowsQuestion(block.rows)
-  else if (orderLabel) which = P.rowsRanked(orderLabel)
-  else if (ordered) which = P.rowsRankedUnnamed
-  else which = P.rowsUnranked(block.rows)
+    if (orderLabel) {
+      which = P.rowsCaptured(orderLabel)
+    } else if (ordered) {
+      which = P.rowsCapturedUnnamed
+    } else {
+      which = P.rowsCapturedUnsorted(block.rows)
+    }
+  } else if (block.source?.type === 'query') {
+    which = P.rowsQuestion(block.rows)
+  } else if (orderLabel) {
+    which = P.rowsRanked(orderLabel)
+  } else if (ordered) {
+    which = P.rowsRankedUnnamed
+  } else {
+    which = P.rowsUnranked(block.rows)
+  }
 
   return (
     <>
@@ -346,7 +357,9 @@ const SourcePicker = ({ dashboards, dashboardId, tileKey, onDashboard, onTile })
         testId='report-builder-tile'
         onChange={(key) => {
           const tile = supported.find((t) => getTileKey(t) === key)
-          if (tile) onTile(tileSource({ dashboard, tile }))
+          if (tile) {
+            onTile(tileSource({ dashboard, tile }))
+          }
         }}
       />
       {dashboard && hidden > 0 ? <Note>{P.hiddenTiles(hidden)}</Note> : null}
@@ -592,8 +605,11 @@ export const readPanelOpen = () => {
 
 export const storePanelOpen = (open) => {
   try {
-    if (open) window.localStorage.removeItem(PANEL_OPEN_KEY)
-    else window.localStorage.setItem(PANEL_OPEN_KEY, 'false')
+    if (open) {
+      window.localStorage.removeItem(PANEL_OPEN_KEY)
+    } else {
+      window.localStorage.setItem(PANEL_OPEN_KEY, 'false')
+    }
   } catch (error) {
     // Blocked storage (a private window, say): it just isn't remembered.
   }

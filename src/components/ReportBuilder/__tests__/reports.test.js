@@ -332,6 +332,108 @@ describe('Reports', () => {
     await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(1))
   })
 
+  it('leaves ⌘S / Ctrl+S alone with no report shown, or with the focus in the host’s own page', async () => {
+    const hostField = document.createElement('input')
+    document.body.appendChild(hostField)
+    const press = (target) => {
+      const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true })
+      act(() => {
+        target.dispatchEvent(event)
+      })
+      return event
+    }
+    try {
+      setup({ saveDelay: 60000 })
+      await screen.findByRole('button', { name: 'Open Q3 book' })
+      expect(press(window).defaultPrevented).toBe(false)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Open Q3 book' }))
+      await screen.findByTestId('builder')
+      act(() => mockBuilder.props.onChange(documentOf('Edited')))
+      expect(press(hostField).defaultPrevented).toBe(false)
+      expect(saveReport).not.toHaveBeenCalled()
+
+      expect(press(screen.getByTestId('builder')).defaultPrevented).toBe(true)
+      await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(1))
+    } finally {
+      hostField.remove()
+    }
+  })
+
+  it('sends what’s waiting when the page goes away, without waiting for a save on its way', async () => {
+    const { ref } = setup({ saveDelay: 60000 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))
+    await screen.findByTestId('builder')
+    saveReport.mockImplementationOnce(() => new Promise(() => {}))
+    act(() => mockBuilder.props.onChange(documentOf('One')))
+    act(() => ref.current.saveNow())
+    expect(saveReport).toHaveBeenCalledTimes(1)
+
+    act(() => mockBuilder.props.onChange(documentOf('Two')))
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'))
+    })
+    expect(saveReport).toHaveBeenCalledTimes(2)
+    expect(saveReport.mock.calls[1][0]).toEqual(
+      expect.objectContaining({ id: A, report: documentOf('Two'), version: 1, keepalive: true }),
+    )
+  })
+
+  it('saves at once when the page is hidden, while it’s still there to finish', async () => {
+    setup({ saveDelay: 60000 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))
+    await screen.findByTestId('builder')
+    act(() => mockBuilder.props.onChange(documentOf('Hidden')))
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    try {
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+      await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(1))
+      expect(saveReport.mock.calls[0][0]).not.toHaveProperty('keepalive')
+    } finally {
+      delete document.visibilityState
+    }
+  })
+
+  it('keeps blocks merged in from another tab when an edit made before the builder had them comes in', async () => {
+    const { ref } = setup({ saveDelay: 60000 })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))
+    await screen.findByTestId('builder')
+    const appended = { id: 'added-elsewhere', type: 'text', text: 'From Add to Report' }
+    const saver = ref.current.savers.get(A)
+
+    // A save merged the block in; before the builder re-rendered with it, it emitted an edit built without it.
+    act(() => {
+      saver.options.onMerged(documentOf('Q3 book', [appended]), [appended])
+      mockBuilder.props.onChange(documentOf('Typed meanwhile'))
+    })
+    expect(mockBuilder.props.report).toEqual(documentOf('Typed meanwhile', [appended]))
+    expect(saver.report).toEqual(documentOf('Typed meanwhile', [appended]))
+
+    // Once the builder has it, an edit without it is one that took it out.
+    act(() => mockBuilder.props.onChange(documentOf('Typed meanwhile')))
+    expect(mockBuilder.props.report.blocks).toEqual([])
+  })
+
+  it('lists every report a page at a time, and opens one from a later page that the address names', async () => {
+    const C = 'cccccccc-0000-4000-8000-000000000003'
+    // Fees was saved between the two pages, so it's on both.
+    fetchReports.mockImplementation(async ({ page }) =>
+      page === 2
+        ? { reports: [summary(B, 'Fees'), summary(C, 'Older')], page: 2, totalPages: 2 }
+        : { reports: [summary(A, 'Q3 book'), summary(B, 'Fees')], page: 1, totalPages: 2 },
+    )
+    fetchReport.mockImplementation(async ({ id }) => stored(id, id === C ? 'Older' : 'Q3 book'))
+    setup({ shownReportId: C })
+    await waitFor(() => expect(screen.getByTestId('builder-title')).toHaveTextContent('Older'))
+    expect(fetchReports).toHaveBeenCalledTimes(2)
+    expect(fetchReports).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 200 }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'All reports' }))
+    expect(homeProps.current.reports.map((report) => report.id)).toEqual([A, B, C])
+  })
+
   it('stops saving when the report changed elsewhere, and reloads the stored copy when asked', async () => {
     setup()
     fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))

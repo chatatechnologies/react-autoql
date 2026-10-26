@@ -38,7 +38,9 @@ export class AutoGrowTextarea extends React.Component {
 
   resize = () => {
     const el = this.ref.current
-    if (!el) return
+    if (!el) {
+      return
+    }
     el.style.height = 'auto'
     if (el.scrollHeight) {
       // scrollHeight leaves out the borders, which a border-box height includes: without them a bordered

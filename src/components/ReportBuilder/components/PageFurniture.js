@@ -54,7 +54,9 @@ export const RunningFooter = ({ left, right }) => (
 // "Generated 23 Sep 2026 · Data as of 23 Sep 2026, 14:05", or "… · Not yet run" before a run. A report
 // with no data says nothing about data.
 export const dataAgeText = ({ dataAsOf, hasData }) => {
-  if (dataAsOf) return `${STRINGS.preview.dataAsOf} ${dataAsOf}`
+  if (dataAsOf) {
+    return `${STRINGS.preview.dataAsOf} ${dataAsOf}`
+  }
   return hasData ? STRINGS.preview.notRunYet : null
 }
 

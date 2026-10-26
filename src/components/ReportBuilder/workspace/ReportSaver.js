@@ -1,5 +1,5 @@
 import { createReport, fetchReport, ReportsApiError, saveReport } from '../run/reportsApi'
-import { SAVE_DELAY_MS } from './constants'
+import { SAVE_DELAY_MS } from './reportsConstants'
 import {
   blocksAddedOnServer,
   describeReportError,
@@ -10,10 +10,11 @@ import {
   stripQueryResponses,
   withBlocksAdded,
 } from './documents'
-import { REPORTS_STRINGS } from './strings'
+import { REPORTS_STRINGS } from './reportsStrings'
 
 // Saves one open report to AutoQL's report service: after a pause in editing, or at once on flush() — Save,
-// ⌘S / Ctrl+S, switching reports, leaving the page — one write at a time.
+// ⌘S / Ctrl+S, switching reports — one write at a time. When the page is going away, leave() sends what's waiting
+// at once, without waiting for a write on its way.
 //
 // Each save sends the whole report with the version it was read at. A version conflict means the stored copy moved
 // on. When all that changed there is blocks added at the end ("Add to Report…" from another page or tab), they're
@@ -21,15 +22,16 @@ import { REPORTS_STRINGS } from './strings'
 // edited somewhere else as well: saving stops, and the workspace offers to reload it (`conflict`).
 //
 // A save that couldn't reach the service, or that the service failed, stays pending and is retried after a growing
-// pause. One the service turned down (too large, a title over the limit, a report deleted elsewhere, a token it
-// wouldn't take) waits for the next edit or Save, or for retry() once the host has new credentials.
+// pause, as is one that kept meeting new blocks. One the service turned down (too large, a title over the limit, a
+// report deleted elsewhere, a token it wouldn't take) waits for the next edit or Save, or for retry() once the host
+// has new credentials.
 //
 // Options: id; stored (what the service has, { report, version, updatedAt }, or null for a report it doesn't have
 // yet); report (as the page has it: the stored copy, or a new report's first draft); delayMs (the pause);
 // getAuthentication (the AutoQL authentication for the report's data source, asked for on every request because the
-// host re-mints tokens); onState(state); onMerged(report), when blocks added elsewhere were merged in and the page
-// should show this copy; onUnauthorized(), when the service turned the token away; folderId (the folder a report the
-// service doesn't have yet is created in; none by default); api (the service's calls, for tests).
+// host re-mints tokens); onState(state); onMerged(report, added), when blocks added elsewhere (`added`) were merged in
+// and the page should show this copy; onUnauthorized(), when the service turned the token away; folderId (the folder
+// a report the service doesn't have yet is created in; none by default); api (the service's calls, for tests).
 //
 // A state is { status, error, savedAt }: status one of SAVE_STATUSES, error the line to show while it's failed or in
 // conflict, savedAt when the service last stored the report (ISO), null until it has.
@@ -72,6 +74,9 @@ export class ReportSaver {
     this.edits = 0
     this.savedEdits = stored ? 0 : -1
     this.inflight = null
+    // What each write on its way carries ({ body, edits, keepalive }), oldest first: a stored copy that turns out
+    // to be one of these is ours, not an edit made elsewhere.
+    this.sending = []
     this.timer = null
     this.retries = 0
     this.disposed = false
@@ -118,7 +123,8 @@ export class ReportSaver {
   }
 
   // Saves what's waiting, now. True once the service has everything; false when a save failed or can't happen.
-  // `keepalive` when the page is going away (reload, close, sign-out), so a save that starts now outlives it.
+  // `keepalive` when the page may go away once it's done (reload, close, sign-out), so a save that starts now
+  // outlives it.
   async flush({ keepalive = false } = {}) {
     this.clearTimer()
     for (;;) {
@@ -136,6 +142,21 @@ export class ReportSaver {
         return false
       }
     }
+  }
+
+  // The page is going away now (pagehide): what's waiting goes at once, as a request that outlives the page. A write
+  // on its way isn't waited for, as the page would be gone before it answered; it's left alone only when it has every
+  // edit and outlives the page too. If both land, the second is turned away as stale and finds the first is ours.
+  leave() {
+    this.clearTimer()
+    if (this.disposed || this.state.status === 'conflict' || !this.dirty) {
+      return
+    }
+    const latest = this.sending[this.sending.length - 1]
+    if (latest && latest.keepalive && latest.edits === this.edits) {
+      return
+    }
+    this.send(true)
   }
 
   // After a failure, saves at once: for when the host has new credentials. Resolves as flush() does, or, with
@@ -198,7 +219,10 @@ export class ReportSaver {
 
   send(keepalive) {
     const run = this.write(keepalive).finally(() => {
-      this.inflight = null
+      // Only leave() sends a write while another is on its way; the later one is what flush() waits for.
+      if (this.inflight === run) {
+        this.inflight = null
+      }
     })
     this.inflight = run
     return run
@@ -211,6 +235,8 @@ export class ReportSaver {
       return false
     }
     let body = stripQueryResponses(this.local)
+    const sending = { body, edits, keepalive: !!keepalive }
+    this.sending.push(sending)
     // Only when asked, so an ordinary save's call doesn't name keepalive at all.
     const sendOptions = keepalive ? { keepalive: true } : {}
     this.setState({ status: 'saving', error: null })
@@ -254,7 +280,15 @@ export class ReportSaver {
           }
         }
 
+        // A later write of ours (one leave() sent beside this) stored everything this one had: saving this again
+        // would put back what it had over what came after.
+        if (this.savedEdits >= edits) {
+          return true
+        }
         const latest = await this.api.fetchReport({ authentication: this.authentication(), id: this.id })
+        if (this.sending.some((item) => item.edits > edits && blocksAddedOnServer(item.body, latest.report) !== null)) {
+          return true
+        }
         const added = this.addedSince(latest.report)
         if (added === null) {
           this.conflict()
@@ -265,9 +299,10 @@ export class ReportSaver {
         this.unconfirmed = null
         if (added.length > 0) {
           body = withBlocksAdded(body, added)
+          sending.body = body
           this.local = withBlocksAdded(this.local, added)
           if (!this.disposed) {
-            this.options.onMerged?.(this.local)
+            this.options.onMerged?.(this.local, added)
           }
         }
         if (sameJson(body, latest.report)) {
@@ -288,12 +323,14 @@ export class ReportSaver {
         this.options.onUnauthorized?.()
       }
       return false
+    } finally {
+      this.sending = this.sending.filter((item) => item !== sending)
     }
   }
 
   // Blocks the stored copy gained since the copy we know — or since a write of ours that may have landed.
   addedSince(server) {
-    for (const known of [this.base, this.unconfirmed]) {
+    for (const known of [this.base, this.unconfirmed, ...this.sending.map((item) => item.body)]) {
       const added = blocksAddedOnServer(known, server)
       if (added !== null) {
         return added

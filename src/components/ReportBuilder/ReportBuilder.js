@@ -14,7 +14,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
-import { BLOCK_TYPES, RB } from './constants'
+import { BLOCK_TYPES, ORIENTATION_OPTIONS, RB } from './constants'
 import { STRINGS } from './strings'
 import { createBlock, normalizeBlock, normalizeReport } from './model/reportSchema'
 import {
@@ -205,7 +205,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
         ),
       // Kept while the focus moves to the formatting bar (its link field, its style menu).
       deactivate: (editor, nextFocus) => {
-        if (nextFocus?.closest?.('[data-formatting-bar]')) return
+        if (nextFocus?.closest?.('[data-formatting-bar]')) {
+          return
+        }
         this.setState((state) => (state.richEditor === editor ? { richEditor: null, richBlockId: null } : null))
       },
     }
@@ -280,9 +282,13 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // Normalized once per block object, so a block the host passes back unchanged keeps its identity and
   // doesn't redraw (a chart redraw is expensive).
   normalizeBlockCached = (block) => {
-    if (!block || typeof block !== 'object') return null
+    if (!block || typeof block !== 'object') {
+      return null
+    }
     const hit = this.blockCache.get(block)
-    if (hit) return hit
+    if (hit) {
+      return hit
+    }
     const normalized = normalizeBlock(block)
     if (normalized) {
       this.blockCache.set(block, normalized)
@@ -293,7 +299,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   getReport = () => {
     const raw = this.props.report
-    if (raw === this.lastRawReport && this.lastReport) return this.lastReport
+    if (raw === this.lastRawReport && this.lastReport) {
+      return this.lastReport
+    }
     const rawBlocks = Array.isArray(raw?.blocks) ? raw.blocks : []
     const base = normalizeReport(raw && typeof raw === 'object' ? { ...raw, blocks: [] } : raw)
     this.lastRawReport = raw
@@ -314,7 +322,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     plan.jobs.forEach((job) => {
       keys[job.blockId] = job.key
     })
-    if (this.lastRequestKeys && sameEntries(this.lastRequestKeys, keys)) return this.lastRequestKeys
+    if (this.lastRequestKeys && sameEntries(this.lastRequestKeys, keys)) {
+      return this.lastRequestKeys
+    }
     this.lastRequestKeys = keys
     return keys
   }
@@ -326,7 +336,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const entries = {}
     const views = {}
     report.blocks.forEach((block) => {
-      if (block.type !== 'data') return
+      if (block.type !== 'data') {
+        return
+      }
       const requestKey = requestKeys[block.id]
       const running = requestKey != null && runningKeys?.[block.id] === requestKey
       const found = block.source?.type === 'tile' ? resolveTile(tileIndex, block.source) : null
@@ -341,7 +353,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     })
     // Then analyses, which read the view of the Data block they're about.
     report.blocks.forEach((block) => {
-      if (block.type !== 'analysis') return
+      if (block.type !== 'analysis') {
+        return
+      }
       const target = block.target
         ? report.blocks.find((other) => other.id === block.target && other.type === 'data')
         : undefined
@@ -378,7 +392,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // Edited since the last run in a way that changes what some block would fetch.
   isStale = (requestKeys) => {
     const { run } = this.state
-    if (!run || run.status === 'running') return false
+    if (!run || run.status === 'running') {
+      return false
+    }
     return Object.keys(requestKeys).some((id) => run.keys[id] !== requestKeys[id])
   }
 
@@ -391,25 +407,26 @@ export class ReportBuilderWithoutTheme extends React.Component {
     this.props.onChange(next)
   }
 
-  // The report as it stands for something finishing now: the last one emitted, until the host passes a new one.
+  // The report as it stands for a change made now: the last one emitted, until the host passes a new one. Every
+  // edit builds on it, so two in a row (a keystroke while a style change is on its way) both count.
   getLatestReport = () => {
     const emitted = this.lastEmitted
     return emitted && emitted.base === this.props.report ? emitted.report : this.getReport()
   }
 
-  onTitleChange = (title) => this.change(setTitle(this.getReport(), title))
+  onTitleChange = (title) => this.change(setTitle(this.getLatestReport(), title))
 
-  onPageChange = (patch) => this.change(updatePageSetup(this.getReport(), patch))
+  onPageChange = (patch) => this.change(updatePageSetup(this.getLatestReport(), patch))
 
-  onBlockChange = (id, patch) => this.change(updateBlock(this.getReport(), id, patch))
+  onBlockChange = (id, patch) => this.change(updateBlock(this.getLatestReport(), id, patch))
 
-  onStyleChange = (id, patch) => this.change(updateBlockStyle(this.getReport(), id, patch))
+  onStyleChange = (id, patch) => this.change(updateBlockStyle(this.getLatestReport(), id, patch))
 
-  onStyleReset = (id) => this.change(resetBlockStyle(this.getReport(), id))
+  onStyleReset = (id) => this.change(resetBlockStyle(this.getLatestReport(), id))
 
-  onSourceChange = (id, source) => this.change(setDataSource(this.getReport(), id, source))
+  onSourceChange = (id, source) => this.change(setDataSource(this.getLatestReport(), id, source))
 
-  onText = (id, text) => this.change(updateBlock(this.getReport(), id, { text }))
+  onText = (id, text) => this.change(updateBlock(this.getLatestReport(), id, { text }))
 
   // A chart's axes or aggregation, changed with its own selectors in the editor (ReportChart).
   onChartChange = (id, patch) => this.change(updateBlock(this.getLatestReport(), id, patch))
@@ -417,19 +434,25 @@ export class ReportBuilderWithoutTheme extends React.Component {
   onAsk = (id, query) => this.onSourceChange(id, { type: 'query', query })
 
   onBlockAction = (id, action) => {
-    const report = this.getReport()
+    const report = this.getLatestReport()
     if (action === 'up' || action === 'down') {
       this.change(moveBlock(report, id, action === 'up' ? -1 : 1))
     } else if (action === 'duplicate') {
       const { report: next, id: copyId } = duplicateBlock(report, id)
       this.change(next)
-      if (copyId) this.setState({ selectedId: copyId })
+      if (copyId) {
+        this.setState({ selectedId: copyId })
+      }
     } else if (action === 'remove') {
       const index = report.blocks.findIndex((block) => block.id === id)
-      if (index < 0) return
+      if (index < 0) {
+        return
+      }
       this.change(removeBlock(report, id))
       this.offerUndoRemove(report.blocks[index], index)
-      if (this.state.selectedId === id) this.setState({ selectedId: null })
+      if (this.state.selectedId === id) {
+        this.setState({ selectedId: null })
+      }
     }
   }
 
@@ -438,14 +461,18 @@ export class ReportBuilderWithoutTheme extends React.Component {
     clearTimeout(this.removedTimer)
     this.setState({ removed: { block, index } })
     this.removedTimer = setTimeout(() => {
-      if (this.mounted) this.setState({ removed: null })
+      if (this.mounted) {
+        this.setState({ removed: null })
+      }
     }, UNDO_REMOVE_MS)
   }
 
   undoRemove = () => {
     const { removed } = this.state
     clearTimeout(this.removedTimer)
-    if (!removed) return
+    if (!removed) {
+      return
+    }
     const report = this.getLatestReport()
     if (report.blocks.some((block) => block.id === removed.block.id)) {
       this.setState({ removed: null })
@@ -467,7 +494,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   }
 
   onKeyDown = (e) => {
-    if (e.key !== 'Escape') return
+    if (e.key !== 'Escape') {
+      return
+    }
     if (this.state.details) {
       this.closeDetails()
     } else if (
@@ -493,10 +522,14 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // Report options › Page setup: the panel with nothing selected, as a click off the blocks gives, shown if it
   // was hidden and scrolled to its top.
   onPageSetup = () => {
-    if (!this.state.panelOpen) storePanelOpen(true)
+    if (!this.state.panelOpen) {
+      storePanelOpen(true)
+    }
     this.setState({ selectedId: null, details: null, panelOpen: true }, () => {
       const panel = this.rootRef.current?.querySelector(`#${this.panelId}`)
-      if (panel) panel.scrollTop = 0
+      if (panel) {
+        panel.scrollTop = 0
+      }
     })
   }
 
@@ -506,15 +539,21 @@ export class ReportBuilderWithoutTheme extends React.Component {
   loadBranding = () => {
     const seq = ++this.brandingSeq
     if (!this.props.enableBranding) {
-      if (this.state.orgBranding || this.state.brandingReady) this.setState({ orgBranding: null, brandingReady: false })
+      if (this.state.orgBranding || this.state.brandingReady) {
+        this.setState({ orgBranding: null, brandingReady: false })
+      }
       return
     }
     fetchBranding({ authentication: this.props.authentication }).then(
       (orgBranding) => {
-        if (this.mounted && seq === this.brandingSeq) this.setState({ orgBranding, brandingReady: true })
+        if (this.mounted && seq === this.brandingSeq) {
+          this.setState({ orgBranding, brandingReady: true })
+        }
       },
       () => {
-        if (this.mounted && seq === this.brandingSeq) this.setState({ orgBranding: null, brandingReady: false })
+        if (this.mounted && seq === this.brandingSeq) {
+          this.setState({ orgBranding: null, brandingReady: false })
+        }
       },
     )
   }
@@ -531,7 +570,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // Saves it for the organisation; the dialog says so if this rejects.
   saveBranding = async (branding) => {
     const saved = await saveOrgBranding({ authentication: this.props.authentication, branding })
-    if (this.mounted) this.setState({ orgBranding: saved, brandingReady: true })
+    if (this.mounted) {
+      this.setState({ orgBranding: saved, brandingReady: true })
+    }
   }
 
   onZoomChange = (zoom) => {
@@ -565,8 +606,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
   setPending = (id, entry) =>
     this.setState((state) => {
       const pending = { ...state.pending }
-      if (entry) pending[id] = entry
-      else delete pending[id]
+      if (entry) {
+        pending[id] = entry
+      } else {
+        delete pending[id]
+      }
       return { pending }
     })
 
@@ -575,13 +619,17 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // if the block is gone or has been filled by then, or if the builder has gone away.
   onPickTiles = (id) => {
     const pick = this.props.pickDashboardTiles
-    if (typeof pick !== 'function' || this.pendingSeqs[id]) return
+    if (typeof pick !== 'function' || this.pendingSeqs[id]) {
+      return
+    }
     this.pendingSeq += 1
     const seq = this.pendingSeq
     this.pendingSeqs[id] = seq
     this.setPending(id, { kind: 'tiles', seq })
     const settle = () => {
-      if (!this.mounted || this.pendingSeqs[id] !== seq) return false
+      if (!this.mounted || this.pendingSeqs[id] !== seq) {
+        return false
+      }
       delete this.pendingSeqs[id]
       this.setPending(id, null)
       return true
@@ -596,10 +644,14 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
     Promise.resolve(picking)
       .then((picked) => {
-        if (!settle()) return
+        if (!settle()) {
+          return
+        }
         const report = this.getLatestReport()
         const target = report.blocks.find((block) => block.id === id)
-        if (!target || target.type !== 'data' || target.source || target.capture) return
+        if (!target || target.type !== 'data' || target.source || target.capture) {
+          return
+        }
         const taken = new Set(report.blocks.map((block) => block.id))
         const blocks = (Array.isArray(picked) ? picked : [])
           .map(normalizeBlock)
@@ -609,12 +661,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
             taken.add(unique.id)
             return unique
           })
-        if (!blocks.length) return
+        if (!blocks.length) {
+          return
+        }
         this.change(replaceBlock(report, id, blocks))
         this.setState({ selectedId: blocks[0].id }, () => this.scrollToBlock(blocks[0].id))
       })
       .catch((error) => {
-        if (settle()) this.props.onErrorCallback(error)
+        if (settle()) {
+          this.props.onErrorCallback(error)
+        }
       })
   }
 
@@ -623,7 +679,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // again. The answer is dropped if the block is gone or filled by then, and the request stopped if the
   // builder goes away.
   askQuestion = (id, query, { rerun = false } = {}) => {
-    if (this.pendingSeqs[id]) return
+    if (this.pendingSeqs[id]) {
+      return
+    }
     this.pendingSeq += 1
     const seq = this.pendingSeq
     this.pendingSeqs[id] = seq
@@ -637,7 +695,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
       autoQLConfig: this.props.autoQLConfig,
       signal: controller?.signal,
     }).then((result) => {
-      if (!this.mounted || this.pendingSeqs[id] !== seq) return
+      if (!this.mounted || this.pendingSeqs[id] !== seq) {
+        return
+      }
       delete this.pendingSeqs[id]
       delete this.pendingAborts[id]
       if (!result.ok) {
@@ -649,14 +709,20 @@ export class ReportBuilderWithoutTheme extends React.Component {
       this.setPending(id, null)
       const report = this.getLatestReport()
       const target = report.blocks.find((block) => block.id === id)
-      if (!target || target.type !== 'data') return
+      if (!target || target.type !== 'data') {
+        return
+      }
       if (rerun) {
         // Only while the block still asks this question.
-        if (!target.askedHere || target.source?.type !== 'query' || target.source.query !== query) return
+        if (!target.askedHere || target.source?.type !== 'query' || target.source.query !== query) {
+          return
+        }
         this.change(updateBlock(report, id, { capture: result.capture }))
         return
       }
-      if (target.source || target.capture) return
+      if (target.source || target.capture) {
+        return
+      }
       this.change(
         replaceDataSource(report, id, {
           source: { type: 'query', query },
@@ -681,12 +747,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // result shows now — one credit per call. The wording is dropped if the block is gone by then, and a failure
   // is kept on the block, with why.
   onAnalyze = (id) => {
-    if (!this.props.enableAnalysis || this.pendingSeqs[id]) return
+    if (!this.props.enableAnalysis || this.pendingSeqs[id]) {
+      return
+    }
     const report = this.getLatestReport()
     const block = report.blocks.find((b) => b.id === id && b.type === 'analysis')
     const target = block?.target && report.blocks.find((b) => b.id === block.target && b.type === 'data')
     const input = target ? getAnalysisInput({ target, targetView: this.derive().views[target.id] }) : null
-    if (!input) return
+    if (!input) {
+      return
+    }
 
     this.pendingSeq += 1
     const seq = this.pendingSeq
@@ -695,7 +765,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const focus = (block.focus || '').trim()
 
     runAnalysis({ input, focus, authentication: this.props.authentication }).then((result) => {
-      if (!this.mounted || this.pendingSeqs[id] !== seq) return
+      if (!this.mounted || this.pendingSeqs[id] !== seq) {
+        return
+      }
       delete this.pendingSeqs[id]
       if (!result.ok) {
         this.setPending(id, { kind: 'analysis', seq, error: result.message })
@@ -703,7 +775,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
       }
       this.setPending(id, null)
       const latest = this.getLatestReport()
-      if (!latest.blocks.some((b) => b.id === id && b.type === 'analysis')) return
+      if (!latest.blocks.some((b) => b.id === id && b.type === 'analysis')) {
+        return
+      }
       this.change(
         updateBlock(latest, id, {
           text: toAnalysisMarkdown(result.text),
@@ -719,10 +793,14 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   // The ✦ on a Data block's toolbar: an Analysis block about it, put right after it and written at once.
   onAnalyzeResult = (dataId) => {
-    if (!this.props.enableAnalysis) return
+    if (!this.props.enableAnalysis) {
+      return
+    }
     const report = this.getLatestReport()
     const target = report.blocks.find((b) => b.id === dataId && b.type === 'data')
-    if (getAnalysisBlocker({ target, targetView: this.derive().views[dataId] })) return
+    if (getAnalysisBlocker({ target, targetView: this.derive().views[dataId] })) {
+      return
+    }
     const block = createBlock('analysis', { target: dataId })
     this.change(insertBlock(report, block, dataId))
     this.setState({ selectedId: block.id }, () => this.scrollToBlock(block.id))
@@ -743,8 +821,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
       const rect = button.getBoundingClientRect()
       let top = rect.top - bodyRect.top - 6
       const limit = bodyRect.height - 460
-      if (limit > 8 && top > limit) top = limit
-      if (!(top > 8)) top = 8
+      if (limit > 8 && top > limit) {
+        top = limit
+      }
+      if (!(top > 8)) {
+        top = 8
+      }
       position = { top, left: rect.right - bodyRect.left + 10 }
     }
     this.setState({ details: { type, draft: defaultDraft(type), position } })
@@ -756,15 +838,19 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   insertFromDetails = () => {
     const { details, selectedId } = this.state
-    if (!details) return
-    const report = this.getReport()
+    if (!details) {
+      return
+    }
+    const report = this.getLatestReport()
     const anchor = report.blocks.some((b) => b.id === selectedId) ? selectedId : undefined
     const draft =
       details.type === 'analysis' && !details.draft?.target
         ? { ...details.draft, target: this.analysisTargetFor(report, anchor) }
         : details.draft
     const block = createBlock(details.type, draft)
-    if (!block) return
+    if (!block) {
+      return
+    }
     this.change(insertBlock(report, block, anchor))
     this.setState({ details: null, selectedId: block.id }, () => this.scrollToBlock(block.id))
   }
@@ -779,7 +865,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     )
     const end = anchorId ? report.blocks.findIndex((b) => b.id === anchorId) : report.blocks.length - 1
     for (let i = end; i >= 0; i -= 1) {
-      if (ids.has(report.blocks[i].id)) return report.blocks[i].id
+      if (ids.has(report.blocks[i].id)) {
+        return report.blocks[i].id
+      }
     }
     return ids.size === 1 ? [...ids][0] : undefined
   }
@@ -796,7 +884,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // Runs every data block as one run with one timestamp. Resolves with the run's summary, or null if
   // it was superseded or the builder went away.
   runReport = () => {
-    if (!this.props.enableRunReport) return Promise.resolve(null)
+    if (!this.props.enableRunReport) {
+      return Promise.resolve(null)
+    }
     this.cancelRequests()
     const { plan, requestKeys } = this.derive()
     this.runId += 1
@@ -815,7 +905,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
       jobs: plan.jobs,
       cancelToken: source.token,
       onSettled: (blockId, result) => {
-        if (!current()) return
+        if (!current()) {
+          return
+        }
         this.setState((state) => ({
           results: { ...state.results, [blockId]: result },
           run: state.run ? { ...state.run, done: state.run.done + 1 } : state.run,
@@ -823,8 +915,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
       },
     })
       .then((results) => {
-        if (!current()) return null
-        if (this.cancelSource === source) this.cancelSource = null
+        if (!current()) {
+          return null
+        }
+        if (this.cancelSource === source) {
+          this.cancelSource = null
+        }
         const summary = { ...summarizeRun(results, plan.skipped), runAt }
         this.setState((state) => ({
           run: { ...state.run, status: summary.status === 'cancelled' ? 'cancelled' : 'done' },
@@ -833,7 +929,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
         return summary
       })
       .catch((error) => {
-        if (!current()) return null
+        if (!current()) {
+          return null
+        }
         this.setState((state) => ({ run: { ...state.run, status: 'done' } }))
         this.props.onErrorCallback(error)
         return null
@@ -841,7 +939,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   }
 
   cancelRun = () => {
-    if (this.state.run?.status !== 'running') return
+    if (this.state.run?.status !== 'running') {
+      return
+    }
     this.cancelRequests()
     this.runId += 1 // anything still in flight is ignored
     this.setState((state) => ({ run: { ...state.run, status: 'cancelled' } }))
@@ -869,16 +969,22 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // Opens the preview if it isn't open, waits for its pages and charts, then prints them. Resolves true
   // once the browser's print dialog has been asked for.
   print = async () => {
-    if (this.printInFlight) return false
+    if (this.printInFlight) {
+      return false
+    }
     this.printInFlight = true
     this.setState({ printing: true, notice: null })
     try {
       await this.openPrintPreview()
       const preview = this.previewRef.current
-      if (!preview) return false
+      if (!preview) {
+        return false
+      }
       await preview.whenReady()
       const charts = await waitForCharts(preview.getPagesElement(), { timeout: DEFAULT_CHART_TIMEOUT })
-      if (!this.mounted || !this.state.previewOpen || this.previewRef.current !== preview) return false
+      if (!this.mounted || !this.state.previewOpen || this.previewRef.current !== preview) {
+        return false
+      }
       if (charts.timedOut) {
         this.setState({ notice: STRINGS.preview.chartsTimedOut(charts.pending) })
       }
@@ -895,25 +1001,28 @@ export class ReportBuilderWithoutTheme extends React.Component {
       return false
     } finally {
       this.printInFlight = false
-      if (this.mounted) this.setState({ printing: false })
+      if (this.mounted) {
+        this.setState({ printing: false })
+      }
     }
   }
 
   // ---------------------------------------------------------------- render
 
-  getRunLabel = ({ report, requestKeys, isStale }) => {
-    const { run } = this.state
-    const dataBlockCount = report.blocks.filter((block) => block.type === 'data' && block.source).length
-    if (run?.status === 'cancelled') {
-      return STRINGS.runStopped
-    }
-    return getRunLabel({ run, dataBlockCount, isStale })
-  }
+  runLabelFor = ({ report, isStale }) =>
+    getRunLabel({
+      run: this.state.run,
+      dataBlockCount: report.blocks.filter((block) => block.type === 'data' && block.source).length,
+      isStale,
+    })
 
   getPreviewMeta = (report) => {
     const { layoutInfo } = this.state
-    const parts = [STRINGS.preview.letter, report.page.orientation === 'landscape' ? 'Landscape' : 'Portrait']
-    if (layoutInfo) parts.push(STRINGS.preview.pages(layoutInfo.pageCount))
+    const orientation = ORIENTATION_OPTIONS.find(([value]) => value === report.page.orientation)
+    const parts = [STRINGS.preview.letter, (orientation || ORIENTATION_OPTIONS[0])[1]]
+    if (layoutInfo) {
+      parts.push(STRINGS.preview.pages(layoutInfo.pageCount))
+    }
     return parts.join(' · ')
   }
 
@@ -1071,7 +1180,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
             <Toolbar
               title={report.title}
               onTitleChange={this.onTitleChange}
-              runLabel={this.getRunLabel({ report, requestKeys, isStale })}
+              runLabel={this.runLabelFor({ report, isStale })}
               running={running}
               highlightRun={hasRunnable && !running && (!run || isStale || run.status === 'cancelled')}
               hasRun={!!run && !running}

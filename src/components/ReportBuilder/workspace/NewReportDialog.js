@@ -3,11 +3,11 @@ import { Icon } from '../components/icons'
 import { SelectBox } from '../components/controls'
 import { createEmptyReport } from '../model/reportSchema'
 import { captureQuestion } from '../run/captureRun'
-import { RS } from './constants'
+import { RS } from './reportsConstants'
 import { newReportId, REPORT_TITLE_MAX } from './documents'
 import { DashboardTilesDialog } from './DashboardTilesDialog'
 import { ReportModal } from './ReportModal'
-import { REPORTS_STRINGS } from './strings'
+import { REPORTS_STRINGS } from './reportsStrings'
 
 // New report, from the tab strip: start from a question, a dashboard, or a blank page.
 //

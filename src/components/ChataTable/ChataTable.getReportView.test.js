@@ -27,9 +27,15 @@ const firstPageOnly = (rows) => ({
 const tableWith = ({ rows = allRows, countRows, tabulator, tableParams, filterCount, filteredResponseData }) => {
   const table = new ChataTable({ response: response(rows, countRows), columns })
   table.ref = tabulator ? { tabulator } : undefined
-  if (tableParams) table.tableParams = tableParams
-  if (filterCount !== undefined) table.filterCount = filterCount
-  if (filteredResponseData) table.filteredResponseData = filteredResponseData
+  if (tableParams) {
+    table.tableParams = tableParams
+  }
+  if (filterCount !== undefined) {
+    table.filterCount = filterCount
+  }
+  if (filteredResponseData) {
+    table.filteredResponseData = filteredResponseData
+  }
   return table
 }
 
@@ -51,6 +57,20 @@ describe('ChataTable.getReportView', () => {
         total: 120,
         filtered: false,
       })
+    })
+
+    it('reads the rows without copying the whole result, and hands back copies of the ones it keeps', () => {
+      const table = tableWith({
+        tabulator: firstPageOnly(allRows),
+        tableParams: { filter: [], sort: [{ field: '1', dir: 'desc' }], page: 1 },
+      })
+      const copyingSort = jest.spyOn(table, 'clientSortAndFilterData')
+
+      const view = table.getReportView(100)
+      expect(copyingSort).not.toHaveBeenCalled()
+      expect(view.rows[0]).toStrictEqual(['West', 120000])
+      view.rows[0][0] = 'Changed'
+      expect(table.originalQueryData.some(([region]) => region === 'Changed')).toBe(false)
     })
 
     it('counts what the filters leave, and leaves the footer’s count alone', () => {

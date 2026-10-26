@@ -21,8 +21,8 @@ import {
   ReportsApiError,
   updateReportTag,
 } from '../run/reportsApi'
-import { DEFAULT_STORAGE_PREFIX, REPORTS_PAGE_SIZE, RS, SAVE_DELAY_MS } from './constants'
-import { REPORTS_STRINGS } from './strings'
+import { DEFAULT_STORAGE_PREFIX, REPORTS_PAGE_SIZE, RS, SAVE_DELAY_MS } from './reportsConstants'
+import { REPORTS_STRINGS } from './reportsStrings'
 import {
   describeReportError,
   isReportGone,
@@ -30,6 +30,7 @@ import {
   newReportId,
   stripQueryResponses,
   titleOf,
+  withBlocksAdded,
 } from './documents'
 import { ReportSaver } from './ReportSaver'
 import { loadOpenTabs, loadTabWidths, saveOpenTabs, saveTabWidths, widthsFor, withTabClosed, withTabOpen } from './tabs'
@@ -45,9 +46,9 @@ import './Reports.scss'
 // save fails or the report was changed elsewhere, and the dashboard-tiles picker. The host draws the home page
 // (renderHome), and keeps which report is shown in its address if it likes (shownReportId and onShowReport).
 //
-// Edits are saved after a short pause, and at once when switching tabs, leaving the page, pressing the save
-// control or ⌘S / Ctrl+S (ReportSaver, one per report opened here). A save that failed is kept and tried again (its
-// tab keeps a dot meanwhile), and the browser asks before the page closes with one. Which reports are open is
+// Edits are saved after a short pause, and at once when switching tabs, leaving or hiding the page, pressing the
+// save control or ⌘S / Ctrl+S (ReportSaver, one per report opened here). A save that failed is kept and tried again
+// (its tab keeps a dot meanwhile), and the browser asks before the page closes with one. Which reports are open is
 // remembered in this browser, per data source (tabs.js). The data source is the token's: when the authentication
 // moves to another one, its list and tabs replace these, and what was waiting to be saved still goes to its own.
 
@@ -74,6 +75,23 @@ const without = (ids, id) => {
   const next = new Set(ids)
   next.delete(id)
   return next
+}
+
+// The service sends a page of reports at a time; any more than this many pages isn't asked for.
+const MAX_LIST_PAGES = 25
+
+// Every one of the user's reports on the data source, a page at a time: most recently saved first. A report saved
+// meanwhile moves up the list, so one that turns up on two pages is kept once.
+const listReports = async (authentication) => {
+  const first = await fetchReports({ authentication, pageSize: REPORTS_PAGE_SIZE })
+  const more = []
+  for (let page = 2; page <= Math.min(first.totalPages || 1, MAX_LIST_PAGES); page += 1) {
+    more.push(fetchReports({ authentication, page, pageSize: REPORTS_PAGE_SIZE }))
+  }
+  const seen = new Set()
+  return [first, ...(await Promise.all(more))]
+    .flatMap(({ reports }) => reports)
+    .filter((report) => !seen.has(report.id) && seen.add(report.id))
 }
 
 // Whether an ISO time is after another (one that can't be read is before anything).
@@ -270,6 +288,9 @@ export class ReportsWithoutTheme extends React.Component {
     this.organizersRequest = 0
     this.openRequest = 0
     this.unauthorizedSaid = false
+    // Blocks a save merged in from another tab ({ id, blocks }), until the builder has been handed them.
+    this.unshownMerge = null
+    this.root = React.createRef()
 
     this.state = {
       reports: null,
@@ -298,6 +319,7 @@ export class ReportsWithoutTheme extends React.Component {
     window.addEventListener('pagehide', this.onPageHide)
     window.addEventListener('beforeunload', this.onBeforeUnload)
     window.addEventListener('keydown', this.onKeyDown)
+    document.addEventListener('visibilitychange', this.onVisibilityChange)
     this.loadList()
     this.loadOrganizers()
   }
@@ -352,6 +374,17 @@ export class ReportsWithoutTheme extends React.Component {
       picker.resolve(null)
       this.setState({ tilePicker: null })
     }
+
+    // The builder now has the blocks merged in (or shows another report): what it emits from here on is built on
+    // them, or took them out.
+    const merge = this.unshownMerge
+    if (merge) {
+      const active = this.activeReport()
+      const blocks = active?.id === merge.id && Array.isArray(active.report?.blocks) ? active.report.blocks : null
+      if (!blocks || merge.blocks.every((block) => blocks.some((shown) => shown?.id === block?.id))) {
+        this.unshownMerge = null
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -359,6 +392,7 @@ export class ReportsWithoutTheme extends React.Component {
     window.removeEventListener('pagehide', this.onPageHide)
     window.removeEventListener('beforeunload', this.onBeforeUnload)
     window.removeEventListener('keydown', this.onKeyDown)
+    document.removeEventListener('visibilitychange', this.onVisibilityChange)
     this.state.tilePicker?.resolve(null)
     // Off to another page: each save finishes, then its saver goes.
     this.savers.forEach((saver) => {
@@ -424,8 +458,8 @@ export class ReportsWithoutTheme extends React.Component {
     const sourceId = this.sourceId
     this.listRequest += 1
     const request = this.listRequest
-    fetchReports({ authentication: this.credentialsFor(sourceId), pageSize: REPORTS_PAGE_SIZE }).then(
-      ({ reports }) => {
+    listReports(this.credentialsFor(sourceId)).then(
+      (reports) => {
         if (!this.mounted || request !== this.listRequest) {
           return
         }
@@ -682,8 +716,11 @@ export class ReportsWithoutTheme extends React.Component {
       delayMs: this.props.saveDelay,
       getAuthentication: () => this.credentialsFor(sourceId),
       onState: (state) => this.onSaverState(id, state),
-      onMerged: (merged) => {
+      onMerged: (merged, added) => {
         if (this.mounted && this.shownId === id) {
+          // The builder is handed them when this renders; an edit it makes before then is built without them.
+          const earlier = this.unshownMerge?.id === id ? this.unshownMerge.blocks : []
+          this.unshownMerge = { id, blocks: [...earlier, ...added] }
           this.setState({ opened: { id, report: merged } })
         }
       },
@@ -724,9 +761,17 @@ export class ReportsWithoutTheme extends React.Component {
   }
 
   // Leaving the page (closing the tab, reloading, navigating away) saves at once, as keepalive requests so they
-  // outlive the page.
+  // outlive the page, without waiting for saves on their way.
   onPageHide = () => {
-    this.flushAll({ keepalive: true })
+    this.savers.forEach((saver) => saver.leave())
+  }
+
+  // The page was hidden (another tab, the window minimised, another app on a phone): saves at once, while the page
+  // is still here to see them through — a phone may close it later without a word.
+  onVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+      this.flushAll()
+    }
   }
 
   // A save still waiting or on its way: start it, and let the browser ask before the page closes.
@@ -740,9 +785,24 @@ export class ReportsWithoutTheme extends React.Component {
     e.returnValue = ''
   }
 
-  // ⌘S / Ctrl+S saves the report rather than opening the browser's "Save page".
+  // ⌘S / Ctrl+S saves the report shown rather than opening the browser's "Save page", while the focus is in the
+  // workspace (its dialogs included) or nowhere in particular. With no report shown, or the focus in the host's own
+  // page, it's left to the host and the browser.
   onKeyDown = (e) => {
-    if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === 's') {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || String(e.key).toLowerCase() !== 's') {
+      return
+    }
+    if (e.defaultPrevented || !this.shownId) {
+      return
+    }
+    const target = e.target
+    const here =
+      target === window ||
+      target === document.body ||
+      target === document.documentElement ||
+      !!this.root.current?.contains(target) ||
+      !!target?.closest?.(`.${RS}-layer`)
+    if (here) {
       e.preventDefault()
       this.saveNow()
     }
@@ -869,11 +929,15 @@ export class ReportsWithoutTheme extends React.Component {
 
   // ---------------------------------------------------------------- changing reports
 
-  handleChange = (next) => {
+  handleChange = (change) => {
     const id = this.shownId
     if (!id) {
       return
     }
+    // Blocks merged in from another tab that the builder hadn't been handed yet: an edit built without them keeps
+    // them, rather than taking them out of the report again.
+    const merged = this.unshownMerge?.id === id ? this.unshownMerge.blocks : null
+    const next = merged ? withBlocksAdded(change, merged) : change
     const title = typeof next?.title === 'string' ? next.title : ''
     this.setState(({ opened, reports }) => ({
       opened: opened?.id === id ? { id, report: next } : opened,
@@ -1109,7 +1173,7 @@ export class ReportsWithoutTheme extends React.Component {
     const titleFor = (id) => titleOf(reports?.find((report) => report.id === id))
 
     return (
-      <div className={`${RS}${className ? ` ${className}` : ''}`} data-test='reports'>
+      <div ref={this.root} className={`${RS}${className ? ` ${className}` : ''}`} data-test='reports'>
         <ReportTabs
           tabs={tabs.map((id) => ({ id, title: titleFor(id), notSaved: notSaved.has(id) }))}
           shownId={shownId}

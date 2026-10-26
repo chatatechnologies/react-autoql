@@ -4,9 +4,9 @@ import '@testing-library/jest-dom'
 import { createEmptyReport } from '../model/reportSchema'
 import { appendReportBlock, createReport, fetchReports, ReportsApiError } from '../run/reportsApi'
 import { AddToReportDialog } from '../workspace/AddToReportDialog'
-import { REPORTS_PAGE_SIZE } from '../workspace/constants'
+import { REPORTS_PAGE_SIZE } from '../workspace/reportsConstants'
 import { REPORT_TITLE_MAX } from '../workspace/documents'
-import { REPORTS_STRINGS } from '../workspace/strings'
+import { REPORTS_STRINGS } from '../workspace/reportsStrings'
 
 // AutoQL's report service is stubbed; its error class is the real one, which the dialog tells failures apart by.
 jest.mock('../run/reportsApi', () => ({

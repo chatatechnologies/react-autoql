@@ -30,8 +30,11 @@ export const readPanelWidth = () => {
 
 export const storePanelWidth = (width) => {
   try {
-    if (width == null) window.localStorage.removeItem(PANEL_WIDTH_KEY)
-    else window.localStorage.setItem(PANEL_WIDTH_KEY, String(Math.round(width)))
+    if (width == null) {
+      window.localStorage.removeItem(PANEL_WIDTH_KEY)
+    } else {
+      window.localStorage.setItem(PANEL_WIDTH_KEY, String(Math.round(width)))
+    }
   } catch (error) {
     // Blocked storage (a private window, say): the width just isn't remembered.
   }
@@ -67,11 +70,15 @@ export class PanelResizer extends React.Component {
 
   resize = (width, done) => {
     this.props.onResize(width)
-    if (done) this.props.onResizeEnd?.(width)
+    if (done) {
+      this.props.onResizeEnd?.(width)
+    }
   }
 
   onMouseDown = (e) => {
-    if (e.button !== 0) return
+    if (e.button !== 0) {
+      return
+    }
     // No text selection starts under the pointer; the edge takes focus, so the keyboard can carry on.
     e.preventDefault()
     this.ref.current?.focus()
@@ -83,7 +90,9 @@ export class PanelResizer extends React.Component {
 
   onMouseMove = (e) => {
     const drag = this.drag
-    if (!drag) return
+    if (!drag) {
+      return
+    }
     // A button let go outside the window never sends mouseup.
     if (e.buttons === 0) {
       this.onMouseUp()
@@ -95,7 +104,9 @@ export class PanelResizer extends React.Component {
       drag.width = width
       // The overlay only once the edge really moves: put under a plain click, it would take the mouseup,
       // and the browser then sends no click or double-click at all.
-      if (!this.state.dragging) this.setState({ dragging: true })
+      if (!this.state.dragging) {
+        this.setState({ dragging: true })
+      }
       this.resize(width, false)
     }
   }
@@ -104,7 +115,9 @@ export class PanelResizer extends React.Component {
     const drag = this.drag
     this.drag = null
     this.stopListening()
-    if (this.state.dragging) this.setState({ dragging: false })
+    if (this.state.dragging) {
+      this.setState({ dragging: false })
+    }
     if (drag && drag.width !== drag.startWidth) {
       this.props.onResizeEnd?.(drag.width)
     }
@@ -119,14 +132,22 @@ export class PanelResizer extends React.Component {
     const { min, max, width } = this.getBounds()
     const step = e.shiftKey ? BIG_STEP : STEP
     let next
-    if (e.key === 'ArrowLeft') next = width + step
-    else if (e.key === 'ArrowRight') next = width - step
-    else if (e.key === 'Home') next = min
-    else if (e.key === 'End') next = max
-    else return
+    if (e.key === 'ArrowLeft') {
+      next = width + step
+    } else if (e.key === 'ArrowRight') {
+      next = width - step
+    } else if (e.key === 'Home') {
+      next = min
+    } else if (e.key === 'End') {
+      next = max
+    } else {
+      return
+    }
     e.preventDefault()
     next = clamp(next, min, max)
-    if (next !== width) this.resize(next, true)
+    if (next !== width) {
+      this.resize(next, true)
+    }
   }
 
   render() {

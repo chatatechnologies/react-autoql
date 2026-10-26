@@ -84,7 +84,9 @@ export const EditorBlock = React.memo(function EditorBlock({
 }) {
   const label = BLOCK_INFO[block.type]?.label || block.type
   const select = () => {
-    if (!selected) onSelect(block.id)
+    if (!selected) {
+      onSelect(block.id)
+    }
   }
   // Only a result Auto Analyze can write about offers it: kept with the answer's query id, and one the magic
   // wand is offered on elsewhere.
@@ -130,9 +132,15 @@ export const EditorBlock = React.memo(function EditorBlock({
 })
 
 const frontMatterNote = (page) => {
-  if (page.coverPage && page.tableOfContents) return STRINGS.frontMatter.both
-  if (page.coverPage) return STRINGS.frontMatter.cover
-  if (page.tableOfContents) return STRINGS.frontMatter.toc
+  if (page.coverPage && page.tableOfContents) {
+    return STRINGS.frontMatter.both
+  }
+  if (page.coverPage) {
+    return STRINGS.frontMatter.cover
+  }
+  if (page.tableOfContents) {
+    return STRINGS.frontMatter.toc
+  }
   return null
 }
 

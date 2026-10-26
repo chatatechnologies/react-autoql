@@ -2,6 +2,7 @@ import { Extension, generateHTML } from '@tiptap/core'
 import { StarterKit } from '@tiptap/starter-kit'
 import { Placeholder } from '@tiptap/extensions'
 import { Markdown, MarkdownManager } from '@tiptap/markdown'
+import { prepareEditorRuntime } from './editorRuntime'
 
 // A report's text as it can be formatted (RW-346), as Jira's editor formats it: bold, italic, underline and
 // strikethrough, links, bulleted and numbered lists, and headings within the text. Text blocks and an
@@ -45,26 +46,38 @@ const OrderedStarterKit = StarterKit.extend({
 })
 
 // The schema and its Markdown: everything a report's text can hold. `placeholder` is shown in an empty editor.
-export const richTextExtensions = ({ placeholder } = {}) => [
-  OrderedStarterKit.configure({
-    link: {
-      openOnClick: false,
-      autolink: true,
-      linkOnPaste: true,
-      defaultProtocol: 'https',
-      protocols: LINK_PROTOCOLS,
-    },
-  }),
-  Markdown.configure({ markedOptions: MARKED_OPTIONS }),
-  LinkShortcut,
-  ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
-]
+export const richTextExtensions = ({ placeholder } = {}) => {
+  prepareEditorRuntime()
+  return [
+    OrderedStarterKit.configure({
+      link: {
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: 'https',
+        protocols: LINK_PROTOCOLS,
+      },
+    }),
+    Markdown.configure({ markedOptions: MARKED_OPTIONS }),
+    LinkShortcut,
+    ...(placeholder ? [Placeholder.configure({ placeholder })] : []),
+  ]
+}
 
-const STATIC_EXTENSIONS = richTextExtensions()
+// What the page's HTML is drawn with, made when a report's text is first drawn rather than when the package loads:
+// an app that never shows a report never sets the editor up.
+let staticExtensions = null
+const pageExtensions = () => {
+  if (!staticExtensions) {
+    staticExtensions = richTextExtensions()
+  }
+  return staticExtensions
+}
+
 let manager = null
 const markdownManager = () => {
   if (!manager) {
-    manager = new MarkdownManager({ extensions: STATIC_EXTENSIONS, markedOptions: MARKED_OPTIONS })
+    manager = new MarkdownManager({ extensions: pageExtensions(), markedOptions: MARKED_OPTIONS })
   }
   return manager
 }
@@ -79,11 +92,15 @@ const HTML_CACHE_MAX = 300
 
 export const richTextHtml = (markdown) => {
   const text = textOf(markdown)
-  if (!text) return ''
+  if (!text) {
+    return ''
+  }
   let html = htmlCache.get(text)
   if (html === undefined) {
-    html = generateHTML(markdownManager().parse(text), STATIC_EXTENSIONS)
-    if (htmlCache.size >= HTML_CACHE_MAX) htmlCache.clear()
+    html = generateHTML(markdownManager().parse(text), pageExtensions())
+    if (htmlCache.size >= HTML_CACHE_MAX) {
+      htmlCache.clear()
+    }
     htmlCache.set(text, html)
   }
   return html
@@ -107,14 +124,18 @@ const chunksOf = (text) => {
         chunks.push({ node })
       }
     })
-    if (chunkCache.size >= HTML_CACHE_MAX) chunkCache.clear()
+    if (chunkCache.size >= HTML_CACHE_MAX) {
+      chunkCache.clear()
+    }
     chunkCache.set(text, chunks)
   }
   return chunks
 }
 
 const plainTextOf = (node) =>
-  node.type === 'text' ? node.text || '' : (node.content || []).map(plainTextOf).join(node.type === 'paragraph' ? '' : '\n')
+  node.type === 'text'
+    ? node.text || ''
+    : (node.content || []).map(plainTextOf).join(node.type === 'paragraph' ? '' : '\n')
 
 // Each piece's words, for estimating heights where nothing can be measured, and whether it's a heading (which
 // goes on to the next page with what follows it).
@@ -131,7 +152,9 @@ const sliceCache = new Map()
 // across pages. A list cut in two goes on as the same list, a numbered one counting on from where it stopped.
 export const richTextSliceHtml = (markdown, from, to) => {
   const text = textOf(markdown)
-  if (!text) return ''
+  if (!text) {
+    return ''
+  }
   const key = `${from}:${to}\u0000${text}`
   let html = sliceCache.get(key)
   if (html === undefined) {
@@ -155,8 +178,10 @@ export const richTextSliceHtml = (markdown, from, to) => {
         }
         open.node.content.push(chunk.node)
       })
-    html = content.length ? generateHTML({ type: 'doc', content }, STATIC_EXTENSIONS) : ''
-    if (sliceCache.size >= HTML_CACHE_MAX) sliceCache.clear()
+    html = content.length ? generateHTML({ type: 'doc', content }, pageExtensions()) : ''
+    if (sliceCache.size >= HTML_CACHE_MAX) {
+      sliceCache.clear()
+    }
     sliceCache.set(key, html)
   }
   return html
@@ -171,9 +196,17 @@ const DOMAIN = /^[^\s.]+(\.[^\s.]+)+$/
 // (javascript: and the like) isn't a link, and gives null.
 export const linkHref = (input) => {
   const text = String(input ?? '').trim()
-  if (!text) return null
-  if (/^(https?:\/\/[^\s]+|mailto:[^\s]+)$/i.test(text)) return text
-  if (EMAIL.test(text)) return `mailto:${text}`
-  if (OTHER_SCHEME.test(text)) return null
+  if (!text) {
+    return null
+  }
+  if (/^(https?:\/\/[^\s]+|mailto:[^\s]+)$/i.test(text)) {
+    return text
+  }
+  if (EMAIL.test(text)) {
+    return `mailto:${text}`
+  }
+  if (OTHER_SCHEME.test(text)) {
+    return null
+  }
   return DOMAIN.test(text) ? `https://${text}` : null
 }

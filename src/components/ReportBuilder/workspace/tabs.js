@@ -1,4 +1,4 @@
-import { TAB_WIDTHS_STORAGE_KEY, TABS_STORAGE_KEY } from './constants'
+import { TAB_WIDTHS_STORAGE_KEY, TABS_STORAGE_KEY } from './reportsConstants'
 
 // The reports open as tabs in the workspace: which ones, in order, per data source, kept in this browser so
 // they're there next time, and the widths their edges were dragged to. Both are kept under the host's storage

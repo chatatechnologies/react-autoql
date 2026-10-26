@@ -1,7 +1,7 @@
 import { MAX_TABLE_ROWS } from '../constants'
 import { MAX_CHART_ROWS, rowsForCapture } from '../model/capture'
 import { newReportId } from './documents'
-import { REPORTS_STRINGS } from './strings'
+import { REPORTS_STRINGS } from './reportsStrings'
 
 // Report blocks made by "Add to Report…", and by the tiles ticked in DashboardTilesDialog.
 //

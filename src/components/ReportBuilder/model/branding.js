@@ -35,7 +35,9 @@ const RGB = /^(?:rgb\s*\(\s*)?(\d{1,3})\s*[,\s]\s*(\d{1,3})\s*[,\s]\s*(\d{1,3})\
 export const parseColour = (input) => {
   const text = String(input ?? '').trim()
   let match = text.match(HEX6)
-  if (match) return `#${match[1].toLowerCase()}`
+  if (match) {
+    return `#${match[1].toLowerCase()}`
+  }
   match = text.match(HEX3)
   if (match) {
     return `#${match[1]
@@ -47,7 +49,9 @@ export const parseColour = (input) => {
   match = text.match(RGB)
   if (match) {
     const parts = match.slice(1, 4).map(Number)
-    if (parts.every((n) => n <= 255)) return `#${parts.map((n) => n.toString(16).padStart(2, '0')).join('')}`
+    if (parts.every((n) => n <= 255)) {
+      return `#${parts.map((n) => n.toString(16).padStart(2, '0')).join('')}`
+    }
   }
   return null
 }
@@ -85,7 +89,9 @@ const isSet = (value) => value != null && value !== '' && !(Array.isArray(value)
 export const mergeBranding = (host, org) => {
   const merged = { ...(host && typeof host === 'object' ? host : {}) }
   Object.entries(org && typeof org === 'object' ? org : {}).forEach(([key, value]) => {
-    if (isSet(value)) merged[key] = value
+    if (isSet(value)) {
+      merged[key] = value
+    }
   })
   return normalizeBranding(merged)
 }
@@ -140,7 +146,9 @@ const formatOf = (url) => {
 export const brandFontFaceCss = (branding, families = BRAND_FONT_FAMILIES) =>
   BRAND_FONT_ROLES.map((role) => {
     const url = branding?.[`${role}Font`]?.url
-    if (!isText(url) || !FONT_URL.test(url)) return ''
+    if (!isText(url) || !FONT_URL.test(url)) {
+      return ''
+    }
     const format = formatOf(url)
     return `@font-face{font-family:'${families[role]}';src:url("${url}")${
       format ? ` format('${format}')` : ''
@@ -152,10 +160,16 @@ export const brandFontFaceCss = (branding, families = BRAND_FONT_FAMILIES) =>
 // Charts keep AutoQL's own type. `families` are the ones brandFontFaceCss was given.
 export const paperFontStyle = (page, branding, families = BRAND_FONT_FAMILIES) => {
   const stack = TYPEFACES[page?.typeface]?.stack
-  if (stack) return { fontFamily: stack }
+  if (stack) {
+    return { fontFamily: stack }
+  }
   const style = {}
-  if (branding?.bodyFont) style[BODY_FONT_VAR] = `'${families.body}', ${THEME_FONT}`
-  if (branding?.headingFont) style[HEADING_FONT_VAR] = `'${families.heading}', ${THEME_FONT}`
+  if (branding?.bodyFont) {
+    style[BODY_FONT_VAR] = `'${families.body}', ${THEME_FONT}`
+  }
+  if (branding?.headingFont) {
+    style[HEADING_FONT_VAR] = `'${families.heading}', ${THEME_FONT}`
+  }
   return Object.keys(style).length ? style : undefined
 }
 
@@ -166,6 +180,8 @@ export const sameBrandFonts = (a, b) =>
 // The first family of each font a report's paper uses, to load before anything is measured.
 export const paperFontFamilies = (page, branding) => {
   const stack = TYPEFACES[page?.typeface]?.stack
-  if (stack) return [stack]
+  if (stack) {
+    return [stack]
+  }
   return BRAND_FONT_ROLES.filter((role) => branding?.[`${role}Font`]).map((role) => `'${BRAND_FONT_FAMILIES[role]}'`)
 }

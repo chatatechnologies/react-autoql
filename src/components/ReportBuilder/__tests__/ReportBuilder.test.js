@@ -2201,3 +2201,22 @@ describe('the pages’ zoom', () => {
     ).toBeTruthy()
   })
 })
+
+describe('edits made before the host passes the report back', () => {
+  it('build on the last one emitted, so none is lost', () => {
+    const onChange = jest.fn()
+    const ref = React.createRef()
+    const initial = createEmptyReport({ blocks: [{ id: 't', type: 'text', text: 'One' }] })
+    // A host that applies onChange later (a debounced or async store): the builder keeps the report it was given.
+    render(<ReportBuilder ref={ref} authentication={AUTH} report={initial} onChange={onChange} />)
+    act(() => {
+      ref.current.onTitleChange('Quarterly review')
+      ref.current.onText('t', 'One, edited')
+      ref.current.onStyleChange('t', { align: 'center' })
+    })
+    expect(onChange).toHaveBeenCalledTimes(3)
+    const last = onChange.mock.calls[2][0]
+    expect(last.title).toBe('Quarterly review')
+    expect(last.blocks[0]).toMatchObject({ id: 't', text: 'One, edited', style: { align: 'center' } })
+  })
+})

@@ -5,8 +5,12 @@ import { getTileLabel, getTileQueryText } from '../../Dashboard/tileQueryConfig'
 // a block stores only the dashboard id and tile key, so a tile edited on its dashboard shows up here.
 
 export const getTileKey = (tile) => {
-  if (tile?.key != null) return String(tile.key)
-  if (tile?.i != null) return String(tile.i)
+  if (tile?.key != null) {
+    return String(tile.key)
+  }
+  if (tile?.i != null) {
+    return String(tile.i)
+  }
   return null
 }
 
@@ -15,7 +19,9 @@ const indexKey = (dashboardId, tileKey) => `${dashboardId}\u0000${tileKey}`
 export const buildTileIndex = (dashboards) => {
   const index = {}
   ;(Array.isArray(dashboards) ? dashboards : []).forEach((dashboard) => {
-    if (dashboard?.id == null) return
+    if (dashboard?.id == null) {
+      return
+    }
     ;(Array.isArray(dashboard.tiles) ? dashboard.tiles : []).forEach((tile) => {
       const key = getTileKey(tile)
       if (key != null) {
@@ -30,8 +36,12 @@ export const resolveTile = (index, source) =>
   source?.type === 'tile' ? index[indexKey(source.dashboardId, source.tileKey)] || null : null
 
 export const getTileSupport = (tile) => {
-  if (!getTileQueryText(tile)) return { supported: false, reason: 'no-query' }
-  if (UNSUPPORTED_DISPLAY_TYPES.includes(tile?.displayType)) return { supported: false, reason: 'unsupported' }
+  if (!getTileQueryText(tile)) {
+    return { supported: false, reason: 'no-query' }
+  }
+  if (UNSUPPORTED_DISPLAY_TYPES.includes(tile?.displayType)) {
+    return { supported: false, reason: 'unsupported' }
+  }
   return { supported: true }
 }
 

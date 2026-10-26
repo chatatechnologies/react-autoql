@@ -25,8 +25,12 @@ export const getTileScopedAuthentication = ({ authentication, tile, getAuthentic
 }
 
 export const normalizeTileAxisSorts = (v) => {
-  if (!v) return {}
-  if (!Array.isArray(v)) return v
+  if (!v) {
+    return {}
+  }
+  if (!Array.isArray(v)) {
+    return v
+  }
   const obj = {}
   v.forEach((item) => {
     if (item && typeof item === 'object' && !Array.isArray(item)) {
@@ -62,7 +66,7 @@ export const getTileInitialTableConfigs = (tile, queryResponse = tile?.queryResp
   // Extract columnOverrides from tile.columns if it exists (for date precision persistence)
   // Compare tile.columns with queryResponse columns to find overrides
   // Use columnOverrides from dataConfig if it exists (preferred method)
-  let columnOverrides = dataConfig?.columnOverrides || {}
+  const columnOverrides = dataConfig?.columnOverrides || {}
 
   // Fallback: Extract columnOverrides from tile.columns if dataConfig doesn't have it
   // This handles backwards compatibility with dashboards saved before columnOverrides was added

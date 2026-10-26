@@ -39,7 +39,9 @@ const keptDataConfig = ({ pivotTableConfig, ...rest }) =>
     : rest
 
 const responseKey = (response) => {
-  if (!response || typeof response !== 'object') return 'none'
+  if (!response || typeof response !== 'object') {
+    return 'none'
+  }
   if (!responseIds.has(response)) {
     nextResponseId += 1
     responseIds.set(response, nextResponseId)
@@ -75,8 +77,12 @@ export class ReportChart extends React.Component {
   report = (key, value) => {
     const last = this.reported[key]
     this.reported[key] = value
-    if (!this.used || !this.props.onConfigChange || !value) return
-    if (deepEqual(value, last) || deepEqual(value, this.props.view.tile?.[key])) return
+    if (!this.used || !this.props.onConfigChange || !value) {
+      return
+    }
+    if (deepEqual(value, last) || deepEqual(value, this.props.view.tile?.[key])) {
+      return
+    }
     this.props.onConfigChange({ [key]: JSON.parse(JSON.stringify(value)) })
   }
 

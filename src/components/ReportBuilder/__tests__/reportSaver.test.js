@@ -1,5 +1,5 @@
 import { ReportsApiError } from '../run/reportsApi'
-import { REPORTS_STRINGS } from '../workspace/strings'
+import { REPORTS_STRINGS } from '../workspace/reportsStrings'
 import { CONFLICT_MESSAGE, ReportSaver } from '../workspace/ReportSaver'
 
 const ID = '33333333-3333-4333-8333-333333333333'
@@ -146,6 +146,93 @@ describe('ReportSaver', () => {
     })
   })
 
+  it('sends what’s waiting at once when the page goes away, without waiting for a save on its way', async () => {
+    const first = deferred()
+    api.saveReport.mockReturnValueOnce(first.promise)
+    const { saver } = saverFor()
+    saver.edit(doc('A'))
+    await jest.advanceTimersByTimeAsync(2000)
+    expect(api.saveReport).toHaveBeenCalledTimes(1)
+
+    // Typed while that one was on its way, and the page closes before it answers.
+    saver.edit(doc('AB'))
+    api.saveReport.mockReturnValueOnce(new Promise(() => {}))
+    saver.leave()
+    expect(api.saveReport).toHaveBeenCalledTimes(2)
+    expect(requests(api.saveReport)[1]).toEqual({
+      authentication: AUTH,
+      id: ID,
+      report: doc('AB'),
+      version: 1,
+      keepalive: true,
+    })
+
+    // That one has everything and outlives the page: going away again sends nothing more.
+    saver.leave()
+    expect(api.saveReport).toHaveBeenCalledTimes(2)
+  })
+
+  it('sends nothing when the page goes away with nothing waiting, or in a conflict', async () => {
+    const { saver } = saverFor()
+    saver.leave()
+    expect(api.saveReport).not.toHaveBeenCalled()
+
+    api.saveReport.mockRejectedValueOnce(conflict())
+    api.fetchReport.mockResolvedValueOnce(detail(2, doc('Renamed in the other tab')))
+    saver.edit(doc('Mine'))
+    await saver.flush()
+    expect(saver.current.status).toBe('conflict')
+    saver.edit(doc('Mine again'))
+    saver.leave()
+    expect(api.saveReport).toHaveBeenCalledTimes(1)
+  })
+
+  it('knows its own save when one sent as the page went away lands first, rather than calling it a conflict', async () => {
+    const first = deferred()
+    api.saveReport.mockReturnValueOnce(first.promise)
+    const { saver, last } = saverFor()
+    saver.edit(doc('A'))
+    await jest.advanceTimersByTimeAsync(2000)
+    saver.edit(doc('AB'))
+    // The page went away (pagehide) and came back (the back/forward cache): the one sent then landed first.
+    api.saveReport.mockResolvedValueOnce(saved(2))
+    saver.leave()
+    await jest.advanceTimersByTimeAsync(0)
+    expect(last().status).toBe('saved')
+
+    // The first is turned away as stale, and isn't sent again over the second, which has all it had.
+    first.reject(conflict())
+    await jest.advanceTimersByTimeAsync(0)
+    expect(last().status).toBe('saved')
+    expect(saver.hasUnsaved).toBe(false)
+    expect(api.saveReport).toHaveBeenCalledTimes(2)
+    expect(api.fetchReport).not.toHaveBeenCalled()
+  })
+
+  it('leaves it to the later save when the stored copy turns out to be that one’s, before it has answered', async () => {
+    const first = deferred()
+    const second = deferred()
+    api.saveReport.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+    const { saver, last } = saverFor()
+    saver.edit(doc('A'))
+    await jest.advanceTimersByTimeAsync(2000)
+    saver.edit(doc('AB'))
+    saver.leave()
+
+    // The second landed first; its answer is still to come when the first is turned away.
+    api.fetchReport.mockResolvedValueOnce(detail(2, doc('AB')))
+    first.reject(conflict())
+    await jest.advanceTimersByTimeAsync(0)
+    expect(api.saveReport).toHaveBeenCalledTimes(2)
+    expect(last().status).toBe('saving')
+
+    second.resolve(saved(2))
+    await jest.advanceTimersByTimeAsync(0)
+    expect(last().status).toBe('saved')
+    expect(saver.hasUnsaved).toBe(false)
+    expect(api.saveReport).toHaveBeenCalledTimes(2)
+  })
+
   it('sends keepalive only when a flush asks for it', async () => {
     api.createReport.mockImplementation(async ({ report }) => detail(1, report))
     api.saveReport.mockResolvedValue(saved(2))
@@ -227,14 +314,14 @@ describe('ReportSaver', () => {
     const merged = doc('Renamed here', [...start.blocks, appended])
     expect(api.saveReport).toHaveBeenLastCalledWith({ authentication: AUTH, id: ID, report: merged, version: 2 })
     expect(api.fetchReport).toHaveBeenCalledWith({ authentication: AUTH, id: ID })
-    expect(onMerged).toHaveBeenCalledWith(merged)
+    expect(onMerged).toHaveBeenCalledWith(merged, [appended])
     expect(saver.report).toEqual(merged)
     expect(last().status).toBe('saved')
     // The save, the refetch and the save after it each asked for credentials.
     expect(getAuthentication).toHaveBeenCalledTimes(3)
   })
 
-  it('merges appends at most three times in a row, then waits for the next edit', async () => {
+  it('merges appends at most three times in a row, then says so and tries again after a pause', async () => {
     let landed = 0
     api.saveReport.mockRejectedValue(conflict())
     // Each refetch finds one more block appended since the last.
@@ -253,10 +340,18 @@ describe('ReportSaver', () => {
     expect(saver.report.blocks.map((block) => block.id)).toEqual(['b1', 'b2', 'b3', 'b4'])
     expect(last()).toMatchObject({
       status: 'failed',
-      error: 'This change isn’t saved yet: the server didn’t accept it.',
+      error:
+        'This change isn’t saved yet: blocks kept being added to it in another tab or window while it saved. ' +
+        'Trying again shortly.',
     })
-    await jest.advanceTimersByTimeAsync(120_000)
-    expect(api.saveReport).toHaveBeenCalledTimes(4)
+
+    // Once the appends stop, the next try stores everything.
+    api.saveReport.mockReset()
+    api.saveReport.mockResolvedValue(saved(5))
+    await jest.advanceTimersByTimeAsync(5000)
+    expect(api.saveReport).toHaveBeenCalledTimes(1)
+    expect(requests(api.saveReport)[0].report.blocks.map((block) => block.id)).toEqual(['b1', 'b2', 'b3', 'b4'])
+    expect(last().status).toBe('saved')
   })
 
   it('stops saving and offers a reload when the report was edited elsewhere as well', async () => {

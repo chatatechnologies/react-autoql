@@ -65,7 +65,9 @@ const fontNameOf = (fileName) => {
 
 // Whether the browser can set type in it, where it can tell (FontFace); elsewhere it's taken on trust.
 const isUsableFont = async (url) => {
-  if (typeof FontFace === 'undefined') return true
+  if (typeof FontFace === 'undefined') {
+    return true
+  }
   try {
     await new FontFace('react-autoql-font-check', `url("${url}")`).load()
     return true
@@ -98,7 +100,9 @@ const draftOf = (branding) => {
 const brandingOf = (draft) => {
   const texts = draft.colours.map((row) => row.text.trim()).filter(Boolean)
   const colors = texts.map(parseColour)
-  if (colors.some((hex) => !hex)) return null
+  if (colors.some((hex) => !hex)) {
+    return null
+  }
   return {
     name: draft.name.trim(),
     position: draft.position,
@@ -159,7 +163,9 @@ const ImageField = ({ label, note, url, error, testId, onFile, onRemove }) => {
               const file = e.target.files?.[0]
               // So choosing the same file again still reads it.
               e.target.value = ''
-              if (file) onFile(file)
+              if (file) {
+                onFile(file)
+              }
             }}
           />
         </div>
@@ -218,7 +224,9 @@ const FontField = ({ label, font, family, error, testId, onFile, onRemove }) => 
             onChange={(e) => {
               const file = e.target.files?.[0]
               e.target.value = ''
-              if (file) onFile(file)
+              if (file) {
+                onFile(file)
+              }
             }}
           />
         </div>
@@ -257,36 +265,58 @@ export class BrandingDialog extends React.Component {
     this.setState(({ assetErrors }) => ({ assetErrors: { ...assetErrors, [field]: message } }))
 
   close = () => {
-    if (!this.state.saving) this.props.onClose()
+    if (!this.state.saving) {
+      this.props.onClose()
+    }
   }
 
   onImage = async (field, file) => {
-    if (!IMAGE_TYPES.includes(file.type)) return this.setAssetError(field, B.imageWrongType)
-    if (file.size > IMAGE_MAX_BYTES) return this.setAssetError(field, B.imageTooLarge(Math.ceil(file.size / 1024)))
+    if (!IMAGE_TYPES.includes(file.type)) {
+      return this.setAssetError(field, B.imageWrongType)
+    }
+    if (file.size > IMAGE_MAX_BYTES) {
+      return this.setAssetError(field, B.imageTooLarge(Math.ceil(file.size / 1024)))
+    }
     try {
       const url = await readFile(file)
-      if (!this.mounted) return
-      if (!url.startsWith('data:image/')) return this.setAssetError(field, B.imageUnreadable)
+      if (!this.mounted) {
+        return
+      }
+      if (!url.startsWith('data:image/')) {
+        return this.setAssetError(field, B.imageUnreadable)
+      }
       this.setAssetError(field, null)
       this.setDraft({ [field]: url })
     } catch (error) {
-      if (this.mounted) this.setAssetError(field, B.imageUnreadable)
+      if (this.mounted) {
+        this.setAssetError(field, B.imageUnreadable)
+      }
     }
   }
 
   onFont = async (field, file) => {
     const type = FONT_TYPES[extensionOf(file.name)]
-    if (!type) return this.setAssetError(field, B.fontWrongType)
-    if (file.size > FONT_MAX_BYTES) return this.setAssetError(field, B.fontTooLarge(Math.ceil(file.size / 1024)))
+    if (!type) {
+      return this.setAssetError(field, B.fontWrongType)
+    }
+    if (file.size > FONT_MAX_BYTES) {
+      return this.setAssetError(field, B.fontTooLarge(Math.ceil(file.size / 1024)))
+    }
     try {
       const url = await readFile(file, type.mime)
       const usable = await isUsableFont(url)
-      if (!this.mounted) return
-      if (!usable) return this.setAssetError(field, B.fontUnreadable)
+      if (!this.mounted) {
+        return
+      }
+      if (!usable) {
+        return this.setAssetError(field, B.fontUnreadable)
+      }
       this.setAssetError(field, null)
       this.setDraft({ [field]: { name: fontNameOf(file.name), url } })
     } catch (error) {
-      if (this.mounted) this.setAssetError(field, B.fontUnreadable)
+      if (this.mounted) {
+        this.setAssetError(field, B.fontUnreadable)
+      }
     }
   }
 
@@ -308,13 +338,19 @@ export class BrandingDialog extends React.Component {
 
   save = async () => {
     const branding = brandingOf(this.state.draft)
-    if (this.state.saving || !branding || !branding.name) return
+    if (this.state.saving || !branding || !branding.name) {
+      return
+    }
     this.setState({ saving: true, error: null })
     try {
       await this.props.onSave(branding)
-      if (this.mounted) this.props.onClose()
+      if (this.mounted) {
+        this.props.onClose()
+      }
     } catch (error) {
-      if (this.mounted) this.setState({ saving: false, error: B.saveFailed })
+      if (this.mounted) {
+        this.setState({ saving: false, error: B.saveFailed })
+      }
     }
   }
 
@@ -326,9 +362,13 @@ export class BrandingDialog extends React.Component {
       this.close()
       return
     }
-    if (e.key !== 'Tab') return
+    if (e.key !== 'Tab') {
+      return
+    }
     const focusable = Array.from(this.dialogRef.current?.querySelectorAll(FOCUSABLE) || [])
-    if (!focusable.length) return
+    if (!focusable.length) {
+      return
+    }
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
     if (e.shiftKey && document.activeElement === first) {

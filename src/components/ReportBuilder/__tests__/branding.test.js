@@ -133,6 +133,27 @@ describe('AutoQL’s branding endpoints', () => {
     expect(axios.get).toHaveBeenCalledTimes(2)
   })
 
+  it('reads it once per data source, whatever tokens are minted meanwhile, and keeps the last few', async () => {
+    const b64url = (value) => btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const authFor = (project, n) => ({ ...AUTH, token: `h.${b64url({ project_id: project, n })}.s` })
+    axios.get.mockResolvedValue({ data: { data: { name: 'Acme' } } })
+    await fetchBranding({ authentication: authFor('p1', 1) })
+    // The host re-minted the token for the same data source: what was read is kept.
+    await fetchBranding({ authentication: authFor('p1', 2) })
+    expect(axios.get).toHaveBeenCalledTimes(1)
+    expect(axios.get.mock.calls[0][1].headers.Authorization).toBe(`Bearer ${authFor('p1', 1).token}`)
+
+    // Another data source asks; past four, the one used longest ago is let go.
+    for (const project of ['p2', 'p3', 'p4', 'p5']) {
+      await fetchBranding({ authentication: authFor(project, 1) })
+    }
+    expect(axios.get).toHaveBeenCalledTimes(5)
+    await fetchBranding({ authentication: authFor('p5', 3) })
+    expect(axios.get).toHaveBeenCalledTimes(5)
+    await fetchBranding({ authentication: authFor('p1', 3) })
+    expect(axios.get).toHaveBeenCalledTimes(6)
+  })
+
   it('asks again after a failure, and not at all without a token', async () => {
     axios.get.mockRejectedValueOnce({ response: { status: 404 } })
     await expect(fetchBranding({ authentication: AUTH })).rejects.toBeTruthy()

@@ -4,11 +4,11 @@ import { UNSUPPORTED_DISPLAY_TYPES } from '../constants'
 import { Icon } from '../components/icons'
 import { SelectBox } from '../components/controls'
 import { getTileKey } from '../model/tiles'
-import { RS } from './constants'
+import { RS } from './reportsConstants'
 import { REPORT_ADD_MAX_BYTES, reportBytes, stripQueryResponses } from './documents'
 import { tileBlocks } from './reportBlocks'
 import { ReportModal } from './ReportModal'
-import { REPORTS_STRINGS } from './strings'
+import { REPORTS_STRINGS } from './reportsStrings'
 
 // Dashboard tiles into a report: from an empty Data block's "Pick dashboard tiles…" ('add'), or New report from a
 // dashboard ('start'). Pick a dashboard, see it as its dashboard page shows it (react-autoql's own Dashboard, from

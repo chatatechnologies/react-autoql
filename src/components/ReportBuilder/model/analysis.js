@@ -15,9 +15,15 @@ export const toAnalysisMarkdown = (text) => String(text ?? '').replace(/\\n/g, '
 // dashboards (shouldShowQueryActionButton: rows and columns, more than one row, not a single value).
 export const getAnalysisBlocker = ({ target, targetView }) => {
   const data = target?.capture?.data
-  if (!data || targetView?.state !== 'ready') return 'not-ready'
-  if (!data.query_id) return 'no-query-id'
-  if (!shouldShowQueryActionButton(true, { data: { data } })) return 'too-little'
+  if (!data || targetView?.state !== 'ready') {
+    return 'not-ready'
+  }
+  if (!data.query_id) {
+    return 'no-query-id'
+  }
+  if (!shouldShowQueryActionButton(true, { data: { data } })) {
+    return 'too-little'
+  }
   return null
 }
 

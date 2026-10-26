@@ -20,20 +20,36 @@ import { isMacKeyboard } from '../keyboard'
 //                   piece of a text taller than a page
 
 export const textStyleOf = (style) => {
-  if (!style) return undefined
+  if (!style) {
+    return undefined
+  }
   const css = {}
-  if (style.font && TYPEFACES[style.font]?.stack) css.fontFamily = TYPEFACES[style.font].stack
-  if (style.size && TEXT_SIZES[style.size]) css.fontSize = `${TEXT_SIZES[style.size].pt}pt`
-  if (style.weight && TEXT_WEIGHTS[style.weight]) css.fontWeight = TEXT_WEIGHTS[style.weight].value
-  if (style.color) css.color = style.color
+  if (style.font && TYPEFACES[style.font]?.stack) {
+    css.fontFamily = TYPEFACES[style.font].stack
+  }
+  if (style.size && TEXT_SIZES[style.size]) {
+    css.fontSize = `${TEXT_SIZES[style.size].pt}pt`
+  }
+  if (style.weight && TEXT_WEIGHTS[style.weight]) {
+    css.fontWeight = TEXT_WEIGHTS[style.weight].value
+  }
+  if (style.color) {
+    css.color = style.color
+  }
   return Object.keys(css).length ? css : undefined
 }
 
 export const boxStyleOf = (style) => {
-  if (!style) return undefined
+  if (!style) {
+    return undefined
+  }
   const css = {}
-  if (style.background) css.background = style.background
-  if (style.align) css.textAlign = style.align
+  if (style.background) {
+    css.background = style.background
+  }
+  if (style.align) {
+    css.textAlign = style.align
+  }
   return Object.keys(css).length ? css : undefined
 }
 
@@ -95,9 +111,7 @@ const TextContent = ({ block, mode, onTextChange, piece }) => {
       />
     )
   }
-  return (
-    <RichTextView className={`${RB}-text`} style={style} markdown={block.text} from={piece?.from} to={piece?.to} />
-  )
+  return <RichTextView className={`${RB}-text`} style={style} markdown={block.text} from={piece?.from} to={piece?.to} />
 }
 
 const Placeholder = ({ title, children, tone }) => (
@@ -241,7 +255,6 @@ const statusText = (view, canRun) => {
 }
 
 const DataContent = ({
-  block,
   view,
   mode,
   piece,
@@ -434,7 +447,7 @@ export const PaperBlock = ({ block, mode = 'page', onTextChange, ...rest }) => {
     case 'text':
       return <TextContent block={block} mode={mode} onTextChange={onTextChange} piece={rest.piece} />
     case 'data':
-      return <DataContent block={block} mode={mode} {...rest} />
+      return <DataContent mode={mode} {...rest} />
     case 'analysis':
       return (
         <AnalysisContent
