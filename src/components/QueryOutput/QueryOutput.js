@@ -443,6 +443,8 @@ export class QueryOutput extends React.Component {
       showRegressionLine: PropTypes.bool,
       treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
       treemapValueColumnIndex: PropTypes.number,
+      roseCategoryColumnIndex: PropTypes.number,
+      roseValueColumnIndices: PropTypes.arrayOf(PropTypes.number),
       sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
       sankeyValueColumnIndex: PropTypes.number,
       splitBy: PropTypes.shape({
@@ -1585,7 +1587,8 @@ export class QueryOutput extends React.Component {
     if (
       this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
       this.state?.displayType === DisplayTypes.SANKEY ||
-      this.state?.displayType === DisplayTypes.TREEMAP
+      this.state?.displayType === DisplayTypes.TREEMAP ||
+      this.state?.displayType === DisplayTypes.ROSE
     ) {
       return false
     }
@@ -5205,7 +5208,8 @@ export class QueryOutput extends React.Component {
       this.potentiallySupportsPivot() &&
       displayType !== DisplayTypes.NETWORK_GRAPH &&
       displayType !== DisplayTypes.SANKEY &&
-      displayType !== DisplayTypes.TREEMAP
+      displayType !== DisplayTypes.TREEMAP &&
+      displayType !== DisplayTypes.ROSE
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 

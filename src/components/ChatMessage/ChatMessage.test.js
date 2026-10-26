@@ -399,3 +399,46 @@ describe('updates while hidden', () => {
     expect(instance.shouldComponentUpdate({ ...props, dataVersion: 1 }, instance.state)).toBe(true)
   })
 })
+
+// Automatic scrolls can reveal more of a message, but never push its top or its toolbars out of view
+describe('scrolling a message into view', () => {
+  const rect = (top, height) => ({ top, bottom: top + height, height })
+
+  const runScroll = ({ containerHeight, messageTop, messageHeight, toolbarTop }) => {
+    const container = {
+      scrollTop: 1000,
+      scrollHeight: 10000,
+      clientHeight: containerHeight,
+      getBoundingClientRect: () => rect(0, containerHeight),
+    }
+    const instance = setup({ scrollContainerRef: { getContainer: () => container, update: () => {} } }).instance()
+    const toolbar = { getBoundingClientRect: () => rect(toolbarTop, 40) }
+    instance.messageContainerRef = {
+      getBoundingClientRect: () => rect(messageTop, messageHeight),
+      querySelectorAll: () => [toolbar],
+    }
+    instance.messageBubbleRef = { getBoundingClientRect: () => rect(messageTop, messageHeight) }
+
+    const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => cb(performance.now() + 10000))
+    try {
+      instance.animateScrollBubbleIntoContainer()
+    } finally {
+      raf.mockRestore()
+    }
+    return container.scrollTop - 1000
+  }
+
+  test('scrolls a short message up just enough to show its bottom', () => {
+    // Message 300..500 in a 400px view: needs 110px to show the bottom (with 10px padding)
+    expect(runScroll({ containerHeight: 400, messageTop: 300, messageHeight: 200, toolbarTop: 280 })).toBe(110)
+  })
+
+  test('stops before the toolbars scroll out of view', () => {
+    // Message 100..480 in a 400px view: showing the bottom needs 90px, but the toolbars at 60 allow only 50
+    expect(runScroll({ containerHeight: 400, messageTop: 100, messageHeight: 380, toolbarTop: 60 })).toBe(50)
+  })
+
+  test('aligns the toolbars, not the message box, with the top of a tall message', () => {
+    expect(runScroll({ containerHeight: 400, messageTop: 300, messageHeight: 900, toolbarTop: 270 })).toBe(260)
+  })
+})

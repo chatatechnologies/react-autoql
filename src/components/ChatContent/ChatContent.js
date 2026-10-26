@@ -34,7 +34,8 @@ import { Tooltip } from '../Tooltip'
 // Styles
 import './ChatContent.scss'
 
-const TOOLBAR_OFFSET = 90 // Offset in pixels to account for toolbar at the top
+const MESSAGE_TOP_SCROLL_PADDING = 10 // Gap left above a message's toolbars when scrolling it into view
+const MIN_TOOLBAR_ROOM = 40 // Toolbars hang this far above the message box
 
 // How long after the last wheel event a thread scroll is still considered "in
 // progress". Long enough to bridge the gaps between wheel events in one flick,
@@ -852,6 +853,23 @@ export default class ChatContent extends React.Component {
     requestAnimationFrame(animateScroll)
   }
 
+  // Where a message starts and ends within the scrolled content. Measured on screen relative to the scroll
+  // container: summing offsetTops climbs past the (unpositioned) content element to the page, so it
+  // overshot by the messenger's own position. The toolbars hang above the message box, so its top is
+  // whichever of the two is higher.
+  getMessageScrollPosition = (messageElement, container) => {
+    const containerTop = container.getBoundingClientRect().top
+    const messageRect = messageElement.getBoundingClientRect()
+    const toolbarTops = Array.from(messageElement.querySelectorAll('.chat-message-toolbar')).map(
+      (toolbar) => toolbar.getBoundingClientRect().top,
+    )
+    return {
+      // Room for the toolbars even if they haven't rendered yet when this measures
+      top: container.scrollTop + Math.min(messageRect.top - MIN_TOOLBAR_ROOM, ...toolbarTops) - containerTop,
+      bottom: container.scrollTop + messageRect.bottom - containerTop,
+    }
+  }
+
   scrollToMessageFit = (messageId) => {
     // Debounce: if we just scrolled to this message recently, skip
     const now = Date.now()
@@ -886,60 +904,20 @@ export default class ChatContent extends React.Component {
         return
       }
 
-      // Use getBoundingClientRect to get accurate positions
-      const containerRect = container.getBoundingClientRect()
-      const messageRect = messageElement.getBoundingClientRect()
-
+      const { top, bottom } = this.getMessageScrollPosition(messageElement, container)
       const containerHeight = container.clientHeight
-      const messageHeight = messageRect.height
+      const topScrollTop = Math.max(0, top - MESSAGE_TOP_SCROLL_PADDING)
 
-      // Calculate message positions relative to container
-      const messageTopOffset = messageRect.top - containerRect.top
-      const messageBottomOffset = messageRect.bottom - containerRect.bottom
-
-      // Find the scrollable content container to calculate absolute position
-      const scrollContent = container.querySelector('.chat-content-container')
-      if (!scrollContent) {
-        this.scrollToBottom()
-        return
-      }
-
-      // Calculate the absolute position of the message within the scrollable content
-      let messageAbsoluteTop = 0
-      let element = messageElement
-      while (element && element !== scrollContent) {
-        messageAbsoluteTop += element.offsetTop
-        element = element.offsetParent
-      }
-
-      // If message is bigger than screen, align top with top (with toolbar offset)
-      if (messageHeight > containerHeight) {
-        // Scroll so message top is TOOLBAR_OFFSET above container top
-        const targetScrollTop = messageAbsoluteTop - TOOLBAR_OFFSET
-        container.scrollTop = targetScrollTop
+      // Bigger than the screen, or its top is above the view: show its top (and toolbars)
+      if (bottom - top > containerHeight || topScrollTop < container.scrollTop) {
+        container.scrollTop = topScrollTop
         this.messengerScrollComponent?.update()
         return
       }
 
-      // Message is smaller than screen - fit it in viewport
-      // Check if message top is above the desired position (TOOLBAR_OFFSET above container top)
-      const desiredTopPosition = TOOLBAR_OFFSET
-
-      if (messageTopOffset < desiredTopPosition) {
-        // Scroll so message top is TOOLBAR_OFFSET above container top
-        const targetScrollTop = messageAbsoluteTop - TOOLBAR_OFFSET
-        container.scrollTop = targetScrollTop
-        this.messengerScrollComponent?.update()
-        return
-      }
-
-      // If bottom is below screen, scroll up to align bottom with bottom
-      if (messageBottomOffset > 0) {
-        // Calculate absolute bottom position
-        const messageAbsoluteBottom = messageAbsoluteTop + messageHeight
-        // Scroll so message bottom aligns with container bottom
-        const targetScrollTop = messageAbsoluteBottom - containerHeight
-        container.scrollTop = targetScrollTop
+      // Bottom is below the view: reveal it, but never so far that the top (and toolbars) scrolls out of view
+      if (bottom > container.scrollTop + containerHeight) {
+        container.scrollTop = Math.min(bottom - containerHeight, topScrollTop)
         this.messengerScrollComponent?.update()
         this.lastScrollMessageId = messageId
         this.lastScrollTime = Date.now()
@@ -986,27 +964,12 @@ export default class ChatContent extends React.Component {
         return
       }
 
-      // Find the scrollable content container to calculate absolute position
-      const scrollContent = container.querySelector('.chat-content-container')
-      if (!scrollContent) {
-        return
-      }
-
-      // Calculate the absolute position of the message within the scrollable content
-      let messageAbsoluteTop = 0
-      let element = messageElement
-      while (element && element !== scrollContent) {
-        messageAbsoluteTop += element.offsetTop
-        element = element.offsetParent
-      }
-
-      // Calculate target scroll: align message top with container top (minus toolbar offset)
-      // If this would scroll past the bottom, cap at the max scroll position
+      // Align the message's top (including its toolbars) with the top of the view. A short last
+      // message can't scroll that far, so this stops at the bottom with the whole message in view.
+      const { top } = this.getMessageScrollPosition(messageElement, container)
       const maxScrollTop = container.scrollHeight - container.clientHeight
-      const targetScrollTop = Math.min(maxScrollTop, Math.max(0, messageAbsoluteTop - TOOLBAR_OFFSET))
+      const targetScrollTop = Math.min(maxScrollTop, Math.max(0, top - MESSAGE_TOP_SCROLL_PADDING))
 
-      // Scroll to align message top with container top (with toolbar offset)
-      // If message is small, this will naturally scroll as far as possible (toward bottom)
       const startScrollTop = container.scrollTop
       const distance = targetScrollTop - startScrollTop
       const duration = 300 // ms

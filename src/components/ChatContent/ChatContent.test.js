@@ -652,3 +652,66 @@ describe('session title', () => {
     expect(fetchQueryTitle).not.toHaveBeenCalled()
   })
 })
+
+// Automatic scrolls to a message must keep its top and its toolbars (which hang above the message box)
+// in view, wherever the messenger sits on the page
+describe('scrolling to a message', () => {
+  const rect = (top, height) => ({ top, bottom: top + height, height })
+
+  afterEach(() => document.getElementById('message-m1')?.remove())
+
+  const setupScroll = ({ messageTop, messageHeight, toolbarTop }) => {
+    const instance = setup().instance()
+    // The scroll container sits 200px down the page and is scrolled 500px into its content
+    const container = {
+      scrollTop: 500,
+      scrollHeight: 5000,
+      clientHeight: 400,
+      getBoundingClientRect: () => rect(200, 400),
+    }
+    instance.messengerScrollComponent = { getContainer: () => container, update: () => {} }
+    instance.checkIfAtBottom = () => {}
+
+    const message = document.createElement('div')
+    message.id = 'message-m1'
+    message.getBoundingClientRect = () => rect(messageTop, messageHeight)
+    const toolbar = document.createElement('div')
+    toolbar.className = 'chat-message-toolbar'
+    toolbar.getBoundingClientRect = () => rect(toolbarTop, 40)
+    message.appendChild(toolbar)
+    document.body.appendChild(message)
+
+    return { instance, container }
+  }
+
+  const withInstantFrames = (fn) => {
+    const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => cb(performance.now() + 10000))
+    try {
+      fn()
+    } finally {
+      raf.mockRestore()
+    }
+  }
+
+  test('scrollToMessageTop puts the toolbars, not the message box, just below the top of the view', () => {
+    // Toolbars at 380 on screen = 500 + 380 - 200 = 680 into the content; 10px gap above them
+    const { instance, container } = setupScroll({ messageTop: 450, messageHeight: 900, toolbarTop: 380 })
+    withInstantFrames(() => instance.scrollToMessageTop('m1'))
+    expect(container.scrollTop).toBe(670)
+  })
+
+  test('leaves room for toolbars that have not rendered yet', () => {
+    // An unrendered toolbar measures at the message top, so 40px is reserved above the message instead
+    const { instance, container } = setupScroll({ messageTop: 450, messageHeight: 900, toolbarTop: 450 })
+    withInstantFrames(() => instance.scrollToMessageTop('m1'))
+    expect(container.scrollTop).toBe(500 + 450 - 40 - 200 - 10)
+  })
+
+  test('scrollToMessageFit reveals the bottom only as far as the top stays in view', () => {
+    // Top (with toolbar room) at 710 and bottom at 1105 in the content: fully showing the bottom needs
+    // 705, but the top needs the scroll to stay at or below 700
+    const { instance, container } = setupScroll({ messageTop: 450, messageHeight: 355, toolbarTop: 420 })
+    instance.scrollToMessageFit('m1')
+    expect(container.scrollTop).toBe(700)
+  })
+})

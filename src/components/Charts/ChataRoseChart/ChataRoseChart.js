@@ -1,0 +1,744 @@
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, forwardRef } from 'react'
+import PropTypes from 'prop-types'
+import { v4 as uuid } from 'uuid'
+import { arc as d3Arc } from 'd3-shape'
+import { scaleRadial } from 'd3-scale'
+import { select } from 'd3-selection'
+import 'd3-transition'
+
+import {
+  getChartColorVars,
+  getThemeValue,
+  isColumnNumberType,
+  isColumnStringType,
+  isAggregation,
+  findRoseColumns,
+  formatElement,
+  getDataFormatting,
+  getAutoQLConfig,
+  MAX_ROSE_CATEGORIES,
+} from 'autoql-fe-utils'
+import { DataLimitWarning } from '../../DataLimitWarning'
+import SankeyColumnSelector from '../ChataSankeyDiagram/SankeyColumnSelector'
+import { BAR_GRADIENT_OPACITY_STOPS, SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
+import { buildRoseData } from './buildRoseData'
+
+import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
+import './ChataRoseChart.scss'
+
+const MAX_LAYERS = 4
+const FONT_SIZE = 11
+const TICK_FONT_SIZE = 9
+// Rough average glyph width, to avoid measuring text in the DOM
+const CHAR_WIDTH = FONT_SIZE * 0.6
+const LABEL_OFFSET = 8
+// Space reserved beside the rose for labels; labels can use more when the chart is wider than it needs
+const LABEL_RESERVED_WIDTH = 110
+const MAX_LABEL_WIDTH = 260
+const LABEL_EDGE_PADDING = 4
+const INNER_RADIUS_RATIO = 0.12
+const TWEEN_DURATION = 500
+const MIN_WEDGES = 8
+const RADIUS_PER_WEDGE = 10
+const OTHER_MAX_RATIO = 2
+
+// Match the network graph's control buttons
+const BUTTON_SIZE = 30
+const BUTTON_RIGHT_OFFSET = 37
+const BUTTON_TOP = 10
+const BUTTON_STEP = 35
+const MARGIN_TOP = 10
+
+const FALLBACK_COLORS = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
+const FALLBACK_NEGATIVE_COLOR = '#CA0B00'
+
+const escapeHtml = (value = '') => {
+  return `${value}`
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+const areNumberArraysEqual = (a = [], b = []) => a.length === b.length && a.every((value, i) => value === b[i])
+
+const truncateToWidth = (text, width) => {
+  const maxChars = Math.floor(width / CHAR_WIDTH)
+  if (text.length <= maxChars) {
+    return text
+  }
+  if (maxChars <= 3) {
+    return ''
+  }
+  return `${text.substring(0, maxChars - 1)}…`
+}
+
+const LABEL_PADDING = 2
+
+// Places labels in priority order, skipping any whose (estimated) box would overlap one already placed.
+// Hidden labels are still in their wedge's tooltip.
+export const placeRoseLabels = (labels) => {
+  const placed = []
+  labels
+    .slice()
+    .sort((a, b) => b.priority - a.priority)
+    .forEach((label) => {
+      const left =
+        label.textAnchor === 'start'
+          ? label.x
+          : label.textAnchor === 'end'
+          ? label.x - label.width
+          : label.x - label.width / 2
+      const box = {
+        left: left - LABEL_PADDING,
+        right: left + label.width + LABEL_PADDING,
+        top: label.y - FONT_SIZE * 0.8 - LABEL_PADDING,
+        bottom: label.y + FONT_SIZE * 0.25 + LABEL_PADDING,
+      }
+      const overlaps = placed.some(
+        ({ box: other }) =>
+          box.left < other.right && box.right > other.left && box.top < other.bottom && box.bottom > other.top,
+      )
+      if (!overlaps) {
+        placed.push({ ...label, box })
+      }
+    })
+  return placed
+}
+
+const getStackSize = (category) => category.values.reduce((sum, value) => sum + Math.abs(value), 0)
+
+// Fewer wedges on smaller charts so each stays wide enough to see, hover and label
+export const getRoseMaxCategories = (outerRadius) =>
+  Math.min(MAX_ROSE_CATEGORIES, Math.max(MIN_WEDGES, Math.floor(outerRadius / RADIUS_PER_WEDGE)))
+
+const prefersReducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+
+const SEGMENT_GEOMETRY_KEYS = ['startAngle', 'endAngle', 'innerRadius', 'outerRadius']
+const lerpSegment = (from, to, t) => {
+  const segment = { ...to }
+  SEGMENT_GEOMETRY_KEYS.forEach((key) => {
+    segment[key] = from[key] + (to[key] - from[key]) * t
+  })
+  return segment
+}
+const isSameGeometry = (a, b) => SEGMENT_GEOMETRY_KEYS.every((key) => a[key] === b[key])
+
+const ChataRoseChart = forwardRef((props, forwardedRef) => {
+  const columns = props.columns || []
+  const gradientIdPrefix = useRef(`rose-gradient-${uuid()}`).current
+  const pathRefs = useRef(new Map())
+  const previousRenderRef = useRef(null)
+
+  const categoryColumnOptionIndices = useMemo(
+    () =>
+      columns
+        .map((col, index) => ({ col, index }))
+        .filter(({ col }) => col?.is_visible !== false && isColumnStringType(col))
+        .map(({ index }) => index),
+    [props.columns],
+  )
+
+  const numberColumnIndices = useMemo(
+    () =>
+      columns
+        .map((col, index) => ({ col, index }))
+        .filter(({ col }) => col?.is_visible !== false && isColumnNumberType(col))
+        .map(({ index }) => index),
+    [props.columns],
+  )
+
+  // Data-aware defaults: a non-date category column with a sensible number of values, Count for percent/ratio-only data
+  const detectedColumns = useMemo(() => findRoseColumns(columns, props.data), [props.columns, props.data])
+
+  // Grouped (aggregated) responses already have one row per group, so "Count" would count groups,
+  // not records - only offer it for list queries
+  const isAggregatedData = useMemo(() => isAggregation(columns), [props.columns])
+  const valueColumnOptionIndices = isAggregatedData
+    ? numberColumnIndices
+    : [SANKEY_VALUE_COUNT_SENTINEL, ...numberColumnIndices]
+
+  const getValidValueColumnIndices = (indices) =>
+    Array.from(new Set((indices || []).filter((index) => valueColumnOptionIndices.includes(index)))).slice(
+      0,
+      MAX_LAYERS,
+    )
+
+  // Category columns with a single value would draw one full circle, so they can't be picked
+  const singleValueColumnIndices = useMemo(
+    () =>
+      categoryColumnOptionIndices.filter((index) => {
+        const first = props.data?.find(Boolean)?.[index]
+        return !props.data?.some((row) => row && row[index] !== first)
+      }),
+    [categoryColumnOptionIndices, props.data],
+  )
+
+  const isValidCategoryColumnIndex = (index) => categoryColumnOptionIndices.includes(index)
+
+  const getDefaultCategoryColumnIndex = () => {
+    const persisted = props.initialChartControls?.roseCategoryColumnIndex
+    if (isValidCategoryColumnIndex(persisted)) {
+      return persisted
+    }
+    if (isValidCategoryColumnIndex(detectedColumns.categoryColumnIndex)) {
+      return detectedColumns.categoryColumnIndex
+    }
+    return categoryColumnOptionIndices[0] ?? -1
+  }
+
+  const getDefaultValueColumnIndices = () => {
+    const persisted = getValidValueColumnIndices(props.initialChartControls?.roseValueColumnIndices)
+    if (persisted.length) {
+      return persisted
+    }
+    if (detectedColumns.countAsValue && !isAggregatedData) {
+      return [SANKEY_VALUE_COUNT_SENTINEL]
+    }
+    const detected = getValidValueColumnIndices(detectedColumns.valueColumnIndices)
+    if (detected.length) {
+      return detected
+    }
+    return valueColumnOptionIndices.length ? [numberColumnIndices[0] ?? SANKEY_VALUE_COUNT_SENTINEL] : []
+  }
+
+  const [categoryColumnIndex, setCategoryColumnIndex] = useState(getDefaultCategoryColumnIndex)
+  const [valueColumnIndices, setValueColumnIndices] = useState(getDefaultValueColumnIndices)
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [showValueDropdown, setShowValueDropdown] = useState(false)
+  const [activeKey, setActiveKey] = useState(null)
+
+  // Keep selections valid if columns change underneath us (eg. a column is hidden).
+  // Auto-corrections are local only, so they don't trigger dashboard update loops.
+  useEffect(() => {
+    if (!isValidCategoryColumnIndex(categoryColumnIndex)) {
+      const next = getDefaultCategoryColumnIndex()
+      if (next !== categoryColumnIndex) {
+        setCategoryColumnIndex(next)
+      }
+    }
+  }, [categoryColumnOptionIndices, categoryColumnIndex])
+
+  useEffect(() => {
+    setValueColumnIndices((prev) => {
+      const validPrev = getValidValueColumnIndices(prev)
+      const next = validPrev.length ? validPrev : getDefaultValueColumnIndices()
+      return areNumberArraysEqual(prev, next) ? prev : next
+    })
+  }, [props.columns])
+
+  const persistRoseControls = (updates) => {
+    if (!props.onChartControlsChange) {
+      return
+    }
+    props.onChartControlsChange({ ...(props.initialChartControls || {}), ...updates })
+  }
+
+  const handleCategoryColumnChange = ([nextCategoryColumnIndex] = []) => {
+    if (nextCategoryColumnIndex === undefined || nextCategoryColumnIndex === categoryColumnIndex) {
+      return
+    }
+    setCategoryColumnIndex(nextCategoryColumnIndex)
+    persistRoseControls({ roseCategoryColumnIndex: nextCategoryColumnIndex })
+  }
+
+  const handleValueColumnsChange = (nextValueColumnIndices) => {
+    if (!nextValueColumnIndices?.length || areNumberArraysEqual(nextValueColumnIndices, valueColumnIndices)) {
+      return
+    }
+    setValueColumnIndices(nextValueColumnIndices)
+    persistRoseControls({ roseValueColumnIndices: nextValueColumnIndices })
+  }
+
+  const closeDropdowns = () => {
+    setShowCategoryDropdown(false)
+    setShowValueDropdown(false)
+  }
+
+  const formattingConfig = useMemo(
+    () => getDataFormatting(props.dataFormatting || getAutoQLConfig(props.autoQLConfig)?.dataFormatting),
+    [props.dataFormatting, props.autoQLConfig],
+  )
+
+  const totalWidth = props.width || 600
+  const totalHeight = props.height || 400
+  const buttonX = totalWidth - BUTTON_RIGHT_OFFSET
+  // Keep the rose clear of the right-side controls
+  const plotWidth = Math.max(0, buttonX - 10)
+  const plotHeight = Math.max(0, totalHeight - MARGIN_TOP)
+  const labelWidth = Math.min(LABEL_RESERVED_WIDTH, plotWidth * 0.2)
+  const outerRadius = Math.max(
+    0,
+    Math.min(plotWidth / 2 - labelWidth - LABEL_OFFSET, plotHeight / 2 - FONT_SIZE - LABEL_OFFSET),
+  )
+  const innerRadius = outerRadius * INNER_RADIUS_RATIO
+  const centerX = plotWidth / 2
+  const centerY = MARGIN_TOP + plotHeight / 2
+  const maxCategories = getRoseMaxCategories(outerRadius)
+
+  const { categories, totalCategories, isTruncated } = useMemo(
+    () => buildRoseData(props.data, categoryColumnIndex, valueColumnIndices, maxCategories),
+    [props.data, categoryColumnIndex, valueColumnIndices, maxCategories],
+  )
+
+  // "Other" sums everything that didn't get its own wedge, so it can dwarf the real categories and
+  // shrink them to slivers. It's drawn to scale up to OTHER_MAX_RATIO times the biggest real wedge;
+  // beyond that it stops at that size and is marked as not to scale.
+  const scaleMaxStack = useMemo(() => {
+    const realCategories = categories.filter((category) => !category.isOther)
+    if (!realCategories.length) {
+      return Math.max(0, ...categories.map(getStackSize))
+    }
+    const maxRealStack = Math.max(0, ...realCategories.map(getStackSize))
+    const otherStack = Math.max(0, ...categories.filter((category) => category.isOther).map(getStackSize))
+    return Math.max(maxRealStack, Math.min(otherStack, maxRealStack * OTHER_MAX_RATIO))
+  }, [categories])
+
+  // Radial scale keeps wedge area (not length) proportional to value, so large values don't look inflated
+  const radiusScale = useMemo(
+    () =>
+      scaleRadial()
+        .domain([0, scaleMaxStack || 1])
+        .range([innerRadius, outerRadius]),
+    [scaleMaxStack, innerRadius, outerRadius],
+  )
+
+  const angleStep = categories.length ? (2 * Math.PI) / categories.length : 0
+
+  // One segment per category and value column, stacked outward. Negative values are drawn by magnitude.
+  const segments = useMemo(() => {
+    const padAngle = categories.length > 1 ? Math.min(0.03, angleStep * 0.2) : 0
+    return categories.flatMap((category, i) => {
+      const stackSize = getStackSize(category)
+      const shrink = stackSize > scaleMaxStack && scaleMaxStack > 0 ? scaleMaxStack / stackSize : 1
+      let cumulative = 0
+      return category.values
+        .map((value, layer) => {
+          const magnitude = Math.abs(value) * shrink
+          if (!magnitude) {
+            return null
+          }
+          const segment = {
+            key: `${category.key}|${layer}`,
+            category,
+            layer,
+            value,
+            isNotToScale: shrink < 1,
+            startAngle: i * angleStep,
+            endAngle: (i + 1) * angleStep,
+            padAngle,
+            innerRadius: radiusScale(cumulative),
+            outerRadius: radiusScale(cumulative + magnitude),
+          }
+          cumulative += magnitude
+          return segment
+        })
+        .filter(Boolean)
+    })
+  }, [categories, radiusScale, angleStep, scaleMaxStack])
+
+  const arcGenerator = useMemo(() => d3Arc().padRadius(outerRadius).cornerRadius(1), [outerRadius])
+
+  // Tween wedges from their previous shape when the data or picks change (not on resize), so a
+  // later step-through-time feature animates without any rose-specific work
+  useLayoutEffect(() => {
+    const previous = previousRenderRef.current
+    previousRenderRef.current = { outerRadius, segments: new Map(segments.map((segment) => [segment.key, segment])) }
+    if (!previous || previous.outerRadius !== outerRadius || prefersReducedMotion()) {
+      return
+    }
+
+    segments.forEach((segment) => {
+      const element = pathRefs.current.get(segment.key)
+      if (!element) {
+        return
+      }
+      const from = previous.segments.get(segment.key) ?? { ...segment, outerRadius: segment.innerRadius }
+      if (isSameGeometry(from, segment)) {
+        return
+      }
+      select(element)
+        .interrupt()
+        .attr('d', arcGenerator(from))
+        .transition()
+        .duration(TWEEN_DURATION)
+        .attrTween('d', () => (t) => arcGenerator(lerpSegment(from, segment, t)))
+    })
+  }, [segments])
+
+  useEffect(() => {
+    const paths = pathRefs.current
+    return () => paths.forEach((element) => select(element).interrupt())
+  }, [])
+
+  const layerColors = useMemo(() => {
+    const chartPalette = getChartColorVars()?.chartColors?.filter(Boolean) || []
+    const colors = chartPalette.length ? chartPalette : FALLBACK_COLORS
+    return valueColumnIndices.map((_, layer) => colors[layer % colors.length])
+  }, [props.themeConfig, valueColumnIndices])
+
+  const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
+  // Set inline (not via CSS var) so colors carry over to the exported PNG
+  const themeTextColor = getThemeValue('text-color-primary')
+  const themeSecondaryTextColor = getThemeValue('text-color-secondary') || themeTextColor
+  const themeBorderColor = getThemeValue('border-color') || '#D8D8D8'
+  const negativeColor = getThemeValue('danger-color') || FALLBACK_NEGATIVE_COLOR
+
+  const categoryColumn = columns[categoryColumnIndex]
+  const getColumnLabel = (column) => column?.display_name || column?.name || ''
+  const getValueLabel = (columnIndex) =>
+    columnIndex === SANKEY_VALUE_COUNT_SENTINEL ? 'Count' : getColumnLabel(columns[columnIndex]) || 'Value'
+
+  const formatValue = (value, columnIndex) => {
+    if (columnIndex === SANKEY_VALUE_COUNT_SENTINEL || !columns[columnIndex]) {
+      return `${value?.toLocaleString?.() ?? value}`
+    }
+    return `${formatElement({ element: value, column: columns[columnIndex], config: formattingConfig })}`
+  }
+
+  const getCategoryName = (category) => {
+    if (category.isOther) {
+      return 'Other'
+    }
+    const displayValue = formatElement({ element: category.rawValue, column: categoryColumn, config: formattingConfig })
+    return displayValue === null || displayValue === undefined || displayValue === '' ? '(Blank)' : `${displayValue}`
+  }
+
+  // A total only makes sense when every layer is in the same units
+  const canShowTotal =
+    valueColumnIndices.length > 1 &&
+    new Set(valueColumnIndices.map((index) => (index === SANKEY_VALUE_COUNT_SENTINEL ? 'count' : columns[index]?.type)))
+      .size === 1
+
+  const getTooltipHtml = (category, isNotToScale) => {
+    const name = category.isOther ? `Other (${category.otherCount} categories)` : getCategoryName(category)
+    const lines = [`<strong>${escapeHtml(getColumnLabel(categoryColumn))}:</strong> ${escapeHtml(name)}`]
+    valueColumnIndices.forEach((columnIndex, layer) => {
+      lines.push(
+        `<strong>${escapeHtml(getValueLabel(columnIndex))}:</strong> ${escapeHtml(
+          formatValue(category.values[layer], columnIndex),
+        )}`,
+      )
+    })
+    if (canShowTotal) {
+      lines.push(`<strong>Total:</strong> ${escapeHtml(formatValue(category.total, valueColumnIndices[0]))}`)
+    }
+    if (isNotToScale) {
+      lines.push('<em>Not drawn to scale</em>')
+    }
+    return lines.join('<br/>')
+  }
+
+  const onWedgeClick = (event, category) => {
+    event.stopPropagation()
+    closeDropdowns()
+
+    if (!enableDrilldowns || !props.onChartClick || category.isOther || !categoryColumn?.name) {
+      return
+    }
+
+    const key = `rose-${category.key}`
+    setActiveKey(key)
+
+    // Same shape as treemap drilldowns: a group-by when the category column is one, otherwise
+    // (eg. list queries) a filter on the category value that QueryOutput builds from the row
+    const { rawValue } = category
+    if (categoryColumn.groupable) {
+      props.onChartClick({
+        groupBys: [
+          {
+            name: categoryColumn.name,
+            drill_down: categoryColumn.drill_down,
+            value: `${rawValue}`,
+            operator: rawValue === null || rawValue === undefined ? 'is' : '=',
+          },
+        ],
+        activeKey: key,
+      })
+      return
+    }
+
+    const row = new Array(columns.length).fill(undefined)
+    row[categoryColumnIndex] = rawValue ?? null
+    props.onChartClick({ stringColumnIndices: [categoryColumnIndex], rows: [row], activeKey: key })
+  }
+
+  const renderGradients = () => {
+    // Same 3-stop opacity gradient as bars/columns, running outward from the centre
+    const renderGradient = (id, color) => (
+      <radialGradient key={id} id={id} gradientUnits='userSpaceOnUse' cx={0} cy={0} r={outerRadius || 1}>
+        <stop offset='0%' stopColor={color} stopOpacity={BAR_GRADIENT_OPACITY_STOPS[0]} />
+        <stop offset='50%' stopColor={color} stopOpacity={BAR_GRADIENT_OPACITY_STOPS[1]} />
+        <stop offset='100%' stopColor={color} stopOpacity={BAR_GRADIENT_OPACITY_STOPS[2]} />
+      </radialGradient>
+    )
+    return (
+      <defs>
+        {layerColors.map((color, layer) => renderGradient(`${gradientIdPrefix}-${layer}`, color))}
+        {renderGradient(`${gradientIdPrefix}-negative`, negativeColor)}
+      </defs>
+    )
+  }
+
+  const renderGrid = () => {
+    const ticks = radiusScale.ticks(4).filter((tick) => tick > 0 && radiusScale(tick) < outerRadius - TICK_FONT_SIZE)
+    const tickFormatColumnIndex = valueColumnIndices[0]
+
+    return (
+      <g className='rose-grid' style={{ pointerEvents: 'none' }}>
+        {[...ticks.map((tick) => radiusScale(tick)), outerRadius].map((radius, i) => (
+          <circle
+            key={`ring-${i}`}
+            r={radius}
+            fill='none'
+            stroke={themeBorderColor}
+            strokeOpacity={i === ticks.length ? 0.8 : 0.5}
+          />
+        ))}
+        {categories.length > 1 &&
+          categories.map((category, i) => {
+            const angle = i * angleStep
+            return (
+              <line
+                key={`spoke-${category.key}`}
+                x1={innerRadius * Math.sin(angle)}
+                y1={-innerRadius * Math.cos(angle)}
+                x2={outerRadius * Math.sin(angle)}
+                y2={-outerRadius * Math.cos(angle)}
+                stroke={themeBorderColor}
+                strokeOpacity={0.5}
+              />
+            )
+          })}
+        {ticks.map((tick) => (
+          <text
+            key={`tick-${tick}`}
+            className='rose-tick-label'
+            x={2}
+            y={-radiusScale(tick) - 2}
+            fontSize={TICK_FONT_SIZE}
+            fill={themeSecondaryTextColor}
+          >
+            {formatValue(tick, tickFormatColumnIndex)}
+          </text>
+        ))}
+      </g>
+    )
+  }
+
+  const renderLabels = () => {
+    const labelRadius = outerRadius + LABEL_OFFSET
+    const candidates = categories
+      .map((category, i) => {
+        const angle = (i + 0.5) * angleStep
+        const sin = Math.sin(angle)
+        const cos = Math.cos(angle)
+        const x = labelRadius * sin
+        const textAnchor = sin > 0.1 ? 'start' : sin < -0.1 ? 'end' : 'middle'
+        // Truncate to the room between the label and the edge of the chart, not a fixed width, so labels
+        // use the empty space beside a height-limited rose
+        const roomToEdge = centerX - Math.abs(x) - LABEL_EDGE_PADDING
+        const availableWidth = Math.min(MAX_LABEL_WIDTH, textAnchor === 'middle' ? 2 * roomToEdge : roomToEdge)
+        const text = truncateToWidth(getCategoryName(category), availableWidth)
+        if (!text) {
+          return null
+        }
+        // Below the centre, hang the text under its anchor point; at the sides, centre it vertically
+        const dy = cos < -0.1 ? FONT_SIZE * 0.8 : cos > 0.1 ? 0 : FONT_SIZE * 0.35
+        return {
+          key: category.key,
+          text,
+          x,
+          y: -labelRadius * cos + dy,
+          width: text.length * CHAR_WIDTH,
+          textAnchor,
+          // Biggest wedges get their labels first; "Other" last
+          priority: category.isOther ? -1 : getStackSize(category),
+        }
+      })
+      .filter(Boolean)
+
+    return (
+      <g className='rose-labels' style={{ pointerEvents: 'none' }}>
+        {placeRoseLabels(candidates).map((label) => (
+          <text
+            key={`label-${label.key}`}
+            className='rose-label'
+            x={label.x}
+            y={label.y}
+            textAnchor={label.textAnchor}
+            fontSize={FONT_SIZE}
+            fill={themeTextColor}
+          >
+            {label.text}
+          </text>
+        ))}
+      </g>
+    )
+  }
+
+  const renderWedges = () =>
+    segments.map((segment) => {
+      const isActive = activeKey === `rose-${segment.category.key}`
+      const fill =
+        segment.value < 0 ? `url(#${gradientIdPrefix}-negative)` : `url(#${gradientIdPrefix}-${segment.layer})`
+      return (
+        <path
+          key={segment.key}
+          ref={(element) => {
+            if (element) {
+              pathRefs.current.set(segment.key, element)
+            } else {
+              pathRefs.current.delete(segment.key)
+            }
+          }}
+          className={`rose-wedge${isActive ? ' active' : ''}${segment.category.isOther ? ' rose-wedge-other' : ''}`}
+          d={arcGenerator(segment)}
+          fill={fill}
+          stroke={segment.isNotToScale ? themeSecondaryTextColor : undefined}
+          strokeDasharray={segment.isNotToScale ? '3,2' : undefined}
+          data-tooltip-id={props.chartTooltipID}
+          data-tooltip-html={getTooltipHtml(segment.category, segment.isNotToScale)}
+          onClick={(e) => onWedgeClick(e, segment.category)}
+        />
+      )
+    })
+
+  const getEmptyMessage = () => {
+    if (!categoryColumnOptionIndices.length) {
+      return 'No columns to group by'
+    }
+    if (!valueColumnIndices.length) {
+      return 'No number column to size wedges by'
+    }
+    // One wedge would be a full circle, which says nothing
+    if (categories.length === 1) {
+      return `Only one ${getColumnLabel(categoryColumn)} value (${getCategoryName(
+        categories[0],
+      )}). Pick a different category.`
+    }
+    return 'No values to display'
+  }
+
+  const renderWarning = () => {
+    if (!isTruncated) {
+      return null
+    }
+    const message = `Only the ${
+      maxCategories - 1
+    } largest categories (out of ${totalCategories}) are shown. The rest are combined into "Other".`
+    return <DataLimitWarning tooltipID={props.tooltipID} isTruncated customMessage={message} />
+  }
+
+  return (
+    <g
+      ref={forwardedRef}
+      className={`react-autoql-rose ${enableDrilldowns ? 'enable-drilldown' : ''}`}
+      data-test='react-autoql-rose'
+      onClick={closeDropdowns}
+    >
+      {renderWarning()}
+
+      {outerRadius <= 0 ? null : categories.length > 1 && segments.length ? (
+        <g className='rose-plot' transform={`translate(${centerX}, ${centerY})`}>
+          {renderGradients()}
+          {renderGrid()}
+          <g className='rose-wedges'>{renderWedges()}</g>
+          {renderLabels()}
+        </g>
+      ) : (
+        <text
+          className='rose-empty-message'
+          x={plotWidth / 2}
+          y={MARGIN_TOP + plotHeight / 2}
+          textAnchor='middle'
+          fill={themeTextColor}
+        >
+          {getEmptyMessage()}
+        </text>
+      )}
+
+      {/* Column selectors share the Sankey selector UI */}
+      <SankeyColumnSelector
+        columns={columns}
+        type='path'
+        pathColumnIndices={categoryColumnIndex >= 0 ? [categoryColumnIndex] : []}
+        pathColumnOptionIndices={categoryColumnOptionIndices}
+        onPathChange={handleCategoryColumnChange}
+        minPathColumns={1}
+        maxPathColumns={1}
+        pathTitle='Category'
+        pathSubtitle='One wedge per value'
+        pathLabel='Category'
+        pathIconType='rose'
+        disabledPathColumnIndices={singleValueColumnIndices}
+        disabledPathColumnTooltip='Only one value in this column'
+        showDropdown={showCategoryDropdown}
+        setShowDropdown={setShowCategoryDropdown}
+        buttonX={buttonX}
+        buttonY={BUTTON_TOP}
+        buttonSize={BUTTON_SIZE}
+        chartTooltipID={props.chartTooltipID}
+      />
+      <SankeyColumnSelector
+        columns={columns}
+        type='path'
+        pathColumnIndices={valueColumnIndices}
+        pathColumnOptionIndices={valueColumnOptionIndices}
+        onPathChange={handleValueColumnsChange}
+        minPathColumns={1}
+        maxPathColumns={MAX_LAYERS}
+        pathTitle='Values'
+        pathSubtitle='Stacked from the centre outward'
+        pathLabel='Values'
+        pathIconType='layers'
+        disabled={isAggregatedData && numberColumnIndices.length <= 1}
+        disabledTooltip='Values are already aggregated by the query'
+        showDropdown={showValueDropdown}
+        setShowDropdown={setShowValueDropdown}
+        buttonX={buttonX}
+        buttonY={BUTTON_TOP + BUTTON_STEP}
+        buttonSize={BUTTON_SIZE}
+        chartTooltipID={props.chartTooltipID}
+      />
+    </g>
+  )
+})
+
+ChataRoseChart.displayName = 'ChataRoseChart'
+
+ChataRoseChart.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.array),
+  columns: PropTypes.arrayOf(PropTypes.shape({})),
+  width: PropTypes.number,
+  height: PropTypes.number,
+  onChartClick: PropTypes.func,
+  themeConfig: PropTypes.shape({}),
+  dataFormatting: PropTypes.shape({}),
+  autoQLConfig: PropTypes.shape({}),
+  initialChartControls: PropTypes.shape({
+    roseCategoryColumnIndex: PropTypes.number,
+    roseValueColumnIndices: PropTypes.arrayOf(PropTypes.number),
+  }),
+  onChartControlsChange: PropTypes.func,
+  tooltipID: PropTypes.string,
+  chartTooltipID: PropTypes.string,
+}
+
+ChataRoseChart.defaultProps = {
+  data: [],
+  columns: [],
+  width: 800,
+  height: 600,
+  onChartClick: () => {},
+  themeConfig: {},
+  dataFormatting: {},
+  autoQLConfig: {},
+  initialChartControls: undefined,
+  onChartControlsChange: undefined,
+  tooltipID: undefined,
+  chartTooltipID: undefined,
+}
+
+export default ChataRoseChart

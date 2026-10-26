@@ -75,6 +75,7 @@ export class ChatMessage extends React.Component {
     this.MESSAGE_WIDTH_MARGINS = 40
     this.BUBBLE_TOP_SCROLL_PADDING = 30
     this.BUBBLE_BOTTOM_SCROLL_PADDING = 10
+    this.MESSAGE_TOP_EDGE_SCROLL_PADDING = 10
     this.ORIGINAL_TABLE_MESSAGE_HEIGHT = undefined
 
     // Store original summary content and response data if this is a summary message
@@ -529,6 +530,24 @@ export class ChatMessage extends React.Component {
     }, delay)
   }
 
+  // The toolbars hang above the message box, so the message's visible top is whichever is higher
+  getMessageTopEdge = () => {
+    const toolbars = this.messageContainerRef?.querySelectorAll('.chat-message-toolbar') ?? []
+    const tops = [this.messageContainerRef, ...toolbars]
+      .filter(Boolean)
+      .map((element) => element.getBoundingClientRect().top)
+    return tops.length ? Math.min(...tops) : this.getMessageVisibilityElement()?.getBoundingClientRect().top
+  }
+
+  // Automatic scrolls may reveal more of a message, but never scroll its top (or its toolbars) out of view
+  limitScrollToKeepTopVisible = (deltaScroll, containerRect, topEdge) => {
+    if (deltaScroll <= 0 || topEdge === undefined) {
+      return deltaScroll
+    }
+    const maxDelta = Math.max(0, topEdge - (containerRect.top + this.MESSAGE_TOP_EDGE_SCROLL_PADDING))
+    return Math.min(deltaScroll, maxDelta)
+  }
+
   animateScrollBubbleIntoContainer = () => {
     const container = this.props.scrollContainerRef?.getContainer?.()
     const bubble = this.getMessageVisibilityElement()
@@ -543,14 +562,17 @@ export class ChatMessage extends React.Component {
     const targetTop = containerRect.top + padTop
     const targetBottom = containerRect.bottom - padBottom
 
+    const topEdge = this.getMessageTopEdge()
+    const edgeTarget = containerRect.top + this.MESSAGE_TOP_EDGE_SCROLL_PADDING
+
     let deltaScroll = 0
 
     if (bubbleRect.height > containerRect.height + eps) {
-      deltaScroll = bubbleRect.top - targetTop
+      deltaScroll = topEdge - edgeTarget
     } else if (bubbleRect.top < targetTop - eps) {
-      deltaScroll = bubbleRect.top - targetTop
+      deltaScroll = topEdge - edgeTarget
     } else if (bubbleRect.bottom > targetBottom + eps) {
-      deltaScroll = bubbleRect.bottom - targetBottom
+      deltaScroll = this.limitScrollToKeepTopVisible(bubbleRect.bottom - targetBottom, containerRect, topEdge)
     } else {
       return
     }
@@ -592,7 +614,12 @@ export class ChatMessage extends React.Component {
     const threadRect = thread.getBoundingClientRect()
     const BOTTOM_BUFFER = 24
 
-    const deltaScroll = threadRect.bottom + BOTTOM_BUFFER - containerRect.bottom
+    // Reveal the thread's end, but not past the point where its start would scroll out of view
+    const deltaScroll = this.limitScrollToKeepTopVisible(
+      threadRect.bottom + BOTTOM_BUFFER - containerRect.bottom,
+      containerRect,
+      threadRect.top,
+    )
     if (deltaScroll <= 0) return
 
     const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)

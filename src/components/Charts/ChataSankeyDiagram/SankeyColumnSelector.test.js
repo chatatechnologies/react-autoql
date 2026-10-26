@@ -1,0 +1,95 @@
+import React from 'react'
+import { mount } from 'enzyme'
+import SankeyColumnSelector from './SankeyColumnSelector'
+import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
+
+const columns = [
+  { name: 'region', display_name: 'Region' },
+  { name: 'sales', display_name: 'Sales', isNumberType: true },
+  { name: 'cost', display_name: 'Cost', isNumberType: true },
+]
+
+const setup = (props = {}) =>
+  mount(
+    <svg>
+      <SankeyColumnSelector
+        columns={columns}
+        type='path'
+        showDropdown
+        setShowDropdown={() => {}}
+        minPathColumns={1}
+        {...props}
+      />
+    </svg>,
+  )
+
+const getAddableNames = (wrapper) =>
+  wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').map((item) => item.text())
+
+describe('SankeyColumnSelector path mode', () => {
+  test('offers Count only when the sentinel is a path option', () => {
+    expect(getAddableNames(setup({ pathColumnIndices: [1], pathColumnOptionIndices: [1, 2] }))).toEqual(['Cost'])
+    expect(
+      getAddableNames(setup({ pathColumnIndices: [1], pathColumnOptionIndices: [SANKEY_VALUE_COUNT_SENTINEL, 1, 2] })),
+    ).toEqual(['Count', 'Cost'])
+  })
+
+  test('adds Count as a path column', () => {
+    const onPathChange = jest.fn()
+    const wrapper = setup({
+      pathColumnIndices: [1],
+      pathColumnOptionIndices: [SANKEY_VALUE_COUNT_SENTINEL, 1, 2],
+      onPathChange,
+    })
+    wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').first().simulate('click')
+    expect(onPathChange).toHaveBeenCalledWith([1, SANKEY_VALUE_COUNT_SENTINEL])
+  })
+
+  test('shows a selected Count in the selected list', () => {
+    const wrapper = setup({
+      pathColumnIndices: [SANKEY_VALUE_COUNT_SENTINEL],
+      pathColumnOptionIndices: [SANKEY_VALUE_COUNT_SENTINEL, 1, 2],
+    })
+    expect(wrapper.find('.sankey-path-selected-item')).toHaveLength(1)
+  })
+
+  test('a single-column pick is a plain list that replaces the pick', () => {
+    const onPathChange = jest.fn()
+    const wrapper = setup({ pathColumnIndices: [1], pathColumnOptionIndices: [1, 2], maxPathColumns: 1, onPathChange })
+    expect(wrapper.find('.sankey-path-add-title').exists()).toBe(false)
+    const items = wrapper.find('.sankey-column-dropdown-item')
+    expect(items.map((item) => item.text())).toEqual(['Sales', 'Cost'])
+    expect(items.first().hasClass('sankey-column-dropdown-item-selected')).toBe(true)
+    items.last().simulate('click')
+    expect(onPathChange).toHaveBeenCalledWith([2])
+  })
+
+  test('disabled options in a single-column pick explain why and do nothing', () => {
+    const onPathChange = jest.fn()
+    const wrapper = setup({
+      pathColumnIndices: [1],
+      pathColumnOptionIndices: [1, 2],
+      maxPathColumns: 1,
+      disabledPathColumnIndices: [2],
+      disabledPathColumnTooltip: 'Only one value',
+      onPathChange,
+    })
+    const disabled = wrapper.find('.sankey-column-dropdown-item').last()
+    expect(disabled.hasClass('sankey-column-dropdown-item-disabled')).toBe(true)
+    expect(disabled.prop('data-tooltip-content')).toBe('Only one value')
+    disabled.simulate('click')
+    expect(onPathChange).not.toHaveBeenCalled()
+  })
+
+  test('does nothing when a multi-column path is full', () => {
+    const onPathChange = jest.fn()
+    const wrapper = setup({
+      pathColumnIndices: [0, 1],
+      pathColumnOptionIndices: [0, 1, 2],
+      maxPathColumns: 2,
+      onPathChange,
+    })
+    wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').first().simulate('click')
+    expect(onPathChange).not.toHaveBeenCalled()
+  })
+})

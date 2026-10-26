@@ -467,6 +467,17 @@ export const treemapIcon = (
   </svg>
 )
 
+export const roseIcon = (
+  <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
+    <path className='chart-icon-svg-0' fill='currentColor' d='M8.10,6.40L8.45,0.51A7.5,7.5 0 0,1 14.26,3.87L9.34,7.12A1.6,1.6 0 0,0 8.10,6.40Z' />
+    <path className='chart-icon-svg-0' fill='currentColor' d='M9.43,7.28L12.47,5.76A5,5 0 0,1 12.47,10.24L9.43,8.72A1.6,1.6 0 0,0 9.43,7.28Z' opacity='0.55' />
+    <path className='chart-icon-svg-0' fill='currentColor' d='M9.34,8.88L13.42,11.58A6.5,6.5 0 0,1 8.39,14.49L8.10,9.60A1.6,1.6 0 0,0 9.34,8.88Z' opacity='0.8' />
+    <path className='chart-icon-svg-0' fill='currentColor' d='M7.90,9.60L7.75,12.19A4.2,4.2 0 0,1 4.50,10.31L6.66,8.88A1.6,1.6 0 0,0 7.90,9.60Z' opacity='0.45' />
+    <path className='chart-icon-svg-0' fill='currentColor' d='M6.57,8.72L1.74,11.13A7,7 0 0,1 1.74,4.87L6.57,7.28A1.6,1.6 0 0,0 6.57,8.72Z' opacity='0.9' />
+    <path className='chart-icon-svg-0' fill='currentColor' d='M6.66,7.12L3.49,5.02A5.4,5.4 0 0,1 7.68,2.61L7.90,6.40A1.6,1.6 0 0,0 6.66,7.12Z' opacity='0.6' />
+  </svg>
+)
+
 export const sankeyIcon = (
   <svg x='0px' y='0px' width='16px' height='16px' viewBox='0 0 16 16'>
     {/* Left nodes */}

@@ -1,0 +1,31 @@
+.react-autoql-rose {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs */
+  .rose-wedge {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 1;
+    outline: none !important;
+
+    &:hover,
+    &.active {
+      fill-opacity: 0.7;
+    }
+  }
+
+  /* Feather's layers icon has built-in padding, so at 1em it reads smaller than the other button icons */
+  .sankey-path-button-icon .react-autoql-icon-layers {
+    font-size: 17px;
+  }
+
+  &.enable-drilldown .rose-wedge:not(.rose-wedge-other) {
+    cursor: pointer;
+  }
+
+  &:focus,
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
+}
