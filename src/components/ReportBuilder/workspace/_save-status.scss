@@ -1,0 +1,56 @@
+// The save control in the builder's toolbar (SaveStatus), under the workspace's root: .#{$rs} { ... }
+
+.#{$rs} {
+  .#{$rs}-save-status {
+    display: inline-flex;
+  }
+
+  // Quiet while the report is saved or saving; tinted once it needs pressing.
+  .#{$rs}-save-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    height: 1.6875rem;
+    margin: 0;
+    padding: 0 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: $text-2;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 550;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background: $bg;
+      color: $text;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+
+    &[data-state='failed'] {
+      border-color: color-mix(in srgb, var(--react-autoql-danger-color, #ca0b00) 30%, transparent);
+      background: color-mix(in srgb, var(--react-autoql-danger-color, #ca0b00) 6%, transparent);
+      color: $danger;
+
+      &:hover {
+        background: color-mix(in srgb, var(--react-autoql-danger-color, #ca0b00) 10%, transparent);
+      }
+    }
+
+    &[data-state='conflict'] {
+      border-color: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 50%, transparent);
+      background: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 10%, transparent);
+      color: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 55%, #000);
+
+      &:hover {
+        background: color-mix(in srgb, var(--react-autoql-warning-color, #ffb600) 20%, transparent);
+      }
+    }
+  }
+}

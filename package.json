@@ -42,11 +42,6 @@
     "cz": "npx git-cz"
   },
   "style": "dist/autoql.esm.css",
-  "husky": {
-    "hooks": {
-      "pre-push": "cross-env NODE_OPTIONS= npx jest --clearCache && cross-env NODE_OPTIONS= npm run test"
-    }
-  },
   "lint-staged": {
     "*.js": [
       "npm run test:staged"
@@ -140,6 +135,11 @@
     "@rollup/plugin-terser": "^1.0.0",
     "@testing-library/jest-dom": "6.4.2",
     "@testing-library/react": "12.1.2",
+    "@tiptap/core": "3.32.0",
+    "@tiptap/extensions": "3.32.0",
+    "@tiptap/markdown": "3.32.0",
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
     "ajv": "^8.20.0",
     "autoprefixer": "10.4.16",
     "axios-mock-adapter": "1.18.1",

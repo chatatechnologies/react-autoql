@@ -953,14 +953,27 @@ export default class ChataTable extends React.Component {
 
   clientSortAndFilterData = (params) => {
     // Use FE for sorting and filtering
-    let response = _cloneDeep(this.props.response)
+    const response = _cloneDeep(this.props.response)
     // For pivot tables, use the pivot data, not the original query data
-    let data = this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData)
+    const data = this.sortAndFilterRows(
+      this.props.pivot ? _cloneDeep(this.props.data) : _cloneDeep(this.originalQueryData),
+      params,
+    )
 
+    // Update filterCount for local filtering
+    this.filterCount = data.length
+
+    response.data.data.rows = data
+    response.data.data.count_rows = data.length
+
+    return response
+  }
+
+  // The rows with params' filters and sort applied, as a new array: filterDataByColumn and sortDataByColumn copy
+  // the array they're given and leave its rows as they are.
+  sortAndFilterRows = (rows, params) => {
     // Ensure data is always an array
-    if (!data) {
-      data = []
-    }
+    let data = rows || []
 
     // filterDataByColumn/sortDataByColumn look up column metadata by array position, so they need
     // columns in data order — this.props.columns may be reordered for display (columnOrder).
@@ -974,9 +987,6 @@ export default class ChataTable extends React.Component {
         data = filterDataByColumn(data, dataOrderedColumns, filterColumnIndex, filter.value, filter.operator)
       })
     }
-
-    // Update filterCount for local filtering
-    this.filterCount = data?.length || 0
 
     // Sorters
     if (params.orders?.length) {
@@ -1001,10 +1011,7 @@ export default class ChataTable extends React.Component {
       }
     }
 
-    response.data.data.rows = data
-    response.data.data.count_rows = data.length
-
-    return response
+    return data || []
   }
 
   queryFn = (params) => {
@@ -2265,6 +2272,58 @@ export default class ChataTable extends React.Component {
       )
     } catch (error) {
       return null
+    }
+  }
+
+  // Every row the table pages through, in the order it shows them: what getRows hands Tabulator 50 at a
+  // time. Tabulator itself only holds the pages scrolled to so far. The rows are the table's own, not copies:
+  // whoever keeps some copies them.
+  getShownRows = () => {
+    if (!this.useInfiniteScroll) {
+      const tableParamsFormatted = formatTableParams(this.tableParams, this.props.columns)
+      return this.sortAndFilterRows(this.props.pivot ? this.props.data : this.originalQueryData, {
+        tableFilters: tableParamsFormatted?.filters,
+        orders: tableParamsFormatted?.sorters,
+      })
+    }
+
+    return this.filteredResponseData ?? this.props.response?.data?.data?.rows ?? []
+  }
+
+  // The table as it's shown now, for a report to keep: its rows in the current sort and filter order (the
+  // first maxRows only), the visible columns in display order, the sort, the header filters, and how many
+  // rows the filters leave. A table holding its whole result sorts and filters it in place; a bigger one (over
+  // TABULATOR_LOCAL_ROW_LIMIT) re-queries the server. Either way the order and the count cover the result.
+  getReportView = (maxRows) => {
+    const tabulator = this.ref?.tabulator
+    const responseRows = this.props.response?.data?.data?.rows || []
+    let rows = responseRows
+    let columnFields
+    try {
+      rows = this.getShownRows()
+      columnFields = tabulator
+        ?.getColumns?.()
+        ?.filter((col) => col.isVisible())
+        .map((col) => col.getField())
+        .filter((field) => field !== undefined && field !== null)
+    } catch (error) {
+      rows = responseRows
+      columnFields = undefined
+    }
+
+    const filters = (this.tableParams?.filter || []).map(({ field, value }) => ({ field, value }))
+    const filtered = filters.length > 0
+    const serverCount = this.props.response?.data?.data?.count_rows
+    let total = serverCount ?? rows.length
+    if (filtered) total = this.useInfiniteScroll ? this.filterCount ?? rows.length : rows.length
+
+    return {
+      rows: _cloneDeep(rows.slice(0, maxRows)),
+      columnFields: columnFields?.length ? columnFields : undefined,
+      sort: (this.tableParams?.sort || []).map(({ field, dir }) => ({ field, dir })),
+      filters,
+      total,
+      filtered,
     }
   }
 
