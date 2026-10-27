@@ -91,3 +91,22 @@ describe('Tooltip global close events', () => {
     wrapper.unmount()
   })
 })
+
+// A `render` prop makes react-tooltip wrap the content and watch it with a ResizeObserver that it
+// recreates on every render. In legacy-mode React that happens mid-resize and the browser reports
+// "ResizeObserver loop completed with undelivered notifications" (eg. resizing Data Messenger).
+describe('Tooltip content observer', () => {
+  it('does not pass a render prop for plain tooltips', () => {
+    const wrapper = mount(<Tooltip tooltipId='plain-content-test-id' {...openTooltipProps} />)
+    expect(wrapper.find(ReactTooltip).prop('render')).toBeUndefined()
+    expect(document.body.querySelector('.react-tooltip-content-wrapper')).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('still passes a render prop through when one is given', () => {
+    const render = () => <span>custom</span>
+    const wrapper = mount(<Tooltip tooltipId='custom-render-test-id' render={render} />)
+    expect(wrapper.find(ReactTooltip).prop('render')).toBe(render)
+    wrapper.unmount()
+  })
+})

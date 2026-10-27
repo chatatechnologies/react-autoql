@@ -30,9 +30,11 @@ export function Tooltip(props = {}) {
       effect='solid'
       delayShow={800}
       globalCloseEvents={GLOBAL_CLOSE_EVENTS}
-      render={({ content, activeAnchor }) => {
-        return content
-      }}
+      // No default `render`: with one, react-tooltip wraps the content and watches it with a
+      // ResizeObserver it recreates on every render. Under legacy-mode React that happens while the
+      // browser is still delivering resize notifications, which reports "ResizeObserver loop completed
+      // with undelivered notifications" (eg. resizing Data Messenger with a tooltip open). Plain
+      // content renders the same without it; tooltips that need custom content still pass `render`.
       {...props}
       id={props.tooltipId ?? defaultTooltipId}
       className={`react-autoql-tooltip${props.className ? ` ${props.className}` : ''}`}

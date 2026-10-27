@@ -173,6 +173,8 @@ export default class Select extends React.Component {
             autoHide={false}
             contentHidden={!this.state.isOpen}
             maxHeight='100%'
+            // Labels truncate with an ellipsis, so the menu never scrolls sideways
+            suppressScrollX
           >
             <Menu options={this.props.options}>
               {this.props.options?.map((option, i) => {

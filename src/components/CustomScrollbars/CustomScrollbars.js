@@ -135,7 +135,14 @@ export default class CustomScrollbars extends React.Component {
         } ${this.props.suppressScrollY ? 'suppress-scroll-y' : 'allow-scroll-y'}`}
         ref={(r) => (this.ref = r)}
         style={this.getStyleProp()}
-        options={{ minScrollbarLength: 15, ...this.props.options }}
+        // Hiding a suppressed axis's rail (see getStyleProp and the scss) isn't enough on its own:
+        // perfect-scrollbar still scrolls that axis on wheel and trackpad gestures unless told not to
+        options={{
+          minScrollbarLength: 15,
+          suppressScrollX: !!this.props.suppressScrollX,
+          suppressScrollY: !!this.props.suppressScrollY,
+          ...this.props.options,
+        }}
         component={this.props.component}
       >
         {this.props.children}
