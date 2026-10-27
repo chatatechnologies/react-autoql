@@ -93,3 +93,28 @@ describe('SankeyColumnSelector path mode', () => {
     expect(onPathChange).not.toHaveBeenCalled()
   })
 })
+
+describe('SankeyColumnSelector popover clicks', () => {
+  // Charts close their dropdowns when clicked, so a click inside the popover (eg. picking from a nested
+  // Select) must not reach the chart, or it closes the popover mid-edit
+  test.each([
+    ['path', { pathColumnIndices: [1], pathColumnOptionIndices: [1, 2] }, '.sankey-path-dropdown-popover-content'],
+    [
+      'single column',
+      { pathColumnIndices: [1], pathColumnOptionIndices: [1, 2], maxPathColumns: 1 },
+      '.sankey-column-dropdown-popover-content',
+    ],
+    ['value', { type: 'value', selectedIndex: 1 }, '.sankey-column-dropdown-popover-content'],
+  ])('a click inside the %s popover does not reach the chart', (_, props, contentSelector) => {
+    const onChartClick = jest.fn()
+    const wrapper = mount(
+      <svg>
+        <g onClick={onChartClick}>
+          <SankeyColumnSelector columns={columns} type='path' showDropdown setShowDropdown={() => {}} {...props} />
+        </g>
+      </svg>,
+    )
+    wrapper.find(contentSelector).first().simulate('click')
+    expect(onChartClick).not.toHaveBeenCalled()
+  })
+})

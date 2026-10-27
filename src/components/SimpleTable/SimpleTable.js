@@ -717,7 +717,12 @@ export default class SimpleTable extends Component {
   }
 
   renderCell = (cell, column, colIndex) => {
-    const formatted = formatElement({ element: cell, column, config: this.props.dataFormatting })
+    let formatted = formatElement({ element: cell, column, config: this.props.dataFormatting })
+    // formatElement hands objects back untouched, and React throws on an object child -
+    // which takes down everything above the table, not just the cell.
+    if (formatted !== null && typeof formatted === 'object' && !React.isValidElement(formatted)) {
+      formatted = JSON.stringify(formatted)
+    }
     const textAlign = column?.hozAlign || (isColumnNumberType(column) ? 'right' : 'center')
     return (
       <td key={colIndex} className='simple-table-cell' style={{ textAlign }}>
@@ -901,9 +906,13 @@ export default class SimpleTable extends Component {
       ? 'No data available'
       : visibleRows.length === 0 ? 'No results match the current filters' : null
 
+    // ps__child--consume: a PerfectScrollbar host (the agent transcript, the chat) must
+    // leave the wheel to us. Its own "can the child scroll?" check has the wheel sign
+    // backwards, so a table at its top or bottom never received the wheel - the page
+    // scrolled instead. onWheel already hands the gesture back when the table runs out.
     return (
       <div
-        className={`simple-table-outer-container${isResizing ? ' simple-table-resizing' : ''}`}
+        className={`simple-table-outer-container ps__child--consume${isResizing ? ' simple-table-resizing' : ''}`}
         ref={this.scrollContainerRef}
         style={{ maxHeight: this.props.maxHeight, height: 'auto' }}
       >

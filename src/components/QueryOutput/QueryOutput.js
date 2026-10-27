@@ -445,6 +445,16 @@ export class QueryOutput extends React.Component {
       treemapValueColumnIndex: PropTypes.number,
       roseCategoryColumnIndex: PropTypes.number,
       roseValueColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      roseMode: PropTypes.oneOf(['values', 'measures']),
+      roseMeasureColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      roseScale: PropTypes.oneOf(['normalized', 'minmax', 'linear', 'log']),
+      timeAnimation: PropTypes.shape({
+        columnIndex: PropTypes.number,
+        grouping: PropTypes.string,
+        speed: PropTypes.number,
+        loop: PropTypes.bool,
+        cumulative: PropTypes.bool,
+      }),
       sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
       sankeyValueColumnIndex: PropTypes.number,
       splitBy: PropTypes.shape({
@@ -2598,6 +2608,7 @@ export class QueryOutput extends React.Component {
     stringColumnIndices,
     rows,
     useOrLogic,
+    extraFilters,
     groupBys: explicitGroupBys,
   }) => {
     const stringCol = columns?.[stringColumnIndex]
@@ -2682,7 +2693,8 @@ export class QueryOutput extends React.Component {
       return this.processDrilldown({
         supportedByAPI: false,
         activeKey,
-        filter: constructedFilters,
+        // eg. the time period a chart is showing while it plays over time
+        filter: [...constructedFilters, ...(extraFilters || [])],
         useOrLogic: false,
       })
     }

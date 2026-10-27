@@ -1,0 +1,131 @@
+// Same look as the chart control buttons (ChataSankeyDiagram.scss). Shapes carry opacity=0 as an
+// attribute so they're left out of exported PNGs; `opacity: 1 !important` shows them in the browser.
+.time-animation-control-outline {
+  fill: var(--react-autoql-background-color-secondary);
+  stroke: var(--react-autoql-border-color);
+  stroke-width: 1px;
+  opacity: 1 !important;
+  transition: stroke 0.2s ease;
+}
+
+.time-animation-control:not(.sankey-button-disabled):hover .time-animation-control-outline {
+  stroke: var(--react-autoql-accent-color);
+}
+
+.time-animation-control-hit {
+  fill: var(--react-autoql-background-color-hover);
+  fill-opacity: 0;
+  opacity: 1 !important;
+  outline: none;
+  transition: fill-opacity 0.2s ease;
+}
+
+.time-animation-control:not(.sankey-button-disabled) .time-animation-play-button-rect:hover,
+.time-animation-settings-button-rect:hover {
+  fill-opacity: 1;
+}
+
+.time-animation-control-icon {
+  color: var(--react-autoql-text-color-primary);
+  fill: var(--react-autoql-text-color-primary);
+  opacity: 1 !important;
+}
+
+.sankey-button-disabled .time-animation-play-icon {
+  opacity: 0.35 !important;
+}
+
+.time-animation-control-divider {
+  stroke: var(--react-autoql-border-color);
+  opacity: 1 !important;
+}
+
+.time-animation-settings-icon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.time-animation-settings {
+  width: 240px;
+  max-height: none;
+  overflow: visible;
+}
+
+.time-animation-settings-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.time-animation-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &.time-animation-setting-inline {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.time-animation-setting-label {
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-secondary);
+}
+
+.time-animation-setting-value {
+  font-size: 0.8125rem;
+}
+
+.time-animation-segmented {
+  display: flex;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.time-animation-segment {
+  flex: 1;
+  padding: 4px 6px;
+  border: none;
+  border-right: 1px solid var(--react-autoql-border-color);
+  background: none;
+  color: var(--react-autoql-text-color-primary);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: var(--react-autoql-background-color-hover);
+  }
+
+  &.time-animation-segment-active {
+    background: var(--react-autoql-accent-color-secondary);
+  }
+}
+
+.time-animation-timeline-hit {
+  cursor: pointer;
+  touch-action: none;
+}
+
+.time-animation-timeline-close {
+  color: var(--react-autoql-text-color-secondary);
+  cursor: pointer;
+  opacity: 1 !important;
+
+  &:hover {
+    color: var(--react-autoql-text-color-primary);
+  }
+}

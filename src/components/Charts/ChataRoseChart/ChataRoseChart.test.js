@@ -58,7 +58,7 @@ describe('ChataRoseChart', () => {
   })
 
   test('falls back to defaults for invalid persisted indices', () => {
-    const wrapper = setup({ initialChartControls: { roseCategoryColumnIndex: 2, roseValueColumnIndices: [0, 99] } })
+    const wrapper = setup({ initialChartControls: { roseCategoryColumnIndex: 99, roseValueColumnIndices: [0, 99] } })
     expect(getWedges(wrapper)).toHaveLength(3)
     expect(getSelector(wrapper, 'Values').prop('pathColumnIndices')).toEqual([2])
   })
@@ -156,16 +156,16 @@ describe('ChataRoseChart', () => {
   test('combines extra categories into Other and shows a warning', () => {
     const manyRows = Array.from({ length: MAX_ROSE_CATEGORIES + 2 }, (_, i) => [`A${i}`, 'X', i + 1, 0])
     const wrapper = setup({ data: manyRows })
-    // 600x400 leaves a 158px radius, which fits 15 wedges
-    expect(getWedges(wrapper)).toHaveLength(15)
+    // 600x400 with short labels leaves a 176px radius, which fits 17 wedges
+    expect(getWedges(wrapper)).toHaveLength(17)
     expect(getWedges(wrapper).last().hasClass('rose-wedge-other')).toBe(true)
     expect(wrapper.find('DataLimitWarning').exists()).toBe(true)
   })
 
   test('draws a reasonably sized Other to scale', () => {
-    // 15 wedges fit: the 14 values of 10 keep their own, and the three 5s make an Other of 15 (1.5x the biggest)
+    // 17 wedges fit: the 16 values of 10 keep their own, and the three 5s make an Other of 15 (1.5x the biggest)
     const rows = [
-      ...Array.from({ length: 14 }, (_, i) => [`A${i}`, 'X', 10, 0]),
+      ...Array.from({ length: 16 }, (_, i) => [`A${i}`, 'X', 10, 0]),
       ...Array.from({ length: 3 }, (_, i) => [`B${i}`, 'X', 5, 0]),
     ]
     const other = getWedges(setup({ data: rows })).last()
@@ -212,6 +212,45 @@ describe('ChataRoseChart', () => {
     const longName = 'Alexander K. Kingsley-Whitmore' // 30 characters, wider than the space reserved for labels
     const wrapper = setup({ width: 1200, height: 400, data: [[longName, 'X', 10, 0], ...data.slice(1)] })
     expect(wrapper.find('text.rose-label').map((label) => label.text())).toContain(longName)
+  })
+
+  test('a number column can be the category, one wedge per value, smallest first', () => {
+    const wrapper = setup({
+      data: [
+        ['BTC', 'X', 3, 1],
+        ['ETH', 'X', 1, 1],
+        ['SOL', 'Y', 2, 1],
+        ['ADA', 'Y', 3, 1],
+      ],
+      initialChartControls: { roseCategoryColumnIndex: 2, roseValueColumnIndices: [3] },
+    })
+    expect(getSelector(wrapper, 'Category').prop('pathColumnOptionIndices')).toEqual([0, 1, 2, 3])
+    // Wedges go around the circle in value order (labels are emitted in placement order instead)
+    const wedgeCategories = getWedges(wrapper).map((wedge) => wedge.prop('data-tooltip-html').split('<br/>')[0])
+    expect(wedgeCategories).toEqual([
+      '<strong>Volume:</strong> 1',
+      '<strong>Volume:</strong> 2',
+      '<strong>Volume:</strong> 3',
+    ])
+  })
+
+  test('a number category with many values is split into ranges that drill down with a between filter', () => {
+    const onChartClick = jest.fn()
+    const rows = Array.from({ length: 200 }, (_, i) => [`A${i}`, 'X', i * 5, 1])
+    const wrapper = setup({
+      data: rows,
+      onChartClick,
+      initialChartControls: { roseCategoryColumnIndex: 2, roseValueColumnIndices: [3] },
+    })
+    const labels = wrapper.find('text.rose-label').map((label) => label.text())
+    expect(labels[0]).toMatch(/^0 – \d+$/)
+    expect(wrapper.find('DataLimitWarning').exists()).toBe(false)
+
+    getWedges(wrapper).first().simulate('click')
+    const [{ filters }] = onChartClick.mock.calls[0]
+    expect(filters).toEqual([
+      { name: 'crypto.volume', operator: 'between', value: expect.stringMatching(/^0,\d+$/), column_type: 'QUANTITY' },
+    ])
   })
 
   test('draws nothing, not an empty message, when there is no room', () => {

@@ -53,3 +53,34 @@ describe('buildRoseData', () => {
     expect(buildRoseData(undefined, 0, [1]).categories).toEqual([])
   })
 })
+
+describe('buildRoseData with fixed categories', () => {
+  test('keeps every fixed category in order, with zeros where a period has no rows', () => {
+    const { categories: fixed } = buildRoseData(data, 0, [1])
+    const { categories } = buildRoseData([['SOL', 3, 0]], 0, [1], undefined, fixed)
+    expect(categories.map((c) => c.rawValue)).toEqual(['BTC', 'ETH', 'SOL', null])
+    expect(categories.map((c) => c.values[0])).toEqual([0, 0, 3, 0])
+  })
+
+  test('sends rows outside the fixed set to Other', () => {
+    const { categories: fixed } = buildRoseData(data, 0, [1], 3)
+    expect(fixed.map((c) => c.key)).toContain(ROSE_OTHER_KEY)
+    const { categories, isTruncated } = buildRoseData(
+      [
+        ['SOL', 2, 0],
+        [null, 1, 0],
+      ],
+      0,
+      [1],
+      3,
+      fixed,
+    )
+    expect(isTruncated).toBe(true)
+    expect(categories.find((c) => c.isOther).values[0]).toBe(3)
+  })
+
+  test('an empty period still has all of the categories', () => {
+    const { categories: fixed } = buildRoseData(data, 0, [1])
+    expect(buildRoseData([], 0, [1], undefined, fixed).categories).toHaveLength(4)
+  })
+})

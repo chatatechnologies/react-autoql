@@ -139,12 +139,20 @@ const SankeyColumnSelector = ({
     onPathChange(nextPath)
   }
 
+  // Clicks inside the popover (including a nested Select's menu, which renders within it) bubble through
+  // the React tree to the chart, and charts close their dropdowns on click. Keep them inside.
+  const stopClickPropagation = (e) => e.stopPropagation()
+
   const renderPathDropdownContent = () => {
     const availableColumns = categoricalColumns.filter(({ index }) => !pathColumnIndices.includes(index))
     const hasMinPath = pathColumnIndices.length >= minPathColumns
 
     return (
-      <div className='sankey-path-dropdown-popover-content' ref={setPathPopoverElement}>
+      <div
+        className='sankey-path-dropdown-popover-content'
+        ref={setPathPopoverElement}
+        onClick={stopClickPropagation}
+      >
         <div className='sankey-column-dropdown-title'>{pathTitle}</div>
         <div className='sankey-path-dropdown-subtitle'>{pathSubtitle}</div>
         <CustomScrollbars className='sankey-path-selected-list' suppressScrollX maxHeight={240}>
@@ -244,7 +252,7 @@ const SankeyColumnSelector = ({
 
   // A single-column pick is a plain list (like the value picker), not an ordered path to add to
   const renderSingleColumnDropdownContent = () => (
-    <div className='sankey-column-dropdown-popover-content'>
+    <div className='sankey-column-dropdown-popover-content' onClick={stopClickPropagation}>
       <div className='sankey-column-dropdown-title'>{pathTitle}</div>
       <CustomScrollbars className='sankey-column-dropdown-container' suppressScrollX>
         {categoricalColumns.map(({ col, index }) => {
@@ -333,7 +341,7 @@ const SankeyColumnSelector = ({
           ) : type === 'path' ? (
             renderPathDropdownContent()
           ) : (
-            <div className='sankey-column-dropdown-popover-content'>
+            <div className='sankey-column-dropdown-popover-content' onClick={stopClickPropagation}>
               <div className='sankey-column-dropdown-title'>{getLabel()} Column</div>
               <div className='sankey-column-dropdown-container'>{renderValueDropdownContent()}</div>
             </div>

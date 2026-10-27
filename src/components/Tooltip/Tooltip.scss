@@ -8,6 +8,11 @@
   transition: none;
   text-align: left;
   z-index: 999999 !important; /* necessary to show up on top of rc drawer */
+  // Size to the content, not to the room left between the tooltip and the page edge. Otherwise
+  // moving a tooltip near the edge changes its width, react-tooltip's ResizeObserver repositions
+  // it, and that changes its width again: "ResizeObserver loop completed with undelivered
+  // notifications". Seen when resizing Data Messenger with a tooltip open.
+  width: max-content;
   max-width: 300px;
   word-break: break-word;
 }

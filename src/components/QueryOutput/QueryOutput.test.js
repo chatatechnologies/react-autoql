@@ -980,3 +980,23 @@ describe('queryFn display_override response relabeling', () => {
     wrapper.unmount()
   })
 })
+
+describe('chart drilldowns with extra filters', () => {
+  test('a row drilldown also applies the extra filters (eg. a time period)', () => {
+    const queryOutput = mount(<QueryOutputWithoutTheme queryResponse={_cloneDeep(testCases[9])} queryFn={() => {}} />)
+    const instance = queryOutput.instance()
+    const processDrilldown = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => {})
+    const columnIndex = 2
+    const row = []
+    row[columnIndex] = 'Acme'
+    const periodFilter = { name: 'sale_date', operator: 'between', value: 'a,b', column_type: 'DATE' }
+
+    instance.onChartClick({ stringColumnIndices: [columnIndex], rows: [row], extraFilters: [periodFilter] })
+
+    const { filter } = processDrilldown.mock.calls[0][0]
+    expect(filter).toHaveLength(2)
+    expect(filter[0]).toMatchObject({ name: instance.state.columns[columnIndex].name, value: 'Acme' })
+    expect(filter[1]).toEqual(periodFilter)
+    queryOutput.unmount()
+  })
+})

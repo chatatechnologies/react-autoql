@@ -16,7 +16,7 @@
 
   /* Feather's layers icon has built-in padding, so at 1em it reads smaller than the other button icons */
   .sankey-path-button-icon .react-autoql-icon-layers {
-    font-size: 17px;
+    font-size: 16.5px;
   }
 
   &.enable-drilldown .rose-wedge:not(.rose-wedge-other) {
@@ -27,5 +27,26 @@
   *:focus,
   *:focus-visible {
     outline: none !important;
+  }
+}
+
+// Settings popover (rendered outside the chart, so not nested under .react-autoql-rose)
+.rose-settings {
+  max-width: 320px;
+
+  .time-animation-segment:disabled {
+    cursor: default;
+    opacity: 0.45;
+
+    &:hover {
+      background: none;
+    }
+  }
+
+  .rose-settings-description {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--react-autoql-text-color-secondary);
   }
 }
