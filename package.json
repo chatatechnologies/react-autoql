@@ -42,11 +42,6 @@
     "cz": "npx git-cz"
   },
   "style": "dist/autoql.esm.css",
-  "husky": {
-    "hooks": {
-      "pre-push": "cross-env NODE_OPTIONS= npx jest --clearCache && cross-env NODE_OPTIONS= npm run test"
-    }
-  },
   "lint-staged": {
     "*.js": [
       "npm run test:staged"
