@@ -225,16 +225,15 @@ describe('ChataRoseChart time animation', () => {
     expect(series[0].color).not.toEqual(series[1].color)
     expect(wrapper.find('path.time-animation-timeline-line')).toHaveLength(2)
     expect(wrapper.find('circle.time-animation-timeline-dot')).toHaveLength(2)
-    // Each line fills the sparkline's height on its own scale, so both peaks reach the same height
-    const getPeakY = (path) =>
-      Math.min(
-        ...path
-          .prop('d')
-          .match(/[\d.]+,[\d.]+/g)
-          .map((point) => Number(point.split(',')[1])),
-      )
-    const [amountLine, unitsLine] = wrapper.find('path.time-animation-timeline-line').map((path) => path)
-    expect(getPeakY(amountLine)).toBeCloseTo(getPeakY(unitsLine))
+    // One line chart, each line on its own scale, so both peaks reach the top of the chart
+    const getYs = (path) =>
+      path
+        .prop('d')
+        .match(/[\d.]+,[\d.]+/g)
+        .map((point) => Number(point.split(',')[1]))
+    const [amountYs, unitsYs] = wrapper.find('path.time-animation-timeline-line').map(getYs)
+    expect(Math.min(...amountYs)).toBeCloseTo(Math.min(...unitsYs))
+    expect(wrapper.find('rect.time-animation-timeline-hit')).toHaveLength(1)
   })
 
   test('playback tweens last the whole frame; a picked frame eases in quickly', () => {

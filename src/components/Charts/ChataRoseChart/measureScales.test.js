@@ -1,4 +1,10 @@
-import { buildMeasureFrames, getMeasureScaleTicks, scaleMeasureValue } from './measureScales'
+import {
+  ROSE_SCALE_LABELS,
+  buildMeasureFrames,
+  describeMeasureValue,
+  getMeasureScaleTicks,
+  scaleMeasureValue,
+} from './measureScales'
 import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 // Two measures (columns 1 and 2) over four periods
@@ -85,5 +91,56 @@ describe('getMeasureScaleTicks', () => {
   test('linear ticks use the formatter', () => {
     const ticks = getMeasureScaleTicks('linear', 400, (value) => `$${value}`)
     expect(ticks.map((t) => t.label)).toEqual(['$100', '$200', '$300', '$400'])
+  })
+})
+
+describe('describeMeasureValue', () => {
+  const formatValue = (value) => `$${value.toFixed(2)}`
+  // Average 65, typically 10 either side, lowest 50, highest 80
+  const stats = { mean: 65, std: 10, min: 50, max: 80 }
+  const describe_ = (scale, value, grouping = 'DAY') =>
+    describeMeasureValue({ scale, value, stats, grouping, formatValue }).map(({ text }) => text)
+
+  test('z-score: how far from the average in usual variations, with the typical range in real units', () => {
+    expect(describe_('normalized', 78)).toEqual([
+      '1.3× its usual variation above its daily average of $65.00',
+      'Typical range: $55.00 – $75.00',
+    ])
+    expect(describe_('normalized', 50, 'MONTH')[0]).toBe('1.5× its usual variation below its monthly average of $65.00')
+  })
+
+  test('z-score: says "average" alone when the periods are not dates grouped by day, month and so on', () => {
+    expect(describe_('normalized', 78, null)[0]).toBe('1.3× its usual variation above its average of $65.00')
+  })
+
+  test('z-score: a measure that never changes is at its average', () => {
+    const flat = { mean: 65, std: 0, min: 65, max: 65 }
+    expect(describeMeasureValue({ scale: 'normalized', value: 65, stats: flat, formatValue })[0].text).toBe(
+      'The same in every period ($65.00)',
+    )
+  })
+
+  test('range: how far from its lowest to its highest, naming the extremes', () => {
+    expect(describe_('minmax', 65)).toEqual(['50% of the way from its lowest ($50.00) to its highest ($80.00)'])
+    expect(describe_('minmax', 80)).toEqual([
+      '100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
+    ])
+    expect(describe_('minmax', 50)[0]).toMatch(/: its lowest period$/)
+  })
+
+  test('actual values need no explanation; log scale warns that lengths are not proportional', () => {
+    expect(describe_('linear', 78)).toEqual([])
+    expect(describeMeasureValue({ scale: 'log', value: 78, stats, formatValue })).toEqual([
+      { text: "Log scale: lengths aren't proportional", isNote: true },
+    ])
+  })
+})
+
+test('scale names say what each one shows', () => {
+  expect(ROSE_SCALE_LABELS).toEqual({
+    normalized: 'Normalized (z-score)',
+    minmax: 'Range (min–max)',
+    linear: 'Actual values',
+    log: 'Actual values (log scale)',
   })
 })

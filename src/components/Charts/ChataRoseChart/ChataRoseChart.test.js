@@ -214,6 +214,27 @@ describe('ChataRoseChart', () => {
     expect(wrapper.find('text.rose-label').map((label) => label.text())).toContain(longName)
   })
 
+  test('a truncated label shows its full name in a tooltip; a label shown in full has none', () => {
+    const longName = 'Alexander K. Kingsley-Whitmore'
+    const wrapper = setup({
+      width: 400,
+      height: 400,
+      chartTooltipID: 'chart-tooltip',
+      data: [[longName, 'X', 10, 0], ...data.slice(1)],
+    })
+    const labels = wrapper.find('text.rose-label')
+    const truncated = labels.filterWhere((label) => label.text().endsWith('…'))
+    expect(truncated).toHaveLength(1)
+    expect(longName.startsWith(truncated.text().slice(0, -1))).toBe(true)
+    expect(truncated.prop('data-tooltip-id')).toBe('chart-tooltip')
+    expect(truncated.prop('data-tooltip-content')).toBe(longName)
+    // Labels sit in a group that ignores the mouse; a truncated one has to opt back in to be hovered
+    expect(truncated.prop('style')).toEqual(expect.objectContaining({ pointerEvents: 'auto' }))
+
+    const full = labels.filterWhere((label) => label.text() === 'ETH')
+    expect(full.prop('data-tooltip-content')).toBeUndefined()
+  })
+
   test('a number column can be the category, one wedge per value, smallest first', () => {
     const wrapper = setup({
       data: [

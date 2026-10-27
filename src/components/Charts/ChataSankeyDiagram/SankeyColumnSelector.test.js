@@ -92,6 +92,31 @@ describe('SankeyColumnSelector path mode', () => {
     wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').first().simulate('click')
     expect(onPathChange).not.toHaveBeenCalled()
   })
+
+  test('a full path says so, and shows the other columns as disabled with the reason', () => {
+    const wrapper = setup({
+      pathColumnIndices: [0, 1],
+      pathColumnOptionIndices: [0, 1, 2],
+      maxPathColumns: 2,
+      chartTooltipID: 'chart-tooltip',
+    })
+    expect(wrapper.find('.sankey-path-add-title').text()).toBe('Add column (2 of 2)')
+    expect(wrapper.find('.sankey-path-limit-notice').text()).toBe(
+      'Maximum of 2 columns reached. Remove one to add another.',
+    )
+    const item = wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').first()
+    expect(item.hasClass('sankey-column-dropdown-item-disabled')).toBe(true)
+    expect(item.prop('data-tooltip-id')).toBe('chart-tooltip')
+    expect(item.prop('data-tooltip-content')).toBe('Maximum of 2 columns reached')
+  })
+
+  test('a path with room has no limit notice and enabled columns', () => {
+    const wrapper = setup({ pathColumnIndices: [0], pathColumnOptionIndices: [0, 1, 2], maxPathColumns: 2 })
+    expect(wrapper.find('.sankey-path-add-title').text()).toBe('Add column (1 of 2)')
+    expect(wrapper.find('.sankey-path-limit-notice').exists()).toBe(false)
+    const item = wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').first()
+    expect(item.hasClass('sankey-column-dropdown-item-disabled')).toBe(false)
+  })
 })
 
 describe('SankeyColumnSelector popover clicks', () => {

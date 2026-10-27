@@ -14,9 +14,24 @@
     }
   }
 
-  /* Feather's layers icon has built-in padding, so at 1em it reads smaller than the other button icons */
-  .sankey-path-button-icon .react-autoql-icon-layers {
-    font-size: 16.5px;
+  /* Every button icon draws about 15px, whatever padding its icon set builds in. Sizes are set
+     explicitly so they don't depend on the inherited font size. */
+  .sankey-path-button-icon {
+    /* Feather: drawn across 22 of its 24 units */
+    .react-autoql-icon-layers {
+      font-size: 16.5px;
+    }
+
+    /* Remix: drawn across 21 of its 24 units */
+    .react-autoql-icon-list-settings {
+      font-size: 17px;
+    }
+
+    /* Custom 16-unit icon, drawn across 14 of them */
+    .react-autoql-icon-rose svg {
+      width: 17px;
+      height: 17px;
+    }
   }
 
   &.enable-drilldown .rose-wedge:not(.rose-wedge-other) {
@@ -40,6 +55,17 @@
 
     &:hover {
       background: none;
+    }
+  }
+
+  .rose-settings-options {
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 4px;
+    overflow: hidden;
+
+    .sankey-column-dropdown-item {
+      padding: 6px 10px;
+      font-size: 0.8125rem;
     }
   }
 

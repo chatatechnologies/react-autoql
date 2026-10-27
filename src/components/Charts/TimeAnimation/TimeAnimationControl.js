@@ -178,26 +178,26 @@ const TimeAnimationControl = ({ animation, columns, x, y, size, chartTooltipID }
           <>
             <rect
               x={iconCenter - 5}
-              y={TIME_ANIMATION_PLAY_HEIGHT / 2 - 6}
+              y={TIME_ANIMATION_PLAY_HEIGHT / 2 - 7}
               width={3.5}
-              height={12}
+              height={14}
               rx={1}
               fill='currentColor'
             />
             <rect
               x={iconCenter + 1.5}
-              y={TIME_ANIMATION_PLAY_HEIGHT / 2 - 6}
+              y={TIME_ANIMATION_PLAY_HEIGHT / 2 - 7}
               width={3.5}
-              height={12}
+              height={14}
               rx={1}
               fill='currentColor'
             />
           </>
         ) : (
           <path
-            d={`M${iconCenter - 4},${TIME_ANIMATION_PLAY_HEIGHT / 2 - 6.5} L${iconCenter + 6},${
+            d={`M${iconCenter - 4.5},${TIME_ANIMATION_PLAY_HEIGHT / 2 - 7} L${iconCenter + 6.5},${
               TIME_ANIMATION_PLAY_HEIGHT / 2
-            } L${iconCenter - 4},${TIME_ANIMATION_PLAY_HEIGHT / 2 + 6.5} Z`}
+            } L${iconCenter - 4.5},${TIME_ANIMATION_PLAY_HEIGHT / 2 + 7} Z`}
             fill='currentColor'
             stroke='currentColor'
             strokeWidth={1}

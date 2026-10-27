@@ -12,10 +12,13 @@ export const ROSE_MODES = ['values', 'measures']
 const MODE_LABELS = { values: 'Values of a column', measures: 'Measures' }
 
 const SCALE_DESCRIPTIONS = {
-  normalized: "How far each period is from that measure's average, in standard deviations. Below average is red.",
-  minmax: "Where each period sits between that measure's lowest and highest period.",
-  linear: 'The values themselves, on one scale shared by every measure.',
-  log: 'The values on a log scale, so small measures stay visible beside large ones.',
+  normalized:
+    "How unusual this period is for each measure: its distance from the measure's average across all periods, compared with how much it usually varies. 1σ is a typical swing; beyond 2σ is rare. Blue is above average, red is below.",
+  minmax:
+    'Where this period falls between the measure\'s lowest and highest period: 0% is its lowest, 100% its highest. Good for "is this a high or low period for this measure?"',
+  linear:
+    'The values themselves, on one scale shared by every measure. Best when the measures are in the same units; a large measure will dwarf small ones.',
+  log: 'The values themselves on a log scale: each ring is 10× the one inside it, so small measures stay visible next to large ones. Lengths show order of magnitude, not exact proportions.',
 }
 
 const ICON_SIZE = 20
@@ -76,11 +79,21 @@ const RoseSettingsControl = ({
         {mode === 'measures' && (
           <div className='time-animation-setting'>
             <div className='time-animation-setting-label'>Scale</div>
-            {renderSegmented(
-              ROSE_SCALES.map((value) => ({ value, label: ROSE_SCALE_LABELS[value] })),
-              scale,
-              onScaleChange,
-            )}
+            {/* A list rather than segments: the names are too long to sit side by side */}
+            <div className='rose-settings-options'>
+              {ROSE_SCALES.map((value) => (
+                <div
+                  key={value}
+                  className={`sankey-column-dropdown-item${
+                    value === scale ? ' sankey-column-dropdown-item-selected' : ''
+                  }`}
+                  onClick={() => value !== scale && onScaleChange(value)}
+                >
+                  {value === scale && <Icon type='check' className='sankey-column-dropdown-item-check' />}
+                  <span>{ROSE_SCALE_LABELS[value]}</span>
+                </div>
+              ))}
+            </div>
             <div className='rose-settings-description'>{SCALE_DESCRIPTIONS[scale]}</div>
           </div>
         )}
@@ -112,7 +125,7 @@ const RoseSettingsControl = ({
             }}
             data-tooltip-id={chartTooltipID}
             data-tooltip-html={`<strong>Wedges are:</strong><br/>${MODE_LABELS[mode]}${
-              mode === 'measures' ? ` (${ROSE_SCALE_LABELS[scale]})` : ''
+              mode === 'measures' ? `, ${ROSE_SCALE_LABELS[scale]}` : ''
             }`}
             style={{ cursor: 'pointer' }}
           />

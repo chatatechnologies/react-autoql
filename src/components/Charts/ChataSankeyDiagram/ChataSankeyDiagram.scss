@@ -135,6 +135,8 @@
 
 .sankey-column-dropdown-container {
   overflow-y: auto;
+  // Only ever scrolls vertically: overflow-y: auto would otherwise turn on overflow-x too
+  overflow-x: hidden;
   max-height: 250px;
 }
 
@@ -275,7 +277,8 @@
   }
 }
 
-.sankey-path-warning {
+.sankey-path-warning,
+.sankey-path-limit-notice {
   margin: 0 12px 8px;
   padding: 8px;
   border-radius: 4px;
@@ -335,6 +338,8 @@
 
 .sankey-filter-dropdown-container {
   overflow-y: auto;
+  // Only ever scrolls vertically: overflow-y: auto would otherwise turn on overflow-x too
+  overflow-x: hidden;
   max-height: 400px;
 }
 
@@ -386,6 +391,7 @@
   gap: 4px;
   max-height: 150px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sankey-filter-item {

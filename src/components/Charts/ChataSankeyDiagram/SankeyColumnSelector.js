@@ -146,6 +146,9 @@ const SankeyColumnSelector = ({
   const renderPathDropdownContent = () => {
     const availableColumns = categoricalColumns.filter(({ index }) => !pathColumnIndices.includes(index))
     const hasMinPath = pathColumnIndices.length >= minPathColumns
+    // At the limit the other columns stay listed, disabled, so it's clear why they can't be added
+    const isFull = pathColumnIndices.length >= maxPathColumns
+    const limitMessage = `Maximum of ${maxPathColumns} columns reached`
 
     return (
       <div
@@ -225,20 +228,25 @@ const SankeyColumnSelector = ({
             Select at least {minPathColumns} column{minPathColumns === 1 ? '' : 's'} to render this chart.
           </div>
         )}
-        <div className='sankey-path-add-title'>Add column</div>
+        <div className='sankey-path-add-title'>
+          Add column ({pathColumnIndices.length} of {maxPathColumns})
+        </div>
+        {isFull && availableColumns.length > 0 && (
+          <div className='sankey-path-limit-notice'>{limitMessage}. Remove one to add another.</div>
+        )}
         <CustomScrollbars className='sankey-column-dropdown-container' suppressScrollX>
           {availableColumns.length === 0 ? (
             <div className='sankey-column-dropdown-empty'>
-              {pathColumnIndices.length >= maxPathColumns
-                ? `Maximum of ${maxPathColumns} columns reached`
-                : 'No additional categorical columns available'}
+              {isFull ? limitMessage : 'No additional categorical columns available'}
             </div>
           ) : (
             availableColumns.map(({ col, index }) => (
               <div
                 key={`path-available-${index}`}
-                className='sankey-column-dropdown-item'
-                onClick={() => addPathColumn(index)}
+                className={`sankey-column-dropdown-item${isFull ? ' sankey-column-dropdown-item-disabled' : ''}`}
+                data-tooltip-id={isFull ? chartTooltipID : undefined}
+                data-tooltip-content={isFull ? limitMessage : undefined}
+                onClick={() => !isFull && addPathColumn(index)}
               >
                 <Icon type='plus' className='sankey-column-dropdown-item-check' />
                 <span>{col.display_name || col.name}</span>

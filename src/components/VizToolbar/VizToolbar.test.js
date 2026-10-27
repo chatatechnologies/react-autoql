@@ -7,6 +7,17 @@ import { Tooltip } from '../Tooltip'
 import VizToolbar from './VizToolbar'
 
 import responseTestCases from '../../../test/responseTestCases'
+import { featureToggles } from '../../js/featureToggles'
+
+// Button counts depend on which chart types are switched on, so pin the toggles for these tests
+const originalToggles = { ...featureToggles }
+beforeAll(() => {
+  featureToggles.treemap = true
+  featureToggles.rose = true
+})
+afterAll(() => {
+  Object.assign(featureToggles, originalToggles)
+})
 
 var responseRef
 var toolbarRef
@@ -57,7 +68,7 @@ describe('renders correctly', () => {
       },
     })
     const toolbarButtons = findByTestAttr(wrapper, 'viz-toolbar-button')
-    expect(toolbarButtons.length).toBe(6) // includes rose; treemap is off by feature toggle
+    expect(toolbarButtons.length).toBe(7) // includes treemap and rose
   })
 })
 

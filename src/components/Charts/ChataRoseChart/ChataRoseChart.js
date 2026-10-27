@@ -23,11 +23,12 @@ import SankeyColumnSelector from '../ChataSankeyDiagram/SankeyColumnSelector'
 import { BAR_GRADIENT_OPACITY_STOPS, SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 import { buildRoseData } from './buildRoseData'
 import { buildNumericCategories } from './numericCategories'
+import { isIdLikeColumn } from './idColumns'
 import {
   DEFAULT_ROSE_SCALE,
   ROSE_SCALES,
-  ROSE_SCALE_LABELS,
   buildMeasureFrames,
+  describeMeasureValue,
   getMeasureScaleTicks,
 } from './measureScales'
 import RoseSettingsControl, { ROSE_MODES } from './RoseSettingsControl'
@@ -36,7 +37,7 @@ import {
   TimeAnimationControl,
   TimeAnimationTimeline,
   easeCubicInOut,
-  getTimelineExtraHeight,
+  getTimelineMinHeight,
 } from '../TimeAnimation'
 
 import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
@@ -72,10 +73,12 @@ const MARGIN_TOP = 10
 const TIMELINE_BESIDE_MIN_WIDTH = 480
 const TIMELINE_MIN_WIDTH = 150
 // Width the timeline gets beside the rose when there's no spare room to give it
-const TIMELINE_MAX_WIDTH = 240
+const TIMELINE_MAX_WIDTH = 300
 const TIMELINE_WIDTH_RATIO = 0.3
-const TIMELINE_MAX_HEIGHT = 140
 const TIMELINE_BELOW_HEIGHT = 80
+// Beside the rose, the timeline is at least this tall, with this much more line chart than the least it needs
+const TIMELINE_BESIDE_MIN_HEIGHT = 100
+const TIMELINE_SPARK_ROOM = 30
 const TIMELINE_GAP = 16
 
 const FALLBACK_COLORS = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
@@ -252,6 +255,20 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   const measureOptionIndices = isAggregatedData
     ? numberColumnIndices
     : [SANKEY_VALUE_COUNT_SENTINEL, ...numberColumnIndices]
+  // Identifiers (Customer Key, Transaction Number, ...) are number columns, but adding them up means
+  // nothing: they aren't picked as measures by default, though they can still be picked by hand
+  const realMeasureIndices = useMemo(
+    () =>
+      numberColumnIndices.filter(
+        (index) =>
+          !isIdLikeColumn(
+            columns[index],
+            (props.data || []).map((row) => row?.[index]),
+          ),
+      ),
+    [numberColumnIndices, props.data],
+  )
+  const defaultMeasureCandidates = realMeasureIndices.length >= MIN_MEASURES ? realMeasureIndices : numberColumnIndices
   const hasDateColumn = columns.some(
     (col) => col?.is_visible !== false && (col.type === 'DATE' || col.type === 'DATE_STRING'),
   )
@@ -263,14 +280,14 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     if (ROSE_MODES.includes(persisted) && !(persisted === 'measures' && measuresDisabledReason)) {
       return persisted
     }
-    return hasDateColumn && numberColumnIndices.length >= MIN_DEFAULT_MEASURES ? 'measures' : 'values'
+    return hasDateColumn && realMeasureIndices.length >= MIN_DEFAULT_MEASURES ? 'measures' : 'values'
   }
 
   const getDefaultMeasureColumnIndices = () => {
     const persisted = (props.initialChartControls?.roseMeasureColumnIndices || []).filter((index) =>
       measureOptionIndices.includes(index),
     )
-    return persisted.length >= MIN_MEASURES ? persisted : numberColumnIndices.slice(0, MAX_ROSE_CATEGORIES)
+    return persisted.length >= MIN_MEASURES ? persisted : defaultMeasureCandidates.slice(0, MAX_ROSE_CATEGORIES)
   }
 
   const [categoryColumnIndex, setCategoryColumnIndex] = useState(getDefaultCategoryColumnIndex)
@@ -389,8 +406,8 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   const areaHeight = Math.max(0, totalHeight - MARGIN_TOP)
   const timelinePlacement = !animation.isActive ? null : areaWidth >= TIMELINE_BESIDE_MIN_WIDTH ? 'beside' : 'below'
 
-  // The widest label the rose might draw (a measure name or a category value), so it keeps room for its
-  // labels when the timeline beside it takes the rest of the width
+  // The widest label the rose might draw (a measure name or a category value), so it doesn't reserve more
+  // room for labels than it needs
   const longestLabelWidth = useMemo(() => {
     const names = isMeasures
       ? validMeasureColumnIndices.map((index) =>
@@ -401,24 +418,20 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return Math.min(MAX_LABEL_WIDTH, longest * CHAR_WIDTH + LABEL_EDGE_PADDING)
   }, [isMeasures, validMeasureColumnIndices.join(','), props.data, categoryColumnIndex, props.columns])
 
-  // Beside the rose, the timeline fills whatever width the rose (sized by the height) and its labels
-  // don't need, and never gets narrower than its usual width
-  const heightLimitedRadius = Math.max(0, areaHeight / 2 - FONT_SIZE - LABEL_OFFSET)
-  const roseWidthAtFullHeight = 2 * (heightLimitedRadius + LABEL_OFFSET + longestLabelWidth)
-  const usualTimelineWidth = Math.min(
-    TIMELINE_MAX_WIDTH,
-    Math.max(TIMELINE_MIN_WIDTH, areaWidth * TIMELINE_WIDTH_RATIO),
-  )
+  // The rose is the focus: beside it, the timeline gets a modest share of the width, and only as much
+  // height as its lines need
   const timelineWidth =
     timelinePlacement === 'beside'
-      ? Math.max(usualTimelineWidth, areaWidth - roseWidthAtFullHeight - TIMELINE_GAP)
+      ? Math.min(TIMELINE_MAX_WIDTH, Math.max(TIMELINE_MIN_WIDTH, areaWidth * TIMELINE_WIDTH_RATIO))
       : areaWidth
   const plotWidth = timelinePlacement === 'beside' ? Math.max(0, areaWidth - timelineWidth - TIMELINE_GAP) : areaWidth
-  // One sparkline per value layer, and a row of values for each in the timeline's header
-  const timelineExtraHeight = getTimelineExtraHeight(
-    isMeasures ? validMeasureColumnIndices.length : valueColumnIndices.length,
+  // The timeline has a row per value layer (or measure); below the rose, it's tall enough for all of them
+  const timelineSeriesCount = isMeasures ? validMeasureColumnIndices.length : valueColumnIndices.length
+  const timelineBelowHeight = Math.max(TIMELINE_BELOW_HEIGHT, getTimelineMinHeight(timelineSeriesCount))
+  const timelineBesideHeight = Math.min(
+    areaHeight,
+    Math.max(TIMELINE_BESIDE_MIN_HEIGHT, getTimelineMinHeight(timelineSeriesCount) + TIMELINE_SPARK_ROOM),
   )
-  const timelineBelowHeight = TIMELINE_BELOW_HEIGHT + timelineExtraHeight
   const plotHeight =
     timelinePlacement === 'below' ? Math.max(0, areaHeight - timelineBelowHeight - TIMELINE_GAP) : areaHeight
   // Room kept beside the rose for labels: no more than its longest label needs
@@ -608,7 +621,8 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return chartPalette.length ? chartPalette : FALLBACK_COLORS
   }, [props.themeConfig])
   const layerColors = valueColumnIndices.map((_, layer) => palette[layer % palette.length])
-  // Each measure has its own color, matching its line in the timeline
+  // Each measure's line in the timeline has its own color. The wedges don't use these: they're told apart
+  // by position and label, and colored only by sign: the first chart color, or red when negative.
   const measureColors = validMeasureColumnIndices.map((_, i) => palette[i % palette.length])
 
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
@@ -666,41 +680,44 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         : animation.currentFrame.label
       : ''
 
-  // What the wedge's length means for the current scale
-  const getScaledDescription = (category) => {
-    const scaled = category.values[0]
-    const { stats, measureColumnIndex } = category
-    switch (scale) {
-      case 'normalized':
-        return `${scaled >= 0 ? '+' : '−'}${Math.abs(scaled).toFixed(2)}σ from its average (${formatValue(
-          stats.mean,
-          measureColumnIndex,
-        )})`
-      case 'minmax':
-        return `${Math.round(scaled * 100)}% of its range (${formatValue(
-          stats.min,
-          measureColumnIndex,
-        )} – ${formatValue(stats.max, measureColumnIndex)})`
-      default:
-        return undefined
+  // The measure and its value, the period, then what the wedge means on the current scale in plain words
+  // A measure isn't a value to filter on, so clicking a measure wedge opens every row in the period being
+  // shown. The tooltip says so, so it isn't mistaken for a drilldown on that measure.
+  const getMeasureDrilldownHint = () => {
+    if (!enableDrilldowns || !props.onChartClick || !animation.currentFrame || !animation.getDrilldown()) {
+      return null
     }
+    const { label } = animation.currentFrame
+    return animation.settings.cumulative
+      ? `Click to see all rows through ${label}`
+      : `Click to see all rows for ${label}`
   }
 
   const getMeasureTooltipHtml = (category) => {
-    const lines = [`<strong>${escapeHtml(getCategoryName(category))}</strong>`]
+    const drilldownHint = getMeasureDrilldownHint()
+    const hintLine = drilldownHint ? `<em>${escapeHtml(drilldownHint)}</em>` : null
+    const name = escapeHtml(getCategoryName(category))
+    const { measureValue, measureColumnIndex } = category
+    const lines = [
+      measureValue === null
+        ? `<strong>${name}</strong>`
+        : `<strong>${name}:</strong> ${escapeHtml(formatValue(measureValue, measureColumnIndex))}`,
+    ]
     if (animation.currentFrame) {
       lines.push(`<strong>${escapeHtml(getColumnLabel(animation.column))}:</strong> ${escapeHtml(getPeriodLabel())}`)
     }
-    if (category.measureValue === null) {
+    if (measureValue === null) {
       lines.push('<em>No data in this period</em>')
-      return lines.join('<br/>')
+      return [...lines, hintLine].filter(Boolean).join('<br/>')
     }
-    lines.push(`<strong>Value:</strong> ${escapeHtml(formatValue(category.measureValue, category.measureColumnIndex))}`)
-    const description = getScaledDescription(category)
-    if (description) {
-      lines.push(escapeHtml(description))
-    }
-    return lines.join('<br/>')
+    describeMeasureValue({
+      scale,
+      value: measureValue,
+      stats: category.stats,
+      grouping: animation.settings.grouping,
+      formatValue: (value) => formatValue(value, measureColumnIndex),
+    }).forEach(({ text, isNote }) => lines.push(isNote ? `<em>${escapeHtml(text)}</em>` : escapeHtml(text)))
+    return [...lines, hintLine].filter(Boolean).join('<br/>')
   }
 
   const getTooltipHtml = (category, isNotToScale) => {
@@ -832,7 +849,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return (
       <defs>
         {layerColors.map((color, layer) => renderGradient(`${gradientIdPrefix}-${layer}`, color))}
-        {measureColors.map((color, i) => renderGradient(`${gradientIdPrefix}-measure-${i}`, color))}
+        {renderGradient(`${gradientIdPrefix}-positive`, palette[0])}
         {renderGradient(`${gradientIdPrefix}-negative`, negativeColor)}
       </defs>
     )
@@ -895,7 +912,8 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     [allData],
   )
 
-  const renderLabels = () => {
+  // Labels for the given room either side of the centre, placed so none overlap
+  const placeLabels = (leftRoom, rightRoom) => {
     const labelRadius = outerRadius + LABEL_OFFSET
     const candidates = categories
       .map((category, i) => {
@@ -906,9 +924,18 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         const textAnchor = sin > 0.1 ? 'start' : sin < -0.1 ? 'end' : 'middle'
         // Truncate to the room between the label and the edge of the chart, not a fixed width, so labels
         // use the empty space beside a height-limited rose
-        const roomToEdge = centerX - Math.abs(x) - LABEL_EDGE_PADDING
-        const availableWidth = Math.min(MAX_LABEL_WIDTH, textAnchor === 'middle' ? 2 * roomToEdge : roomToEdge)
-        const text = truncateToWidth(getCategoryName(category), availableWidth)
+        const roomToLeftEdge = leftRoom + x - LABEL_EDGE_PADDING
+        const roomToRightEdge = rightRoom - x - LABEL_EDGE_PADDING
+        const availableWidth = Math.min(
+          MAX_LABEL_WIDTH,
+          textAnchor === 'start'
+            ? roomToRightEdge
+            : textAnchor === 'end'
+            ? roomToLeftEdge
+            : 2 * Math.min(roomToLeftEdge, roomToRightEdge),
+        )
+        const fullText = getCategoryName(category)
+        const text = truncateToWidth(fullText, availableWidth)
         if (!text) {
           return null
         }
@@ -917,6 +944,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         return {
           key: category.key,
           text,
+          fullText,
           x,
           y: -labelRadius * cos + dy,
           width: text.length * CHAR_WIDTH,
@@ -933,22 +961,61 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         }
       })
       .filter(Boolean)
+    return placeRoseLabels(candidates)
+  }
 
+  // How far the rose and its labels reach left and right of the centre
+  const getLabelReach = (labels) =>
+    labels.reduce(
+      (reach, label) => {
+        const left =
+          label.textAnchor === 'start'
+            ? label.x
+            : label.textAnchor === 'end'
+            ? label.x - label.width
+            : label.x - label.width / 2
+        return { left: Math.max(reach.left, -left), right: Math.max(reach.right, left + label.width) }
+      },
+      { left: outerRadius, right: outerRadius },
+    )
+
+  // With the timeline beside it, the rose and timeline are placed as one group, centred: the timeline
+  // sits just past the rose's right-hand labels rather than at the far edge, so there's no gap between them
+  const getRoseLayout = () => {
+    const labels = placeLabels(centerX, plotWidth - centerX)
+    if (timelinePlacement !== 'beside' || !(outerRadius > 0)) {
+      return { centerX, labels }
+    }
+    const reach = getLabelReach(labels)
+    const groupWidth = reach.left + reach.right + TIMELINE_GAP + timelineWidth
+    const roseCenterX = Math.max(0, (areaWidth - groupWidth) / 2) + reach.left
+    return { centerX: roseCenterX, labels, timelineX: roseCenterX + reach.right + TIMELINE_GAP }
+  }
+  const roseLayout = getRoseLayout()
+
+  const renderLabels = () => {
     return (
       <g className='rose-labels' style={{ pointerEvents: 'none' }}>
-        {placeRoseLabels(candidates).map((label) => (
-          <text
-            key={`label-${label.key}`}
-            className='rose-label'
-            x={label.x}
-            y={label.y}
-            textAnchor={label.textAnchor}
-            fontSize={FONT_SIZE}
-            fill={themeTextColor}
-          >
-            {label.text}
-          </text>
-        ))}
+        {roseLayout.labels.map((label) => {
+          // A truncated label shows its full name on hover, so it opts back in to the mouse
+          const isLabelTruncated = label.text !== label.fullText
+          return (
+            <text
+              key={`label-${label.key}`}
+              className='rose-label'
+              x={label.x}
+              y={label.y}
+              textAnchor={label.textAnchor}
+              fontSize={FONT_SIZE}
+              fill={themeTextColor}
+              data-tooltip-id={isLabelTruncated ? props.chartTooltipID : undefined}
+              data-tooltip-content={isLabelTruncated ? label.fullText : undefined}
+              style={isLabelTruncated ? { pointerEvents: 'auto', cursor: 'default' } : undefined}
+            >
+              {label.text}
+            </text>
+          )
+        })}
       </g>
     )
   }
@@ -960,7 +1027,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         segment.value < 0
           ? `url(#${gradientIdPrefix}-negative)`
           : segment.category.measureIndex !== undefined
-          ? `url(#${gradientIdPrefix}-measure-${segment.category.measureIndex})`
+          ? `url(#${gradientIdPrefix}-positive)`
           : `url(#${gradientIdPrefix}-${segment.layer})`
       return (
         <path
@@ -1012,14 +1079,18 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     if (!timelinePlacement) {
       return null
     }
+    // Beside the rose, the timeline is centred on it vertically
     const isBeside = timelinePlacement === 'beside'
-    const height = isBeside ? Math.min(TIMELINE_MAX_HEIGHT + timelineExtraHeight, areaHeight) : timelineBelowHeight
+    const besideY = Math.min(
+      Math.max(MARGIN_TOP, centerY - timelineBesideHeight / 2),
+      MARGIN_TOP + areaHeight - timelineBesideHeight,
+    )
     return (
       <TimeAnimationTimeline
-        x={isBeside ? plotWidth + TIMELINE_GAP : 0}
-        y={isBeside ? MARGIN_TOP + (areaHeight - height) / 2 : totalHeight - timelineBelowHeight}
+        x={isBeside ? roseLayout.timelineX : 0}
+        y={isBeside ? besideY : totalHeight - timelineBelowHeight}
         width={timelineWidth}
-        height={height}
+        height={isBeside ? timelineBesideHeight : timelineBelowHeight}
         frames={animation.frames}
         series={timelineSeries}
         frameIndex={animation.frameIndex}
@@ -1083,7 +1154,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       {renderWarning()}
 
       {outerRadius <= 0 ? null : categories.length > 1 && (segments.length || animation.isActive) ? (
-        <g className='rose-plot' transform={`translate(${centerX}, ${centerY})`}>
+        <g className='rose-plot' transform={`translate(${roseLayout.centerX}, ${centerY})`}>
           {renderGradients()}
           {renderGrid()}
           <g className='rose-wedges'>{renderWedges()}</g>
@@ -1128,7 +1199,8 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
           pathTitle='Measures'
           pathSubtitle='One wedge each'
           pathLabel='Measures'
-          pathIconType='layers'
+          // Each measure is a wedge, so this uses the wedge icon (layers is for series within a wedge)
+          pathIconType='rose'
           showDropdown={showMeasureDropdown}
           setShowDropdown={setShowMeasureDropdown}
           buttonX={buttonX}

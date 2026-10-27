@@ -5,7 +5,13 @@ import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 // period at a time. The columns can be in very different units, so each is put on a common scale.
 export const ROSE_SCALES = ['normalized', 'minmax', 'linear', 'log']
 export const DEFAULT_ROSE_SCALE = 'normalized'
-export const ROSE_SCALE_LABELS = { normalized: 'Normalized', minmax: 'Min–max', linear: 'Linear', log: 'Log' }
+// Plain names first, with the technical term in brackets for people who know it
+export const ROSE_SCALE_LABELS = {
+  normalized: 'Normalized (z-score)',
+  minmax: 'Range (min–max)',
+  linear: 'Actual values',
+  log: 'Actual values (log scale)',
+}
 
 const MAX_TICKS = 4
 
@@ -115,4 +121,44 @@ export const getMeasureScaleTicks = (scale, domainMax, formatValue = (value) => 
     magnitude: tick,
     label: scale === 'normalized' ? `${tick}σ` : formatValue(tick),
   }))
+}
+
+const PERIOD_ADJECTIVES = { DAY: 'daily', WEEK: 'weekly', MONTH: 'monthly', QUARTER: 'quarterly', YEAR: 'yearly' }
+
+// What a measure wedge's value means on each scale, in plain words, for its tooltip. Lines marked isNote
+// are caveats rather than facts about the value. `grouping` is the period being stepped by (eg. MONTH,
+// for "monthly average"), if it's a date grouping.
+export const describeMeasureValue = ({ scale, value, stats, grouping, formatValue }) => {
+  switch (scale) {
+    case 'normalized': {
+      if (!(stats.std > 0)) {
+        return [{ text: `The same in every period (${formatValue(stats.mean)})` }]
+      }
+      const zScore = (value - stats.mean) / stats.std
+      const adjective = PERIOD_ADJECTIVES[grouping]
+      const average = `its ${adjective ? `${adjective} ` : ''}average of ${formatValue(stats.mean)}`
+      return [
+        { text: `${Math.abs(zScore).toFixed(1)}× its usual variation ${zScore < 0 ? 'below' : 'above'} ${average}` },
+        { text: `Typical range: ${formatValue(stats.mean - stats.std)} – ${formatValue(stats.mean + stats.std)}` },
+      ]
+    }
+    case 'minmax': {
+      if (!(stats.max > stats.min)) {
+        return [{ text: `The same in every period (${formatValue(stats.min)})` }]
+      }
+      const percent = Math.round(((value - stats.min) / (stats.max - stats.min)) * 100)
+      const extreme = value === stats.max ? ': its highest period' : value === stats.min ? ': its lowest period' : ''
+      return [
+        {
+          text: `${percent}% of the way from its lowest (${formatValue(stats.min)}) to its highest (${formatValue(
+            stats.max,
+          )})${extreme}`,
+        },
+      ]
+    }
+    case 'log':
+      return [{ text: "Log scale: lengths aren't proportional", isNote: true }]
+    default:
+      return []
+  }
 }

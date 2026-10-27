@@ -4,6 +4,16 @@ import { act } from 'react-dom/test-utils'
 import { QueryOutput } from '../../QueryOutput/QueryOutput'
 import ChataRoseChart from './ChataRoseChart'
 import SankeyColumnSelector from '../ChataSankeyDiagram/SankeyColumnSelector'
+import { featureToggles } from '../../../js/featureToggles'
+
+// The rose is behind a feature toggle; these tests need it on whatever its default is
+const originalRoseToggle = featureToggles.rose
+beforeAll(() => {
+  featureToggles.rose = true
+})
+afterAll(() => {
+  featureToggles.rose = originalRoseToggle
+})
 
 // A list query (nothing groupable), like "transactions with their product and department details"
 const departments = ['Pharmacy', 'Grocery', 'Bakery', 'Deli', 'Produce']
