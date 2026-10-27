@@ -57,7 +57,7 @@ describe('renders correctly', () => {
       },
     })
     const toolbarButtons = findByTestAttr(wrapper, 'viz-toolbar-button')
-    expect(toolbarButtons.length).toBe(6) // includes treemap
+    expect(toolbarButtons.length).toBe(5) // treemap is off by feature toggle
   })
 })
 

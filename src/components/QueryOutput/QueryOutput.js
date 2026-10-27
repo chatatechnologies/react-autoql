@@ -100,6 +100,7 @@ import {
   getSplitSeriesValueTitle,
   supportsSplitSeriesDisplayType,
 } from './splitSeriesUtils'
+import { featureToggles, isDisplayTypeEnabled } from '../../js/featureToggles'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -1324,16 +1325,18 @@ export class QueryOutput extends React.Component {
       return 'single-value'
     }
 
-    return getDefaultDisplayType(
+    const defaultDisplayType = getDefaultDisplayType(
       this.props.queryResponse,
       this.props.autoChartAggregations,
       this.getColumns(),
       this.getDataLength(),
       this.getPivotDataLength(),
-      preferredDisplayType,
+      isDisplayTypeEnabled(preferredDisplayType) ? preferredDisplayType : undefined,
       this.getIsDataLimited(),
       this.props.preferRegularTableInitialDisplayType,
     )
+
+    return isDisplayTypeEnabled(defaultDisplayType) ? defaultDisplayType : 'table'
   }
 
   getDisplayTypeFromInitial = (props) => {
@@ -1354,6 +1357,7 @@ export class QueryOutput extends React.Component {
     }
     // If prop is provided, but it isn't supported by the dataset, use default display type
     else if (
+      !isDisplayTypeEnabled(displayType) ||
       !isDisplayTypeValid(
         props.queryResponse,
         displayType,
@@ -1422,6 +1426,10 @@ export class QueryOutput extends React.Component {
   // that disappears just turns the split off locally instead of rewriting the saved setting.
   getSplitSeriesConfig = (displayType = this.state?.displayType, columns = this.state?.columns) => {
     const unavailable = { isAvailable: false, isActive: false }
+
+    if (!featureToggles.splitBy) {
+      return unavailable
+    }
 
     if (!columns?.length || !this.tableConfig || !supportsSplitSeriesDisplayType(displayType)) {
       return unavailable
@@ -3662,7 +3670,8 @@ export class QueryOutput extends React.Component {
   // none of its inputs changing, which on a large answer made the scan a large share of the
   // drag. Keyed on everything it reads: the response, its rows and display_type (by identity
   // or value - the response is replaced, not edited, when rows change), the columns, and the
-  // scalar arguments. Returns a copy so a caller can't alter the cached list.
+  // scalar arguments. Returns a copy so a caller can't alter the cached list, leaving out display
+  // types whose feature toggle is off.
   getSupportedDisplayTypesMemoized = (columns) => {
     const args = {
       response: this.queryResponse,
@@ -3689,10 +3698,14 @@ export class QueryOutput extends React.Component {
     }
 
     const value = this.supportedDisplayTypesCache.value
-    return Array.isArray(value) ? [...value] : value
+    return Array.isArray(value) ? value.filter(isDisplayTypeEnabled) : value
   }
 
   isCurrentDisplayTypeValid = () => {
+    if (!isDisplayTypeEnabled(this.state.displayType)) {
+      return false
+    }
+
     return isDisplayTypeValid(
       this.queryResponse,
       this.state.displayType,
