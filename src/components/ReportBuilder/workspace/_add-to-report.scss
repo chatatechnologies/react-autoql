@@ -1,0 +1,27 @@
+// Add to Report (AddToReportDialog), under the dialogs' layer: .#{$rs}-layer { ... }
+
+.#{$rs}-layer {
+  // The reports to choose from: room for a few rows while they load, then scrolling once there are many. The area
+  // draws the border, so the list inside it goes without its own.
+  .#{$rs}-add-to-report-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 7.5rem;
+    max-height: 22.5rem;
+    overflow-y: auto;
+    border: 1px solid $border;
+    border-radius: 4px;
+    background: $surface;
+
+    > .#{$rs}-message {
+      flex: 1 1 auto;
+    }
+
+    // Its own height, so the area scrolls rather than the list being squeezed into it.
+    > .#{$rs}-choices {
+      flex: none;
+      border: 0;
+      border-radius: 0;
+    }
+  }
+}

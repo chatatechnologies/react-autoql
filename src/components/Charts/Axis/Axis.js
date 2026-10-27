@@ -15,6 +15,7 @@ import {
 } from 'autoql-fe-utils'
 
 import safeGetBBox from '../../../utils/safeGetBBox'
+import { getUnscaledClientRect } from '../measureScale'
 
 import { Legend } from '../Legend'
 import { SPLIT_SERIES_BUTTON_SPACE } from '../SplitSeriesButton'
@@ -420,9 +421,7 @@ export default class Axis extends Component {
       // svg coordinate system is different from clientRect coordinate system
       // we need to get the deltas first, then we can apply them to the bounding rect
       const axisBBox = safeGetBBox(this.axisElement)
-      const axisBoundingRect = this.axisElement.getBoundingClientRect
-        ? this.axisElement.getBoundingClientRect()
-        : undefined
+      const axisBoundingRect = getUnscaledClientRect(this.axisElement)
 
       let xDiff = 0
       let yDiff = 0
@@ -435,7 +434,7 @@ export default class Axis extends Component {
       select(this.axisElement)
         .selectAll('g.tick text')
         .each(function () {
-          const textBoundingRect = select(this).node().getBoundingClientRect()
+          const textBoundingRect = getUnscaledClientRect(select(this).node())
 
           labelBboxes.push({
             left: textBoundingRect.left - xDiff,

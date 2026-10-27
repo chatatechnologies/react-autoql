@@ -37,3 +37,22 @@ if (typeof SVGElement !== 'undefined' && !SVGElement.prototype.getComputedTextLe
     return text.length * avgCharWidth
   }
 }
+
+// ProseMirror (the report builder's text editor) measures the selection to keep it in view; jsdom lays nothing
+// out, so ranges answer with empty boxes, and no element is at any point.
+if (typeof Range !== 'undefined') {
+  if (!Range.prototype.getClientRects) {
+    Range.prototype.getClientRects = function () {
+      return { length: 0, item: () => null, [Symbol.iterator]: [][Symbol.iterator] }
+    }
+  }
+  if (!Range.prototype.getBoundingClientRect) {
+    Range.prototype.getBoundingClientRect = function () {
+      return { x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 }
+    }
+  }
+}
+if (typeof document !== 'undefined' && !document.elementFromPoint) {
+  document.elementFromPoint = () => null
+}
+
