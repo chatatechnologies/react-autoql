@@ -1,6 +1,6 @@
 // A column can carry a value_action that adds an "open" button to its table cells:
-//   { link: { link_url: 'https://crm.acme.com/accounts/{value}', link_target: '_blank' } }
-//   { callback: { callback_name: 'openCustomerDrawer' } }
+//   { type: 'link', link_url: 'https://crm.acme.com/accounts/{value}', link_target: '_blank' }
+//   { type: 'callback', callback_name: 'openCustomerDrawer' }
 // Callbacks are supplied by the host app through the valueActionCallbacks prop, each either a
 // function or { onClick, tooltip }.
 
@@ -17,12 +17,12 @@ export const VALUE_ACTION_ICON =
 export const getValueAction = (column) => {
   const action = column?.value_action
 
-  if (typeof action?.link?.link_url === 'string' && action.link.link_url) {
-    return { type: 'link', url: action.link.link_url, target: action.link.link_target || '_blank' }
+  if (action?.type === 'link' && typeof action.link_url === 'string' && action.link_url) {
+    return { type: 'link', url: action.link_url, target: action.link_target || '_blank' }
   }
 
-  if (typeof action?.callback?.callback_name === 'string' && action.callback.callback_name) {
-    return { type: 'callback', name: action.callback.callback_name }
+  if (action?.type === 'callback' && typeof action.callback_name === 'string' && action.callback_name) {
+    return { type: 'callback', name: action.callback_name }
   }
 
   return undefined

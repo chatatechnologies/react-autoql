@@ -3,8 +3,8 @@ import { mount } from 'enzyme'
 import { QueryOutput } from '../QueryOutput'
 import { TOOLTIP_COPY_TEXTS } from '../../../js/Constants'
 
-const LINK_ACTION = { link: { link_url: 'https://crm.acme.com/accounts/{value}', link_target: '_blank' } }
-const CALLBACK_ACTION = { callback: { callback_name: 'openCustomerDrawer' } }
+const LINK_ACTION = { type: 'link', link_url: 'https://crm.acme.com/accounts/{value}', link_target: '_blank' }
+const CALLBACK_ACTION = { type: 'callback', callback_name: 'openCustomerDrawer' }
 
 const makeColumns = ({ accountIdAction = LINK_ACTION } = {}) => [
   { name: 'account_id', display_name: 'Account ID', type: 'STRING', value_action: accountIdAction },
@@ -107,7 +107,7 @@ describe('QueryOutput value actions', () => {
         type: 'DATE',
         precision: 'MONTH',
         dow_style: 'NUM_1_MON',
-        value_action: { callback: { callback_name: 'openMonth' } },
+        value_action: { type: 'callback', callback_name: 'openMonth' },
       },
       { name: 'total', display_name: 'Total', type: 'QUANTITY' },
     ]
@@ -198,7 +198,7 @@ describe('QueryOutput value actions', () => {
   test('a link that is not http or https gets no button', () => {
     const wrapper = setup({
       queryResponse: makeResponse(
-        makeColumns({ accountIdAction: { link: { link_url: 'javascript:alert({value})' } } }),
+        makeColumns({ accountIdAction: { type: 'link', link_url: 'javascript:alert({value})' } }),
       ),
     })
 
@@ -226,7 +226,9 @@ describe('QueryOutput value actions', () => {
 
     const wrapper = setup({
       queryResponse: makeResponse(
-        makeColumns({ accountIdAction: { link: { link_url: 'https://erp.acme.com/{value}', link_target: '_self' } } }),
+        makeColumns({
+          accountIdAction: { type: 'link', link_url: 'https://erp.acme.com/{value}', link_target: '_self' },
+        }),
       ),
     })
     const { button } = renderCell(wrapper.instance(), 'account_id')

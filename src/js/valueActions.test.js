@@ -1,7 +1,7 @@
 import { buildValueActionUrl, getValueAction, getValueActionTooltip, runValueActionCallback } from './valueActions'
 
-const linkColumn = (link) => ({ name: 'account_id', value_action: { link } })
-const callbackColumn = (callback_name) => ({ name: 'account_name', value_action: { callback: { callback_name } } })
+const linkColumn = (link) => ({ name: 'account_id', value_action: { type: 'link', ...link } })
+const callbackColumn = (callback_name) => ({ name: 'account_name', value_action: { type: 'callback', callback_name } })
 
 describe('getValueAction', () => {
   test('reads a link action', () => {
@@ -27,8 +27,19 @@ describe('getValueAction', () => {
     expect(getValueAction({ name: 'region', value_action: null })).toBeUndefined()
     expect(getValueAction({ name: 'region' })).toBeUndefined()
     expect(getValueAction(undefined)).toBeUndefined()
-    expect(getValueAction({ value_action: { link: {} } })).toBeUndefined()
-    expect(getValueAction({ value_action: { callback: { callback_name: '' } } })).toBeUndefined()
+    expect(getValueAction({ value_action: { type: 'link' } })).toBeUndefined()
+    expect(getValueAction({ value_action: { type: 'callback', callback_name: '' } })).toBeUndefined()
+  })
+
+  test('is undefined when the type does not match the fields or is unknown', () => {
+    expect(
+      getValueAction({ value_action: { type: 'callback', link_url: 'https://crm.acme.com/{value}' } }),
+    ).toBeUndefined()
+    expect(getValueAction({ value_action: { type: 'link', callback_name: 'openCustomerDrawer' } })).toBeUndefined()
+    expect(
+      getValueAction({ value_action: { type: 'email', link_url: 'https://crm.acme.com/{value}' } }),
+    ).toBeUndefined()
+    expect(getValueAction({ value_action: { link_url: 'https://crm.acme.com/{value}' } })).toBeUndefined()
   })
 })
 
