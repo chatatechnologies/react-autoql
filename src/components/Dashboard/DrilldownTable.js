@@ -20,6 +20,9 @@ export default class DrilldownTable extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
+    valueActionCallbacks: PropTypes.objectOf(
+      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
+    ),
   }
 
   static defaultProps = {
@@ -33,6 +36,7 @@ export default class DrilldownTable extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
+    valueActionCallbacks: undefined,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -62,6 +66,7 @@ export default class DrilldownTable extends React.Component {
             }}
             originalQueryID={this.props.queryResponse?.data?.data?.query_id}
             dataFormatting={this.props.dataFormatting}
+            valueActionCallbacks={this.props.valueActionCallbacks}
             queryResponse={this.props.queryResponse}
             drilldownFilters={this.props.drilldownFilters}
             renderTooltips={false}

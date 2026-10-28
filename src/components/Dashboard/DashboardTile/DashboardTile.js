@@ -163,6 +163,9 @@ export class DashboardTile extends React.Component {
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: PropTypes.objectOf(
+      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
+    ),
     onRetry: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
@@ -224,6 +227,7 @@ export class DashboardTile extends React.Component {
     executeSingleTile: () => {},
     onSaveCallback: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onRetry: () => {},
     onSuccessCallback: () => {},
     onCSVDownloadStart: () => {},
@@ -1793,6 +1797,7 @@ export class DashboardTile extends React.Component {
         authentication={this.getTileAuthentication()}
         autoQLConfig={this.getTileAutoQLConfig()}
         dataFormatting={this.props.dataFormatting}
+        valueActionCallbacks={this.props.valueActionCallbacks}
         renderTooltips={false}
         autoSelectQueryValidationSuggestion={false}
         autoChartAggregations={this.props.autoChartAggregations}

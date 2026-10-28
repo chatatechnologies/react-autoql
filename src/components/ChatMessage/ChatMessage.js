@@ -146,6 +146,9 @@ export class ChatMessage extends React.Component {
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: PropTypes.objectOf(
+      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
+    ),
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     shouldRender: PropTypes.bool,
@@ -224,6 +227,7 @@ export class ChatMessage extends React.Component {
     drilldownFilters: undefined,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
@@ -1564,6 +1568,7 @@ export class ChatMessage extends React.Component {
           onDrilldownEnd={this.props.onDrilldownEnd}
           originalQueryID={this.props.originalQueryID}
           onErrorCallback={this.props.onErrorCallback}
+          valueActionCallbacks={this.props.valueActionCallbacks}
           isAnimating={this.state.isAnimatingMessageBubble}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}

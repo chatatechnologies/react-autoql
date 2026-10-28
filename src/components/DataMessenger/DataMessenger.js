@@ -212,6 +212,9 @@ export class DataMessenger extends React.Component {
     onNotificationCount: PropTypes.func,
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: PropTypes.objectOf(
+      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
+    ),
     onSuccessAlert: PropTypes.func,
     setMobileActivePage: PropTypes.func,
     onProjectSelectChange: PropTypes.func,
@@ -292,6 +295,7 @@ export class DataMessenger extends React.Component {
     onNotificationCount: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessAlert: () => {},
     onProjectSelectChange: () => {},
     onCreateQueryEvaluationItem: undefined,

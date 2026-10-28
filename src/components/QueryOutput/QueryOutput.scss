@@ -449,6 +449,50 @@ body.react-autoql-no-select {
   text-align: inherit;
 }
 
+// "Open" button on cells in a column with a value_action. Hidden rather than removed until the
+// cell is hovered, so it keeps its space and the value doesn't shift when it appears.
+.react-autoql-cell-value-action-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--react-autoql-accent-color);
+  cursor: pointer;
+  visibility: hidden;
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.12);
+  }
+
+  &:focus-visible {
+    visibility: visible;
+    outline: 1px solid var(--react-autoql-accent-color);
+  }
+
+  svg {
+    display: block;
+  }
+}
+
+.tabulator-cell:hover .react-autoql-cell-value-action-btn {
+  visibility: visible;
+}
+
+// No hover on touch screens, so the button stays visible
+@media (hover: none) {
+  .react-autoql-cell-value-action-btn {
+    visibility: visible;
+  }
+}
+
 #react-autoql-query-output-tooltip {
   cursor: pointer !important;
 }

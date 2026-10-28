@@ -101,6 +101,14 @@ import {
   supportsSplitSeriesDisplayType,
 } from './splitSeriesUtils'
 import { featureToggles, isDisplayTypeEnabled } from '../../js/featureToggles'
+import {
+  VALUE_ACTION_ICON,
+  buildValueActionUrl,
+  getValueAction,
+  getValueActionTooltip,
+  hasValueActionValue,
+  runValueActionCallback,
+} from '../../js/valueActions'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
@@ -400,6 +408,11 @@ export class QueryOutput extends React.Component {
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
+    // Host functions for columns whose value_action is a callback, keyed by callback_name.
+    // Each is a function, or { onClick, tooltip } to replace the button's "Open" tooltip.
+    valueActionCallbacks: PropTypes.objectOf(
+      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
+    ),
     showQueryInterpretation: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
@@ -525,6 +538,7 @@ export class QueryOutput extends React.Component {
     onLegendFilterChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
@@ -3819,6 +3833,79 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  // The "open" button for a cell in a column with a value_action. A link is a real anchor so
+  // cmd/middle-click and "copy link" work; a callback is a button that calls the host app.
+  createValueActionButton = (cell, cellValue, action, column) => {
+    if (!action || !hasValueActionValue(cellValue)) {
+      return undefined
+    }
+
+    let button
+    if (action.type === 'link') {
+      const url = buildValueActionUrl(action.url, cellValue)
+      if (!url) {
+        return undefined
+      }
+
+      button = document.createElement('a')
+      button.href = url
+      button.target = action.target
+      button.rel = 'noopener noreferrer'
+    } else {
+      button = document.createElement('button')
+      button.type = 'button'
+    }
+
+    const tooltip = getValueActionTooltip(action, this.props.valueActionCallbacks)
+    button.className = 'react-autoql-cell-value-action-btn'
+    button.setAttribute('aria-label', tooltip)
+    button.innerHTML = VALUE_ACTION_ICON
+
+    button.addEventListener('click', (e) => {
+      // Keep the click from reaching the cell, which would start a drilldown
+      e.stopPropagation()
+
+      if (action.type === 'callback') {
+        const rowData = cell.getData()
+        const row = {}
+        this.getColumns()?.forEach((col) => {
+          row[col.name] = rowData?.[col.field]
+        })
+
+        const context = {
+          column: {
+            name: column?.name,
+            display_name: column?.display_name,
+            type: column?.type,
+            precision: column?.precision,
+            dow_style: column?.dow_style,
+          },
+          formattedValue: formatElement({
+            element: cellValue,
+            column,
+            config: getDataFormatting(this.props.dataFormatting),
+            forExport: true,
+          }),
+          queryId: this.queryResponse?.data?.data?.query_id,
+          queryText: this.queryResponse?.data?.data?.text,
+          event: e,
+        }
+
+        runValueActionCallback({ action, value: cellValue, row, context, callbacks: this.props.valueActionCallbacks })
+      }
+    })
+
+    // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the button
+    button.addEventListener('mouseenter', () => {
+      cell.getElement()?.setAttribute('data-tooltip-content', tooltip)
+    })
+    button.addEventListener('mouseleave', () => {
+      cell.getElement()?.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
+    })
+
+    return button
+  }
+
   addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
     cellElement.setAttribute('data-tooltip-id', tooltipId)
     cellElement.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
@@ -3903,6 +3990,8 @@ export class QueryOutput extends React.Component {
         newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
       }
 
+      const valueAction = getValueAction(newCol)
+
       // Cell formatting
       newCol.formatter = (cell, formatterParams, onRendered) => {
         const cellValue = cell.getValue()
@@ -3920,6 +4009,11 @@ export class QueryOutput extends React.Component {
         valueContainer.innerHTML = formattedValue ?? ''
 
         wrapper.appendChild(valueContainer)
+
+        const valueActionButton = this.createValueActionButton(cell, cellValue, valueAction, newCol)
+        if (valueActionButton) {
+          wrapper.appendChild(valueActionButton)
+        }
 
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
