@@ -1,0 +1,168 @@
+// New report › Start from a template (TemplatesDialog), under the dialogs' layer: .#{$rs}-layer { ... }
+//
+// The large modal's body is a row: the templates, searched and narrowed, on the left, and the one chosen on the right,
+// as it prints (a read-only ReportBuilder).
+
+.#{$rs}-layer {
+  .#{$rs}-templates-aside {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    width: 20rem;
+    min-height: 0;
+    border-right: 1px solid $border;
+  }
+
+  .#{$rs}-templates-filters {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 1rem 0.75rem;
+    border-bottom: 1px solid $border;
+
+    .#{$rs}-input,
+    .#{$rs}-select {
+      font-size: 0.8125rem;
+    }
+  }
+
+  .#{$rs}-templates-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3125rem;
+  }
+
+  // A tag to narrow the list by: pressed, it's one of those the templates shown carry.
+  .#{$rs}-templates-tag {
+    margin: 0;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid $border;
+    border-radius: 999px;
+    background: $surface;
+    color: $text-2;
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &[aria-pressed='true'] {
+      @include accent-soft;
+      border-color: $accent;
+      color: $accent;
+    }
+  }
+
+  .#{$rs}-templates-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0.5rem;
+    list-style: none;
+
+    > li + li {
+      margin-top: 0.125rem;
+    }
+  }
+
+  .#{$rs}-templates-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0.5rem 0.625rem;
+    border-radius: 4px;
+    color: $text;
+    font-size: 0.8125rem;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+    }
+
+    > input[type='radio'] {
+      flex: none;
+      width: 0.875rem;
+      height: 0.875rem;
+      margin: 0.1875rem 0 0;
+      accent-color: $accent;
+      cursor: inherit;
+    }
+
+    &[data-checked] {
+      @include accent-soft;
+    }
+  }
+
+  .#{$rs}-templates-text {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .#{$rs}-templates-name {
+    display: block;
+    font-weight: 550;
+  }
+
+  .#{$rs}-templates-description {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 0.125rem;
+    color: $text-2;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .#{$rs}-templates-meta {
+    display: block;
+    margin-top: 0.25rem;
+    color: $text-2;
+    font-size: 0.6875rem;
+  }
+
+  // Loading, nothing there, or why not: in the list's place, or the preview's.
+  .#{$rs}-templates-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 1rem;
+    color: $text-2;
+    font-size: 0.8125rem;
+
+    > p {
+      margin: 0;
+    }
+
+    &[data-tone='error'] {
+      color: $text;
+    }
+  }
+
+  p.#{$rs}-templates-empty {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .#{$rs}-templates-preview {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: $bg;
+
+    > .#{$rs}-templates-empty {
+      align-self: center;
+      margin: auto;
+    }
+  }
+}

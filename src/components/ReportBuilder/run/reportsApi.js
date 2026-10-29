@@ -13,12 +13,18 @@ export const REPORTS_PATH = '/autoql/api/v1/reports'
 export const REPORT_ERROR_CODES = {
   410: 'INCOMPLETE_REQUEST_BODY',
   440: 'INVALID_PROJECT_ID',
+  469: 'REPORT_ORGANIZATION_UNAVAILABLE',
   470: 'REPORT_NOT_FOUND',
   471: 'REPORT_VERSION_CONFLICT',
   472: 'REPORT_ID_CONFLICT',
   473: 'INVALID_REPORT',
   474: 'REPORT_TOO_LARGE',
   475: 'REPORT_BLOCK_INVALID',
+  476: 'REPORT_TEMPLATE_NOT_FOUND',
+  477: 'REPORT_TEMPLATE_CONTAINS_DATA',
+  479: 'REPORT_TEMPLATE_SCOPE_INVALID',
+  480: 'REPORT_CATEGORY_NOT_FOUND',
+  481: 'REPORT_CATEGORY_NAME_EXISTS',
   482: 'REPORT_TAGS_INVALID',
   483: 'REPORT_PROJECT_REQUIRED',
   484: 'REPORT_SEARCH_INVALID',
@@ -28,8 +34,20 @@ export const REPORT_ERROR_CODES = {
   488: 'REPORT_TAG_NOT_FOUND',
   489: 'REPORT_TAG_NAME_TAKEN',
   490: 'REPORT_BULK_REQUEST_INVALID',
+  491: 'REPORT_DATA_FILL_IN_PROGRESS',
+  492: 'REPORT_TEMPLATE_BLOCK_NOT_PORTABLE',
+  493: 'REPORT_FILL_REJECTED',
   494: 'REPORT_NAME_INVALID',
+  495: 'REPORT_ORGANIZATION_UNKNOWN',
 }
+
+// Where a report made from a template is with its data (`dataStatus`): the service fills its data blocks in the
+// background, PENDING then RUNNING, and ends DONE (every block filled), PARTIAL (some) or FAILED (none). NONE is
+// a report nothing has filled.
+export const REPORT_DATA_STATUSES = ['NONE', 'PENDING', 'RUNNING', 'DONE', 'PARTIAL', 'FAILED']
+
+// Whether the service is filling a report's data now: it's read-only meanwhile.
+export const isFillingData = (dataStatus) => dataStatus === 'PENDING' || dataStatus === 'RUNNING'
 
 // A failed call. `status` is 0 when the service couldn't be reached; `code` names the service's message id when it
 // sent one; `details` is that answer's data with its keys in camelCase: the current `version` and `updatedAt` on a
@@ -91,7 +109,17 @@ const toError = (error) => {
 }
 
 // One call to the service, as the token's user on the token's data source: its status and the envelope's data.
-const call = async ({ authentication, method = 'get', path = '', params = {}, data, keepalive = false, signal }) => {
+// `base` is the API it's on: the reports API by default, or AutoQL's management API for reports.
+const call = async ({
+  authentication,
+  base = REPORTS_PATH,
+  method = 'get',
+  path = '',
+  params = {},
+  data,
+  keepalive = false,
+  signal,
+}) => {
   const { domain, apiKey, token } = getAuthentication(authentication)
   if (!domain || !token) {
     throw new ReportsApiError({ status: 401, message: 'No AutoQL authentication to reach reports with' })
@@ -105,7 +133,7 @@ const call = async ({ authentication, method = 'get', path = '', params = {}, da
   const body = data === undefined ? undefined : JSON.stringify(data)
   const config = {
     method,
-    url: `${domain}${REPORTS_PATH}${path}?${query}`,
+    url: `${domain}${base}${path}?${query}`,
     headers: {
       Authorization: `Bearer ${token}`,
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
@@ -125,20 +153,37 @@ const call = async ({ authentication, method = 'get', path = '', params = {}, da
   }
 }
 
+// For calls to AutoQL's management API for reports, which go the same way.
+export const callReportService = call
+
 const text = (value) => (typeof value === 'string' ? value : '')
 const count = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : 0)
 const ids = (value) => (Array.isArray(value) ? value.filter((id) => typeof id === 'string') : [])
 const idOrNull = (value) => (typeof value === 'string' ? value : null)
-const pathOf = (...segments) => segments.map((segment) => `/${encodeURIComponent(segment)}`).join('')
+export const pathOf = (...segments) => segments.map((segment) => `/${encodeURIComponent(segment)}`).join('')
 
-const required = (item, what) => {
+export const required = (item, what) => {
   if (!item) {
     throw new ReportsApiError({ status: 200, message: `Unexpected ${what} from the report service` })
   }
   return item
 }
 
-// A report as listed: everything but its document.
+const dataStatusOf = (value) => (REPORT_DATA_STATUSES.includes(value) ? value : 'NONE')
+
+// Why the data blocks a fill left unfilled weren't filled: [{ blockId, reason, message }], `reason` one of the
+// service's stable codes (not_confident, access_denied, no_data, query_failed, timeout, too_large,
+// tile_unavailable, no_question, stale_block, busy, interrupted), `message` the query's own words if it sent any.
+const dataErrorsOf = (value) =>
+  (Array.isArray(value) ? value : [])
+    .filter((error) => isObject(error) && typeof error.block_id === 'string')
+    .map((error) => ({
+      blockId: error.block_id,
+      reason: text(error.reason),
+      ...(typeof error.message === 'string' && error.message ? { message: error.message } : {}),
+    }))
+
+// A report as listed: everything but its document. `templateId` is the template it was made from, if it was.
 const summaryOf = (raw) =>
   isObject(raw) && typeof raw.id === 'string'
     ? {
@@ -148,6 +193,8 @@ const summaryOf = (raw) =>
         version: count(raw.version),
         folderId: idOrNull(raw.folder_id),
         tagIds: ids(raw.tag_ids),
+        templateId: idOrNull(raw.template_id),
+        dataStatus: dataStatusOf(raw.data_status),
         createdAt: text(raw.created_at),
         updatedAt: text(raw.updated_at),
       }
@@ -158,6 +205,7 @@ const detailOf = (raw) => {
   return {
     ...summary,
     projectId: text(raw.project_id),
+    dataErrors: dataErrorsOf(raw.data_errors),
     report: required(isObject(raw.document) && raw.document, 'report'),
   }
 }
@@ -191,7 +239,52 @@ const placementOf = (raw) =>
     ? { id: raw.id, folderId: idOrNull(raw.folder_id), tagIds: ids(raw.tag_ids) }
     : null
 
-const listOf = (data, itemOf) => (Array.isArray(data?.items) ? data.items.map(itemOf).filter(Boolean) : [])
+export const listOf = (data, itemOf) => (Array.isArray(data?.items) ? data.items.map(itemOf).filter(Boolean) : [])
+
+// A page of a list, as the service pages it.
+export const pageOf = (data) => {
+  const pagination = isObject(data?.pagination) ? data.pagination : {}
+  return {
+    page: count(pagination.current_page),
+    pageSize: count(pagination.page_size),
+    totalPages: count(pagination.total_pages),
+    totalItems: count(pagination.total_items),
+  }
+}
+
+// A template as listed (without its document), or with it as `report` when it was asked for by id. `scope` is
+// INTEGRATOR (everyone's) or ORGANIZATION (`organizationId`'s); `status` DRAFT or PUBLISHED, though only published
+// ones are listed to start a report from.
+export const templateOf = (raw) =>
+  isObject(raw) && typeof raw.id === 'string'
+    ? {
+        id: raw.id,
+        scope: text(raw.scope),
+        organizationId: idOrNull(raw.organization_public_id),
+        title: text(raw.title),
+        description: text(raw.description),
+        categoryId: idOrNull(raw.category_id),
+        tags: Array.isArray(raw.tags) ? raw.tags.filter((tag) => typeof tag === 'string') : [],
+        status: text(raw.status),
+        databaseModel: text(raw.database_model),
+        sizeBytes: count(raw.size_bytes),
+        publishedAt: text(raw.published_at),
+        createdAt: text(raw.created_at),
+        updatedAt: text(raw.updated_at),
+        ...(isObject(raw.document) ? { report: raw.document } : {}),
+      }
+    : null
+
+// A template category: INTEGRATOR (everyone's) or ORGANIZATION (`organizationId`'s).
+export const categoryOf = (raw) =>
+  isObject(raw) && typeof raw.id === 'string'
+    ? {
+        id: raw.id,
+        scope: text(raw.scope),
+        organizationId: idOrNull(raw.organization_public_id),
+        name: text(raw.name),
+      }
+    : null
 
 // ---------------------------------------------------------------- reports
 
@@ -222,14 +315,7 @@ export const fetchReports = async ({
     },
     signal,
   })
-  const pagination = isObject(data?.pagination) ? data.pagination : {}
-  return {
-    reports: listOf(data, summaryOf),
-    page: count(pagination.current_page),
-    pageSize: count(pagination.page_size),
-    totalPages: count(pagination.total_pages),
-    totalItems: count(pagination.total_items),
-  }
+  return { reports: listOf(data, summaryOf), ...pageOf(data) }
 }
 
 // One report, with its document.
@@ -252,6 +338,38 @@ export const createReport = async ({ authentication, id, report, folderId, tagId
     keepalive,
   })
   return { ...detailOf(data), created: status === 201 }
+}
+
+// Starts a report from a published template, under the id the host made for it (a UUID), filed and tagged if asked.
+// The report is the user's own copy, which later changes to the template don't touch. The service fills its data
+// blocks with the user's data in the background (`dataStatus` PENDING, then RUNNING), asking the questions in
+// `timeZone` (the browser's, say) so relative dates read as they do in the app; the report is read-only until it's
+// done. Creating again with the same id answers with what was stored the first time, and `created` false.
+export const createReportFromTemplate = async ({ authentication, id, templateId, folderId, tagIds, timeZone }) => {
+  const { status, data } = await call({
+    authentication,
+    method: 'post',
+    data: {
+      id,
+      template_id: templateId,
+      ...(folderId ? { folder_id: folderId } : {}),
+      ...(tagIds?.length ? { tag_ids: tagIds } : {}),
+      ...(timeZone ? { time_zone: timeZone } : {}),
+    },
+  })
+  return { ...detailOf(data), created: status === 201 }
+}
+
+// How filling a report's data is going: { dataStatus, version, dataUpdatedAt, dataErrors }. Every block filled
+// moves the report to a new version, so a version that changed means there's more to show.
+export const fetchReportDataStatus = async ({ authentication, id, signal }) => {
+  const { data } = await call({ authentication, path: `${pathOf(id)}/data`, signal })
+  return {
+    dataStatus: dataStatusOf(data?.data_status),
+    version: count(data?.version),
+    dataUpdatedAt: text(data?.data_updated_at) || null,
+    dataErrors: dataErrorsOf(data?.data_errors),
+  }
 }
 
 // Replaces the whole document. `version` is the one it was last read or saved at: an older one fails with
@@ -355,3 +473,53 @@ export const updateReportTag = async ({ authentication, id, name, color }) =>
 export const deleteReportTag = async ({ authentication, id }) => {
   await call({ authentication, method: 'delete', path: pathOf('tags', id) })
 }
+
+// ---------------------------------------------------------------- templates, to start a report from
+
+// The templates published for the token's data source, without their documents: its organization's and the
+// integrator's, made for its data model. `q` matches titles; `tags` (any of them, spelled as their manager spelled
+// them), `categoryId` and `scope` (INTEGRATOR or ORGANIZATION) narrow it. Paged like reports.
+export const fetchReportTemplates = async ({
+  authentication,
+  q,
+  tags,
+  categoryId,
+  scope,
+  orderBy,
+  order,
+  page,
+  pageSize,
+  signal,
+} = {}) => {
+  const { data } = await call({
+    authentication,
+    path: '/templates',
+    params: {
+      q,
+      tags: tags?.length ? tags.join(',') : undefined,
+      category_id: categoryId,
+      scope,
+      order_by: orderBy,
+      order,
+      page,
+      page_size: pageSize,
+    },
+    signal,
+  })
+  return { templates: listOf(data, templateOf), ...pageOf(data) }
+}
+
+// One published template, with its document (`report`): what a report started from it begins as, its data blocks
+// holding their questions and how they're shown, but no answers.
+export const fetchReportTemplate = async ({ authentication, id, signal }) => {
+  const template = required(
+    templateOf((await call({ authentication, path: pathOf('templates', id), signal })).data),
+    'template',
+  )
+  required(template.report, 'template')
+  return template
+}
+
+// The template categories the token's data source can see (its organization's and the integrator's), in no order.
+export const fetchReportCategories = async ({ authentication, scope, signal } = {}) =>
+  listOf((await call({ authentication, path: '/categories', params: { scope }, signal })).data, categoryOf)

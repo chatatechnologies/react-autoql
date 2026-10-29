@@ -15,7 +15,7 @@ import {
   TYPEFACES,
   WIDTH_OPTIONS,
 } from '../constants'
-import { STRINGS } from '../strings'
+import { STRINGS, unfilledText } from '../strings'
 import { getRowOptions } from '../model/dataBlock'
 import { getTileKey, getTileSupport, tileSource } from '../model/tiles'
 import { getTileLabel } from '../../Dashboard/tileQueryConfig'
@@ -432,17 +432,22 @@ class DataProperties extends React.Component {
           <>
             <SectionLabel>{P.source}</SectionLabel>
             <SourceCard block={block} view={view} />
-            <Note>
-              {rerunnable
-                ? captured
-                  ? P.askedNote
-                  : P.notAskedNote
-                : captured
-                ? P.capturedNote
-                : source.type === 'query'
-                ? P.questionNote
-                : P.sourceNote}
-            </Note>
+            {view?.state === 'unfilled' ? (
+              // AutoQL couldn't fill in its answer, and says why.
+              <Note tone='warning'>{unfilledText(view)}</Note>
+            ) : (
+              <Note>
+                {rerunnable
+                  ? captured
+                    ? P.askedNote
+                    : P.notAskedNote
+                  : captured
+                  ? P.capturedNote
+                  : source.type === 'query'
+                  ? P.questionNote
+                  : P.sourceNote}
+              </Note>
+            )}
             {!canRun && !captured && !rerunnable ? <Note>{P.noCaptureNote}</Note> : null}
             {rerunnable ? (
               <>

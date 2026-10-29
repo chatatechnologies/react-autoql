@@ -14,7 +14,7 @@ import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { withTheme } from '../../theme'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
-import { BLOCK_TYPES, ORIENTATION_OPTIONS, RB } from './constants'
+import { BLOCK_TYPES, ORIENTATION_OPTIONS, RB, RERUN_ALL_CONCURRENCY } from './constants'
 import { STRINGS } from './strings'
 import { createBlock, normalizeBlock, normalizeReport } from './model/reportSchema'
 import {
@@ -33,7 +33,7 @@ import {
   updatePageSetup,
 } from './model/reportOperations'
 import { buildTileIndex, resolveTile } from './model/tiles'
-import { getDataBlockView } from './model/blockView'
+import { getDataBlockView, isCapture } from './model/blockView'
 import {
   getAnalysisBlocker,
   getAnalysisInput,
@@ -74,6 +74,9 @@ import './ReportPaper.scss'
 // properties panel was left, in this browser.)
 
 let panelIds = 0
+
+// A question asked in the report, which Rerun asks again.
+const isRerunnable = (block) => block?.type === 'data' && !!block.askedHere && block.source?.type === 'query'
 
 // How long a deleted block can be put back for.
 const UNDO_REMOVE_MS = 10000
@@ -144,7 +147,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // captured when they were added ("Add to Report…"), and running is kept for refreshing them later.
     enableRunReport: PropTypes.bool,
     // Data blocks can be made here, not only arrive with "Add to Report…": an empty one asks a question once
-    // and keeps the answer (with a Rerun button), or takes tiles from pickDashboardTiles. Off by default.
+    // and keeps the answer (with a Rerun button), or takes tiles from pickDashboardTiles. Off by default. The
+    // questions asked here can be rerun all at once, too (Rerun all).
     enableDataBlocks: PropTypes.bool,
     // With enableDataBlocks: an empty Data block offers "Pick dashboard tiles…", which calls this. The host
     // shows its own picker and resolves with the blocks to put in the empty block's place (in order), or
@@ -158,6 +162,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // The host's own element for the toolbar, shown just before Preview (and in the preview): whether the
     // report is saved, say. None by default.
     toolbarStatus: PropTypes.node,
+    // Shows the report and nothing that changes it: its pages as they print, with no way back to editing (or to
+    // printing) until it's turned off — while AutoQL fills in a report's data, say, or to show a template.
+    readOnly: PropTypes.bool,
+    // What a Data block with no answer says about it: in a template ('template'), while AutoQL fills in the
+    // report's data ('filling'), or once it has ('filled'), with why it couldn't fill the blocks in `errors`
+    // (blockId → { reason, message }).
+    dataFill: PropTypes.shape({
+      state: PropTypes.oneOf(['template', 'filling', 'filled']),
+      errors: PropTypes.objectOf(PropTypes.shape({ reason: PropTypes.string, message: PropTypes.string })),
+    }),
     className: PropTypes.string,
   }
 
@@ -181,6 +195,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     enableAnalysis: false,
     onGetStarted: undefined,
     toolbarStatus: null,
+    readOnly: false,
+    dataFill: null,
     className: undefined,
   }
 
@@ -244,6 +260,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
       orgBranding: null,
       brandingReady: false,
       brandingOpen: false,
+      // Rerun all, while it runs and after one that some questions didn't answer: { total, done, failed, running }.
+      rerunAll: null,
     }
     this.pendingSeq = 0
     this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
@@ -331,7 +349,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   // A block's view is rebuilt only when something it depends on changed, so typing in a heading doesn't
   // redraw every table and chart in the report.
-  getViews = memoize((report, tileIndex, results, requestKeys, runningKeys) => {
+  getViews = memoize((report, tileIndex, results, requestKeys, runningKeys, dataFill) => {
     const previous = this.viewEntries || {}
     const entries = {}
     const views = {}
@@ -342,12 +360,27 @@ export class ReportBuilderWithoutTheme extends React.Component {
       const requestKey = requestKeys[block.id]
       const running = requestKey != null && runningKeys?.[block.id] === requestKey
       const found = block.source?.type === 'tile' ? resolveTile(tileIndex, block.source) : null
-      const inputs = [block, found?.tile, found?.dashboard, results[block.id], requestKey, running]
+      const fillState = dataFill?.state
+      const fillError = dataFill?.errors?.[block.id]
+      const inputs = [
+        block,
+        found?.tile,
+        found?.dashboard,
+        results[block.id],
+        requestKey,
+        running,
+        fillState,
+        fillError,
+      ]
       const old = previous[block.id]
+      const fill = fillState ? { state: fillState, error: fillError } : undefined
       const entry =
-        old && old.inputs.every((value, i) => value === inputs[i])
+        old && old.inputs.length === inputs.length && old.inputs.every((value, i) => value === inputs[i])
           ? old
-          : { inputs, view: getDataBlockView({ block, tileIndex, result: results[block.id], requestKey, running }) }
+          : {
+              inputs,
+              view: getDataBlockView({ block, tileIndex, result: results[block.id], requestKey, running, fill }),
+            }
       entries[block.id] = entry
       views[block.id] = entry.view
     })
@@ -385,7 +418,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const requestKeys = this.getRequestKeys(plan)
     const { run, results } = this.state
     const runningKeys = run?.status === 'running' ? run.keys : null
-    const views = this.getViews(report, tileIndex, results, requestKeys, runningKeys)
+    const views = this.getViews(report, tileIndex, results, requestKeys, runningKeys, this.props.dataFill)
     return { report, tileIndex, plan, requestKeys, views }
   }
 
@@ -401,8 +434,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // ---------------------------------------------------------------- editing
 
   // Remembers what it emitted: something that finishes later builds on it until the host passes a report
-  // back (a host may apply onChange a render or more later).
+  // back (a host may apply onChange a render or more later). A read-only report isn't changed: anything that
+  // lands meanwhile (an answer on its way, say) is dropped.
   change = (next) => {
+    if (this.props.readOnly) {
+      return
+    }
     this.lastEmitted = { base: this.props.report, report: next }
     this.props.onChange(next)
   }
@@ -677,10 +714,12 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // A question asked on a Data block: asked once, and its answer kept as the block's capture, marked askedHere
   // so it can be asked again (Rerun). Asked again, the answer keeps the block's table and chart settings. A failed
   // question stays with the block, with why, to be fixed and asked again. The answer is dropped if the block is
-  // gone or filled by then, and the request stopped if the builder goes away.
-  askQuestion = (id, query, { rerun = false } = {}) => {
+  // gone or filled by then, and the request stopped if the builder goes away. Resolves with true once the answer is
+  // kept, false when the question didn't answer, and null when it wasn't asked (one is on its way already), was
+  // stopped, or its answer was dropped.
+  askQuestion = (id, query, { rerun = false, capturedAt } = {}) => {
     if (this.pendingSeqs[id]) {
-      return
+      return Promise.resolve(null)
     }
     this.pendingSeq += 1
     const seq = this.pendingSeq
@@ -690,15 +729,16 @@ export class ReportBuilderWithoutTheme extends React.Component {
     this.setPending(id, { kind: 'question', seq, query, rerun })
     const asked = rerun ? this.getLatestReport().blocks.find((block) => block.id === id) : null
 
-    captureQuestion({
+    return captureQuestion({
       query,
       authentication: this.props.authentication,
       autoQLConfig: this.props.autoQLConfig,
       signal: controller?.signal,
       ...(rerun ? { rerun: { kept: asked?.capture, displayType: asked?.displayType } } : {}),
+      ...(capturedAt ? { capturedAt } : {}),
     }).then((result) => {
       if (!this.mounted || this.pendingSeqs[id] !== seq) {
-        return
+        return null
       }
       delete this.pendingSeqs[id]
       delete this.pendingAborts[id]
@@ -706,24 +746,24 @@ export class ReportBuilderWithoutTheme extends React.Component {
         const why = STRINGS.data.askFailed[result.reason] || STRINGS.data.askFailed.error
         const error = result.error?.message ? `${why} ${result.error.message}` : why
         this.setPending(id, result.reason === 'cancelled' ? null : { kind: 'question', seq, query, rerun, error })
-        return
+        return result.reason === 'cancelled' ? null : false
       }
       this.setPending(id, null)
       const report = this.getLatestReport()
       const target = report.blocks.find((block) => block.id === id)
       if (!target || target.type !== 'data') {
-        return
+        return null
       }
       if (rerun) {
         // Only while the block still asks this question.
         if (!target.askedHere || target.source?.type !== 'query' || target.source.query !== query) {
-          return
+          return null
         }
         this.change(updateBlock(report, id, { capture: result.capture }))
-        return
+        return true
       }
       if (target.source || target.capture) {
-        return
+        return null
       }
       this.change(
         replaceDataSource(report, id, {
@@ -733,6 +773,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
           askedHere: true,
         }),
       )
+      return true
     })
   }
 
@@ -740,10 +781,74 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   onRerun = (id) => {
     const block = this.getLatestReport().blocks.find((b) => b.id === id)
-    if (block?.askedHere && block.source?.type === 'query') {
+    if (isRerunnable(block)) {
       this.askQuestion(id, block.source.query, { rerun: true })
     }
   }
+
+  // Rerun all (Report options, and the line over the report while questions have no answer): every question asked in
+  // the report, asked again a few at a time, each answer kept the way its block is set up, as Rerun on one does, and
+  // all as of when it started. How it's going is `state.rerunAll`: { total, done, failed, running }, kept once it's
+  // done only while some didn't answer. Stop leaves the questions not yet asked as they are, and stops those on their
+  // way.
+  canRerunAll = () => !this.props.enableRunReport && !!this.props.enableDataBlocks && !this.props.readOnly
+
+  rerunAll = () => {
+    if (!this.canRerunAll() || this.state.rerunAll?.running) {
+      return
+    }
+    const ids = this.getLatestReport()
+      .blocks.filter(isRerunnable)
+      .map((block) => block.id)
+    if (!ids.length) {
+      return
+    }
+    // Every answer is as of when Rerun all started, so the report reads as of one time.
+    const job = { next: 0, asking: new Set(), capturedAt: new Date().toISOString() }
+    this.rerunAllJob = job
+    this.setState({ rerunAll: { total: ids.length, done: 0, failed: 0, running: true } })
+
+    const askNext = () => {
+      if (!this.mounted || this.rerunAllJob !== job || job.next >= ids.length) {
+        return
+      }
+      const id = ids[job.next]
+      job.next += 1
+      // Taken out, or asking something else, since: there's nothing of it to rerun.
+      const block = this.getLatestReport().blocks.find((b) => b.id === id)
+      const asking = isRerunnable(block)
+        ? this.askQuestion(id, block.source.query, { rerun: true, capturedAt: job.capturedAt })
+        : Promise.resolve(null)
+      job.asking.add(id)
+      asking.then((answered) => {
+        job.asking.delete(id)
+        if (!this.mounted || this.rerunAllJob !== job) {
+          return
+        }
+        this.setState(({ rerunAll }) => {
+          const done = rerunAll.done + 1
+          const failed = rerunAll.failed + (answered === false ? 1 : 0)
+          if (done < rerunAll.total) {
+            return { rerunAll: { ...rerunAll, done, failed } }
+          }
+          return { rerunAll: failed ? { ...rerunAll, done, failed, running: false } : null }
+        })
+        askNext()
+      })
+    }
+    for (let i = 0; i < Math.min(RERUN_ALL_CONCURRENCY, ids.length); i += 1) {
+      askNext()
+    }
+  }
+
+  stopRerunAll = () => {
+    const job = this.rerunAllJob
+    this.rerunAllJob = null
+    job?.asking.forEach((id) => this.pendingAborts[id]?.abort())
+    this.setState({ rerunAll: null })
+  }
+
+  dismissRerunAll = () => this.setState({ rerunAll: null })
 
   // Writes (or rewrites) an Analysis block's wording with Auto Analyze, from the result it's about as that
   // result shows now — one credit per call. The wording is dropped if the block is gone by then, and a failure
@@ -1075,6 +1180,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
             authentication={this.props.authentication}
             autoQLConfig={this.props.autoQLConfig}
             canRun={canRun}
+            canCapture={canCapture}
             onPages={this.onEditorPages}
           />
           <ZoomFrame zoom={this.state.zoom} onFit={this.onFit}>
@@ -1158,11 +1264,47 @@ export class ReportBuilderWithoutTheme extends React.Component {
     )
   }
 
+  // The line over the report for Rerun all: how it's going, how many didn't answer, or how many have no answer yet.
+  renderRerunAll = (report) => {
+    if (!this.canRerunAll()) {
+      return null
+    }
+    const R = STRINGS.rerunAll
+    const { rerunAll } = this.state
+    let text
+    let action
+    if (rerunAll?.running) {
+      text = R.running(rerunAll.done, rerunAll.total)
+      action = { label: R.stop, onClick: this.stopRerunAll, test: 'report-builder-rerun-all-stop' }
+    } else if (rerunAll?.failed) {
+      text = R.failed(rerunAll.failed, rerunAll.total)
+      action = { label: R.dismiss, onClick: this.dismissRerunAll, test: 'report-builder-rerun-all-dismiss' }
+    } else {
+      const unanswered = report.blocks.filter((block) => isRerunnable(block) && !isCapture(block.capture)).length
+      if (!unanswered) {
+        return null
+      }
+      text = R.unanswered(unanswered)
+      action = { label: R.action, onClick: this.rerunAll, test: 'report-builder-rerun-all-start' }
+    }
+    return (
+      <div className={`${RB}-notice`} data-tone='info' role='status' data-test='report-builder-rerun-all'>
+        <span>{text}</span>
+        <button type='button' className={`${RB}-notice-action`} data-test={action.test} onClick={action.onClick}>
+          {action.label}
+        </button>
+      </div>
+    )
+  }
+
   render() {
     const { report, plan, requestKeys, views } = this.derive()
     const branding = this.getBranding(this.props.branding, this.state.orgBranding)
     const geometry = getPageGeometry(report.page)
-    const { run, previewOpen, printing, notice, layoutInfo } = this.state
+    const { readOnly } = this.props
+    const { run, printing, notice, layoutInfo } = this.state
+    // Read-only, the report shows as it prints: the preview, already free of anything that edits.
+    const previewOpen = this.state.previewOpen || readOnly
     const isStale = this.isStale(requestKeys)
     const running = run?.status === 'running'
     const hasRunnable = plan.jobs.length > 0
@@ -1189,8 +1331,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
               canRun={hasRunnable}
               onRun={this.runReport}
               onCancelRun={this.cancelRun}
-              showRun={this.props.enableRunReport}
+              showRun={this.props.enableRunReport && !readOnly}
               previewOpen={previewOpen}
+              readOnly={readOnly}
               previewMeta={previewOpen ? this.getPreviewMeta(report) : null}
               onOpenPreview={this.openPrintPreview}
               onClosePreview={this.closePrintPreview}
@@ -1206,12 +1349,18 @@ export class ReportBuilderWithoutTheme extends React.Component {
               optionsRef={this.optionsRef}
               onPageSetup={this.onPageSetup}
               onBranding={this.canEditBranding() ? this.openBranding : undefined}
+              onRerunAll={
+                this.canRerunAll() && !this.state.rerunAll?.running && report.blocks.some(isRerunnable)
+                  ? this.rerunAll
+                  : undefined
+              }
             />
             {notice || (previewOpen && layoutInfo?.overflowCount) ? (
               <div className={`${RB}-notice`} role='status'>
                 {notice || STRINGS.preview.overflowNotice(layoutInfo.overflowCount)}
               </div>
             ) : null}
+            {previewOpen ? null : this.renderRerunAll(report)}
             {this.state.removed && !previewOpen ? (
               <div className={`${RB}-notice`} data-tone='info' role='status' data-test='report-builder-removed'>
                 <span>{STRINGS.blockRemoved}</span>
@@ -1247,7 +1396,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
                 this.renderEditor({ report, views, geometry, branding })
               )}
             </div>
-            {this.state.brandingOpen && this.canEditBranding() ? (
+            {this.state.brandingOpen && this.canEditBranding() && !readOnly ? (
               <BrandingDialog
                 branding={branding}
                 reportTitle={report.title}

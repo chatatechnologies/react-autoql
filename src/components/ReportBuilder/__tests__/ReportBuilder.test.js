@@ -705,6 +705,60 @@ describe('preview and print', () => {
   })
 })
 
+describe('read-only (readOnly), and a report whose data AutoQL fills in (dataFill)', () => {
+  const unanswered = {
+    id: 'q',
+    type: 'data',
+    width: 'full',
+    rows: 25,
+    source: { type: 'query', query: 'aum by account' },
+    askedHere: true,
+    capture: { version: 1, displayType: 'table', config: { displayType: 'table' } },
+  }
+  const fromTemplate = () =>
+    createEmptyReport({
+      title: 'Quarterly review',
+      blocks: [{ id: 'h', type: 'heading', text: 'Accounts', level: 1 }, unanswered],
+    })
+
+  it('shows the report as it prints, with nothing that edits it, prints it or goes back to editing', async () => {
+    const { container, rerender, spy } = setup(fromTemplate(), { readOnly: true, enableDataBlocks: true })
+
+    await waitFor(() => expect(container.querySelectorAll('.react-autoql-report-builder-page').length).toBe(1))
+    expect(screen.getByTestId('report-builder').getAttribute('data-mode')).toBe('preview')
+    expect(screen.getByTestId('report-builder-toolbar-heading').textContent).toBe('Quarterly review')
+    expect(screen.queryByTestId('report-builder-title')).toBeNull()
+    expect(screen.queryByTestId('report-builder-close-preview')).toBeNull()
+    expect(screen.queryByTestId('report-builder-print')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Report options' })).toBeNull()
+    expect(spy).not.toHaveBeenCalled()
+
+    // Once it's turned off, the editor is back.
+    rerender(<Host initial={fromTemplate()} spy={spy} enableDataBlocks readOnly={false} />)
+    expect(screen.getByTestId('report-builder-title').value).toBe('Quarterly review')
+    expect(screen.getByTestId('report-builder').getAttribute('data-mode')).toBe('edit')
+  })
+
+  it('says a template’s data goes in when a report is started from it, and that a filling report waits for it', () => {
+    const { rerender, spy } = setup(fromTemplate(), { readOnly: true, dataFill: { state: 'template' } })
+    expect(screen.getByText('Your data goes here when a report is started from this template.')).toBeTruthy()
+
+    rerender(<Host initial={fromTemplate()} spy={spy} readOnly dataFill={{ state: 'filling' }} />)
+    expect(screen.getByText('Filling in your data…')).toBeTruthy()
+  })
+
+  it('says why a block wasn’t filled in, on the page and in the panel, beside its Rerun', () => {
+    const dataFill = { state: 'filled', errors: { q: { reason: 'not_confident' } } }
+    setup(fromTemplate(), { enableDataBlocks: true, dataFill })
+
+    const why = 'AutoQL wasn’t sure what this question means for your data.'
+    expect(screen.getByText(`${why} Rerun asks it again.`)).toBeTruthy()
+    selectBlock('Data')
+    expect(within(panel()).getByText(why)).toBeTruthy()
+    expect(within(panel()).getByTestId('report-builder-rerun')).toBeTruthy()
+  })
+})
+
 describe('a controlled component', () => {
   it('keeps blocks and fields from a newer version through an edit', () => {
     const { lastReport } = setup(
@@ -1392,6 +1446,105 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
     await waitFor(() => expect(lastReport()?.blocks[0].capture.data?.rows).toHaveLength(3))
     expect(lastReport().blocks[0].capture.config.columnVisibility).toStrictEqual({ account: true, aum: false })
     expect(lastReport().blocks[0].rows).toBe(25)
+  })
+
+  describe('Rerun all', () => {
+    // As a report made from a template has them: questions, and how each is shown, but no answers.
+    const unanswered = (id, query = `question ${id}`) => ({
+      id,
+      type: 'data',
+      width: 'full',
+      rows: 25,
+      source: { type: 'query', query },
+      askedHere: true,
+      capture: { version: 1, displayType: 'table', config: { displayType: 'table', columnVisibility: { aum: false } } },
+    })
+    const bar = () => screen.queryByTestId('report-builder-rerun-all')
+    // Answers that come when told to, and stop when their request is.
+    const answers = () => {
+      const waiting = []
+      runQuery.mockImplementation(
+        (request) =>
+          new Promise((resolve, reject) => {
+            waiting.push({ query: request.query, resolve, reject })
+            request.cancelToken?.addEventListener?.('abort', () => reject(new Error('canceled')))
+          }),
+      )
+      return waiting
+    }
+
+    it('asks every question in the report again, three at a time, each kept as its block is set up', async () => {
+      const waiting = answers()
+      const added = { ...ASKED, id: 'x', askedHere: undefined }
+      const { lastReport } = setupAsking(
+        createEmptyReport({ blocks: [unanswered('a'), unanswered('b'), added, unanswered('c'), unanswered('d')] }),
+      )
+      expect(bar()?.textContent).toContain('4 blocks have no answer yet.')
+
+      fireEvent.click(screen.getByTestId('report-builder-rerun-all-start'))
+      expect(waiting.map((w) => w.query)).toEqual(['question a', 'question b', 'question c'])
+      expect(bar()?.textContent).toContain('Rerunning: 0 of 4 done…')
+
+      await act(async () => waiting[0].resolve(responseOf(rowsOf(2))))
+      expect(waiting.map((w) => w.query)).toEqual(['question a', 'question b', 'question c', 'question d'])
+      expect(bar()?.textContent).toContain('Rerunning: 1 of 4 done…')
+      await act(async () => waiting.slice(1).forEach((w) => w.resolve(responseOf(rowsOf(3)))))
+
+      await waitFor(() => expect(bar()).toBeNull())
+      const blocks = lastReport().blocks
+      expect(blocks.filter((block) => block.capture?.data).map((block) => block.id)).toEqual(['a', 'b', 'x', 'c', 'd'])
+      expect(blocks[0].capture.config.columnVisibility).toStrictEqual({ account: true, aum: false })
+      expect(runQuery).toHaveBeenCalledTimes(4)
+      // All as of when Rerun all started.
+      const asOf = new Set(blocks.filter((block) => block.askedHere).map((block) => block.capture.capturedAt))
+      expect(asOf.size).toBe(1)
+    })
+
+    it('is in Report options too, for questions that have answers already', async () => {
+      runQuery.mockResolvedValue(responseOf(rowsOf(5)))
+      const { lastReport } = setupAsking(createEmptyReport({ blocks: [ASKED] }))
+      expect(bar()).toBeNull()
+
+      fireEvent.click(screen.getByTestId('report-builder-options'))
+      fireEvent.click(screen.getByRole('menuitem', { name: 'Rerun all' }))
+      await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(5))
+      expect(runQuery).toHaveBeenCalledTimes(1)
+    })
+
+    it('stops what’s on its way, and asks nothing more', async () => {
+      const waiting = answers()
+      const { spy } = setupAsking(createEmptyReport({ blocks: ['a', 'b', 'c', 'd'].map((id) => unanswered(id)) }))
+      fireEvent.click(screen.getByTestId('report-builder-rerun-all-start'))
+      expect(waiting).toHaveLength(3)
+
+      await act(async () => fireEvent.click(screen.getByTestId('report-builder-rerun-all-stop')))
+      expect(bar()?.textContent).toContain('4 blocks have no answer yet.')
+      expect(waiting).toHaveLength(3)
+      expect(spy).not.toHaveBeenCalled()
+    })
+
+    it('says how many didn’t answer, until that’s dismissed', async () => {
+      runQuery.mockImplementation((request) =>
+        request.query === 'question b'
+          ? Promise.reject({ data: { message: 'The query timed out.', reference_id: '1.1.504' } })
+          : Promise.resolve(responseOf(rowsOf(2))),
+      )
+      setupAsking(createEmptyReport({ blocks: [unanswered('a'), unanswered('b')] }))
+      fireEvent.click(screen.getByTestId('report-builder-rerun-all-start'))
+
+      await waitFor(() => expect(bar()?.textContent).toContain('1 of 2 blocks didn’t answer. Select one to see why.'))
+      fireEvent.click(screen.getByTestId('report-builder-rerun-all-dismiss'))
+      expect(bar()?.textContent).toContain('1 block has no answer yet.')
+    })
+
+    it('isn’t offered without data blocks, nor while the report is read-only', () => {
+      const report = createEmptyReport({ blocks: [unanswered('a')] })
+      const { unmount } = setup(report)
+      expect(bar()).toBeNull()
+      unmount()
+      setupAsking(report, { readOnly: true })
+      expect(bar()).toBeNull()
+    })
   })
 
   it('drops the answer for a block deleted while asking', async () => {

@@ -336,6 +336,20 @@ describe('captureQuestion', () => {
       expect(result.capture.table.sort).toStrictEqual(own)
     })
 
+    it('keeps the answer as of the time it’s given, asked again or first', async () => {
+      const at = '2026-10-29T09:00:00.000Z'
+      const runQueryFn = jest.fn(() => Promise.resolve(answer({ columns: LIST, rows: listed(3), orders: sorted })))
+      const again = await captureQuestion({
+        query: 'aum',
+        authentication: AUTH,
+        rerun: { kept },
+        capturedAt: at,
+        runQueryFn,
+      })
+      const first = await captureQuestion({ query: 'aum', authentication: AUTH, capturedAt: at, runQueryFn })
+      expect([again.capture.capturedAt, first.capture.capturedAt]).toEqual([at, at])
+    })
+
     it('asks once, with no order, when its table has none', async () => {
       const runQueryFn = jest.fn(() => Promise.reject({ data: { message: 'The query timed out.' } }))
       const result = await captureQuestion({

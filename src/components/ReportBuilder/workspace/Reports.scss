@@ -324,6 +324,18 @@ $rs: 'react-autoql-reports';
     background: $surface;
     color: $danger;
     font-size: 0.75rem;
+
+    // How filling in a report's data is going, or went.
+    &[data-tone='info'] {
+      color: $text-2;
+    }
+    &[data-tone='warning'] {
+      color: $text;
+
+      > .#{$rb}-icon {
+        color: $warning;
+      }
+    }
   }
 
   .#{$rs}-editor-body {
@@ -509,4 +521,5 @@ $rs: 'react-autoql-reports';
 @import 'save-status';
 @import 'new-report';
 @import 'tile-picker';
+@import 'templates';
 @import 'add-to-report';
