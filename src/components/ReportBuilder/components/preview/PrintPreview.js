@@ -278,6 +278,7 @@ export class PrintPreview extends React.Component {
       authentication,
       autoQLConfig,
       canRun: this.props.canRun,
+      canCapture: this.props.canCapture,
     }
 
     return page.cells.map((cell) => {
@@ -381,6 +382,7 @@ export class PrintPreview extends React.Component {
               authentication,
               autoQLConfig,
               canRun: this.props.canRun,
+              canCapture: this.props.canCapture,
             }}
           />
         ) : null}

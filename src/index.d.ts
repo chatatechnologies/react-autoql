@@ -523,12 +523,14 @@ export interface ReportDataBlock {
   // Table rows to print; a chart shows its tile as the dashboard does.
   rows: ReportTableRows
   width?: ReportBlockWidth
-  // What the block shows until a run replaces it (always, while enableRunReport is off).
-  capture?: ReportCapture
+  // What the block shows until a run replaces it (always, while enableRunReport is off). A block of a report made
+  // from a template keeps only how it's shown (no `data`, no `capturedAt`) until its question is answered.
+  capture?: ReportCapture | Omit<ReportCapture, 'data' | 'capturedAt'>
   // How it's shown, when not as captured: 'table' or a chart type its data supports ('bar', 'line', …).
   // Chosen in the properties panel; a choice the data can't be drawn as is ignored.
   displayType?: string
-  // A question asked in the builder (enableDataBlocks), which its Rerun button can ask again.
+  // A question asked in the builder (enableDataBlocks), or one a template's report asks, which its Rerun button can
+  // ask (again). Rerun keeps the block's table and chart settings.
   askedHere?: boolean
   // Its chart's axes and aggregation, when chosen in the builder with the chart's own axis selectors: what
   // QueryOutput reports (onTableConfigChange, onAggConfigChange). Kept across Rerun; set right when drawn if the
@@ -709,6 +711,9 @@ export declare function captureQuestion(options: {
   // Stops the request; the result is then { ok: false, reason: 'cancelled' }.
   signal?: AbortSignal
   cancelToken?: any
+  // Asked again (Rerun): the block's capture and how the block shows it. The answer keeps those settings, and is
+  // asked for in the order the block's table is sorted by (once more without it, if it can't be asked that way).
+  rerun?: { kept?: Partial<ReportCapture>; displayType?: string }
 }): Promise<CaptureQuestionResult>
 
 // How many table rows a new block for this capture prints: all of a table that 10, 25, 50 or 100 holds,

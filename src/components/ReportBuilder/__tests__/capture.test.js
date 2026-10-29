@@ -1,5 +1,5 @@
 import { transformQueryResponse } from 'autoql-fe-utils'
-import { captureFromResponse, MAX_CHART_ROWS, rowsForCapture } from '../model/capture'
+import { captureFromResponse, MAX_CHART_ROWS, recaptureFromResponse, rowsForCapture } from '../model/capture'
 import { getEffectiveDisplay } from '../model/dataBlock'
 import { captureQuestion } from '../run/captureRun'
 import { QUESTION_SOURCE } from '../constants'
@@ -119,6 +119,107 @@ describe('captureFromResponse', () => {
   })
 })
 
+describe('recaptureFromResponse', () => {
+  // What a block of a report made from a template keeps: how it's shown, but no answer.
+  const KEPT = {
+    version: 1,
+    displayType: 'table',
+    table: { columnIndices: [2, 0], sort: [{ name: 'aum', sort: 'DESC' }] },
+    config: {
+      displayType: 'table',
+      dataConfig: { tableConfig: { stringColumnIndex: 0, numberColumnIndices: [2] }, columnOverrides: {} },
+      columnVisibility: { account: true, advisor: false, aum: true },
+      axisSorts: {},
+      chartControls: { showAverageLine: false, showRegressionLine: false },
+      orders: [{ name: 'aum', sort: 'DESC' }],
+    },
+  }
+  const sorted = [{ name: 'aum', sort: 'DESC' }]
+
+  it('keeps the block’s table and chart settings, and takes the answer and when it came', () => {
+    const result = recaptureFromResponse(answer({ columns: LIST, rows: listed(12), orders: sorted }), {
+      kept: KEPT,
+      orders: sorted,
+      capturedAt: '2026-10-28T18:00:00.000Z',
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.capture).toStrictEqual({
+      version: 1,
+      capturedAt: '2026-10-28T18:00:00.000Z',
+      displayType: 'table',
+      data: expect.objectContaining({ count_rows: 12, query_id: 'q_1', text: 'total aum by region' }),
+      table: { columnIndices: [2, 0], sort: sorted, filtered: false },
+      config: { ...KEPT.config, columnVisibility: { account: true, advisor: false, aum: true }, orders: sorted },
+    })
+    expect(result.capture.data.rows).toHaveLength(12)
+  })
+
+  it('drops the filters typed against the rows kept before', () => {
+    const kept = { ...KEPT, table: { ...KEPT.table, filters: [{ name: 'advisor', value: 'Okafor' }], filtered: true } }
+    const { capture } = recaptureFromResponse(answer({ columns: LIST, rows: listed(3) }), { kept, orders: sorted })
+    expect(capture.table).toStrictEqual({ columnIndices: [2, 0], sort: sorted, filtered: false })
+  })
+
+  it('shows it as the block does, else as it was kept, else as AutoQL would, while the answer can be', () => {
+    const response = answer({ rows: grouped(6) })
+    const chart = { ...KEPT, displayType: 'column', table: undefined, config: { displayType: 'column' } }
+
+    expect(recaptureFromResponse(response, { kept: chart, displayType: 'bar' }).capture.displayType).toBe('bar')
+    expect(recaptureFromResponse(response, { kept: chart }).capture.displayType).toBe('column')
+    expect(recaptureFromResponse(response, { kept: {} }).capture.displayType).toBe(
+      getEffectiveDisplay(response).displayType,
+    )
+    // A chart the new answer can't be shown as (it has no numbers now) is a table.
+    const names = answer({ columns: LIST.slice(0, 2), rows: listed(6).map(([account, advisor]) => [account, advisor]) })
+    expect(recaptureFromResponse(names, { kept: chart }).capture.displayType).toBe('table')
+  })
+
+  it('keeps a table, never a chart it can’t print or one of more rows than a chart keeps', () => {
+    const big = answer({ rows: grouped(MAX_CHART_ROWS), countRows: 4500 })
+    const chart = { displayType: 'column', config: { displayType: 'column' } }
+    const { capture } = recaptureFromResponse(big, { kept: chart })
+    expect(capture.displayType).toBe('table')
+    expect(capture.config.displayType).toBe('table')
+    expect(capture.data.rows).toHaveLength(100)
+    expect(capture.table).toStrictEqual({ sort: [], filtered: false })
+
+    const pivot = { displayType: 'pivot_table', config: { displayType: 'pivot_table' } }
+    expect(recaptureFromResponse(answer({ rows: grouped(6) }), { kept: pivot }).capture.displayType).toBe('table')
+  })
+
+  it('leaves the columns to their names when a kept position isn’t a column of the new answer', () => {
+    const { capture } = recaptureFromResponse(answer({ rows: grouped(4) }), { kept: KEPT })
+    expect(capture.table).not.toHaveProperty('columnIndices')
+    // By name: what the block kept for a column still there, and the answer's own for a new one.
+    expect(capture.config.columnVisibility).toStrictEqual({ region: true, aum: true })
+
+    const hidden = { ...KEPT, config: { ...KEPT.config, columnVisibility: { aum: false } } }
+    expect(
+      recaptureFromResponse(answer({ rows: grouped(4) }), { kept: hidden }).capture.config.columnVisibility,
+    ).toStrictEqual({ region: true, aum: false })
+  })
+
+  it('says the rows are in the order the question was answered in', () => {
+    // Asked without the kept sort: the answer's own order.
+    const own = [{ name: 'account', sort: 'ASC' }]
+    const { capture } = recaptureFromResponse(answer({ columns: LIST, rows: listed(3), orders: own }), {
+      kept: KEPT,
+    })
+    expect(capture.table.sort).toStrictEqual(own)
+    expect(capture.config.orders).toStrictEqual(own)
+  })
+
+  it('fails as captureFromResponse does', () => {
+    const notSure = { data: { reference_id: '1.1.430', message: 'I’m not sure what you mean', data: {} } }
+    expect(recaptureFromResponse(notSure, { kept: KEPT })).toMatchObject({ ok: false, reason: 'error' })
+    expect(recaptureFromResponse(answer({ columns: [], rows: [] }), { kept: KEPT })).toStrictEqual({
+      ok: false,
+      reason: 'no-data',
+    })
+  })
+})
+
 describe('rowsForCapture', () => {
   const table = (n) => ({ displayType: 'table', data: { count_rows: n } })
 
@@ -187,6 +288,65 @@ describe('captureQuestion', () => {
       ok: false,
       reason: 'error',
       error: { message: 'The query timed out.', referenceId: '1.1.504' },
+    })
+  })
+
+  describe('asked again (rerun)', () => {
+    const sorted = [{ name: 'aum', sort: 'DESC' }]
+    const kept = {
+      version: 1,
+      displayType: 'table',
+      table: { columnIndices: [2, 0], sort: sorted },
+      config: { displayType: 'table', columnVisibility: { account: true, advisor: false, aum: true } },
+    }
+
+    it('asks in the order its table is sorted by, and keeps the block’s settings', async () => {
+      const runQueryFn = jest.fn(() => Promise.resolve(answer({ columns: LIST, rows: listed(3), orders: sorted })))
+
+      const result = await captureQuestion({
+        query: 'aum by account',
+        authentication: AUTH,
+        rerun: { kept, displayType: undefined },
+        runQueryFn,
+      })
+
+      expect(runQueryFn).toHaveBeenCalledTimes(1)
+      expect(runQueryFn.mock.calls[0][0]).toMatchObject({ query: 'aum by account', orders: sorted })
+      expect(result.capture.table).toStrictEqual({ columnIndices: [2, 0], sort: sorted, filtered: false })
+      expect(result.capture.config.columnVisibility).toStrictEqual(kept.config.columnVisibility)
+    })
+
+    it('asks once more without that order when it can’t be asked in it', async () => {
+      const own = [{ name: 'account', sort: 'ASC' }]
+      const runQueryFn = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.reject({ data: { message: 'Unknown column', reference_id: '1.1.400' } }))
+        .mockImplementationOnce(() => Promise.resolve(answer({ columns: LIST, rows: listed(3), orders: own })))
+
+      const result = await captureQuestion({
+        query: 'aum by account',
+        authentication: AUTH,
+        rerun: { kept },
+        runQueryFn,
+      })
+
+      expect(runQueryFn).toHaveBeenCalledTimes(2)
+      expect(runQueryFn.mock.calls[1][0]).not.toHaveProperty('orders')
+      expect(result.ok).toBe(true)
+      expect(result.capture.table.sort).toStrictEqual(own)
+    })
+
+    it('asks once, with no order, when its table has none', async () => {
+      const runQueryFn = jest.fn(() => Promise.reject({ data: { message: 'The query timed out.' } }))
+      const result = await captureQuestion({
+        query: 'aum by account',
+        authentication: AUTH,
+        rerun: { kept: { ...kept, table: undefined } },
+        runQueryFn,
+      })
+      expect(runQueryFn).toHaveBeenCalledTimes(1)
+      expect(runQueryFn.mock.calls[0][0]).not.toHaveProperty('orders')
+      expect(result).toMatchObject({ ok: false, reason: 'error' })
     })
   })
 

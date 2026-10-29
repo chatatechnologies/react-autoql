@@ -235,10 +235,16 @@ export const Continued = () => (
   </div>
 )
 
-const statusText = (view, canRun) => {
+const statusText = (view, canRun, canCapture) => {
   switch (view.state) {
     case 'not-run':
-      return canRun ? STRINGS.data.notRun : STRINGS.data.noCapture
+      if (canRun) {
+        return STRINGS.data.notRun
+      }
+      if (view.askedHere) {
+        return canCapture ? STRINGS.data.notAsked : STRINGS.data.noAnswer
+      }
+      return STRINGS.data.noCapture
     case 'loading':
       return STRINGS.data.loading
     case 'stale':
@@ -295,7 +301,7 @@ const DataContent = ({
       <div className={`${RB}-data`} data-state={view.state}>
         {title}
         <Placeholder tone={view.state === 'error' || view.state === 'missing' ? 'warning' : undefined}>
-          {statusText(view, canRun)}
+          {statusText(view, canRun, canCapture)}
         </Placeholder>
       </div>
     )

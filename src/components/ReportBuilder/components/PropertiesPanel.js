@@ -434,14 +434,16 @@ class DataProperties extends React.Component {
             <SourceCard block={block} view={view} />
             <Note>
               {rerunnable
-                ? P.askedNote
+                ? captured
+                  ? P.askedNote
+                  : P.notAskedNote
                 : captured
                 ? P.capturedNote
                 : source.type === 'query'
                 ? P.questionNote
                 : P.sourceNote}
             </Note>
-            {!canRun && !captured ? <Note>{P.noCaptureNote}</Note> : null}
+            {!canRun && !captured && !rerunnable ? <Note>{P.noCaptureNote}</Note> : null}
             {rerunnable ? (
               <>
                 <button
@@ -454,7 +456,11 @@ class DataProperties extends React.Component {
                 >
                   {asking ? P.rerunning : P.rerun}
                 </button>
-                {question?.error ? <Note tone='warning'>{question.error}</Note> : <Note>{P.rerunNote}</Note>}
+                {question?.error ? (
+                  <Note tone='warning'>{question.error}</Note>
+                ) : (
+                  <Note>{captured ? P.rerunNote : P.firstAskNote}</Note>
+                )}
               </>
             ) : null}
             {canRun ? (
