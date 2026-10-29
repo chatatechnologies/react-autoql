@@ -165,6 +165,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // Shows the report and nothing that changes it: its pages as they print, with no way back to editing (or to
     // printing) until it's turned off — while AutoQL fills in a report's data, say, or to show a template.
     readOnly: PropTypes.bool,
+    // Adds "Save as template…" to the report options menu (⋮), which calls this: the host makes a template from the
+    // report. None by default.
+    onSaveAsTemplate: PropTypes.func,
     // What a Data block with no answer says about it: in a template ('template'), while AutoQL fills in the
     // report's data ('filling'), or once it has ('filled'), with why it couldn't fill the blocks in `errors`
     // (blockId → { reason, message }).
@@ -196,6 +199,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
     onGetStarted: undefined,
     toolbarStatus: null,
     readOnly: false,
+    onSaveAsTemplate: undefined,
     dataFill: null,
     className: undefined,
   }
@@ -1349,6 +1353,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
               optionsRef={this.optionsRef}
               onPageSetup={this.onPageSetup}
               onBranding={this.canEditBranding() ? this.openBranding : undefined}
+              onSaveAsTemplate={this.props.onSaveAsTemplate}
               onRerunAll={
                 this.canRerunAll() && !this.state.rerunAll?.running && report.blocks.some(isRerunnable)
                   ? this.rerunAll

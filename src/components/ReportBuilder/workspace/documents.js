@@ -140,10 +140,15 @@ export const describeBlock = (block) => {
 // What's done to folders and tags, rather than to reports.
 const ORGANIZER_ACTIONS = ['organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag']
 
+// What's done to templates and their categories (Save as template, Manage templates).
+const TEMPLATE_ACTIONS = ['saveTemplate', 'templateDetails', 'publish', 'unpublish', 'deleteTemplate']
+const CATEGORY_ACTIONS = ['categories', 'category', 'deleteCategory']
+
 // The one line to show for a failed call ('load', 'open', 'save', 'add' or 'delete'; for folders and tags
 // 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'; for templates 'templates', 'template',
-// 'startFromTemplate' and 'fill'), and whether trying again later can help: it can when the service couldn't be
-// reached or failed, not when it turned the request down.
+// 'startFromTemplate', 'fill', 'manageTemplates', 'saveTemplate', 'templateDetails', 'publish', 'unpublish' and
+// 'deleteTemplate'; for their categories 'categories', 'category' and 'deleteCategory'), and whether trying again
+// later can help: it can when the service couldn't be reached or failed, not when it turned the request down.
 export const describeReportError = (error, action) => {
   const known = error instanceof ReportsApiError
   const status = known ? error.status : 0
@@ -173,11 +178,36 @@ export const describeReportError = (error, action) => {
   } else if (code === 'REPORT_TAG_NAME_TAKEN') {
     reason = E.tagNameTaken
   } else if (code === 'REPORT_NAME_INVALID') {
-    reason = E.nameInvalid
+    reason = TEMPLATE_ACTIONS.includes(action)
+      ? E.templateNameInvalid
+      : CATEGORY_ACTIONS.includes(action)
+      ? E.categoryNameInvalid
+      : E.nameInvalid
   } else if (code === 'REPORT_TAGS_INVALID') {
-    reason = E.tooManyTags
+    reason = TEMPLATE_ACTIONS.includes(action) ? E.tooManyTemplateTags : E.tooManyTags
   } else if (code === 'REPORT_LIMIT_EXCEEDED') {
-    reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
+    if (action === 'publish' || action === 'templateDetails') {
+      reason = E.publishLimit
+    } else if (TEMPLATE_ACTIONS.includes(action)) {
+      reason = E.templateLimit
+    } else if (CATEGORY_ACTIONS.includes(action)) {
+      reason = E.categoryLimit
+    } else {
+      reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
+    }
+  } else if (code === 'REPORT_CATEGORY_NOT_FOUND') {
+    reason = E.categoryGone
+  } else if (code === 'REPORT_CATEGORY_NAME_EXISTS') {
+    reason = E.categoryNameTaken
+  } else if (code === 'REPORT_TEMPLATE_CONTAINS_DATA') {
+    reason = E.templateHasData
+  } else if (code === 'REPORT_TEMPLATE_BLOCK_NOT_PORTABLE') {
+    reason = E.blockNotPortable
+  } else if (code === 'REPORT_TEMPLATE_SCOPE_INVALID' || code === 'REPORT_ORGANIZATION_UNKNOWN') {
+    reason = E.notYourOrganization
+  } else if (code === 'REPORT_ORGANIZATION_UNAVAILABLE') {
+    reason = E.organizationUnavailable
+    retry = true
   } else if (code === 'REPORT_BULK_REQUEST_INVALID') {
     reason = E.tooManyReports
   } else if (code === 'REPORT_TEMPLATE_NOT_FOUND') {
@@ -199,6 +229,8 @@ export const describeReportError = (error, action) => {
   } else if (status >= 500) {
     reason = E.serverFailed
     retry = true
+  } else if (status === 403 && [...TEMPLATE_ACTIONS, ...CATEGORY_ACTIONS, 'manageTemplates'].includes(action)) {
+    reason = E.forbidden
   } else {
     reason = E.refused
   }

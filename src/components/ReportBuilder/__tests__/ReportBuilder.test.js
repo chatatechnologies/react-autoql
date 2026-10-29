@@ -2124,6 +2124,15 @@ describe('the report options menu, and the organisation’s branding (enableBran
   })
   afterEach(() => window.localStorage.removeItem(PANEL_KEY))
 
+  it('offers Save as template… where the host makes templates from reports, and calls it', async () => {
+    const onSaveAsTemplate = jest.fn()
+    await setupBranding({}, { canEditBranding: false, onSaveAsTemplate })
+    fireEvent.click(options())
+    expect(menuItems()).toEqual(['Page setup', 'Save as template…'])
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Save as template…' }))
+    expect(onSaveAsTemplate).toHaveBeenCalledTimes(1)
+  })
+
   it('offers Page setup, and Branding… only where AutoQL answers and the host lets this user change it', async () => {
     const { unmount } = setup()
     fireEvent.click(options())

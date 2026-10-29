@@ -64,6 +64,7 @@ export const STRINGS = {
     label: 'Report options',
     pageSetup: 'Page setup',
     branding: 'Branding…',
+    saveAsTemplate: 'Save as template…',
     rerunAll: 'Rerun all',
   },
   // Rerun all: every question asked in the report, asked again a few at a time, and the line over the report that

@@ -18,7 +18,7 @@ import { REPORTS_STRINGS } from './reportsStrings'
 //
 // Props: authentication, autoQLConfig, dataFormatting, previewProps (more for the preview's ReportBuilder: branding,
 // enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, id }), which resolves once
-// the report is made or rejects with why not.
+// the report is made or rejects with why not, and onManage (Manage templates, for an organization's admins).
 
 const S = REPORTS_STRINGS
 const T = S.templates
@@ -345,7 +345,7 @@ export class TemplatesDialog extends React.Component {
   }
 
   render() {
-    const { onClose } = this.props
+    const { onClose, onManage } = this.props
     const { chosenId, starting, startError } = this.state
     return (
       <ReportModal
@@ -360,6 +360,17 @@ export class TemplatesDialog extends React.Component {
         statusTone={startError ? 'error' : undefined}
         actions={
           <>
+            {onManage ? (
+              <button
+                type='button'
+                className={`${RS}-button`}
+                data-test='reports-templates-manage'
+                disabled={starting}
+                onClick={onManage}
+              >
+                {S.manageTemplates.open}
+              </button>
+            ) : null}
             <button
               type='button'
               className={`${RS}-button`}

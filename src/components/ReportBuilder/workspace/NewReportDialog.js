@@ -25,7 +25,8 @@ import { REPORTS_STRINGS } from './reportsStrings'
 //
 // Props: authentication, autoQLConfig, dataFormatting, dashboards (undefined where the host has none, so there's no
 // dashboard to start from; null while they load), onClose, onStart, onTilesChange (passed on to the tiles),
-// enableTemplates, onStartFromTemplate({ templateId, id }) and previewProps (passed on to the templates).
+// enableTemplates, onStartFromTemplate({ templateId, id }), previewProps and onManageTemplates (passed on to the
+// templates).
 
 const S = REPORTS_STRINGS
 const N = S.newReport
@@ -282,6 +283,7 @@ export class NewReportDialog extends React.Component {
           previewProps={this.props.previewProps}
           onClose={this.closeTemplates}
           onStart={this.props.onStartFromTemplate}
+          onManage={this.props.onManageTemplates}
         />
       )
     }
