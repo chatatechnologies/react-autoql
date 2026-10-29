@@ -53,6 +53,8 @@ import { ReportTabs } from './ReportTabs'
 import { SaveStatus } from './SaveStatus'
 import { NewReportDialog } from './NewReportDialog'
 import { DashboardTilesDialog } from './DashboardTilesDialog'
+import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
+import { ManageTemplatesDialog } from './ManageTemplatesDialog'
 import './Reports.scss'
 
 // The reports workspace: a user's reports on one data source, kept by AutoQL's report service (run/reportsApi),
@@ -64,7 +66,9 @@ import './Reports.scss'
 // With enableTemplates, New report can start from a template: the report is made from it, and AutoQL fills in its
 // data blocks in the background — or, where AutoQL doesn't fill reports in itself, this page asks their questions.
 // Meanwhile the report shows as it prints, read-only, filling in as each block is answered; then it says how many
-// blocks were filled, and each one that wasn't says why.
+// blocks were filled, and each one that wasn't says why. With canManageTemplates too (an organization's admins), a
+// report can be saved as a template (Report options › Save as template…), and the organization's templates and
+// categories managed (Manage templates, from the templates and the home page).
 //
 // Edits are saved after a short pause, and at once when switching tabs, leaving or hiding the page, pressing the
 // save control or ⌘S / Ctrl+S (ReportSaver, one per report opened here). A save that failed is kept and tried again
@@ -350,6 +354,10 @@ export class ReportsWithoutTheme extends React.Component {
     // New report can start from a template published for the data source, which AutoQL fills in with the user's
     // data. Off by default.
     enableTemplates: PropTypes.bool,
+    // With enableTemplates: a report can be saved as a template for the organization, and the organization's
+    // templates and categories managed. That takes AutoQL's management grant for reports, so say who may: an app's
+    // owners and admins, say. Off by default.
+    canManageTemplates: PropTypes.bool,
     // Passed on to each report's ReportBuilder.
     branding: PropTypes.object,
     enableBranding: PropTypes.bool,
@@ -380,6 +388,7 @@ export class ReportsWithoutTheme extends React.Component {
     saveDelay: SAVE_DELAY_MS,
     newReportFolderId: null,
     enableTemplates: false,
+    canManageTemplates: false,
     branding: undefined,
     enableBranding: false,
     canEditBranding: false,
@@ -447,6 +456,9 @@ export class ReportsWithoutTheme extends React.Component {
       // The shown report's data, as AutoQL fills it in: { id, dataStatus, dataErrors }, with `ended` once a fill
       // followed here finished, or `stalled` when it stopped without word.
       fill: null,
+      // The report Save as template is open for, and whether Manage templates is open.
+      saveAsTemplateId: null,
+      manageTemplatesOpen: false,
     }
   }
 
@@ -1482,6 +1494,25 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState({ tilePicker: null })
   }
 
+  // ---------------------------------------------------------------- templates, for those who manage them
+
+  canManageTemplates = () => !!(this.props.enableTemplates && this.props.canManageTemplates)
+
+  openSaveAsTemplate = () => {
+    if (this.shownId) {
+      this.setState({ saveAsTemplateId: this.shownId })
+    }
+  }
+
+  closeSaveAsTemplate = () => this.setState({ saveAsTemplateId: null })
+
+  // A template is made from the report as AutoQL has it: what's waiting is saved first. Resolves with whether it was.
+  saveForTemplate = () => this.savers.get(this.state.saveAsTemplateId)?.flush() ?? Promise.resolve(false)
+
+  openManageTemplates = () => this.setState({ newReportOpen: false, saveAsTemplateId: null, manageTemplatesOpen: true })
+
+  closeManageTemplates = () => this.setState({ manageTemplatesOpen: false })
+
   openNewReport = () => this.setState({ newReportOpen: true })
 
   closeNewReport = () => this.setState({ newReportOpen: false })
@@ -1518,6 +1549,7 @@ export class ReportsWithoutTheme extends React.Component {
         ...(notice ? [{ tone: 'info', text: notice }] : []),
       ],
       newReport: this.openNewReport,
+      manageTemplates: this.canManageTemplates() ? this.openManageTemplates : undefined,
     }
     return this.props.renderHome ? this.props.renderHome(home) : <PlainHome {...home} />
   }
@@ -1549,6 +1581,7 @@ export class ReportsWithoutTheme extends React.Component {
           onChange={this.handleChange}
           readOnly={filling}
           dataFill={this.dataFillFor(fill, filling)}
+          onSaveAsTemplate={this.canManageTemplates() && !readOnly && !filling ? this.openSaveAsTemplate : undefined}
           branding={this.props.branding}
           enableBranding={this.props.enableBranding}
           canEditBranding={this.props.canEditBranding}
@@ -1625,7 +1658,17 @@ export class ReportsWithoutTheme extends React.Component {
 
   render() {
     const { authentication, autoQLConfig, dataFormatting, dashboards, onDashboardTilesChange, className } = this.props
-    const { reports, tabs, tabWidths, shownId, notSaved, tilePicker, newReportOpen } = this.state
+    const {
+      reports,
+      tabs,
+      tabWidths,
+      shownId,
+      notSaved,
+      tilePicker,
+      newReportOpen,
+      saveAsTemplateId,
+      manageTemplatesOpen,
+    } = this.state
     const active = this.activeReport()
     const titleFor = (id) => titleOf(reports?.find((report) => report.id === id))
 
@@ -1656,12 +1699,28 @@ export class ReportsWithoutTheme extends React.Component {
             onTilesChange={onDashboardTilesChange}
             enableTemplates={this.props.enableTemplates}
             onStartFromTemplate={this.startFromTemplate}
+            onManageTemplates={this.canManageTemplates() ? this.openManageTemplates : undefined}
             previewProps={{
               branding: this.props.branding,
               enableBranding: this.props.enableBranding,
               fontStylesheetUrl: this.props.fontStylesheetUrl,
             }}
           />
+        ) : null}
+
+        {saveAsTemplateId && active && active.id === saveAsTemplateId ? (
+          <SaveAsTemplateDialog
+            authentication={authentication}
+            reportId={saveAsTemplateId}
+            report={active.report}
+            flush={this.saveForTemplate}
+            onClose={this.closeSaveAsTemplate}
+            onManage={this.openManageTemplates}
+          />
+        ) : null}
+
+        {manageTemplatesOpen && this.canManageTemplates() ? (
+          <ManageTemplatesDialog authentication={authentication} onClose={this.closeManageTemplates} />
         ) : null}
 
         {tilePicker && active && tilePicker.reportId === active.id ? (

@@ -82,6 +82,17 @@ $rs: 'react-autoql-reports';
         filter: brightness(0.94);
       }
     }
+    // What can't be undone: deleting.
+    &[data-variant='danger'] {
+      border-color: $danger;
+      background: $danger;
+      color: #ffffff;
+
+      &:hover:not(:disabled) {
+        background: $danger;
+        filter: brightness(0.94);
+      }
+    }
   }
 
   .#{$rs}-icon-button {

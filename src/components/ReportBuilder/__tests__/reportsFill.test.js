@@ -56,13 +56,26 @@ jest.mock('../ReportBuilder', () => ({
   },
 }))
 
-const mockDialogs = { newReport: null }
+const mockDialogs = { newReport: null, saveAsTemplate: null, manage: null }
 jest.mock('../workspace/NewReportDialog', () => ({
   NewReportDialog: (props) => {
     mockDialogs.newReport = props
     return <div data-test='new-report-dialog' />
   },
 }))
+jest.mock('../workspace/SaveAsTemplateDialog', () => ({
+  SaveAsTemplateDialog: (props) => {
+    mockDialogs.saveAsTemplate = props
+    return <div data-test='save-as-template-dialog' />
+  },
+}))
+jest.mock('../workspace/ManageTemplatesDialog', () => ({
+  ManageTemplatesDialog: (props) => {
+    mockDialogs.manage = props
+    return <div data-test='manage-templates-dialog' />
+  },
+}))
+
 const b64url = (value) => btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const AUTH = { apiKey: 'key', domain: 'https://example.test', token: `h.${b64url({ project_id: 'p1' })}.s` }
 
@@ -454,5 +467,61 @@ describe('a report made from a template that AutoQL doesn’t fill in (NONE)', (
     await startFromTemplate()
     expect(mockBuilder.props.readOnly).toBe(true)
     expect(captureQuestion).not.toHaveBeenCalled()
+  })
+})
+
+describe('templates, for those who manage them (canManageTemplates)', () => {
+  it('saves the report shown as a template, from what it saved first', async () => {
+    createReportFromTemplate.mockResolvedValue({ ...stored(), created: true })
+    setup({ canManageTemplates: true })
+    await startFromTemplate()
+
+    act(() => mockBuilder.props.onChange({ ...mockBuilder.props.report, title: 'Q3 review' }))
+    act(() => mockBuilder.props.onSaveAsTemplate())
+    expect(screen.getByTestId('save-as-template-dialog')).toBeTruthy()
+    expect(mockDialogs.saveAsTemplate).toMatchObject({ authentication: AUTH, reportId: T })
+    expect(mockDialogs.saveAsTemplate.report.title).toBe('Q3 review')
+    await expect(mockDialogs.saveAsTemplate.flush()).resolves.toBe(true)
+    expect(saveReport).toHaveBeenCalledWith(
+      expect.objectContaining({ id: T, report: expect.objectContaining({ title: 'Q3 review' }) }),
+    )
+
+    // Made: Manage templates is where it's published.
+    act(() => mockDialogs.saveAsTemplate.onManage())
+    expect(screen.queryByTestId('save-as-template-dialog')).toBeNull()
+    expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
+    act(() => mockDialogs.manage.onClose())
+    expect(screen.queryByTestId('manage-templates-dialog')).toBeNull()
+  })
+
+  it('offers neither while a report fills, nor to those who don’t manage templates', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'RUNNING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus.mockReturnValue(new Promise(() => {}))
+    const { unmount } = setup({ canManageTemplates: true })
+    await startFromTemplate()
+    expect(mockBuilder.props.onSaveAsTemplate).toBeUndefined()
+    unmount()
+
+    createReportFromTemplate.mockResolvedValue({ ...stored({ blocks: [dataBlock('d1')] }), created: true })
+    setup()
+    await startFromTemplate()
+    expect(mockBuilder.props.onSaveAsTemplate).toBeUndefined()
+    expect(mockDialogs.newReport.onManageTemplates).toBeUndefined()
+  })
+
+  it('opens Manage templates from the home page and from the templates', async () => {
+    setup({ canManageTemplates: true })
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    act(() => homeProps.current.manageTemplates())
+    expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
+    act(() => mockDialogs.manage.onClose())
+
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    act(() => mockDialogs.newReport.onManageTemplates())
+    expect(screen.queryByTestId('new-report-dialog')).toBeNull()
+    expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
   })
 })

@@ -39,6 +39,7 @@ export const Toolbar = ({
   optionsRef,
   onPageSetup,
   onBranding,
+  onSaveAsTemplate,
   onRerunAll,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
@@ -165,7 +166,13 @@ export const Toolbar = ({
         </button>
       )}
       {!previewOpen && onPageSetup ? (
-        <ReportOptions ref={optionsRef} onPageSetup={onPageSetup} onBranding={onBranding} onRerunAll={onRerunAll} />
+        <ReportOptions
+          ref={optionsRef}
+          onPageSetup={onPageSetup}
+          onBranding={onBranding}
+          onSaveAsTemplate={onSaveAsTemplate}
+          onRerunAll={onRerunAll}
+        />
       ) : null}
     </div>
   </div>

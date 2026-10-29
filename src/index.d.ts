@@ -675,6 +675,9 @@ export interface ReportBuilderProps {
   // Your own element for the toolbar, shown just before Preview (and in the preview): whether the report is
   // saved, say. None by default.
   toolbarStatus?: React.ReactNode
+  // Adds "Save as template…" to the report options menu (⋮), which calls this: the host makes a template from the
+  // report. None by default.
+  onSaveAsTemplate?: () => void
   // Shows the report as it prints and nothing that changes it (or prints it, or goes back to editing) until it's
   // turned off: while AutoQL fills in its data, say, or to show a template.
   readOnly?: boolean
@@ -902,6 +905,59 @@ export declare function fetchReportTemplate(
 export declare function fetchReportCategories(
   options: ReportsCall & { scope?: 'INTEGRATOR' | 'ORGANIZATION'; signal?: AbortSignal },
 ): Promise<ReportTemplateCategory[]>
+
+// ─── Report templates, as an organization's admins manage them ───────────────
+// Through AutoQL's management API (/autoql/management/api/v1/reports), which takes the token's management grant for
+// reports. The organization is the one the token's project belongs to.
+
+export declare function fetchManagedTemplates(
+  options: ReportsCall & {
+    q?: string
+    tags?: string[]
+    categoryId?: string
+    status?: 'DRAFT' | 'PUBLISHED'
+    orderBy?: 'updated_at' | 'created_at' | 'title'
+    order?: 'asc' | 'desc'
+    page?: number
+    pageSize?: number
+    signal?: AbortSignal
+  },
+): Promise<{ templates: ReportTemplate[]; page: number; pageSize: number; totalPages: number; totalItems: number }>
+// A draft for the organization, made from one of the user's own reports as AutoQL has it (save it first), without the
+// report's data. Titles, headings, text, questions and an analysis's focus are kept as they are.
+export declare function createTemplateFromReport(
+  options: ReportsCall & {
+    reportId: string
+    title: string
+    description?: string
+    categoryId?: string
+    tags?: string[]
+  },
+): Promise<ReportTemplate>
+// What's left out stays as it is; null takes away a description, a category or the tags.
+export declare function updateTemplate(
+  options: ReportsCall & {
+    id: string
+    title?: string
+    description?: string | null
+    categoryId?: string | null
+    tags?: string[] | null
+  },
+): Promise<ReportTemplate>
+export declare function publishTemplate(options: ReportsCall & { id: string }): Promise<ReportTemplate | null>
+export declare function unpublishTemplate(options: ReportsCall & { id: string }): Promise<ReportTemplate | null>
+// Reports already made from it keep their copy.
+export declare function deleteTemplate(options: ReportsCall & { id: string }): Promise<void>
+// The organization's own categories (templates can also take the integrator's: fetchReportCategories lists both).
+export declare function fetchManagedCategories(
+  options: ReportsCall & { signal?: AbortSignal },
+): Promise<ReportTemplateCategory[]>
+export declare function createTemplateCategory(options: ReportsCall & { name: string }): Promise<ReportTemplateCategory>
+export declare function renameTemplateCategory(
+  options: ReportsCall & { id: string; name: string },
+): Promise<ReportTemplateCategory>
+// Its templates stay, without a category.
+export declare function deleteTemplateCategory(options: ReportsCall & { id: string }): Promise<void>
 export declare function saveReport(
   options: ReportsCall & { id: string; report: Report; version: number; keepalive?: boolean },
 ): Promise<StoredReportStamp>
@@ -967,6 +1023,8 @@ export interface ReportsHomeProps {
   notices: ReportsNotice[]
   // Opens New report.
   newReport: () => void
+  // Opens Manage templates: there with enableTemplates and canManageTemplates, for a button of the host's own.
+  manageTemplates?: () => void
 
   // The user's folders and tags on the data source, A to Z; null while they load. Each report in `reports` says its
   // folder (folderId, null for none) and its tags (tagIds).
@@ -1029,6 +1087,10 @@ export interface ReportsProps {
   // user's data while the report shows read-only — or, where AutoQL doesn't fill reports in itself, the workspace
   // asks their questions, all as of when the report was started. Off by default.
   enableTemplates?: boolean
+  // With enableTemplates: a report can be saved as a template for the organization (Report options › Save as
+  // template…), and its templates and categories managed (Manage templates). That takes AutoQL's management grant
+  // for reports, so say who may: an app's owners and admins, say. Off by default.
+  canManageTemplates?: boolean
   // Passed on to each report's ReportBuilder.
   branding?: ReportBranding
   enableBranding?: boolean
