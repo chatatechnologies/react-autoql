@@ -141,8 +141,9 @@ export const describeBlock = (block) => {
 const ORGANIZER_ACTIONS = ['organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag']
 
 // The one line to show for a failed call ('load', 'open', 'save', 'add' or 'delete'; for folders and tags
-// 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'), and whether trying again later can
-// help: it can when the service couldn't be reached or failed, not when it turned the request down.
+// 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'; for templates 'templates', 'template',
+// 'startFromTemplate' and 'fill'), and whether trying again later can help: it can when the service couldn't be
+// reached or failed, not when it turned the request down.
 export const describeReportError = (error, action) => {
   const known = error instanceof ReportsApiError
   const status = known ? error.status : 0
@@ -179,6 +180,15 @@ export const describeReportError = (error, action) => {
     reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
   } else if (code === 'REPORT_BULK_REQUEST_INVALID') {
     reason = E.tooManyReports
+  } else if (code === 'REPORT_TEMPLATE_NOT_FOUND') {
+    reason = E.templateGone
+  } else if (code === 'REPORT_DATA_FILL_IN_PROGRESS') {
+    // Saved while AutoQL fills in its data: it goes through once the fill is done.
+    reason = E.filling
+    retry = true
+  } else if (code === 'REPORT_FILL_REJECTED') {
+    reason = E.busy
+    retry = true
   } else if (code === 'REPORT_VERSION_CONFLICT') {
     // Blocks kept being added elsewhere while it saved (a conflict of any other kind isn't an error).
     reason = E.keptChanging

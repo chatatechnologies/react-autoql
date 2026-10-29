@@ -3,9 +3,9 @@ import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { Icon } from './icons'
 
-// The report options menu (⋮) at the end of the toolbar, as the prototype has it: Page setup, and Branding…
-// where the host lets the organisation's branding be changed here. A choice, Escape, Tab or a click anywhere
-// else closes it; the arrow keys move between its items.
+// The report options menu (⋮) at the end of the toolbar, as the prototype has it: Page setup, Rerun all where the
+// report has questions asked in it, and Branding… where the host lets the organisation's branding be changed here. A
+// choice, Escape, Tab or a click anywhere else closes it; the arrow keys move between its items.
 
 let menuIds = 0
 
@@ -73,10 +73,11 @@ export class ReportOptions extends React.Component {
   }
 
   render() {
-    const { onPageSetup, onBranding } = this.props
+    const { onPageSetup, onBranding, onRerunAll } = this.props
     const { open } = this.state
     const items = [
       { key: 'page-setup', label: STRINGS.reportOptions.pageSetup, action: onPageSetup },
+      onRerunAll ? { key: 'rerun-all', label: STRINGS.reportOptions.rerunAll, action: onRerunAll } : null,
       onBranding ? { key: 'branding', label: STRINGS.reportOptions.branding, action: onBranding } : null,
     ].filter(Boolean)
     this.itemRefs = []

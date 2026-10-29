@@ -12,6 +12,9 @@ import { captureFromResponse, MAX_CHART_ROWS, recaptureFromResponse } from '../m
 // is kept in those settings (recaptureFromResponse), and asked for in the order its table is sorted by, as the rows
 // printed are the first ones in that order. If it can't be asked in that order (a column it sorts by is gone, say),
 // it's asked once more without one.
+//
+// `capturedAt` is when the answer is said to be from: now by default, or when the questions asked together started
+// (Rerun all, a report filled in from a template), so they all read as of one time.
 export const captureQuestion = ({
   query,
   authentication,
@@ -19,6 +22,7 @@ export const captureQuestion = ({
   signal,
   cancelToken,
   rerun,
+  capturedAt,
   runQueryFn = runQuery,
 } = {}) => {
   const text = typeof query === 'string' ? query.trim() : ''
@@ -50,9 +54,10 @@ export const captureQuestion = ({
         if (cancelled()) {
           return { ok: false, reason: 'cancelled' }
         }
+        const at = capturedAt ? { capturedAt } : {}
         return rerun
-          ? recaptureFromResponse(response, { kept, displayType: rerun.displayType, orders })
-          : captureFromResponse(response)
+          ? recaptureFromResponse(response, { kept, displayType: rerun.displayType, orders, ...at })
+          : captureFromResponse(response, at)
       },
       (error) => {
         if (cancelled()) {

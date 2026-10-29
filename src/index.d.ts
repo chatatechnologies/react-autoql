@@ -125,9 +125,7 @@ export interface UseMagicWandBillingGateResult {
   billingExecutionType?: BillingExecutionType
 }
 
-export declare function useMagicWandBillingGate(
-  args?: UseMagicWandBillingGateArgs,
-): UseMagicWandBillingGateResult
+export declare function useMagicWandBillingGate(args?: UseMagicWandBillingGateArgs): UseMagicWandBillingGateResult
 
 export declare function getMagicWandBillingErrorState(error: any): MagicWandBillingGateState
 
@@ -663,7 +661,8 @@ export interface ReportBuilderProps {
   // Run report: the builder fetches every data block itself. Off by default: blocks show what was
   // captured when they were added, and runReport() resolves null.
   enableRunReport?: boolean
-  // Data blocks can be made in the builder, not only arrive with "Add to Report…". Off by default.
+  // Data blocks can be made in the builder, not only arrive with "Add to Report…": a question asked once, kept with a
+  // Rerun button, and every such question asked again at once with Rerun all (Report options). Off by default.
   enableDataBlocks?: boolean
   // With enableDataBlocks: an empty Data block offers "Pick dashboard tiles…", which calls this. Show your own
   // picker and resolve with the blocks to put in the empty block's place, in order, or null to leave it.
@@ -676,6 +675,15 @@ export interface ReportBuilderProps {
   // Your own element for the toolbar, shown just before Preview (and in the preview): whether the report is
   // saved, say. None by default.
   toolbarStatus?: React.ReactNode
+  // Shows the report as it prints and nothing that changes it (or prints it, or goes back to editing) until it's
+  // turned off: while AutoQL fills in its data, say, or to show a template.
+  readOnly?: boolean
+  // What a Data block with no answer says: in a template ('template'), while AutoQL fills in the report's data
+  // ('filling'), or once it has ('filled'), with why it couldn't fill the blocks in `errors`.
+  dataFill?: {
+    state: 'template' | 'filling' | 'filled'
+    errors?: Record<string, { reason: ReportDataError['reason']; message?: string }>
+  } | null
   className?: string
 }
 
@@ -739,6 +747,33 @@ export declare class ReportsApiError extends Error {
   details?: Record<string, any>
 }
 
+// Where a report made from a template is with its data: AutoQL fills its data blocks in the background (PENDING,
+// then RUNNING; read-only meanwhile) and ends DONE, PARTIAL (some blocks couldn't be filled) or FAILED (none could).
+// NONE: nothing has filled it.
+export type ReportDataStatus = 'NONE' | 'PENDING' | 'RUNNING' | 'DONE' | 'PARTIAL' | 'FAILED'
+export declare const REPORT_DATA_STATUSES: ReportDataStatus[]
+// Whether AutoQL is filling a report's data now (PENDING or RUNNING).
+export declare function isFillingData(dataStatus: ReportDataStatus | string | null | undefined): boolean
+
+// Why a fill left a data block unfilled. `message` is the query's own words, when it sent any.
+export interface ReportDataError {
+  blockId: string
+  reason:
+    | 'not_confident'
+    | 'access_denied'
+    | 'no_data'
+    | 'query_failed'
+    | 'timeout'
+    | 'too_large'
+    | 'tile_unavailable'
+    | 'no_question'
+    | 'stale_block'
+    | 'busy'
+    | 'interrupted'
+    | string
+  message?: string
+}
+
 export interface StoredReportSummary {
   id: string
   title: string
@@ -746,13 +781,52 @@ export interface StoredReportSummary {
   version: number
   folderId: string | null
   tagIds: string[]
+  // The template it was made from, if it was.
+  templateId: string | null
+  dataStatus: ReportDataStatus
   createdAt: string
   updatedAt: string
 }
 
 export interface StoredReport extends StoredReportSummary {
   projectId: string
+  // Why the last fill left some data blocks unfilled.
+  dataErrors: ReportDataError[]
   report: Report
+}
+
+export interface ReportDataProgress {
+  dataStatus: ReportDataStatus
+  // Moves on with every block filled.
+  version: number
+  dataUpdatedAt: string | null
+  dataErrors: ReportDataError[]
+}
+
+// A template to start a report from. INTEGRATOR templates are everyone's, ORGANIZATION ones the organization's.
+export interface ReportTemplate {
+  id: string
+  scope: 'INTEGRATOR' | 'ORGANIZATION' | string
+  organizationId: string | null
+  title: string
+  description: string
+  categoryId: string | null
+  tags: string[]
+  status: 'DRAFT' | 'PUBLISHED' | string
+  databaseModel: string
+  sizeBytes: number
+  publishedAt: string
+  createdAt: string
+  updatedAt: string
+  // Asked for by id: what a report started from it begins as.
+  report?: Report
+}
+
+export interface ReportTemplateCategory {
+  id: string
+  scope: 'INTEGRATOR' | 'ORGANIZATION' | string
+  organizationId: string | null
+  name: string
 }
 
 export interface StoredReportStamp {
@@ -799,6 +873,35 @@ export declare function fetchReport(options: ReportsCall & { id: string; signal?
 export declare function createReport(
   options: ReportsCall & { id: string; report: Report; folderId?: string; tagIds?: string[]; keepalive?: boolean },
 ): Promise<StoredReport & { created: boolean }>
+// A report of the user's own from a published template; AutoQL fills its data blocks in the background, asking in
+// `timeZone` (an IANA name, the browser's say).
+export declare function createReportFromTemplate(
+  options: ReportsCall & { id: string; templateId: string; folderId?: string; tagIds?: string[]; timeZone?: string },
+): Promise<StoredReport & { created: boolean }>
+export declare function fetchReportDataStatus(
+  options: ReportsCall & { id: string; signal?: AbortSignal },
+): Promise<ReportDataProgress>
+// The templates published for the token's data source (its organization's and the integrator's, for its data model),
+// without their documents.
+export declare function fetchReportTemplates(
+  options: ReportsCall & {
+    q?: string
+    tags?: string[]
+    categoryId?: string
+    scope?: 'INTEGRATOR' | 'ORGANIZATION'
+    orderBy?: 'updated_at' | 'created_at' | 'title'
+    order?: 'asc' | 'desc'
+    page?: number
+    pageSize?: number
+    signal?: AbortSignal
+  },
+): Promise<{ templates: ReportTemplate[]; page: number; pageSize: number; totalPages: number; totalItems: number }>
+export declare function fetchReportTemplate(
+  options: ReportsCall & { id: string; signal?: AbortSignal },
+): Promise<ReportTemplate & { report: Report }>
+export declare function fetchReportCategories(
+  options: ReportsCall & { scope?: 'INTEGRATOR' | 'ORGANIZATION'; signal?: AbortSignal },
+): Promise<ReportTemplateCategory[]>
 export declare function saveReport(
   options: ReportsCall & { id: string; report: Report; version: number; keepalive?: boolean },
 ): Promise<StoredReportStamp>
@@ -922,6 +1025,10 @@ export interface ReportsProps {
   saveDelay?: number
   // The folder New report makes reports in, while it's one of the user's: the one the host's home page shows, say.
   newReportFolderId?: string | null
+  // New report can start from a template published for the data source; AutoQL fills in its data blocks with the
+  // user's data while the report shows read-only — or, where AutoQL doesn't fill reports in itself, the workspace
+  // asks their questions, all as of when the report was started. Off by default.
+  enableTemplates?: boolean
   // Passed on to each report's ReportBuilder.
   branding?: ReportBranding
   enableBranding?: boolean

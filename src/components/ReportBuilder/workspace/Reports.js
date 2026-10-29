@@ -6,22 +6,37 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import { ReportBuilder } from '../ReportBuilder'
 import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
+import { isCapture } from '../model/blockView'
+import { updateBlock } from '../model/reportOperations'
+import { captureQuestion } from '../run/captureRun'
+import { RERUN_ALL_CONCURRENCY } from '../constants'
 import {
   createReportFolder,
+  createReportFromTemplate,
   createReportTag,
   deleteReport as deleteStoredReport,
   deleteReportFolder,
   deleteReportTag,
   fetchReport,
+  fetchReportDataStatus,
   fetchReportFolders,
   fetchReports,
   fetchReportTags,
+  isFillingData,
   organizeReports as organizeStoredReports,
   renameReportFolder,
   ReportsApiError,
   updateReportTag,
 } from '../run/reportsApi'
-import { DEFAULT_STORAGE_PREFIX, REPORTS_PAGE_SIZE, RS, SAVE_DELAY_MS } from './reportsConstants'
+import {
+  DEFAULT_STORAGE_PREFIX,
+  FILL_POLL_MAX_MS,
+  FILL_POLL_MS,
+  FILL_STALL_MS,
+  REPORTS_PAGE_SIZE,
+  RS,
+  SAVE_DELAY_MS,
+} from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
 import {
   describeReportError,
@@ -45,6 +60,11 @@ import './Reports.scss'
 // report (from a question, a dashboard, or a blank page), opening and autosaving each report, what's said when a
 // save fails or the report was changed elsewhere, and the dashboard-tiles picker. The host draws the home page
 // (renderHome), and keeps which report is shown in its address if it likes (shownReportId and onShowReport).
+//
+// With enableTemplates, New report can start from a template: the report is made from it, and AutoQL fills in its
+// data blocks in the background — or, where AutoQL doesn't fill reports in itself, this page asks their questions.
+// Meanwhile the report shows as it prints, read-only, filling in as each block is answered; then it says how many
+// blocks were filled, and each one that wasn't says why.
 //
 // Edits are saved after a short pause, and at once when switching tabs, leaving or hiding the page, pressing the
 // save control or ⌘S / Ctrl+S (ReportSaver, one per report opened here). A save that failed is kept and tried again
@@ -99,12 +119,101 @@ const listReports = async (authentication) => {
   }
 }
 
-// The list once a report is opened: with its title as stored, or with the report added if the list didn't have it
-// (it was on a page that failed to list), so its tab has its title.
-const withOpened = (reports, { id, title, sizeBytes, version, folderId, tagIds, createdAt, updatedAt }) =>
-  reports.some((report) => report.id === id)
-    ? reports.map((report) => (report.id === id ? { ...report, title } : report))
-    : [...reports, { id, title, sizeBytes, version, folderId, tagIds, createdAt, updatedAt }]
+// A report as the list has it, from a report read with its document.
+const summaryOf = ({
+  id,
+  title,
+  sizeBytes,
+  version,
+  folderId,
+  tagIds,
+  templateId,
+  dataStatus,
+  createdAt,
+  updatedAt,
+}) => ({
+  id,
+  title,
+  sizeBytes,
+  version,
+  folderId,
+  tagIds,
+  templateId,
+  dataStatus,
+  createdAt,
+  updatedAt,
+})
+
+// The list once a report is opened: with its title and data status as stored, or with the report added if the list
+// didn't have it (it was on a page that failed to list), so its tab has its title.
+const withOpened = (reports, detail) =>
+  reports.some((report) => report.id === detail.id)
+    ? reports.map((report) =>
+        report.id === detail.id ? { ...report, title: detail.title, dataStatus: detail.dataStatus } : report,
+      )
+    : [...reports, summaryOf(detail)]
+
+// The browser's time zone, which AutoQL asks a template's questions in.
+const browserTimeZone = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
+  } catch (error) {
+    return undefined
+  }
+}
+
+// How far filling in a report's data has got: its data blocks with an answer (`done`), of all of them (`total`).
+const fillProgress = (report) => {
+  const blocks = (Array.isArray(report?.blocks) ? report.blocks : []).filter((block) => block?.type === 'data')
+  return { done: blocks.filter((block) => isCapture(block.capture)).length, total: blocks.length }
+}
+
+// The blocks of a report made from a template that a fill asks again: every Data block with a question.
+const questionBlocks = (report) =>
+  (Array.isArray(report?.blocks) ? report.blocks : []).filter(
+    (block) => block?.type === 'data' && block.source?.type === 'query' && block.source.query,
+  )
+
+// Why a question asked from here didn't fill its block, as the report service says it of its own fills.
+const fillErrorOf = (blockId, result) => {
+  const referenceId = result.error?.referenceId
+  let reason = 'query_failed'
+  if (result.reason === 'no-data') {
+    reason = 'no_data'
+  } else if (referenceId === '1.1.430' || referenceId === '1.1.431') {
+    reason = 'not_confident'
+  } else if (referenceId === '1.1.522') {
+    reason = 'access_denied'
+  }
+  return {
+    blockId,
+    reason,
+    ...(reason === 'query_failed' && result.error?.message ? { message: result.error.message } : {}),
+  }
+}
+
+// What's said over a report AutoQL fills in: how far it's got, and how it went once it's done (or stopped). Said once
+// a fill followed here ends, not each time the report is opened after. How it went is counted on the report as it is
+// now, so blocks rerun (or removed) since count too.
+const fillNoticeOf = (fill, filling, report) => {
+  const { done, total } = fillProgress(report)
+  if (filling) {
+    return { tone: 'info', text: S.workspace.filling(done, total) }
+  }
+  if (fill.stalled) {
+    return { tone: 'warning', text: S.workspace.fillStalled }
+  }
+  if (!fill.ended) {
+    return null
+  }
+  if (done >= total) {
+    return { tone: 'info', text: S.workspace.filled(total) }
+  }
+  if (!done) {
+    return { tone: 'warning', text: S.workspace.notFilled(total) }
+  }
+  return { tone: 'warning', text: S.workspace.partlyFilled(done, total) }
+}
 
 // Whether an ISO time is after another (one that can't be read is before anything).
 const isLater = (iso, than) => {
@@ -238,6 +347,9 @@ export class ReportsWithoutTheme extends React.Component {
     saveDelay: PropTypes.number,
     // The folder New report makes reports in: the one the host's home page shows, say. None by default.
     newReportFolderId: PropTypes.string,
+    // New report can start from a template published for the data source, which AutoQL fills in with the user's
+    // data. Off by default.
+    enableTemplates: PropTypes.bool,
     // Passed on to each report's ReportBuilder.
     branding: PropTypes.object,
     enableBranding: PropTypes.bool,
@@ -267,6 +379,7 @@ export class ReportsWithoutTheme extends React.Component {
     onUnauthorized: undefined,
     saveDelay: SAVE_DELAY_MS,
     newReportFolderId: null,
+    enableTemplates: false,
     branding: undefined,
     enableBranding: false,
     canEditBranding: false,
@@ -302,6 +415,12 @@ export class ReportsWithoutTheme extends React.Component {
     this.unauthorizedSaid = false
     // Blocks a save merged in from another tab ({ id, blocks }), until the builder has been handed them.
     this.unshownMerge = null
+    // Where each report opened here is with the data AutoQL fills in, as last heard: id → { dataStatus, dataErrors }.
+    // The fill of the report shown is followed (`fillFollow`) until it ends.
+    this.fillInfo = new Map()
+    this.fillFollow = null
+    // Reports made from a template filled in from here, while AutoQL can't fill them itself: id → the fill under way.
+    this.localFills = new Map()
     this.root = React.createRef()
 
     this.state = {
@@ -325,6 +444,9 @@ export class ReportsWithoutTheme extends React.Component {
       folders: null,
       tags: null,
       organizersError: null,
+      // The shown report's data, as AutoQL fills it in: { id, dataStatus, dataErrors }, with `ended` once a fill
+      // followed here finished, or `stalled` when it stopped without word.
+      fill: null,
     }
   }
 
@@ -409,6 +531,9 @@ export class ReportsWithoutTheme extends React.Component {
     window.removeEventListener('keydown', this.onKeyDown)
     document.removeEventListener('visibilitychange', this.onVisibilityChange)
     this.state.tilePicker?.resolve(null)
+    this.stopFollowingFill()
+    this.localFills.forEach((fill) => fill.controllers.forEach((controller) => controller.abort()))
+    this.localFills.clear()
     // Off to another page: each save finishes, then its saver goes.
     this.savers.forEach((saver) => {
       saver.flush().finally(() => saver.dispose())
@@ -844,14 +969,17 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState(({ tabWidths }) => ({ tabs, tabWidths: widthsFor(tabWidths, tabs) }))
   }
 
-  select = (id) => {
+  select = (id, opening) => {
     this.shownId = id
-    this.setState({ shownId: id })
-    this.loadShown()
+    this.stopFollowingFill()
+    const info = id ? this.fillInfo.get(id) : null
+    this.setState({ shownId: id, fill: info ? { id, ...info } : null })
+    this.loadShown(opening)
   }
 
-  // The report shown: what hasn't reached the server yet if there's something, otherwise the stored copy.
-  loadShown = () => {
+  // The report shown: what hasn't reached the server yet if there's something, otherwise the stored copy — or the one
+  // just made, as it came back (`opening`: { detail, sourceId }), which needn't be read again.
+  loadShown = (opening) => {
     const id = this.shownId
     this.openRequest += 1
     const request = this.openRequest
@@ -860,8 +988,14 @@ export class ReportsWithoutTheme extends React.Component {
       this.setState({ ...cleared, opened: null, saveState: null })
       return
     }
+    if (opening?.detail?.id === id) {
+      this.setState(cleared)
+      this.showStored(id, opening.sourceId, opening.detail)
+      return
+    }
     const saver = this.savers.get(id)
-    if (saver?.hasUnsaved) {
+    // What's waiting to be saved, or being filled in from here, is newer than the stored copy.
+    if (saver && (saver.hasUnsaved || this.localFills.has(id))) {
       this.setState({ ...cleared, opened: { id, report: saver.report }, saveState: saver.current })
       return
     }
@@ -873,13 +1007,7 @@ export class ReportsWithoutTheme extends React.Component {
           return
         }
         this.unauthorizedSaid = false
-        const stored = { report: detail.report, version: detail.version, updatedAt: detail.updatedAt }
-        const fresh = this.makeSaver(id, sourceId, detail.report, stored)
-        this.setState(({ reports }) => ({
-          opened: { id, report: detail.report },
-          saveState: fresh.current,
-          reports: reports && withOpened(reports, detail),
-        }))
+        this.showStored(id, sourceId, detail)
       },
       (error) => {
         if (!this.mounted || request !== this.openRequest) {
@@ -897,6 +1025,165 @@ export class ReportsWithoutTheme extends React.Component {
         this.setState({ openError: describeReportError(error, 'open').message })
       },
     )
+  }
+
+  // A report as stored, shown, with a saver at its version; while AutoQL fills in its data, that's followed (unless
+  // `follow` is false, for a fill already followed).
+  showStored = (id, sourceId, detail, { follow = true } = {}) => {
+    const stored = { report: detail.report, version: detail.version, updatedAt: detail.updatedAt }
+    const fresh = this.makeSaver(id, sourceId, detail.report, stored)
+    this.setState(({ reports }) => ({
+      opened: { id, report: detail.report },
+      saveState: fresh.current,
+      reports: reports && withOpened(reports, detail),
+    }))
+    if (follow) {
+      this.followFill(id, sourceId, detail)
+    }
+  }
+
+  // ---------------------------------------------------------------- the data AutoQL fills in
+
+  // Where a report is with its data, as the service said, kept for when it's shown again. The shown report's fill is
+  // followed while it runs: how it's going is asked every few seconds, and the report is read again each time a block
+  // was filled (its version moved on) and once it's done.
+  followFill = (id, sourceId, { dataStatus, dataErrors, version }) => {
+    this.fillInfo.set(id, { dataStatus, dataErrors })
+    if (this.shownId !== id) {
+      return
+    }
+    this.stopFollowingFill()
+    this.setState({ fill: { id, dataStatus, dataErrors } })
+    if (isFillingData(dataStatus)) {
+      const follow = { id, sourceId, version, dataStatus, heardAt: Date.now(), delay: FILL_POLL_MS, timer: null }
+      this.fillFollow = follow
+      this.checkFillLater(follow)
+    }
+  }
+
+  stopFollowingFill = () => {
+    clearTimeout(this.fillFollow?.timer)
+    this.fillFollow = null
+  }
+
+  checkFillLater = (follow) => {
+    follow.timer = setTimeout(() => this.checkFill(follow), follow.delay)
+  }
+
+  // A check that fails is tried again after a growing pause. With no news for long enough, the fill is taken to have
+  // stopped, and the report can be changed again.
+  checkFill = async (follow) => {
+    const current = () => this.mounted && this.fillFollow === follow
+    if (!current()) {
+      return
+    }
+    const stalled = () => {
+      if (Date.now() - follow.heardAt < FILL_STALL_MS) {
+        return false
+      }
+      this.stopFollowingFill()
+      this.setState(({ fill }) => (fill?.id === follow.id ? { fill: { ...fill, stalled: true } } : null))
+      return true
+    }
+    const tryAgain = () => {
+      follow.delay = Math.min(follow.delay * 2, FILL_POLL_MAX_MS)
+      if (!stalled()) {
+        this.checkFillLater(follow)
+      }
+    }
+
+    let progress
+    try {
+      progress = await fetchReportDataStatus({ authentication: this.credentialsFor(follow.sourceId), id: follow.id })
+    } catch (error) {
+      if (!current()) {
+        return
+      }
+      if (isReportGone(error)) {
+        // Deleted somewhere else: opening it again finds that out, and says so.
+        this.stopFollowingFill()
+        this.loadShown()
+        return
+      }
+      this.unauthorized(error)
+      tryAgain()
+      return
+    }
+    if (!current()) {
+      return
+    }
+
+    const filling = isFillingData(progress.dataStatus)
+    // A block was filled since (the report's version moved on), or the fill is over: the report is read again.
+    if (progress.version !== follow.version || !filling) {
+      const read = await this.readFilled(follow)
+      if (!current()) {
+        return
+      }
+      if (!read) {
+        tryAgain()
+        return
+      }
+    }
+    // Any news — a block filled, the fill under way — says it's still going.
+    if (progress.version !== follow.version || progress.dataStatus !== follow.dataStatus) {
+      follow.version = progress.version
+      follow.dataStatus = progress.dataStatus
+      follow.heardAt = Date.now()
+    } else if (filling && stalled()) {
+      return
+    }
+
+    follow.delay = FILL_POLL_MS
+    const { dataStatus, dataErrors } = progress
+    this.fillInfo.set(follow.id, { dataStatus, dataErrors })
+    if (filling) {
+      this.setState({ fill: { id: follow.id, dataStatus, dataErrors } })
+      this.checkFillLater(follow)
+      return
+    }
+    this.fillFollow = null
+    this.setState({ fill: { id: follow.id, dataStatus, dataErrors, ended: true } })
+  }
+
+  // The report as the fill has left it so far, shown in place of what was, with its saver at the new version: nothing
+  // was edited meanwhile. Resolves with whether it could be read.
+  readFilled = async ({ id, sourceId }) => {
+    let detail
+    try {
+      detail = await fetchReport({ authentication: this.credentialsFor(sourceId), id })
+    } catch (error) {
+      this.unauthorized(error)
+      return false
+    }
+    if (this.mounted && this.shownId === id && !this.savers.get(id)?.hasUnsaved) {
+      this.showStored(id, sourceId, detail, { follow: false })
+    }
+    return true
+  }
+
+  // While AutoQL fills in its data, a report can't be changed: the builder is read-only, and nothing is saved.
+  isFilling = (id) => {
+    const { fill } = this.state
+    return !!fill && fill.id === id && isFillingData(fill.dataStatus) && !fill.stalled
+  }
+
+  // What the builder says about the shown report's data blocks with no answer: kept the same while the fill is.
+  dataFillFor = (fill, filling) => {
+    if (!fill || (!filling && !fill.dataErrors?.length)) {
+      return null
+    }
+    const last = this.lastDataFill
+    if (last && last.fill === fill && last.filling === filling) {
+      return last.value
+    }
+    const errors = {}
+    ;(fill.dataErrors || []).forEach(({ blockId, reason, message }) => {
+      errors[blockId] = { reason, message }
+    })
+    const value = filling ? { state: 'filling' } : { state: 'filled', errors }
+    this.lastDataFill = { fill, filling, value }
+    return value
   }
 
   // A report shown in its tab (opened as one if it isn't); what was shown is saved at once.
@@ -934,6 +1221,12 @@ export class ReportsWithoutTheme extends React.Component {
 
   // A report no longer there: its saver, tab and list entry go.
   forget = (id) => {
+    if (this.fillFollow?.id === id) {
+      this.stopFollowingFill()
+    }
+    this.localFills.get(id)?.controllers.forEach((controller) => controller.abort())
+    this.localFills.delete(id)
+    this.fillInfo.delete(id)
     this.savers.get(id)?.dispose()
     this.savers.delete(id)
     this.saverSources.delete(id)
@@ -953,7 +1246,7 @@ export class ReportsWithoutTheme extends React.Component {
 
   handleChange = (change) => {
     const id = this.shownId
-    if (!id) {
+    if (!id || this.isFilling(id)) {
       return
     }
     // Blocks merged in from another tab that the builder hadn't been handed yet: an edit built without them keeps
@@ -995,6 +1288,124 @@ export class ReportsWithoutTheme extends React.Component {
     saver.flush()
     this.setTabs((tabs) => withTabOpen(tabs, id))
     this.select(id)
+  }
+
+  // New report › Start from a template: the report made from it, under the id the dialog made for it (the same one when
+  // it tries again, so a start that went through isn't made twice), in the folder the host's home page shows. It opens
+  // in its tab while AutoQL fills in its data. Rejects with why it wasn't made, for the dialog to say.
+  startFromTemplate = async ({ templateId, id }) => {
+    const sourceId = this.sourceId
+    // What the report's data is as of, wherever it's filled in.
+    const startedAt = new Date().toISOString()
+    this.saveNow()
+    let detail
+    try {
+      detail = await createReportFromTemplate({
+        authentication: this.credentialsFor(sourceId),
+        id,
+        templateId,
+        folderId: this.newReportFolder() || undefined,
+        timeZone: browserTimeZone(),
+      })
+    } catch (error) {
+      this.unauthorized(error)
+      throw error
+    }
+    if (!this.stillOn(sourceId)) {
+      return
+    }
+    this.setState(({ reports }) => ({
+      newReportOpen: false,
+      notice: null,
+      reports: [summaryOf(detail), ...(reports || []).filter((report) => report.id !== detail.id)],
+    }))
+    this.setTabs((tabs) => withTabOpen(tabs, detail.id))
+    this.select(detail.id, { detail, sourceId })
+    // An AutoQL that doesn't fill reports in itself (yet) leaves it to this page.
+    if (detail.dataStatus === 'NONE') {
+      this.fillHere(detail.id, sourceId, startedAt)
+    }
+  }
+
+  // A report made from a template, filled in from this page as AutoQL would fill it: its questions asked a few at a
+  // time, each answer kept the way its block is set up and as of when the report was started, while it shows
+  // read-only with how far it's got. Each answer is saved as it comes. It goes on while another report is shown, and
+  // stops if this one is deleted or the page goes away; what it hadn't asked by then can be rerun.
+  fillHere = (id, sourceId, capturedAt) => {
+    const blocks = questionBlocks(this.savers.get(id)?.report)
+    if (!blocks.length) {
+      return
+    }
+    const fill = { next: 0, asking: 0, errors: [], controllers: new Set() }
+    this.localFills.set(id, fill)
+    this.showFill(id, { dataStatus: 'RUNNING', dataErrors: [] })
+
+    const finish = () => {
+      this.localFills.delete(id)
+      const filled = blocks.length - fill.errors.length
+      const dataStatus = !fill.errors.length ? 'DONE' : filled ? 'PARTIAL' : 'FAILED'
+      this.showFill(id, { dataStatus, dataErrors: fill.errors, ended: true })
+    }
+    const askNext = () => {
+      if (!this.mounted || this.localFills.get(id) !== fill) {
+        return
+      }
+      if (fill.next >= blocks.length) {
+        if (!fill.asking) {
+          finish()
+        }
+        return
+      }
+      const block = blocks[fill.next]
+      fill.next += 1
+      fill.asking += 1
+      const controller = typeof AbortController === 'function' ? new AbortController() : null
+      fill.controllers.add(controller)
+      captureQuestion({
+        query: block.source.query,
+        authentication: this.credentialsFor(sourceId),
+        autoQLConfig: this.props.autoQLConfig,
+        signal: controller?.signal,
+        rerun: { kept: block.capture, displayType: block.displayType },
+        capturedAt,
+      }).then((result) => {
+        fill.controllers.delete(controller)
+        fill.asking -= 1
+        if (!this.mounted || this.localFills.get(id) !== fill) {
+          return
+        }
+        if (result.ok) {
+          this.keepFilled(id, block, result.capture)
+        } else if (result.reason !== 'cancelled') {
+          fill.errors.push(fillErrorOf(block.id, result))
+        }
+        askNext()
+      })
+    }
+    for (let i = 0; i < Math.min(RERUN_ALL_CONCURRENCY, blocks.length); i += 1) {
+      askNext()
+    }
+  }
+
+  // An answer a fill from here got, kept in its block — while the block still asks that question — and saved.
+  keepFilled = (id, block, capture) => {
+    const saver = this.savers.get(id)
+    const report = saver?.report
+    const target = report?.blocks?.find((b) => b?.id === block.id)
+    if (!target || target.source?.type !== 'query' || target.source.query !== block.source.query) {
+      return
+    }
+    const next = updateBlock(report, block.id, { capture })
+    saver.edit(next)
+    this.setState(({ opened }) => (opened?.id === id ? { opened: { id, report: next } } : null))
+  }
+
+  // Where a report is with its data, kept for when it's shown again, and shown now if it is.
+  showFill = (id, { dataStatus, dataErrors, ended = false }) => {
+    this.fillInfo.set(id, { dataStatus, dataErrors })
+    if (this.shownId === id) {
+      this.setState({ fill: { id, dataStatus, dataErrors, ...(ended ? { ended } : {}) } })
+    }
   }
 
   // From the home page (the host asks first). Its tab closes too. Resolves with whether it was deleted.
@@ -1120,6 +1531,9 @@ export class ReportsWithoutTheme extends React.Component {
       (active ? saveState?.error : null) ||
       (readOnly ? S.workspace.readOnly : null) ||
       (dashboardsError ? S.workspace.dashboardsFailed(dashboardsError) : null)
+    const fill = active && this.state.fill?.id === active.id ? this.state.fill : null
+    const filling = !!fill && this.isFilling(active.id)
+    const fillNotice = fill ? fillNoticeOf(fill, filling, active.report) : null
 
     let body
     if (active) {
@@ -1133,6 +1547,8 @@ export class ReportsWithoutTheme extends React.Component {
           dashboards={dashboards || NO_DASHBOARDS}
           report={active.report}
           onChange={this.handleChange}
+          readOnly={filling}
+          dataFill={this.dataFillFor(fill, filling)}
           branding={this.props.branding}
           enableBranding={this.props.enableBranding}
           canEditBranding={this.props.canEditBranding}
@@ -1145,7 +1561,7 @@ export class ReportsWithoutTheme extends React.Component {
           onRunComplete={this.props.onRunComplete}
           onErrorCallback={this.props.onErrorCallback}
           toolbarStatus={
-            !readOnly && saveState ? (
+            !readOnly && !filling && saveState ? (
               <SaveStatus
                 state={saveState.status}
                 savedAt={saveState.savedAt}
@@ -1185,6 +1601,23 @@ export class ReportsWithoutTheme extends React.Component {
             {notice}
           </p>
         ) : null}
+        {fillNotice ? (
+          <p
+            className={`${RS}-editor-notice`}
+            data-tone={fillNotice.tone}
+            role='status'
+            data-test='reports-fill-notice'
+          >
+            {filling ? (
+              <span className={`${RS}-spin`}>
+                <Icon name='spinner' size={14} />
+              </span>
+            ) : (
+              <Icon name={fillNotice.tone === 'info' ? 'check' : 'alert'} size={14} />
+            )}
+            {fillNotice.text}
+          </p>
+        ) : null}
         <div className={`${RS}-editor-body`}>{body}</div>
       </div>
     )
@@ -1221,6 +1654,13 @@ export class ReportsWithoutTheme extends React.Component {
             onClose={this.closeNewReport}
             onStart={this.startReport}
             onTilesChange={onDashboardTilesChange}
+            enableTemplates={this.props.enableTemplates}
+            onStartFromTemplate={this.startFromTemplate}
+            previewProps={{
+              branding: this.props.branding,
+              enableBranding: this.props.enableBranding,
+              fontStylesheetUrl: this.props.fontStylesheetUrl,
+            }}
           />
         ) : null}
 

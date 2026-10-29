@@ -17,6 +17,21 @@ export const REPORTS_STRINGS = {
   workspace: {
     opening: 'Opening report…',
     readOnly: 'This report was saved by a newer version of the app, so it can’t be changed here.',
+    // A report started from a template, while AutoQL fills in its data blocks and once it has.
+    filling: (done, total) =>
+      `Filling in your data: ${done} of ${total} ${plural(
+        total,
+        'block',
+        'blocks',
+      )} so far. You can edit the report once it’s done.`,
+    filled: (total) => (total > 1 ? `Your data is in: all ${total} blocks were filled in.` : 'Your data is in.'),
+    partlyFilled: (done, total) =>
+      `${done} of ${total} blocks were filled in. Select the others to see why, and Rerun them.`,
+    notFilled: (total) =>
+      total === 1
+        ? 'The block couldn’t be filled in. Select it to see why, and Rerun it.'
+        : `None of the ${total} blocks could be filled in. Select one to see why, and Rerun it.`,
+    fillStalled: 'Filling in your data stopped before it finished. Blocks without data can be rerun.',
     deletedElsewhere: (title) => `“${title}” was deleted in another tab or window.`,
     dashboardsFailed: (reason) => `Dashboards couldn’t be loaded, so only questions can be used: ${reason}`,
     noReports: 'No reports yet. Start one with New report.',
@@ -69,6 +84,10 @@ export const REPORTS_STRINGS = {
       tag: 'The tag wasn’t saved',
       deleteTag: 'The tag wasn’t deleted',
       organize: 'Nothing was changed',
+      templates: 'Templates couldn’t be loaded',
+      template: 'This template couldn’t be shown',
+      startFromTemplate: 'The report wasn’t started',
+      fill: 'How filling in its data is going couldn’t be checked',
     },
     signedOut: 'you’re signed out',
     notFound: 'the report no longer exists (it may have been deleted in another tab)',
@@ -89,6 +108,9 @@ export const REPORTS_STRINGS = {
     organizerLimit: 'that’s over the limit of 100 folders and 100 tags',
     reportLimit: 'that’s over the limit of 1,000 reports',
     tooManyReports: 'up to 200 reports can be changed at once',
+    templateGone: 'that template isn’t published any more',
+    filling: 'its data is still being filled in',
+    busy: 'AutoQL is too busy just now',
   },
 
   // New report, from the tab strip: a question, a dashboard, or a blank page.
@@ -96,6 +118,11 @@ export const REPORTS_STRINGS = {
     title: 'New report',
     what: 'Start from a question, a dashboard, or a blank page.',
     whatWithoutDashboards: 'Start from a question or a blank page.',
+    whatWithTemplates: 'Start from a question, a dashboard, a template, or a blank page.',
+    whatWithTemplatesWithoutDashboards: 'Start from a question, a template, or a blank page.',
+    template: 'Start from a template',
+    templateNote: 'A report laid out for you, with its questions asked again on your data.',
+    chooseTemplate: 'Choose a template…',
     startFrom: 'Start from',
     question: 'Start from a question',
     questionLabel: 'Question',
@@ -113,6 +140,27 @@ export const REPORTS_STRINGS = {
       'no-data': 'That question came back with no data to show.',
       unsupported: 'That answer can’t be kept in a report yet.',
     },
+  },
+
+  // New report › Start from a template: the templates published for the data source, and one shown as it prints.
+  templates: {
+    title: 'Start from a template',
+    what: 'Its questions are asked again on your data when the report starts, and the report is yours to change.',
+    search: 'Search templates by title',
+    searchPlaceholder: 'Search templates',
+    category: 'Category',
+    allCategories: 'All categories',
+    tags: 'Tags',
+    list: 'Templates',
+    loading: 'Loading templates…',
+    none: 'No templates have been published for this data source yet.',
+    noMatch: 'No templates match.',
+    clearFilters: 'Clear filters',
+    choose: 'Choose a template to see it here.',
+    loadingOne: 'Loading the template…',
+    back: 'Back',
+    start: 'Start report',
+    starting: 'Starting…',
   },
 
   // Dashboard tiles into a report: an empty Data block's "Pick dashboard tiles…", or New report from a dashboard.

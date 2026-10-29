@@ -97,6 +97,14 @@ const PATHS = {
     </>
   ),
   question: <path d='M3 3.5h10v7H7l-3 2.5v-2.5H3z' />,
+  // A page laid out: a report template.
+  template: (
+    <>
+      <rect x='3.5' y='2' width='9' height='12' rx='1' />
+      <path d='M5.75 4.75h4.5M5.75 7h4.5' />
+      <rect x='5.75' y='9.25' width='4.5' height='2.5' rx='0.5' />
+    </>
+  ),
   dashboard: (
     <>
       <rect x='2.5' y='2.5' width='4.5' height='4.5' rx='1' />

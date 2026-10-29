@@ -64,6 +64,18 @@ export const STRINGS = {
     label: 'Report options',
     pageSetup: 'Page setup',
     branding: 'Branding…',
+    rerunAll: 'Rerun all',
+  },
+  // Rerun all: every question asked in the report, asked again a few at a time, and the line over the report that
+  // says how it's going — or, before, how many questions have no answer yet.
+  rerunAll: {
+    unanswered: (n) => `${n} ${n === 1 ? 'block has' : 'blocks have'} no answer yet.`,
+    action: 'Rerun all',
+    running: (done, total) => `Rerunning: ${done} of ${total} done…`,
+    stop: 'Stop',
+    failed: (failed, total) =>
+      `${failed} of ${total} ${total === 1 ? 'block' : 'blocks'} didn’t answer. Select one to see why.`,
+    dismiss: 'Dismiss',
   },
   // The organisation's branding (enableBranding), as the prototype's Branding dialog has it, with what RW-332
   // asks for: a logo and a wordmark, where they sit, brand colours, and fonts.
@@ -190,6 +202,25 @@ export const STRINGS = {
     // A question asked in the report that has no answer yet, as a block of a report made from a template has.
     notAsked: 'No answer yet. Rerun asks the question.',
     noAnswer: 'No answer yet.',
+    // A template's data block, and a report made from one while AutoQL fills in its data, then the blocks it
+    // couldn't fill (by the report service's reason) — said with unfilledText.
+    fromTemplate: 'Your data goes here when a report is started from this template.',
+    filling: 'Filling in your data…',
+    unfilled: {
+      not_confident: 'AutoQL wasn’t sure what this question means for your data.',
+      access_denied: 'You don’t have access to the data this question asks about.',
+      no_data: 'This question had no data to show.',
+      query_failed: 'This question didn’t run.',
+      timeout: 'This question took too long to answer.',
+      too_large: 'Its answer would make the report too large to save.',
+      tile_unavailable: 'The dashboard tile it comes from isn’t available to you.',
+      no_question: 'This block has no question to ask.',
+      stale_block: 'This block changed while its data was being filled in.',
+      busy: 'AutoQL was too busy to fill this in.',
+      interrupted: 'Filling this in was interrupted.',
+      unknown: 'This couldn’t be filled in.',
+    },
+    unfilledRerun: 'Rerun asks it again.',
     asOf: (when) => `As of ${when}`,
     filteredBy: (what) => `Filtered: ${what}`,
     loading: 'Loading…',
@@ -377,4 +408,12 @@ export const STRINGS = {
     page: (n, total) => `Page ${n} of ${total}`,
     notRunYet: 'Not yet run',
   },
+}
+
+// Why AutoQL couldn't fill in a Data block's answer (a view in the 'unfilled' state): the reason in plain words, with
+// the query's own when it didn't run, and that Rerun asks it again where it can.
+export const unfilledText = ({ reason, message, askedHere } = {}, { canRerun = false } = {}) => {
+  const why = STRINGS.data.unfilled[reason] || STRINGS.data.unfilled.unknown
+  const said = reason === 'query_failed' && message ? `${why} ${message}` : why
+  return askedHere && canRerun ? `${said} ${STRINGS.data.unfilledRerun}` : said
 }

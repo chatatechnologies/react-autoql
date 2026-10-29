@@ -83,6 +83,9 @@ export const CHART_HEIGHT_PX = { full: 280, half: 220 }
 
 export const QUERY_CONCURRENCY = 6
 
+// Rerun all asks at most this many of a report's questions at once, as AutoQL fills a report's data.
+export const RERUN_ALL_CONCURRENCY = 3
+
 // Display types v1 can't print faithfully: pivots need a second layout pass, network and sankey
 // charts never report that they've finished drawing, and treemaps haven't been tried on paper yet.
 export const UNSUPPORTED_DISPLAY_TYPES = ['pivot_table', 'network_graph', 'sankey', 'treemap']
