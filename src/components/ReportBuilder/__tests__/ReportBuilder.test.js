@@ -1348,6 +1348,52 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
     expect(within(panel()).getByTestId('report-builder-rerun').textContent).toBe('Rerun')
   })
 
+  it('reruns in the block’s table and chart settings, asking in the order its table is sorted by', async () => {
+    const sorted = [{ name: 'aum', sort: 'DESC' }]
+    const capture = {
+      ...captureOfRows(2),
+      table: { columnIndices: [1, 0], sort: sorted, filtered: false },
+      config: {
+        displayType: 'table',
+        columnVisibility: { account: true, aum: true },
+        dataConfig: { tableConfig: { stringColumnIndex: 0, numberColumnIndices: [1] } },
+      },
+    }
+    const { lastReport } = setupAsking(createEmptyReport({ blocks: [{ ...ASKED, capture }] }))
+
+    selectBlock('Data')
+    runQuery.mockResolvedValue(responseOf(rowsOf(4)))
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+
+    await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(4))
+    expect(runQuery.mock.calls[0][0]).toMatchObject({ query: 'aum by account', orders: sorted })
+    expect(lastReport().blocks[0].capture).toMatchObject({
+      displayType: 'table',
+      table: { columnIndices: [1, 0], sort: sorted, filtered: false },
+      config: { displayType: 'table', dataConfig: capture.config.dataConfig, orders: sorted },
+    })
+  })
+
+  it('offers Rerun on a question with no answer yet, as a report made from a template has', async () => {
+    // A template keeps how the block is shown, but no answer.
+    const unanswered = {
+      ...ASKED,
+      capture: { version: 1, displayType: 'table', config: { displayType: 'table', columnVisibility: { aum: false } } },
+    }
+    const { lastReport } = setupAsking(createEmptyReport({ blocks: [unanswered] }))
+    expect(screen.getByText('No answer yet. Rerun asks the question.')).toBeTruthy()
+
+    selectBlock('Data')
+    expect(within(panel()).getByText(/has its question and how to show the answer, but no answer yet/)).toBeTruthy()
+    expect(within(panel()).queryByText(/Data blocks come from/)).toBeNull()
+    runQuery.mockResolvedValue(responseOf(rowsOf(3)))
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+
+    await waitFor(() => expect(lastReport()?.blocks[0].capture.data?.rows).toHaveLength(3))
+    expect(lastReport().blocks[0].capture.config.columnVisibility).toStrictEqual({ account: true, aum: false })
+    expect(lastReport().blocks[0].rows).toBe(25)
+  })
+
   it('drops the answer for a block deleted while asking', async () => {
     let answer
     runQuery.mockImplementation(() => new Promise((resolve) => (answer = resolve)))
