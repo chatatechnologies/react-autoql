@@ -3,9 +3,9 @@ import { DisplayTypes } from 'autoql-fe-utils'
 // Features that are built but not released yet. Set a toggle to true to turn the feature on.
 // An object (not separate constants) so tests can switch a feature on.
 export const featureToggles = {
-  treemap: true,
-  splitBy: true,
-  rose: true,
+  treemap: false,
+  splitBy: false,
+  rose: false,
 }
 
 export const isDisplayTypeEnabled = (displayType) => {
