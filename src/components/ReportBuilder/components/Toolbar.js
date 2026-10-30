@@ -9,7 +9,8 @@ import { ReportOptions } from './ReportOptions'
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
 // `status` is the host's own element (toolbarStatus), set apart just before them. The zoom (ZoomFrame) is how
 // large the pages show, in the editor and the preview alike. In the editor, the panel button beside Preview
-// hides and shows the properties panel (`panelId`), and the report options menu (⋮) ends the row.
+// hides and shows the properties panel (`panelId`), and the report options menu (⋮) ends the row. Read-only, it's
+// the report's title, how its pages are set up and the zoom: nothing that edits it, prints it or leaves the preview.
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -22,6 +23,7 @@ export const Toolbar = ({
   onCancelRun,
   showRun = true,
   previewOpen,
+  readOnly = false,
   previewMeta,
   onOpenPreview,
   onClosePreview,
@@ -37,11 +39,16 @@ export const Toolbar = ({
   optionsRef,
   onPageSetup,
   onBranding,
+  onSaveAsTemplate,
+  onRerunAll,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
       <div className={`${RB}-toolbar-title`} data-readonly=''>
-        <span className={`${RB}-toolbar-heading`}>{STRINGS.preview.title}</span>
+        {/* Read-only, there's no editor to name it: the report's own title. */}
+        <span className={`${RB}-toolbar-heading`} data-test='report-builder-toolbar-heading'>
+          {readOnly ? title || STRINGS.untitled : STRINGS.preview.title}
+        </span>
         {previewMeta ? <span className={`${RB}-toolbar-meta`}>{previewMeta}</span> : null}
       </div>
     ) : (
@@ -123,7 +130,7 @@ export const Toolbar = ({
           <Icon name='panel' size={15} />
         </button>
       ) : null}
-      {previewOpen ? (
+      {readOnly ? null : previewOpen ? (
         <button
           type='button'
           className={`${RB}-button`}
@@ -144,20 +151,28 @@ export const Toolbar = ({
           {STRINGS.openPreview}
         </button>
       )}
-      <button
-        type='button'
-        className={`${RB}-button`}
-        data-variant='primary'
-        title={STRINGS.printTitle}
-        disabled={printing}
-        data-test='report-builder-print'
-        onClick={onPrint}
-      >
-        <Icon name='printer' size={13} />
-        {printing ? STRINGS.printing : STRINGS.print}
-      </button>
+      {readOnly ? null : (
+        <button
+          type='button'
+          className={`${RB}-button`}
+          data-variant='primary'
+          title={STRINGS.printTitle}
+          disabled={printing}
+          data-test='report-builder-print'
+          onClick={onPrint}
+        >
+          <Icon name='printer' size={13} />
+          {printing ? STRINGS.printing : STRINGS.print}
+        </button>
+      )}
       {!previewOpen && onPageSetup ? (
-        <ReportOptions ref={optionsRef} onPageSetup={onPageSetup} onBranding={onBranding} />
+        <ReportOptions
+          ref={optionsRef}
+          onPageSetup={onPageSetup}
+          onBranding={onBranding}
+          onSaveAsTemplate={onSaveAsTemplate}
+          onRerunAll={onRerunAll}
+        />
       ) : null}
     </div>
   </div>

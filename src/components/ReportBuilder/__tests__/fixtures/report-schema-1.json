@@ -1,0 +1,550 @@
+{
+  "schemaVersion": 1,
+  "title": "Q3 book review",
+  "page": {
+    "orientation": "portrait",
+    "margins": "normal",
+    "typeface": "archivo",
+    "header": true,
+    "footer": true,
+    "pageNumbers": true,
+    "repeatTableHeaders": true,
+    "showInterpretation": true,
+    "coverPage": true,
+    "tableOfContents": false
+  },
+  "blocks": [
+    {
+      "id": "1a7c3e90-2b4d-4f61-8a5e-0c9d8b7a6f51",
+      "type": "heading",
+      "text": "Q3 book review",
+      "level": 1,
+      "width": "full",
+      "style": {
+        "font": "newsreader",
+        "size": "huge",
+        "weight": "semibold",
+        "color": "#16181C"
+      }
+    },
+    {
+      "id": "4b2e8f13-7c6a-4d95-b1e0-5f3a2c1d9e84",
+      "type": "text",
+      "text": "Assets under management for **Dana Okafor**’s households at the end of the quarter.\n\n- Three households hold most of the book.\n- Accounts opened this quarter are listed at the end.",
+      "width": "full",
+      "style": {
+        "align": "center",
+        "background": "#F1F3F5"
+      }
+    },
+    {
+      "id": "8d1f0c52-6b3e-4a71-9f2d-3c4b5a6e7f80",
+      "type": "data",
+      "width": "full",
+      "rows": 10,
+      "source": {
+        "type": "tile",
+        "dashboardId": "5e8a1b2c-3d4f-4a6b-9c7d-8e0f1a2b3c4d",
+        "tileKey": "c7d4b2a1-9e8f-4c3b-a2d1-0f9e8d7c6b5a",
+        "snapshot": {
+          "dashboardName": "Firm overview",
+          "tileTitle": "AUM by household",
+          "query": "total aum by household and advisor",
+          "displayType": "table"
+        }
+      },
+      "capture": {
+        "version": 1,
+        "capturedAt": "2026-10-20T16:41:09.532Z",
+        "displayType": "table",
+        "data": {
+          "columns": [
+            {
+              "name": "household_name",
+              "display_name": "Household",
+              "type": "STRING",
+              "groupable": true,
+              "is_visible": true,
+              "field": "0",
+              "index": 0,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Household"
+            },
+            {
+              "name": "advisor_name",
+              "display_name": "Advisor",
+              "type": "STRING",
+              "groupable": true,
+              "is_visible": true,
+              "field": "1",
+              "index": 1,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Advisor"
+            },
+            {
+              "name": "total_aum",
+              "display_name": "Total AUM",
+              "type": "DOLLAR_AMT",
+              "groupable": false,
+              "is_visible": true,
+              "field": "2",
+              "index": 2,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": true,
+              "isNumberType": true,
+              "isStringType": false,
+              "isDateType": false,
+              "title": "Total AUM"
+            },
+            {
+              "name": "account_count",
+              "display_name": "Accounts",
+              "type": "QUANTITY",
+              "groupable": false,
+              "is_visible": true,
+              "field": "3",
+              "index": 3,
+              "additional": false,
+              "is_timestamp": false,
+              "quantity_type": "integer",
+              "isNumberSummable": true,
+              "isNumberType": true,
+              "isStringType": false,
+              "isDateType": false,
+              "title": "Accounts"
+            }
+          ],
+          "rows": [
+            ["Harbor Lane Household", "Dana Okafor", 4820000, 6],
+            ["Juniper Family Trust", "Dana Okafor", 3915000, 4],
+            ["Northwind Household", "Dana Okafor", 2760500, 3]
+          ],
+          "count_rows": 3,
+          "text": "total aum by household and advisor",
+          "query_id": "q_6f1c2a4e-8b7d-4c1e-9a3f-2d5b7e9c0a11",
+          "interpretation": "total assets under management by household and advisor",
+          "parsed_interpretation": [
+            {
+              "c_type": "PREFIX",
+              "eng": "total"
+            },
+            {
+              "c_type": "SEED",
+              "eng": "assets under management"
+            },
+            {
+              "c_type": "GROUP_BY",
+              "eng": "by household"
+            },
+            {
+              "c_type": "GROUP_BY",
+              "eng": "by advisor"
+            }
+          ]
+        },
+        "table": {
+          "columnIndices": [0, 2, 1],
+          "sort": [
+            {
+              "name": "total_aum",
+              "sort": "DESC"
+            }
+          ],
+          "filters": [
+            {
+              "name": "advisor_name",
+              "value": "Okafor"
+            }
+          ],
+          "filtered": true
+        },
+        "config": {
+          "displayType": "table",
+          "dataConfig": {
+            "tableConfig": {
+              "stringColumnIndices": [0],
+              "stringColumnIndex": 0,
+              "numberColumnIndices": [2],
+              "numberColumnIndex": 2,
+              "numberColumnIndices2": [3],
+              "numberColumnIndex2": 3,
+              "currencyColumnIndices": [2],
+              "quantityColumnIndices": [3],
+              "ratioColumnIndices": [],
+              "allNumberColumnIndices": [2, 3],
+              "legendColumnIndex": 1
+            },
+            "pivotTableConfig": {
+              "stringColumnIndices": [0, 1, 2],
+              "stringColumnIndex": 0,
+              "numberColumnIndices": [1],
+              "numberColumnIndex": 1,
+              "numberColumnIndices2": [2],
+              "numberColumnIndex2": 2,
+              "currencyColumnIndices": [1, 2],
+              "quantityColumnIndices": [],
+              "ratioColumnIndices": [],
+              "allNumberColumnIndices": [1, 2]
+            },
+            "columnOverrides": {}
+          },
+          "columnVisibility": {
+            "household_name": true,
+            "advisor_name": true,
+            "total_aum": true,
+            "account_count": true
+          },
+          "legendFilterConfig": null,
+          "axisSorts": {},
+          "chartControls": {
+            "showAverageLine": false,
+            "showRegressionLine": false
+          },
+          "networkColumnConfig": null,
+          "orders": []
+        }
+      }
+    },
+    {
+      "id": "9e3d2c1b-0a4f-4e5d-8c7b-6a5f4e3d2c1b",
+      "type": "analysis",
+      "width": "full",
+      "target": "8d1f0c52-6b3e-4a71-9f2d-3c4b5a6e7f80",
+      "focus": "Concentration in the largest households",
+      "text": "**Three households hold all of the AUM shown, $11.5M in total.**\n\n- Harbor Lane Household is the largest, at $4.82M across 6 accounts.\n- Juniper Family Trust and Northwind Household follow, at $3.92M and $2.76M.",
+      "writtenAt": "2026-10-20T16:42:55.904Z",
+      "targetAsOf": "2026-10-20T16:41:09.532Z",
+      "targetTitle": "AUM by household",
+      "focusUsed": "Concentration in the largest households",
+      "rowsAnalyzed": 3
+    },
+    {
+      "id": "2c4e6a8b-1d3f-4b5c-9e7a-0b2d4f6a8c1e",
+      "type": "pagebreak"
+    },
+    {
+      "id": "7a9c1e3b-5d7f-4a2c-8e4b-6d8f0a2c4e6b",
+      "type": "heading",
+      "text": "By advisor and account type",
+      "level": 2,
+      "width": "full"
+    },
+    {
+      "id": "3e5a7c9b-1f2d-4c6e-8a0b-2d4f6b8a0c2e",
+      "type": "data",
+      "width": "full",
+      "rows": 25,
+      "source": {
+        "type": "query",
+        "query": "total aum by advisor and account type"
+      },
+      "displayType": "stacked_bar",
+      "dataConfig": {
+        "tableConfig": {
+          "stringColumnIndices": [0],
+          "stringColumnIndex": 0,
+          "numberColumnIndices": [2],
+          "numberColumnIndex": 2,
+          "numberColumnIndices2": [],
+          "currencyColumnIndices": [2],
+          "quantityColumnIndices": [],
+          "ratioColumnIndices": [],
+          "allNumberColumnIndices": [2],
+          "legendColumnIndex": 1
+        }
+      },
+      "aggConfig": {
+        "total_aum": "sum"
+      },
+      "capture": {
+        "version": 1,
+        "capturedAt": "2026-10-20T16:44:27.081Z",
+        "displayType": "stacked_column",
+        "data": {
+          "columns": [
+            {
+              "name": "advisor_name",
+              "display_name": "Advisor",
+              "type": "STRING",
+              "groupable": true,
+              "is_visible": true,
+              "field": "0",
+              "index": 0,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Advisor"
+            },
+            {
+              "name": "account_type",
+              "display_name": "Account type",
+              "type": "STRING",
+              "groupable": true,
+              "is_visible": true,
+              "field": "1",
+              "index": 1,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Account type"
+            },
+            {
+              "name": "total_aum",
+              "display_name": "Total AUM",
+              "type": "DOLLAR_AMT",
+              "groupable": false,
+              "is_visible": true,
+              "field": "2",
+              "index": 2,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": true,
+              "isNumberType": true,
+              "isStringType": false,
+              "isDateType": false,
+              "title": "Total AUM"
+            }
+          ],
+          "rows": [
+            ["Dana Okafor", "Individual", 6120000],
+            ["Dana Okafor", "Joint", 3110500],
+            ["Dana Okafor", "Trust", 2265000],
+            ["Sam Rivera", "Individual", 1840000],
+            ["Sam Rivera", "Joint", 970000],
+            ["Sam Rivera", "Trust", 410000]
+          ],
+          "count_rows": 6,
+          "text": "total aum by advisor and account type",
+          "query_id": "q_0b9e4d2c-7a1f-4e3b-8c6d-5f2a1b3c4d5e",
+          "interpretation": "total assets under management by advisor and account type",
+          "parsed_interpretation": [
+            {
+              "c_type": "PREFIX",
+              "eng": "total"
+            },
+            {
+              "c_type": "SEED",
+              "eng": "assets under management"
+            },
+            {
+              "c_type": "GROUP_BY",
+              "eng": "by advisor"
+            },
+            {
+              "c_type": "GROUP_BY",
+              "eng": "by account type"
+            }
+          ]
+        },
+        "config": {
+          "displayType": "stacked_column",
+          "dataConfig": {
+            "tableConfig": {
+              "stringColumnIndices": [0],
+              "stringColumnIndex": 0,
+              "numberColumnIndices": [2],
+              "numberColumnIndex": 2,
+              "numberColumnIndices2": [],
+              "currencyColumnIndices": [2],
+              "quantityColumnIndices": [],
+              "ratioColumnIndices": [],
+              "allNumberColumnIndices": [2],
+              "legendColumnIndex": 1
+            },
+            "pivotTableConfig": {
+              "stringColumnIndices": [0, 1, 2, 3],
+              "stringColumnIndex": 0,
+              "numberColumnIndices": [1],
+              "numberColumnIndex": 1,
+              "numberColumnIndices2": [2],
+              "numberColumnIndex2": 2,
+              "currencyColumnIndices": [1, 2, 3],
+              "quantityColumnIndices": [],
+              "ratioColumnIndices": [],
+              "allNumberColumnIndices": [1, 2, 3]
+            },
+            "columnOverrides": {}
+          },
+          "columnVisibility": {
+            "advisor_name": true,
+            "account_type": true,
+            "total_aum": true
+          },
+          "legendFilterConfig": {
+            "account_type": {
+              "filteredOutLabels": ["Trust"]
+            }
+          },
+          "axisSorts": {
+            "x-0": "value-desc"
+          },
+          "chartControls": {
+            "showAverageLine": false,
+            "showRegressionLine": false
+          },
+          "networkColumnConfig": null,
+          "orders": []
+        }
+      }
+    },
+    {
+      "id": "6b8d0f2a-4c6e-4f8a-9b1d-3e5a7c9e1f3b",
+      "type": "heading",
+      "text": "Accounts opened this quarter",
+      "level": 2,
+      "width": "full"
+    },
+    {
+      "id": "0f2b4d6e-8a1c-4e3a-b5c7-9d1f3b5d7f9a",
+      "type": "data",
+      "width": "full",
+      "rows": 10,
+      "source": {
+        "type": "query",
+        "query": "list accounts opened this quarter"
+      },
+      "capture": {
+        "version": 1,
+        "capturedAt": "2026-10-21T15:02:44.118Z",
+        "displayType": "table",
+        "data": {
+          "columns": [
+            {
+              "name": "account_name",
+              "display_name": "Account",
+              "type": "STRING",
+              "groupable": false,
+              "is_visible": true,
+              "field": "0",
+              "index": 0,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Account"
+            },
+            {
+              "name": "household_name",
+              "display_name": "Household",
+              "type": "STRING",
+              "groupable": false,
+              "is_visible": true,
+              "field": "1",
+              "index": 1,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Household"
+            },
+            {
+              "name": "opened_on",
+              "display_name": "Opened",
+              "type": "DATE",
+              "groupable": false,
+              "is_visible": true,
+              "field": "2",
+              "index": 2,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": false,
+              "isNumberType": false,
+              "isStringType": true,
+              "isDateType": true,
+              "title": "Opened"
+            },
+            {
+              "name": "market_value",
+              "display_name": "Market value",
+              "type": "DOLLAR_AMT",
+              "groupable": false,
+              "is_visible": true,
+              "field": "3",
+              "index": 3,
+              "additional": false,
+              "is_timestamp": false,
+              "isNumberSummable": true,
+              "isNumberType": true,
+              "isStringType": false,
+              "isDateType": false,
+              "title": "Market value"
+            }
+          ],
+          "rows": [
+            ["Harbor Lane Joint Brokerage", "Harbor Lane Household", "2026-07-08", 412000],
+            ["Juniper Family Trust IRA", "Juniper Family Trust", "2026-08-19", 268500],
+            ["Northwind Roth IRA", "Northwind Household", "2026-09-02", 91000]
+          ],
+          "count_rows": 3,
+          "text": "list accounts opened this quarter",
+          "query_id": "q_9c8b7a6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d",
+          "interpretation": "all accounts opened this quarter",
+          "parsed_interpretation": [
+            {
+              "c_type": "PREFIX",
+              "eng": "all"
+            },
+            {
+              "c_type": "SEED",
+              "eng": "accounts"
+            },
+            {
+              "c_type": "FILTER",
+              "eng": "opened"
+            },
+            {
+              "c_type": "DATE",
+              "eng": "this quarter"
+            }
+          ]
+        },
+        "table": {
+          "sort": [
+            {
+              "name": "opened_on",
+              "sort": "ASC"
+            }
+          ],
+          "filtered": false
+        },
+        "config": {
+          "displayType": "table",
+          "columnVisibility": {
+            "account_name": true,
+            "household_name": true,
+            "opened_on": true,
+            "market_value": true
+          },
+          "orders": [
+            {
+              "name": "opened_on",
+              "sort": "ASC"
+            }
+          ]
+        }
+      },
+      "askedHere": true
+    }
+  ]
+}

@@ -6,22 +6,27 @@ import { captureQuestion } from '../run/captureRun'
 import { RS } from './reportsConstants'
 import { newReportId, REPORT_TITLE_MAX } from './documents'
 import { DashboardTilesDialog } from './DashboardTilesDialog'
+import { TemplatesDialog } from './TemplatesDialog'
 import { ReportModal } from './ReportModal'
 import { REPORTS_STRINGS } from './reportsStrings'
 
-// New report, from the tab strip: start from a question, a dashboard, or a blank page.
+// New report, from the tab strip: start from a question, a dashboard, a template, or a blank page.
 //
 // - A question is asked once (captureQuestion) and its answer becomes the report's first Data block, marked as asked
 //   in the report (askedHere), so its Rerun button can ask it again. The report is named after it.
 // - A dashboard opens its tiles (DashboardTilesDialog, in this dialog's place), every one ticked as it loads; the
 //   report is named after the dashboard. Closing the tiles comes back here.
+// - A template (with enableTemplates) opens the templates published for the data source (TemplatesDialog, in this
+//   dialog's place); the report is made from the one chosen (onStartFromTemplate), and AutoQL fills in its data.
 // - A blank page is just that.
 //
 // The host makes the report from what this starts it with: onStart({ title, blocks }). A question still on its way is
 // dropped, and its request stopped, when the dialog closes.
 //
 // Props: authentication, autoQLConfig, dataFormatting, dashboards (undefined where the host has none, so there's no
-// dashboard to start from; null while they load), onClose, onStart, onTilesChange (passed on to the tiles).
+// dashboard to start from; null while they load), onClose, onStart, onTilesChange (passed on to the tiles),
+// enableTemplates, onStartFromTemplate({ templateId, id }), previewProps and onManageTemplates (passed on to the
+// templates).
 
 const S = REPORTS_STRINGS
 const N = S.newReport
@@ -50,6 +55,7 @@ export class NewReportDialog extends React.Component {
       asking: false,
       error: null,
       pickingTiles: false,
+      pickingTemplate: false,
     }
   }
 
@@ -89,7 +95,7 @@ export class NewReportDialog extends React.Component {
     if (asking) {
       return false
     }
-    if (mode === 'blank') {
+    if (mode === 'blank' || mode === 'template') {
       return true
     }
     return mode === 'question' ? !!question.trim() : !!this.dashboard()
@@ -109,6 +115,10 @@ export class NewReportDialog extends React.Component {
     }
     if (mode === 'dashboard') {
       this.setState({ pickingTiles: true })
+      return
+    }
+    if (mode === 'template') {
+      this.setState({ pickingTemplate: true })
       return
     }
 
@@ -167,6 +177,8 @@ export class NewReportDialog extends React.Component {
   }
 
   closeTiles = () => this.setState({ pickingTiles: false })
+
+  closeTemplates = () => this.setState({ pickingTemplate: false })
 
   startFromTiles = (blocks, dashboard) =>
     this.props.onStart({ title: clipTitle(String(dashboard?.name ?? '')), blocks })
@@ -249,10 +261,32 @@ export class NewReportDialog extends React.Component {
     )
   }
 
+  description() {
+    const { dashboards, enableTemplates } = this.props
+    if (enableTemplates) {
+      return dashboards === undefined ? N.whatWithTemplatesWithoutDashboards : N.whatWithTemplates
+    }
+    return dashboards === undefined ? N.whatWithoutDashboards : N.what
+  }
+
   render() {
     const { authentication, autoQLConfig, dataFormatting, dashboards, onClose, onTilesChange } = this.props
-    const { mode, asking, error, pickingTiles } = this.state
+    const { mode, asking, error, pickingTiles, pickingTemplate } = this.state
     const dashboard = this.dashboard()
+
+    if (pickingTemplate && this.props.enableTemplates) {
+      return (
+        <TemplatesDialog
+          authentication={authentication}
+          autoQLConfig={autoQLConfig}
+          dataFormatting={dataFormatting}
+          previewProps={this.props.previewProps}
+          onClose={this.closeTemplates}
+          onStart={this.props.onStartFromTemplate}
+          onManage={this.props.onManageTemplates}
+        />
+      )
+    }
 
     if (pickingTiles && dashboard) {
       return (
@@ -271,7 +305,7 @@ export class NewReportDialog extends React.Component {
       )
     }
 
-    let createLabel = mode === 'dashboard' ? N.chooseTiles : N.create
+    let createLabel = mode === 'dashboard' ? N.chooseTiles : mode === 'template' ? N.chooseTemplate : N.create
     if (asking) {
       createLabel = (
         <>
@@ -286,7 +320,7 @@ export class NewReportDialog extends React.Component {
     return (
       <ReportModal
         title={N.title}
-        description={dashboards === undefined ? N.whatWithoutDashboards : N.what}
+        description={this.description()}
         size='small'
         initialFocus={mode === 'dashboard' ? this.dashboardSelectRef : this.questionRef}
         testId='reports-new-report'
@@ -313,6 +347,9 @@ export class NewReportDialog extends React.Component {
           {this.renderChoice('question', 'question', N.question, this.renderQuestion())}
           {dashboards !== undefined
             ? this.renderChoice('dashboard', 'dashboard', N.dashboard, this.renderDashboards())
+            : null}
+          {this.props.enableTemplates
+            ? this.renderChoice('template', 'template', N.template, <p className={`${RS}-note`}>{N.templateNote}</p>)
             : null}
           {this.renderChoice('blank', 'file', N.blank)}
         </ul>

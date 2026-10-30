@@ -52,6 +52,7 @@ export class EditorPagination extends React.Component {
       nextProps.report !== this.props.report ||
       nextProps.views !== this.props.views ||
       nextProps.canRun !== this.props.canRun ||
+      nextProps.canCapture !== this.props.canCapture ||
       !sameBrandFonts(nextProps.branding, this.props.branding) ||
       !deepEqual(nextProps.dataFormatting, this.props.dataFormatting)
     )
@@ -99,7 +100,7 @@ export class EditorPagination extends React.Component {
   }
 
   render() {
-    const { report, views, branding, dataFormatting, authentication, autoQLConfig, canRun } = this.props
+    const { report, views, branding, dataFormatting, authentication, autoQLConfig, canRun, canCapture } = this.props
     if (!this.state.active) {
       return <span ref={this.anchorRef} hidden />
     }
@@ -116,6 +117,7 @@ export class EditorPagination extends React.Component {
           authentication,
           autoQLConfig,
           canRun,
+          canCapture,
         }}
       />
     )

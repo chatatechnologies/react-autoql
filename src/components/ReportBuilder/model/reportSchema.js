@@ -16,6 +16,9 @@ import {
 // A report is a template: its blocks say what to show, never the data itself. Everything here is
 // plain JSON, so a host can persist it as-is. Query responses live only in the builder's state.
 
+// Schema 1 is frozen: AutoQL's report service builds templates and fills data blocks from it, and tests against
+// the sample in __tests__/fixtures/report-schema-1.json. A new optional field can be added to it; any other change
+// to what's stored takes a new version, and the report service has to hear about it.
 export const REPORT_SCHEMA_VERSION = 1
 
 export const DEFAULT_PAGE_SETUP = {
