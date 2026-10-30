@@ -114,14 +114,19 @@ class DashboardWithoutTheme extends React.Component {
 
     tiles: PropTypes.arrayOf(PropTypes.shape({})),
     executeOnMount: PropTypes.bool,
+    /** @internal */
     dataPageSize: PropTypes.number,
     executeOnStopEditing: PropTypes.bool,
+    /** @internal */
     disableAggregationMenu: PropTypes.bool,
+    /** @internal */
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     isEditing: PropTypes.bool,
     isEditable: PropTypes.bool,
+    /** @internal */
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onChange: PropTypes.func,
+    /** @internal */
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
     onSuccessCallback: PropTypes.func,
@@ -139,36 +144,47 @@ class DashboardWithoutTheme extends React.Component {
     refreshInterval: PropTypes.number,
     dashboardId: PropTypes.string,
     enableAutoRefresh: PropTypes.bool,
+    /** @internal */
     slicerSuggestion: PropTypes.string,
+    /** @internal */
     initialSlicers: PropTypes.arrayOf(
       PropTypes.shape({
         type: PropTypes.string,
         data: PropTypes.shape({}),
       }),
     ),
+    /** @internal */
     enableSlicers: PropTypes.bool,
     enableCyclicalDates: PropTypes.bool,
+    /** @internal */
     enableMagicWand: PropTypes.bool,
+    /** @internal */
     showMagicWandQuoteButton: PropTypes.bool,
+    /** @internal */
     enableBillingGate: PropTypes.bool,
+    /** @internal */
     onQuotaExceeded: PropTypes.func,
+    /** @internal */
     enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
-    // List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown.
+    /** @internal List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown. */
     projectSelectList: PropTypes.arrayOf(
       PropTypes.shape({
         projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
         displayName: PropTypes.string.isRequired,
       }),
     ),
-    // Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details.
+    /** @internal Resolves an authentication object scoped to a given projectId (multi-project dashboards). See DashboardTile for details. */
     getAuthenticationForProject: PropTypes.func,
-    // Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange
+    /** @internal Called with a tile's projectId when a query gets a real 401, so the host can force a fresh token exchange */
     onTileAuthExpired: PropTypes.func,
-    // Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards
+    /** @internal Whether to surface the project picker (edit-mode button + modal) for multi-project dashboards */
     showProjectIndicator: PropTypes.bool,
-    // Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard
+    /** @internal Whether this dashboard is project-based (PROJECT type), as opposed to a CUSTOM dashboard */
     isProjectDashboard: PropTypes.bool,
+    /** @internal Not read by Dashboard; the toolbar's Save button calls onSaveCallback. */
+    onSaveClick: PropTypes.func,
+    preferRegularTableInitialDisplayType: PropTypes.bool,
   }
 
   static defaultProps = {
