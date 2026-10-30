@@ -174,6 +174,7 @@ export class ChatMessage extends React.Component {
     onRTValueLabelClick: PropTypes.func,
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
+    querySessionId: PropTypes.string,
     isVisibleInDOM: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
     onMessageResize: PropTypes.func,
@@ -201,6 +202,7 @@ export class ChatMessage extends React.Component {
     isIntroMessage: false,
     source: null,
     scope: undefined,
+    querySessionId: undefined,
     response: undefined,
     content: undefined,
     isActive: false,
@@ -1592,6 +1594,7 @@ export class ChatMessage extends React.Component {
           onRTValueLabelClick={this.props.onRTValueLabelClick}
           source={this.props.source}
           scope={this.props.scope}
+          querySessionId={this.props.querySessionId}
           drilldownFilters={this.props.drilldownFilters}
           onRowChange={this.scrollIntoView}
           onDisplayTypeChange={this.onDisplayTypeChange}

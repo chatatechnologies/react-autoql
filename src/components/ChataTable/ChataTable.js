@@ -41,6 +41,7 @@ import { DataLimitWarning } from '../DataLimitWarning'
 import { columnOptionsList } from './tabulatorConstants'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { DATASET_TOO_LARGE, TABULATOR_LOCAL_ROW_LIMIT, LOCAL_OR_REMOTE } from '../../js/Constants'
+import { enrichTableFilters } from '../../js/followOnFilters'
 import CustomColumnModal from '../AddColumnBtn/CustomColumnModal'
 import PivotAxisSelector, { computePivotAxisSelectorLocation } from './PivotAxisSelector'
 import { arePropsEqualByIdentity } from '../../js/propsEqual'
@@ -635,17 +636,7 @@ export default class ChataTable extends React.Component {
       return
     }
 
-    // Enrich filters: sanitize BETWEEN values and add column_type
-    const sanitizedFilters = (tableParamsFormatted?.filters || []).map((filter) => {
-      const column = this.props.columns?.find((col) => col.name === filter.name)
-      return {
-        ...filter,
-        ...(filter?.operator === 'between' && typeof filter?.value === 'string'
-          ? { value: filter.value.replace(/^(?:\(+|\)+)$/g, '') }
-          : {}),
-        ...(column?.type ? { column_type: column.type } : {}),
-      }
-    })
+    const sanitizedFilters = enrichTableFilters(tableParamsFormatted?.filters || [], this.props.columns)
 
     try {
       await runQueryOnly({

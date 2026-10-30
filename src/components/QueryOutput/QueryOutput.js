@@ -11,6 +11,11 @@ import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import { uniqueValues } from '../../js/arrayUtils'
 import { cloneResponseSharingRows } from '../../js/responseUtils'
 import { arePropsEqualByIdentity } from '../../js/propsEqual'
+import {
+  FOLLOW_ON_FILTERS_DEBOUNCE_MS,
+  formatFiltersForFollowOn,
+  getFollowOnFilterKey,
+} from '../../js/followOnFilters'
 
 import {
   AggTypes,
@@ -73,6 +78,7 @@ import {
   DisplayTypes,
   createFilterFunction,
   extractOperatorFromValue,
+  setQueryMetadata,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -227,6 +233,10 @@ export class QueryOutput extends React.Component {
       this.formattedTableParams = { filters: [], sorters: [] }
     }
 
+    // The filter state the backend last recorded for this answer's follow-on context.
+    // Whatever the answer arrived with is already known to it.
+    this.lastFollowOnFilterKey = getFollowOnFilterKey(this.formattedTableParams.filters)
+
     // Filters that arrived with the query itself — fe_req, a drilldown, or a saved tile config —
     // captured once the seeding above has finished. These are not the user narrowing a table down,
     // so anything matching this baseline must not count as "the user applied a filter".
@@ -344,6 +354,9 @@ export class QueryOutput extends React.Component {
     }),
     // Pins drilldowns to this id, since a cached-refresh response can carry a different query_id for the same query
     queryId: PropTypes.string,
+    // The chat session (AutoQL-Session-ID) this answer was asked in. When set, table filters
+    // are recorded on the query so the session's next follow-on query knows about them.
+    querySessionId: PropTypes.string,
     onSuggestionClick: PropTypes.func,
     initialDisplayType: PropTypes.string,
     // Set once this answer's rows have been dropped to a preview to save memory. Holds
@@ -475,6 +488,7 @@ export class QueryOutput extends React.Component {
 
     queryResponse: undefined,
     queryId: undefined,
+    querySessionId: undefined,
     initialDisplayType: null,
     dataTruncated: undefined,
     onRestoreData: undefined,
@@ -878,6 +892,7 @@ export class QueryOutput extends React.Component {
 
   componentWillUnmount = () => {
     this._isMounted = false
+    this.sendFollowOnFilters()
     this.removeResizeListeners()
     this.clearResizeCursorStyles()
     window.removeEventListener('resize', this.handleWindowResize)
@@ -2229,10 +2244,18 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  queryFn = async (args = {}) => {
+  queryFn = async ({ isTableRequest, ...args } = {}) => {
     this.wasQueryFnCancelled = false
 
     const queryRequestData = this.queryResponse?.data?.data?.fe_req
+
+    // A table filter or sort re-runs the same question, so its answer still belongs to the
+    // query the user asked. A filter change (not a sort) also records the filters on that
+    // query, so the session's next follow-on query knows what the user is looking at.
+    const followOnQueryID = isTableRequest ? this.getFollowOnQueryID() : undefined
+    const followOnFilterKey = getFollowOnFilterKey(args?.tableFilters)
+    const isFollowOnFilterChange =
+      !!followOnQueryID && this.canRecordFollowOnFilters() && followOnFilterKey !== this.lastFollowOnFilterKey
 
     // Update formattedTableParams with current state from ChataTable before processing
     if (args?.tableFilters || args?.orders) {
@@ -2308,6 +2331,9 @@ export class QueryOutput extends React.Component {
           // `enableQuerySuggestions`. Without it a failed re-run answers with a
           // related-queries list even for integrators who turned suggestions off.
           allowSuggestions: this.props.enableQuerySuggestions,
+          ...(isFollowOnFilterChange
+            ? { sessionId: this.props.querySessionId, originalQueryId: followOnQueryID }
+            : {}),
           ...args,
           tableFilters: allFilters,
         })
@@ -2321,6 +2347,14 @@ export class QueryOutput extends React.Component {
 
     const effectiveDisplayOverrides = args?.displayOverrides ?? queryRequestData?.display_overrides
     const result = this.applyDisplayOverridesToResponse(response, effectiveDisplayOverrides)
+    if (followOnQueryID && result?.data?.data?.rows) {
+      // FE-only, like isClientSideFilter: survives the clones and remounts that a query_id
+      // swap would otherwise cut off from the query the user asked.
+      result.followOnQueryID = followOnQueryID
+      if (isFollowOnFilterChange && !this.wasQueryFnCancelled) {
+        this.lastFollowOnFilterKey = followOnFilterKey
+      }
+    }
     if (this.props.onNewQueryId) {
       const newQueryId = result?.data?.data?.query_id
       if (newQueryId) {
@@ -2328,6 +2362,63 @@ export class QueryOutput extends React.Component {
       }
     }
     return result
+  }
+
+  // The regular table's sorts and filters, as opposed to the other re-runs queryFn serves
+  // (drilldown by filter, Restore, custom columns).
+  tableQueryFn = (args) => this.queryFn({ ...args, isTableRequest: true })
+
+  // The query whose session history entry stands for this answer. A table re-run gets a
+  // query_id of its own, but it is the same question.
+  getFollowOnQueryID = () => this.queryResponse?.followOnQueryID ?? this.queryResponse?.data?.data?.query_id
+
+  // Follow-on context only exists within a query session. A drilldown is not a session
+  // turn, and a client-side drilldown carries its parent's query_id.
+  canRecordFollowOnFilters = () =>
+    !!this.props.querySessionId &&
+    !!this.getFollowOnQueryID() &&
+    !isDrilldown(this.queryResponse) &&
+    !this.queryResponse?.isClientSideFilter
+
+  // < 50k rows the table filters client-side and the backend never sees it, so the filters
+  // are recorded on the query separately, once they have settled.
+  queueFollowOnFilters = (filters = []) => {
+    clearTimeout(this.followOnFiltersTimeout)
+    this.pendingFollowOnFilters = undefined
+
+    if (!this.canRecordFollowOnFilters() || getFollowOnFilterKey(filters) === this.lastFollowOnFilterKey) {
+      return
+    }
+
+    this.pendingFollowOnFilters = filters
+    this.followOnFiltersTimeout = setTimeout(this.sendFollowOnFilters, FOLLOW_ON_FILTERS_DEBOUNCE_MS)
+  }
+
+  sendFollowOnFilters = () => {
+    clearTimeout(this.followOnFiltersTimeout)
+    const filters = this.pendingFollowOnFilters
+    this.pendingFollowOnFilters = undefined
+
+    if (!filters) {
+      return
+    }
+
+    const key = getFollowOnFilterKey(filters)
+    const previousKey = this.lastFollowOnFilterKey
+    this.lastFollowOnFilterKey = key
+
+    setQueryMetadata({
+      ...getAuthentication(this.props.authentication),
+      queryId: this.getFollowOnQueryID(),
+      filters: formatFiltersForFollowOn(filters, this.state.columns),
+      sessionId: this.props.querySessionId,
+    }).catch((error) => {
+      // Silent: only the next follow-on query's context is lost, never the table on screen.
+      console.warn('Could not record table filters for follow-on queries', error)
+      if (this.lastFollowOnFilterKey === key) {
+        this.lastFollowOnFilterKey = previousKey
+      }
+    })
   }
 
   /**
@@ -2949,6 +3040,11 @@ export class QueryOutput extends React.Component {
     }
 
     this.props.onTableParamsChange?.(this.tableParams, this.formattedTableParams)
+
+    // Remote tables record their filters through the re-run itself (see queryFn)
+    if (this.tableRef?.isLocal) {
+      this.queueFollowOnFilters(this.formattedTableParams?.filters)
+    }
 
     // Regenerate pivot data when table params change (filters/sorters)
     if (this.shouldGeneratePivotData()) {
@@ -5211,7 +5307,7 @@ export class QueryOutput extends React.Component {
             isAggregation(this.state.columns) && getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns
           }
           tooltipID={this.props.tooltipID}
-          queryFn={this.queryFn}
+          queryFn={this.tableQueryFn}
           source={this.props.source}
           scope={this.props.scope}
           tableConfig={this.tableConfig}
