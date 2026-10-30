@@ -237,7 +237,7 @@ export interface DashboardProps {
   onChange?: (tiles: DashboardTile[], slicers?: any[]) => void
   onErrorCallback?: (error: any) => void
   // Called when the open button is clicked on a cell in a column whose value_action is
-  // { callback: { callback_name } }. Keyed by callback_name; the row is keyed by column name.
+  // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
   onSuccessCallback?: (response: any) => void
   autoChartAggregations?: boolean
@@ -350,7 +350,7 @@ export interface DataMessengerProps {
   onVisibleChange?: (visible: boolean) => void
   onErrorCallback?: (error: any) => void
   // Called when the open button is clicked on a cell in a column whose value_action is
-  // { callback: { callback_name } }. Keyed by callback_name; the row is keyed by column name.
+  // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
   onSuccessAlert?: (message: string) => void
   onProjectSelectChange?: (projectId: string) => void
@@ -407,7 +407,7 @@ export interface QueryOutputProps {
   onDrilldownEnd?: () => void
   onErrorCallback?: (error: any) => void
   // Called when the open button is clicked on a cell in a column whose value_action is
-  // { callback: { callback_name } }. Keyed by callback_name; the row is keyed by column name.
+  // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
   [key: string]: any
 }

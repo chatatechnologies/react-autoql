@@ -7,6 +7,8 @@
 const VALUE_PLACEHOLDER = '{value}'
 const ALLOWED_LINK_PROTOCOLS = ['http:', 'https:']
 
+export const VALUE_ACTION_BUTTON_CLASS = 'react-autoql-cell-value-action-btn'
+
 export const VALUE_ACTION_ICON =
   '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<path fill="none" stroke="currentColor" d="M9.5 2.5h4v4"/>' +
@@ -57,11 +59,15 @@ export const getValueActionTooltip = (action, callbacks) => {
   return action?.type === 'link' && action.target === '_blank' ? 'Open in new tab' : 'Open'
 }
 
-// An unknown callback_name does nothing
-export const runValueActionCallback = ({ action, value, row, context, callbacks }) => {
+const getCallbackFn = (action, callbacks) => {
   const entry = getCallbackEntry(action, callbacks)
   const callback = typeof entry === 'function' ? entry : entry?.onClick
-  if (typeof callback === 'function') {
-    callback(value, row, context)
-  }
+  return typeof callback === 'function' ? callback : undefined
+}
+
+export const hasValueActionCallback = (action, callbacks) => !!getCallbackFn(action, callbacks)
+
+// An unknown callback_name does nothing
+export const runValueActionCallback = ({ action, value, row, context, callbacks }) => {
+  getCallbackFn(action, callbacks)?.(value, row, context)
 }

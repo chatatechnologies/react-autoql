@@ -1,4 +1,10 @@
-import { buildValueActionUrl, getValueAction, getValueActionTooltip, runValueActionCallback } from './valueActions'
+import {
+  buildValueActionUrl,
+  getValueAction,
+  getValueActionTooltip,
+  hasValueActionCallback,
+  runValueActionCallback,
+} from './valueActions'
 
 const linkColumn = (link) => ({ name: 'account_id', value_action: { type: 'link', ...link } })
 const callbackColumn = (callback_name) => ({ name: 'account_name', value_action: { type: 'callback', callback_name } })
@@ -128,5 +134,20 @@ describe('runValueActionCallback', () => {
 
   test('does nothing when no callbacks are given', () => {
     expect(() => runValueActionCallback({ action, value: 'Acme', row: {} })).not.toThrow()
+  })
+})
+
+describe('hasValueActionCallback', () => {
+  const action = { type: 'callback', name: 'openCustomerDrawer' }
+
+  test('is true for a function or { onClick }', () => {
+    expect(hasValueActionCallback(action, { openCustomerDrawer: () => {} })).toBe(true)
+    expect(hasValueActionCallback(action, { openCustomerDrawer: { onClick: () => {}, tooltip: 'View' } })).toBe(true)
+  })
+
+  test('is false when the callback is missing or has no function', () => {
+    expect(hasValueActionCallback(action, { other: () => {} })).toBe(false)
+    expect(hasValueActionCallback(action, undefined)).toBe(false)
+    expect(hasValueActionCallback(action, { openCustomerDrawer: { tooltip: 'View' } })).toBe(false)
   })
 })

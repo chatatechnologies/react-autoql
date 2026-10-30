@@ -13,7 +13,7 @@ import DrilldownTable from './DrilldownTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { ReportProblemModal } from '../ReportProblemModal'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 
 export default class DrilldownModal extends React.Component {
   constructor(props) {
@@ -43,9 +43,7 @@ export default class DrilldownModal extends React.Component {
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
-    valueActionCallbacks: PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
-    ),
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,

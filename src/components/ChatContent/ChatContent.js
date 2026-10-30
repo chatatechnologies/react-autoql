@@ -11,7 +11,7 @@ import {
   dataFormattingDefault,
 } from 'autoql-fe-utils'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 import { lang } from '../../js/Localization'
 import { fetchSubjectListCached } from '../../js/subjectListService'
 import { fetchQueryTitle } from '../../js/queryTitleService'
@@ -130,9 +130,7 @@ export default class ChatContent extends React.Component {
     // holds this thread and needs to reflect the lock state (see DataMessenger).
     onFilterLockChange: PropTypes.func,
     onErrorCallback: PropTypes.func.isRequired,
-    valueActionCallbacks: PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
-    ),
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessAlert: PropTypes.func.isRequired,
     onRTValueLabelClick: PropTypes.func,
     disableMaxMessageHeight: PropTypes.bool,

@@ -35,7 +35,12 @@ import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
 import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType,
+  valueActionCallbacksType,
+} from '../../../props/types'
 import { buildDashboardSource } from '../dashboardSource'
 import {
   getTileQueryOutputProps,
@@ -163,9 +168,7 @@ export class DashboardTile extends React.Component {
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
-    valueActionCallbacks: PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
-    ),
+    valueActionCallbacks: valueActionCallbacksType,
     onRetry: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,

@@ -102,16 +102,18 @@ import {
 } from './splitSeriesUtils'
 import { featureToggles, isDisplayTypeEnabled } from '../../js/featureToggles'
 import {
+  VALUE_ACTION_BUTTON_CLASS,
   VALUE_ACTION_ICON,
   buildValueActionUrl,
   getValueAction,
   getValueActionTooltip,
+  hasValueActionCallback,
   hasValueActionValue,
   runValueActionCallback,
 } from '../../js/valueActions'
 
 import { withTheme } from '../../theme'
-import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
+import { dataFormattingType, autoQLConfigType, authenticationType, valueActionCallbacksType } from '../../props/types'
 
 import './QueryOutput.scss'
 
@@ -408,11 +410,7 @@ export class QueryOutput extends React.Component {
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
-    // Host functions for columns whose value_action is a callback, keyed by callback_name.
-    // Each is a function, or { onClick, tooltip } to replace the button's "Open" tooltip.
-    valueActionCallbacks: PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
-    ),
+    valueActionCallbacks: valueActionCallbacksType,
     showQueryInterpretation: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
@@ -2653,8 +2651,16 @@ export class QueryOutput extends React.Component {
     })
   }
 
-  onTableCellClick = (cell) => {
+  onTableCellClick = (cell, e) => {
     const columnDefinition = cell?.getColumn()?.getDefinition()
+
+    // The open button runs the column's value_action instead of drilling down. A link button
+    // is an anchor, so the browser opens it; a callback goes to the host app.
+    if (e?.target?.closest?.(`.${VALUE_ACTION_BUTTON_CLASS}`)) {
+      this.runValueActionCallbackForCell(cell, columnDefinition, e)
+      return
+    }
+
     // "Other" stands for many legend values at once, none of which is its name - there is
     // no single group to drill into.
     if (columnDefinition?.pivot || columnDefinition?.isPivotOtherColumn) {
@@ -3833,10 +3839,51 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  runValueActionCallbackForCell = (cell, column, e) => {
+    const action = getValueAction(column)
+    if (action?.type !== 'callback') {
+      return
+    }
+
+    const cellValue = cell.getValue()
+    const rowData = cell.getData()
+    const row = {}
+    this.getColumns()?.forEach((col) => {
+      row[col.name] = rowData?.[col.field]
+    })
+
+    const context = {
+      column: {
+        name: column?.name,
+        display_name: column?.display_name,
+        type: column?.type,
+        precision: column?.precision,
+        dow_style: column?.dow_style,
+      },
+      formattedValue: formatElement({
+        element: cellValue,
+        column,
+        config: getDataFormatting(this.props.dataFormatting),
+        forExport: true,
+      }),
+      queryId: this.queryResponse?.data?.data?.query_id,
+      queryText: this.queryResponse?.data?.data?.text,
+      event: e,
+    }
+
+    runValueActionCallback({ action, value: cellValue, row, context, callbacks: this.props.valueActionCallbacks })
+  }
+
   // The "open" button for a cell in a column with a value_action. A link is a real anchor so
   // cmd/middle-click and "copy link" work; a callback is a button that calls the host app.
-  createValueActionButton = (cell, cellValue, action, column) => {
+  // Clicks are handled in onTableCellClick.
+  createValueActionButton = (cell, cellValue, action) => {
     if (!action || !hasValueActionValue(cellValue)) {
+      return undefined
+    }
+
+    // A callback the host app hasn't registered would do nothing, so don't offer it
+    if (action.type === 'callback' && !hasValueActionCallback(action, this.props.valueActionCallbacks)) {
       return undefined
     }
 
@@ -3856,47 +3903,15 @@ export class QueryOutput extends React.Component {
       button.type = 'button'
     }
 
-    const tooltip = getValueActionTooltip(action, this.props.valueActionCallbacks)
-    button.className = 'react-autoql-cell-value-action-btn'
-    button.setAttribute('aria-label', tooltip)
+    button.className = VALUE_ACTION_BUTTON_CLASS
+    button.setAttribute('aria-label', getValueActionTooltip(action, this.props.valueActionCallbacks))
     button.innerHTML = VALUE_ACTION_ICON
 
-    button.addEventListener('click', (e) => {
-      // Keep the click from reaching the cell, which would start a drilldown
-      e.stopPropagation()
-
-      if (action.type === 'callback') {
-        const rowData = cell.getData()
-        const row = {}
-        this.getColumns()?.forEach((col) => {
-          row[col.name] = rowData?.[col.field]
-        })
-
-        const context = {
-          column: {
-            name: column?.name,
-            display_name: column?.display_name,
-            type: column?.type,
-            precision: column?.precision,
-            dow_style: column?.dow_style,
-          },
-          formattedValue: formatElement({
-            element: cellValue,
-            column,
-            config: getDataFormatting(this.props.dataFormatting),
-            forExport: true,
-          }),
-          queryId: this.queryResponse?.data?.data?.query_id,
-          queryText: this.queryResponse?.data?.data?.text,
-          event: e,
-        }
-
-        runValueActionCallback({ action, value: cellValue, row, context, callbacks: this.props.valueActionCallbacks })
-      }
-    })
-
-    // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the button
+    // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the button.
+    // Read at hover time so a changed tooltip in valueActionCallbacks shows without re-rendering the table.
     button.addEventListener('mouseenter', () => {
+      const tooltip = getValueActionTooltip(action, this.props.valueActionCallbacks)
+      button.setAttribute('aria-label', tooltip)
       cell.getElement()?.setAttribute('data-tooltip-content', tooltip)
     })
     button.addEventListener('mouseleave', () => {
@@ -3916,6 +3931,11 @@ export class QueryOutput extends React.Component {
     }
 
     const handler = (e) => {
+      // Leave right-click on the open button to the browser, so a link shows its own menu
+      if (e.target?.closest?.(`.${VALUE_ACTION_BUTTON_CLASS}`)) {
+        return
+      }
+
       e.preventDefault()
       e.stopPropagation()
       const textToCopy = formatElement({
@@ -3990,10 +4010,8 @@ export class QueryOutput extends React.Component {
         newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
       }
 
-      const valueAction = getValueAction(newCol)
-
       // Cell formatting
-      newCol.formatter = (cell, formatterParams, onRendered) => {
+      const formatCell = (cell, onRendered, { withValueAction }) => {
         const cellValue = cell.getValue()
         const wrapper = document.createElement('div')
         wrapper.className = 'react-autoql-cell-value-wrapper'
@@ -4010,9 +4028,13 @@ export class QueryOutput extends React.Component {
 
         wrapper.appendChild(valueContainer)
 
-        const valueActionButton = this.createValueActionButton(cell, cellValue, valueAction, newCol)
-        if (valueActionButton) {
-          wrapper.appendChild(valueActionButton)
+        // Read from the cell's own column: pivot columns are built from these ones but drop value_action
+        if (withValueAction) {
+          const valueAction = getValueAction(cell.getColumn()?.getDefinition())
+          const valueActionButton = this.createValueActionButton(cell, cellValue, valueAction)
+          if (valueActionButton) {
+            wrapper.appendChild(valueActionButton)
+          }
         }
 
         if (cellValue != null && cellValue !== '') {
@@ -4030,6 +4052,14 @@ export class QueryOutput extends React.Component {
 
         return wrapper
       }
+
+      newCol.formatter = (cell, formatterParams, onRendered) => formatCell(cell, onRendered, { withValueAction: true })
+
+      // Copying, HTML export and printing get the value without the open button
+      newCol.formatterClipboard = (cell, formatterParams, onRendered) =>
+        formatCell(cell, onRendered, { withValueAction: false })
+      newCol.formatterHtmlOutput = newCol.formatterClipboard
+      newCol.formatterPrint = newCol.formatterClipboard
 
       // Always enable header filtering; display only when toggled
       newCol.headerFilter = col.headerFilter ?? 'input'
@@ -4198,6 +4228,7 @@ export class QueryOutput extends React.Component {
 
       const pivotMonthColumn = {
         ...origDateColumn,
+        value_action: undefined, // Pivot cells have no deep links
         title: 'Month',
         name: 'Month',
         field: '0',
@@ -4234,6 +4265,7 @@ export class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
+          value_action: undefined,
           origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
@@ -4648,6 +4680,7 @@ export class QueryOutput extends React.Component {
       // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
+        value_action: undefined, // Pivot cells have no deep links
         id: `pivot-col-0`, // Stable ID based on field
         index: 0, // Set index to match array position for sortDataByColumn
         frozen: true,
@@ -4672,6 +4705,7 @@ export class QueryOutput extends React.Component {
 
         const newPivotCol = {
           ...columns[nIdx],
+          value_action: undefined,
           id: `pivot-col-${i + 1}`, // Stable ID based on field index
           index: i + 1, // Set index to match array position for sortDataByColumn
           origColumn: columns[nIdx],
@@ -4702,6 +4736,7 @@ export class QueryOutput extends React.Component {
 
         pivotTableColumns.push({
           ...columns[nIdx],
+          value_action: undefined,
           id: `pivot-col-${otherColIndex}`,
           index: otherColIndex,
           origColumn: columns[nIdx],

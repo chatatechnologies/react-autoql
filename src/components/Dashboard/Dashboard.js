@@ -22,7 +22,7 @@ import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import { withTheme } from '../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 import { buildDashboardSource } from './dashboardSource'
 import { isSm, subscribeToScreenSize } from '../../js/breakpoints'
 
@@ -124,9 +124,7 @@ class DashboardWithoutTheme extends React.Component {
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
-    valueActionCallbacks: PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
-    ),
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,

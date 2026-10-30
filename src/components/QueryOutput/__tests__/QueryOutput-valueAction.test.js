@@ -41,15 +41,17 @@ const cellFor = (instance, columnName, row = ROW) => {
   }
 }
 
-// Renders the cell the way Tabulator does: the formatter's output inside the cell element
-const renderCell = (instance, columnName, row) => {
+// Renders the cell the way Tabulator does: the formatter's output inside the cell element, with
+// clicks on the cell going to onTableCellClick (Tabulator's cellClick)
+const renderCell = (instance, columnName, row, formatterName = 'formatter') => {
   const cell = cellFor(instance, columnName, row)
   const content = cell
     .getColumn()
     .getDefinition()
-    .formatter(cell, {}, () => {})
+    [formatterName](cell, {}, (onRendered) => onRendered())
   cell.getElement().appendChild(content)
-  return { cell, button: content.querySelector('.react-autoql-cell-value-action-btn') }
+  cell.getElement().addEventListener('click', (e) => instance.onTableCellClick(cell, e))
+  return { cell, content, button: content.querySelector('.react-autoql-cell-value-action-btn') }
 }
 
 describe('QueryOutput value actions', () => {
@@ -144,25 +146,116 @@ describe('QueryOutput value actions', () => {
     wrapper.unmount()
   })
 
-  test('a callback button with no matching callback does nothing', () => {
-    const somethingElse = jest.fn()
-    const wrapper = setup({ valueActionCallbacks: { somethingElse } })
-    const { button } = renderCell(wrapper.instance(), 'account_name')
+  test('a callback column gets no button when the host app has no matching callback', () => {
+    const wrapper = setup({ valueActionCallbacks: { somethingElse: jest.fn() } })
+    expect(renderCell(wrapper.instance(), 'account_name').button).toBeNull()
+    wrapper.unmount()
 
-    expect(() => button.click()).not.toThrow()
-    expect(somethingElse).not.toHaveBeenCalled()
+    const withoutProp = setup()
+    expect(renderCell(withoutProp.instance(), 'account_name').button).toBeNull()
+    withoutProp.unmount()
+  })
+
+  test('clicking a callback button does not drill down', () => {
+    const wrapper = setup({ valueActionCallbacks: { openCustomerDrawer: jest.fn() } })
+    const instance = wrapper.instance()
+    const drilldownSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => Promise.resolve())
+    const { button } = renderCell(instance, 'account_name')
+
+    button.querySelector('svg').dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    expect(drilldownSpy).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
-  test('clicking the button does not reach the cell, so it does not drill down', () => {
+  test('clicking a link button leaves it to the browser and does not drill down', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const drilldownSpy = jest.spyOn(instance, 'processDrilldown').mockImplementation(() => Promise.resolve())
+    const { button } = renderCell(instance, 'account_id')
+
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    button.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(drilldownSpy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('right-clicking the button keeps the browser menu, while the rest of the cell still copies', () => {
+    const wrapper = setup()
+    const instance = wrapper.instance()
+    const copySpy = jest.spyOn(instance, 'copyToClipboard').mockImplementation(() => {})
+    const { content, button } = renderCell(instance, 'account_id')
+
+    const onButton = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    button.dispatchEvent(onButton)
+    expect(onButton.defaultPrevented).toBe(false)
+    expect(copySpy).not.toHaveBeenCalled()
+
+    const onValue = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    content.querySelector('.react-autoql-cell-value').dispatchEvent(onValue)
+    expect(onValue.defaultPrevented).toBe(true)
+    expect(copySpy).toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  test('copying, HTML export and printing leave the button out', () => {
     const wrapper = setup({ valueActionCallbacks: { openCustomerDrawer: jest.fn() } })
-    const { cell, button } = renderCell(wrapper.instance(), 'account_name')
-    const cellClick = jest.fn()
-    cell.getElement().addEventListener('click', cellClick)
+    const instance = wrapper.instance()
 
-    button.click()
+    ;['formatterClipboard', 'formatterHtmlOutput', 'formatterPrint'].forEach((formatterName) => {
+      const link = renderCell(instance, 'account_id', ROW, formatterName)
+      expect(link.button).toBeNull()
+      expect(link.content.querySelector('a, svg')).toBeNull()
+      expect(link.content.textContent).toBe('1042')
 
-    expect(cellClick).not.toHaveBeenCalled()
+      expect(renderCell(instance, 'account_name', ROW, formatterName).button).toBeNull()
+    })
+    wrapper.unmount()
+  })
+
+  test('pivot table cells get no button', () => {
+    const columns = [
+      {
+        name: 'region',
+        display_name: 'Region',
+        type: 'STRING',
+        groupable: true,
+        value_action: LINK_ACTION,
+      },
+      { name: 'product', display_name: 'Product', type: 'STRING', groupable: true },
+      { name: 'total', display_name: 'Total', type: 'QUANTITY', value_action: CALLBACK_ACTION },
+    ]
+    const rows = [
+      ['West', 'Widgets', 5],
+      ['East', 'Widgets', 3],
+      ['West', 'Gadgets', 2],
+    ]
+    const wrapper = setup({
+      queryResponse: makeResponse(columns, rows),
+      valueActionCallbacks: { openCustomerDrawer: jest.fn() },
+    })
+    const instance = wrapper.instance()
+    instance.generatePivotTableData({ isFirstGeneration: true })
+
+    expect(instance.pivotTableColumns.length).toBeGreaterThan(1)
+    instance.pivotTableColumns.forEach((definition, i) => {
+      expect(definition.value_action).toBeUndefined()
+
+      const element = document.createElement('div')
+      const pivotRow = instance.pivotTableData[0]
+      const cell = {
+        getColumn: () => ({ getDefinition: () => definition }),
+        getValue: () => pivotRow[i],
+        getData: () => pivotRow,
+        getElement: () => element,
+      }
+      const content = definition.formatter(cell, {}, () => {})
+      if (content instanceof Node) {
+        expect(content.querySelector('.react-autoql-cell-value-action-btn')).toBeNull()
+      }
+    })
     wrapper.unmount()
   })
 
@@ -215,6 +308,19 @@ describe('QueryOutput value actions', () => {
 
     button.dispatchEvent(new MouseEvent('mouseleave'))
     expect(cell.getElement().getAttribute('data-tooltip-content')).toBe(TOOLTIP_COPY_TEXTS.DEFAULT)
+    wrapper.unmount()
+  })
+
+  test('the tooltip is read when hovering, so a changed callback tooltip shows without re-rendering', () => {
+    const onClick = jest.fn()
+    const wrapper = setup({ valueActionCallbacks: { openCustomerDrawer: { onClick, tooltip: 'View customer' } } })
+    const { cell, button } = renderCell(wrapper.instance(), 'account_name')
+
+    wrapper.setProps({ valueActionCallbacks: { openCustomerDrawer: { onClick, tooltip: 'Open customer drawer' } } })
+    button.dispatchEvent(new MouseEvent('mouseenter'))
+
+    expect(cell.getElement().getAttribute('data-tooltip-content')).toBe('Open customer drawer')
+    expect(button.getAttribute('aria-label')).toBe('Open customer drawer')
     wrapper.unmount()
   })
 

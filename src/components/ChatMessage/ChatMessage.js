@@ -36,7 +36,7 @@ import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverC
 import SimpleTable from '../SimpleTable/SimpleTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 
 import './ChatMessage.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
@@ -146,9 +146,7 @@ export class ChatMessage extends React.Component {
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
-    valueActionCallbacks: PropTypes.objectOf(
-      PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
-    ),
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     shouldRender: PropTypes.bool,
