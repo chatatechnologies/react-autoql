@@ -2657,7 +2657,7 @@ export class QueryOutput extends React.Component {
     // The open button runs the column's value_action instead of drilling down. A link button
     // is an anchor, so the browser opens it; a callback goes to the host app.
     if (e?.target?.closest?.(`.${VALUE_ACTION_BUTTON_CLASS}`)) {
-      this.runValueActionCallbackForCell(cell, columnDefinition, e)
+      this.runValueActionCallbackForCell(cell, e)
       return
     }
 
@@ -3839,7 +3839,9 @@ export class QueryOutput extends React.Component {
     }
   }
 
-  runValueActionCallbackForCell = (cell, column, e) => {
+  runValueActionCallbackForCell = (cell, e) => {
+    // Tabulator's column definition only keeps Tabulator options (see ChataTable), so use our own column
+    const column = this.getColumns()?.find((col) => col.field === cell.getField())
     const action = getValueAction(column)
     if (action?.type !== 'callback') {
       return
@@ -4010,6 +4012,8 @@ export class QueryOutput extends React.Component {
         newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
       }
 
+      const valueAction = getValueAction(newCol)
+
       // Cell formatting
       const formatCell = (cell, onRendered, { withValueAction }) => {
         const cellValue = cell.getValue()
@@ -4028,9 +4032,7 @@ export class QueryOutput extends React.Component {
 
         wrapper.appendChild(valueContainer)
 
-        // Read from the cell's own column: pivot columns are built from these ones but drop value_action
         if (withValueAction) {
-          const valueAction = getValueAction(cell.getColumn()?.getDefinition())
           const valueActionButton = this.createValueActionButton(cell, cellValue, valueAction)
           if (valueActionButton) {
             wrapper.appendChild(valueActionButton)
@@ -4055,7 +4057,8 @@ export class QueryOutput extends React.Component {
 
       newCol.formatter = (cell, formatterParams, onRendered) => formatCell(cell, onRendered, { withValueAction: true })
 
-      // Copying, HTML export and printing get the value without the open button
+      // Copying, HTML export and printing get the value without the open button. Pivot columns,
+      // which are built from these ones, use it as their formatter too.
       newCol.formatterClipboard = (cell, formatterParams, onRendered) =>
         formatCell(cell, onRendered, { withValueAction: false })
       newCol.formatterHtmlOutput = newCol.formatterClipboard
@@ -4228,7 +4231,7 @@ export class QueryOutput extends React.Component {
 
       const pivotMonthColumn = {
         ...origDateColumn,
-        value_action: undefined, // Pivot cells have no deep links
+        formatter: origDateColumn.formatterClipboard, // Pivot cells have no open button
         title: 'Month',
         name: 'Month',
         field: '0',
@@ -4265,7 +4268,7 @@ export class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
-          value_action: undefined,
+          formatter: columns[numberColumnIndex].formatterClipboard, // Pivot cells have no open button
           origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
@@ -4680,7 +4683,7 @@ export class QueryOutput extends React.Component {
       // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
-        value_action: undefined, // Pivot cells have no deep links
+        formatter: columns[newStringColumnIndex].formatterClipboard, // Pivot cells have no open button
         id: `pivot-col-0`, // Stable ID based on field
         index: 0, // Set index to match array position for sortDataByColumn
         frozen: true,
@@ -4705,7 +4708,7 @@ export class QueryOutput extends React.Component {
 
         const newPivotCol = {
           ...columns[nIdx],
-          value_action: undefined,
+          formatter: columns[nIdx].formatterClipboard,
           id: `pivot-col-${i + 1}`, // Stable ID based on field index
           index: i + 1, // Set index to match array position for sortDataByColumn
           origColumn: columns[nIdx],
@@ -4736,7 +4739,7 @@ export class QueryOutput extends React.Component {
 
         pivotTableColumns.push({
           ...columns[nIdx],
-          value_action: undefined,
+          formatter: columns[nIdx].formatterClipboard,
           id: `pivot-col-${otherColIndex}`,
           index: otherColIndex,
           origColumn: columns[nIdx],

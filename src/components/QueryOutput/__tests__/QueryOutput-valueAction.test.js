@@ -1,6 +1,7 @@
 import React from 'react'
-import { mount } from 'enzyme'
+import { mount, shallow } from 'enzyme'
 import { QueryOutput } from '../QueryOutput'
+import ChataTable from '../../ChataTable/ChataTable'
 import { TOOLTIP_COPY_TEXTS } from '../../../js/Constants'
 
 const LINK_ACTION = { type: 'link', link_url: 'https://crm.acme.com/accounts/{value}', link_target: '_blank' }
@@ -30,11 +31,23 @@ const setup = (props = {}) =>
     />,
   )
 
+// The column definition Tabulator holds: ChataTable passes it only Tabulator options, so it has no
+// value_action, name or type
+const tabulatorDefinitionFor = (instance, columnName) => {
+  const { field } = instance.getColumns().find((col) => col.name === columnName)
+  const table = shallow(<ChataTable columns={instance.getColumns()} response={instance.queryResponse} />)
+  return table
+    .instance()
+    .getFilteredTabulatorColumnDefinitions()
+    .find((definition) => definition.field === field)
+}
+
 const cellFor = (instance, columnName, row = ROW) => {
-  const definition = instance.getColumns().find((col) => col.name === columnName)
+  const definition = tabulatorDefinitionFor(instance, columnName)
   const element = document.createElement('div')
   return {
     getColumn: () => ({ getDefinition: () => definition }),
+    getField: () => definition.field,
     getValue: () => row[Number(definition.field)],
     getData: () => row,
     getElement: () => element,
@@ -61,6 +74,7 @@ describe('QueryOutput value actions', () => {
 
   test('a link cell gets an open button that is a real link to the filled-in URL', () => {
     const wrapper = setup()
+    expect(tabulatorDefinitionFor(wrapper.instance(), 'account_id').value_action).toBeUndefined()
     const { button } = renderCell(wrapper.instance(), 'account_id')
 
     expect(button.tagName).toBe('A')
@@ -241,12 +255,11 @@ describe('QueryOutput value actions', () => {
 
     expect(instance.pivotTableColumns.length).toBeGreaterThan(1)
     instance.pivotTableColumns.forEach((definition, i) => {
-      expect(definition.value_action).toBeUndefined()
-
       const element = document.createElement('div')
       const pivotRow = instance.pivotTableData[0]
       const cell = {
         getColumn: () => ({ getDefinition: () => definition }),
+        getField: () => definition.field,
         getValue: () => pivotRow[i],
         getData: () => pivotRow,
         getElement: () => element,
