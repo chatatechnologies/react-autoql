@@ -28,7 +28,7 @@ import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
 // Utils
 import { withTheme } from '../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 import { lang, setLanguage } from '../../js/Localization'
 
 // Styles
@@ -212,6 +212,7 @@ export class DataMessenger extends React.Component {
     onNotificationCount: PropTypes.func,
     onVisibleChange: PropTypes.func,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessAlert: PropTypes.func,
     setMobileActivePage: PropTypes.func,
     onProjectSelectChange: PropTypes.func,
@@ -292,6 +293,7 @@ export class DataMessenger extends React.Component {
     onNotificationCount: () => {},
     onVisibleChange: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessAlert: () => {},
     onProjectSelectChange: () => {},
     onCreateQueryEvaluationItem: undefined,

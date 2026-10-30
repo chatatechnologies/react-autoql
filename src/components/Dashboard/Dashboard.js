@@ -22,7 +22,7 @@ import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import { withTheme } from '../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 import { buildDashboardSource } from './dashboardSource'
 import { isSm, subscribeToScreenSize } from '../../js/breakpoints'
 
@@ -124,6 +124,7 @@ class DashboardWithoutTheme extends React.Component {
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,
@@ -191,6 +192,7 @@ class DashboardWithoutTheme extends React.Component {
     refreshInterval: 60,
     enableCyclicalDates: false,
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessCallback: () => {},
     onChange: () => {},
     onCSVDownloadStart: () => {},
@@ -1508,6 +1510,7 @@ class DashboardWithoutTheme extends React.Component {
             notExecutedText={this.props.notExecutedText}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
+            valueActionCallbacks={this.props.valueActionCallbacks}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
             onDrilldownStart={this.onDrilldownStart}
@@ -1622,6 +1625,7 @@ class DashboardWithoutTheme extends React.Component {
             showQueryInterpretation={this.props.isEditing}
             isDrilldownRunning={this.state.isDrilldownRunning}
             onErrorCallback={this.props.onErrorCallback}
+            valueActionCallbacks={this.props.valueActionCallbacks}
             onSuccessCallback={this.props.onSuccessCallback}
             activeDrilldownRef={this.activeDrilldownRef}
             onCSVDownloadStart={this.props.onCSVDownloadStart}

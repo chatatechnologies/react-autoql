@@ -449,6 +449,50 @@ body.react-autoql-no-select {
   text-align: inherit;
 }
 
+// "Open" button on cells in a column with a value_action. Always shown, faintly, so the column reads
+// as clickable without hovering; full strength when its cell is hovered.
+.react-autoql-cell-value-action-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--react-autoql-accent-color);
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.1s ease, background-color 0.1s ease;
+
+  &:hover {
+    background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.12);
+  }
+
+  &:focus-visible {
+    opacity: 1;
+    outline: 1px solid var(--react-autoql-accent-color);
+  }
+
+  svg {
+    display: block;
+  }
+}
+
+.tabulator-cell:hover .react-autoql-cell-value-action-btn {
+  opacity: 1;
+}
+
+// No hover on touch screens, so the button is always at full strength
+@media (hover: none) {
+  .react-autoql-cell-value-action-btn {
+    opacity: 1;
+  }
+}
+
 #react-autoql-query-output-tooltip {
   cursor: pointer !important;
 }

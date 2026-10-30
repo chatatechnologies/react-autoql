@@ -6,7 +6,7 @@ import { QueryOutput } from '../QueryOutput'
 import { VizToolbar } from '../VizToolbar'
 import { OptionsToolbar } from '../OptionsToolbar'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 
 export default class DrilldownTable extends React.Component {
   static propTypes = {
@@ -20,6 +20,7 @@ export default class DrilldownTable extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
   }
 
   static defaultProps = {
@@ -33,6 +34,7 @@ export default class DrilldownTable extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
+    valueActionCallbacks: undefined,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -62,6 +64,7 @@ export default class DrilldownTable extends React.Component {
             }}
             originalQueryID={this.props.queryResponse?.data?.data?.query_id}
             dataFormatting={this.props.dataFormatting}
+            valueActionCallbacks={this.props.valueActionCallbacks}
             queryResponse={this.props.queryResponse}
             drilldownFilters={this.props.drilldownFilters}
             renderTooltips={false}

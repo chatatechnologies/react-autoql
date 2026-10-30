@@ -13,7 +13,7 @@ import DrilldownTable from './DrilldownTable'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 import { ReportProblemModal } from '../ReportProblemModal'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 
 export default class DrilldownModal extends React.Component {
   constructor(props) {
@@ -43,6 +43,7 @@ export default class DrilldownModal extends React.Component {
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,
@@ -75,6 +76,7 @@ export default class DrilldownModal extends React.Component {
     autoChartAggregations: true,
     cancelQueriesOnUnmount: false,
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessCallback: () => {},
     onChange: () => {},
     onCSVDownloadStart: () => {},
@@ -157,6 +159,7 @@ export default class DrilldownModal extends React.Component {
         reportProblemCallback={this.reportProblemCallback}
         showQueryInterpretation={this.props.showQueryInterpretation}
         onErrorCallback={this.props.onErrorCallback}
+        valueActionCallbacks={this.props.valueActionCallbacks}
         onSuccessCallback={this.props.onSuccessCallback}
         onCSVDownloadStart={this.props.onCSVDownloadStart}
         onCSVDownloadProgress={this.props.onCSVDownloadProgress}
