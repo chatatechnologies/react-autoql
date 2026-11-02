@@ -345,7 +345,19 @@ export const createReport = async ({ authentication, id, report, folderId, tagId
 // blocks with the user's data in the background (`dataStatus` PENDING, then RUNNING), asking the questions in
 // `timeZone` (the browser's, say) so relative dates read as they do in the app; the report is read-only until it's
 // done. Creating again with the same id answers with what was stored the first time, and `created` false.
-export const createReportFromTemplate = async ({ authentication, id, templateId, folderId, tagIds, timeZone }) => {
+//
+// `sessionFilterLocks` makes it for one household, say (the report's filter lock, model/filterLocks.js): the report
+// keeps it, and every question is filled in with it (RW-352). A service without that ignores it, and the report comes
+// back without one.
+export const createReportFromTemplate = async ({
+  authentication,
+  id,
+  templateId,
+  folderId,
+  tagIds,
+  timeZone,
+  sessionFilterLocks,
+}) => {
   const { status, data } = await call({
     authentication,
     method: 'post',
@@ -355,6 +367,7 @@ export const createReportFromTemplate = async ({ authentication, id, templateId,
       ...(folderId ? { folder_id: folderId } : {}),
       ...(tagIds?.length ? { tag_ids: tagIds } : {}),
       ...(timeZone ? { time_zone: timeZone } : {}),
+      ...(sessionFilterLocks?.length ? { session_filter_locks: sessionFilterLocks } : {}),
     },
   })
   return { ...detailOf(data), created: status === 201 }

@@ -318,6 +318,7 @@ describe('captureQuestion', () => {
 
     it('asks once more without that order when it can’t be asked in it', async () => {
       const own = [{ name: 'account', sort: 'ASC' }]
+      const lock = [{ key: 'household', value: 'Brown Family', filter_type: 'include' }]
       const runQueryFn = jest
         .fn()
         .mockImplementationOnce(() => Promise.reject({ data: { message: 'Unknown column', reference_id: '1.1.400' } }))
@@ -326,12 +327,16 @@ describe('captureQuestion', () => {
       const result = await captureQuestion({
         query: 'aum by account',
         authentication: AUTH,
+        filters: lock,
         rerun: { kept },
         runQueryFn,
       })
 
       expect(runQueryFn).toHaveBeenCalledTimes(2)
       expect(runQueryFn.mock.calls[1][0]).not.toHaveProperty('orders')
+      // Still for the report's filter lock.
+      expect(runQueryFn.mock.calls[0][0].filters).toStrictEqual(lock)
+      expect(runQueryFn.mock.calls[1][0].filters).toStrictEqual(lock)
       expect(result.ok).toBe(true)
       expect(result.capture.table.sort).toStrictEqual(own)
     })

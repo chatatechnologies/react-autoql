@@ -12,6 +12,7 @@ import {
   TYPEFACES,
   WIDTH_OPTIONS,
 } from '../constants'
+import { normalizeFilterLocks } from './filterLocks'
 
 // A report is a template: its blocks say what to show, never the data itself. Everything here is
 // plain JSON, so a host can persist it as-is. Query responses live only in the builder's state.
@@ -193,18 +194,28 @@ export const createEmptyReport = (overrides = {}) => {
 }
 
 // Fills defaults, validates every value against the options the builder offers, and gives each
-// block an id. Unknown top-level fields and unknown block types are kept.
+// block an id. Unknown top-level fields and unknown block types are kept. A filter lock (model/filterLocks.js) keeps
+// only real locks, and goes when none is left, so a report without one never gains the field.
 export const normalizeReport = (report) => {
   if (!isObject(report)) {
     return createEmptyReport()
   }
-  return {
+  const normalized = {
     ...report,
     schemaVersion: typeof report.schemaVersion === 'number' ? report.schemaVersion : REPORT_SCHEMA_VERSION,
     title: typeof report.title === 'string' ? report.title : '',
     page: normalizePageSetup(report.page),
     blocks: (Array.isArray(report.blocks) ? report.blocks : []).map(normalizeBlock).filter(Boolean),
   }
+  if ('sessionFilterLocks' in report) {
+    const locks = normalizeFilterLocks(report.sessionFilterLocks)
+    if (locks.length) {
+      normalized.sessionFilterLocks = locks
+    } else {
+      delete normalized.sessionFilterLocks
+    }
+  }
+  return normalized
 }
 
 export const isNewerSchema = (report) => (report?.schemaVersion || 0) > REPORT_SCHEMA_VERSION

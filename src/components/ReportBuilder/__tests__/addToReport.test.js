@@ -183,6 +183,31 @@ describe('AddToReportDialog', () => {
     expect(appendReportBlock).not.toHaveBeenCalled()
   })
 
+  it('makes a new report for the filter lock the answer was asked with, and adds to a report as it is (RW-351)', async () => {
+    const lock = { key: 'household', value: 'Brown Family', filter_type: 'include' }
+    fetchReports.mockResolvedValue({ reports: REPORTS })
+    createReport.mockImplementation(async (request) => storedAs(request))
+    appendReportBlock.mockResolvedValue({ id: 'r3', version: 4, updatedAt: '', appended: true })
+    const { unmount } = setup({ sessionFilterLocks: [{ ...lock, isSession: true }] })
+    await listed()
+
+    fireEvent.click(newReport())
+    fireEvent.change(nameField(), { target: { value: 'The Browns' } })
+    fireEvent.click(addButton())
+    expect(createReport.mock.calls[0][0].report).toEqual({
+      ...createEmptyReport({ title: 'The Browns', blocks: [CLEAN] }),
+      sessionFilterLocks: [lock],
+    })
+    await waitFor(() => expect(createReport).toHaveBeenCalledTimes(1))
+    unmount()
+
+    setup({ sessionFilterLocks: [lock] })
+    await listed()
+    fireEvent.click(report('Book of business'))
+    fireEvent.click(addButton())
+    expect(appendReportBlock).toHaveBeenCalledWith({ authentication: AUTH, id: 'r3', block: CLEAN })
+  })
+
   it('adds the block at the end of the report chosen, and tells the host which', async () => {
     fetchReports.mockResolvedValue({ reports: REPORTS })
     appendReportBlock.mockResolvedValue({ id: 'r3', version: 4, updatedAt: '', appended: true })

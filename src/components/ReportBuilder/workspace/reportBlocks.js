@@ -1,5 +1,6 @@
 import { MAX_TABLE_ROWS } from '../constants'
 import { MAX_CHART_ROWS, rowsForCapture } from '../model/capture'
+import { normalizeFilterLocks } from '../model/filterLocks'
 import { newReportId } from './documents'
 import { REPORTS_STRINGS } from './reportsStrings'
 
@@ -33,7 +34,11 @@ const CAPTURE_ERRORS = {
 // The block for what was chosen: the answer as it's shown now, and where it came from — the dashboard tile when there
 // is one, else the question. `data` is the toolbar's payload, `extra` its second argument (older versions of
 // react-autoql pass none), and `dashboard` ({ id, name, tiles }) the one the tile is on, for the labels the block
-// keeps. { ok: true, block }, or { ok: false, message } saying why it can't be added.
+// keeps. { ok: true, block, sessionFilterLocks? }, or { ok: false, message } saying why it can't be added.
+//
+// An answer asked with a filter lock (a household, say: `data.filters`, its session_filter_locks) brings it along
+// for a new report made from it to have (AddToReportDialog). A tile's filters are its own and its dashboard's, so a
+// tile brings none.
 export const captureReportBlock = ({ data, extra, dashboard } = {}) => {
   const result = extra?.captureForReport?.(LIMITS)
   if (!result) {
@@ -68,9 +73,11 @@ export const captureReportBlock = ({ data, extra, dashboard } = {}) => {
     }
   }
 
+  const sessionFilterLocks = source?.type === 'query' ? normalizeFilterLocks(data?.filters) : []
   return {
     ok: true,
     block: { id: newReportId(), type: 'data', width: 'full', rows: rowsForCapture(capture), source, capture },
+    ...(sessionFilterLocks.length ? { sessionFilterLocks } : {}),
   }
 }
 

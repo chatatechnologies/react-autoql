@@ -26,13 +26,21 @@ export const BrandMark = ({ branding, size = 'small' }) => {
   )
 }
 
-// The title and the lockup, the lockup left, centred or right (branding.position) and the title clear of it.
-export const RunningHeader = ({ branding, title }) => (
+// The title and the lockup, the lockup left, centred or right (branding.position) and the title clear of it. A report
+// with a filter lock says what it's for after its title, on the same line: the header is one line high.
+export const RunningHeader = ({ branding, title, lock }) => (
   <header
     className={`${RB}-running-header`}
     data-brand-position={hasBranding(branding) ? branding.position || DEFAULT_BRAND_POSITION : undefined}
   >
-    <div className={`${RB}-running-title`}>{title || STRINGS.untitled}</div>
+    <div className={`${RB}-running-title`}>
+      {title || STRINGS.untitled}
+      {lock ? (
+        <span className={`${RB}-running-lock`} data-test='report-running-lock'>
+          {` · ${lock}`}
+        </span>
+      ) : null}
+    </div>
     <BrandMark branding={branding} />
   </header>
 )

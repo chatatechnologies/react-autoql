@@ -585,11 +585,30 @@ export interface ReportPageSetup {
   tableOfContents: boolean
 }
 
+// A report's filter lock: one AutoQL session filter lock, as the query API takes it in session_filter_locks and
+// FilterLockPopover makes it. Every question in a report that has one is asked with them.
+export interface ReportFilterLock {
+  key: string
+  value: string | number
+  filter_type?: string
+  canonical_key?: string
+  format_txt?: string
+  show_message?: string
+}
+
 export interface Report {
   schemaVersion: number
   title: string
   page: ReportPageSetup
+  // What the report is for: a household, say, or several. None asks every question for everything.
+  sessionFilterLocks?: ReportFilterLock[]
   blocks: ReportBlock[]
+}
+
+// What the host calls a report's filter lock, and having none: { title: 'Households', none: 'All households' }.
+export interface ReportFilterLockLabels {
+  title?: string
+  none?: string
 }
 
 export interface ReportDashboard {
@@ -687,6 +706,13 @@ export interface ReportBuilderProps {
     state: 'template' | 'filling' | 'filled'
     errors?: Record<string, { reason: ReportDataError['reason']; message?: string }>
   } | null
+  // The report's filter lock (sessionFilterLocks) can be set in the panel when nothing is selected. Off by default; a
+  // report that has one is asked with it either way.
+  enableFilterLocks?: boolean
+  // With enableFilterLocks: the host's values to lock on (its households, say), loaded the first time the picker
+  // opens. Without it, the picker searches AutoQL's values.
+  loadFilterLockSuggestions?: () => Promise<string[]>
+  filterLockLabels?: ReportFilterLockLabels
   className?: string
 }
 
@@ -1091,6 +1117,11 @@ export interface ReportsProps {
   // template…), and its templates and categories managed (Manage templates). That takes AutoQL's management grant
   // for reports, so say who may: an app's owners and admins, say. Off by default.
   canManageTemplates?: boolean
+  // A report can be for one value, or several, of what the host's data locks on (its households, say): set in each
+  // report's builder and, with enableTemplates, chosen when a report is started from a template. Off by default.
+  enableFilterLocks?: boolean
+  loadFilterLockSuggestions?: () => Promise<string[]>
+  filterLockLabels?: ReportFilterLockLabels
   // Passed on to each report's ReportBuilder.
   branding?: ReportBranding
   enableBranding?: boolean
@@ -1131,17 +1162,21 @@ export interface ReportToolbarOptionExtra {
 }
 
 // The Data block "Add to Report…" adds: the answer or tile as it's shown now, and where it came from (the tile,
-// when there is one, else the question). A message to show when it can't be kept.
+// when there is one, else the question). A message to show when it can't be kept. An answer asked with a filter lock
+// brings it (sessionFilterLocks), for AddToReportDialog.
 export declare function captureReportBlock(options: {
   data: ReportToolbarOptionData | null | undefined
   extra: ReportToolbarOptionExtra | null | undefined
   dashboard?: { id: string; name?: string; tiles?: DashboardTile[] } | null
-}): { ok: true; block: ReportDataBlock } | { ok: false; message: string }
+}): { ok: true; block: ReportDataBlock; sessionFilterLocks?: ReportFilterLock[] } | { ok: false; message: string }
 
 export interface AddToReportDialogProps {
   authentication?: Authentication
   // The block to add at the end of the chosen report (captureReportBlock).
   block: ReportBlock
+  // The lock the answer was asked with (captureReportBlock): a new report made for the block is for it too. A report
+  // the block is added to keeps its own.
+  sessionFilterLocks?: ReportFilterLock[]
   onClose: () => void
   // After it's added (before onClose): which report, and whether it was made for this.
   onAdded?: (added: { id: string; title: string; created: boolean }) => void

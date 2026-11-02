@@ -131,6 +131,24 @@ describe('captureReportBlock', () => {
     })
   })
 
+  it('brings the filter lock an answer was asked with, but not a tile’s filters (RW-351)', () => {
+    const lock = { key: 'household', value: 'Brown Family', filter_type: 'include', isSession: true }
+    const kept = { key: 'household', value: 'Brown Family', filter_type: 'include' }
+    const answer = captureReportBlock({
+      data: { query: 'aum', filters: [lock] },
+      extra: extraOf({ ok: true, capture: capture(3) }),
+    })
+    expect(answer.sessionFilterLocks).toStrictEqual([kept])
+
+    const tile = captureReportBlock({
+      data: { query: 'aum', tileKey: 'a', dashboardId: 'd1', filters: [lock] },
+      extra: extraOf({ ok: true, capture: capture(3) }),
+      dashboard: DASHBOARD,
+    })
+    expect(tile.ok).toBe(true)
+    expect(tile).not.toHaveProperty('sessionFilterLocks')
+  })
+
   it('takes the question from the answer when the toolbar doesn’t say, and has no source without one', () => {
     const withText = captureReportBlock({ data: {}, extra: extraOf({ ok: true, capture: capture(3) }) })
     expect(withText.block.source).toEqual({ type: 'query', query: 'total aum by region' })

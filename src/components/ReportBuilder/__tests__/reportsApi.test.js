@@ -310,6 +310,16 @@ describe('starting a report from a template', () => {
       path: '/autoql/api/v1/reports',
       body: { id: ID, template_id: 'tp1', folder_id: 'f', time_zone: 'America/Denver' },
     })
+    expect(sent().body).not.toHaveProperty('session_filter_locks')
+  })
+
+  it('makes it for a filter lock, as session_filter_locks (RW-352)', async () => {
+    const lock = [{ key: 'household', value: 'Brown Family', filter_type: 'include' }]
+    axios.request.mockResolvedValue(
+      answer({ ...STORED, template_id: 'tp1', data_status: 'PENDING', project_id: 'CT_1', document: DOCUMENT }, 201),
+    )
+    await createReportFromTemplate({ authentication: AUTH, id: ID, templateId: 'tp1', sessionFilterLocks: lock })
+    expect(sent().body).toMatchObject({ id: ID, template_id: 'tp1', session_filter_locks: lock })
   })
 
   it('says how filling the report’s data is going, and why blocks weren’t filled', async () => {

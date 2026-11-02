@@ -383,3 +383,49 @@
     gap: 0.5rem;
   }
 }
+
+// Beside Start report, with enableFilterLocks: what the report will be for (the report's filter lock) and Change…,
+// which opens FilterLockPopover inside the dialog. It takes the room the status line would, which stays for errors.
+.#{$rs}-layer {
+  .#{$rs}-templates-lock {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    margin-right: auto;
+  }
+
+  .#{$rs}-templates-lock-label {
+    flex: none;
+    color: $text-2;
+    font-size: 0.75rem;
+  }
+
+  .#{$rs}-filter-lock {
+    min-width: 0;
+  }
+
+  .#{$rs}-filter-lock-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .#{$rs}-filter-lock-value {
+    min-width: 0;
+    max-width: 16rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: $text;
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
+
+  .#{$rs}-filter-lock-failed {
+    margin: 0.25rem 0 0;
+    color: $danger;
+    font-size: 0.75rem;
+  }
+}

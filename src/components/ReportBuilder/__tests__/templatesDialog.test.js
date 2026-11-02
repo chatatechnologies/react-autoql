@@ -23,6 +23,16 @@ jest.mock('../ReportBuilder', () => ({
   },
 }))
 
+// The filter lock's field (RW-351) as a button that picks the lock a test sets: the popover is FilterLockField's own.
+const mockLock = { next: [] }
+jest.mock('../components/FilterLockField', () => ({
+  FilterLockField: (props) => (
+    <button type='button' data-test='mock-filter-lock' onClick={() => props.onChange(mockLock.next)}>
+      {props.locks?.length ? props.locks.map((lock) => lock.value).join(', ') : props.labels?.none}
+    </button>
+  ),
+}))
+
 const AUTH = { apiKey: 'k', domain: 'https://example.test', token: 't' }
 const template = (id, title, rest = {}) => ({
   id,
@@ -71,6 +81,7 @@ const startButton = () => screen.getByTestId('reports-templates-start')
 beforeEach(() => {
   jest.clearAllMocks()
   mockBuilder.props = null
+  mockLock.next = []
   fetchReportTemplates.mockResolvedValue({ templates: TEMPLATES, page: 1, pageSize: 200, totalPages: 1, totalItems: 3 })
   fetchReportCategories.mockResolvedValue(CATEGORIES)
   fetchReportTemplate.mockImplementation(async ({ id }) => ({
@@ -173,6 +184,38 @@ describe('TemplatesDialog', () => {
     const [first, again] = onStart.mock.calls.map(([call]) => call)
     expect(first).toEqual({ templateId: 't1', id: expect.stringMatching(/^[0-9a-f-]{36}$/) })
     expect(again).toEqual(first)
+  })
+
+  it('starts it for the filter lock chosen beside Start report, as another report for another lock', async () => {
+    const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include' }
+    const { onStart } = setup({
+      enableFilterLocks: true,
+      filterLockLabels: { title: 'Households', none: 'All households' },
+    })
+    await waitFor(() => expect(names()).toHaveLength(3))
+    fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+    expect(screen.getByTestId('reports-templates-lock')).toHaveTextContent('HouseholdsAll households')
+
+    await act(async () => fireEvent.click(startButton()))
+    mockLock.next = [BROWN]
+    fireEvent.click(screen.getByTestId('mock-filter-lock'))
+    expect(screen.getByTestId('reports-templates-lock')).toHaveTextContent('Brown Family')
+    await act(async () => fireEvent.click(startButton()))
+
+    const [everything, brown] = onStart.mock.calls.map(([call]) => call)
+    expect(everything).toEqual({ templateId: 't1', id: expect.stringMatching(/^[0-9a-f-]{36}$/) })
+    expect(brown).toEqual({
+      templateId: 't1',
+      id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+      sessionFilterLocks: [BROWN],
+    })
+    expect(brown.id).not.toBe(everything.id)
+  })
+
+  it('has no filter lock to choose without enableFilterLocks', async () => {
+    setup()
+    await waitFor(() => expect(names()).toHaveLength(3))
+    expect(screen.queryByTestId('reports-templates-lock')).toBeNull()
   })
 
   it('says when there are no templates, and when they couldn’t be loaded', async () => {

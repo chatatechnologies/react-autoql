@@ -1430,6 +1430,34 @@
     }
   }
 
+  // A report's filter lock in the panel (FilterLockField): what it is, and Change….
+  .#{$rb}-filter-lock {
+    margin: 0 0 0.5rem;
+  }
+
+  .#{$rb}-filter-lock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .#{$rb}-filter-lock-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    color: $text;
+  }
+
+  .#{$rb}-filter-lock-failed {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: $text-2;
+  }
+
   .#{$rb}-note {
     margin: 0 0 0.875rem;
     font-size: 0.75rem;

@@ -15,10 +15,13 @@ import { captureFromResponse, MAX_CHART_ROWS, recaptureFromResponse } from '../m
 //
 // `capturedAt` is when the answer is said to be from: now by default, or when the questions asked together started
 // (Rerun all, a report filled in from a template), so they all read as of one time.
+//
+// `filters` is the report's filter lock (model/filterLocks.js), which every question in it is asked with.
 export const captureQuestion = ({
   query,
   authentication,
   autoQLConfig,
+  filters,
   signal,
   cancelToken,
   rerun,
@@ -32,7 +35,7 @@ export const captureQuestion = ({
 
   // Up to a chart's worth of rows: how it will be shown isn't known until it answers.
   const request = {
-    ...buildQuestionRequest({ query: text, authentication, autoQLConfig }),
+    ...buildQuestionRequest({ query: text, authentication, autoQLConfig, filters }),
     pageSize: MAX_CHART_ROWS,
     cancelToken: signal ?? cancelToken,
   }

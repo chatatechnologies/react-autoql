@@ -584,6 +584,12 @@ $warn-rule: #f0dcb0;
     color: $ink;
   }
 
+  // What a report with a filter lock is for, after its title on the same line.
+  .#{$rb}-running-lock {
+    font-weight: 450;
+    color: $ink-2;
+  }
+
   .#{$rb}-running-footer {
     display: flex;
     align-items: flex-end;
@@ -676,6 +682,14 @@ $warn-rule: #f0dcb0;
     line-height: 1.1;
     letter-spacing: -0.02em;
     color: $ink;
+    overflow-wrap: anywhere;
+  }
+
+  .#{$rb}-cover-lock {
+    margin: 0 0 8pt;
+    font-size: 13pt;
+    font-weight: 500;
+    color: $ink-2;
     overflow-wrap: anywhere;
   }
 

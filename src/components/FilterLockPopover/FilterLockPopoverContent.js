@@ -106,6 +106,12 @@ export default class FilterLockPopover extends React.Component {
      * later query, which is surprising if the user only meant "just this once".
      */
     persistNewFilters: PropTypes.bool,
+    /**
+     * Whether each row has its "Persist" toggle. Off where the locks belong to
+     * something other than the user (a report's filter lock): with every lock
+     * session-scoped and no toggle, nothing here reaches the filter-locking API.
+     */
+    showPersistToggle: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -118,6 +124,7 @@ export default class FilterLockPopover extends React.Component {
     suggestionList: undefined,
     suggestionListTitle: undefined,
     persistNewFilters: true,
+    showPersistToggle: true,
   }
 
   componentDidMount = () => {
@@ -1018,7 +1025,7 @@ export default class FilterLockPopover extends React.Component {
             onChange={(value) => this.handleExcludeToggle(category, value)}
           />
         </div>
-        {i === 0 ? (
+        {i === 0 && this.props.showPersistToggle ? (
           <div className='persist-toggle-column'>
             <h4>Persist</h4>
             <Icon
@@ -1057,13 +1064,15 @@ export default class FilterLockPopover extends React.Component {
           {filterName}
         </div>
         <div className='react-autoql-filter-list-item-actions'>
-          <Checkbox
-            className='persist-toggle'
-            data-test='react-autoql-filter-lock-persist-toggle'
-            type='switch'
-            checked={!filter.isSession}
-            onChange={() => this.handlePersistToggle(filter)}
-          />
+          {this.props.showPersistToggle ? (
+            <Checkbox
+              className='persist-toggle'
+              data-test='react-autoql-filter-lock-persist-toggle'
+              type='switch'
+              checked={!filter.isSession}
+              onChange={() => this.handlePersistToggle(filter)}
+            />
+          ) : null}
           <Icon
             className='react-autoql-remove-filter-icon'
             tooltip='Remove filter'
