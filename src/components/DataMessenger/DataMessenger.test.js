@@ -338,15 +338,16 @@ describe('restore handle while maximized', () => {
     return { wrapper, instance }
   }
 
+  // The outer quarter of the drawer: 250px of its 1000px width, or 200px of its 800px height
   const cases = [
-    { placement: 'right', near: { clientX: 30, clientY: 400 }, far: { clientX: 31, clientY: 400 } },
-    { placement: 'left', near: { clientX: 970, clientY: 400 }, far: { clientX: 969, clientY: 400 } },
-    { placement: 'top', near: { clientX: 500, clientY: 770 }, far: { clientX: 500, clientY: 769 } },
-    { placement: 'bottom', near: { clientX: 500, clientY: 30 }, far: { clientX: 500, clientY: 31 } },
+    { placement: 'right', near: { clientX: 250, clientY: 400 }, far: { clientX: 251, clientY: 400 } },
+    { placement: 'left', near: { clientX: 750, clientY: 400 }, far: { clientX: 749, clientY: 400 } },
+    { placement: 'top', near: { clientX: 500, clientY: 600 }, far: { clientX: 500, clientY: 599 } },
+    { placement: 'bottom', near: { clientX: 500, clientY: 200 }, far: { clientX: 500, clientY: 201 } },
   ]
 
   cases.forEach(({ placement, near, far }) => {
-    test(`${placement} placement shows it within 30px of the outer edge`, () => {
+    test(`${placement} placement shows it within the outer quarter of the drawer`, () => {
       const { wrapper, instance } = setupMaximized(placement)
 
       instance.onDrawerMouseMove(far)
@@ -366,11 +367,23 @@ describe('restore handle while maximized', () => {
     const pill = {}
     instance.restoreHandleRef = { contains: (target) => target === pill }
 
-    instance.onDrawerMouseMove({ clientX: 33, clientY: 400, target: pill })
+    instance.onDrawerMouseMove({ clientX: 260, clientY: 400, target: pill })
     expect(wrapper.state('isNearRestoreEdge')).toBe(true)
 
-    instance.onDrawerMouseMove({ clientX: 33, clientY: 400, target: {} })
+    instance.onDrawerMouseMove({ clientX: 260, clientY: 400, target: {} })
     expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a narrow drawer still shows it within 30px of the outer edge', () => {
+    const { wrapper, instance } = setupMaximized('right')
+    instance.messengerDrawerRef = { getBoundingClientRect: () => ({ left: 0, top: 0, right: 80, bottom: 800 }) }
+
+    instance.onDrawerMouseMove({ clientX: 31, clientY: 400 })
+    expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+
+    instance.onDrawerMouseMove({ clientX: 30, clientY: 400 })
+    expect(wrapper.state('isNearRestoreEdge')).toBe(true)
     wrapper.unmount()
   })
 

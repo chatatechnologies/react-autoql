@@ -1349,10 +1349,23 @@ export class DataMessenger extends React.Component {
     )
   }
 
-  // How close, in px, the pointer has to come to the maximized drawer's outer edge
-  // for the restore pill to show. Near rather than on the edge: that edge is the
-  // edge of the screen, and nobody aims for the last pixel of it.
-  RESTORE_EDGE_DISTANCE = 30
+  // How close the pointer has to come to the maximized drawer's outer edge for the
+  // restore pill to show: the outer quarter of the drawer, and never less than 30px.
+  // Near rather than on the edge: that edge is the edge of the screen, and nobody
+  // aims for the last pixel of it.
+  RESTORE_EDGE_FRACTION = 0.25
+  RESTORE_EDGE_MIN_DISTANCE = 30
+
+  getRestoreEdgeDistance = () => {
+    const rect = this.messengerDrawerRef?.getBoundingClientRect()
+    if (!rect) {
+      return this.RESTORE_EDGE_MIN_DISTANCE
+    }
+
+    const placement = this.getPlacementProp()
+    const size = placement === 'top' || placement === 'bottom' ? rect.bottom - rect.top : rect.right - rect.left
+    return Math.max(this.RESTORE_EDGE_MIN_DISTANCE, size * this.RESTORE_EDGE_FRACTION)
+  }
 
   getDistanceFromOuterEdge = (e) => {
     const rect = this.messengerDrawerRef?.getBoundingClientRect()
@@ -1381,7 +1394,7 @@ export class DataMessenger extends React.Component {
     // The pill reaches a little past the reveal distance, so being on it counts as
     // near - otherwise it would vanish from under the pointer on its inner half.
     const isNearRestoreEdge =
-      this.getDistanceFromOuterEdge(e) <= this.RESTORE_EDGE_DISTANCE || !!this.restoreHandleRef?.contains(e.target)
+      this.getDistanceFromOuterEdge(e) <= this.getRestoreEdgeDistance() || !!this.restoreHandleRef?.contains(e.target)
 
     // Every mouse move lands here, so only re-render when the answer changes.
     if (isNearRestoreEdge !== this.state.isNearRestoreEdge) {
