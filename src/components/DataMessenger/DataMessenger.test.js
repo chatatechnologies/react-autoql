@@ -387,6 +387,17 @@ describe('restore handle while maximized', () => {
     wrapper.unmount()
   })
 
+  test('reads the drawer rect once per mouse move', () => {
+    const { wrapper, instance } = setupMaximized('right')
+    const getBoundingClientRect = jest.fn(() => rect)
+    instance.messengerDrawerRef = { getBoundingClientRect }
+
+    instance.onDrawerMouseMove({ clientX: 100, clientY: 400 })
+
+    expect(getBoundingClientRect).toHaveBeenCalledTimes(1)
+    wrapper.unmount()
+  })
+
   test('is not tracked or rendered when the drawer is not maximized', () => {
     const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
     const instance = wrapper.instance()

@@ -1402,24 +1402,13 @@ export class DataMessenger extends React.Component {
   RESTORE_EDGE_FRACTION = 0.25
   RESTORE_EDGE_MIN_DISTANCE = 30
 
-  getRestoreEdgeDistance = () => {
-    const rect = this.messengerDrawerRef?.getBoundingClientRect()
-    if (!rect) {
-      return this.RESTORE_EDGE_MIN_DISTANCE
-    }
-
+  getRestoreEdgeDistance = (rect) => {
     const placement = this.getPlacementProp()
     const size = placement === 'top' || placement === 'bottom' ? rect.bottom - rect.top : rect.right - rect.left
     return Math.max(this.RESTORE_EDGE_MIN_DISTANCE, size * this.RESTORE_EDGE_FRACTION)
   }
 
-  getDistanceFromOuterEdge = (e) => {
-    const rect = this.messengerDrawerRef?.getBoundingClientRect()
-
-    if (!rect) {
-      return Infinity
-    }
-
+  getDistanceFromOuterEdge = (e, rect) => {
     switch (this.getPlacementProp()) {
       case 'left':
         return rect.right - e.clientX
@@ -1439,8 +1428,10 @@ export class DataMessenger extends React.Component {
 
     // The pill reaches a little past the reveal distance, so being on it counts as
     // near - otherwise it would vanish from under the pointer on its inner half.
-    const isNearRestoreEdge =
-      this.getDistanceFromOuterEdge(e) <= this.getRestoreEdgeDistance() || !!this.restoreHandleRef?.contains(e.target)
+    // Read once per move: it forces a layout, and every mouse move over the drawer lands here
+    const rect = this.messengerDrawerRef?.getBoundingClientRect()
+    const isNearEdge = !!rect && this.getDistanceFromOuterEdge(e, rect) <= this.getRestoreEdgeDistance(rect)
+    const isNearRestoreEdge = isNearEdge || !!this.restoreHandleRef?.contains(e.target)
 
     // Every mouse move lands here, so only re-render when the answer changes.
     if (isNearRestoreEdge !== this.state.isNearRestoreEdge) {
