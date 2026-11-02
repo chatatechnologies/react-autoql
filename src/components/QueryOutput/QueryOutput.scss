@@ -480,6 +480,19 @@ body.react-autoql-no-select {
   }
 }
 
+// Screen-reader-only description of a value's link (see createValueActionLink)
+.react-autoql-cell-value-action-hint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 #react-autoql-query-output-tooltip {
   cursor: pointer !important;
 }

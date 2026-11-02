@@ -3877,8 +3877,9 @@ export class QueryOutput extends React.Component {
 
   // The link around a cell's value in a column with a value_action. A link is a real anchor so
   // cmd/middle-click and "copy link" work; a callback is a button that calls the host app.
-  // Clicks are handled in onTableCellClick.
-  createValueActionLink = (cell, cellValue, action) => {
+  // Clicks are handled in onTableCellClick. Returns the link and a visually hidden hint that
+  // describes it ("Open in new tab", or the callback's tooltip) to screen readers.
+  createValueActionLink = (cell, cellValue, action, formattedValue) => {
     if (!action || !hasValueActionValue(cellValue)) {
       return undefined
     }
@@ -3905,19 +3906,26 @@ export class QueryOutput extends React.Component {
     }
 
     link.className = VALUE_ACTION_LINK_CLASS
+    link.innerHTML = formattedValue ?? ''
+
+    const hint = document.createElement('span')
+    hint.id = `${VALUE_ACTION_LINK_CLASS}-hint-${uuid()}`
+    hint.className = `${VALUE_ACTION_LINK_CLASS}-hint`
+    hint.textContent = getValueActionTooltip(action, this.props.valueActionCallbacks)
+    link.setAttribute('aria-describedby', hint.id)
 
     // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the link.
     // Read at hover time so a changed tooltip in valueActionCallbacks shows without re-rendering the table.
     link.addEventListener('mouseenter', () => {
-      cell
-        .getElement()
-        ?.setAttribute('data-tooltip-content', getValueActionTooltip(action, this.props.valueActionCallbacks))
+      const tooltip = getValueActionTooltip(action, this.props.valueActionCallbacks)
+      hint.textContent = tooltip
+      cell.getElement()?.setAttribute('data-tooltip-content', tooltip)
     })
     link.addEventListener('mouseleave', () => {
       cell.getElement()?.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
     })
 
-    return link
+    return [link, hint]
   }
 
   addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
@@ -4025,10 +4033,11 @@ export class QueryOutput extends React.Component {
           htmlElement: cell.getElement(),
         })
 
-        const valueActionLink = withValueAction ? this.createValueActionLink(cell, cellValue, valueAction) : undefined
-        if (valueActionLink) {
-          valueActionLink.innerHTML = formattedValue ?? ''
-          valueContainer.appendChild(valueActionLink)
+        const valueActionElements = withValueAction
+          ? this.createValueActionLink(cell, cellValue, valueAction, formattedValue)
+          : undefined
+        if (valueActionElements) {
+          valueContainer.append(...valueActionElements)
         } else {
           valueContainer.innerHTML = formattedValue ?? ''
         }

@@ -67,6 +67,10 @@ const renderCell = (instance, columnName, row, formatterName = 'formatter') => {
   return { cell, content, link: content.querySelector('.react-autoql-cell-value-action') }
 }
 
+// What a screen reader announces after the link's name: the element its aria-describedby points to
+const describedBy = (link) =>
+  link.parentElement.querySelector(`[id="${link.getAttribute('aria-describedby')}"]`)?.textContent
+
 describe('QueryOutput value actions', () => {
   afterEach(() => {
     jest.restoreAllMocks()
@@ -82,6 +86,7 @@ describe('QueryOutput value actions', () => {
     expect(link.getAttribute('target')).toBe('_blank')
     expect(link.getAttribute('rel')).toBe('noopener noreferrer')
     expect(link.textContent).toBe('1042')
+    expect(describedBy(link)).toBe('Open in new tab')
     wrapper.unmount()
   })
 
@@ -150,6 +155,7 @@ describe('QueryOutput value actions', () => {
     const wrapper = setup({ valueActionCallbacks: { openCustomerDrawer: { onClick, tooltip: 'View customer' } } })
     const { cell, link } = renderCell(wrapper.instance(), 'account_name')
 
+    expect(describedBy(link)).toBe('View customer')
     link.dispatchEvent(new MouseEvent('mouseenter'))
     expect(cell.getElement().getAttribute('data-tooltip-content')).toBe('View customer')
 
@@ -331,6 +337,7 @@ describe('QueryOutput value actions', () => {
     link.dispatchEvent(new MouseEvent('mouseenter'))
 
     expect(cell.getElement().getAttribute('data-tooltip-content')).toBe('Open customer drawer')
+    expect(describedBy(link)).toBe('Open customer drawer')
     wrapper.unmount()
   })
 
