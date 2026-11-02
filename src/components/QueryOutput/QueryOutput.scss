@@ -480,8 +480,10 @@ body.react-autoql-no-select {
   }
 }
 
-// Screen-reader-only description of a value's link (see createValueActionLink)
+// Screen-reader-only description of a value's link (see createValueActionLink). Not selectable,
+// so selecting the table's text by hand and copying it doesn't pick up "Open in new tab".
 .react-autoql-cell-value-action-hint {
+  user-select: none;
   position: absolute;
   width: 1px;
   height: 1px;
