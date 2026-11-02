@@ -451,8 +451,9 @@ body.react-autoql-no-select {
 
 // Values in a column with a value_action are links: an <a>, or a <button> for a host app callback.
 // Hovering one also drops the row's hover look (see ChataTable.scss), so it's clear the click goes
-// to the link rather than the row's drilldown.
-.react-autoql-cell-value-action {
+// to the link rather than the row's drilldown. Scoped through the cell's wrappers so link styles
+// around the table (e.g. chat messages make every link bold with no underline) don't override it.
+.react-autoql-cell-value-wrapper .react-autoql-cell-value .react-autoql-cell-value-action {
   display: inline;
   margin: 0 -2px;
   padding: 0 2px;
@@ -460,6 +461,7 @@ body.react-autoql-no-select {
   border-radius: 3px;
   background: none;
   font: inherit;
+  font-weight: inherit;
   line-height: inherit;
   text-align: inherit;
   color: var(--react-autoql-accent-color);
