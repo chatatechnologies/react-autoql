@@ -40,7 +40,7 @@ export const dataConfigType = PropTypes.shape({
 })
 
 // Host functions for columns whose value_action is a callback, keyed by callback_name.
-// Each is a function, or { onClick, tooltip } to replace the open button's "Open" tooltip.
+// Each is a function, or { onClick, tooltip } to replace the link's "Open" tooltip.
 export const valueActionCallbacksType = PropTypes.objectOf(
   PropTypes.oneOfType([PropTypes.func, PropTypes.shape({ onClick: PropTypes.func, tooltip: PropTypes.string })]),
 )

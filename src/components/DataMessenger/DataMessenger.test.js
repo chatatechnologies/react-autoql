@@ -338,15 +338,16 @@ describe('restore handle while maximized', () => {
     return { wrapper, instance }
   }
 
+  // The outer quarter of the drawer: 250px of its 1000px width, or 200px of its 800px height
   const cases = [
-    { placement: 'right', near: { clientX: 30, clientY: 400 }, far: { clientX: 31, clientY: 400 } },
-    { placement: 'left', near: { clientX: 970, clientY: 400 }, far: { clientX: 969, clientY: 400 } },
-    { placement: 'top', near: { clientX: 500, clientY: 770 }, far: { clientX: 500, clientY: 769 } },
-    { placement: 'bottom', near: { clientX: 500, clientY: 30 }, far: { clientX: 500, clientY: 31 } },
+    { placement: 'right', near: { clientX: 250, clientY: 400 }, far: { clientX: 251, clientY: 400 } },
+    { placement: 'left', near: { clientX: 750, clientY: 400 }, far: { clientX: 749, clientY: 400 } },
+    { placement: 'top', near: { clientX: 500, clientY: 600 }, far: { clientX: 500, clientY: 599 } },
+    { placement: 'bottom', near: { clientX: 500, clientY: 200 }, far: { clientX: 500, clientY: 201 } },
   ]
 
   cases.forEach(({ placement, near, far }) => {
-    test(`${placement} placement shows it within 30px of the outer edge`, () => {
+    test(`${placement} placement shows it within the outer quarter of the drawer`, () => {
       const { wrapper, instance } = setupMaximized(placement)
 
       instance.onDrawerMouseMove(far)
@@ -366,11 +367,34 @@ describe('restore handle while maximized', () => {
     const pill = {}
     instance.restoreHandleRef = { contains: (target) => target === pill }
 
-    instance.onDrawerMouseMove({ clientX: 33, clientY: 400, target: pill })
+    instance.onDrawerMouseMove({ clientX: 260, clientY: 400, target: pill })
     expect(wrapper.state('isNearRestoreEdge')).toBe(true)
 
-    instance.onDrawerMouseMove({ clientX: 33, clientY: 400, target: {} })
+    instance.onDrawerMouseMove({ clientX: 260, clientY: 400, target: {} })
     expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a narrow drawer still shows it within 30px of the outer edge', () => {
+    const { wrapper, instance } = setupMaximized('right')
+    instance.messengerDrawerRef = { getBoundingClientRect: () => ({ left: 0, top: 0, right: 80, bottom: 800 }) }
+
+    instance.onDrawerMouseMove({ clientX: 31, clientY: 400 })
+    expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+
+    instance.onDrawerMouseMove({ clientX: 30, clientY: 400 })
+    expect(wrapper.state('isNearRestoreEdge')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('reads the drawer rect once per mouse move', () => {
+    const { wrapper, instance } = setupMaximized('right')
+    const getBoundingClientRect = jest.fn(() => rect)
+    instance.messengerDrawerRef = { getBoundingClientRect }
+
+    instance.onDrawerMouseMove({ clientX: 100, clientY: 400 })
+
+    expect(getBoundingClientRect).toHaveBeenCalledTimes(1)
     wrapper.unmount()
   })
 
@@ -398,6 +422,116 @@ describe('restore handle while maximized', () => {
 
     expect(wrapper.state('isSizeMaximum')).toBe(false)
     expect(wrapper.state('isNearRestoreEdge')).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('dragging the maximize and restore pills', () => {
+  beforeEach(() => {
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback()
+      return 1
+    })
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  const maxWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+
+  test('dragging the maximize pill resizes the drawer instead of maximizing it', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 500, pageY: 400, button: 0 })
+    instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 1 })
+    instance.stopResizingDrawer()
+    pill.simulate('click')
+
+    expect(wrapper.state('width')).toBe(600)
+    expect(wrapper.state('isSizeMaximum')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a press that moves only a few px is still a click', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 500, pageY: 400, button: 0 })
+    instance.onPillPointerMove({ pageX: 498, pageY: 401, buttons: 1 })
+    instance.stopTrackingPillPointer()
+    pill.simulate('click')
+
+    expect(wrapper.state('isResizing')).toBe(false)
+    expect(wrapper.state('isSizeMaximum')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('dragging the restore pill inward shrinks the maximized drawer', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true, isSizeMaximum: true, width: maxWidth })
+    const pill = shallow(<div>{instance.renderRestoreHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 10, pageY: 400, button: 0 })
+    instance.onPillPointerMove({ pageX: 210, pageY: 400, buttons: 1 })
+    instance.stopResizingDrawer()
+
+    expect(wrapper.state('width')).toBe(maxWidth - 200)
+    expect(wrapper.state('isSizeMaximum')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a right-button drag on the pill does not resize the drawer', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 500, pageY: 400, button: 2 })
+    instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 2 })
+
+    expect(wrapper.state('isResizing')).toBe(false)
+    expect(wrapper.state('width')).toBe(500)
+    wrapper.unmount()
+  })
+
+  test('a right-button press on the edge does not start a resize', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const edge = shallow(<div>{instance.renderResizeHandle()}</div>).find('.react-autoql-drawer-resize-handle')
+
+    edge.simulate('mousedown', { pageX: 500, pageY: 400, button: 2 })
+    expect(wrapper.state('isResizing')).toBe(false)
+
+    edge.simulate('mousedown', { pageX: 500, pageY: 400, button: 0 })
+    expect(wrapper.state('isResizing')).toBe(true)
+    instance.stopResizingDrawer()
+    wrapper.unmount()
+  })
+
+  test('a drag that ends off the pill does not swallow the next click', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+
+    // Dragged, but the click never landed on the pill (it moved or unmounted)
+    instance.onPillMouseDown({ pageX: 500, pageY: 400, button: 0 })
+    instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 1 })
+    instance.stopResizingDrawer()
+
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+    pill.simulate('mousedown', { pageX: 600, pageY: 400, button: 0 })
+    instance.stopTrackingPillPointer()
+    pill.simulate('click')
+
+    expect(wrapper.state('isSizeMaximum')).toBe(true)
     wrapper.unmount()
   })
 })
