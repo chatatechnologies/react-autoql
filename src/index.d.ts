@@ -220,7 +220,7 @@ export interface ValueActionContext {
 
 export type ValueActionCallback = (value: any, row: Record<string, any>, context: ValueActionContext) => void
 
-// A plain function, or an object that also sets the open button's tooltip (default "Open")
+// A plain function, or an object that also sets the link's tooltip (default "Open")
 export type ValueActionCallbackEntry = ValueActionCallback | { onClick: ValueActionCallback; tooltip?: string }
 
 export interface DashboardProps {
@@ -236,7 +236,7 @@ export interface DashboardProps {
   notExecutedText?: string | React.ReactElement
   onChange?: (tiles: DashboardTile[], slicers?: any[]) => void
   onErrorCallback?: (error: any) => void
-  // Called when the open button is clicked on a cell in a column whose value_action is
+  // Called when the value is clicked in a cell of a column whose value_action is
   // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
   onSuccessCallback?: (response: any) => void
@@ -349,7 +349,7 @@ export interface DataMessengerProps {
   onNotificationCount?: (count: number) => void
   onVisibleChange?: (visible: boolean) => void
   onErrorCallback?: (error: any) => void
-  // Called when the open button is clicked on a cell in a column whose value_action is
+  // Called when the value is clicked in a cell of a column whose value_action is
   // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
   onSuccessAlert?: (message: string) => void
@@ -406,7 +406,7 @@ export interface QueryOutputProps {
   onDrilldownStart?: (params: any) => void
   onDrilldownEnd?: () => void
   onErrorCallback?: (error: any) => void
-  // Called when the open button is clicked on a cell in a column whose value_action is
+  // Called when the value is clicked in a cell of a column whose value_action is
   // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
   [key: string]: any

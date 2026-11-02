@@ -102,8 +102,7 @@ import {
 } from './splitSeriesUtils'
 import { featureToggles, isDisplayTypeEnabled } from '../../js/featureToggles'
 import {
-  VALUE_ACTION_BUTTON_CLASS,
-  VALUE_ACTION_ICON,
+  VALUE_ACTION_LINK_CLASS,
   buildValueActionUrl,
   getValueAction,
   getValueActionTooltip,
@@ -2654,9 +2653,9 @@ export class QueryOutput extends React.Component {
   onTableCellClick = (cell, e) => {
     const columnDefinition = cell?.getColumn()?.getDefinition()
 
-    // The open button runs the column's value_action instead of drilling down. A link button
+    // A click on the value's link runs the column's value_action instead of drilling down. A link
     // is an anchor, so the browser opens it; a callback goes to the host app.
-    if (e?.target?.closest?.(`.${VALUE_ACTION_BUTTON_CLASS}`)) {
+    if (e?.target?.closest?.(`.${VALUE_ACTION_LINK_CLASS}`)) {
       this.runValueActionCallbackForCell(cell, e)
       return
     }
@@ -3876,10 +3875,10 @@ export class QueryOutput extends React.Component {
     runValueActionCallback({ action, value: cellValue, row, context, callbacks: this.props.valueActionCallbacks })
   }
 
-  // The "open" button for a cell in a column with a value_action. A link is a real anchor so
+  // The link around a cell's value in a column with a value_action. A link is a real anchor so
   // cmd/middle-click and "copy link" work; a callback is a button that calls the host app.
   // Clicks are handled in onTableCellClick.
-  createValueActionButton = (cell, cellValue, action) => {
+  createValueActionLink = (cell, cellValue, action) => {
     if (!action || !hasValueActionValue(cellValue)) {
       return undefined
     }
@@ -3889,38 +3888,36 @@ export class QueryOutput extends React.Component {
       return undefined
     }
 
-    let button
+    let link
     if (action.type === 'link') {
       const url = buildValueActionUrl(action.url, cellValue)
       if (!url) {
         return undefined
       }
 
-      button = document.createElement('a')
-      button.href = url
-      button.target = action.target
-      button.rel = 'noopener noreferrer'
+      link = document.createElement('a')
+      link.href = url
+      link.target = action.target
+      link.rel = 'noopener noreferrer'
     } else {
-      button = document.createElement('button')
-      button.type = 'button'
+      link = document.createElement('button')
+      link.type = 'button'
     }
 
-    button.className = VALUE_ACTION_BUTTON_CLASS
-    button.setAttribute('aria-label', getValueActionTooltip(action, this.props.valueActionCallbacks))
-    button.innerHTML = VALUE_ACTION_ICON
+    link.className = VALUE_ACTION_LINK_CLASS
 
-    // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the button.
+    // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the link.
     // Read at hover time so a changed tooltip in valueActionCallbacks shows without re-rendering the table.
-    button.addEventListener('mouseenter', () => {
-      const tooltip = getValueActionTooltip(action, this.props.valueActionCallbacks)
-      button.setAttribute('aria-label', tooltip)
-      cell.getElement()?.setAttribute('data-tooltip-content', tooltip)
+    link.addEventListener('mouseenter', () => {
+      cell
+        .getElement()
+        ?.setAttribute('data-tooltip-content', getValueActionTooltip(action, this.props.valueActionCallbacks))
     })
-    button.addEventListener('mouseleave', () => {
+    link.addEventListener('mouseleave', () => {
       cell.getElement()?.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
     })
 
-    return button
+    return link
   }
 
   addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
@@ -3933,8 +3930,8 @@ export class QueryOutput extends React.Component {
     }
 
     const handler = (e) => {
-      // Leave right-click on the open button to the browser, so a link shows its own menu
-      if (e.target?.closest?.(`.${VALUE_ACTION_BUTTON_CLASS}`)) {
+      // Leave right-click on a value's link to the browser, so it shows its own link menu
+      if (e.target?.closest?.(`.${VALUE_ACTION_LINK_CLASS}`)) {
         return
       }
 
@@ -4028,16 +4025,15 @@ export class QueryOutput extends React.Component {
           htmlElement: cell.getElement(),
         })
 
-        valueContainer.innerHTML = formattedValue ?? ''
+        const valueActionLink = withValueAction ? this.createValueActionLink(cell, cellValue, valueAction) : undefined
+        if (valueActionLink) {
+          valueActionLink.innerHTML = formattedValue ?? ''
+          valueContainer.appendChild(valueActionLink)
+        } else {
+          valueContainer.innerHTML = formattedValue ?? ''
+        }
 
         wrapper.appendChild(valueContainer)
-
-        if (withValueAction) {
-          const valueActionButton = this.createValueActionButton(cell, cellValue, valueAction)
-          if (valueActionButton) {
-            wrapper.appendChild(valueActionButton)
-          }
-        }
 
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
@@ -4057,7 +4053,7 @@ export class QueryOutput extends React.Component {
 
       newCol.formatter = (cell, formatterParams, onRendered) => formatCell(cell, onRendered, { withValueAction: true })
 
-      // Copying, HTML export and printing get the value without the open button. Pivot columns,
+      // Copying, HTML export and printing get the plain value, without the link. Pivot columns,
       // which are built from these ones, use it as their formatter too.
       newCol.formatterClipboard = (cell, formatterParams, onRendered) =>
         formatCell(cell, onRendered, { withValueAction: false })
@@ -4231,7 +4227,7 @@ export class QueryOutput extends React.Component {
 
       const pivotMonthColumn = {
         ...origDateColumn,
-        formatter: origDateColumn.formatterClipboard, // Pivot cells have no open button
+        formatter: origDateColumn.formatterClipboard, // Pivot cells have no value links
         title: 'Month',
         name: 'Month',
         field: '0',
@@ -4268,7 +4264,7 @@ export class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
-          formatter: columns[numberColumnIndex].formatterClipboard, // Pivot cells have no open button
+          formatter: columns[numberColumnIndex].formatterClipboard, // Pivot cells have no value links
           origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
@@ -4683,7 +4679,7 @@ export class QueryOutput extends React.Component {
       // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
-        formatter: columns[newStringColumnIndex].formatterClipboard, // Pivot cells have no open button
+        formatter: columns[newStringColumnIndex].formatterClipboard, // Pivot cells have no value links
         id: `pivot-col-0`, // Stable ID based on field
         index: 0, // Set index to match array position for sortDataByColumn
         frozen: true,

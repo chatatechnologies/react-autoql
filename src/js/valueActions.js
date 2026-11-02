@@ -1,4 +1,4 @@
-// A column can carry a value_action that adds an "open" button to its table cells:
+// A column can carry a value_action that turns the values in its table cells into links:
 //   { type: 'link', link_url: 'https://crm.acme.com/accounts/{value}', link_target: '_blank' }
 //   { type: 'callback', callback_name: 'openCustomerDrawer' }
 // Callbacks are supplied by the host app through the valueActionCallbacks prop, each either a
@@ -7,14 +7,7 @@
 const VALUE_PLACEHOLDER = '{value}'
 const ALLOWED_LINK_PROTOCOLS = ['http:', 'https:']
 
-export const VALUE_ACTION_BUTTON_CLASS = 'react-autoql-cell-value-action-btn'
-
-export const VALUE_ACTION_ICON =
-  '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-  '<path fill="none" stroke="currentColor" d="M9.5 2.5h4v4"/>' +
-  '<path fill="none" stroke="currentColor" d="M13.5 2.5 7.5 8.5"/>' +
-  '<path fill="none" stroke="currentColor" d="M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3"/>' +
-  '</svg>'
+export const VALUE_ACTION_LINK_CLASS = 'react-autoql-cell-value-action'
 
 export const getValueAction = (column) => {
   const action = column?.value_action

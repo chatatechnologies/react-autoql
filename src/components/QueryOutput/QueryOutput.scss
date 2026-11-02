@@ -449,47 +449,32 @@ body.react-autoql-no-select {
   text-align: inherit;
 }
 
-// "Open" button on cells in a column with a value_action. Always shown, faintly, so the column reads
-// as clickable without hovering; full strength when its cell is hovered.
-.react-autoql-cell-value-action-btn {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 4px;
-  padding: 0;
+// Values in a column with a value_action are links: an <a>, or a <button> for a host app callback.
+// Hovering one also drops the row's hover look (see ChataTable.scss), so it's clear the click goes
+// to the link rather than the row's drilldown.
+.react-autoql-cell-value-action {
+  display: inline;
+  margin: 0 -2px;
+  padding: 0 2px;
   border: none;
-  border-radius: 4px;
-  background: transparent;
+  border-radius: 3px;
+  background: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
   color: var(--react-autoql-accent-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
-  opacity: 0.4;
-  transition: opacity 0.1s ease, background-color 0.1s ease;
+  transition: background-color 0.1s ease;
 
   &:hover {
-    background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.12);
+    background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.15);
+    text-decoration-thickness: 2px;
   }
 
   &:focus-visible {
-    opacity: 1;
     outline: 1px solid var(--react-autoql-accent-color);
-  }
-
-  svg {
-    display: block;
-  }
-}
-
-.tabulator-cell:hover .react-autoql-cell-value-action-btn {
-  opacity: 1;
-}
-
-// No hover on touch screens, so the button is always at full strength
-@media (hover: none) {
-  .react-autoql-cell-value-action-btn {
-    opacity: 1;
   }
 }
 
