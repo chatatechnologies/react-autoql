@@ -1322,7 +1322,12 @@ export class DataMessenger extends React.Component {
       return (
         <div
           className={`react-autoql-drawer-resize-handle ${placement}`}
-          onMouseDown={(e) => this.startResizingDrawer(e)}
+          onMouseDown={(e) => {
+            // Only the main button resizes - a right or middle drag shouldn't
+            if (e.button === 0) {
+              this.startResizingDrawer(e)
+            }
+          }}
         />
       )
     }
@@ -1335,6 +1340,11 @@ export class DataMessenger extends React.Component {
   PILL_DRAG_THRESHOLD = 3
 
   onPillMouseDown = (e) => {
+    // Only the main button drags - a right or middle press shouldn't resize the drawer
+    if (e.button !== 0) {
+      return
+    }
+
     this.pillPointerDown = { pageX: e.pageX, pageY: e.pageY }
     this.didDragPill = false
     document.addEventListener('mousemove', this.onPillPointerMove)

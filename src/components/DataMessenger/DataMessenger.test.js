@@ -446,7 +446,7 @@ describe('dragging the maximize and restore pills', () => {
     wrapper.setState({ isVisible: true })
     const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
 
-    pill.simulate('mousedown', { pageX: 500, pageY: 400 })
+    pill.simulate('mousedown', { pageX: 500, pageY: 400, button: 0 })
     instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 1 })
     instance.stopResizingDrawer()
     pill.simulate('click')
@@ -462,7 +462,7 @@ describe('dragging the maximize and restore pills', () => {
     wrapper.setState({ isVisible: true })
     const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
 
-    pill.simulate('mousedown', { pageX: 500, pageY: 400 })
+    pill.simulate('mousedown', { pageX: 500, pageY: 400, button: 0 })
     instance.onPillPointerMove({ pageX: 498, pageY: 401, buttons: 1 })
     instance.stopTrackingPillPointer()
     pill.simulate('click')
@@ -478,12 +478,41 @@ describe('dragging the maximize and restore pills', () => {
     wrapper.setState({ isVisible: true, isSizeMaximum: true, width: maxWidth })
     const pill = shallow(<div>{instance.renderRestoreHandle()}</div>).find('button')
 
-    pill.simulate('mousedown', { pageX: 10, pageY: 400 })
+    pill.simulate('mousedown', { pageX: 10, pageY: 400, button: 0 })
     instance.onPillPointerMove({ pageX: 210, pageY: 400, buttons: 1 })
     instance.stopResizingDrawer()
 
     expect(wrapper.state('width')).toBe(maxWidth - 200)
     expect(wrapper.state('isSizeMaximum')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a right-button drag on the pill does not resize the drawer', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 500, pageY: 400, button: 2 })
+    instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 2 })
+
+    expect(wrapper.state('isResizing')).toBe(false)
+    expect(wrapper.state('width')).toBe(500)
+    wrapper.unmount()
+  })
+
+  test('a right-button press on the edge does not start a resize', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const edge = shallow(<div>{instance.renderResizeHandle()}</div>).find('.react-autoql-drawer-resize-handle')
+
+    edge.simulate('mousedown', { pageX: 500, pageY: 400, button: 2 })
+    expect(wrapper.state('isResizing')).toBe(false)
+
+    edge.simulate('mousedown', { pageX: 500, pageY: 400, button: 0 })
+    expect(wrapper.state('isResizing')).toBe(true)
+    instance.stopResizingDrawer()
     wrapper.unmount()
   })
 
@@ -493,12 +522,12 @@ describe('dragging the maximize and restore pills', () => {
     wrapper.setState({ isVisible: true })
 
     // Dragged, but the click never landed on the pill (it moved or unmounted)
-    instance.onPillMouseDown({ pageX: 500, pageY: 400 })
+    instance.onPillMouseDown({ pageX: 500, pageY: 400, button: 0 })
     instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 1 })
     instance.stopResizingDrawer()
 
     const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
-    pill.simulate('mousedown', { pageX: 600, pageY: 400 })
+    pill.simulate('mousedown', { pageX: 600, pageY: 400, button: 0 })
     instance.stopTrackingPillPointer()
     pill.simulate('click')
 
