@@ -414,3 +414,84 @@ describe('restore handle while maximized', () => {
     wrapper.unmount()
   })
 })
+
+describe('dragging the maximize and restore pills', () => {
+  beforeEach(() => {
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback()
+      return 1
+    })
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  const maxWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+
+  test('dragging the maximize pill resizes the drawer instead of maximizing it', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 500, pageY: 400 })
+    instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 1 })
+    instance.stopResizingDrawer()
+    pill.simulate('click')
+
+    expect(wrapper.state('width')).toBe(600)
+    expect(wrapper.state('isSizeMaximum')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a press that moves only a few px is still a click', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 500, pageY: 400 })
+    instance.onPillPointerMove({ pageX: 498, pageY: 401, buttons: 1 })
+    instance.stopTrackingPillPointer()
+    pill.simulate('click')
+
+    expect(wrapper.state('isResizing')).toBe(false)
+    expect(wrapper.state('isSizeMaximum')).toBe(true)
+    wrapper.unmount()
+  })
+
+  test('dragging the restore pill inward shrinks the maximized drawer', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true, isSizeMaximum: true, width: maxWidth })
+    const pill = shallow(<div>{instance.renderRestoreHandle()}</div>).find('button')
+
+    pill.simulate('mousedown', { pageX: 10, pageY: 400 })
+    instance.onPillPointerMove({ pageX: 210, pageY: 400, buttons: 1 })
+    instance.stopResizingDrawer()
+
+    expect(wrapper.state('width')).toBe(maxWidth - 200)
+    expect(wrapper.state('isSizeMaximum')).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('a drag that ends off the pill does not swallow the next click', () => {
+    const wrapper = shallow(<DataMessenger {...defaultProps} placement='right' width={500} />)
+    const instance = wrapper.instance()
+    wrapper.setState({ isVisible: true })
+
+    // Dragged, but the click never landed on the pill (it moved or unmounted)
+    instance.onPillMouseDown({ pageX: 500, pageY: 400 })
+    instance.onPillPointerMove({ pageX: 400, pageY: 400, buttons: 1 })
+    instance.stopResizingDrawer()
+
+    const pill = shallow(<div>{instance.renderMaximizeHandle()}</div>).find('button')
+    pill.simulate('mousedown', { pageX: 600, pageY: 400 })
+    instance.stopTrackingPillPointer()
+    pill.simulate('click')
+
+    expect(wrapper.state('isSizeMaximum')).toBe(true)
+    wrapper.unmount()
+  })
+})

@@ -365,6 +365,7 @@ export class DataMessenger extends React.Component {
       this._isMounted = false
       window.removeEventListener('resize', this.onWindowResize)
       this.stopResizingDrawer()
+      this.stopTrackingPillPointer()
 
       clearTimeout(this.windowResizeTimer)
       clearTimeout(this.executeQueryTimeout)
@@ -1300,31 +1301,75 @@ export class DataMessenger extends React.Component {
     document.removeEventListener('mouseleave', this.stopResizingDrawer)
   }
 
+  startResizingDrawer = ({ pageX, pageY }) => {
+    this.setState({
+      isResizing: true,
+      startingResizePosition: {
+        x: pageX,
+        y: pageY,
+        width: this.getDrawerWidth(),
+        height: this.getDrawerHeight(),
+      },
+    })
+    document.addEventListener('mousemove', this.resizeDrawer)
+    document.addEventListener('mouseup', this.stopResizingDrawer)
+    document.addEventListener('mouseleave', this.stopResizingDrawer)
+  }
+
   renderResizeHandle = () => {
-    const self = this
     if (this.state.isVisible) {
       const placement = this.getPlacementProp()
       return (
         <div
           className={`react-autoql-drawer-resize-handle ${placement}`}
-          onMouseDown={(e) => {
-            this.setState({
-              isResizing: true,
-              startingResizePosition: {
-                x: e.pageX,
-                y: e.pageY,
-                width: this.getDrawerWidth(),
-                height: this.getDrawerHeight(),
-              },
-            })
-            document.addEventListener('mousemove', self.resizeDrawer)
-            document.addEventListener('mouseup', self.stopResizingDrawer)
-            document.addEventListener('mouseleave', self.stopResizingDrawer)
-          }}
+          onMouseDown={(e) => this.startResizingDrawer(e)}
         />
       )
     }
     return null
+  }
+
+  // The maximize and restore pills sit on the resize edge, so dragging one resizes the
+  // drawer like the edge does. A press only becomes a drag once the pointer moves a few
+  // px - a plain click still toggles full screen without a resize in between.
+  PILL_DRAG_THRESHOLD = 3
+
+  onPillMouseDown = (e) => {
+    this.pillPointerDown = { pageX: e.pageX, pageY: e.pageY }
+    this.didDragPill = false
+    document.addEventListener('mousemove', this.onPillPointerMove)
+    document.addEventListener('mouseup', this.stopTrackingPillPointer)
+  }
+
+  onPillPointerMove = (e) => {
+    const start = this.pillPointerDown
+    if (!start) {
+      return
+    }
+
+    const distance = Math.max(Math.abs(e.pageX - start.pageX), Math.abs(e.pageY - start.pageY))
+    if (distance > this.PILL_DRAG_THRESHOLD) {
+      this.didDragPill = true
+      this.stopTrackingPillPointer()
+      // Measured from where the pill was pressed, so the drawer doesn't jump by the threshold
+      this.startResizingDrawer(start)
+      this.resizeDrawer(e)
+    }
+  }
+
+  stopTrackingPillPointer = () => {
+    document.removeEventListener('mousemove', this.onPillPointerMove)
+    document.removeEventListener('mouseup', this.stopTrackingPillPointer)
+  }
+
+  // The click that ends a drag isn't a click on the pill
+  onPillClick = (toggle) => {
+    if (this.didDragPill) {
+      this.didDragPill = false
+      return
+    }
+
+    toggle()
   }
 
   // A small pill straddling the drawer's outer edge that expands it to full
@@ -1340,7 +1385,8 @@ export class DataMessenger extends React.Component {
     return (
       <button
         className={`react-autoql-drawer-maximize-handle ${this.getPlacementProp()}`}
-        onClick={() => this.toggleFullScreen(false, maxWidth, maxHeight)}
+        onMouseDown={this.onPillMouseDown}
+        onClick={() => this.onPillClick(() => this.toggleFullScreen(false, maxWidth, maxHeight))}
         data-tooltip-content={lang.maximizeDataMessenger}
         data-tooltip-id={this.TOOLTIP_ID}
       >
@@ -1425,10 +1471,13 @@ export class DataMessenger extends React.Component {
         className={`react-autoql-drawer-restore-handle ${this.getPlacementProp()}${
           this.state.isNearRestoreEdge ? ' visible' : ''
         }`}
-        onClick={() => {
-          this.setState({ isNearRestoreEdge: false })
-          this.toggleFullScreen(true, maxWidth, maxHeight)
-        }}
+        onMouseDown={this.onPillMouseDown}
+        onClick={() =>
+          this.onPillClick(() => {
+            this.setState({ isNearRestoreEdge: false })
+            this.toggleFullScreen(true, maxWidth, maxHeight)
+          })
+        }
         aria-label={lang.minimizeDataMessenger}
         data-tooltip-content={lang.minimizeDataMessenger}
         data-tooltip-id={this.TOOLTIP_ID}
