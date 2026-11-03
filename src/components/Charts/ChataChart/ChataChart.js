@@ -52,8 +52,10 @@ import { ChataStackedColumnChart } from '../ChataStackedColumnChart'
 import ChataNetworkGraph from '../ChataNetworkGraph'
 import { ChataSankeyDiagram } from '../ChataSankeyDiagram'
 import { ChataTreemap } from '../ChataTreemap'
+import { ChataRoseChart } from '../ChataRoseChart'
 import { AverageLine } from '../AverageLine'
 import { RegressionLine } from '../RegressionLine'
+import { getUnscaledClientRect } from '../measureScale'
 import ChartHeaderToggle from '../ChartHeaderToggle/ChartHeaderToggle'
 
 import { chartContainerDefaultProps, chartContainerPropTypes } from '../chartPropHelpers.js'
@@ -174,7 +176,7 @@ export default class ChataChart extends React.Component {
   }
 
   isContainerCollapsed = () => {
-    const rect = this.chartContainerRef?.getBoundingClientRect?.()
+    const rect = getUnscaledClientRect(this.chartContainerRef)
     const w = rect?.width ?? this.chartContainerRef?.clientWidth ?? 0
     const h = rect?.height ?? this.chartContainerRef?.clientHeight ?? 0
     return w <= 1 || h <= 1
@@ -413,6 +415,7 @@ export default class ChataChart extends React.Component {
     clearTimeout(this.adjustVerticalPositionTimeout)
     clearTimeout(this.adjustPositionTimeout)
     cancelAnimationFrame(this.liveResizeFrame)
+    cancelAnimationFrame(this.selfSizingRedrawFrame)
     this.stopThrottledRefresh()
     if (this.cleanupObserve) {
       try {
@@ -698,7 +701,8 @@ export default class ChataChart extends React.Component {
           !this.dataIsBinned() &&
           props.type !== DisplayTypes.NETWORK_GRAPH &&
           props.type !== DisplayTypes.SANKEY &&
-          props.type !== DisplayTypes.TREEMAP
+          props.type !== DisplayTypes.TREEMAP &&
+          props.type !== DisplayTypes.ROSE
         ) {
           data = data.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
@@ -775,7 +779,8 @@ export default class ChataChart extends React.Component {
           !this.dataIsBinned() &&
           props.type !== DisplayTypes.NETWORK_GRAPH &&
           props.type !== DisplayTypes.SANKEY &&
-          props.type !== DisplayTypes.TREEMAP
+          props.type !== DisplayTypes.TREEMAP &&
+          props.type !== DisplayTypes.ROSE
         ) {
           aggregated = aggregated.slice(0, MAX_CHART_ELEMENTS)
           isDataTruncated = true
@@ -843,6 +848,11 @@ export default class ChataChart extends React.Component {
   // end. That measurement reads the layout when it runs, so it reflects the latest size.
   // Pass { throttleMs: 0 } to opt out. Also used as onAxesRenderComplete, which passes nothing.
   adjustChartPosition = (options) => {
+    if (this.props.type === DisplayTypes.ROSE) {
+      this.scheduleSelfSizingRedraw()
+      return
+    }
+
     if (
       this.props.type === DisplayTypes.NETWORK_GRAPH ||
       this.props.type === DisplayTypes.SANKEY ||
@@ -882,6 +892,28 @@ export default class ChataChart extends React.Component {
         })
       }
     }, wait)
+  }
+
+  // Charts that size themselves to the whole container (the rose) have no axes to measure or shift,
+  // but still need a redraw at each new size, including during a resize. One per animation frame.
+  scheduleSelfSizingRedraw = () => {
+    if (this.selfSizingRedrawFrame || this.props.hidden) {
+      return
+    }
+
+    this.selfSizingRedrawFrame = requestAnimationFrame(() => {
+      this.selfSizingRedrawFrame = null
+      if (!this._isMounted || this.props.hidden) {
+        return
+      }
+
+      // Outer dimensions are cached between renders; this redraw is for a new size
+      this.shouldRecalculateDimensions = true
+      const { innerHeight, innerWidth } = this.getInnerDimensions()
+      if (innerHeight !== this.state.innerHeight || innerWidth !== this.state.innerWidth) {
+        this.setState({ innerHeight, innerWidth })
+      }
+    })
   }
 
   // While resizing, redraw as often as the chart can actually be drawn and no more: one redraw
@@ -939,11 +971,11 @@ export default class ChataChart extends React.Component {
   }
 
   getRenderedChartDimensions = () => {
-    const leftAxisBBox = this.innerChartRef?.axesRef?.leftAxis?.ref?.getBoundingClientRect()
-    const topAxisBBox = this.innerChartRef?.axesRef?.topAxis?.ref?.getBoundingClientRect()
-    const bottomAxisBBox = this.innerChartRef?.axesRef?.bottomAxis?.getBoundingClientRect()
-    const rightAxisBBox = this.innerChartRef?.axesRef?.rightAxis?.getBoundingClientRect()
-    const clippedLegendBBox = this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer?.getBoundingClientRect()
+    const leftAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.leftAxis?.ref)
+    const topAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.topAxis?.ref)
+    const bottomAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.bottomAxis)
+    const rightAxisBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.rightAxis)
+    const clippedLegendBBox = getUnscaledClientRect(this.innerChartRef?.axesRef?.legendRef?.legendClippingContainer)
     const axesBBox = mergeBoundingClientRects([
       leftAxisBBox,
       bottomAxisBBox,
@@ -1017,7 +1049,7 @@ export default class ChataChart extends React.Component {
     if (!this.outerWidth || !this.outerHeight || this.shouldRecalculateDimensions) {
       this.shouldRecalculateDimensions = false
 
-      const containerBBox = this.chartContainerRef?.getBoundingClientRect()
+      const containerBBox = getUnscaledClientRect(this.chartContainerRef)
       const containerWidth = containerBBox?.width ?? 0
       const containerHeight = containerBBox?.height ?? 0
 
@@ -1138,7 +1170,8 @@ export default class ChataChart extends React.Component {
         className={`react-autoql-chart-header-container ${
           this.state.isLoading &&
           this.props.type !== DisplayTypes.NETWORK_GRAPH &&
-          this.props.type !== DisplayTypes.TREEMAP
+          this.props.type !== DisplayTypes.TREEMAP &&
+          this.props.type !== DisplayTypes.ROSE
             ? 'react-autoql-chart-loading'
             : ''
         }`}
@@ -1385,7 +1418,8 @@ export default class ChataChart extends React.Component {
       this.state.isDataTruncated &&
       this.props.type !== DisplayTypes.PIE &&
       this.props.type !== DisplayTypes.NETWORK_GRAPH &&
-      this.props.type !== DisplayTypes.TREEMAP
+      this.props.type !== DisplayTypes.TREEMAP &&
+      this.props.type !== DisplayTypes.ROSE
 
     const isDataLimited = this.props.isDataLimited
 
@@ -1402,7 +1436,8 @@ export default class ChataChart extends React.Component {
       this.props.type !== DisplayTypes.PIE &&
       this.props.type !== DisplayTypes.NETWORK_GRAPH &&
       this.props.type !== DisplayTypes.SANKEY &&
-      this.props.type !== DisplayTypes.TREEMAP
+      this.props.type !== DisplayTypes.TREEMAP &&
+      this.props.type !== DisplayTypes.ROSE
 
     const isDataLimited = this.props.isDataLimited
 
@@ -1619,6 +1654,9 @@ export default class ChataChart extends React.Component {
       case DisplayTypes.TREEMAP: {
         return <ChataTreemap {...commonChartProps} />
       }
+      case DisplayTypes.ROSE: {
+        return <ChataRoseChart {...commonChartProps} />
+      }
       default: {
         return 'Unknown Display Type'
       }
@@ -1653,7 +1691,8 @@ export default class ChataChart extends React.Component {
               this.state.isLoading &&
               this.props.type !== DisplayTypes.NETWORK_GRAPH &&
               this.props.type !== DisplayTypes.SANKEY &&
-              this.props.type !== DisplayTypes.TREEMAP
+              this.props.type !== DisplayTypes.TREEMAP &&
+              this.props.type !== DisplayTypes.ROSE
                 ? 'react-autoql-chart-loading'
                 : ''
             }

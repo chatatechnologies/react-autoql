@@ -142,6 +142,7 @@ class VizToolbar extends React.Component {
               {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
               {this.createVisButton(DisplayTypes.SANKEY, 'Sankey Diagram', <Icon type='sankey' />)}
               {this.createVisButton(DisplayTypes.TREEMAP, 'Treemap', <Icon type='treemap' />)}
+              {this.createVisButton(DisplayTypes.ROSE, 'Rose Chart', <Icon type='rose' />)}
             </div>
           </div>
         </div>
@@ -229,6 +230,7 @@ class VizToolbar extends React.Component {
             {this.createVisButton(DisplayTypes.NETWORK_GRAPH, 'Network Graph', <Icon type='network' />)}
             {this.createVisButton(DisplayTypes.SANKEY, 'Sankey Diagram', <Icon type='sankey' />)}
             {this.createVisButton(DisplayTypes.TREEMAP, 'Treemap', <Icon type='treemap' />)}
+            {this.createVisButton(DisplayTypes.ROSE, 'Rose Chart', <Icon type='rose' />)}
           </div>
           {!this.props.tooltipID && (
             <Tooltip tooltipId={`react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`} delayShow={800} />

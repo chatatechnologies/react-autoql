@@ -1,0 +1,78 @@
+.react-autoql-rose {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs */
+  .rose-wedge {
+    transition: fill-opacity 0.3s ease;
+    fill-opacity: 1;
+    outline: none !important;
+
+    &:hover,
+    &.active {
+      fill-opacity: 0.7;
+    }
+  }
+
+  /* Every button icon draws about 15px, whatever padding its icon set builds in. Sizes are set
+     explicitly so they don't depend on the inherited font size. */
+  .sankey-path-button-icon {
+    /* Feather: drawn across 22 of its 24 units */
+    .react-autoql-icon-layers {
+      font-size: 16.5px;
+    }
+
+    /* Remix: drawn across 21 of its 24 units */
+    .react-autoql-icon-list-settings {
+      font-size: 17px;
+    }
+
+    /* Custom 16-unit icon, drawn across 14 of them */
+    .react-autoql-icon-rose svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  &.enable-drilldown .rose-wedge:not(.rose-wedge-other) {
+    cursor: pointer;
+  }
+
+  &:focus,
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
+}
+
+// Settings popover (rendered outside the chart, so not nested under .react-autoql-rose)
+.rose-settings {
+  max-width: 320px;
+
+  .time-animation-segment:disabled {
+    cursor: default;
+    opacity: 0.45;
+
+    &:hover {
+      background: none;
+    }
+  }
+
+  .rose-settings-options {
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 4px;
+    overflow: hidden;
+
+    .sankey-column-dropdown-item {
+      padding: 6px 10px;
+      font-size: 0.8125rem;
+    }
+  }
+
+  .rose-settings-description {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--react-autoql-text-color-secondary);
+  }
+}

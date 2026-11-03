@@ -20,6 +20,8 @@ const SankeyColumnSelector = ({
   pathSubtitle,
   pathLabel,
   pathIconType,
+  disabledPathColumnIndices,
+  disabledPathColumnTooltip,
   allowCount,
   disabled,
   disabledTooltip,
@@ -66,8 +68,12 @@ const SankeyColumnSelector = ({
     }
   }
 
+  // Count is offered as a path option only when the caller includes the sentinel in pathColumnOptionIndices
+  const countPathOption = { col: { display_name: 'Count' }, index: SANKEY_VALUE_COUNT_SENTINEL }
+  const getPathColumn = (index) => (index === SANKEY_VALUE_COUNT_SENTINEL ? countPathOption.col : columns?.[index])
+
   const selectedPathNames = (pathColumnIndices || [])
-    .map((index) => columns?.[index]?.display_name || columns?.[index]?.name)
+    .map((index) => getPathColumn(index)?.display_name || getPathColumn(index)?.name)
     .filter(Boolean)
 
   const isCountSelected = type === 'value' && selectedIndex === SANKEY_VALUE_COUNT_SENTINEL
@@ -89,6 +95,9 @@ const SankeyColumnSelector = ({
     .filter(({ col, index }) =>
       Array.isArray(pathColumnOptionIndices) ? pathColumnOptionIndices.includes(index) : !col.isNumberType,
     )
+  if (pathColumnOptionIndices?.includes(SANKEY_VALUE_COUNT_SENTINEL)) {
+    categoricalColumns.unshift(countPathOption)
+  }
 
   const filteredColumns = type === 'value' ? numericColumns : categoricalColumns.map(({ col }) => col)
 
@@ -130,18 +139,29 @@ const SankeyColumnSelector = ({
     onPathChange(nextPath)
   }
 
+  // Clicks inside the popover (including a nested Select's menu, which renders within it) bubble through
+  // the React tree to the chart, and charts close their dropdowns on click. Keep them inside.
+  const stopClickPropagation = (e) => e.stopPropagation()
+
   const renderPathDropdownContent = () => {
     const availableColumns = categoricalColumns.filter(({ index }) => !pathColumnIndices.includes(index))
     const hasMinPath = pathColumnIndices.length >= minPathColumns
+    // At the limit the other columns stay listed, disabled, so it's clear why they can't be added
+    const isFull = pathColumnIndices.length >= maxPathColumns
+    const limitMessage = `Maximum of ${maxPathColumns} columns reached`
 
     return (
-      <div className='sankey-path-dropdown-popover-content' ref={setPathPopoverElement}>
+      <div
+        className='sankey-path-dropdown-popover-content'
+        ref={setPathPopoverElement}
+        onClick={stopClickPropagation}
+      >
         <div className='sankey-column-dropdown-title'>{pathTitle}</div>
         <div className='sankey-path-dropdown-subtitle'>{pathSubtitle}</div>
         <CustomScrollbars className='sankey-path-selected-list' suppressScrollX maxHeight={240}>
           <div className='sankey-path-selected-list-inner'>
           {pathColumnIndices.map((columnIndex, listIndex) => {
-            const column = columns[columnIndex]
+            const column = getPathColumn(columnIndex)
             if (!column) return null
             const selectOptions = categoricalColumns.filter(({ index }) => {
               const isCurrent = index === columnIndex
@@ -208,20 +228,25 @@ const SankeyColumnSelector = ({
             Select at least {minPathColumns} column{minPathColumns === 1 ? '' : 's'} to render this chart.
           </div>
         )}
-        <div className='sankey-path-add-title'>Add column</div>
+        <div className='sankey-path-add-title'>
+          Add column ({pathColumnIndices.length} of {maxPathColumns})
+        </div>
+        {isFull && availableColumns.length > 0 && (
+          <div className='sankey-path-limit-notice'>{limitMessage}. Remove one to add another.</div>
+        )}
         <CustomScrollbars className='sankey-column-dropdown-container' suppressScrollX>
           {availableColumns.length === 0 ? (
             <div className='sankey-column-dropdown-empty'>
-              {pathColumnIndices.length >= maxPathColumns
-                ? `Maximum of ${maxPathColumns} columns reached`
-                : 'No additional categorical columns available'}
+              {isFull ? limitMessage : 'No additional categorical columns available'}
             </div>
           ) : (
             availableColumns.map(({ col, index }) => (
               <div
                 key={`path-available-${index}`}
-                className='sankey-column-dropdown-item'
-                onClick={() => addPathColumn(index)}
+                className={`sankey-column-dropdown-item${isFull ? ' sankey-column-dropdown-item-disabled' : ''}`}
+                data-tooltip-id={isFull ? chartTooltipID : undefined}
+                data-tooltip-content={isFull ? limitMessage : undefined}
+                onClick={() => !isFull && addPathColumn(index)}
               >
                 <Icon type='plus' className='sankey-column-dropdown-item-check' />
                 <span>{col.display_name || col.name}</span>
@@ -232,6 +257,37 @@ const SankeyColumnSelector = ({
       </div>
     )
   }
+
+  // A single-column pick is a plain list (like the value picker), not an ordered path to add to
+  const renderSingleColumnDropdownContent = () => (
+    <div className='sankey-column-dropdown-popover-content' onClick={stopClickPropagation}>
+      <div className='sankey-column-dropdown-title'>{pathTitle}</div>
+      <CustomScrollbars className='sankey-column-dropdown-container' suppressScrollX>
+        {categoricalColumns.map(({ col, index }) => {
+          const isSelected = pathColumnIndices[0] === index
+          const isDisabled = !isSelected && !!disabledPathColumnIndices?.includes(index)
+          return (
+            <div
+              key={`path-single-${index}`}
+              className={`sankey-column-dropdown-item${isSelected ? ' sankey-column-dropdown-item-selected' : ''}${
+                isDisabled ? ' sankey-column-dropdown-item-disabled' : ''
+              }`}
+              data-tooltip-id={isDisabled ? chartTooltipID : undefined}
+              data-tooltip-content={isDisabled ? disabledPathColumnTooltip : undefined}
+              onClick={() => {
+                if (isDisabled) return
+                if (!isSelected) onPathChange([index])
+                setShowDropdown(false)
+              }}
+            >
+              {isSelected && <Icon type='check' className='sankey-column-dropdown-item-check' />}
+              <span>{col.display_name || col.name}</span>
+            </div>
+          )
+        })}
+      </CustomScrollbars>
+    </div>
+  )
 
   const renderValueDropdownContent = () => {
     if (type !== 'value') {
@@ -288,10 +344,12 @@ const SankeyColumnSelector = ({
         isOpen={showDropdown}
         onClickOutside={handleClickOutside}
         content={
-          type === 'path' ? (
+          type === 'path' && maxPathColumns === 1 ? (
+            renderSingleColumnDropdownContent()
+          ) : type === 'path' ? (
             renderPathDropdownContent()
           ) : (
-            <div className='sankey-column-dropdown-popover-content'>
+            <div className='sankey-column-dropdown-popover-content' onClick={stopClickPropagation}>
               <div className='sankey-column-dropdown-title'>{getLabel()} Column</div>
               <div className='sankey-column-dropdown-container'>{renderValueDropdownContent()}</div>
             </div>
@@ -370,6 +428,8 @@ SankeyColumnSelector.propTypes = {
   pathSubtitle: PropTypes.string,
   pathLabel: PropTypes.string,
   pathIconType: PropTypes.string,
+  disabledPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+  disabledPathColumnTooltip: PropTypes.string,
   allowCount: PropTypes.bool,
   disabled: PropTypes.bool,
   disabledTooltip: PropTypes.string,
@@ -393,6 +453,8 @@ SankeyColumnSelector.defaultProps = {
   pathSubtitle: 'Order defines flow direction',
   pathLabel: 'Path',
   pathIconType: 'sankey',
+  disabledPathColumnIndices: undefined,
+  disabledPathColumnTooltip: undefined,
   allowCount: true,
   disabled: false,
   disabledTooltip: undefined,

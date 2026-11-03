@@ -117,6 +117,7 @@ import {
   thinkingBubbleIcon,
   sankeyIcon,
   treemapIcon,
+  roseIcon,
   splitSeriesIcon,
 } from '../../svgIcons.js'
 
@@ -449,6 +450,10 @@ export default class Icon extends React.Component {
       }
       case 'treemap': {
         icon = treemapIcon
+        break
+      }
+      case 'rose': {
+        icon = roseIcon
         break
       }
       case 'split-series': {

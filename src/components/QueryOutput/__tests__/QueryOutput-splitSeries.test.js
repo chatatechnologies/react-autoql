@@ -6,9 +6,16 @@ import { SplitSeriesButton } from '../../Charts/SplitSeriesButton'
 import { SPLIT_SERIES_COUNT } from '../splitSeriesUtils'
 import testCases from '../../../../test/responseTestCases'
 import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
+import { featureToggles } from '../../../js/featureToggles'
 
-beforeAll(() => installGetBBoxMock())
-afterAll(() => uninstallGetBBoxMock())
+beforeAll(() => {
+  installGetBBoxMock()
+  featureToggles.splitBy = true
+})
+afterAll(() => {
+  uninstallGetBBoxMock()
+  featureToggles.splitBy = false
+})
 
 // List query (nothing groupable): Customer, Region, Product, Sales
 const columns = [
@@ -62,6 +69,30 @@ const getChartProps = (wrapper) => {
 }
 
 const splitByRegion = { columnIndex: regionIndex, valueColumnIndex: salesIndex }
+
+describe('split series feature toggle', () => {
+  beforeEach(() => {
+    featureToggles.splitBy = false
+  })
+  afterEach(() => {
+    featureToggles.splitBy = true
+  })
+
+  test('hides the split button when the toggle is off', () => {
+    const { wrapper } = setup()
+
+    expect(getChartProps(wrapper).splitBy).toBeUndefined()
+    expect(wrapper.find(SplitSeriesButton).exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  test('ignores a saved split when the toggle is off', () => {
+    const { wrapper } = setup({ initialChartControls: { splitBy: splitByRegion } })
+
+    expect(getChartProps(wrapper).splitBy).toBeUndefined()
+    wrapper.unmount()
+  })
+})
 
 describe('split series on a list query chart', () => {
   test('offers the split button when no split is saved', () => {
