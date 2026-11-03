@@ -36,7 +36,7 @@ import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverC
 import SimpleTable from '../SimpleTable/SimpleTable'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 
 import './ChatMessage.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
@@ -146,6 +146,7 @@ export class ChatMessage extends React.Component {
     enableColumnVisibilityManager: PropTypes.bool,
     dataFormatting: dataFormattingType,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessAlert: PropTypes.func,
     isResizing: PropTypes.bool,
     shouldRender: PropTypes.bool,
@@ -224,6 +225,7 @@ export class ChatMessage extends React.Component {
     drilldownFilters: undefined,
     onSuggestionClick: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessAlert: () => {},
     onConditionClickCallback: () => {},
     scrollToBottom: () => {},
@@ -1564,6 +1566,7 @@ export class ChatMessage extends React.Component {
           onDrilldownEnd={this.props.onDrilldownEnd}
           originalQueryID={this.props.originalQueryID}
           onErrorCallback={this.props.onErrorCallback}
+          valueActionCallbacks={this.props.valueActionCallbacks}
           isAnimating={this.state.isAnimatingMessageBubble}
           isResizing={this.props.isResizing}
           enableDynamicCharting={this.props.enableDynamicCharting}

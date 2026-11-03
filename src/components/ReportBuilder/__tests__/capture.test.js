@@ -98,6 +98,7 @@ describe('captureFromResponse', () => {
     expect(capture.displayType).toBe('table')
     expect(capture.data.rows).toHaveLength(100)
     expect(capture.data.count_rows).toBe(4500)
+    expect(capture.config.tableInsteadOf).toBe(getEffectiveDisplay(response).displayType)
   })
 
   it('never keeps a display the report can’t print', () => {
@@ -198,6 +199,37 @@ describe('recaptureFromResponse', () => {
     expect(
       recaptureFromResponse(answer({ rows: grouped(4) }), { kept: hidden }).capture.config.columnVisibility,
     ).toStrictEqual({ region: true, aum: false })
+  })
+
+  it('follows the table’s columns by name to where they are in the new answer', () => {
+    const col = (name, type = 'DOLLAR_AMT') => ({ name, display_name: name, type, groupable: false, is_visible: true })
+    const before = {
+      ...KEPT,
+      data: { columns: [col('region', 'STRING'), col('sales'), col('profit')], rows: [] },
+      table: { columnIndices: [0, 2] },
+    }
+    const moved = answer({ columns: [col('profit'), col('region', 'STRING'), col('sales')], rows: [[1, 'East', 2]] })
+    expect(recaptureFromResponse(moved, { kept: before }).capture.table.columnIndices).toStrictEqual([1, 0])
+
+    // Profit is gone, though both positions are still columns of the new answer: they're left to their names.
+    const gone = answer({ columns: [col('sales'), col('region', 'STRING'), col('cost')], rows: [[2, 'East', 1]] })
+    expect(recaptureFromResponse(gone, { kept: before }).capture.table).not.toHaveProperty('columnIndices')
+  })
+
+  it('shows a table kept in place of a chart as that chart again, once the answer fits one', () => {
+    const big = answer({ rows: grouped(MAX_CHART_ROWS), countRows: 4500 })
+    const chart = { displayType: 'column', config: { displayType: 'column' } }
+    const asTable = recaptureFromResponse(big, { kept: chart }).capture
+    expect(asTable.displayType).toBe('table')
+    expect(asTable.config.tableInsteadOf).toBe('column')
+
+    const small = recaptureFromResponse(answer({ rows: grouped(6) }), { kept: asTable }).capture
+    expect(small.displayType).toBe('column')
+    expect(small.config).not.toHaveProperty('tableInsteadOf')
+
+    // A table that isn't standing in for anything stays one.
+    const table = { displayType: 'table', config: { displayType: 'table' } }
+    expect(recaptureFromResponse(answer({ rows: grouped(6) }), { kept: table }).capture.displayType).toBe('table')
   })
 
   it('says the rows are in the order the question was answered in', () => {
@@ -353,6 +385,68 @@ describe('captureQuestion', () => {
       })
       const first = await captureQuestion({ query: 'aum', authentication: AUTH, capturedAt: at, runQueryFn })
       expect([again.capture.capturedAt, first.capture.capturedAt]).toEqual([at, at])
+    })
+
+    it('asks once more without that order when the service turns it down by its status', async () => {
+      const runQueryFn = jest
+        .fn()
+        .mockImplementationOnce(() => Promise.reject({ status: 422, data: { message: 'Bad order' } }))
+        .mockImplementationOnce(() => Promise.resolve(answer({ columns: LIST, rows: listed(3) })))
+      const result = await captureQuestion({
+        query: 'aum by account',
+        authentication: AUTH,
+        rerun: { kept },
+        runQueryFn,
+      })
+      expect(runQueryFn).toHaveBeenCalledTimes(2)
+      expect(result.ok).toBe(true)
+    })
+
+    it('asks once when the service fails rather than turning the order down, and keeps the sort', async () => {
+      const failures = [
+        { status: 500, data: { message: 'Internal error', reference_id: '1.1.500' } },
+        { data: { message: 'The query timed out.', reference_id: '1.1.504' } },
+        { status: 401, data: { message: 'Unauthenticated' } },
+        undefined, // the network
+      ]
+      for (const failure of failures) {
+        const runQueryFn = jest.fn(() => Promise.reject(failure))
+        const result = await captureQuestion({
+          query: 'aum by account',
+          authentication: AUTH,
+          rerun: { kept },
+          runQueryFn,
+        })
+        expect(runQueryFn).toHaveBeenCalledTimes(1)
+        expect(runQueryFn.mock.calls[0][0]).toMatchObject({ orders: sorted })
+        expect(result).toMatchObject({ ok: false, reason: 'error' })
+      }
+    })
+
+    it('doesn’t ask in the order of a column added on screen, which the question doesn’t answer with', async () => {
+      const runQueryFn = jest.fn(() => Promise.resolve(answer({ columns: LIST, rows: listed(3) })))
+      const margin = { name: 'margin', display_name: 'Margin', type: 'PERCENT', custom: true }
+      const withCustom = {
+        ...kept,
+        data: { columns: [...LIST, margin], rows: [] },
+        table: { sort: [{ name: 'margin', sort: 'DESC' }, ...sorted] },
+      }
+      await captureQuestion({ query: 'aum by account', authentication: AUTH, rerun: { kept: withCustom }, runQueryFn })
+      expect(runQueryFn).toHaveBeenCalledTimes(1)
+      expect(runQueryFn.mock.calls[0][0].orders).toStrictEqual(sorted)
+    })
+
+    it('keeps the answer in the block’s settings as they are when it comes', async () => {
+      const runQueryFn = jest.fn(() => Promise.resolve(answer({ columns: LIST, rows: listed(3), orders: sorted })))
+      const visibility = { account: true, advisor: true, aum: false }
+      const changed = { ...kept, config: { ...kept.config, columnVisibility: visibility } }
+      const result = await captureQuestion({
+        query: 'aum by account',
+        authentication: AUTH,
+        rerun: { kept, current: () => ({ kept: changed }) },
+        runQueryFn,
+      })
+      expect(result.capture.config.columnVisibility).toStrictEqual(visibility)
     })
 
     it('asks once, with no order, when its table has none', async () => {

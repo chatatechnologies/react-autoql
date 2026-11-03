@@ -303,6 +303,14 @@
     &:not(.react-autoql-table-pivot) .react-autoql-table.tabulator .tabulator-row:hover .tabulator-cell {
       color: var(--react-autoql-accent-color);
     }
+
+    // ...but not while hovering a value's link, so it's clear the click goes to the link
+    &:not(.react-autoql-table-pivot)
+      .react-autoql-table.tabulator
+      .tabulator-row:has(.react-autoql-cell-value-action:hover)
+      .tabulator-cell {
+      color: var(--react-autoql-text-color-primary);
+    }
   }
 
   &:not(.react-autoql-table-supports-drilldown) .react-autoql-table.tabulator .tabulator-row .tabulator-cell {
@@ -538,6 +546,16 @@
 
     .tabulator-row:hover .tabulator-cell {
       background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.09) !important;
+    }
+
+    // Hovering a value's link (column value_action) drops the row's hover highlight, so it's clear
+    // the click goes to the link rather than the row's drilldown
+    .tabulator-row:has(.react-autoql-cell-value-action:hover) .tabulator-cell {
+      background-color: var(--react-autoql-background-color-secondary) !important;
+    }
+
+    .tabulator-row:nth-child(even):has(.react-autoql-cell-value-action:hover) .tabulator-cell:not(.tabulator-frozen) {
+      background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.05) !important;
     }
 
     // Frozen cells always need a solid background so they stay readable on scroll.

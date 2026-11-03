@@ -449,6 +449,52 @@ body.react-autoql-no-select {
   text-align: inherit;
 }
 
+// Values in a column with a value_action are links: an <a>, or a <button> for a host app callback.
+// Hovering one also drops the row's hover look (see ChataTable.scss), so it's clear the click goes
+// to the link rather than the row's drilldown. Scoped through the cell's wrappers so link styles
+// around the table (e.g. chat messages make every link bold with no underline) don't override it.
+.react-autoql-cell-value-wrapper .react-autoql-cell-value .react-autoql-cell-value-action {
+  display: inline;
+  margin: 0 -2px;
+  padding: 0 2px;
+  border: none;
+  border-radius: 3px;
+  background: none;
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  color: var(--react-autoql-accent-color);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+
+  &:hover {
+    background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.15);
+    text-decoration-thickness: 2px;
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--react-autoql-accent-color);
+  }
+}
+
+// Screen-reader-only description of a value's link (see createValueActionLink). Not selectable,
+// so selecting the table's text by hand and copying it doesn't pick up "Open in new tab".
+.react-autoql-cell-value-action-hint {
+  user-select: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 #react-autoql-query-output-tooltip {
   cursor: pointer !important;
 }

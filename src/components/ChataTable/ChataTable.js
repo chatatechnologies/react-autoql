@@ -1189,7 +1189,7 @@ export default class ChataTable extends React.Component {
   }
 
   cellClick = (e, cell) => {
-    this.props.onCellClick(cell)
+    this.props.onCellClick(cell, e)
   }
 
   // Returns whether anything was copied: a table still waiting for a box to build into
