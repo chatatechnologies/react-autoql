@@ -94,7 +94,6 @@ const AgentComposer = forwardRef(
       // models, modelsStatus, llmModel, onModelChange and popoverParentElement are
       // still accepted (see propTypes) but unused while the picker is off.
       onSubmit,
-      onCancel,
       tooltipID,
     },
     ref,
@@ -331,26 +330,18 @@ const AgentComposer = forwardRef(
               />
             </div>
           )}
-          {isSending ? (
-            <button
-              className='react-autoql-agent-composer-btn is-stop'
-              onClick={onCancel}
-              aria-label='Stop generating'
-              data-tooltip-content='Stop'
-              data-tooltip-id={tooltipID}
-            >
-              <span className='react-autoql-agent-stop-glyph' />
-            </button>
-          ) : (
-            <button
-              className={`react-autoql-agent-composer-btn is-send${canSend ? ' can-send' : ''}`}
-              onClick={submit}
-              disabled={!canSend}
-              aria-label='Send message'
-            >
-              <Icon type='send' />
-            </button>
-          )}
+          {/* No stop button while a request is in flight: cancelling only drops the
+              request on our side - the backend session keeps running and can end
+              without the user ever seeing it. The send button just stays disabled
+              until the response lands. */}
+          <button
+            className={`react-autoql-agent-composer-btn is-send${canSend && !isSending ? ' can-send' : ''}`}
+            onClick={submit}
+            disabled={!canSend || isSending}
+            aria-label='Send message'
+          >
+            <Icon type='send' />
+          </button>
         </div>
 
         {/* The toolbar row - model picker and the "↵ to send" hint - is turned off
@@ -380,7 +371,6 @@ AgentComposer.propTypes = {
   llmModel: PropTypes.string,
   onModelChange: PropTypes.func,
   onSubmit: PropTypes.func.isRequired,
-  onCancel: PropTypes.func,
   popoverParentElement: PropTypes.any,
   tooltipID: PropTypes.string,
 }
@@ -401,7 +391,6 @@ AgentComposer.defaultProps = {
   modelsStatus: undefined,
   llmModel: undefined,
   onModelChange: () => {},
-  onCancel: () => {},
   popoverParentElement: undefined,
   tooltipID: undefined,
 }
