@@ -99,8 +99,8 @@ Please cover all of these; several are what make the component feel unfinished t
    would be.
 8. **Status / unsupported-type item** — a muted informational notice.
 9. **Thinking state** — while waiting for a response (an animated dots indicator exists).
-10. **Composer** — auto-growing textarea, send button that becomes a stop button while a
-    request is in flight, optional microphone button, and the model picker pill on a
+10. **Composer** — auto-growing textarea, send button that stays disabled while a request is
+    in flight (no stop button - cancelling wouldn't stop the backend session), optional microphone button, and the model picker pill on a
     second row below the input.
 11. **Model picker open** — a dropdown menu of models, each with a name and an optional
     one-line description.
@@ -183,8 +183,7 @@ The markup is stable; write specs against these hooks.
     ├── .react-autoql-agent-composer-input-row      (+ .is-focused | .is-sending)
     │   ├── .react-autoql-agent-composer-input      textarea
     │   ├── .react-autoql-agent-composer-microphone
-    │   └── .react-autoql-agent-composer-btn        (+ .is-send/.can-send | .is-stop)
-    │       └── .react-autoql-agent-stop-glyph
+    │   └── .react-autoql-agent-composer-btn        (.is-send + .can-send)
     └── .react-autoql-agent-composer-toolbar
         ├── .react-autoql-agent-model-select        restyles the shared Select trigger
         └── .react-autoql-agent-composer-hint

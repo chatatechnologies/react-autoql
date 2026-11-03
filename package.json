@@ -1,6 +1,6 @@
 {
   "name": "react-autoql",
-  "version": "8.36.2",
+  "version": "8.37.1",
   "description": "React Widget Library",
   "main": "dist/autoql.cjs.js",
   "module": "dist/autoql.esm.js",
@@ -42,11 +42,6 @@
     "cz": "npx git-cz"
   },
   "style": "dist/autoql.esm.css",
-  "husky": {
-    "hooks": {
-      "pre-push": "cross-env NODE_OPTIONS= npx jest --clearCache && cross-env NODE_OPTIONS= npm run test"
-    }
-  },
   "lint-staged": {
     "*.js": [
       "npm run test:staged"
@@ -64,13 +59,14 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.12.2",
+    "autoql-fe-utils": "1.14.0",
     "axios": "^1.16.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
     "d3-array": "2.3.3",
     "d3-axis": "1.0.12",
     "d3-force": "^3.0.0",
+    "d3-hierarchy": "^3.1.2",
     "d3-sankey": "^0.12.3",
     "d3-scale": "4.0.2",
     "d3-selection": "3.0.0",
@@ -139,6 +135,11 @@
     "@rollup/plugin-terser": "^1.0.0",
     "@testing-library/jest-dom": "6.4.2",
     "@testing-library/react": "12.1.2",
+    "@tiptap/core": "3.32.0",
+    "@tiptap/extensions": "3.32.0",
+    "@tiptap/markdown": "3.32.0",
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0",
     "ajv": "^8.20.0",
     "autoprefixer": "10.4.16",
     "axios-mock-adapter": "1.18.1",

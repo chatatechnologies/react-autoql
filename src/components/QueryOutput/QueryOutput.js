@@ -93,9 +93,26 @@ import {
   selectPivotColumnHeaders,
   canAggregateIntoOther,
 } from './pivotUtils'
+import {
+  SPLIT_SERIES_COUNT,
+  buildSplitSeriesData,
+  getSplitSeriesColumnIndices,
+  getSplitSeriesValueTitle,
+  supportsSplitSeriesDisplayType,
+} from './splitSeriesUtils'
+import { featureToggles, isDisplayTypeEnabled } from '../../js/featureToggles'
+import {
+  VALUE_ACTION_LINK_CLASS,
+  buildValueActionUrl,
+  getValueAction,
+  getValueActionTooltip,
+  hasValueActionCallback,
+  hasValueActionValue,
+  runValueActionCallback,
+} from '../../js/valueActions'
 
 import { withTheme } from '../../theme'
-import { dataFormattingType, autoQLConfigType, authenticationType } from '../../props/types'
+import { dataFormattingType, autoQLConfigType, authenticationType, valueActionCallbacksType } from '../../props/types'
 
 import './QueryOutput.scss'
 
@@ -243,6 +260,7 @@ export class QueryOutput extends React.Component {
       resizeStartHeight: 0,
       isResizable: this.shouldEnableResize,
       hiddenLegendLabels: [],
+      hiddenSplitSeriesKeys: [],
       legendStateByChart: {},
       originalLegendState: this.originalLegendState,
       networkColumnConfig: props.initialNetworkColumnConfig || null,
@@ -391,6 +409,7 @@ export class QueryOutput extends React.Component {
     showSingleValueResponseTitle: PropTypes.bool,
     allowColumnAddition: PropTypes.bool,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     showQueryInterpretation: PropTypes.bool,
     useInfiniteScroll: PropTypes.bool,
     subjects: PropTypes.arrayOf(PropTypes.shape({})),
@@ -433,6 +452,26 @@ export class QueryOutput extends React.Component {
     initialChartControls: PropTypes.shape({
       showAverageLine: PropTypes.bool,
       showRegressionLine: PropTypes.bool,
+      treemapGroupColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      treemapValueColumnIndex: PropTypes.number,
+      roseCategoryColumnIndex: PropTypes.number,
+      roseValueColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      roseMode: PropTypes.oneOf(['values', 'measures']),
+      roseMeasureColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      roseScale: PropTypes.oneOf(['normalized', 'minmax', 'linear', 'log']),
+      timeAnimation: PropTypes.shape({
+        columnIndex: PropTypes.number,
+        grouping: PropTypes.string,
+        speed: PropTypes.number,
+        loop: PropTypes.bool,
+        cumulative: PropTypes.bool,
+      }),
+      sankeyPathColumnIndices: PropTypes.arrayOf(PropTypes.number),
+      sankeyValueColumnIndex: PropTypes.number,
+      splitBy: PropTypes.shape({
+        columnIndex: PropTypes.number,
+        valueColumnIndex: PropTypes.number, // SPLIT_SERIES_COUNT for Count
+      }),
     }),
     onChartControlsChange: PropTypes.func,
   }
@@ -496,6 +535,7 @@ export class QueryOutput extends React.Component {
     onLegendFilterChange: () => {},
     onQueryValidationSelectOption: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onDrilldownStart: () => {},
     onDrilldownEnd: () => {},
     onColumnChange: () => {},
@@ -627,6 +667,7 @@ export class QueryOutput extends React.Component {
           if (this.queryID && this.queryID !== prevQueryID) {
             this.hasUserSelectedStringAxis = false
             this.captureQueryFilterBaseline()
+            this.setState({ hiddenSplitSeriesKeys: [] })
           }
           const additionalSelects = this.getAdditionalSelectsFromResponse(this.queryResponse)
           const newColumns = this.formatColumnsForTable(this.queryResponse?.data?.data?.columns, additionalSelects)
@@ -1051,6 +1092,19 @@ export class QueryOutput extends React.Component {
     })
   }
 
+  // Memoized so charts get the same columns array across re-renders. A new array on every render
+  // would make charts rebuild everything derived from columns (eg. the treemap zoom resetting).
+  getChartColumnsWithOverrides = (columns) => {
+    const overrides = this.latestColumnOverrides
+    const cached = this.chartColumnsCache
+    if (cached?.columns === columns && cached?.overrides === overrides) {
+      return cached.result
+    }
+    const result = this.applyColumnOverrides(columns)
+    this.chartColumnsCache = { columns, overrides, result }
+    return result
+  }
+
   findDefaultNumberColumnIndex = (defaultAmountColumn) => {
     return this.tableConfig.allNumberColumnIndices?.find((index) => {
       return (
@@ -1294,16 +1348,18 @@ export class QueryOutput extends React.Component {
       return 'single-value'
     }
 
-    return getDefaultDisplayType(
+    const defaultDisplayType = getDefaultDisplayType(
       this.props.queryResponse,
       this.props.autoChartAggregations,
       this.getColumns(),
       this.getDataLength(),
       this.getPivotDataLength(),
-      preferredDisplayType,
+      isDisplayTypeEnabled(preferredDisplayType) ? preferredDisplayType : undefined,
       this.getIsDataLimited(),
       this.props.preferRegularTableInitialDisplayType,
     )
+
+    return isDisplayTypeEnabled(defaultDisplayType) ? defaultDisplayType : 'table'
   }
 
   getDisplayTypeFromInitial = (props) => {
@@ -1324,6 +1380,7 @@ export class QueryOutput extends React.Component {
     }
     // If prop is provided, but it isn't supported by the dataset, use default display type
     else if (
+      !isDisplayTypeEnabled(displayType) ||
       !isDisplayTypeValid(
         props.queryResponse,
         displayType,
@@ -1387,9 +1444,181 @@ export class QueryOutput extends React.Component {
     return this.potentiallySupportsPivot() && getNumberOfGroupables(columns) === 1
   }
 
+  // "Split by" a column: list queries only - grouped data already gets series from its pivot.
+  // Everything here is resolved from the saved chartControls.splitBy each render, so a column
+  // that disappears just turns the split off locally instead of rewriting the saved setting.
+  getSplitSeriesConfig = (displayType = this.state?.displayType, columns = this.state?.columns) => {
+    const unavailable = { isAvailable: false, isActive: false }
+
+    if (!featureToggles.splitBy) {
+      return unavailable
+    }
+
+    if (!columns?.length || !this.tableConfig || !supportsSplitSeriesDisplayType(displayType)) {
+      return unavailable
+    }
+
+    if (!isListQuery(columns) || this.potentiallySupportsPivot()) {
+      return unavailable
+    }
+
+    const stringColumnIndex = this.tableConfig.stringColumnIndex
+    const eligibleColumnIndices = getSplitSeriesColumnIndices(columns, stringColumnIndex)
+    if (!eligibleColumnIndices.length) {
+      return unavailable
+    }
+
+    const saved = this.state?.chartControls?.splitBy
+    const savedSplitIndex = saved?.columnIndex
+    const splitColumnIndex = eligibleColumnIndices.includes(savedSplitIndex) ? savedSplitIndex : undefined
+
+    // With several series on the y-axis there is nothing to split into: the chart already has its
+    // series. A saved split still applies, since a split chart only ever has one value column.
+    const selectedNumberColumnCount = (this.tableConfig.numberColumnIndices ?? []).filter(
+      (index) => columns[index] && columns[index].is_visible !== false,
+    ).length
+    if (splitColumnIndex === undefined && selectedNumberColumnCount > 1) {
+      return unavailable
+    }
+
+    const numberColumnIndices = columns.reduce((indices, column, index) => {
+      if (column?.is_visible !== false && isColumnNumberType(column)) indices.push(index)
+      return indices
+    }, [])
+
+    let valueColumnIndex = SPLIT_SERIES_COUNT
+    if (saved?.valueColumnIndex !== SPLIT_SERIES_COUNT && numberColumnIndices.length) {
+      const savedValueIndex = saved?.valueColumnIndex
+      const currentNumberIndex = this.tableConfig.numberColumnIndex
+      if (numberColumnIndices.includes(savedValueIndex)) {
+        valueColumnIndex = savedValueIndex
+      } else if (numberColumnIndices.includes(currentNumberIndex)) {
+        valueColumnIndex = currentNumberIndex
+      } else {
+        valueColumnIndex = numberColumnIndices[0]
+      }
+    }
+
+    // The x-axis column is offered in the legend selector too (picking it swaps the two), but only
+    // when it could itself be a split column
+    const xColumn = columns[stringColumnIndex]
+    const canSwapWithXAxis =
+      !!xColumn && xColumn.is_visible !== false && !isColumnNumberType(xColumn) && !isColumnDateType(xColumn)
+
+    return {
+      isAvailable: true,
+      isActive: splitColumnIndex !== undefined,
+      splitColumnIndex,
+      valueColumnIndex,
+      eligibleColumnIndices,
+      selectableColumnIndices: canSwapWithXAxis
+        ? [...eligibleColumnIndices, stringColumnIndex].sort((a, b) => a - b)
+        : eligibleColumnIndices,
+      numberColumnIndices,
+      stringColumnIndex,
+    }
+  }
+
+  getSplitSeriesData = (config, columns) => {
+    const hiddenSeriesKeys = this.state.hiddenSplitSeriesKeys
+    const cacheKey = {
+      rows: this.tableData,
+      columns,
+      splitColumnIndex: config.splitColumnIndex,
+      valueColumnIndex: config.valueColumnIndex,
+      hiddenSeriesKeys,
+      dataFormatting: this.props.dataFormatting,
+    }
+
+    const cached = this.splitSeriesCache
+    const isCacheValid = cached && Object.keys(cacheKey).every((key) => cached.key[key] === cacheKey[key])
+    if (isCacheValid) {
+      return cached.result
+    }
+
+    const result = buildSplitSeriesData({
+      rows: this.tableData,
+      columns,
+      splitColumnIndex: config.splitColumnIndex,
+      valueColumnIndex: config.valueColumnIndex,
+      hiddenSeriesKeys,
+      dataFormatting: this.props.dataFormatting,
+    })
+
+    this.splitSeriesCache = { key: cacheKey, result }
+    return result
+  }
+
+  saveSplitSeriesControls = (splitBy) => {
+    this.splitSeriesCache = undefined
+    const chartControls = { ...(this.state.chartControls || {}) }
+    if (splitBy) {
+      chartControls.splitBy = splitBy
+    } else {
+      delete chartControls.splitBy
+    }
+
+    this.setState({ hiddenLegendLabels: [], hiddenSplitSeriesKeys: [], chartID: uuid() })
+    this.handleChartControlsChange(chartControls)
+  }
+
+  onSplitColumnChange = (columnIndex) => {
+    const config = this.getSplitSeriesConfig()
+    if (!config.isAvailable) {
+      return
+    }
+
+    if (columnIndex === null || columnIndex === undefined) {
+      this.saveSplitSeriesControls(undefined)
+      return
+    }
+
+    // Picking the x-axis column from the legend swaps the two
+    if (columnIndex === config.stringColumnIndex) {
+      const previousSplitIndex = config.splitColumnIndex
+      if (previousSplitIndex === undefined) {
+        return
+      }
+
+      this.tableConfig.stringColumnIndex = previousSplitIndex
+      this.hasUserSelectedStringAxis = true
+      this.onTableConfigChange()
+    }
+
+    this.saveSplitSeriesControls({ columnIndex, valueColumnIndex: config.valueColumnIndex })
+  }
+
+  onSplitValueChange = (valueColumnIndex) => {
+    const config = this.getSplitSeriesConfig()
+    if (!config.isActive) {
+      return
+    }
+
+    if (valueColumnIndex !== SPLIT_SERIES_COUNT) {
+      this.tableConfig.numberColumnIndex = valueColumnIndex
+      this.tableConfig.numberColumnIndices = [valueColumnIndex]
+      this.onTableConfigChange()
+    }
+
+    this.saveSplitSeriesControls({ columnIndex: config.splitColumnIndex, valueColumnIndex })
+  }
+
+  toggleSplitSeriesVisibility = (seriesKey) => {
+    this.setState(({ hiddenSplitSeriesKeys: hidden }) => ({
+      hiddenSplitSeriesKeys: hidden.includes(seriesKey)
+        ? hidden.filter((key) => key !== seriesKey)
+        : [...hidden, seriesKey],
+    }))
+  }
+
   usePivotDataForChart = () => {
-    // Network graphs and sankey diagrams always use original data, never pivot data
-    if (this.state?.displayType === DisplayTypes.NETWORK_GRAPH || this.state?.displayType === DisplayTypes.SANKEY) {
+    // Network graphs, sankey diagrams and treemaps always use original data, never pivot data
+    if (
+      this.state?.displayType === DisplayTypes.NETWORK_GRAPH ||
+      this.state?.displayType === DisplayTypes.SANKEY ||
+      this.state?.displayType === DisplayTypes.TREEMAP ||
+      this.state?.displayType === DisplayTypes.ROSE
+    ) {
       return false
     }
 
@@ -1478,6 +1707,7 @@ export class QueryOutput extends React.Component {
       const isDifferentQuery = !!nextQueryID && nextQueryID !== this.queryID
       if (isDifferentQuery) {
         this.hasUserSelectedStringAxis = false
+        this.setState({ hiddenSplitSeriesKeys: [] })
       }
       this.queryID = nextQueryID || this.queryID
       this.queryResponse = cloneResponseSharingRows(response)
@@ -1907,6 +2137,96 @@ export class QueryOutput extends React.Component {
       this.chartRef.saveAsPNG()
     }
   }
+
+  // What this answer shows now, captured so a report can draw it as it was seen: the data and the settings
+  // that shape it (the same settings a dashboard tile saves). Plain JSON. A table keeps its rows in their
+  // current sort and filter order, up to maxTableRows; a chart keeps the rows it draws, up to maxChartRows.
+  // Returns { ok: true, capture } or { ok: false, reason: 'no-data' | 'unsupported' | 'too-large' }.
+  captureForReport = ({ maxTableRows = 100, maxChartRows = 2000 } = {}) => {
+    const data = this.queryResponse?.data?.data
+    const displayType = this.state.displayType
+    const responseRows = Array.isArray(data?.rows) ? data.rows : null
+    const columns = Array.isArray(data?.columns) ? data.columns : null
+    if (!responseRows || !columns?.length) {
+      return { ok: false, reason: 'no-data' }
+    }
+    if (!['table', 'single-value'].includes(displayType) && !isChartType(displayType)) {
+      return { ok: false, reason: 'unsupported' } // pivot tables, text answers
+    }
+    if (['network_graph', 'sankey', 'treemap'].includes(displayType)) {
+      return { ok: false, reason: 'unsupported' }
+    }
+
+    let rows = responseRows
+    let countRows = data.count_rows
+    let table
+    if (displayType === 'table') {
+      const view = this.tableRef?.getReportView?.(maxTableRows)
+      const byField = (field) => columns.findIndex((col) => String(col.field ?? col.index) === String(field))
+      rows = view ? view.rows : responseRows.slice(0, maxTableRows)
+      countRows = view ? view.total : data.count_rows
+      const sort = view
+        ? view.sort
+            .map(({ field, dir }) => ({ name: columns[byField(field)]?.name, sort: String(dir).toUpperCase() }))
+            .filter((order) => order.name)
+        : data.fe_req?.orders || []
+      table = {
+        columnIndices: view?.columnFields?.map(byField).filter((index) => index > -1),
+        sort,
+        // The header filters as typed ("Okafor", ">5000000"), so the report can say what was left out.
+        filters: (view?.filters || [])
+          .map(({ field, value }) => ({ name: columns[byField(field)]?.name, value: String(value ?? '') }))
+          .filter((filter) => filter.name && filter.value),
+        filtered: !!view?.filtered,
+      }
+    } else if (responseRows.length > maxChartRows) {
+      return { ok: false, reason: 'too-large', rowCount: responseRows.length }
+    }
+
+    const columnVisibility = {}
+    ;(this.state.columns || []).forEach((col) => {
+      if (col?.name) columnVisibility[col.name] = col.is_visible !== false
+    })
+
+    const capture = {
+      version: 1,
+      capturedAt: new Date().toISOString(),
+      displayType,
+      data: {
+        columns,
+        rows,
+        count_rows: countRows ?? rows.length,
+        text: data.text,
+        query_id: data.query_id,
+        interpretation: data.interpretation,
+        parsed_interpretation: data.parsed_interpretation,
+      },
+      table,
+      // Shaped like a dashboard tile's saved view, so it maps onto QueryOutput the way a tile does.
+      config: {
+        displayType,
+        dataConfig: {
+          tableConfig: this.tableConfig,
+          pivotTableConfig: this.pivotTableConfig,
+          columnOverrides: this.state.columnOverrides,
+        },
+        aggConfig: this.state.aggConfig,
+        columnVisibility,
+        legendFilterConfig: this.state.legendFilterConfig,
+        axisSorts: this.state.axisSorts,
+        chartControls: this.state.chartControls,
+        networkColumnConfig: this.state.networkColumnConfig,
+        bucketSize: this.chartRef?.bucketSize ?? this.props.bucketSize,
+        orders: data.fe_req?.orders,
+      },
+    }
+
+    try {
+      return { ok: true, capture: JSON.parse(JSON.stringify(capture)) }
+    } catch (error) {
+      return { ok: false, reason: 'unsupported' }
+    }
+  }
   handleQueryFnError = (error) => {
     if (error?.data?.message === REQUEST_CANCELLED_ERROR) {
       // Cancelling hands back the data already on screen, which is the right answer for
@@ -2330,8 +2650,16 @@ export class QueryOutput extends React.Component {
     })
   }
 
-  onTableCellClick = (cell) => {
+  onTableCellClick = (cell, e) => {
     const columnDefinition = cell?.getColumn()?.getDefinition()
+
+    // A click on the value's link runs the column's value_action instead of drilling down. A link
+    // is an anchor, so the browser opens it; a callback goes to the host app.
+    if (e?.target?.closest?.(`.${VALUE_ACTION_LINK_CLASS}`)) {
+      this.runValueActionCallbackForCell(cell, e)
+      return
+    }
+
     // "Other" stands for many legend values at once, none of which is its name - there is
     // no single group to drill into.
     if (columnDefinition?.pivot || columnDefinition?.isPivotOtherColumn) {
@@ -2397,6 +2725,7 @@ export class QueryOutput extends React.Component {
     stringColumnIndices,
     rows,
     useOrLogic,
+    extraFilters,
     groupBys: explicitGroupBys,
   }) => {
     const stringCol = columns?.[stringColumnIndex]
@@ -2407,6 +2736,28 @@ export class QueryOutput extends React.Component {
     // Same as onTableCellClick: a drilldown on "Other" would filter on a value that does not exist.
     if (columns?.[columnIndex]?.isPivotOtherColumn) {
       return
+    }
+
+    // A split series is the x value and the split value together
+    const splitSeriesColumn = columns?.[columnIndex]?.isSplitSeries ? columns[columnIndex] : undefined
+    if (splitSeriesColumn) {
+      const splitConfig = this.getSplitSeriesConfig()
+      const splitColumn = this.state.columns?.[splitConfig.splitColumnIndex]
+      const xColumn = this.state.columns?.[stringColumnIndex]
+      if (!splitConfig.isActive || !splitColumn || !xColumn) {
+        return
+      }
+
+      const xFilters = filter
+        ? [].concat(filter)
+        : [this.constructFilter({ column: xColumn, value: row?.[stringColumnIndex] })]
+      const splitFilter = this.constructFilter({ column: splitColumn, value: splitSeriesColumn.splitSeriesValue })
+
+      return this.processDrilldown({
+        supportedByAPI: false,
+        activeKey,
+        filter: [...xFilters, splitFilter],
+      })
     }
 
     if (explicitGroupBys && Array.isArray(explicitGroupBys) && explicitGroupBys.length > 0) {
@@ -2459,7 +2810,8 @@ export class QueryOutput extends React.Component {
       return this.processDrilldown({
         supportedByAPI: false,
         activeKey,
-        filter: constructedFilters,
+        // eg. the time period a chart is showing while it plays over time
+        filter: [...constructedFilters, ...(extraFilters || [])],
         useOrLogic: false,
       })
     }
@@ -2686,6 +3038,7 @@ export class QueryOutput extends React.Component {
     if (nextQueryID && nextQueryID !== this.queryID) {
       this.hasUserSelectedStringAxis = false
       this.queryID = nextQueryID
+      this.setState({ hiddenSplitSeriesKeys: [] })
     }
 
     // Sorting or filtering a preview table already goes to the server for a full page
@@ -2788,6 +3141,14 @@ export class QueryOutput extends React.Component {
     if (!d) return
 
     const columnIndex = d?.columnIndex
+
+    // Split series columns only exist in the chart's copy of the columns
+    const splitSeriesKey = d?.column?.isSplitSeries ? d.column.splitSeriesKey : undefined
+    if (splitSeriesKey !== undefined) {
+      this.toggleSplitSeriesVisibility(splitSeriesKey)
+      return
+    }
+
     const usePivotData = this.usePivotDataForChart()
     const newColumns = usePivotData ? _cloneDeep(this.pivotTableColumns) : _cloneDeep(this.state.columns)
     if (!newColumns?.length) {
@@ -2814,6 +3175,22 @@ export class QueryOutput extends React.Component {
     }
 
     this.hasUserSelectedStringAxis = true
+
+    // Moving the split column onto the x-axis swaps the two, or turns the split off when the old
+    // x-axis column can't be split by (a date or number)
+    const splitConfig = this.getSplitSeriesConfig()
+    if (splitConfig.isActive && index === splitConfig.splitColumnIndex) {
+      const previousStringColumnIndex = this.tableConfig.stringColumnIndex
+      const canSwap = splitConfig.selectableColumnIndices.includes(previousStringColumnIndex)
+      this.tableConfig.stringColumnIndex = index
+      this.onTableConfigChange()
+      this.saveSplitSeriesControls(
+        canSwap
+          ? { columnIndex: previousStringColumnIndex, valueColumnIndex: splitConfig.valueColumnIndex }
+          : undefined,
+      )
+      return
+    }
 
     if (this.tableConfig.legendColumnIndex === index) {
       let stringColumnIndex = this.tableConfig.stringColumnIndex
@@ -2961,6 +3338,12 @@ export class QueryOutput extends React.Component {
   }
 
   onChangeNumberColumnIndices = (indices, indices2, newColumns) => {
+    // A split chart has one value column, picked from the original columns
+    if (this.getSplitSeriesConfig().isActive && indices?.length) {
+      this.onSplitValueChange(indices[0])
+      return
+    }
+
     const isUsingPivotData = this.usePivotDataForChart()
 
     if (isUsingPivotData) {
@@ -3321,7 +3704,8 @@ export class QueryOutput extends React.Component {
   // none of its inputs changing, which on a large answer made the scan a large share of the
   // drag. Keyed on everything it reads: the response, its rows and display_type (by identity
   // or value - the response is replaced, not edited, when rows change), the columns, and the
-  // scalar arguments. Returns a copy so a caller can't alter the cached list.
+  // scalar arguments. Returns a copy so a caller can't alter the cached list, leaving out display
+  // types whose feature toggle is off.
   getSupportedDisplayTypesMemoized = (columns) => {
     const args = {
       response: this.queryResponse,
@@ -3348,10 +3732,14 @@ export class QueryOutput extends React.Component {
     }
 
     const value = this.supportedDisplayTypesCache.value
-    return Array.isArray(value) ? [...value] : value
+    return Array.isArray(value) ? value.filter(isDisplayTypeEnabled) : value
   }
 
   isCurrentDisplayTypeValid = () => {
+    if (!isDisplayTypeEnabled(this.state.displayType)) {
+      return false
+    }
+
     return isDisplayTypeValid(
       this.queryResponse,
       this.state.displayType,
@@ -3450,6 +3838,96 @@ export class QueryOutput extends React.Component {
     }
   }
 
+  runValueActionCallbackForCell = (cell, e) => {
+    // Tabulator's column definition only keeps Tabulator options (see ChataTable), so use our own column
+    const column = this.getColumns()?.find((col) => col.field === cell.getField())
+    const action = getValueAction(column)
+    if (action?.type !== 'callback') {
+      return
+    }
+
+    const cellValue = cell.getValue()
+    const rowData = cell.getData()
+    const row = {}
+    this.getColumns()?.forEach((col) => {
+      row[col.name] = rowData?.[col.field]
+    })
+
+    const context = {
+      column: {
+        name: column?.name,
+        display_name: column?.display_name,
+        type: column?.type,
+        precision: column?.precision,
+        dow_style: column?.dow_style,
+      },
+      formattedValue: formatElement({
+        element: cellValue,
+        column,
+        config: getDataFormatting(this.props.dataFormatting),
+        forExport: true,
+      }),
+      queryId: this.queryResponse?.data?.data?.query_id,
+      queryText: this.queryResponse?.data?.data?.text,
+      event: e,
+    }
+
+    runValueActionCallback({ action, value: cellValue, row, context, callbacks: this.props.valueActionCallbacks })
+  }
+
+  // The link around a cell's value in a column with a value_action. A link is a real anchor so
+  // cmd/middle-click and "copy link" work; a callback is a button that calls the host app.
+  // Clicks are handled in onTableCellClick. Returns the link and a visually hidden hint that
+  // describes it ("Open in new tab", or the callback's tooltip) to screen readers.
+  createValueActionLink = (cell, cellValue, action, formattedValue) => {
+    if (!action || !hasValueActionValue(cellValue)) {
+      return undefined
+    }
+
+    // A callback the host app hasn't registered would do nothing, so don't offer it
+    if (action.type === 'callback' && !hasValueActionCallback(action, this.props.valueActionCallbacks)) {
+      return undefined
+    }
+
+    let link
+    if (action.type === 'link') {
+      const url = buildValueActionUrl(action.url, cellValue)
+      if (!url) {
+        return undefined
+      }
+
+      link = document.createElement('a')
+      link.href = url
+      link.target = action.target
+      link.rel = 'noopener noreferrer'
+    } else {
+      link = document.createElement('button')
+      link.type = 'button'
+    }
+
+    link.className = VALUE_ACTION_LINK_CLASS
+    link.innerHTML = formattedValue ?? ''
+
+    const hint = document.createElement('span')
+    hint.id = `${VALUE_ACTION_LINK_CLASS}-hint-${uuid()}`
+    hint.className = `${VALUE_ACTION_LINK_CLASS}-hint`
+    hint.textContent = getValueActionTooltip(action, this.props.valueActionCallbacks)
+    link.setAttribute('aria-describedby', hint.id)
+
+    // The cell is already the tooltip anchor (right-click to copy), so swap its text while over the link.
+    // Read at hover time so a changed tooltip in valueActionCallbacks shows without re-rendering the table.
+    link.addEventListener('mouseenter', () => {
+      const tooltip = getValueActionTooltip(action, this.props.valueActionCallbacks)
+      hint.textContent = tooltip
+      cell.getElement()?.setAttribute('data-tooltip-content', tooltip)
+    })
+    link.addEventListener('mouseleave', () => {
+      cell.getElement()?.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
+    })
+
+    return [link, hint]
+  }
+
   addCopyToClipboardListener = (cellElement, cellValue, newCol, dataFormatting, tooltipId) => {
     cellElement.setAttribute('data-tooltip-id', tooltipId)
     cellElement.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT)
@@ -3460,6 +3938,11 @@ export class QueryOutput extends React.Component {
     }
 
     const handler = (e) => {
+      // Leave right-click on a value's link to the browser, so it shows its own link menu
+      if (e.target?.closest?.(`.${VALUE_ACTION_LINK_CLASS}`)) {
+        return
+      }
+
       e.preventDefault()
       e.stopPropagation()
       const textToCopy = formatElement({
@@ -3534,8 +4017,10 @@ export class QueryOutput extends React.Component {
         newCol.cssClass = `${newCol.cssClass} DRILLDOWN`
       }
 
+      const valueAction = getValueAction(newCol)
+
       // Cell formatting
-      newCol.formatter = (cell, formatterParams, onRendered) => {
+      const formatCell = (cell, onRendered, { withValueAction }) => {
         const cellValue = cell.getValue()
         const wrapper = document.createElement('div')
         wrapper.className = 'react-autoql-cell-value-wrapper'
@@ -3548,7 +4033,14 @@ export class QueryOutput extends React.Component {
           htmlElement: cell.getElement(),
         })
 
-        valueContainer.innerHTML = formattedValue ?? ''
+        const valueActionElements = withValueAction
+          ? this.createValueActionLink(cell, cellValue, valueAction, formattedValue)
+          : undefined
+        if (valueActionElements) {
+          valueContainer.append(...valueActionElements)
+        } else {
+          valueContainer.innerHTML = formattedValue ?? ''
+        }
 
         wrapper.appendChild(valueContainer)
 
@@ -3567,6 +4059,15 @@ export class QueryOutput extends React.Component {
 
         return wrapper
       }
+
+      newCol.formatter = (cell, formatterParams, onRendered) => formatCell(cell, onRendered, { withValueAction: true })
+
+      // Copying, HTML export and printing get the plain value, without the link. Pivot columns,
+      // which are built from these ones, use it as their formatter too.
+      newCol.formatterClipboard = (cell, formatterParams, onRendered) =>
+        formatCell(cell, onRendered, { withValueAction: false })
+      newCol.formatterHtmlOutput = newCol.formatterClipboard
+      newCol.formatterPrint = newCol.formatterClipboard
 
       // Always enable header filtering; display only when toggled
       newCol.headerFilter = col.headerFilter ?? 'input'
@@ -3735,6 +4236,7 @@ export class QueryOutput extends React.Component {
 
       const pivotMonthColumn = {
         ...origDateColumn,
+        formatter: origDateColumn.formatterClipboard, // Pivot cells have no value links
         title: 'Month',
         name: 'Month',
         field: '0',
@@ -3771,6 +4273,7 @@ export class QueryOutput extends React.Component {
       Object.keys(uniqueYears).forEach((year, i) => {
         pivotTableColumns.push({
           ...columns[numberColumnIndex],
+          formatter: columns[numberColumnIndex].formatterClipboard, // Pivot cells have no value links
           origColumn: columns[numberColumnIndex],
           origValues: {},
           name: year,
@@ -4185,6 +4688,7 @@ export class QueryOutput extends React.Component {
       // First column will be the row headers defined by the string column
       pivotTableColumns.push({
         ...columns[newStringColumnIndex],
+        formatter: columns[newStringColumnIndex].formatterClipboard, // Pivot cells have no value links
         id: `pivot-col-0`, // Stable ID based on field
         index: 0, // Set index to match array position for sortDataByColumn
         frozen: true,
@@ -4209,6 +4713,7 @@ export class QueryOutput extends React.Component {
 
         const newPivotCol = {
           ...columns[nIdx],
+          formatter: columns[nIdx].formatterClipboard,
           id: `pivot-col-${i + 1}`, // Stable ID based on field index
           index: i + 1, // Set index to match array position for sortDataByColumn
           origColumn: columns[nIdx],
@@ -4239,6 +4744,7 @@ export class QueryOutput extends React.Component {
 
         pivotTableColumns.push({
           ...columns[nIdx],
+          formatter: columns[nIdx].formatterClipboard,
           id: `pivot-col-${otherColIndex}`,
           index: otherColIndex,
           origColumn: columns[nIdx],
@@ -4953,7 +5459,9 @@ export class QueryOutput extends React.Component {
     const canUsePivotData =
       this.potentiallySupportsPivot() &&
       displayType !== DisplayTypes.NETWORK_GRAPH &&
-      displayType !== DisplayTypes.SANKEY
+      displayType !== DisplayTypes.SANKEY &&
+      displayType !== DisplayTypes.TREEMAP &&
+      displayType !== DisplayTypes.ROSE
     const chartDataSource =
       this.state.chartControls?.dataSource || this.props.initialChartControls?.dataSource || 'pivoted'
 
@@ -5020,14 +5528,41 @@ export class QueryOutput extends React.Component {
       isChartDataAggregated = true
     }
 
-    const data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
+    let data = usePivotData ? this.state.visiblePivotRows || this.pivotTableData : this.tableData
     const baseColumns = usePivotData ? this.pivotTableColumns : this.state.columns
     // Apply column overrides (e.g., date precision) for charts only - don't mutate original queryResponse
     // Don't apply overrides when using pivot data - pivot columns have different structure
-    const columns = usePivotData ? baseColumns : this.applyColumnOverrides(baseColumns)
+    let columns = usePivotData ? baseColumns : this.getChartColumnsWithOverrides(baseColumns)
     // originalColumns should be the original columns from queryResponse, not overridden
     // Always use getColumns() to match master branch behavior
     const originalColumns = this.getColumns()
+
+    const splitConfig = usePivotData ? { isAvailable: false } : this.getSplitSeriesConfig(displayType, columns)
+    const splitData = splitConfig.isActive ? this.getSplitSeriesData(splitConfig, columns) : undefined
+    if (splitData) {
+      data = splitData.rows
+      columns = splitData.columns
+      tableConfig.numberColumnIndices = splitData.seriesColumnIndices
+      tableConfig.numberColumnIndex = splitData.seriesColumnIndices[0]
+      tableConfig.numberColumnIndices2 = []
+      tableConfig.numberColumnIndex2 = undefined
+    }
+
+    const splitBy = splitConfig.isAvailable
+      ? {
+          isActive: !!splitData,
+          columnIndex: splitData ? splitConfig.splitColumnIndex : undefined,
+          column: splitData ? this.state.columns?.[splitConfig.splitColumnIndex] : undefined,
+          eligibleColumnIndices: splitConfig.eligibleColumnIndices,
+          selectableColumnIndices: splitConfig.selectableColumnIndices,
+          valueColumnIndex: splitConfig.valueColumnIndex,
+          valueTitle: splitData ? getSplitSeriesValueTitle(this.state.columns, splitConfig.valueColumnIndex) : undefined,
+          numberColumnIndices: splitConfig.numberColumnIndices,
+          columns: this.state.columns,
+          onColumnChange: this.onSplitColumnChange,
+          onValueChange: this.onSplitValueChange,
+        }
+      : undefined
 
     // Disable cyclical dates if any column has groupable: true
     const hasGroupableColumns = originalColumns?.some((col) => col?.groupable === true)
@@ -5079,8 +5614,13 @@ export class QueryOutput extends React.Component {
           onLegendClick={this.onLegendClick}
           currentLegendState={this.state.hiddenLegendLabels}
           legendColumn={
-            usePivotData ? originalColumns?.[tableConfig?.legendColumnIndex] : columns?.[tableConfig?.legendColumnIndex]
+            splitBy?.isActive
+              ? splitBy.column
+              : usePivotData
+              ? originalColumns?.[tableConfig?.legendColumnIndex]
+              : columns?.[tableConfig?.legendColumnIndex]
           }
+          splitBy={splitBy}
           changeStringColumnIndex={this.onChangeStringColumnIndex}
           changeLegendColumnIndex={this.onChangeLegendColumnIndex}
           changeNumberColumnIndices={this.onChangeNumberColumnIndices}

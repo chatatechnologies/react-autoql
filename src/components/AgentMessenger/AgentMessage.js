@@ -5,10 +5,45 @@ import { dataFormattingDefault } from 'autoql-fe-utils'
 import { Icon } from '../Icon'
 import { dataFormattingType } from '../../props/types'
 
-import { resolveRenderer } from './renderers'
+import { resolveRenderer, StatusItem } from './renderers'
 import { getPhaseLabel } from './threadsReducer'
 
 import './AgentMessage.scss'
+
+const ITEM_RENDER_ERROR = "This part of the response couldn't be displayed."
+
+/**
+ * One boundary per item. Without it a single item that throws - an odd cell value in
+ * a table, say - reaches the messenger-wide boundary, which swaps the whole screen
+ * for an empty div until the page is reloaded. The fallback is a StatusItem, so it
+ * still reports itself revealed and the items after it carry on mounting.
+ */
+class ItemErrorBoundary extends React.Component {
+  static propTypes = {
+    onRevealComplete: PropTypes.func,
+    children: PropTypes.node,
+  }
+
+  state = { hasError: false }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error, info) {
+    console.error('[AgentMessenger] response item failed to render', error, info)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <StatusItem type='error' data={{ text: ITEM_RENDER_ERROR }} onRevealComplete={this.props.onRevealComplete} />
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 /**
  * One message - a user bubble, or an agent block that walks its response items in
@@ -101,18 +136,20 @@ const AgentMessage = ({
 
           return (
             <div className='react-autoql-agent-item' key={item.id}>
-              <Renderer
-                data={item.data}
-                type={item.type}
-                isRevealed={isRevealed}
-                shouldAnimate={enableTypewriter}
-                dataFormatting={dataFormatting}
-                maxHeight={tableMaxHeight}
-                onProgress={onItemProgress}
-                onRetry={onRetry ? onRetryMessage : undefined}
-                onStartNewSession={onStartNewSession}
-                onRevealComplete={() => onRevealComplete(item.id)}
-              />
+              <ItemErrorBoundary onRevealComplete={() => onRevealComplete(item.id)}>
+                <Renderer
+                  data={item.data}
+                  type={item.type}
+                  isRevealed={isRevealed}
+                  shouldAnimate={enableTypewriter}
+                  dataFormatting={dataFormatting}
+                  maxHeight={tableMaxHeight}
+                  onProgress={onItemProgress}
+                  onRetry={onRetry ? onRetryMessage : undefined}
+                  onStartNewSession={onStartNewSession}
+                  onRevealComplete={() => onRevealComplete(item.id)}
+                />
+              </ItemErrorBoundary>
             </div>
           )
         })}

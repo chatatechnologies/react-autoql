@@ -22,7 +22,7 @@ import { DashboardTile } from './DashboardTile'
 import { ErrorBoundary } from '../../containers/ErrorHOC'
 
 import { withTheme } from '../../theme'
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 import { buildDashboardSource } from './dashboardSource'
 import { isSm, subscribeToScreenSize } from '../../js/breakpoints'
 
@@ -124,6 +124,7 @@ class DashboardWithoutTheme extends React.Component {
     onChange: PropTypes.func,
     enableDynamicCharting: PropTypes.bool,
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onCSVDownloadStart: PropTypes.func,
@@ -191,6 +192,7 @@ class DashboardWithoutTheme extends React.Component {
     refreshInterval: 60,
     enableCyclicalDates: false,
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onSuccessCallback: () => {},
     onChange: () => {},
     onCSVDownloadStart: () => {},
@@ -617,6 +619,43 @@ class DashboardWithoutTheme extends React.Component {
     }
 
     return Promise.resolve()
+  }
+
+  // What the chosen tiles show now, captured for a report the way "Add to Report…" captures a tile
+  // (DashboardTile.captureForReport): a table's rows in the shown sort and filter order, its visible
+  // columns, a chart's settings. Without tileKeys, every tile in reading order (top to bottom, then left
+  // to right). One entry per key: { tileKey, dashboardId, title, query, displayType, result }, where
+  // result is { ok: true, capture } or { ok: false, reason } ('loading' while a tile has no finished answer
+  // on screen, 'not-found' for a key this dashboard has no tile for).
+  captureTilesForReport = ({ tileKeys, maxTableRows, maxChartRows } = {}) => {
+    const tiles = this.getMostRecentTiles() || []
+    const keyOf = (tile) => tile?.key ?? tile?.i
+    const keys = Array.isArray(tileKeys)
+      ? tileKeys
+      : [...tiles].sort((a, b) => (a?.y ?? 0) - (b?.y ?? 0) || (a?.x ?? 0) - (b?.x ?? 0)).map(keyOf)
+
+    return keys.map((tileKey) => {
+      const tile = tiles.find((t) => String(t?.key) === String(tileKey) || String(t?.i) === String(tileKey))
+      const tileRef = tile && (this.tileRefs?.[tile.key] || this.tileRefs?.[tile.i])
+
+      let result
+      if (!tile) {
+        result = { ok: false, reason: 'not-found' }
+      } else if (typeof tileRef?.captureForReport !== 'function') {
+        result = { ok: false, reason: 'loading' }
+      } else {
+        result = tileRef.captureForReport({ maxTableRows, maxChartRows })
+      }
+
+      return {
+        tileKey: tile ? keyOf(tile) : tileKey,
+        dashboardId: this.props.dashboardId,
+        title: tile?.title || tile?.query || '',
+        query: tile?.query ?? '',
+        displayType: tile?.displayType,
+        result,
+      }
+    })
   }
 
   unExecuteDashboard = () => {
@@ -1471,6 +1510,7 @@ class DashboardWithoutTheme extends React.Component {
             notExecutedText={this.props.notExecutedText}
             enableDynamicCharting={this.props.enableDynamicCharting}
             onErrorCallback={this.props.onErrorCallback}
+            valueActionCallbacks={this.props.valueActionCallbacks}
             onSuccessCallback={this.props.onSuccessCallback}
             autoChartAggregations={this.props.autoChartAggregations}
             onDrilldownStart={this.onDrilldownStart}
@@ -1585,6 +1625,7 @@ class DashboardWithoutTheme extends React.Component {
             showQueryInterpretation={this.props.isEditing}
             isDrilldownRunning={this.state.isDrilldownRunning}
             onErrorCallback={this.props.onErrorCallback}
+            valueActionCallbacks={this.props.valueActionCallbacks}
             onSuccessCallback={this.props.onSuccessCallback}
             activeDrilldownRef={this.activeDrilldownRef}
             onCSVDownloadStart={this.props.onCSVDownloadStart}

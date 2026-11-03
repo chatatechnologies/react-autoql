@@ -53,3 +53,8 @@
     }
   }
 }
+
+.legend-select-list-item.legend-select-remove-split {
+  border-top: 1px solid var(--react-autoql-border-color);
+  color: var(--react-autoql-danger-color, #c0392b);
+}

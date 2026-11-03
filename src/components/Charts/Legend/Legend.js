@@ -23,6 +23,7 @@ import {
 } from 'autoql-fe-utils'
 
 import safeGetBBox from '../../../utils/safeGetBBox'
+import { getUnscaledClientRect } from '../measureScale'
 
 // Module-level storage for filtered labels to persist across component remounts
 const legendFilterStore = new Map()
@@ -41,7 +42,7 @@ export default class Legend extends React.Component {
     this.HORIZONTAL_LEGEND_SPACING = isMobile ? 15 : 20
     this.VERTICAL_LEGEND_SPACING = isMobile ? 15 : 25
     this.SHAPE_SIZE = isMobile ? 50 : 75
-    this.TOP_ADJUSTMENT = isMobile ? 12 : props.isAggregated ? 8 : 16
+    this.TOP_ADJUSTMENT = isMobile ? 12 : props.isAggregated || props.splitBy?.isActive ? 8 : 16
     this.DEFAULT_MAX_WIDTH = isMobile ? 100 : 140
     this.AXIS_TITLE_BORDER_PADDING_LEFT = 5
     this.AXIS_TITLE_BORDER_PADDING_TOP = 3
@@ -498,7 +499,7 @@ export default class Legend extends React.Component {
     // Remove red arrow if it has been rendered already
     select(legendElement).select('.legend-hidden-field-arrow').remove()
 
-    const legendContainerBBox = this.legendBorder?.getBoundingClientRect()
+    const legendContainerBBox = getUnscaledClientRect(this.legendBorder)
     const legendBottom = (legendContainerBBox?.y ?? 0) + (legendContainerBBox?.height ?? 0) - this.BORDER_PADDING
 
     let hasRemovedElement = false
@@ -511,7 +512,7 @@ export default class Legend extends React.Component {
         if (hasRemovedElement) {
           select(this).remove()
         } else {
-          const cellBBox = this.getBoundingClientRect()
+          const cellBBox = getUnscaledClientRect(this)
           const cellBottom = (cellBBox?.y ?? 0) + (cellBBox?.height ?? 0) - 5
 
           if (cellBottom > legendBottom) {
@@ -600,9 +601,11 @@ export default class Legend extends React.Component {
 
         this.renderFilterButtonWithD3(legendElement, titleBBox, sectionIndex)
         this.renderFilterBadge(legendElement, sectionIndex)
+        this.renderRemoveSplitButtonWithD3(legendElement, sectionIndex)
       } else {
         select(legendElement).select('.legend-filter-button-d3').remove()
         select(legendElement).select('.legend-filter-badge').remove()
+        select(legendElement).select('.legend-remove-split-button-d3').remove()
       }
     } catch (error) {
       console.error(error)
@@ -685,6 +688,73 @@ export default class Legend extends React.Component {
     }
   }
 
+  // Split charts: a one-click way to remove the split, after the filter button. Smaller than the
+  // filter icon so the title row doesn't read as a row of equal buttons.
+  renderRemoveSplitButtonWithD3 = (legendElement, sectionIndex = 0) => {
+    try {
+      select(legendElement).select('.legend-remove-split-button-d3').remove()
+
+      const filterButtonPos = this.filterButtonPositions[sectionIndex]
+      if (!this.props.splitBy?.isActive || !filterButtonPos) {
+        return
+      }
+
+      const iconSize = 8
+      const hitSize = 18
+      const buttonX = filterButtonPos.x + 20
+      const buttonY = filterButtonPos.y
+      const tooltipID = this.props.chartTooltipID || this.props.tooltipID || `legend-filter-tooltip-${this.LEGEND_ID}`
+
+      const removeSplit = (event) => {
+        event.stopPropagation()
+        this.props.splitBy?.onColumnChange?.(null)
+      }
+
+      const buttonGroup = select(legendElement)
+        .append('g')
+        .attr('class', 'legend-remove-split-button-d3')
+        .attr('data-test', 'legend-remove-split-button')
+        .attr('opacity', '0') // use css to style so it isn't exported in the png
+        .style('cursor', 'pointer')
+        .attr('role', 'button')
+        .attr('tabindex', 0)
+        .attr('aria-label', 'Remove split')
+        .attr('data-tooltip-id', tooltipID)
+        .attr('data-tooltip-content', 'Remove split')
+        .on('click', removeSplit)
+        .on('keydown', (event) => {
+          if (event && (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar')) {
+            event.preventDefault()
+            removeSplit(event)
+          }
+        })
+
+      buttonGroup
+        .append('rect')
+        .attr('class', 'legend-remove-split-button-bg')
+        .attr('x', buttonX - hitSize / 2)
+        .attr('y', buttonY - hitSize / 2)
+        .attr('width', hitSize)
+        .attr('height', hitSize)
+        .attr('rx', 3)
+        .attr('fill', 'transparent')
+        .attr('stroke', 'transparent')
+
+      const half = iconSize / 2
+      buttonGroup
+        .append('path')
+        .attr('class', 'legend-remove-split-icon')
+        .attr('d', `M${buttonX - half},${buttonY - half}L${buttonX + half},${buttonY + half}M${buttonX + half},${buttonY - half}L${buttonX - half},${buttonY + half}`)
+        .attr('fill', 'none')
+        .attr('stroke', 'currentColor')
+        .attr('stroke-width', 1.5)
+        .attr('stroke-linecap', 'round')
+        .style('pointer-events', 'none')
+    } catch (error) {
+      console.warn('Error rendering remove split button:', error)
+    }
+  }
+
   renderFilterBadge = (legendElement, sectionIndex = 0) => {
     try {
       select(legendElement).select('.legend-filter-badge').remove()
@@ -733,8 +803,12 @@ export default class Legend extends React.Component {
     }
   }
 
+  // Pivot and split charts title the legend with the column their series come from, and that
+  // title opens a selector to change it
+  hasColumnTitle = () => this.props.isAggregated || !!this.props.splitBy?.isActive
+
   getLegendTitleFromColumns = (columnIndices) => {
-    if (this.props.isAggregated) {
+    if (this.hasColumnTitle()) {
       return this.props.legendColumn?.display_name ?? 'Legend'
     }
 
@@ -844,7 +918,7 @@ export default class Legend extends React.Component {
 
       if (sectionIndex > 0) {
         const previousLegendSectionsBBox = mergeBoundingClientRects(
-          this.legendElements.filter((el, i) => el && i < sectionIndex).map((el) => el.getBoundingClientRect()),
+          this.legendElements.filter((el, i) => el && i < sectionIndex).map((el) => getUnscaledClientRect(el)),
         )
 
         if (this.props.orientation === 'vertical') {
@@ -884,7 +958,7 @@ export default class Legend extends React.Component {
             const labelObj = legendLabelsForSection.find((l) => l.label === cellData)
             if (labelObj?.hidden) return
 
-            const cellBBox = this.getBoundingClientRect()
+            const cellBBox = getUnscaledClientRect(this)
             if (cellBBox) {
               visibleCellBBoxes.push(cellBBox)
             }
@@ -900,7 +974,7 @@ export default class Legend extends React.Component {
         if (!el) return
         const titleElement = select(el).select('.legendTitle').node()
         if (titleElement) {
-          const titleClientRect = titleElement.getBoundingClientRect()
+          const titleClientRect = getUnscaledClientRect(titleElement)
           if (titleClientRect && titleClientRect.width > 0 && titleClientRect.height > 0) {
             // Use the minimum of actual width and maxSectionWidth (title should wrap)
             const titleWidth = Math.min(titleClientRect.width, maxSectionWidth)
@@ -916,7 +990,7 @@ export default class Legend extends React.Component {
 
         // Also include the entire legend element's bounding box to ensure we capture everything
         // This is a fallback in case individual elements don't capture the full extent
-        const legendElementRect = el.getBoundingClientRect()
+        const legendElementRect = getUnscaledClientRect(el)
         if (legendElementRect && legendElementRect.width > 0 && legendElementRect.height > 0) {
           allBBoxes.push(legendElementRect)
         }
@@ -925,11 +999,14 @@ export default class Legend extends React.Component {
       // Add filter button bounding boxes for all sections
       this.legendElements.forEach((el) => {
         if (!el) return
-        const btn = select(el).select('.legend-filter-button-d3').node()
-        if (btn) {
-          const bbox = btn.getBoundingClientRect()
-          if (bbox) allBBoxes.push(bbox)
-        }
+        // The split's remove button too (develop), measured unscaled as the rest are (inside a zoomed report page).
+        ;['.legend-filter-button-d3', '.legend-remove-split-button-d3'].forEach((selector) => {
+          const btn = select(el).select(selector).node()
+          if (btn) {
+            const bbox = getUnscaledClientRect(btn)
+            if (bbox) allBBoxes.push(bbox)
+          }
+        })
       })
 
       const mergedBBox = mergeBoundingClientRects(allBBoxes)
@@ -959,7 +1036,7 @@ export default class Legend extends React.Component {
       this.removeHiddenLegendLabels(legendElement)
       this.applyStylesForHiddenSeries(legendElement, legendLabels)
 
-      if (this.props.isAggregated && isFirstSection && legendElement) {
+      if (this.hasColumnTitle() && isFirstSection && legendElement) {
         setTimeout(() => {
           this.renderFilterBadge(legendElement, sectionIndex)
         }, 0)
@@ -971,7 +1048,7 @@ export default class Legend extends React.Component {
 
   applyTitleStyles = (title, isFirstSection, legendElement, sectionIndex) => {
     if (title) {
-      if (this.props.isAggregated) {
+      if (this.hasColumnTitle()) {
         this.styleLegendTitleWithBorder(legendElement, sectionIndex, isFirstSection)
       } else {
         this.styleLegendTitleNoBorder(legendElement, isFirstSection)
@@ -1098,6 +1175,7 @@ export default class Legend extends React.Component {
 
   renderTitleSelector = () => {
     const positions = this.columnSelectorPositions?.filter(Boolean) || []
+    const isSplit = !!this.props.splitBy?.isActive
     return (
       <LegendSelector
         tableConfig={this.props.tableConfig}
@@ -1113,6 +1191,7 @@ export default class Legend extends React.Component {
         numberColumnIndices2={this.props.numberColumnIndices2}
         hasSecondAxis={this.props.hasSecondAxis}
         isAggregated={this.props.isAggregated}
+        splitBy={this.props.splitBy}
         tooltipID={this.props.tooltipID}
         columns={this.props.originalColumns}
         align='center'
@@ -1127,6 +1206,8 @@ export default class Legend extends React.Component {
               key={`column-selector-${i}`}
               className='axis-label-border'
               data-test='axis-label-border'
+              data-tooltip-id={isSplit ? this.props.chartTooltipID : undefined}
+              data-tooltip-html={isSplit ? 'Change or remove the split' : undefined}
               x={pos.x}
               y={pos.y}
               width={pos.width}
@@ -1190,8 +1271,8 @@ export default class Legend extends React.Component {
           {this.renderLegendSections()}
           {this.renderLegendClippingContainer(translateX, translateY)}
           {this.renderLegendBorder()}
-          {this.props.isAggregated && this.renderTitleSelector()}
-          {this.props.isAggregated &&
+          {this.hasColumnTitle() && this.renderTitleSelector()}
+          {this.hasColumnTitle() &&
             (this.filterButtonPositions || []).map((_, i) => this.renderLegendPopover(i, iconSize))}
         </g>
       </>

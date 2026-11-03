@@ -85,8 +85,7 @@ export const getVisibleLegendSeriesSlotCount = (props) => {
     return 1
   }
 
-  const countVisible = (indices) =>
-    indices.filter((i) => columns[i] && !columns[i].isSeriesHidden).length
+  const countVisible = (indices) => indices.filter((i) => columns[i] && !columns[i].isSeriesHidden).length
 
   let total = countVisible(resolveSeriesColumnIndices({ visibleSeriesIndices, numberColumnIndices }))
 
@@ -109,9 +108,7 @@ export const getVisibleLegendSeriesSlotCount = (props) => {
 export const isDenseChartLayout = (data, chartProps) => {
   const n = Array.isArray(data) ? data.length : 0
   const props = chartProps || {}
-  const seriesSlots = isStackedBarOrColumnDisplayType(props.type)
-    ? 1
-    : getVisibleLegendSeriesSlotCount(props)
+  const seriesSlots = isStackedBarOrColumnDisplayType(props.type) ? 1 : getVisibleLegendSeriesSlotCount(props)
   return n > DENSE_CATEGORY_THRESHOLD || n * seriesSlots > DENSE_CATEGORY_THRESHOLD
 }
 
@@ -131,6 +128,15 @@ export const chartContainerPropTypes = {
   legendColumnIndex: PropTypes.number,
   enableDynamicCharting: PropTypes.bool,
   legendLocation: PropTypes.string,
+  // List queries only: one series per value of a column (see QueryOutput/splitSeriesUtils)
+  splitBy: PropTypes.shape({
+    isActive: PropTypes.bool,
+    columnIndex: PropTypes.number,
+    valueColumnIndex: PropTypes.number,
+    valueTitle: PropTypes.string,
+    onColumnChange: PropTypes.func,
+    onValueChange: PropTypes.func,
+  }),
   isResizing: PropTypes.bool,
   onLegendClick: PropTypes.func,
   onLabelChange: PropTypes.func,
@@ -195,7 +201,7 @@ export const chartElementDefaultProps = {
 /**
  * Creates a "between" filter for date drilldowns when the string axis is a DATE column.
  * Returns null if the column is not a DATE type or if the date value is invalid.
- * 
+ *
  * @param {Object} params - Parameters object
  * @param {Object} params.stringColumn - The column object for the string axis
  * @param {*} params.dateValue - The date value from the row data

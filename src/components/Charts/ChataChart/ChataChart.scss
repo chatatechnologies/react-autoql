@@ -159,6 +159,40 @@
     opacity: 1 !important;
   }
 
+  // The legend's title controls take focus when clicked, which drew the browser's thick focus
+  // ring. Keyboard focus shows the same background as hover instead.
+  [data-test='legend'] {
+    *:focus,
+    *:focus-visible {
+      outline: none;
+    }
+  }
+
+  .legend-filter-button-d3:focus-visible .legend-filter-button-bg {
+    fill: var(--react-autoql-hover-color);
+    fill-opacity: 0.8;
+  }
+
+  .legend-remove-split-button-d3 {
+    opacity: 1 !important;
+    color: var(--react-autoql-text-color-placeholder, var(--react-autoql-text-color-primary));
+    outline: none;
+
+    .legend-remove-split-icon {
+      transition: stroke 0.2s ease;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: var(--react-autoql-danger-color, #c0392b);
+
+      .legend-remove-split-button-bg {
+        fill: var(--react-autoql-hover-color);
+        fill-opacity: 0.8;
+      }
+    }
+  }
+
   .legendCells {
     .cell {
       &.legend-cell-hidden {

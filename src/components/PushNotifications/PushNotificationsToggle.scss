@@ -1,0 +1,31 @@
+.react-autoql-push-notifications-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  .react-autoql-push-notifications-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .react-autoql-push-notifications-toggle-label {
+    color: var(--react-autoql-text-color-primary);
+    font-weight: 600;
+  }
+
+  .react-autoql-push-notifications-toggle-message {
+    color: var(--react-autoql-text-color-secondary);
+    font-size: 0.9em;
+  }
+
+  .react-autoql-push-notifications-toggle-message-warning {
+    color: var(--react-autoql-warning-color);
+  }
+
+  .react-autoql-switch-container {
+    flex: none;
+  }
+}

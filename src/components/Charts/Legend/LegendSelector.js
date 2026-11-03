@@ -81,7 +81,58 @@ export default class LegendSelector extends React.Component {
     return columnIndices
   }
 
+  // Split charts: the split column's alternatives (the x-axis column swaps with it), and a way
+  // to turn the split off, which brings back the Split by button
+  renderSplitSeriesContent = (splitBy) => {
+    const columns = splitBy.columns ?? []
+
+    return (
+      <div
+        className='legend-selector-container'
+        id='legend-selector-content'
+        data-test='split-series-legend-selector'
+        onClick={(e) => {
+          e.stopPropagation()
+        }}
+      >
+        <CustomScrollbars suppressScrollX>
+          <ul className='axis-selector-content'>
+            {(splitBy.selectableColumnIndices ?? []).map((colIndex) => (
+              <li
+                className={`legend-select-list-item ${colIndex === splitBy.columnIndex ? 'active' : ''}`}
+                key={`legend-column-select-${colIndex}`}
+                onClick={() => {
+                  this.props.closeSelector()
+                  if (colIndex !== splitBy.columnIndex) {
+                    splitBy.onColumnChange(colIndex)
+                  }
+                }}
+              >
+                {columns[colIndex]?.display_name}
+              </li>
+            ))}
+            <li
+              className='legend-select-list-item legend-select-remove-split'
+              key='legend-column-remove-split'
+              data-test='remove-split-series'
+              onClick={() => {
+                this.props.closeSelector()
+                splitBy.onColumnChange(null)
+              }}
+            >
+              Remove split
+            </li>
+          </ul>
+        </CustomScrollbars>
+      </div>
+    )
+  }
+
   renderSelectorContent = () => {
+    if (this.props.splitBy?.isActive) {
+      return this.renderSplitSeriesContent(this.props.splitBy)
+    }
+
     const tableConfig = this.props.tableConfig || {}
     const selectedLegendIndex = this.props.legendColumn?.index
     const numberColumnIndices = tableConfig.numberColumnIndices || []

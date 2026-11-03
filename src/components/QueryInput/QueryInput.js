@@ -185,7 +185,13 @@ class QueryInput extends React.Component {
     measure()
 
     if (typeof ResizeObserver !== 'undefined') {
-      this.leftContentObserver = new ResizeObserver(measure)
+      // Measure on the next frame, not inside the observer callback: measure() calls setState, which
+      // re-renders synchronously and changes the input's padding while the browser is still delivering
+      // resize notifications - the cause of "ResizeObserver loop completed with undelivered notifications".
+      this.leftContentObserver = new ResizeObserver(() => {
+        cancelAnimationFrame(this.leftContentFrame)
+        this.leftContentFrame = requestAnimationFrame(measure)
+      })
       this.leftContentObserver.observe(element)
     }
   }
@@ -232,6 +238,7 @@ class QueryInput extends React.Component {
     if (!!this.props.leftContent !== !!prevProps.leftContent) {
       this.leftContentObserver?.disconnect()
       this.leftContentObserver = undefined
+      cancelAnimationFrame(this.leftContentFrame)
 
       if (this.props.leftContent) {
         this.observeLeftContent()
@@ -244,6 +251,7 @@ class QueryInput extends React.Component {
   componentWillUnmount = () => {
     this._isMounted = false
     this.leftContentObserver?.disconnect()
+    cancelAnimationFrame(this.leftContentFrame)
     clearTimeout(this.autoCompleteTimer)
     clearTimeout(this.queryValidationTimer)
     clearTimeout(this.caretMoveTimeout)

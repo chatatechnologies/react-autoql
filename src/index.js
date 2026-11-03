@@ -29,6 +29,7 @@ export { ScheduleBuilder } from './components/Notifications/ScheduleBuilder'
 export { ConditionBuilder } from './components/Notifications/ConditionBuilder'
 export { NotificationIcon } from './components/Notifications/NotificationIcon'
 export { NotificationFeed } from './components/Notifications/NotificationFeed'
+export * from './components/PushNotifications'
 export { JoinColumnSelectionTable } from './components/Notifications/JoinColumnSelectionTable'
 export { SelectableTable } from './components/SelectableTable'
 export { NotificationItem } from './components/Notifications/NotificationItem'
@@ -37,3 +38,30 @@ export { ChatContent } from './components/ChatContent'
 export { SimpleTable } from './components/SimpleTable'
 export { AppearanceSection } from './components/Notifications/DataAlertSettings/AppearanceSection'
 export { SlicerChip } from './components/DashboardToolbar'
+// The builder and the reports workspace fetch their code the first time one is shown (onDemand.js).
+export { ReportBuilder, Reports } from './components/ReportBuilder/onDemand'
+export { createEmptyReport, REPORT_SCHEMA_VERSION } from './components/ReportBuilder/model/reportSchema'
+export { captureQuestion } from './components/ReportBuilder/run/captureRun'
+export { rowsForCapture } from './components/ReportBuilder/model/capture'
+export {
+  REPORT_ERROR_CODES,
+  ReportsApiError,
+  appendReportBlock,
+  createReport,
+  createReportFolder,
+  createReportTag,
+  deleteReport,
+  deleteReportFolder,
+  deleteReports,
+  deleteReportTag,
+  fetchReport,
+  fetchReportFolders,
+  fetchReports,
+  fetchReportTags,
+  organizeReports,
+  renameReportFolder,
+  saveReport,
+  updateReportTag,
+} from './components/ReportBuilder/run/reportsApi'
+export { AddToReportDialog } from './components/ReportBuilder/workspace/AddToReportDialog'
+export { captureReportBlock } from './components/ReportBuilder/workspace/reportBlocks'

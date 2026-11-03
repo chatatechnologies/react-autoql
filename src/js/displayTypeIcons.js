@@ -26,6 +26,8 @@ const DISPLAY_TYPE_ICONS = {
   [DisplayTypes.SCATTERPLOT]: 'scatterplot',
   [DisplayTypes.NETWORK_GRAPH]: 'network',
   [DisplayTypes.SANKEY]: 'sankey',
+  [DisplayTypes.TREEMAP]: 'treemap',
+  [DisplayTypes.ROSE]: 'rose',
 }
 
 export const getIconForDisplayType = (displayType) => DISPLAY_TYPE_ICONS[displayType] ?? 'column-chart'

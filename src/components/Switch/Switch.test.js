@@ -83,5 +83,25 @@ describe('Switch', () => {
       const input = wrapper.find("[data-test='react-autoql-switch']")
       expect(input.prop('disabled')).toBe(true)
     })
+
+    test('the slider follows a disabled prop that changes after mounting', () => {
+      const wrapper = setup({ disabled: true })
+      expect(wrapper.find('.toggle-switch-slider').prop('style')).toEqual({ pointerEvents: 'none' })
+
+      wrapper.setProps({ disabled: false })
+      expect(wrapper.find('.toggle-switch-slider').prop('style')).toEqual({ pointerEvents: 'auto' })
+    })
+
+    test('ignores clicks on the slider while disabled', () => {
+      const onChange = jest.fn()
+      const wrapper = setup({ disabled: true, onChange })
+
+      wrapper.find('.toggle-switch-slider').simulate('click')
+      expect(onChange).not.toHaveBeenCalled()
+
+      wrapper.setProps({ disabled: false })
+      wrapper.find('.toggle-switch-slider').simulate('click')
+      expect(onChange).toHaveBeenCalledWith(true)
+    })
   })
 })

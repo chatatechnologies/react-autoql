@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { v4 as uuid } from 'uuid'
 import { Axis } from '../Axis'
+import { SplitSeriesButton } from '../SplitSeriesButton'
 import { axesDefaultProps, axesPropTypes } from '../chartPropHelpers'
 
 export default class Axes extends React.Component {
@@ -140,16 +141,40 @@ export default class Axes extends React.Component {
     return this.props.legendLocation === 'bottom'
   }
 
+  // The button only starts a split; once split, the legend title is the control
+  shouldRenderSplitSeriesButton = () => {
+    return !!this.props.splitBy && !this.props.splitBy.isActive
+  }
+
+  renderSplitSeriesButton = () => {
+    if (!this.shouldRenderSplitSeriesButton()) {
+      return null
+    }
+
+    return <SplitSeriesButton splitBy={this.props.splitBy} x={10} y={0} chartTooltipID={this.props.chartTooltipID} />
+  }
+
   renderRightAxis = (innerWidth, innerHeight) => {
     const shouldRenderAxis = this.shouldRenderRightAxis()
     const shouldRenderRightLegend = this.shouldRenderRightLegend()
+    const shouldRenderSplitSeriesButton = this.shouldRenderSplitSeriesButton()
 
-    if (!shouldRenderAxis && !shouldRenderRightLegend) {
+    if (!shouldRenderAxis && !shouldRenderRightLegend && !shouldRenderSplitSeriesButton) {
       return null
+    }
+
+    // The button is inside this group so the chart measures it and leaves room for it
+    if (!shouldRenderAxis && !shouldRenderRightLegend) {
+      return (
+        <g ref={(r) => (this.rightAxis = r)} transform={`translate(${innerWidth}, 0)`}>
+          {this.renderSplitSeriesButton()}
+        </g>
+      )
     }
 
     return (
       <g ref={(r) => (this.rightAxis = r)} transform={`translate(${innerWidth}, 0)`}>
+        {this.renderSplitSeriesButton()}
         <Axis
           {...this.props}
           ref={(r) => (this.rightAxisWithoutLegend = r)}
@@ -158,6 +183,7 @@ export default class Axes extends React.Component {
           scale={this.props.yScale2}
           showGridLines={false}
           hasLegend={shouldRenderRightLegend}
+          hasSplitSeriesButton={shouldRenderSplitSeriesButton}
           innerWidth={innerWidth}
           innerHeight={innerHeight}
           onAxisRenderComplete={this.onAxisRenderComplete}
