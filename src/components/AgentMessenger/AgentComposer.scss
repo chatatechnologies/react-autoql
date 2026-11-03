@@ -152,22 +152,6 @@
   &:disabled {
     cursor: default;
   }
-
-  &.is-stop {
-    background-color: var(--am-b3);
-    color: var(--am-t1);
-
-    &:hover {
-      background-color: var(--am-hover);
-    }
-  }
-}
-
-.react-autoql-agent-stop-glyph {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 2px;
-  background-color: currentColor;
 }
 
 .react-autoql-agent-composer-toolbar {

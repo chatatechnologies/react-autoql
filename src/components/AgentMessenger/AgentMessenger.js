@@ -75,7 +75,6 @@ const AgentMessenger = ({
     closeThread,
     activateThread,
     setThreadModel,
-    cancelThreadRequest,
     markItemRevealed,
     lastOpenedThreadId,
   } = useAgentSession({
@@ -318,7 +317,6 @@ const AgentMessenger = ({
           llmModel={activeThread?.llmModel}
           onModelChange={(llmModel) => activeThread && setThreadModel(activeThread.id, llmModel)}
           onSubmit={onSubmit}
-          onCancel={() => activeThread && cancelThreadRequest(activeThread.id)}
           popoverParentElement={containerElement}
           tooltipID={tooltipIdRef.current}
         />
