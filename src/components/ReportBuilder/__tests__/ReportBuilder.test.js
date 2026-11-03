@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { fetchLLMSummary, runQuery } from 'autoql-fe-utils'
 import { ReportBuilder } from '..'
 import { createEmptyReport } from '../model/reportSchema'
+import { updateBlock } from '../model/reportOperations'
 import { printFrame } from '../print/printFrame'
 import { fetchBranding, saveBranding } from '../run/brandingApi'
 
@@ -1392,6 +1393,38 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
     await waitFor(() => expect(lastReport()?.blocks[0].capture.data?.rows).toHaveLength(3))
     expect(lastReport().blocks[0].capture.config.columnVisibility).toStrictEqual({ account: true, aum: false })
     expect(lastReport().blocks[0].rows).toBe(25)
+  })
+
+  it('says on paper that a question has no answer yet, without offering Rerun there', () => {
+    const unanswered = { ...ASKED, capture: { version: 1, displayType: 'table', config: { displayType: 'table' } } }
+    setupAsking(createEmptyReport({ blocks: [unanswered] }))
+    fireEvent.click(screen.getByTestId('report-builder-open-preview'))
+
+    const preview = screen.getByTestId('report-builder-preview')
+    expect(within(preview).getAllByText('No answer yet.').length).toBeGreaterThan(0)
+    expect(within(preview).queryAllByText('No answer yet. Rerun asks the question.')).toHaveLength(0)
+  })
+
+  it('keeps a rerun’s answer in the block’s settings as they are when it comes', async () => {
+    let answerWith
+    runQuery.mockImplementation(() => new Promise((resolve) => (answerWith = resolve)))
+    const { lastReport, ref } = setupAsking(createEmptyReport({ blocks: [ASKED] }))
+
+    selectBlock('Data')
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+    // While it's asked, the block's settings change (an undo, say).
+    act(() => {
+      const report = ref.current.getLatestReport()
+      const { capture } = report.blocks[0]
+      const columnVisibility = { account: false, aum: true }
+      ref.current.change(
+        updateBlock(report, 'q', { capture: { ...capture, config: { ...capture.config, columnVisibility } } }),
+      )
+    })
+    await act(async () => answerWith(responseOf(rowsOf(4))))
+
+    await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(4))
+    expect(lastReport().blocks[0].capture.config.columnVisibility).toStrictEqual({ account: false, aum: true })
   })
 
   it('drops the answer for a block deleted while asking', async () => {

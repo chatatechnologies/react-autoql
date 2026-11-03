@@ -35,7 +35,7 @@ export const DEFAULT_PAGE_SETUP = {
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
-const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
+export const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
 const oneOf = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback)
 const optionKeys = (options) => options.map(([key]) => key)
 
