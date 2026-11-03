@@ -193,7 +193,14 @@ export const getDataBlockView = ({ block, tileIndex, result, requestKey, running
 
   const found = source?.type === 'tile' ? resolveTile(tileIndex || {}, source) : null
   const tile = found?.tile
-  const base = { ...describeSource(block, found), sourceType: source?.type, tile, dashboard: found?.dashboard }
+  const base = {
+    ...describeSource(block, found),
+    sourceType: source?.type,
+    // A question asked in the report, which can be asked again (Rerun) — with an answer yet or not.
+    askedHere: !!block.askedHere && source?.type === 'query',
+    tile,
+    dashboard: found?.dashboard,
+  }
 
   // What was captured stands on its own — even if its tile has since been removed — until a run replaces it.
   const ran = !!result && result.requestKey === requestKey && result.status === 'success'
