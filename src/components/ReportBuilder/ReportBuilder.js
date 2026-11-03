@@ -716,11 +716,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
   }
 
   // A question asked on a Data block: asked once, and its answer kept as the block's capture, marked askedHere
-  // so it can be asked again (Rerun). Asked again, the answer keeps the block's table and chart settings. A failed
-  // question stays with the block, with why, to be fixed and asked again. The answer is dropped if the block is
-  // gone or filled by then, and the request stopped if the builder goes away. Resolves with true once the answer is
-  // kept, false when the question didn't answer, and null when it wasn't asked (one is on its way already), was
-  // stopped, or its answer was dropped.
+  // so it can be asked again (Rerun). Asked again, the answer keeps the block's table and chart settings, as the
+  // block has them when it comes. A failed question stays with the block, with why, to be fixed and asked again. The
+  // answer is dropped if the block is gone or filled by then, and the request stopped if the builder goes away.
+  // Resolves with true once the answer is kept, false when the question didn't answer, and null when it wasn't asked
+  // (one is on its way already), was stopped, or its answer was dropped.
   askQuestion = (id, query, { rerun = false, capturedAt } = {}) => {
     if (this.pendingSeqs[id]) {
       return Promise.resolve(null)
@@ -731,14 +731,17 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const controller = typeof AbortController === 'function' ? new AbortController() : null
     this.pendingAborts[id] = controller
     this.setPending(id, { kind: 'question', seq, query, rerun })
-    const asked = rerun ? this.getLatestReport().blocks.find((block) => block.id === id) : null
+    const settingsOf = () => {
+      const block = this.getLatestReport().blocks.find((b) => b.id === id)
+      return block ? { kept: block.capture, displayType: block.displayType } : null
+    }
 
     return captureQuestion({
       query,
       authentication: this.props.authentication,
       autoQLConfig: this.props.autoQLConfig,
       signal: controller?.signal,
-      ...(rerun ? { rerun: { kept: asked?.capture, displayType: asked?.displayType } } : {}),
+      ...(rerun ? { rerun: { ...settingsOf(), current: settingsOf } } : {}),
       ...(capturedAt ? { capturedAt } : {}),
     }).then((result) => {
       if (!this.mounted || this.pendingSeqs[id] !== seq) {
@@ -1393,7 +1396,6 @@ export class ReportBuilderWithoutTheme extends React.Component {
                   autoQLConfig={this.props.autoQLConfig}
                   onLayout={this.onLayout}
                   canRun={this.props.enableRunReport}
-                  canCapture={!this.props.enableRunReport && !!this.props.enableDataBlocks}
                   zoom={this.state.zoom}
                   onFit={this.onFit}
                 />

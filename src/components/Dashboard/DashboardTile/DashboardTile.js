@@ -35,7 +35,12 @@ import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
 import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import {
+  authenticationType,
+  autoQLConfigType,
+  dataFormattingType,
+  valueActionCallbacksType,
+} from '../../../props/types'
 import { buildDashboardSource } from '../dashboardSource'
 import {
   getTileQueryOutputProps,
@@ -163,6 +168,7 @@ export class DashboardTile extends React.Component {
     allowCustomColumnsOnDrilldown: PropTypes.bool,
     notExecutedText: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     onErrorCallback: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
     onRetry: PropTypes.func,
     onSuccessCallback: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
@@ -224,6 +230,7 @@ export class DashboardTile extends React.Component {
     executeSingleTile: () => {},
     onSaveCallback: () => {},
     onErrorCallback: () => {},
+    valueActionCallbacks: undefined,
     onRetry: () => {},
     onSuccessCallback: () => {},
     onCSVDownloadStart: () => {},
@@ -1793,6 +1800,7 @@ export class DashboardTile extends React.Component {
         authentication={this.getTileAuthentication()}
         autoQLConfig={this.getTileAutoQLConfig()}
         dataFormatting={this.props.dataFormatting}
+        valueActionCallbacks={this.props.valueActionCallbacks}
         renderTooltips={false}
         autoSelectQueryValidationSuggestion={false}
         autoChartAggregations={this.props.autoChartAggregations}

@@ -284,7 +284,6 @@ export const useAgentSession = ({
     closeThread,
     activateThread,
     setThreadModel,
-    cancelThreadRequest,
     markItemRevealed,
   }
 }
