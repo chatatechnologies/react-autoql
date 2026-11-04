@@ -1,4 +1,10 @@
-import { cloneResponseSharingRows, getResponseRowCount, isDatalessResponse, withPreviewRows } from './responseUtils'
+import {
+  cloneResponseSharingRows,
+  getPinnedQueryId,
+  getResponseRowCount,
+  isDatalessResponse,
+  withPreviewRows,
+} from './responseUtils'
 
 // The saving is the rows; the isolation that callers rely on is everything else.
 // QueryOutput edits columns, fe_req and available_selects on its own copy and must
@@ -236,5 +242,26 @@ describe('getResponseRowCount', () => {
     expect(getResponseRowCount({ data: { data: { rows: [[1], [2]] } } })).toBe(2)
     expect(getResponseRowCount({ data: { data: {} } })).toBe(0)
     expect(getResponseRowCount(undefined)).toBe(0)
+  })
+})
+
+// A cached dashboard run's query_id has no stored post-processor request, so drilling down or exporting
+// on it fails (1.1.572). The response names the tile's saved query as drilldown_query_id.
+describe('getPinnedQueryId', () => {
+  const response = (data) => ({ data: { data } })
+
+  it("takes the response's drilldown_query_id first", () => {
+    const cached = response({ query_id: 'q_cached_run', drilldown_query_id: 'q_saved' })
+    expect(getPinnedQueryId(cached, 'q_cached_run', 'q_cached_run')).toBe('q_saved')
+  })
+
+  it("then the tile's pinned queryId", () => {
+    expect(getPinnedQueryId(response({ query_id: 'q_run' }), 'q_tile', 'q_run')).toBe('q_tile')
+  })
+
+  it("then the answer's own query id", () => {
+    expect(getPinnedQueryId(response({ query_id: 'q_run' }), undefined, 'q_answer')).toBe('q_answer')
+    expect(getPinnedQueryId(response({ query_id: 'q_run' }))).toBe('q_run')
+    expect(getPinnedQueryId(undefined)).toBeUndefined()
   })
 })
