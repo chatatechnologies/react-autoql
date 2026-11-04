@@ -7,7 +7,7 @@ import { LoadingDots } from '../../LoadingDots'
 import { QueryOutput } from '../../QueryOutput'
 import OptionsToolbar from '../../OptionsToolbar/OptionsToolbar'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../../props/types'
 
 export default class NotificationQueryResponse extends React.Component {
   constructor(props) {
@@ -35,6 +35,7 @@ export default class NotificationQueryResponse extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
   }
 
   static defaultProps = {
@@ -47,6 +48,7 @@ export default class NotificationQueryResponse extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
+    valueActionCallbacks: undefined,
   }
 
   onUpdateFilterResponse = (localRTFilterResponse) => {
@@ -85,6 +87,7 @@ export default class NotificationQueryResponse extends React.Component {
               useInfiniteScroll={false}
               onUpdateFilterResponse={this.onUpdateFilterResponse}
               enableCustomColumns={this.props.enableCustomColumns}
+              valueActionCallbacks={this.props.valueActionCallbacks}
               enableCyclicalDates={this.props.enableCyclicalDates}
               preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
               autoHeight={true}

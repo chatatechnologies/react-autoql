@@ -1192,6 +1192,7 @@ export class DataMessenger extends React.Component {
           popoverParentElement={this.props.popoverParentElement}
           enableCustomColumns={this.props.enableCustomColumns}
           enableCyclicalDates={this.props.enableCyclicalDates}
+          valueActionCallbacks={this.props.valueActionCallbacks}
         />
       </ErrorBoundary>
     )
