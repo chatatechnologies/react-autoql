@@ -25,7 +25,7 @@ import { InfiniteScroll } from '../../InfiniteScroll'
 import { NotificationItem } from '../NotificationItem'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { withTheme } from '../../../theme'
-import { authenticationType } from '../../../props/types'
+import { authenticationType, valueActionCallbacksType } from '../../../props/types'
 import emptyStateImg from '../../../images/notifications_empty_state_blue.png'
 
 import './NotificationFeed.scss'
@@ -95,6 +95,7 @@ class NotificationFeed extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
   }
 
   static defaultProps = {
@@ -120,6 +121,7 @@ class NotificationFeed extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
+    valueActionCallbacks: undefined,
     onCollapseCallback: () => {},
     onExpandCallback: () => {},
     onErrorCallback: () => {},
@@ -859,6 +861,7 @@ class NotificationFeed extends React.Component {
                           showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
                           enableBillingGate={this.props.enableBillingGate}
                           onQuotaExceeded={this.props.onQuotaExceeded}
+                          valueActionCallbacks={this.props.valueActionCallbacks}
                         />
                       </div>
                     )
