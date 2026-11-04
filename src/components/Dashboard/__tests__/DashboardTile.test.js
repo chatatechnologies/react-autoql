@@ -564,6 +564,27 @@ describe('endTopQuery: queryId capture in edit mode', () => {
     expect(call).toBeDefined()
     wrapper.unmount()
   })
+
+  // A cached run's own query has no stored post-processor request, so drilldowns on it fail (1.1.572)
+  test("on a cached refresh, a tile with no saved id takes the drilldown_query_id, not the cached run's id", () => {
+    const tileWithNoId = { ...sampleTile, queryId: undefined }
+    const wrapper = setup({ tile: tileWithNoId, isEditing: false, setParamsForTile: mockSetParamsForTile })
+    const instance = wrapper.instance()
+
+    const response = {
+      data: {
+        data: { ...sampleResponses[10].data.data, query_id: 'q_cached_run', drilldown_query_id: 'q_saved' },
+        reference_id: '1.1.200',
+      },
+    }
+
+    instance.endTopQuery({ response, queryChanged: false, isCachedRefresh: true })
+    jest.advanceTimersByTime(100)
+
+    expect(savedParams.find((p) => p.queryId === 'q_saved')).toBeDefined()
+    expect(savedParams.find((p) => p.queryId === 'q_cached_run')).toBeUndefined()
+    wrapper.unmount()
+  })
 })
 
 describe('network column detection in endTopQuery', () => {
@@ -1009,6 +1030,43 @@ describe('processTile resolves with fresh queryId from the response', () => {
     const result = await instance.processTile({ query: 'Total online sales by region by year' })
 
     expect(result.queryId).toBe('q_existing')
+
+    wrapper.unmount()
+  })
+
+  // Hosts store what processTile resolves with. A cached run's own query has no stored post-processor
+  // request, so a tile that took its id would fail every drilldown and export (1.1.572).
+  test("keeps the saved id on a cached refresh: the drilldown_query_id, not the cached run's query_id", async () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: 'q_saved' } })
+    const instance = wrapper.instance()
+
+    const cachedResponse = {
+      data: {
+        data: { ...sampleResponses[10].data.data, query_id: 'q_cached_run', drilldown_query_id: 'q_saved' },
+        reference_id: '1.1.200',
+      },
+    }
+    jest.spyOn(instance, 'processTileTop').mockReturnValue(Promise.resolve(cachedResponse))
+
+    const result = await instance.processTile({ isCachedRefresh: true })
+
+    expect(result.queryId).toBe('q_saved')
+
+    wrapper.unmount()
+  })
+
+  test("keeps the tile's saved queryId on a cached refresh whose response has no drilldown_query_id", async () => {
+    const wrapper = setup({ tile: { ...sampleTile, queryId: 'q_saved' } })
+    const instance = wrapper.instance()
+
+    const cachedResponse = {
+      data: { data: { ...sampleResponses[10].data.data, query_id: 'q_cached_run' }, reference_id: '1.1.200' },
+    }
+    jest.spyOn(instance, 'processTileTop').mockReturnValue(Promise.resolve(cachedResponse))
+
+    const result = await instance.processTile({ isCachedRefresh: true })
+
+    expect(result.queryId).toBe('q_saved')
 
     wrapper.unmount()
   })

@@ -61,6 +61,17 @@ export const getTileRequestParams = ({ tile, isReset = false, dashboardSlicers, 
   }
 }
 
+// The query id a tile keeps after a run. A cached refresh keeps the tile's saved query - its response names it
+// drilldown_query_id - because the cached run's own query_id has no stored post-processor request, so drilldowns
+// and exports on it fail (1.1.572). Any other run's query_id is a regular query and becomes the tile's id.
+export const getTileQueryIdAfterRun = (response, { isCachedRefresh = false, savedQueryId } = {}) => {
+  const data = response?.data?.data
+  if (isCachedRefresh) {
+    return data?.drilldown_query_id || savedQueryId || data?.query_id
+  }
+  return data?.query_id
+}
+
 export const getTileInitialTableConfigs = (tile, queryResponse = tile?.queryResponse) => {
   const dataConfig = tile?.dataConfig || {}
   // Extract columnOverrides from tile.columns if it exists (for date precision persistence)

@@ -43,6 +43,7 @@ import {
 } from '../../../props/types'
 import { buildDashboardSource } from '../dashboardSource'
 import {
+  getTileQueryIdAfterRun,
   getTileQueryOutputProps,
   getTileRequestParams,
   getTileScopedAuthentication,
@@ -743,7 +744,7 @@ export class DashboardTile extends React.Component {
         Object.assign(paramsToSet, this.filterValidConfig(this.savedTileConfig))
       } else {
         if (queryChanged || !this.props.tile?.queryId || !isCachedRefresh) {
-          const queryId = response?.data?.data?.query_id
+          const queryId = getTileQueryIdAfterRun(response, { isCachedRefresh, savedQueryId: this.props.tile?.queryId })
           if (queryId) {
             paramsToSet.queryId = queryId
           }
@@ -1030,11 +1031,15 @@ export class DashboardTile extends React.Component {
       this.processTileTop({ query: q1, skipQueryValidation, source, isCachedRefresh, isReset, axiosSource }),
     )
       .then((queryResponse) => {
-        // Read queryId from the fresh response since this.props.tile.queryId is stale until the debounce lands.
-        const freshQueryId = queryResponse?.data?.data?.query_id
+        // Read queryId from the response since this.props.tile.queryId is stale until the debounce lands - except
+        // that a cached refresh keeps the saved id (getTileQueryIdAfterRun). Hosts store what this resolves with.
+        const queryId = getTileQueryIdAfterRun(queryResponse, {
+          isCachedRefresh,
+          savedQueryId: this.props.tile?.queryId,
+        })
         return {
           ...this.props.tile,
-          ...(freshQueryId ? { queryId: freshQueryId } : {}),
+          ...(queryId ? { queryId } : {}),
           queryResponse,
           defaultSelectedSuggestion: undefined,
         }

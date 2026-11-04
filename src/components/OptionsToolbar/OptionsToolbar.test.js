@@ -1192,4 +1192,12 @@ describe('data alert query id', () => {
     getModalQueryId({ queryResponse, props: { queryId: 'cached-tile-id' } })
     expect(queryResponse.data.data.query_id).toBe('original-id')
   })
+
+  test("uses the drilldown_query_id a cached tile response carries over the cached run's id", () => {
+    const queryResponse = {
+      data: { data: { ...responseTestCases[8].data.data, query_id: 'q_cached_run', drilldown_query_id: 'q_saved' } },
+    }
+    const queryId = getModalQueryId({ queryResponse, props: { queryId: 'q_cached_run' }, queryID: 'q_cached_run' })
+    expect(queryId).toBe('q_saved')
+  })
 })

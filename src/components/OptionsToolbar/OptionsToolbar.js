@@ -34,6 +34,7 @@ import SummaryModal from '../SummaryModal/SummaryModal'
 import FocusPromptPopoverContent from '../FocusPromptPopover/FocusPromptPopoverContent'
 import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQueryDisabledState, shouldShowQueryActionButton } from '../../utils/summaryButtonUtils'
 import { useMagicWandBillingGate, getMagicWandBillingErrorState } from '../../hooks/billing'
+import { getPinnedQueryId } from '../../js/responseUtils'
 
 import { autoQLConfigType, authenticationType, dataFormattingType } from '../../props/types'
 
@@ -224,8 +225,14 @@ export class OptionsToolbar extends React.Component {
     this.setTemporaryState('copiedTable', !!copied, 1000)
   }
 
+  // The query id drilldowns use (getPinnedQueryId): never a cached dashboard run's own, which can't be exported
+  getResponseQueryId = () => {
+    const responseRef = this.props.responseRef
+    return getPinnedQueryId(responseRef?.queryResponse, responseRef?.props?.queryId, responseRef?.queryID)
+  }
+
   fetchCSVAndExport = () => {
-    const queryId = this.props.responseRef?.props?.queryId || this.props.responseRef?.queryID
+    const queryId = this.getResponseQueryId()
     const query = this.props.responseRef?.queryResponse?.data?.data?.text
     const uniqueId = uuid()
 
@@ -362,7 +369,7 @@ export class OptionsToolbar extends React.Component {
 
     // Pin the alert to the same query id drilldowns use. On a dashboard a cached-refresh response can
     // carry a different query_id than the tile's cached one, and that id has no usable post-proc data.
-    const queryId = this.props.responseRef?.props?.queryId || this.props.responseRef?.queryID
+    const queryId = this.getResponseQueryId()
     if (queryId && queryResponse?.data?.data) {
       queryResponse.data.data.query_id = queryId
     }
@@ -548,7 +555,7 @@ export class OptionsToolbar extends React.Component {
                     option.callback?.(
                       {
                         query: responseRef?.queryResponse?.data?.data?.text,
-                        queryId: responseRef?.queryResponse?.data?.data?.query_id,
+                        queryId: this.getResponseQueryId(),
                         queryResponse: responseCopy,
                         aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
                         displayType: responseRef?.state?.displayType,
