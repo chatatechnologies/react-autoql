@@ -5,6 +5,8 @@ import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 // period at a time. The columns can be in very different units, so each is put on a common scale.
 export const ROSE_SCALES = ['normalized', 'minmax', 'linear', 'log']
 export const DEFAULT_ROSE_SCALE = 'normalized'
+// Scales that compare each period with the others, so they only mean something while playing over time
+export const PERIOD_SCALES = ['normalized', 'minmax']
 // Plain names first, with the technical term in brackets for people who know it
 export const ROSE_SCALE_LABELS = {
   normalized: 'Normalized (z-score)',

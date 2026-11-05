@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 
 import { Icon } from '../../Icon'
 import { Popover } from '../../Popover'
-import { ROSE_SCALES, ROSE_SCALE_LABELS } from './measureScales'
+import { PERIOD_SCALES, ROSE_SCALES, ROSE_SCALE_LABELS } from './measureScales'
 
 import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
 import '../TimeAnimation/TimeAnimation.scss'
@@ -31,6 +31,7 @@ const RoseSettingsControl = ({
   onModeChange,
   onScaleChange,
   measuresDisabledReason,
+  periodScalesDisabledReason,
   x,
   y,
   size,
@@ -81,18 +82,23 @@ const RoseSettingsControl = ({
             <div className='time-animation-setting-label'>Scale</div>
             {/* A list rather than segments: the names are too long to sit side by side */}
             <div className='rose-settings-options'>
-              {ROSE_SCALES.map((value) => (
-                <div
-                  key={value}
-                  className={`sankey-column-dropdown-item${
-                    value === scale ? ' sankey-column-dropdown-item-selected' : ''
-                  }`}
-                  onClick={() => value !== scale && onScaleChange(value)}
-                >
-                  {value === scale && <Icon type='check' className='sankey-column-dropdown-item-check' />}
-                  <span>{ROSE_SCALE_LABELS[value]}</span>
-                </div>
-              ))}
+              {ROSE_SCALES.map((value) => {
+                const disabledReason = PERIOD_SCALES.includes(value) ? periodScalesDisabledReason : undefined
+                return (
+                  <div
+                    key={value}
+                    className={`sankey-column-dropdown-item${
+                      value === scale ? ' sankey-column-dropdown-item-selected' : ''
+                    }${disabledReason ? ' sankey-column-dropdown-item-disabled' : ''}`}
+                    data-tooltip-id={disabledReason ? chartTooltipID : undefined}
+                    data-tooltip-content={disabledReason}
+                    onClick={() => !disabledReason && value !== scale && onScaleChange(value)}
+                  >
+                    {value === scale && <Icon type='check' className='sankey-column-dropdown-item-check' />}
+                    <span>{ROSE_SCALE_LABELS[value]}</span>
+                  </div>
+                )
+              })}
             </div>
             <div className='rose-settings-description'>{SCALE_DESCRIPTIONS[scale]}</div>
           </div>
@@ -162,6 +168,8 @@ RoseSettingsControl.propTypes = {
   onScaleChange: PropTypes.func.isRequired,
   // Set when the data can't be shown as measures; the option is disabled with this as its tooltip
   measuresDisabledReason: PropTypes.string,
+  // Set while not playing over time: the scales that compare periods are disabled with this as their tooltip
+  periodScalesDisabledReason: PropTypes.string,
   x: PropTypes.number.isRequired,
   y: PropTypes.number.isRequired,
   size: PropTypes.number,
@@ -170,6 +178,7 @@ RoseSettingsControl.propTypes = {
 
 RoseSettingsControl.defaultProps = {
   measuresDisabledReason: undefined,
+  periodScalesDisabledReason: undefined,
   size: 30,
   chartTooltipID: undefined,
 }

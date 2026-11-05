@@ -26,6 +26,7 @@ import { buildNumericCategories } from './numericCategories'
 import { isIdLikeColumn } from './idColumns'
 import {
   DEFAULT_ROSE_SCALE,
+  PERIOD_SCALES,
   ROSE_SCALES,
   buildMeasureFrames,
   describeMeasureValue,
@@ -378,8 +379,8 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   )
 
   // Dates and numbers can be stepped through. In values mode, not the category (it's already spread
-  // around the circle) or a value column. In measures mode any of them can be, and picking a measure takes
-  // it out of the measures; one period is always shown.
+  // around the circle) or a value column. In measures mode any of them can be, and stepping through a
+  // measure takes it out of the measures. Both modes show all of the data until played over time.
   const animation = useTimeAnimation({
     data: props.data,
     columns,
@@ -390,12 +391,15 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       : [...(categoryColumnIndex >= 0 ? [categoryColumnIndex] : []), ...valueColumnIndices],
     dataFormatting: formattingConfig,
     includeNumberColumns: true,
-    showOneFrame: isMeasures,
   })
 
-  // The column being stepped through can't also be a measure
-  const stepColumnIndex = animation.settings.columnIndex
+  // While playing over time, the column being stepped through can't also be a measure
+  const stepColumnIndex = animation.isActive ? animation.settings.columnIndex : undefined
   const availableMeasureOptionIndices = measureOptionIndices.filter((index) => index !== stepColumnIndex)
+  // Normalized and range compare periods with each other, so they only apply while playing over time.
+  // Until then, wedges show the totals of all of the data on the actual-values scale.
+  const isPeriodScale = PERIOD_SCALES.includes(scale)
+  const effectiveScale = !animation.isActive && isPeriodScale ? 'linear' : scale
   const validMeasureColumnIndices = measureColumnIndices.filter((index) =>
     availableMeasureOptionIndices.includes(index),
   )
@@ -495,14 +499,22 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       numericCategories,
     ],
   )
-  // Measures mode: one category per measure in each period, scaled against every period
+  // Measures mode: one category per measure in each period, scaled against every period. Until played
+  // over time, one frame holds all of the data.
   const measureData = useMemo(
-    () => (isMeasures ? buildMeasureFrames(animation.frames, validMeasureColumnIndices, scale) : null),
-    [isMeasures, animation.frames, validMeasureColumnIndices.join(','), scale],
+    () =>
+      isMeasures
+        ? buildMeasureFrames(
+            animation.isActive ? animation.frames : [{ key: 'all', rows: props.data || [] }],
+            validMeasureColumnIndices,
+            effectiveScale,
+          )
+        : null,
+    [isMeasures, animation.isActive, animation.frames, props.data, validMeasureColumnIndices.join(','), effectiveScale],
   )
 
   const categories = measureData
-    ? measureData.frames[animation.frameIndex]?.categories ?? []
+    ? measureData.frames[animation.isActive ? animation.frameIndex : 0]?.categories ?? []
     : frameData
     ? frameData[animation.frameIndex]?.categories ?? []
     : allData.categories
@@ -713,7 +725,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       return [...lines, hintLine].filter(Boolean).join('<br/>')
     }
     describeMeasureValue({
-      scale,
+      scale: effectiveScale,
       value: measureValue,
       stats: category.stats,
       grouping: animation.settings.grouping,
@@ -860,7 +872,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   const renderGrid = () => {
     const tickFormatColumnIndex = valueColumnIndices[0]
     const tickLabels = measureData
-      ? getMeasureScaleTicks(scale, scaleMaxStack, formatMeasureTick)
+      ? getMeasureScaleTicks(effectiveScale, scaleMaxStack, formatMeasureTick)
       : radiusScale.ticks(4).map((tick) => ({ magnitude: tick, label: formatValue(tick, tickFormatColumnIndex) }))
     const visibleTicks = tickLabels.filter(
       ({ magnitude }) => magnitude > 0 && radiusScale(magnitude) < outerRadius - TICK_FONT_SIZE,
@@ -1103,20 +1115,17 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         tweenDuration={prefersReducedMotion() ? 0 : animation.tweenDuration}
         ease={animation.ease}
         onSeek={animation.goToFrame}
-        onClose={isMeasures ? undefined : animation.exit}
+        onClose={animation.exit}
       />
     )
   }
 
   const getEmptyMessage = () => {
     if (isMeasures) {
-      if (stepColumnIndex === undefined) {
-        return 'Pick a column to step through in the time settings'
-      }
       if (validMeasureColumnIndices.length < MIN_MEASURES) {
         return `Pick at least ${MIN_MEASURES} measures`
       }
-      if (!animation.frames.length) {
+      if (animation.isActive && !animation.frames.length) {
         return `No ${getColumnLabel(animation.column)} values to step through`
       }
       return 'No values to display'
@@ -1178,7 +1187,10 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
       <RoseSettingsControl
         mode={isMeasures ? 'measures' : 'values'}
-        scale={scale}
+        scale={effectiveScale}
+        periodScalesDisabledReason={
+          animation.isActive ? undefined : 'Compares periods, so it applies while playing over time'
+        }
         onModeChange={handleModeChange}
         onScaleChange={handleScaleChange}
         measuresDisabledReason={measuresDisabledReason}
