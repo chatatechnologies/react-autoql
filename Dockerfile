@@ -1,4 +1,4 @@
-FROM node:20-alpine as build
+FROM us-east1-docker.pkg.dev/staging-245514/docker-hub/node:24.22.1-alpine as build
 
 # Create app directory
 
