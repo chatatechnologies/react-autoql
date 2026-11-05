@@ -741,6 +741,28 @@ export default class FilterLockPopover extends React.Component {
     }
   }
 
+  /**
+   * react-autosuggest opens the list on focus, typing or the arrow keys. Picking
+   * a value (or Escape) closes it but leaves the search box focused, so clicking
+   * back into the box did nothing: the user had to click away and back in to see
+   * the list again. Reopen it the way ArrowDown does.
+   *
+   * ⚠️ Reads react-autosuggest's own state and calls its revealSuggestions(),
+   * which it has no public API for (pinned at 10.1.0).
+   */
+  onInputClick = () => {
+    const autoSuggest = this.autoSuggest
+    if (!autoSuggest?.state?.isFocused || !autoSuggest.state.isCollapsed) {
+      return
+    }
+
+    const value = this.state.inputValue
+    if (this.shouldRenderSuggestions(value, 'suggestions-revealed')) {
+      this.onSuggestionsFetchRequested({ value, reason: 'suggestions-revealed' })
+      autoSuggest.revealSuggestions?.()
+    }
+  }
+
   getKey = (filter) => {
     const key = filter.key || filter.canonical
     const value = filter.value || filter.keyword
@@ -955,6 +977,7 @@ export default class FilterLockPopover extends React.Component {
     return (
       <span className='react-autoql-vl-autocomplete-input-wrapper'>
         <Autosuggest
+          ref={(ref) => (this.autoSuggest = ref)}
           id='react-autoql-filter-menu-input'
           className='react-autoql-vl-autocomplete-input'
           highlightFirstSuggestion
@@ -970,6 +993,7 @@ export default class FilterLockPopover extends React.Component {
           multiSection={true}
           inputProps={{
             onChange: this.onInputChange,
+            onClick: this.onInputClick,
             value: this.state.inputValue,
             disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
             placeholder: 'Search & select a filter',
