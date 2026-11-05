@@ -322,6 +322,14 @@ describe('starting a report from a template', () => {
     expect(sent().body).toMatchObject({ id: ID, template_id: 'tp1', session_filter_locks: lock })
   })
 
+  it('makes it for everything with an empty filter lock, even from a template made for one', async () => {
+    axios.request.mockResolvedValue(
+      answer({ ...STORED, template_id: 'tp1', data_status: 'PENDING', project_id: 'CT_1', document: DOCUMENT }, 201),
+    )
+    await createReportFromTemplate({ authentication: AUTH, id: ID, templateId: 'tp1', sessionFilterLocks: [] })
+    expect(sent().body).toMatchObject({ id: ID, template_id: 'tp1', session_filter_locks: [] })
+  })
+
   it('says how filling the report’s data is going, and why blocks weren’t filled', async () => {
     axios.request.mockResolvedValue(
       answer({

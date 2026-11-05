@@ -280,6 +280,16 @@ describe('a report started from a template for a filter lock (RW-351)', () => {
     expect(mockBuilder.props.lockChangedAt).toBeUndefined()
   })
 
+  it('sends none picked over a template’s own lock as it is, and makes it for everything', async () => {
+    createReportFromTemplate.mockResolvedValue(copyLockedTo(BROWN))
+    setup({ enableFilterLocks: true })
+    await startFor([])
+
+    expect(createReportFromTemplate).toHaveBeenCalledWith(expect.objectContaining({ sessionFilterLocks: [] }))
+    expect(captureQuestion.mock.calls.map(([options]) => options.filters)).toStrictEqual([undefined])
+    expect(mockBuilder.props.report.sessionFilterLocks).toBeUndefined()
+  })
+
   it('takes a lock AutoQL’s copy came with off when none is picked, once its fill is over', async () => {
     createReportFromTemplate.mockResolvedValue(copyLockedTo(BROWN, { dataStatus: 'PENDING' }))
     filledLater({ ...documentOf([dataBlock('d1', answered)]), sessionFilterLocks: [BROWN] })

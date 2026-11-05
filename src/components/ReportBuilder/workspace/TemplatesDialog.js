@@ -3,7 +3,7 @@ import { Icon } from '../components/icons'
 import { SelectBox } from '../components/controls'
 import { ReportBuilder } from '../ReportBuilder'
 import { FilterLockField } from '../components/FilterLockField'
-import { filterLocksKey } from '../model/filterLocks'
+import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
 import { STRINGS } from '../strings'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates } from '../run/reportsApi'
 import { describeReportError, newReportId } from './documents'
@@ -26,7 +26,12 @@ import { REPORTS_STRINGS } from './reportsStrings'
 //
 // With enableFilterLocks, the report can be started for one value, or several, of what the host's data locks on (its
 // households, say): the report's filter lock (model/filterLocks.js), chosen beside Start report with the host's
-// loadFilterLockSuggestions and filterLockLabels, as in the builder. None starts it for everything.
+// loadFilterLockSuggestions and filterLockLabels, as in the builder. It starts out as the template's own, which a
+// template keeps from the report it was made from, so Start report waits for the template's document; the preview
+// shows the report for what's chosen. None starts it for everything, even from a template that has one.
+
+// A template's own filter lock, from its document.
+const templateLocks = (template) => normalizeFilterLocks(template?.report?.sessionFilterLocks)
 
 const S = REPORTS_STRINGS
 const T = S.templates
@@ -124,14 +129,16 @@ export class TemplatesDialog extends React.Component {
     )
   }
 
-  // A template chosen: shown as soon as its document is in.
+  // A template chosen: shown as soon as its document is in. With enableFilterLocks, the report it starts is for what
+  // the template is for, once that's known, unless something else was chosen beside Start report while it came.
   choose = (id) => {
     if (id === this.state.chosenId) {
       return
     }
     this.chosenController?.abort()
+    this.lockChosenFor = null
     const kept = this.documents.get(id)
-    this.setState({ chosenId: id, chosen: kept || null, chosenError: null, startError: null })
+    this.setState({ chosenId: id, chosen: kept || null, chosenError: null, startError: null, ...this.locksOf(kept) })
     if (kept) {
       return
     }
@@ -141,7 +148,7 @@ export class TemplatesDialog extends React.Component {
       (template) => {
         this.documents.set(id, template)
         if (this.mounted && this.state.chosenId === id) {
-          this.setState({ chosen: template })
+          this.setState({ chosen: template, ...(this.lockChosenFor === id ? {} : this.locksOf(template)) })
         }
       },
       (error) => {
@@ -168,7 +175,31 @@ export class TemplatesDialog extends React.Component {
     }
   }
 
-  setLocks = (locks) => this.setState({ locks })
+  // What the report is for, as the template has it (none before its document is in).
+  locksOf = (template) => (this.props.enableFilterLocks ? { locks: templateLocks(template) } : {})
+
+  setLocks = (locks) => {
+    this.lockChosenFor = this.state.chosenId
+    this.setState({ locks })
+  }
+
+  // The chosen template as it would start: for what's chosen beside Start report. Made again only when either changes,
+  // so the preview isn't handed a new document on every render.
+  previewReport() {
+    const { chosen, locks } = this.state
+    if (!this.props.enableFilterLocks) {
+      return chosen.report
+    }
+    const key = filterLocksKey(locks)
+    if (this.preview?.chosen !== chosen || this.preview.key !== key) {
+      const report = { ...chosen.report, sessionFilterLocks: locks }
+      if (!locks.length) {
+        delete report.sessionFilterLocks
+      }
+      this.preview = { chosen, key, report }
+    }
+    return this.preview.report
+  }
 
   // Beside Start report: what the report will be for (the report's filter lock), and Change….
   renderLock() {
@@ -190,12 +221,20 @@ export class TemplatesDialog extends React.Component {
     )
   }
 
+  // Waits for the template's document with enableFilterLocks: until it's in, what the template is for isn't known.
+  canStart() {
+    const { chosenId, chosen, starting } = this.state
+    return !!chosenId && !starting && (!this.props.enableFilterLocks || !!chosen)
+  }
+
   start = async () => {
     const templateId = this.state.chosenId
-    if (!templateId || this.state.starting) {
+    if (!this.canStart()) {
       return
     }
     const locks = this.props.enableFilterLocks ? this.state.locks : []
+    // None, from a template that has one, is said: the report is for everything, not for the template's.
+    const said = locks.length > 0 || (this.props.enableFilterLocks && templateLocks(this.state.chosen).length > 0)
     const startKey = `${templateId}\n${filterLocksKey(locks)}`
     if (!this.startIds.has(startKey)) {
       this.startIds.set(startKey, newReportId())
@@ -205,7 +244,7 @@ export class TemplatesDialog extends React.Component {
       await this.props.onStart({
         templateId,
         id: this.startIds.get(startKey),
-        ...(locks.length ? { sessionFilterLocks: locks } : {}),
+        ...(said ? { sessionFilterLocks: locks } : {}),
       })
     } catch (error) {
       if (this.mounted) {
@@ -370,14 +409,15 @@ export class TemplatesDialog extends React.Component {
         </p>
       )
     } else {
+      // Made again for another filter lock, rather than told that its lock changed (which offers Rerun all).
       content = (
         <ReportBuilder
-          key={chosen.id}
+          key={this.props.enableFilterLocks ? `${chosen.id}\n${filterLocksKey(this.state.locks)}` : chosen.id}
           {...previewProps}
           authentication={authentication}
           autoQLConfig={autoQLConfig}
           dataFormatting={dataFormatting}
-          report={chosen.report}
+          report={this.previewReport()}
           readOnly
           dataFill={TEMPLATE_FILL}
         />
@@ -392,7 +432,7 @@ export class TemplatesDialog extends React.Component {
 
   render() {
     const { onClose, onManage } = this.props
-    const { chosenId, starting, startError } = this.state
+    const { starting, startError } = this.state
     return (
       <ReportModal
         title={T.title}
@@ -432,7 +472,7 @@ export class TemplatesDialog extends React.Component {
               className={`${RS}-button`}
               data-variant='primary'
               data-test='reports-templates-start'
-              disabled={!chosenId || starting}
+              disabled={!this.canStart()}
               onClick={this.start}
             >
               {starting ? (

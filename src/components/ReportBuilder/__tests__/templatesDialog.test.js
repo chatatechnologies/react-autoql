@@ -194,6 +194,7 @@ describe('TemplatesDialog', () => {
     })
     await waitFor(() => expect(names()).toHaveLength(3))
     fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+    await waitFor(() => expect(startButton()).toBeEnabled())
     expect(screen.getByTestId('reports-templates-lock')).toHaveTextContent('HouseholdsAll households')
 
     await act(async () => fireEvent.click(startButton()))
@@ -210,6 +211,91 @@ describe('TemplatesDialog', () => {
       sessionFilterLocks: [BROWN],
     })
     expect(brown.id).not.toBe(everything.id)
+  })
+
+  describe('a template made for a filter lock (its document has one)', () => {
+    const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include' }
+    const NGUYEN = { key: 'household', value: 'Nguyen Family', filter_type: 'include' }
+    const LABELS = { title: 'Households', none: 'All households' }
+    // t1's document comes when a test says (`arrive`), made for Brown; the others' at once, without a lock.
+    let arrive
+    beforeEach(() => {
+      fetchReportTemplate.mockImplementation(({ id }) => {
+        const report = { schemaVersion: 1, title: `${id} report`, page: {}, blocks: [] }
+        const kept = { ...TEMPLATES.find((t) => t.id === id), report }
+        if (id !== 't1') {
+          return Promise.resolve(kept)
+        }
+        return new Promise((resolve) => {
+          arrive = () => resolve({ ...kept, report: { ...report, sessionFilterLocks: [BROWN] } })
+        })
+      })
+    })
+    const chooseFirst = async () => {
+      await waitFor(() => expect(names()).toHaveLength(3))
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+    }
+    const lockShown = () => screen.getByTestId('reports-templates-lock')
+
+    it('starts the report for it once its document is in, or for what’s chosen instead, and says none', async () => {
+      const { onStart } = setup({ enableFilterLocks: true, filterLockLabels: LABELS })
+      await chooseFirst()
+      expect(startButton()).toBeDisabled()
+      await act(async () => arrive())
+      expect(lockShown()).toHaveTextContent('Brown Family')
+      expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+      await act(async () => fireEvent.click(startButton()))
+
+      mockLock.next = [NGUYEN]
+      fireEvent.click(screen.getByTestId('mock-filter-lock'))
+      expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([NGUYEN])
+      await act(async () => fireEvent.click(startButton()))
+
+      mockLock.next = []
+      fireEvent.click(screen.getByTestId('mock-filter-lock'))
+      expect(lockShown()).toHaveTextContent('All households')
+      expect(mockBuilder.props.report).not.toHaveProperty('sessionFilterLocks')
+      await act(async () => fireEvent.click(startButton()))
+
+      const [brown, nguyen, everything] = onStart.mock.calls.map(([call]) => call)
+      expect(brown).toEqual({ templateId: 't1', id: expect.any(String), sessionFilterLocks: [BROWN] })
+      expect(nguyen).toEqual({ templateId: 't1', id: expect.any(String), sessionFilterLocks: [NGUYEN] })
+      expect(everything).toEqual({ templateId: 't1', id: expect.any(String), sessionFilterLocks: [] })
+      expect(new Set([brown.id, nguyen.id, everything.id]).size).toBe(3)
+    })
+
+    it('goes back to what each template is for when another is chosen', async () => {
+      const { onStart } = setup({ enableFilterLocks: true, filterLockLabels: LABELS })
+      await chooseFirst()
+      await act(async () => arrive())
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
+      await waitFor(() => expect(mockBuilder.props.report.title).toBe('t2 report'))
+      expect(lockShown()).toHaveTextContent('All households')
+      await act(async () => fireEvent.click(startButton()))
+      expect(onStart).toHaveBeenLastCalledWith({ templateId: 't2', id: expect.any(String) })
+
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+      expect(lockShown()).toHaveTextContent('Brown Family')
+    })
+
+    it('keeps what was chosen beside Start report while the template’s document came', async () => {
+      setup({ enableFilterLocks: true, filterLockLabels: LABELS })
+      await chooseFirst()
+      mockLock.next = [NGUYEN]
+      fireEvent.click(screen.getByTestId('mock-filter-lock'))
+      await act(async () => arrive())
+      expect(lockShown()).toHaveTextContent('Nguyen Family')
+      expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([NGUYEN])
+    })
+
+    it('starts it as before without enableFilterLocks: shown as the template has it, started without', async () => {
+      const { onStart } = setup()
+      await chooseFirst()
+      await act(async () => arrive())
+      expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+      await act(async () => fireEvent.click(startButton()))
+      expect(onStart).toHaveBeenCalledWith({ templateId: 't1', id: expect.any(String) })
+    })
   })
 
   it('has no filter lock to choose without enableFilterLocks', async () => {

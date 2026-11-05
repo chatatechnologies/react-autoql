@@ -189,9 +189,15 @@ export const REPORTS_STRINGS = {
   // Report options › Save as template… (an organization's admins): a draft made from the report as it's saved.
   saveAsTemplate: {
     title: 'Save as template',
-    what: 'A draft template for your organization, made from this report as it’s saved. Its data is taken out: answers, table filters, chart legends and analyses’ wording.',
+    what: 'Makes a draft template from this report. Once it’s published, anyone in your organization can start a report from it. It leaves out this report’s data: its answers, table filters, chart legends and Auto Analyze’s wording.',
     check:
-      'Check that it names no clients first: titles, headings, text, questions and an analysis’s focus are kept as they are.',
+      'Remove any client names before you save. The template copies this report’s titles, headings, text, questions and analysis focus exactly as they are.',
+    // In place of `check` with filter locks: what the template is for, which it keeps from the report (a household,
+    // say)…
+    keepsLock: (label, lock) =>
+      `${label}: ${lock}. Reports started from it are for ${lock} too, unless another is picked when they start.`,
+    // …or that the report isn't for one, and how to make the template for one.
+    keepsNone: (label, none) => `${label}: ${none}. To make a template for one, pick it for this report first.`,
     templateTitle: 'Title',
     description: 'Description (optional)',
     category: 'Category (optional)',

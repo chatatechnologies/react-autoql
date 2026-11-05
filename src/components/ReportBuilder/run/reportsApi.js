@@ -347,8 +347,9 @@ export const createReport = async ({ authentication, id, report, folderId, tagId
 // done. Creating again with the same id answers with what was stored the first time, and `created` false.
 //
 // `sessionFilterLocks` makes it for one household, say (the report's filter lock, model/filterLocks.js): the report
-// keeps it, and every question is filled in with it (RW-352). A service without that ignores it, and the report comes
-// back without one.
+// keeps it, and every question is filled in with it (RW-352). An empty list makes it for everything, even from a
+// template made for one; left out, the report is for what the template is for. A service without that ignores it,
+// and the report comes back as the template has it.
 export const createReportFromTemplate = async ({
   authentication,
   id,
@@ -367,7 +368,7 @@ export const createReportFromTemplate = async ({
       ...(folderId ? { folder_id: folderId } : {}),
       ...(tagIds?.length ? { tag_ids: tagIds } : {}),
       ...(timeZone ? { time_zone: timeZone } : {}),
-      ...(sessionFilterLocks?.length ? { session_filter_locks: sessionFilterLocks } : {}),
+      ...(Array.isArray(sessionFilterLocks) ? { session_filter_locks: sessionFilterLocks } : {}),
     },
   })
   return { ...detailOf(data), created: status === 201 }

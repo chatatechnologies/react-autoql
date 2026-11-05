@@ -95,8 +95,52 @@ describe('SaveAsTemplateDialog', () => {
 
   it('says first that what it keeps can still name clients, and starts from the report’s title', async () => {
     open()
-    expect(screen.getByText(/Check that it names no clients first/)).toBeInTheDocument()
+    expect(screen.getByText(/Remove any client names before you save/)).toBeInTheDocument()
     expect(screen.getByTestId('reports-template-title')).toHaveValue('Q3 book review')
+    await waitFor(() =>
+      expect(within(screen.getByTestId('reports-template-category')).getAllByRole('option')).toHaveLength(3),
+    )
+  })
+
+  describe('with enableFilterLocks', () => {
+    const LABELS = { title: 'Households', none: 'All households' }
+    const categoriesIn = () =>
+      waitFor(() =>
+        expect(within(screen.getByTestId('reports-template-category')).getAllByRole('option')).toHaveLength(3),
+      )
+
+    it('says first that the template is for what the report is for, in place of the warning', async () => {
+      open({
+        enableFilterLocks: true,
+        filterLockLabels: LABELS,
+        report: {
+          ...REPORT,
+          sessionFilterLocks: [{ key: 'household', value: 'Brown Family', filter_type: 'include' }],
+        },
+      })
+      expect(screen.getByTestId('reports-save-as-template-lock')).toHaveTextContent(
+        'Households: Brown Family. Reports started from it are for Brown Family too, unless another is picked when they start.',
+      )
+      expect(screen.queryByText(/Remove any client names/)).toBeNull()
+      await categoriesIn()
+    })
+
+    it('says so when the report is for everything, and how to make the template for one', async () => {
+      open({ enableFilterLocks: true, filterLockLabels: LABELS })
+      expect(screen.getByTestId('reports-save-as-template-lock')).toHaveTextContent(
+        'Households: All households. To make a template for one, pick it for this report first.',
+      )
+      expect(screen.queryByText(/Remove any client names/)).toBeNull()
+      await categoriesIn()
+    })
+  })
+
+  it('warns about client names without enableFilterLocks, whatever the report is for', async () => {
+    open({
+      report: { ...REPORT, sessionFilterLocks: [{ key: 'household', value: 'Brown Family', filter_type: 'include' }] },
+    })
+    expect(screen.queryByTestId('reports-save-as-template-lock')).toBeNull()
+    expect(screen.getByText(/Remove any client names before you save/)).toBeInTheDocument()
     await waitFor(() =>
       expect(within(screen.getByTestId('reports-template-category')).getAllByRole('option')).toHaveLength(3),
     )

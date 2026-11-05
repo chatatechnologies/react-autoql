@@ -931,9 +931,17 @@ export declare function createReport(
   options: ReportsCall & { id: string; report: Report; folderId?: string; tagIds?: string[]; keepalive?: boolean },
 ): Promise<StoredReport & { created: boolean }>
 // A report of the user's own from a published template; AutoQL fills its data blocks in the background, asking in
-// `timeZone` (an IANA name, the browser's say).
+// `timeZone` (an IANA name, the browser's say). `sessionFilterLocks` is what it's for (an empty list: everything);
+// left out, it's for what the template is for.
 export declare function createReportFromTemplate(
-  options: ReportsCall & { id: string; templateId: string; folderId?: string; tagIds?: string[]; timeZone?: string },
+  options: ReportsCall & {
+    id: string
+    templateId: string
+    folderId?: string
+    tagIds?: string[]
+    timeZone?: string
+    sessionFilterLocks?: ReportFilterLock[]
+  },
 ): Promise<StoredReport & { created: boolean }>
 export declare function fetchReportDataStatus(
   options: ReportsCall & { id: string; signal?: AbortSignal },

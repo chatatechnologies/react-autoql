@@ -1329,9 +1329,10 @@ export class ReportsWithoutTheme extends React.Component {
   // in its tab while AutoQL fills in its data. Rejects with why it wasn't made, for the dialog to say.
   //
   // With `sessionFilterLocks` it's made for them (the report's filter lock, model/filterLocks.js), and filled in with
-  // them; without, it's for everything, even if the service's copy came with a lock (from a template that kept one).
-  // A service that doesn't take them yet (before RW-352) makes the report without them, and fills it in for
-  // everything: the report gets what was picked here once it can be changed, and the builder offers Rerun all to ask
+  // them; an empty list (none, over a template's own) is sent as it is. With none, the report is for everything, even
+  // if the service's copy came with a lock: the dialog starts out with the template's own, so none is a choice.
+  // A service that doesn't take them yet (before RW-352) makes the report as the template has it, and fills it in
+  // that way: the report gets what was picked here once it can be changed, and the builder offers Rerun all to ask
   // every question with it. Filled in from this page, it's asked with what was picked from the start.
   startFromTemplate = async ({ templateId, id, sessionFilterLocks }) => {
     const sourceId = this.sourceId
@@ -1347,7 +1348,7 @@ export class ReportsWithoutTheme extends React.Component {
         templateId,
         folderId: this.newReportFolder() || undefined,
         timeZone: browserTimeZone(),
-        ...(locks.length ? { sessionFilterLocks: locks } : {}),
+        ...(Array.isArray(sessionFilterLocks) ? { sessionFilterLocks: locks } : {}),
       })
     } catch (error) {
       this.unauthorized(error)
@@ -1787,6 +1788,8 @@ export class ReportsWithoutTheme extends React.Component {
             flush={this.saveForTemplate}
             onClose={this.closeSaveAsTemplate}
             onManage={this.openManageTemplates}
+            enableFilterLocks={this.props.enableFilterLocks}
+            filterLockLabels={this.props.filterLockLabels}
           />
         ) : null}
 

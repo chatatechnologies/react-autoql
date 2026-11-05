@@ -1,5 +1,7 @@
 import React from 'react'
 import { Icon } from '../components/icons'
+import { summarizeFilterLocks } from '../model/filterLocks'
+import { STRINGS } from '../strings'
 import { fetchReportCategories } from '../run/reportsApi'
 import { createTemplateFromReport } from '../run/templatesApi'
 import { describeBlock, describeReportError } from './documents'
@@ -11,9 +13,11 @@ import { detailsOf, detailsProblem, detailsToSend, TemplateDetailsFields } from 
 // Report options › Save as template… (an organization's admins): a draft template for the organization, made from the
 // report as AutoQL has it — so it's saved first (`flush`, which resolves with whether it was). AutoQL takes the data
 // out; what it keeps as it is — titles, headings, text, questions, an analysis's focus — can still name clients, which
-// is said before anything else. Once it's made, Manage templates (`onManage`) is where it's published.
+// is said before anything else. With enableFilterLocks, a template is for what its report is for (a household, say:
+// its filter lock), and reports started from it begin with that, so what's said first is what that is, or that it's
+// for everything and how to make it for one. Once it's made, Manage templates (`onManage`) is where it's published.
 //
-// Props: authentication, reportId, report (as shown), flush, onClose, onManage.
+// Props: authentication, reportId, report (as shown), flush, onClose, onManage, enableFilterLocks, filterLockLabels.
 
 const S = REPORTS_STRINGS.saveAsTemplate
 
@@ -84,6 +88,28 @@ export class SaveAsTemplateDialog extends React.Component {
     if (this.mounted) {
       this.setState({ saving: false, error, saved })
     }
+  }
+
+  // Before anything else, with enableFilterLocks: what the template is for, as its report is (one household, say, or
+  // everything). Without, that what it keeps as it is can still name clients.
+  renderCheck() {
+    const { enableFilterLocks, filterLockLabels, report } = this.props
+    if (enableFilterLocks) {
+      const label = filterLockLabels?.title || STRINGS.filterLock.title
+      const lock = summarizeFilterLocks(report?.sessionFilterLocks)
+      return (
+        <p className={`${RS}-template-check`} data-tone='kept' data-test='reports-save-as-template-lock'>
+          <Icon name='check' size={14} />
+          {lock ? S.keepsLock(label, lock) : S.keepsNone(label, filterLockLabels?.none || STRINGS.filterLock.none)}
+        </p>
+      )
+    }
+    return (
+      <p className={`${RS}-template-check`}>
+        <Icon name='warning' size={14} />
+        {S.check}
+      </p>
+    )
   }
 
   renderSaved() {
@@ -159,10 +185,7 @@ export class SaveAsTemplateDialog extends React.Component {
           this.renderSaved()
         ) : (
           <>
-            <p className={`${RS}-template-check`}>
-              <Icon name='warning' size={14} />
-              {S.check}
-            </p>
+            {this.renderCheck()}
             <TemplateDetailsFields
               value={details}
               categories={categories}

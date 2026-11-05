@@ -199,6 +199,11 @@
       margin-top: 0.0625rem;
       color: $warning;
     }
+
+    // What the template keeps of the report's filter lock, said in place of the warning.
+    &[data-tone='kept'] > .#{$rb}-icon {
+      color: $accent;
+    }
   }
 
   .#{$rs}-template-saved {
