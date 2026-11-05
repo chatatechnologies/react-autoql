@@ -7,6 +7,7 @@ import { Icon } from './icons'
 import { boxStyleOf, PaperBlock } from './PaperBlock'
 import { getAnalysisBlocker } from '../model/analysis'
 import { RunningFooter, RunningHeader } from './PageFurniture'
+import { summarizeFilterLocks } from '../model/filterLocks'
 import { FormattingBar } from './FormattingBar'
 
 const BlockTools = ({ id, isFirst, isLast, onAction, onAnalyze }) => (
@@ -317,7 +318,11 @@ export class Sheet extends React.Component {
     const header =
       geometry.headerIn > 0 ? (
         <div className={`${RB}-page-header`} style={{ height: `${geometry.headerIn}in` }}>
-          <RunningHeader branding={branding} title={report.title} />
+          <RunningHeader
+            branding={branding}
+            title={report.title}
+            lock={summarizeFilterLocks(report.sessionFilterLocks)}
+          />
         </div>
       ) : null
     const footerOf = (contentPage) =>

@@ -44,24 +44,43 @@ export { createEmptyReport, REPORT_SCHEMA_VERSION } from './components/ReportBui
 export { captureQuestion } from './components/ReportBuilder/run/captureRun'
 export { rowsForCapture } from './components/ReportBuilder/model/capture'
 export {
+  REPORT_DATA_STATUSES,
   REPORT_ERROR_CODES,
   ReportsApiError,
   appendReportBlock,
   createReport,
   createReportFolder,
+  createReportFromTemplate,
   createReportTag,
   deleteReport,
   deleteReportFolder,
   deleteReports,
   deleteReportTag,
   fetchReport,
+  fetchReportCategories,
+  fetchReportDataStatus,
   fetchReportFolders,
   fetchReports,
   fetchReportTags,
+  fetchReportTemplate,
+  fetchReportTemplates,
+  isFillingData,
   organizeReports,
   renameReportFolder,
   saveReport,
   updateReportTag,
 } from './components/ReportBuilder/run/reportsApi'
+export {
+  createTemplateCategory,
+  createTemplateFromReport,
+  deleteTemplate,
+  deleteTemplateCategory,
+  fetchManagedCategories,
+  fetchManagedTemplates,
+  publishTemplate,
+  renameTemplateCategory,
+  unpublishTemplate,
+  updateTemplate,
+} from './components/ReportBuilder/run/templatesApi'
 export { AddToReportDialog } from './components/ReportBuilder/workspace/AddToReportDialog'
 export { captureReportBlock } from './components/ReportBuilder/workspace/reportBlocks'

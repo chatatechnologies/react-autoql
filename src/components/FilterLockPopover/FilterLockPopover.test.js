@@ -220,3 +220,27 @@ describe('saving indicator renders when', () => {
     })
   })
 })
+
+describe('the Persist toggle (showPersistToggle)', () => {
+  const listed = async (props) => {
+    const wrapper = setup({ isOpen: true, initialFilters: filterResponse.data.data.data, ...props })
+    await currentEventLoopEnd()
+    wrapper.update()
+    return wrapper
+  }
+
+  test('shows on each row by default', async () => {
+    const wrapper = await listed()
+    expect(findByTestAttr(wrapper, 'react-autoql-filter-list-item').length).toBeGreaterThan(0)
+    expect(findByTestAttr(wrapper, 'react-autoql-filter-lock-persist-toggle').length).toBeGreaterThan(0)
+    wrapper.unmount()
+  })
+
+  test('is gone for locks that aren’t the user’s own (a report’s), heading and all', async () => {
+    const wrapper = await listed({ showPersistToggle: false })
+    expect(findByTestAttr(wrapper, 'react-autoql-filter-list-item').length).toBeGreaterThan(0)
+    expect(findByTestAttr(wrapper, 'react-autoql-filter-lock-persist-toggle')).toHaveLength(0)
+    expect(wrapper.find('.persist-toggle-column')).toHaveLength(0)
+    wrapper.unmount()
+  })
+})

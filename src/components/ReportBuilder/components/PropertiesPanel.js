@@ -15,14 +15,16 @@ import {
   TYPEFACES,
   WIDTH_OPTIONS,
 } from '../constants'
-import { STRINGS } from '../strings'
+import { STRINGS, unfilledText } from '../strings'
 import { getRowOptions } from '../model/dataBlock'
+import { summarizeFilterLocks } from '../model/filterLocks'
 import { getTileKey, getTileSupport, tileSource } from '../model/tiles'
 import { getTileLabel } from '../../Dashboard/tileQueryConfig'
 import { Icon } from '../../Icon'
 import { formatPrintedDate } from '../run/reportRun'
 import { Divider, Field, Note, SectionLabel, Segmented, SelectField, Swatches, Toggle, useStableId } from './controls'
 import { AutoGrowTextarea } from './AutoGrowTextarea'
+import { FilterLockField } from './FilterLockField'
 import { isMacKeyboard } from '../keyboard'
 
 const P = STRINGS.panel
@@ -398,6 +400,8 @@ class DataProperties extends React.Component {
     const asking = !!question && !question.error
     // A question asked in this builder can be asked again; nothing else here reruns.
     const rerunnable = !canRun && canCapture && !!onRerun && !!block.askedHere && source?.type === 'query'
+    // The report's filter lock, which it's asked with.
+    const lock = summarizeFilterLocks(this.props.report?.sessionFilterLocks)
 
     return (
       <>
@@ -432,17 +436,22 @@ class DataProperties extends React.Component {
           <>
             <SectionLabel>{P.source}</SectionLabel>
             <SourceCard block={block} view={view} />
-            <Note>
-              {rerunnable
-                ? captured
-                  ? P.askedNote
-                  : P.notAskedNote
-                : captured
-                ? P.capturedNote
-                : source.type === 'query'
-                ? P.questionNote
-                : P.sourceNote}
-            </Note>
+            {view?.state === 'unfilled' ? (
+              // AutoQL couldn't fill in its answer, and says why.
+              <Note tone='warning'>{unfilledText(view)}</Note>
+            ) : (
+              <Note>
+                {rerunnable
+                  ? captured
+                    ? P.askedNote
+                    : P.notAskedNote
+                  : captured
+                  ? P.capturedNote
+                  : source.type === 'query'
+                  ? P.questionNote
+                  : P.sourceNote}
+              </Note>
+            )}
             {!canRun && !captured && !rerunnable ? <Note>{P.noCaptureNote}</Note> : null}
             {rerunnable ? (
               <>
@@ -461,6 +470,7 @@ class DataProperties extends React.Component {
                 ) : (
                   <Note>{captured ? P.rerunNote : P.firstAskNote}</Note>
                 )}
+                {lock ? <Note>{P.askedForLock(lock)}</Note> : null}
               </>
             ) : null}
             {canRun ? (
@@ -621,16 +631,43 @@ export const storePanelOpen = (open) => {
   }
 }
 
+// The report's filter lock (model/filterLocks.js), over its page setup: what every question in it is asked for.
+const ReportFilterLock = ({ report, labels, authentication, loadSuggestions, onChange }) => (
+  <>
+    <SectionLabel>{labels?.title || STRINGS.filterLock.title}</SectionLabel>
+    <FilterLockField
+      locks={report.sessionFilterLocks}
+      labels={labels}
+      authentication={authentication}
+      loadSuggestions={loadSuggestions}
+      onChange={onChange}
+    />
+    <Note>{STRINGS.filterLock.note}</Note>
+    <Divider />
+  </>
+)
+
 export const PropertiesPanel = (props) => {
   const { report, block, view, onPageChange } = props
   let content
   if (!block) {
     content = (
-      <PageSetup
-        page={report.page}
-        onPageChange={onPageChange}
-        brandFonts={!!(props.branding?.headingFont || props.branding?.bodyFont)}
-      />
+      <>
+        {props.enableFilterLocks && props.onFilterLocksChange ? (
+          <ReportFilterLock
+            report={report}
+            labels={props.filterLockLabels}
+            authentication={props.authentication}
+            loadSuggestions={props.loadFilterLockSuggestions}
+            onChange={props.onFilterLocksChange}
+          />
+        ) : null}
+        <PageSetup
+          page={report.page}
+          onPageChange={onPageChange}
+          brandFonts={!!(props.branding?.headingFont || props.branding?.bodyFont)}
+        />
+      </>
     )
   } else {
     const info = BLOCK_INFO[block.type]

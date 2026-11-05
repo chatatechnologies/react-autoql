@@ -3,6 +3,7 @@ import PropTypes from 'prop-types'
 import { authenticationType } from '../../../props/types'
 import { Icon } from '../components/icons'
 import { createEmptyReport } from '../model/reportSchema'
+import { normalizeFilterLocks } from '../model/filterLocks'
 import { appendReportBlock, createReport, fetchReports } from '../run/reportsApi'
 import { REPORTS_PAGE_SIZE, RS } from './reportsConstants'
 import {
@@ -49,6 +50,10 @@ export class AddToReportDialog extends React.Component {
     authentication: authenticationType,
     // The report block to add, as captureReportBlock made it.
     block: PropTypes.object.isRequired,
+    // The filter lock the answer was asked with, as captureReportBlock brought it: a new report made for the block
+    // is for it too (its filter lock, model/filterLocks.js). A report it's added to keeps its own: the block alone is
+    // added there, so a report open elsewhere doesn't find itself changed.
+    sessionFilterLocks: PropTypes.array,
     onClose: PropTypes.func.isRequired,
     // Called once the block is added, before onClose, with { id, title, created }: created is true when a new
     // report was made for it.
@@ -57,6 +62,7 @@ export class AddToReportDialog extends React.Component {
 
   static defaultProps = {
     authentication: undefined,
+    sessionFilterLocks: undefined,
     onAdded: undefined,
   }
 
@@ -171,7 +177,12 @@ export class AddToReportDialog extends React.Component {
     let added
     try {
       if (chosenId === NEW_REPORT) {
-        const report = createEmptyReport({ title: name.trim(), blocks: [clean] })
+        const locks = normalizeFilterLocks(this.props.sessionFilterLocks)
+        const report = createEmptyReport({
+          title: name.trim(),
+          blocks: [clean],
+          ...(locks.length ? { sessionFilterLocks: locks } : {}),
+        })
         const created = await createReport({ authentication, id: newReportId(), report })
         added = { id: created.id, title: titleOf(created), created: true }
       } else {
