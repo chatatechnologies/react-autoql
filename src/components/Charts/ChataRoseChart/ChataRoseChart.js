@@ -83,7 +83,12 @@ const TIMELINE_SPARK_ROOM = 30
 const TIMELINE_GAP = 16
 
 const FALLBACK_COLORS = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
-const FALLBACK_NEGATIVE_COLOR = '#CA0B00'
+// Negative wedges keep their color and are hatched with diagonal stripes this far apart, each this wide,
+// showing this much of the fill: visible, but quieter than a second color would be
+const HATCH_SPACING = 6
+const HATCH_STRIPE_WIDTH = 2
+const HATCH_STRIPE_OPACITY = 0.55
+const HATCH_KEY_SIZE = 12
 
 const escapeHtml = (value = '') => {
   return `${value}`
@@ -540,7 +545,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
   const angleStep = categories.length ? (2 * Math.PI) / categories.length : 0
 
-  // One segment per category and value column, stacked outward. Negative values are drawn by magnitude.
+  // One segment per category and value column, stacked outward. Negative values are drawn by magnitude, hatched.
   // While playing over time, empty segments are kept (with no thickness) so they can grow and shrink.
   const keepEmptySegments = animation.isActive
   const segments = useMemo(() => {
@@ -635,8 +640,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return chartPalette.length ? chartPalette : FALLBACK_COLORS
   }, [props.themeConfig])
   const layerColors = valueColumnIndices.map((_, layer) => palette[layer % palette.length])
-  // Each measure's line in the timeline has its own color. The wedges don't use these: they're told apart
-  // by position and label, and colored only by sign: the first chart color, or red when negative.
+  // Each measure has the same color in its wedge and its line in the timeline
   const measureColors = validMeasureColumnIndices.map((_, i) => palette[i % palette.length])
 
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
@@ -644,7 +648,6 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   const themeTextColor = getThemeValue('text-color-primary')
   const themeSecondaryTextColor = getThemeValue('text-color-secondary') || themeTextColor
   const themeBorderColor = getThemeValue('border-color') || '#D8D8D8'
-  const negativeColor = getThemeValue('danger-color') || FALLBACK_NEGATIVE_COLOR
 
   const categoryColumn = columns[categoryColumnIndex]
   const getColumnLabel = (column) => column?.display_name || column?.name || ''
@@ -869,12 +872,52 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         <stop offset='100%' stopColor={color} stopOpacity={BAR_GRADIENT_OPACITY_STOPS[2]} />
       </radialGradient>
     )
+    // Negative wedges are masked with diagonal stripes that let less of the fill through. The mask's content
+    // is far bigger than any chart, so it covers whatever it's applied to (the rose or the key).
     return (
       <defs>
         {layerColors.map((color, layer) => renderGradient(`${gradientIdPrefix}-${layer}`, color))}
-        {renderGradient(`${gradientIdPrefix}-positive`, palette[0])}
-        {renderGradient(`${gradientIdPrefix}-negative`, negativeColor)}
+        {measureColors.map((color, i) => renderGradient(`${gradientIdPrefix}-measure-${i}`, color))}
+        <pattern
+          id={`${gradientIdPrefix}-hatch`}
+          patternUnits='userSpaceOnUse'
+          width={HATCH_SPACING}
+          height={HATCH_SPACING}
+          patternTransform='rotate(45)'
+        >
+          <rect width={HATCH_SPACING} height={HATCH_SPACING} fill='white' />
+          <rect width={HATCH_STRIPE_WIDTH} height={HATCH_SPACING} fill='black' fillOpacity={1 - HATCH_STRIPE_OPACITY} />
+        </pattern>
+        <mask id={`${gradientIdPrefix}-hatch-mask`} maskContentUnits='userSpaceOnUse'>
+          <rect x={-10000} y={-10000} width={20000} height={20000} fill={`url(#${gradientIdPrefix}-hatch)`} />
+        </mask>
       </defs>
+    )
+  }
+
+  // Says what hatching means, in the bottom-left corner of the rose's area, when any wedge is hatched
+  const renderHatchKey = () => {
+    if (!segments.some((segment) => segment.value < 0)) {
+      return null
+    }
+    const label = isMeasures && effectiveScale === 'normalized' ? 'Below average' : 'Negative'
+    return (
+      <g
+        className='rose-hatch-key'
+        transform={`translate(${-roseLayout.centerX + 4}, ${plotHeight / 2 - HATCH_KEY_SIZE - 4})`}
+        style={{ pointerEvents: 'none' }}
+      >
+        <rect
+          width={HATCH_KEY_SIZE}
+          height={HATCH_KEY_SIZE}
+          rx={2}
+          fill={themeSecondaryTextColor}
+          mask={`url(#${gradientIdPrefix}-hatch-mask)`}
+        />
+        <text x={HATCH_KEY_SIZE + 6} y={HATCH_KEY_SIZE - 2} fontSize={TICK_FONT_SIZE} fill={themeSecondaryTextColor}>
+          {label}
+        </text>
+      </g>
     )
   }
 
@@ -1046,12 +1089,9 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   const renderSegment = (segment) => {
     const isMeasure = segment.category.measureIndex !== undefined
     const isActive = activeKey === (isMeasure ? getMeasureActiveKey() : `rose-${segment.category.key}`)
-    const fill =
-      segment.value < 0
-        ? `url(#${gradientIdPrefix}-negative)`
-        : segment.category.measureIndex !== undefined
-        ? `url(#${gradientIdPrefix}-positive)`
-        : `url(#${gradientIdPrefix}-${segment.layer})`
+    const fill = isMeasure
+      ? `url(#${gradientIdPrefix}-measure-${segment.category.measureIndex})`
+      : `url(#${gradientIdPrefix}-${segment.layer})`
     return (
       <path
         key={segment.key}
@@ -1065,6 +1105,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         className={`rose-wedge${isActive ? ' active' : ''}${segment.category.isOther ? ' rose-wedge-other' : ''}`}
         d={arcGenerator(segment)}
         fill={fill}
+        mask={segment.value < 0 ? `url(#${gradientIdPrefix}-hatch-mask)` : undefined}
         stroke={segment.isNotToScale ? themeSecondaryTextColor : undefined}
         strokeDasharray={segment.isNotToScale ? '3,2' : undefined}
         data-tooltip-id={props.chartTooltipID}
@@ -1207,6 +1248,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
           {renderGrid()}
           {renderWedges()}
           {renderLabels()}
+          {renderHatchKey()}
         </g>
       ) : (
         <text

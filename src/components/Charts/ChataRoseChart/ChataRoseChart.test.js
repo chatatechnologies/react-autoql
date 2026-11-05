@@ -75,10 +75,15 @@ describe('ChataRoseChart', () => {
     expect(getSelector(wrapper, 'Values').prop('pathColumnIndices')).toEqual([2])
   })
 
-  test('fills negative values with the negative gradient', () => {
+  // AQLP-1095: a negative value keeps its series' color, hatched, and a key says what hatching means
+  test('hatches negative values in their own color, with a key', () => {
     const wrapper = setup({ initialChartControls: { roseValueColumnIndices: [3] } })
-    const fills = getWedges(wrapper).map((w) => w.prop('fill'))
-    expect(fills.filter((fill) => fill.includes('-negative'))).toHaveLength(1)
+    const wedges = getWedges(wrapper)
+    expect(new Set(wedges.map((w) => w.prop('fill'))).size).toBe(1)
+    expect(wedges.filterWhere((w) => !!w.prop('mask'))).toHaveLength(1)
+    expect(wrapper.find('g.rose-hatch-key').text()).toBe('Negative')
+    // No negatives, no key
+    expect(setup().find('g.rose-hatch-key').exists()).toBe(false)
   })
 
   test('saves picks through onChartControlsChange', () => {

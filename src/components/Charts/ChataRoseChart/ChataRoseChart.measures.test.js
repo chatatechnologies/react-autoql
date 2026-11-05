@@ -231,12 +231,26 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedges(wrapper)).toHaveLength(3)
   })
 
-  // Measures are told apart by their position and labels, so color only says positive or negative
-  test('normalized: wedges are blue above the average and red below it, with rings in standard deviations', () => {
+  // AQLP-1095: each measure has its timeline color, and a wedge below its average is hatched
+  test('normalized: each measure in its own color, hatched below its average, with rings in standard deviations', () => {
     const wrapper = setupInPeriod()
+    const timelineColors = wrapper
+      .find(TimeAnimationTimeline)
+      .prop('series')
+      .map((series) => series.color)
+    const gradientColor = (wedge) =>
+      wrapper
+        .find(`radialGradient#${wedge.prop('fill').match(/url\(#(.+)\)/)[1]}`)
+        .find('stop')
+        .first()
+        .prop('stopColor')
+    expect(['Revenue', 'COGS', 'Profit'].map((measure) => gradientColor(getWedge(wrapper, measure)))).toEqual(
+      timelineColors,
+    )
     // On the last day Revenue is below its average and COGS above
-    expect(getWedge(wrapper, 'Revenue').prop('fill')).toContain('-negative')
-    expect(getWedge(wrapper, 'COGS').prop('fill')).toContain('-positive')
+    expect(getWedge(wrapper, 'Revenue').prop('mask')).toContain('hatch')
+    expect(getWedge(wrapper, 'COGS').prop('mask')).toBeUndefined()
+    expect(wrapper.find('g.rose-hatch-key').text()).toBe('Below average')
     // COGS on the last day: 80, against a daily average of 65 that usually varies by about 11
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
       '<strong>COGS:</strong> $80.00<br/><strong>Profit:</strong> -$30.00<br/>COGS: 1.3× its usual variation above its daily average of $65.00<br/>Typical range: $53.82 – $76.18',
@@ -245,11 +259,11 @@ describe('ChataRoseChart measures mode', () => {
     expect(getTickLabels(wrapper).every((label) => label.endsWith('σ'))).toBe(true)
   })
 
-  test('every positive measure wedge is the same color', () => {
+  test('each measure wedge has its own color, and none is hatched on a min-max scale', () => {
     const wrapper = setupInPeriod({ initialChartControls: { roseScale: 'minmax' } })
-    const fills = getWedges(wrapper).map((wedge) => wedge.prop('fill'))
-    expect(new Set(fills).size).toBe(1)
-    expect(fills[0]).toContain('-positive')
+    expect(new Set(getWedges(wrapper).map((wedge) => wedge.prop('fill'))).size).toBe(3)
+    expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
+    expect(wrapper.find('g.rose-hatch-key').exists()).toBe(false)
   })
 
   test('changing the scale redraws and saves it', () => {
@@ -264,7 +278,7 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
       'COGS: 100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
     )
-    expect(getWedges(wrapper).filterWhere((wedge) => wedge.prop('fill').includes('-negative'))).toHaveLength(0)
+    expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
   })
 
   test('offers Count for list queries, and never the column being stepped through', () => {

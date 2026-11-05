@@ -43,7 +43,7 @@ const getStats = (values) => {
   return { mean, std: Math.sqrt(variance), min: Math.min(...finite), max: Math.max(...finite) }
 }
 
-// A signed number drawn as the wedge: its length is the magnitude, and negative is drawn in red.
+// A signed number drawn as the wedge: its length is the magnitude, and negative is drawn hatched.
 // - normalized: standard deviations from the measure's average over all periods (a z-score)
 // - minmax: where the period sits between the measure's lowest (0) and highest (1) period
 // - linear: the value itself, on one scale shared by every measure

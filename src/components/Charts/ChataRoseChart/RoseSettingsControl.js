@@ -13,7 +13,7 @@ const MODE_LABELS = { values: 'Values of a column', measures: 'Measures' }
 
 const SCALE_DESCRIPTIONS = {
   normalized:
-    "How unusual this period is for each measure: its distance from the measure's average across all periods, compared with how much it usually varies. 1σ is a typical swing; beyond 2σ is rare. Blue is above average, red is below.",
+    "How unusual this period is for each measure: its distance from the measure's average across all periods, compared with how much it usually varies. 1σ is a typical swing; beyond 2σ is rare. Hatched wedges are below average.",
   minmax:
     'Where this period falls between the measure\'s lowest and highest period: 0% is its lowest, 100% its highest. Good for "is this a high or low period for this measure?"',
   linear:
