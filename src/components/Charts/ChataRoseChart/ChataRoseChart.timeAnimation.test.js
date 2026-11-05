@@ -265,4 +265,17 @@ describe('ChataRoseChart time animation', () => {
     const animation = wrapper.find(TimeAnimationControl).prop('animation')
     expect(animation.columnOptionIndices).toEqual([1, 3])
   })
+
+  // AQLP-1094: no date column, but an unused number column: it's picked, so play works straight away
+  test('without a date column, the first unused number column is ready to play over', () => {
+    const round = { name: 'sales.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }
+    const wrapper = setup({
+      columns: [columns[0], round, columns[2]],
+      data: data.map((row, i) => [row[0], (i % 2) + 1, row[2]]),
+      initialChartControls: { roseValueColumnIndices: [2] },
+    })
+    const animation = wrapper.find(TimeAnimationControl).prop('animation')
+    expect(animation.settings.columnIndex).toBe(1)
+    expect(animation.isAvailable).toBe(true)
+  })
 })

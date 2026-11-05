@@ -21,7 +21,7 @@ const SEEK_TWEEN_DURATION = 300
 // `timeAnimation` key in chart controls so every chart type saves them the same way; the play state
 // does not persist, so a saved chart always opens showing all of its data.
 // - includeNumberColumns: number columns can be stepped through, not just dates. A date column is still
-//   the default; with none, nothing is picked until the user picks a column.
+//   the default; with none, the first number column is.
 // - showOneFrame: for charts that only ever show one period. Always active, opens on the latest period,
 //   and exit() just pauses.
 export const useTimeAnimation = ({
@@ -41,15 +41,12 @@ export const useTimeAnimation = ({
     () => getTimeAnimationColumnOptions(columns, excludedColumnIndices, includeNumberColumns),
     [columns, excludedColumnIndices.join(','), includeNumberColumns],
   )
-  // Only a date column is ever picked automatically
-  const defaultColumnIndex = useMemo(
-    () => getTimeAnimationColumnOptions(columns, excludedColumnIndices)[0],
-    [columns, excludedColumnIndices.join(',')],
-  )
+  // Options are dates first, so a date column is the default when there is one; otherwise the first
+  // option, so the chart has something to step through without the user having to pick
+  const defaultColumnIndex = columnOptionIndices[0]
 
-  const [columnIndex, setColumnIndex] = useState(() =>
-    columnOptionIndices.includes(saved.columnIndex) ? saved.columnIndex : defaultColumnIndex,
-  )
+  // Only a picked (or saved) column is kept; the default is worked out each time, so it follows the options
+  const [columnIndex, setColumnIndex] = useState(saved.columnIndex)
   const [savedGrouping, setGrouping] = useState(saved.grouping)
   const [speed, setSpeed] = useState(TIME_ANIMATION_SPEEDS.includes(saved.speed) ? saved.speed : 1)
   // Loops unless it's been turned off

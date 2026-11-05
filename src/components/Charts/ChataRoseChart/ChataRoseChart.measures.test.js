@@ -221,21 +221,22 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedges(wrapper)).toHaveLength(2)
   })
 
-  test('without a date column, asks for a column to step through, which can be any unused number column', () => {
+  // AQLP-1094: with no date column, the first column that can be stepped through is picked, so the
+  // chart isn't blank until one is picked by hand
+  test('without a date column, steps through the first number column, which can be changed', () => {
     const roundColumn = { name: 'game.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }
     const wrapper = setup({
       columns: [roundColumn, ...measureColumns],
       data: data.map((row, i) => [i + 1, ...row.slice(1)]),
       initialChartControls: { roseMode: 'measures' },
     })
-    expect(wrapper.find('text.rose-empty-message').text()).toBe('Pick a column to step through in the time settings')
+    expect(wrapper.find('text.rose-empty-message').exists()).toBe(false)
 
     const animation = wrapper.find(TimeAnimationControl).prop('animation')
     expect(animation.columnOptionIndices).toEqual([0, 1, 2, 3])
-    act(() => animation.updateSettings({ columnIndex: 0 }))
-    wrapper.update()
+    expect(animation.settings.columnIndex).toBe(0)
 
-    // Round is now what's stepped through, so it's no longer a measure
+    // Round is what's stepped through, so it's not a measure
     expect(getMeasurePicker(wrapper).prop('pathColumnOptionIndices')).not.toContain(0)
     expect(getWedges(wrapper)).toHaveLength(3)
     expect(
