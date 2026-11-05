@@ -33,16 +33,21 @@ describe('getTimeAnimationColumnOptions', () => {
   })
 })
 
-describe('getTimeAnimationColumnOptions with every column', () => {
-  test('offers date columns first, then the other visible columns, minus the excluded ones', () => {
+describe('getTimeAnimationColumnOptions with number columns', () => {
+  test('offers date columns first, then visible number columns, minus the excluded ones', () => {
     const cols = [
       { type: 'STRING' },
       { type: 'QUANTITY' },
       { type: 'DATE' },
-      { type: 'STRING', is_visible: false },
+      { type: 'QUANTITY', is_visible: false },
       { type: 'DOLLAR_AMT' },
+      { type: 'DATE_STRING' },
     ]
-    expect(getTimeAnimationColumnOptions(cols, [4], true)).toEqual([2, 0, 1])
+    expect(getTimeAnimationColumnOptions(cols, [4], true)).toEqual([2, 5, 1])
+  })
+
+  test('never offers string columns', () => {
+    expect(getTimeAnimationColumnOptions([{ type: 'STRING' }, { type: 'QUANTITY' }], [], true)).toEqual([1])
   })
 })
 

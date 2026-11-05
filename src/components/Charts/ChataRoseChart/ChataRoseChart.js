@@ -377,17 +377,19 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     [props.dataFormatting, props.autoQLConfig],
   )
 
-  // A date category is already spread around the circle, so it can't also be what plays over time. In
-  // measures mode one period is always shown.
+  // Dates and numbers can be stepped through. In values mode, not the category (it's already spread
+  // around the circle) or a value column. In measures mode any of them can be, and picking a measure takes
+  // it out of the measures; one period is always shown.
   const animation = useTimeAnimation({
     data: props.data,
     columns,
     initialChartControls: props.initialChartControls,
     onChartControlsChange: props.onChartControlsChange,
-    // Any column can be stepped through in measures mode; picking a measure takes it out of the measures
-    excludedColumnIndices: isMeasures ? [] : categoryColumnIndex >= 0 ? [categoryColumnIndex] : [],
+    excludedColumnIndices: isMeasures
+      ? []
+      : [...(categoryColumnIndex >= 0 ? [categoryColumnIndex] : []), ...valueColumnIndices],
     dataFormatting: formattingConfig,
-    includeAllColumns: isMeasures,
+    includeNumberColumns: true,
     showOneFrame: isMeasures,
   })
 

@@ -20,8 +20,8 @@ const SEEK_TWEEN_DURATION = 300
 // `currentFrame.rows` in place of its data while `isActive`. Settings persist under one
 // `timeAnimation` key in chart controls so every chart type saves them the same way; the play state
 // does not persist, so a saved chart always opens showing all of its data.
-// - includeAllColumns: any column can be stepped through, not just dates. A date column is still the
-//   default; with none, nothing is picked until the user picks a column.
+// - includeNumberColumns: number columns can be stepped through, not just dates. A date column is still
+//   the default; with none, nothing is picked until the user picks a column.
 // - showOneFrame: for charts that only ever show one period. Always active, opens on the latest period,
 //   and exit() just pauses.
 export const useTimeAnimation = ({
@@ -31,15 +31,15 @@ export const useTimeAnimation = ({
   onChartControlsChange,
   excludedColumnIndices = [],
   dataFormatting,
-  includeAllColumns = false,
+  includeNumberColumns = false,
   showOneFrame = false,
 }) => {
   const saved = initialChartControls?.timeAnimation || {}
   const isAggregated = useMemo(() => isAggregation(columns), [columns])
 
   const columnOptionIndices = useMemo(
-    () => getTimeAnimationColumnOptions(columns, excludedColumnIndices, includeAllColumns),
-    [columns, excludedColumnIndices.join(','), includeAllColumns],
+    () => getTimeAnimationColumnOptions(columns, excludedColumnIndices, includeNumberColumns),
+    [columns, excludedColumnIndices.join(','), includeNumberColumns],
   )
   // Only a date column is ever picked automatically
   const defaultColumnIndex = useMemo(
@@ -199,7 +199,7 @@ export const useTimeAnimation = ({
     ease,
     settings: { columnIndex: validColumnIndex, grouping, speed, loop, cumulative },
     columnOptionIndices,
-    includeAllColumns,
+    includeNumberColumns,
     showOneFrame,
     groupingOptions,
     play,

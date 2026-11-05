@@ -221,7 +221,7 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedges(wrapper)).toHaveLength(2)
   })
 
-  test('without a date column, asks for a column to step through, which can be any column', () => {
+  test('without a date column, asks for a column to step through, which can be any unused number column', () => {
     const roundColumn = { name: 'game.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }
     const wrapper = setup({
       columns: [roundColumn, ...measureColumns],

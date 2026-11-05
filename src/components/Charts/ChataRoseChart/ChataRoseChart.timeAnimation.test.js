@@ -252,4 +252,17 @@ describe('ChataRoseChart time animation', () => {
     const wrapper = setup({ columns: dateOnly, data: data.map((row) => [row[1], row[2]]) })
     expect(wrapper.find('g.time-animation-control').exists()).toBe(false)
   })
+
+  // AQLP-1093: dates and numbers can be stepped through, but not strings or the columns already drawn
+  test('offers date and unused number columns to step through, never strings', () => {
+    const units = { name: 'sales.units', display_name: 'Units', type: 'QUANTITY', is_visible: true }
+    const store = { name: 'sales.store', display_name: 'Store', type: 'STRING', is_visible: true }
+    const wrapper = setup({
+      columns: [...columns, units, store],
+      data: data.map((row, i) => [...row, i + 1, `S${i}`]),
+      initialChartControls: { roseValueColumnIndices: [2], timeAnimation: { grouping: 'MONTH' } },
+    })
+    const animation = wrapper.find(TimeAnimationControl).prop('animation')
+    expect(animation.columnOptionIndices).toEqual([1, 3])
+  })
 })
