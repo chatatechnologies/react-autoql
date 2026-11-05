@@ -47,8 +47,10 @@ const goToPeriod = (wrapper, frameIndex) => {
 const setupInPeriod = (props) => goToPeriod(setup(props))
 
 const getWedges = (wrapper) => wrapper.find('path.rose-wedge')
-const getWedge = (wrapper, measure) =>
-  getWedges(wrapper).filterWhere((wedge) => wedge.prop('data-tooltip-html').startsWith(`<strong>${measure}`))
+const getWedge = (wrapper, measure) => {
+  const columnIndex = columns.findIndex((column) => column.display_name === measure)
+  return getWedges(wrapper).filterWhere((wedge) => wedge.key() === `measure:${columnIndex}|0`)
+}
 const getSettings = (wrapper) => wrapper.find(RoseSettingsControl)
 const getMeasurePicker = (wrapper) =>
   wrapper.find(SankeyColumnSelector).filterWhere((selector) => selector.prop('pathTitle') === 'Measures')
@@ -181,6 +183,33 @@ describe('ChataRoseChart measures mode', () => {
     expect(wrapper.find('path.rose-wedge-dimmed')).toHaveLength(0)
   })
 
+  // AQLP-1097: the whole rose is one row (the period), so it's hovered, described and drilled into as one
+  test('every wedge lists the period and all of its measures, and is hovered as one rose', () => {
+    const wrapper = setupInPeriod()
+    expect(wrapper.find('g.rose-wedges-measures').find('path.rose-wedge')).toHaveLength(3)
+    const tooltip = getWedge(wrapper, 'Revenue').prop('data-tooltip-html')
+    expect(tooltip.startsWith('<strong>Date:</strong> Jan 4, 2024<br/><strong>Revenue:</strong> $50.00')).toBe(true)
+    expect(tooltip).toContain('<strong>COGS:</strong> $80.00<br/><strong>Profit:</strong> -$30.00')
+  })
+
+  test('clicking a wedge makes the whole rose active for that period', () => {
+    const onChartClick = jest.fn()
+    const wrapper = setupInPeriod({ onChartClick })
+    getWedge(wrapper, 'Profit').simulate('click')
+    wrapper.update()
+    expect(getWedges(wrapper).filterWhere((wedge) => wedge.hasClass('active'))).toHaveLength(3)
+    // Another period isn't the one drilled into
+    goToPeriod(wrapper, 0)
+    expect(getWedges(wrapper).filterWhere((wedge) => wedge.hasClass('active'))).toHaveLength(0)
+  })
+
+  test('without a period to drill into, wedges do not look clickable', () => {
+    const wrapper = setup()
+    expect(wrapper.find('g.rose-wedges-no-drilldown').exists()).toBe(true)
+    expect(getWedge(setupInPeriod(), 'Revenue').prop('data-tooltip-html')).toContain('Click to see')
+    expect(setupInPeriod().find('g.rose-wedges-no-drilldown').exists()).toBe(false)
+  })
+
   test('is not the default without a date column', () => {
     const wrapper = setup({
       columns: [{ name: 'dept', display_name: 'Dept', type: 'STRING', is_visible: true }, ...measureColumns],
@@ -210,7 +239,7 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedge(wrapper, 'COGS').prop('fill')).toContain('-positive')
     // COGS on the last day: 80, against a daily average of 65 that usually varies by about 11
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
-      '<strong>COGS:</strong> $80.00<br/><strong>Date:</strong> Jan 4, 2024<br/>1.3× its usual variation above its daily average of $65.00<br/>Typical range: $53.82 – $76.18',
+      '<strong>COGS:</strong> $80.00<br/><strong>Profit:</strong> -$30.00<br/>COGS: 1.3× its usual variation above its daily average of $65.00<br/>Typical range: $53.82 – $76.18',
     )
     expect(wrapper.find('circle.rose-average-ring').exists()).toBe(false)
     expect(getTickLabels(wrapper).every((label) => label.endsWith('σ'))).toBe(true)
@@ -233,7 +262,7 @@ describe('ChataRoseChart measures mode', () => {
     expect(getTickLabels(wrapper)).toEqual(['25%', '50%', '75%'])
     // COGS is at its highest on the last day; nothing is below zero on a min-max scale
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
-      '100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
+      'COGS: 100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
     )
     expect(getWedges(wrapper).filterWhere((wedge) => wedge.prop('fill').includes('-negative'))).toHaveLength(0)
   })

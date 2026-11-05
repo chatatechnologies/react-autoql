@@ -52,6 +52,18 @@ describe('ChataRoseChart', () => {
     expect(getWedges(wrapper)).toHaveLength(6)
   })
 
+  // AQLP-1097: a wedge's segments are one row, so they're hovered and described together
+  test("a wedge's stacked segments are hovered as one, and share a tooltip with every value", () => {
+    const wrapper = setup({ initialChartControls: { roseValueColumnIndices: [2, 3] } })
+    const groups = wrapper.find('g.rose-wedge-group')
+    expect(groups).toHaveLength(3)
+    groups.forEach((group) => {
+      const segments = group.find('path.rose-wedge')
+      expect(segments).toHaveLength(2)
+      expect(new Set(segments.map((segment) => segment.prop('data-tooltip-html'))).size).toBe(1)
+    })
+  })
+
   test('uses the persisted category column', () => {
     const wrapper = setup({ initialChartControls: { roseCategoryColumnIndex: 1 } })
     expect(getWedges(wrapper)).toHaveLength(2)

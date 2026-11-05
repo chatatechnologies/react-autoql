@@ -694,7 +694,6 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         : animation.currentFrame.label
       : ''
 
-  // The measure and its value, the period, then what the wedge means on the current scale in plain words
   // A measure isn't a value to filter on, so clicking a measure wedge opens every row in the period being
   // shown. The tooltip says so, so it isn't mistaken for a drilldown on that measure.
   const getMeasureDrilldownHint = () => {
@@ -707,31 +706,38 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       : `Click to see all rows for ${label}`
   }
 
-  const getMeasureTooltipHtml = (category) => {
-    const drilldownHint = getMeasureDrilldownHint()
-    const hintLine = drilldownHint ? `<em>${escapeHtml(drilldownHint)}</em>` : null
-    const name = escapeHtml(getCategoryName(category))
-    const { measureValue, measureColumnIndex } = category
-    const lines = [
-      measureValue === null
-        ? `<strong>${name}</strong>`
-        : `<strong>${name}:</strong> ${escapeHtml(formatValue(measureValue, measureColumnIndex))}`,
-    ]
+  // The whole rose is one row (a period, or all of the data), so every wedge has the same tooltip: the
+  // period, every measure's value, then what the hovered wedge means on the current scale in plain words
+  const getMeasureTooltipHtml = (hoveredCategory) => {
+    const lines = []
     if (animation.currentFrame) {
       lines.push(`<strong>${escapeHtml(getColumnLabel(animation.column))}:</strong> ${escapeHtml(getPeriodLabel())}`)
     }
-    if (measureValue === null) {
-      lines.push('<em>No data in this period</em>')
-      return [...lines, hintLine].filter(Boolean).join('<br/>')
+    categories.forEach(({ measureValue, measureColumnIndex, ...category }) => {
+      const name = escapeHtml(getCategoryName({ measureColumnIndex, ...category }))
+      const value =
+        measureValue === null ? '<em>No data</em>' : escapeHtml(formatValue(measureValue, measureColumnIndex))
+      lines.push(`<strong>${name}:</strong> ${value}`)
+    })
+    const { measureValue, measureColumnIndex } = hoveredCategory
+    if (measureValue !== null) {
+      describeMeasureValue({
+        scale: effectiveScale,
+        value: measureValue,
+        stats: hoveredCategory.stats,
+        grouping: animation.settings.grouping,
+        formatValue: (value) => formatValue(value, measureColumnIndex),
+      }).forEach(({ text, isNote }, i) => {
+        // The first line names the measure it's about
+        const line = i === 0 && !isNote ? `${getCategoryName(hoveredCategory)}: ${text}` : text
+        lines.push(isNote ? `<em>${escapeHtml(line)}</em>` : escapeHtml(line))
+      })
     }
-    describeMeasureValue({
-      scale: effectiveScale,
-      value: measureValue,
-      stats: category.stats,
-      grouping: animation.settings.grouping,
-      formatValue: (value) => formatValue(value, measureColumnIndex),
-    }).forEach(({ text, isNote }) => lines.push(isNote ? `<em>${escapeHtml(text)}</em>` : escapeHtml(text)))
-    return [...lines, hintLine].filter(Boolean).join('<br/>')
+    const drilldownHint = getMeasureDrilldownHint()
+    if (drilldownHint) {
+      lines.push(`<em>${escapeHtml(drilldownHint)}</em>`)
+    }
+    return lines.join('<br/>')
   }
 
   const getTooltipHtml = (category, isNotToScale) => {
@@ -759,13 +765,16 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return lines.join('<br/>')
   }
 
+  // The whole rose is active once its period is drilled into
+  const getMeasureActiveKey = () => `rose-period-${animation.currentFrame?.key}`
+
   // A measure isn't a value to filter on, so a measure wedge drills into the period being shown
-  const onMeasureWedgeClick = (category) => {
+  const onMeasureWedgeClick = () => {
     const frameDrilldown = animation.getDrilldown()
     if (!frameDrilldown) {
       return
     }
-    const key = `rose-${category.key}`
+    const key = getMeasureActiveKey()
     setActiveKey(key)
     if (frameDrilldown.groupBy) {
       props.onChartClick({ groupBys: [frameDrilldown.groupBy], activeKey: key })
@@ -780,7 +789,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
     if (category.measureColumnIndex !== undefined) {
       if (enableDrilldowns && props.onChartClick) {
-        onMeasureWedgeClick(category)
+        onMeasureWedgeClick()
       }
       return
     }
@@ -1034,36 +1043,64 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     )
   }
 
-  const renderWedges = () =>
-    segments.map((segment) => {
-      const isActive = activeKey === `rose-${segment.category.key}`
-      const fill =
-        segment.value < 0
-          ? `url(#${gradientIdPrefix}-negative)`
-          : segment.category.measureIndex !== undefined
-          ? `url(#${gradientIdPrefix}-positive)`
-          : `url(#${gradientIdPrefix}-${segment.layer})`
+  const renderSegment = (segment) => {
+    const isMeasure = segment.category.measureIndex !== undefined
+    const isActive = activeKey === (isMeasure ? getMeasureActiveKey() : `rose-${segment.category.key}`)
+    const fill =
+      segment.value < 0
+        ? `url(#${gradientIdPrefix}-negative)`
+        : segment.category.measureIndex !== undefined
+        ? `url(#${gradientIdPrefix}-positive)`
+        : `url(#${gradientIdPrefix}-${segment.layer})`
+    return (
+      <path
+        key={segment.key}
+        ref={(element) => {
+          if (element) {
+            pathRefs.current.set(segment.key, element)
+          } else {
+            pathRefs.current.delete(segment.key)
+          }
+        }}
+        className={`rose-wedge${isActive ? ' active' : ''}${segment.category.isOther ? ' rose-wedge-other' : ''}`}
+        d={arcGenerator(segment)}
+        fill={fill}
+        stroke={segment.isNotToScale ? themeSecondaryTextColor : undefined}
+        strokeDasharray={segment.isNotToScale ? '3,2' : undefined}
+        data-tooltip-id={props.chartTooltipID}
+        data-tooltip-html={getTooltipHtml(segment.category, segment.isNotToScale)}
+        onClick={(e) => onWedgeClick(e, segment.category)}
+      />
+    )
+  }
+
+  // Hover and drilldowns are for a whole wedge (a row), not one of its stacked segments, so each wedge's
+  // segments are grouped and hovered together. In measures mode the whole rose is one row (the period), so
+  // it's all hovered together.
+  const renderWedges = () => {
+    if (isMeasures) {
+      const canDrillDown = !!getMeasureDrilldownHint()
       return (
-        <path
-          key={segment.key}
-          ref={(element) => {
-            if (element) {
-              pathRefs.current.set(segment.key, element)
-            } else {
-              pathRefs.current.delete(segment.key)
-            }
-          }}
-          className={`rose-wedge${isActive ? ' active' : ''}${segment.category.isOther ? ' rose-wedge-other' : ''}`}
-          d={arcGenerator(segment)}
-          fill={fill}
-          stroke={segment.isNotToScale ? themeSecondaryTextColor : undefined}
-          strokeDasharray={segment.isNotToScale ? '3,2' : undefined}
-          data-tooltip-id={props.chartTooltipID}
-          data-tooltip-html={getTooltipHtml(segment.category, segment.isNotToScale)}
-          onClick={(e) => onWedgeClick(e, segment.category)}
-        />
+        <g className={`rose-wedges rose-wedges-measures${canDrillDown ? '' : ' rose-wedges-no-drilldown'}`}>
+          {segments.map(renderSegment)}
+        </g>
       )
+    }
+    const segmentsByCategory = new Map()
+    segments.forEach((segment) => {
+      const key = segment.category.key
+      segmentsByCategory.set(key, [...(segmentsByCategory.get(key) || []), segment])
     })
+    return (
+      <g className='rose-wedges'>
+        {Array.from(segmentsByCategory.entries()).map(([key, categorySegments]) => (
+          <g key={key} className='rose-wedge-group'>
+            {categorySegments.map(renderSegment)}
+          </g>
+        ))}
+      </g>
+    )
+  }
 
   // One sparkline per value layer: the layer summed over all categories in each period. In measures mode,
   // one per measure, in its own units and color.
@@ -1168,7 +1205,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         <g className='rose-plot' transform={`translate(${roseLayout.centerX}, ${centerY})`}>
           {renderGradients()}
           {renderGrid()}
-          <g className='rose-wedges'>{renderWedges()}</g>
+          {renderWedges()}
           {renderLabels()}
         </g>
       ) : (

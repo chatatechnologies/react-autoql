@@ -2,16 +2,21 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs */
+  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs.
+     A wedge's stacked segments are hovered together, and in measures mode the whole rose is. */
   .rose-wedge {
     transition: fill-opacity 0.3s ease;
     fill-opacity: 1;
     outline: none !important;
 
-    &:hover,
     &.active {
       fill-opacity: 0.7;
     }
+  }
+
+  .rose-wedge-group:hover .rose-wedge,
+  .rose-wedges-measures:hover .rose-wedge {
+    fill-opacity: 0.7;
   }
 
   /* Every button icon draws about 15px, whatever padding its icon set builds in. Sizes are set
@@ -36,6 +41,10 @@
 
   &.enable-drilldown .rose-wedge:not(.rose-wedge-other) {
     cursor: pointer;
+  }
+
+  &.enable-drilldown .rose-wedges-no-drilldown .rose-wedge {
+    cursor: default;
   }
 
   &:focus,
