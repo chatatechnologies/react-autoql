@@ -326,6 +326,49 @@ describe('agent tab', () => {
   })
 })
 
+describe('project select', () => {
+  const projectProps = {
+    autoQLConfig: { enableProjectSelect: true },
+    projectSelectList: [
+      { projectId: 'project-a', displayName: 'Project A' },
+      { projectId: 'project-b', displayName: 'Project B' },
+    ],
+    selectedProjectId: 'project-a',
+  }
+  const setupProjects = (props = {}) => shallow(<DataMessenger {...defaultProps} {...projectProps} {...props} />)
+
+  test('keeps the page title instead of replacing it', () => {
+    const wrapper = setupProjects({ title: 'Data Messenger' })
+    expect(wrapper.dive().find('.header-title').text()).toBe('Data Messenger')
+  })
+
+  test('renders the selector in the right-hand header controls', () => {
+    const right = setupProjects().dive().find('.react-autoql-header-right-container')
+    expect(right.find('ProjectSelect').exists()).toBe(true)
+  })
+
+  test('is absent when project select is not enabled', () => {
+    const wrapper = setupProjects({ autoQLConfig: {} })
+    expect(wrapper.dive().find('ProjectSelect').exists()).toBe(false)
+  })
+
+  test('is absent with no projects', () => {
+    const wrapper = setupProjects({ projectSelectList: [] })
+    expect(wrapper.dive().find('ProjectSelect').exists()).toBe(false)
+  })
+
+  test('clears messages and reports the new project id on change', () => {
+    const onProjectSelectChange = jest.fn()
+    const wrapper = setupProjects({ onProjectSelectChange })
+    const clearMessages = jest.spyOn(wrapper.instance(), 'clearMessages')
+
+    wrapper.dive().find('ProjectSelect').props().onChange('project-b')
+
+    expect(clearMessages).toHaveBeenCalled()
+    expect(onProjectSelectChange).toHaveBeenCalledWith('project-b')
+  })
+})
+
 describe('restore handle while maximized', () => {
   // A 1000x800 drawer at the origin, so each placement's outer edge is easy to aim at.
   const rect = { left: 0, top: 0, right: 1000, bottom: 800 }
