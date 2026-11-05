@@ -1,6 +1,7 @@
 .legend-popover-wrapper {
   min-width: 200px;
   max-width: 300px;
+  color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
@@ -59,7 +60,7 @@
     color: var(--react-autoql-text-color-primary);
 
     &::placeholder {
-      color: var(--react-autoql-text-color-disabled);
+      color: var(--react-autoql-text-color-placeholder);
     }
 
     &:focus {
@@ -76,7 +77,7 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: var(--react-autoql-text-color-disabled);
+    color: var(--react-autoql-text-color-placeholder);
     cursor: pointer;
     font-size: 1.125rem;
     line-height: 1;
@@ -179,7 +180,7 @@
     padding: 20px;
     text-align: center;
     font-size: 0.6875rem;
-    color: var(--react-autoql-text-color-disabled);
+    color: var(--react-autoql-text-color-placeholder);
   }
 
   .legend-item {

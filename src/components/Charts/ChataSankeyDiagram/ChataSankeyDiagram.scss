@@ -116,6 +116,8 @@
 
 // Column dropdown styles
 .sankey-column-dropdown-popover-content {
+  // Popovers portal to <body>, so without this the text takes the host page's colour.
+  color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
@@ -149,7 +151,7 @@
   transition: background 0.2s ease;
 
   &:hover {
-    background: var(--react-autoql-background-color-hover);
+    background: var(--react-autoql-hover-color);
   }
 
   &.sankey-column-dropdown-item-selected {
@@ -167,17 +169,18 @@
 }
 
 .sankey-column-dropdown-item-check {
-  color: var(--react-autoql-primary-color);
+  color: var(--react-autoql-accent-color);
   font-size: 0.875rem;
 }
 
 .sankey-column-dropdown-empty {
   padding: 12px;
   text-align: center;
-  color: var(--react-autoql-text-color-muted);
+  color: var(--react-autoql-text-color-secondary);
 }
 
 .sankey-path-dropdown-popover-content {
+  color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
@@ -192,7 +195,7 @@
 .sankey-path-dropdown-subtitle {
   padding: 8px 12px;
   font-size: 0.75rem;
-  color: var(--react-autoql-text-color-muted);
+  color: var(--react-autoql-text-color-secondary);
   border-bottom: 1px solid var(--react-autoql-border-color);
 }
 
@@ -221,7 +224,7 @@
 
 .sankey-path-selected-index {
   font-size: 0.75rem;
-  color: var(--react-autoql-text-color-muted);
+  color: var(--react-autoql-text-color-secondary);
 }
 
 .sankey-path-selected-name {
@@ -233,7 +236,7 @@
 }
 
 .sankey-path-drag-handle {
-  color: var(--react-autoql-text-color-muted);
+  color: var(--react-autoql-text-color-secondary);
   cursor: grab;
   user-select: none;
   letter-spacing: -1px;
@@ -261,7 +264,7 @@
 .sankey-path-control-btn {
   border: 1px solid var(--react-autoql-border-color);
   background: var(--react-autoql-background-color-secondary);
-  color: var(--react-autoql-text-color-default);
+  color: var(--react-autoql-text-color-primary);
   border-radius: 3px;
   padding: 0 6px;
   cursor: pointer;
@@ -282,9 +285,9 @@
   margin: 0 12px 8px;
   padding: 8px;
   border-radius: 4px;
-  background: var(--react-autoql-background-color-hover);
+  background: var(--react-autoql-hover-color);
   font-size: 0.75rem;
-  color: var(--react-autoql-text-color-muted);
+  color: var(--react-autoql-text-color-secondary);
 }
 
 .sankey-path-add-title {
@@ -300,6 +303,7 @@
 
 // Filter dropdown styles
 .sankey-filter-dropdown-popover-content {
+  color: var(--react-autoql-text-color-primary);
   background: var(--react-autoql-background-color-secondary);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 4px;
@@ -332,7 +336,7 @@
   outline: none;
 
   &:focus {
-    border-color: var(--react-autoql-primary-color);
+    border-color: var(--react-autoql-accent-color);
   }
 }
 
@@ -372,16 +376,16 @@
 .sankey-filter-quick-btn {
   padding: 2px 8px;
   font-size: 0.6875rem;
-  background: var(--react-autoql-background-color-hover);
+  background: var(--react-autoql-hover-color);
   border: 1px solid var(--react-autoql-border-color);
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--react-autoql-primary-color);
+    background: var(--react-autoql-accent-color);
     color: white;
-    border-color: var(--react-autoql-primary-color);
+    border-color: var(--react-autoql-accent-color);
   }
 }
 
@@ -404,7 +408,7 @@
   transition: background 0.2s ease;
 
   &:hover {
-    background: var(--react-autoql-background-color-hover);
+    background: var(--react-autoql-hover-color);
   }
 }
 
@@ -420,7 +424,7 @@
 .sankey-filter-empty {
   padding: 8px;
   text-align: center;
-  color: var(--react-autoql-text-color-muted);
+  color: var(--react-autoql-text-color-secondary);
   font-size: 0.8125rem;
 }
 
