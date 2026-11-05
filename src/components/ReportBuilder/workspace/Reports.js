@@ -1789,7 +1789,6 @@ export class ReportsWithoutTheme extends React.Component {
             onClose={this.closeSaveAsTemplate}
             onManage={this.openManageTemplates}
             enableFilterLocks={this.props.enableFilterLocks}
-            filterLockLabels={this.props.filterLockLabels}
           />
         ) : null}
 
