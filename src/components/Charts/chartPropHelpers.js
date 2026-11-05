@@ -7,6 +7,7 @@ import {
   DisplayTypes,
   dataFormattingDefault,
   getTooltipContent,
+  formatElement,
 } from 'autoql-fe-utils'
 
 import { dataFormattingType } from '../../props/types'
@@ -44,6 +45,94 @@ export const createTooltipContentCache = () => {
       forRow.set(key, getTooltipContent(params))
     }
     return forRow.get(key)
+  }
+}
+
+export const escapeTooltipHtml = (value = '') =>
+  `${value ?? ''}`
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+
+/**
+ * Visible series indices when every series is a different number column of the same row, so a whole
+ * stack (or every line at one x) drills into the same row. Returns null when that isn't the case:
+ * - pivot / double group-by / date pivot data (isAggregated, or series columns with origColumn):
+ *   each series is one value of the legend column and drills on it
+ * - split-by series (splitBy.isActive, or isSplitSeries columns): each series drills on its split value
+ * - fewer than two visible series: nothing to combine
+ */
+export const getSameRowSeriesIndices = ({ columns, numberColumnIndices, isAggregated, splitBy }) => {
+  if (isAggregated || splitBy?.isActive || !columns || !numberColumnIndices?.length) {
+    return null
+  }
+
+  const visible = numberColumnIndices.filter((i) => columns[i] && !columns[i].isSeriesHidden)
+  if (visible.length < 2) {
+    return null
+  }
+
+  const isPerValueSeries = visible.some((i) => {
+    const column = columns[i]
+    return !!(column.origColumn || column.origPivotColumn || column.isSplitSeries)
+  })
+
+  return isPerValueSeries ? null : visible
+}
+
+/**
+ * One tooltip for a whole stack / x position: the category, then every series' value in that row.
+ * Cached per row like createTooltipContentCache, since every segment of a stack shares it.
+ */
+export const createStackTooltipContentCache = () => {
+  let deps = []
+  let byRow = new WeakMap()
+
+  const build = ({ row, columns, seriesIndices, stringColumnIndex, dataFormatting }) => {
+    const lines = []
+    const stringColumn = columns?.[stringColumnIndex]
+    if (stringColumn) {
+      const stringTitle = stringColumn.tooltipTitle ?? stringColumn.display_name
+      const stringValue = formatElement({
+        element: row[stringColumnIndex],
+        column: stringColumn,
+        config: dataFormatting,
+        isChart: false,
+      })
+      lines.push(`<div><strong>${escapeTooltipHtml(stringTitle)}:</strong> ${escapeTooltipHtml(stringValue)}</div>`)
+    }
+
+    seriesIndices.forEach((colIndex) => {
+      const column = columns?.[colIndex]
+      const value = row[colIndex]
+      if (!column || value === null || value === undefined || value === '') {
+        return
+      }
+      const formatted = formatElement({ element: value, column, config: dataFormatting, isChart: true })
+      lines.push(`<div><strong>${escapeTooltipHtml(column.display_name)}:</strong> ${escapeTooltipHtml(formatted)}</div>`)
+    })
+
+    return `<div>${lines.join('')}</div>`
+  }
+
+  return (params) => {
+    const { row, columns, seriesIndices, stringColumnIndex, dataFormatting } = params
+    if (!row || typeof row !== 'object' || !seriesIndices?.length) {
+      return null
+    }
+
+    const nextDeps = [columns, dataFormatting, stringColumnIndex, seriesIndices.join(',')]
+    if (nextDeps.some((dep, i) => dep !== deps[i])) {
+      deps = nextDeps
+      byRow = new WeakMap()
+    }
+
+    if (!byRow.has(row)) {
+      byRow.set(row, build(params))
+    }
+    return byRow.get(row)
   }
 }
 

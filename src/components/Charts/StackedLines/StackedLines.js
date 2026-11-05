@@ -11,6 +11,8 @@ import {
   chartElementPropTypes,
   createDateDrilldownFilter,
   createTooltipContentCache,
+  createStackTooltipContentCache,
+  getSameRowSeriesIndices,
 } from '../chartPropHelpers'
 import { createSVGPath } from '../Line/lineFns'
 
@@ -40,6 +42,7 @@ const HOVER_LABEL_TEXT_STYLE = { fontWeight: 500 }
 export default class StackedLines extends PureComponent {
   // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
   getTooltipContent = createTooltipContentCache()
+  getStackTooltipContent = createStackTooltipContentCache()
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
@@ -47,6 +50,7 @@ export default class StackedLines extends PureComponent {
   state = {
     activeKey: this.props.activeChartElementKey,
     hoveredPolygonIndex: null,
+    hoveredStackIndex: null, // row index of the hovered stack (same-row series only)
   }
 
   onDotClick = (row, colIndex, rowIndex) => {
@@ -74,29 +78,46 @@ export default class StackedLines extends PureComponent {
     this.setState({ activeKey: newActiveKey })
   }
 
-  createPolygonVertexDot = (d, i, x, y, colIndex, index, color) => {
-    const tooltip = this.getTooltipContent({
-      row: d,
-      columns: this.props.columns,
-      colIndex,
-      colIndex2: this.props.stringColumnIndex,
-      legendColumn: this.props.legendColumn,
-      dataFormatting: this.props.dataFormatting,
-      aggregated: this.props.isAggregated,
-    })
+  // sameRowSeriesIndices: set when every series is a number column of the same row (see
+  // getSameRowSeriesIndices). The vertices at one x then hover, activate and tooltip as one stack
+  createPolygonVertexDot = (d, i, x, y, colIndex, index, color, sameRowSeriesIndices) => {
+    const tooltip = sameRowSeriesIndices
+      ? this.getStackTooltipContent({
+          row: d,
+          columns: this.props.columns,
+          seriesIndices: sameRowSeriesIndices,
+          stringColumnIndex: this.props.stringColumnIndex,
+          dataFormatting: this.props.dataFormatting,
+        })
+      : this.getTooltipContent({
+          row: d,
+          columns: this.props.columns,
+          colIndex,
+          colIndex2: this.props.stringColumnIndex,
+          legendColumn: this.props.legendColumn,
+          dataFormatting: this.props.dataFormatting,
+          aggregated: this.props.isAggregated,
+        })
+
+    const isActive = sameRowSeriesIndices
+      ? sameRowSeriesIndices.some((seriesIndex) => this.state.activeKey === getKey(seriesIndex, index))
+      : this.state.activeKey === getKey(colIndex, index)
+    const isStackHovered = !!sameRowSeriesIndices && this.state.hoveredStackIndex === index
 
     return (
       <circle
         key={`dot-${getKey(colIndex, index)}`}
-        className={`vertex-dot${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
+        className={`vertex-dot${isActive ? ' active' : ''}${isStackHovered ? ' hovered' : ''}`}
         cy={y}
         cx={x}
         r={4}
         onClick={() => this.onDotClick(d, colIndex, index)}
+        onMouseEnter={sameRowSeriesIndices ? () => this.setState({ hoveredStackIndex: index }) : undefined}
+        onMouseLeave={sameRowSeriesIndices ? () => this.setState({ hoveredStackIndex: null }) : undefined}
         data-tooltip-html={tooltip}
         data-tooltip-id={this.props.chartTooltipID}
         style={{
-          opacity: this.state.activeKey === getKey(colIndex, index) ? 1 : 0,
+          opacity: isActive ? 1 : 0,
           cursor: getAutoQLConfig(this.props.autoQLConfig).enableDrilldowns ? 'pointer' : 'default',
           stroke: color,
           strokeWidth: 3,
@@ -263,6 +284,8 @@ export default class StackedLines extends PureComponent {
       return null
     }
 
+    const sameRowSeriesIndices = getSameRowSeriesIndices(this.props)
+
     // Build gradient defs for each visible series (vertical, top-to-bottom depth effect)
     const gradientDefs = []
     const gradientIds = new Map()
@@ -321,7 +344,7 @@ export default class StackedLines extends PureComponent {
 
           // Create original vertex dots (for click/active functionality)
           if (value !== 0) {
-            const polygonVertexDot = this.createPolygonVertexDot(d, i, x, y, colIndex, index, color)
+            const polygonVertexDot = this.createPolygonVertexDot(d, i, x, y, colIndex, index, color, sameRowSeriesIndices)
             polygonVertexDots.push(polygonVertexDot)
           }
 

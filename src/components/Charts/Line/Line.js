@@ -2,12 +2,20 @@ import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { getThemeValue, getKey, getAutoQLConfig } from 'autoql-fe-utils'
 
-import { chartElementDefaultProps, chartElementPropTypes, createDateDrilldownFilter, createTooltipContentCache } from '../chartPropHelpers'
+import {
+  chartElementDefaultProps,
+  chartElementPropTypes,
+  createDateDrilldownFilter,
+  createTooltipContentCache,
+  createStackTooltipContentCache,
+  getSameRowSeriesIndices,
+} from '../chartPropHelpers'
 import { createSVGPath } from './lineFns'
 
 export default class Line extends PureComponent {
   // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
   getTooltipContent = createTooltipContentCache()
+  getStackTooltipContent = createStackTooltipContentCache()
 
   constructor(props) {
     super(props)
@@ -19,6 +27,7 @@ export default class Line extends PureComponent {
     this.state = {
       activeKey: this.props.activeChartElementKey,
       hoveredKey: null,
+      hoveredRowIndex: null, // row index of the hovered vertex
       hoveredVertex: null, // { x, y, color } coordinates of hovered vertex
       hoveredLineColIndex: null, // colIndex of the line being hovered
       hoveredTooltip: null, // tooltip html for the currently hovered vertex
@@ -240,6 +249,7 @@ export default class Line extends PureComponent {
 
     this.setState({
       hoveredKey: point.key,
+      hoveredRowIndex: point.rowIndex,
       hoveredVertex: { x: point.x, y: point.y, color: point.color },
       hoveredLineColIndex: point.colIndex,
       previousHoveredLineColIndex: point.colIndex,
@@ -250,6 +260,7 @@ export default class Line extends PureComponent {
   onHoverAreaMouseLeave = () => {
     this.setState({
       hoveredKey: null,
+      hoveredRowIndex: null,
       hoveredVertex: null,
       hoveredLineColIndex: null,
       hoveredTooltip: null,
@@ -324,6 +335,13 @@ export default class Line extends PureComponent {
     
     // Get bottom of chart for hover line (yScale domain[0] is the minimum value, which maps to bottom)
     const bottomY = yScale(yScale.domain()[0])
+    // Hover lines run the full plot height, from the top of the plot area down to the x-axis
+    const yRange = yScale.range?.() ?? []
+    const plotTopY = yRange.length ? Math.min(...yRange) : 0
+
+    // Series that are number columns of the same row: every vertex at one x is the same drilldown,
+    // so they share one tooltip listing every series and hover together (pivot / split-by stay per vertex)
+    const sameRowSeriesIndices = getSameRowSeriesIndices(this.props)
 
 
     numberColumnIndices.forEach((colIndex, i) => {
@@ -368,15 +386,23 @@ export default class Line extends PureComponent {
           const xy = [x, y]
           vertices.push(xy)
 
-          const tooltip = this.getTooltipContent({
-            row: d,
-            columns,
-            colIndex,
-            colIndex2: stringColumnIndex,
-            legendColumn,
-            dataFormatting,
-            aggregated: this.props.isAggregated,
-          })
+          const tooltip = sameRowSeriesIndices
+            ? this.getStackTooltipContent({
+                row: d,
+                columns,
+                seriesIndices: sameRowSeriesIndices,
+                stringColumnIndex,
+                dataFormatting,
+              })
+            : this.getTooltipContent({
+                row: d,
+                columns,
+                colIndex,
+                colIndex2: stringColumnIndex,
+                legendColumn,
+                dataFormatting,
+                aggregated: this.props.isAggregated,
+              })
 
           const key = getKey(colIndex, index)
 
@@ -391,7 +417,9 @@ export default class Line extends PureComponent {
           // Determine if this dot should be shown due to line hover
           // Line is hovered if: line path is hovered OR a vertex on this line is hovered
           const isLineHovered = this.state.hoveredLineColIndex === colIndex
-          const isVertexHovered = this.state.hoveredKey === key
+          const isVertexHovered = sameRowSeriesIndices
+            ? this.state.hoveredKey !== null && this.state.hoveredRowIndex === index
+            : this.state.hoveredKey === key
           const wasLineHovered = this.state.previousHoveredLineColIndex === colIndex
           
           // Use smaller radius for line hover, normal radius for vertex hover
@@ -419,7 +447,7 @@ export default class Line extends PureComponent {
             />
           )
 
-          const dotClassName = `line-dot${this.state.activeKey === key ? ' active' : ''}${this.state.hoveredKey === key ? ' hovered' : ''}${isLineHovered ? ' line-hovered' : ''}${largeDataset ? ' hidden-dot' : ''}`
+          const dotClassName = `line-dot${this.state.activeKey === key ? ' active' : ''}${isVertexHovered ? ' hovered' : ''}${isLineHovered ? ' line-hovered' : ''}${largeDataset ? ' hidden-dot' : ''}`
 
           if (areaHover) {
             // The chart-wide overlay handles hover, tooltip and click for every vertex
@@ -452,12 +480,22 @@ export default class Line extends PureComponent {
                 onClick={() => this.onDotClick(d, colIndex, index)}
                 onMouseEnter={() => {
                   // When hovering over a vertex, show all dots for the line and highlight this vertex
-                  this.setState({ hoveredKey: key, hoveredVertex: { x, y, color }, hoveredLineColIndex: colIndex })
+                  this.setState({
+                    hoveredKey: key,
+                    hoveredRowIndex: index,
+                    hoveredVertex: { x, y, color },
+                    hoveredLineColIndex: colIndex,
+                  })
                 }}
                 onMouseLeave={() => {
                   // When leaving vertex, clear both vertex and line hover
                   // The line path's onMouseEnter will restore hoveredLineColIndex if still over the line
-                  this.setState({ hoveredKey: null, hoveredVertex: null, hoveredLineColIndex: null })
+                  this.setState({
+                    hoveredKey: null,
+                    hoveredRowIndex: null,
+                    hoveredVertex: null,
+                    hoveredLineColIndex: null,
+                  })
                 }}
                 data-tooltip-html={tooltip}
                 data-tooltip-id={this.props.chartTooltipID}
@@ -567,7 +605,7 @@ export default class Line extends PureComponent {
           key={`hover-line-${this.state.hoveredKey}`}
           className='line-hover-indicator'
           x1={this.state.hoveredVertex.x}
-          y1={this.state.hoveredVertex.y}
+          y1={plotTopY}
           x2={this.state.hoveredVertex.x}
           y2={bottomY}
           stroke={this.state.hoveredVertex.color}
@@ -586,7 +624,7 @@ export default class Line extends PureComponent {
           key={`active-line-${this.state.activeKey}`}
           className='line-hover-indicator'
           x1={this.state.activeVertex.x}
-          y1={this.state.activeVertex.y}
+          y1={plotTopY}
           x2={this.state.activeVertex.x}
           y2={bottomY}
           stroke={this.state.activeVertex.color}
