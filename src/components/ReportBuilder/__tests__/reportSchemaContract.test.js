@@ -9,7 +9,8 @@ import SAMPLE from './fixtures/report-schema-1.json'
 // Report schema 1, frozen: fixtures/report-schema-1.json is a report as the builder writes it, with made-up data,
 // and the contract AutoQL's report service tests against (its template stripper and its data fills). It has every
 // block type: a dashboard tile and a Query-view answer kept with "Add to Report…", a question asked in the report,
-// and an analysis written about the tile. If one of these tests fails, the stored shape changed: that takes a new
+// and an analysis written about the tile. It's also for one household: the filter lock every question in it is asked
+// with (RW-351, added as an optional field). If one of these tests fails, the stored shape changed: that takes a new
 // schema version, and the report service has to hear about it.
 
 const dataBlocks = SAMPLE.blocks.filter((block) => block.type === 'data')
@@ -39,6 +40,13 @@ describe('report schema 1', () => {
     )
     expect(new Set(SAMPLE.blocks.map((block) => block.type))).toStrictEqual(
       new Set(['heading', 'text', 'data', 'analysis', 'pagebreak']),
+    )
+  })
+
+  it('keeps its filter lock as the query API takes it', () => {
+    expect(SAMPLE.sessionFilterLocks).toHaveLength(1)
+    expect(keysOf(SAMPLE.sessionFilterLocks[0])).toStrictEqual(
+      ['key', 'value', 'filter_type', 'canonical_key', 'format_txt', 'show_message'].sort(),
     )
   })
 

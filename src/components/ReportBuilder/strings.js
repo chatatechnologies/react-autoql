@@ -77,6 +77,9 @@ export const STRINGS = {
     failed: (failed, total) =>
       `${failed} of ${total} ${total === 1 ? 'block' : 'blocks'} didn’t answer. Select one to see why.`,
     dismiss: 'Dismiss',
+    // The report's filter lock changed after its questions were asked.
+    lockChanged: (lock) => `This report is now for ${lock}. Rerun all asks every question for it.`,
+    lockRemoved: 'This report is no longer locked to a filter. Rerun all asks every question without one.',
   },
   // The organisation's branding (enableBranding), as the prototype's Branding dialog has it, with what RW-332
   // asks for: a logo and a wordmark, where they sit, brand colours, and fonts.
@@ -254,6 +257,17 @@ export const STRINGS = {
     failed: 'Auto Analyze couldn’t write this.',
   },
 
+  // A report's filter lock (model/filterLocks.js): in the panel, and wherever a report is started from a template.
+  // The host can name it and its "none" (filterLockLabels): "Households", "All households".
+  filterLock: {
+    title: 'Filter lock',
+    none: 'None',
+    change: 'Change…',
+    loading: 'Loading…',
+    loadFailed: 'The list didn’t load. Try again.',
+    note: 'Every question in the report is asked for it. After changing it, Rerun all asks them again.',
+  },
+
   panel: {
     pageSetup: 'Page setup',
     orientation: 'Orientation',
@@ -320,6 +334,7 @@ export const STRINGS = {
     rerunning: 'Asking again…',
     rerunNote: 'Asks the question again, and shows the new answer in place of this one, set up the same way.',
     firstAskNote: 'Asks the question, and shows the answer the way this block is set up.',
+    askedForLock: (lock) => `It’s asked for ${lock}, as is every question in this report.`,
 
     analysisResult: 'Result',
     chooseResult: 'Choose a result…',

@@ -2,6 +2,9 @@ import React from 'react'
 import { Icon } from '../components/icons'
 import { SelectBox } from '../components/controls'
 import { ReportBuilder } from '../ReportBuilder'
+import { FilterLockField } from '../components/FilterLockField'
+import { filterLocksKey } from '../model/filterLocks'
+import { STRINGS } from '../strings'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates } from '../run/reportsApi'
 import { describeReportError, newReportId } from './documents'
 import { ReportModal } from './ReportModal'
@@ -17,8 +20,13 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // here. A template's document is fetched when it's chosen, and kept while the dialog is open.
 //
 // Props: authentication, autoQLConfig, dataFormatting, previewProps (more for the preview's ReportBuilder: branding,
-// enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, id }), which resolves once
-// the report is made or rejects with why not, and onManage (Manage templates, for an organization's admins).
+// enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, id, sessionFilterLocks? }),
+// which resolves once the report is made or rejects with why not, and onManage (Manage templates, for an
+// organization's admins).
+//
+// With enableFilterLocks, the report can be started for one value, or several, of what the host's data locks on (its
+// households, say): the report's filter lock (model/filterLocks.js), chosen beside Start report with the host's
+// loadFilterLockSuggestions and filterLockLabels, as in the builder. None starts it for everything.
 
 const S = REPORTS_STRINGS
 const T = S.templates
@@ -64,8 +72,9 @@ export class TemplatesDialog extends React.Component {
     this.searchRef = React.createRef()
     // Documents fetched, by template.
     this.documents = new Map()
-    // The id each template's report is made under: a retry after a start that may have gone through asks for the same
-    // report again, rather than making a second.
+    // The id each template's report is made under, for each filter lock: a retry after a start that may have gone
+    // through asks for the same report again, rather than making a second. Started for another lock, it's another
+    // report: the service answers an id it has already made with that report, whatever else is asked.
     this.startIds = new Map()
     this.loadRequest = 0
     this.state = {
@@ -80,6 +89,9 @@ export class TemplatesDialog extends React.Component {
       chosenError: null,
       starting: false,
       startError: null,
+      locks: [],
+      // The dialog, for the filter lock's popover to open in: one opened outside it couldn't take focus.
+      lockHost: null,
     }
   }
 
@@ -150,17 +162,51 @@ export class TemplatesDialog extends React.Component {
 
   clearFilters = () => this.setState({ q: '', categoryId: '', tags: [] }, () => this.searchRef.current?.focus())
 
+  setLockHost = (element) => {
+    if (element) {
+      this.setState({ lockHost: element.closest('[role="dialog"]') || null })
+    }
+  }
+
+  setLocks = (locks) => this.setState({ locks })
+
+  // Beside Start report: what the report will be for (the report's filter lock), and Change….
+  renderLock() {
+    const labels = this.props.filterLockLabels || {}
+    return (
+      <div className={`${RS}-templates-lock`} ref={this.setLockHost} data-test='reports-templates-lock'>
+        <span className={`${RS}-templates-lock-label`}>{labels.title || STRINGS.filterLock.title}</span>
+        <FilterLockField
+          classPrefix={RS}
+          locks={this.state.locks}
+          labels={labels}
+          authentication={this.props.authentication}
+          loadSuggestions={this.props.loadFilterLockSuggestions}
+          parentElement={this.state.lockHost || undefined}
+          disabled={this.state.starting}
+          onChange={this.setLocks}
+        />
+      </div>
+    )
+  }
+
   start = async () => {
     const templateId = this.state.chosenId
     if (!templateId || this.state.starting) {
       return
     }
-    if (!this.startIds.has(templateId)) {
-      this.startIds.set(templateId, newReportId())
+    const locks = this.props.enableFilterLocks ? this.state.locks : []
+    const startKey = `${templateId}\n${filterLocksKey(locks)}`
+    if (!this.startIds.has(startKey)) {
+      this.startIds.set(startKey, newReportId())
     }
     this.setState({ starting: true, startError: null })
     try {
-      await this.props.onStart({ templateId, id: this.startIds.get(templateId) })
+      await this.props.onStart({
+        templateId,
+        id: this.startIds.get(startKey),
+        ...(locks.length ? { sessionFilterLocks: locks } : {}),
+      })
     } catch (error) {
       if (this.mounted) {
         this.setState({ startError: describeReportError(error, 'startFromTemplate').message })
@@ -360,6 +406,7 @@ export class TemplatesDialog extends React.Component {
         statusTone={startError ? 'error' : undefined}
         actions={
           <>
+            {this.props.enableFilterLocks ? this.renderLock() : null}
             {onManage ? (
               <button
                 type='button'

@@ -7,7 +7,8 @@ import { ReportBuilder } from '../ReportBuilder'
 import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
 import { isCapture } from '../model/blockView'
-import { updateBlock } from '../model/reportOperations'
+import { setSessionFilterLocks, updateBlock } from '../model/reportOperations'
+import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
 import { captureQuestion } from '../run/captureRun'
 import { RERUN_ALL_CONCURRENCY } from '../constants'
 import {
@@ -196,6 +197,9 @@ const fillErrorOf = (blockId, result) => {
   }
 }
 
+// How AutoQL's fill of a report can end.
+const FILL_OVER = ['DONE', 'PARTIAL', 'FAILED']
+
 // What's said over a report AutoQL fills in: how far it's got, and how it went once it's done (or stopped). Said once
 // a fill followed here ends, not each time the report is opened after. How it went is counted on the report as it is
 // now, so blocks rerun (or removed) since count too.
@@ -358,6 +362,13 @@ export class ReportsWithoutTheme extends React.Component {
     // templates and categories managed. That takes AutoQL's management grant for reports, so say who may: an app's
     // owners and admins, say. Off by default.
     canManageTemplates: PropTypes.bool,
+    // A report can be for one value, or several, of what the host's data locks on: its households, say (the report's
+    // filter lock, model/filterLocks.js). It's set in each report's builder, and with enableTemplates, chosen when a
+    // report is started from a template. Off by default. loadFilterLockSuggestions and filterLockLabels: see
+    // ReportBuilder.
+    enableFilterLocks: PropTypes.bool,
+    loadFilterLockSuggestions: PropTypes.func,
+    filterLockLabels: PropTypes.shape({ title: PropTypes.string, none: PropTypes.string }),
     // Passed on to each report's ReportBuilder.
     branding: PropTypes.object,
     enableBranding: PropTypes.bool,
@@ -389,6 +400,9 @@ export class ReportsWithoutTheme extends React.Component {
     newReportFolderId: null,
     enableTemplates: false,
     canManageTemplates: false,
+    enableFilterLocks: false,
+    loadFilterLockSuggestions: undefined,
+    filterLockLabels: undefined,
     branding: undefined,
     enableBranding: false,
     canEditBranding: false,
@@ -430,6 +444,11 @@ export class ReportsWithoutTheme extends React.Component {
     this.fillFollow = null
     // Reports made from a template filled in from here, while AutoQL can't fill them itself: id → the fill under way.
     this.localFills = new Map()
+    // Reports started from a template whose copy the service made with another filter lock than the one picked (or
+    // with one when none was): id → the one picked, put on once they're filled in (applyPendingLock), and then id →
+    // when it was, for the builder to offer Rerun all.
+    this.pendingLocks = new Map()
+    this.locksPutOn = new Map()
     this.root = React.createRef()
 
     this.state = {
@@ -515,6 +534,9 @@ export class ReportsWithoutTheme extends React.Component {
       saveOpenTabs(prefix, this.sourceId, this.state.tabs)
       saveTabWidths(prefix, this.sourceId, widthsFor(this.state.tabWidths, this.state.tabs))
     }
+
+    // A report started for a filter lock the service didn't keep: it gets it once it's shown and can be changed.
+    this.applyPendingLock()
 
     // A tiles picker opened for a report that's no longer the one shown (deleted in another tab, say) answers
     // "nothing".
@@ -1305,10 +1327,17 @@ export class ReportsWithoutTheme extends React.Component {
   // New report › Start from a template: the report made from it, under the id the dialog made for it (the same one when
   // it tries again, so a start that went through isn't made twice), in the folder the host's home page shows. It opens
   // in its tab while AutoQL fills in its data. Rejects with why it wasn't made, for the dialog to say.
-  startFromTemplate = async ({ templateId, id }) => {
+  //
+  // With `sessionFilterLocks` it's made for them (the report's filter lock, model/filterLocks.js), and filled in with
+  // them; without, it's for everything, even if the service's copy came with a lock (from a template that kept one).
+  // A service that doesn't take them yet (before RW-352) makes the report without them, and fills it in for
+  // everything: the report gets what was picked here once it can be changed, and the builder offers Rerun all to ask
+  // every question with it. Filled in from this page, it's asked with what was picked from the start.
+  startFromTemplate = async ({ templateId, id, sessionFilterLocks }) => {
     const sourceId = this.sourceId
     // What the report's data is as of, wherever it's filled in.
     const startedAt = new Date().toISOString()
+    const locks = normalizeFilterLocks(sessionFilterLocks)
     this.saveNow()
     let detail
     try {
@@ -1318,6 +1347,7 @@ export class ReportsWithoutTheme extends React.Component {
         templateId,
         folderId: this.newReportFolder() || undefined,
         timeZone: browserTimeZone(),
+        ...(locks.length ? { sessionFilterLocks: locks } : {}),
       })
     } catch (error) {
       this.unauthorized(error)
@@ -1326,6 +1356,9 @@ export class ReportsWithoutTheme extends React.Component {
     if (!this.stillOn(sourceId)) {
       return
     }
+    if (filterLocksKey(detail.report?.sessionFilterLocks) !== filterLocksKey(locks)) {
+      this.pendingLocks.set(detail.id, locks)
+    }
     this.setState(({ reports }) => ({
       newReportOpen: false,
       notice: null,
@@ -1333,21 +1366,51 @@ export class ReportsWithoutTheme extends React.Component {
     }))
     this.setTabs((tabs) => withTabOpen(tabs, detail.id))
     this.select(detail.id, { detail, sourceId })
-    // An AutoQL that doesn't fill reports in itself (yet) leaves it to this page.
+    // An AutoQL that doesn't fill reports in itself (yet) leaves it to this page, which asks with the lock from the
+    // start.
     if (detail.dataStatus === 'NONE') {
+      this.applyPendingLock({ now: true })
       this.fillHere(detail.id, sourceId, startedAt)
     }
+  }
+
+  // The filter lock a report was started for, where the service's copy has another (pendingLocks), put on the shown
+  // report as an edit once its fill is over (none takes the copy's off): put on before then, the version the fill
+  // leaves would take its place. `now` puts it on before this page fills it in. A report filled in for another lock
+  // says so (the builder offers Rerun all).
+  applyPendingLock = ({ now = false } = {}) => {
+    const id = this.shownId
+    const locks = id ? this.pendingLocks.get(id) : null
+    const saver = id ? this.savers.get(id) : null
+    if (!locks || !saver?.report || this.localFills.has(id)) {
+      return
+    }
+    // AutoQL's fill over: NONE says it won't fill this one, which this page does, from the start (`now`).
+    const { fill } = this.state
+    if (!now && !(fill?.id === id && FILL_OVER.includes(fill.dataStatus))) {
+      return
+    }
+    this.pendingLocks.delete(id)
+    // Put on after a fill without it, the answers it left aren't for it. Before this page's own fill, they aren't
+    // asked yet.
+    if (!now) {
+      this.locksPutOn.set(id, Date.now())
+    }
+    this.handleChange(setSessionFilterLocks(saver.report, locks))
   }
 
   // A report made from a template, filled in from this page as AutoQL would fill it: its questions asked a few at a
   // time, each answer kept the way its block is set up and as of when the report was started, while it shows
   // read-only with how far it's got. Each answer is saved as it comes. It goes on while another report is shown, and
-  // stops if this one is deleted or the page goes away; what it hadn't asked by then can be rerun.
+  // stops if this one is deleted or the page goes away; what it hadn't asked by then can be rerun. Every question is
+  // asked with the report's filter lock.
   fillHere = (id, sourceId, capturedAt) => {
-    const blocks = questionBlocks(this.savers.get(id)?.report)
+    const report = this.savers.get(id)?.report
+    const blocks = questionBlocks(report)
     if (!blocks.length) {
       return
     }
+    const filters = report.sessionFilterLocks
     const fill = { next: 0, asking: 0, errors: [], controllers: new Set() }
     this.localFills.set(id, fill)
     this.showFill(id, { dataStatus: 'RUNNING', dataErrors: [] })
@@ -1377,6 +1440,7 @@ export class ReportsWithoutTheme extends React.Component {
         query: block.source.query,
         authentication: this.credentialsFor(sourceId),
         autoQLConfig: this.props.autoQLConfig,
+        filters,
         signal: controller?.signal,
         rerun: { kept: block.capture, displayType: block.displayType },
         capturedAt,
@@ -1589,6 +1653,10 @@ export class ReportsWithoutTheme extends React.Component {
           pickDashboardTiles={dashboards === undefined ? undefined : this.pickDashboardTiles}
           enableAnalysis={this.props.enableAnalysis}
           enableRunReport={this.props.enableRunReport}
+          enableFilterLocks={this.props.enableFilterLocks}
+          loadFilterLockSuggestions={this.props.loadFilterLockSuggestions}
+          filterLockLabels={this.props.filterLockLabels}
+          lockChangedAt={this.locksPutOn.get(active.id)}
           fontStylesheetUrl={this.props.fontStylesheetUrl}
           getAuthenticationForProject={this.props.getAuthenticationForProject}
           onRunComplete={this.props.onRunComplete}
@@ -1698,6 +1766,9 @@ export class ReportsWithoutTheme extends React.Component {
             onStart={this.startReport}
             onTilesChange={onDashboardTilesChange}
             enableTemplates={this.props.enableTemplates}
+            enableFilterLocks={this.props.enableFilterLocks}
+            loadFilterLockSuggestions={this.props.loadFilterLockSuggestions}
+            filterLockLabels={this.props.filterLockLabels}
             onStartFromTemplate={this.startFromTemplate}
             onManageTemplates={this.canManageTemplates() ? this.openManageTemplates : undefined}
             previewProps={{

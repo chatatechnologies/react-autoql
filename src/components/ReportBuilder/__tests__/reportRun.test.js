@@ -80,6 +80,13 @@ describe('buildQuestionRequest', () => {
       allowSuggestions: false,
     })
   })
+
+  it('asks with the report’s filter lock, as runQuery sends session_filter_locks, and without one has none', () => {
+    const lock = [{ key: 'household', value: 'Brown Family', filter_type: 'include' }]
+    expect(buildQuestionRequest({ query: 'aum', authentication: AUTH, filters: lock }).filters).toStrictEqual(lock)
+    expect(buildQuestionRequest({ query: 'aum', authentication: AUTH, filters: [] })).not.toHaveProperty('filters')
+    expect(buildQuestionRequest({ query: 'aum', authentication: AUTH })).not.toHaveProperty('filters')
+  })
 })
 
 describe('getRequestKey', () => {

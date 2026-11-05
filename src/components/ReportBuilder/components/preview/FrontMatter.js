@@ -3,15 +3,21 @@ import { RB } from '../../constants'
 import { STRINGS } from '../../strings'
 import { BrandMark, dataAgeText } from '../PageFurniture'
 
-// The cover has no running header or footer. The table of contents gets a page of its own after it.
+// The cover has no running header or footer. The table of contents gets a page of its own after it. A report with a
+// filter lock says under its title what it's for.
 
-export const CoverPage = ({ title, branding, generated, dataAsOf, hasData }) => (
+export const CoverPage = ({ title, lock, branding, generated, dataAsOf, hasData }) => (
   <div className={`${RB}-cover`} data-brand-position={branding?.position || undefined}>
     <BrandMark branding={branding} size='large' />
     <div className={`${RB}-cover-middle`}>
       <div className={`${RB}-cover-title`} role='heading' aria-level={1}>
         {title || STRINGS.untitled}
       </div>
+      {lock ? (
+        <div className={`${RB}-cover-lock`} data-test='report-cover-lock'>
+          {lock}
+        </div>
+      ) : null}
       <div className={`${RB}-cover-sub`}>{dataAgeText({ dataAsOf, hasData })}</div>
     </div>
     <div className={`${RB}-cover-foot`}>

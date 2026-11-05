@@ -2461,3 +2461,134 @@ describe('edits made before the host passes the report back', () => {
     expect(last.blocks[0]).toMatchObject({ id: 't', text: 'One, edited', style: { align: 'center' } })
   })
 })
+
+describe('a report’s filter lock (RW-351)', () => {
+  const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include', format_txt: 'Brown Family' }
+  const NGUYEN = { key: 'household', value: 'Nguyen Family', filter_type: 'include', format_txt: 'Nguyen Family' }
+  const asked = (id, query = `question ${id}`) => ({
+    id,
+    type: 'data',
+    width: 'full',
+    rows: 25,
+    source: { type: 'query', query },
+    capture: {
+      version: 1,
+      capturedAt: new Date(2026, 8, 29, 13, 0).toISOString(),
+      displayType: 'table',
+      data: { columns: COLUMNS, rows: rowsOf(2), count_rows: 2 },
+      table: { sort: [], filtered: false },
+      config: { displayType: 'table' },
+    },
+    askedHere: true,
+  })
+  const locked = (blocks, locks = [BROWN]) => ({ ...createEmptyReport({ blocks }), sessionFilterLocks: locks })
+  const setupLocked = (initial, props = {}) => setup(initial, { enableDataBlocks: true, ...props })
+  const rerunAllBar = () => screen.queryByTestId('report-builder-rerun-all')
+
+  it('asks every question with it, and says so in the panel', async () => {
+    runQuery.mockResolvedValue(responseOf(rowsOf(4)))
+    const { lastReport } = setupLocked(locked([asked('q', 'aum by account')]))
+
+    selectBlock('Data')
+    expect(within(panel()).getByText('It’s asked for Brown Family, as is every question in this report.')).toBeTruthy()
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+
+    await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(4))
+    expect(runQuery.mock.calls[0][0]).toMatchObject({ query: 'aum by account', filters: [BROWN] })
+  })
+
+  it('asks with no lock in a report without one', async () => {
+    runQuery.mockResolvedValue(responseOf(rowsOf(4)))
+    const { lastReport } = setupLocked(createEmptyReport({ blocks: [asked('q')] }))
+
+    selectBlock('Data')
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+    await waitFor(() => expect(lastReport()?.blocks[0].capture.data.rows).toHaveLength(4))
+    expect(runQuery.mock.calls[0][0]).not.toHaveProperty('filters')
+  })
+
+  it('drops an answer that comes back after the lock changed', async () => {
+    let answer
+    runQuery.mockImplementation(() => new Promise((resolve) => (answer = resolve)))
+    const { ref, lastReport } = setupLocked(locked([asked('q')]))
+
+    selectBlock('Data')
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+    act(() => ref.current.onFilterLocksChange([NGUYEN]))
+    await act(async () => answer(responseOf(rowsOf(7))))
+
+    expect(lastReport().sessionFilterLocks).toStrictEqual([NGUYEN])
+    expect(lastReport().blocks[0].capture.data.rows).toHaveLength(2)
+  })
+
+  it('offers Rerun all once it changes, which asks every question for the new one', async () => {
+    runQuery.mockResolvedValue(responseOf(rowsOf(3)))
+    const { ref, lastReport } = setupLocked(locked([asked('a'), asked('b')]))
+    expect(rerunAllBar()).toBeNull()
+
+    act(() => ref.current.onFilterLocksChange([NGUYEN]))
+    expect(rerunAllBar()?.textContent).toContain(
+      'This report is now for Nguyen Family. Rerun all asks every question for it.',
+    )
+    fireEvent.click(screen.getByTestId('report-builder-rerun-all-start'))
+
+    await waitFor(() => expect(rerunAllBar()).toBeNull())
+    expect(runQuery).toHaveBeenCalledTimes(2)
+    runQuery.mock.calls.forEach(([request]) => expect(request.filters).toStrictEqual([NGUYEN]))
+    expect(lastReport().blocks.every((block) => block.capture.data.rows.length === 3)).toBe(true)
+  })
+
+  it('stops offering it once every answer is from after the change', async () => {
+    runQuery.mockResolvedValue(responseOf(rowsOf(3)))
+    const { ref } = setupLocked(locked([asked('a')]))
+
+    act(() => ref.current.onFilterLocksChange([NGUYEN]))
+    expect(rerunAllBar()?.textContent).toContain('This report is now for Nguyen Family.')
+    selectBlock('Data')
+    fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+
+    await waitFor(() => expect(rerunAllBar()).toBeNull())
+    expect(runQuery.mock.calls[0][0].filters).toStrictEqual([NGUYEN])
+  })
+
+  it('offers it when the host says it gave the report its lock after the answers came', () => {
+    const report = locked([asked('a')])
+    const { rerender } = render(<ReportBuilder authentication={AUTH} enableDataBlocks report={report} />)
+    expect(rerunAllBar()).toBeNull()
+
+    rerender(<ReportBuilder authentication={AUTH} enableDataBlocks report={report} lockChangedAt={Date.now()} />)
+    expect(rerunAllBar()?.textContent).toContain('This report is now for Brown Family.')
+  })
+
+  it('offers it when the host gives the report a lock, and says when there is none', () => {
+    const report = createEmptyReport({ blocks: [asked('a')] })
+    const { rerender } = render(<ReportBuilder authentication={AUTH} enableDataBlocks report={report} />)
+    expect(rerunAllBar()).toBeNull()
+
+    rerender(
+      <ReportBuilder authentication={AUTH} enableDataBlocks report={{ ...report, sessionFilterLocks: [BROWN] }} />,
+    )
+    expect(rerunAllBar()?.textContent).toContain('This report is now for Brown Family.')
+
+    rerender(<ReportBuilder authentication={AUTH} enableDataBlocks report={report} />)
+    expect(rerunAllBar()?.textContent).toContain('no longer locked to a filter')
+  })
+
+  it('shows after the title, on the page and as it prints', () => {
+    setupLocked(locked([asked('a')], [BROWN, NGUYEN]))
+    expect(screen.getAllByTestId('report-running-lock')[0].textContent).toBe(' · Brown Family +1')
+  })
+
+  it('is set in the panel when nothing is selected, with enableFilterLocks and the host’s words', () => {
+    const labels = { title: 'Households', none: 'All households' }
+    setupLocked(createEmptyReport(), { enableFilterLocks: true, filterLockLabels: labels })
+    expect(within(panel()).getByText('Households')).toBeTruthy()
+    expect(within(panel()).getByTestId('report-filter-lock-value').textContent).toBe('All households')
+    expect(within(panel()).getByTestId('report-filter-lock-change').textContent).toBe('Change…')
+  })
+
+  it('isn’t in the panel without enableFilterLocks', () => {
+    setupLocked(locked([]))
+    expect(within(panel()).queryByTestId('report-filter-lock')).toBeNull()
+  })
+})

@@ -47,6 +47,13 @@ export class FilterLockPopover extends React.Component {
      * seed and means "no filters".
      */
     seedFilters: PropTypes.array,
+    /**
+     * Whether each row has its "Persist" toggle. Off for locks that aren't the
+     * user's own (a report's filter lock): seeded session-scoped, with
+     * persistNewFilters false and no toggle, they never reach the
+     * filter-locking API. Default true.
+     */
+    showPersistToggle: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -62,6 +69,7 @@ export class FilterLockPopover extends React.Component {
     // there - the menu reads fine as a plain panel.
     showArrow: false,
     persistNewFilters: true,
+    showPersistToggle: true,
   }
 
   state = {
@@ -173,6 +181,7 @@ export class FilterLockPopover extends React.Component {
         suggestionList={this.props.suggestionList}
         suggestionListTitle={this.props.suggestionListTitle}
         persistNewFilters={this.props.persistNewFilters}
+        showPersistToggle={this.props.showPersistToggle}
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
       />
     )

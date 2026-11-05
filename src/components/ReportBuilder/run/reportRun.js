@@ -37,8 +37,9 @@ export const buildTileRequest = ({ tile, dashboard, authentication, autoQLConfig
   }
 }
 
-// A question has no tile to inherit from: it runs as asked, with AutoQL's defaults.
-export const buildQuestionRequest = ({ query, authentication, autoQLConfig }) => ({
+// A question has no tile to inherit from: it runs as asked, with AutoQL's defaults. A report with a filter lock
+// (model/filterLocks.js) asks every question with it: `filters` is what runQuery sends as `session_filter_locks`.
+export const buildQuestionRequest = ({ query, authentication, autoQLConfig, filters }) => ({
   ...getAuthentication(authentication),
   ...getAutoQLConfig(autoQLConfig),
   enableQueryValidation: false,
@@ -46,6 +47,7 @@ export const buildQuestionRequest = ({ query, authentication, autoQLConfig }) =>
   allowSuggestions: false,
   query,
   source: QUESTION_SOURCE,
+  ...(Array.isArray(filters) && filters.length ? { filters } : {}),
 })
 
 const KEY_FIELDS = [
@@ -81,7 +83,12 @@ export const planReportRun = ({ report, tileIndex, authentication, autoQLConfig,
       return
     }
     if (source.type === 'query') {
-      const request = buildQuestionRequest({ query: source.query, authentication, autoQLConfig })
+      const request = buildQuestionRequest({
+        query: source.query,
+        authentication,
+        autoQLConfig,
+        filters: report.sessionFilterLocks,
+      })
       jobs.push({ blockId: block.id, request, key: getRequestKey(request) })
       return
     }

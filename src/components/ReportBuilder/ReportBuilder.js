@@ -27,12 +27,14 @@ import {
   replaceDataSource,
   resetBlockStyle,
   setDataSource,
+  setSessionFilterLocks,
   setTitle,
   updateBlock,
   updateBlockStyle,
   updatePageSetup,
 } from './model/reportOperations'
 import { buildTileIndex, resolveTile } from './model/tiles'
+import { filterLocksKey, summarizeFilterLocks } from './model/filterLocks'
 import { getDataBlockView, isCapture } from './model/blockView'
 import {
   getAnalysisBlocker,
@@ -175,6 +177,19 @@ export class ReportBuilderWithoutTheme extends React.Component {
       state: PropTypes.oneOf(['template', 'filling', 'filled']),
       errors: PropTypes.objectOf(PropTypes.shape({ reason: PropTypes.string, message: PropTypes.string })),
     }),
+    // A report can be for one value, or several, of what the host's data locks on (its households, say): the
+    // report's filter lock (model/filterLocks.js), set in the panel when nothing is selected, which every question in
+    // it is asked with. Off by default; a report that has one is asked with it either way.
+    enableFilterLocks: PropTypes.bool,
+    // With enableFilterLocks: the host's values to lock on, as a function resolving with their names, called the
+    // first time the picker opens. Without it, the picker searches AutoQL's values.
+    loadFilterLockSuggestions: PropTypes.func,
+    // With enableFilterLocks: what the host calls the lock, and having none ({ title: 'Households', none: 'All
+    // households' }).
+    filterLockLabels: PropTypes.shape({ title: PropTypes.string, none: PropTypes.string }),
+    // When the host gave the report the filter lock it has (ms since the epoch): answers from before then were asked
+    // without it, and Rerun all is offered for them. A change made here counts too, without this.
+    lockChangedAt: PropTypes.number,
     className: PropTypes.string,
   }
 
@@ -201,6 +216,10 @@ export class ReportBuilderWithoutTheme extends React.Component {
     readOnly: false,
     onSaveAsTemplate: undefined,
     dataFill: null,
+    enableFilterLocks: false,
+    loadFilterLockSuggestions: undefined,
+    filterLockLabels: undefined,
+    lockChangedAt: undefined,
     className: undefined,
   }
 
@@ -266,6 +285,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
       brandingOpen: false,
       // Rerun all, while it runs and after one that some questions didn't answer: { total, done, failed, running }.
       rerunAll: null,
+      // When the report's filter lock last changed (ms): answers from before then were asked with the one it had, and
+      // Rerun all is offered for them.
+      lockChangedAt: null,
     }
     this.pendingSeq = 0
     this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
@@ -288,6 +310,14 @@ export class ReportBuilderWithoutTheme extends React.Component {
       before.apiKey !== now.apiKey
     ) {
       this.loadBranding()
+    }
+    // The report's filter lock changed (here, or by the host: a report filled in before it got its lock): its answers
+    // were asked without it, and Rerun all is offered to ask them again.
+    if (
+      prevProps.report &&
+      filterLocksKey(prevProps.report.sessionFilterLocks) !== filterLocksKey(this.props.report?.sessionFilterLocks)
+    ) {
+      this.setState({ lockChangedAt: Date.now() })
     }
   }
 
@@ -458,6 +488,24 @@ export class ReportBuilderWithoutTheme extends React.Component {
   onTitleChange = (title) => this.change(setTitle(this.getLatestReport(), title))
 
   onPageChange = (patch) => this.change(updatePageSetup(this.getLatestReport(), patch))
+
+  onFilterLocksChange = (locks) => {
+    this.change(setSessionFilterLocks(this.getLatestReport(), locks))
+    this.setState({ lockChangedAt: Date.now() })
+  }
+
+  // Whether a question was answered before the report's filter lock last changed (here, or by the host), so with the
+  // lock it had then.
+  answeredBeforeLockChange = (report) => {
+    const changedAt = Math.max(this.state.lockChangedAt ?? -Infinity, this.props.lockChangedAt ?? -Infinity)
+    return (
+      Number.isFinite(changedAt) &&
+      report.blocks.some(
+        (block) =>
+          isRerunnable(block) && isCapture(block.capture) && !(Date.parse(block.capture.capturedAt) >= changedAt),
+      )
+    )
+  }
 
   onBlockChange = (id, patch) => this.change(updateBlock(this.getLatestReport(), id, patch))
 
@@ -721,6 +769,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
   // answer is dropped if the block is gone or filled by then, and the request stopped if the builder goes away.
   // Resolves with true once the answer is kept, false when the question didn't answer, and null when it wasn't asked
   // (one is on its way already), was stopped, or its answer was dropped.
+  //
+  // It's asked with the report's filter lock (model/filterLocks.js), and its answer dropped if the lock has changed
+  // by the time it comes back: it would be for the old one.
   askQuestion = (id, query, { rerun = false, capturedAt } = {}) => {
     if (this.pendingSeqs[id]) {
       return Promise.resolve(null)
@@ -731,6 +782,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
     const controller = typeof AbortController === 'function' ? new AbortController() : null
     this.pendingAborts[id] = controller
     this.setPending(id, { kind: 'question', seq, query, rerun })
+    const askedOn = this.getLatestReport()
+    const lock = filterLocksKey(askedOn.sessionFilterLocks)
     const settingsOf = () => {
       const block = this.getLatestReport().blocks.find((b) => b.id === id)
       return block ? { kept: block.capture, displayType: block.displayType } : null
@@ -740,6 +793,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
       query,
       authentication: this.props.authentication,
       autoQLConfig: this.props.autoQLConfig,
+      filters: askedOn.sessionFilterLocks,
       signal: controller?.signal,
       ...(rerun ? { rerun: { ...settingsOf(), current: settingsOf } } : {}),
       ...(capturedAt ? { capturedAt } : {}),
@@ -758,7 +812,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
       this.setPending(id, null)
       const report = this.getLatestReport()
       const target = report.blocks.find((block) => block.id === id)
-      if (!target || target.type !== 'data') {
+      if (!target || target.type !== 'data' || filterLocksKey(report.sessionFilterLocks) !== lock) {
         return null
       }
       if (rerun) {
@@ -1241,6 +1295,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
               view={selected ? views[selected.id] : null}
               dashboards={this.props.dashboards}
               onPageChange={this.onPageChange}
+              enableFilterLocks={this.props.enableFilterLocks}
+              onFilterLocksChange={this.onFilterLocksChange}
+              loadFilterLockSuggestions={this.props.loadFilterLockSuggestions}
+              filterLockLabels={this.props.filterLockLabels}
+              authentication={this.props.authentication}
               onBlockChange={this.onBlockChange}
               onStyleChange={this.onStyleChange}
               onStyleReset={this.onStyleReset}
@@ -1286,6 +1345,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
     } else if (rerunAll?.failed) {
       text = R.failed(rerunAll.failed, rerunAll.total)
       action = { label: R.dismiss, onClick: this.dismissRerunAll, test: 'report-builder-rerun-all-dismiss' }
+    } else if (this.answeredBeforeLockChange(report)) {
+      // Answered before the report's filter lock changed: Rerun all asks every question with the lock it has now.
+      const lock = summarizeFilterLocks(report.sessionFilterLocks)
+      text = lock ? R.lockChanged(lock) : R.lockRemoved
+      action = { label: R.action, onClick: this.rerunAll, test: 'report-builder-rerun-all-start' }
     } else {
       const unanswered = report.blocks.filter((block) => isRerunnable(block) && !isCapture(block.capture)).length
       if (!unanswered) {

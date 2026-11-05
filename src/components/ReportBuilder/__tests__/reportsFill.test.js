@@ -194,6 +194,117 @@ describe('starting a report from a template', () => {
   })
 })
 
+describe('a report started from a template for a filter lock (RW-351)', () => {
+  const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include', format_txt: 'Brown Family' }
+  const startFor = async (locks) => {
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    await act(() => mockDialogs.newReport.onStartFromTemplate({ templateId: 'tp1', id: T, sessionFilterLocks: locks }))
+  }
+  const filledLater = (report) => {
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataErrors: [] })
+    fetchReport.mockResolvedValue({ ...stored({ version: 3, dataStatus: 'DONE' }), report })
+  }
+
+  it('asks AutoQL to make it for the lock, and leaves a report it made that way as it is', async () => {
+    const report = { ...documentOf([dataBlock('d1', answered)]), sessionFilterLocks: [BROWN] }
+    createReportFromTemplate.mockResolvedValue({ ...stored({ dataStatus: 'PENDING' }), report, created: true })
+    filledLater(report)
+    setup({ enableFilterLocks: true })
+    expect(mockDialogs.newReport).toBeNull()
+    await startFor([{ ...BROWN, isSession: true }])
+
+    expect(createReportFromTemplate).toHaveBeenCalledWith(expect.objectContaining({ sessionFilterLocks: [BROWN] }))
+    await waitFor(() => expect(mockBuilder.props.readOnly).toBe(false))
+    expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+    expect(saveReport).not.toHaveBeenCalled()
+  })
+
+  it('puts the lock on a report AutoQL made without it, once its fill is over, and saves it', async () => {
+    const report = documentOf([dataBlock('d1', answered)])
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    filledLater(report)
+    setup({ enableFilterLocks: true })
+    await startFor([BROWN])
+
+    // Not while it's filled in: what the fill leaves would take its place.
+    expect(mockBuilder.props.readOnly).toBe(true)
+    expect(mockBuilder.props.report.sessionFilterLocks).toBeUndefined()
+
+    await waitFor(() => expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN]))
+    expect(mockBuilder.props.readOnly).toBe(false)
+    // The builder hears when, to offer Rerun all for the answers the fill left.
+    expect(typeof mockBuilder.props.lockChangedAt).toBe('number')
+    await waitFor(() =>
+      expect(saveReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: T,
+          version: 3,
+          report: expect.objectContaining({ sessionFilterLocks: [BROWN] }),
+        }),
+      ),
+    )
+  })
+
+  it('asks every question with the lock from the start when it’s filled in here', async () => {
+    createReportFromTemplate.mockResolvedValue({ ...stored({ blocks: [dataBlock('d1')] }), created: true })
+    setup({ enableFilterLocks: true })
+    await startFor([BROWN])
+
+    expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ query: 'question d1', filters: [BROWN] }))
+    expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+    // Asked with it from the start: nothing to rerun.
+    expect(mockBuilder.props.lockChangedAt).toBeUndefined()
+  })
+
+  // A template that kept a lock, which AutoQL's copy of it then comes with: what's picked is what the report is for.
+  const copyLockedTo = (lock, { dataStatus } = {}) => ({
+    ...stored({ dataStatus, blocks: [dataBlock('d1')] }),
+    report: { ...documentOf([dataBlock('d1')]), sessionFilterLocks: [lock] },
+    created: true,
+  })
+
+  it('makes it for everything when no lock is picked, even if AutoQL’s copy came with one', async () => {
+    createReportFromTemplate.mockResolvedValue(copyLockedTo(BROWN))
+    setup({ enableFilterLocks: true })
+    await startFor(undefined)
+
+    expect(createReportFromTemplate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ sessionFilterLocks: expect.anything() }),
+    )
+    expect(captureQuestion.mock.calls.map(([options]) => options.filters)).toStrictEqual([undefined])
+    expect(mockBuilder.props.report.sessionFilterLocks).toBeUndefined()
+    expect(mockBuilder.props.lockChangedAt).toBeUndefined()
+  })
+
+  it('takes a lock AutoQL’s copy came with off when none is picked, once its fill is over', async () => {
+    createReportFromTemplate.mockResolvedValue(copyLockedTo(BROWN, { dataStatus: 'PENDING' }))
+    filledLater({ ...documentOf([dataBlock('d1', answered)]), sessionFilterLocks: [BROWN] })
+    setup({ enableFilterLocks: true })
+    await startFor(undefined)
+
+    expect(mockBuilder.props.readOnly).toBe(true)
+    expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+
+    await waitFor(() => expect(mockBuilder.props.report.sessionFilterLocks).toBeUndefined())
+    expect(mockBuilder.props.readOnly).toBe(false)
+    // The answers the fill left may be for the copy's lock: the builder offers Rerun all.
+    expect(typeof mockBuilder.props.lockChangedAt).toBe('number')
+    await waitFor(() =>
+      expect(saveReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: T,
+          version: 3,
+          report: expect.not.objectContaining({ sessionFilterLocks: expect.anything() }),
+        }),
+      ),
+    )
+  })
+})
+
 describe('a report whose data AutoQL fills in', () => {
   it('is read-only while it fills, read again as blocks fill, then says how it went and saves from there', async () => {
     createReportFromTemplate.mockResolvedValue({
