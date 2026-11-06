@@ -5,10 +5,15 @@ import {
   createTemplateCategory,
   deleteTemplate,
   deleteTemplateCategory,
+  discardTemplateDraft,
   fetchManagedCategories,
+  fetchManagedTemplate,
   fetchManagedTemplates,
+  keepsTemplateDrafts,
   publishTemplate,
   renameTemplateCategory,
+  saveTemplateDraft,
+  TEMPLATE_TITLE_MAX,
   unpublishTemplate,
   updateTemplate,
 } from '../run/templatesApi'
@@ -16,14 +21,16 @@ import { describeReportError } from './documents'
 import { ReportModal } from './ReportModal'
 import { RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
-import { detailsOf, detailsProblem, detailsToSend, TemplateDetailsFields } from './templateDetails'
+import { detailsOf, detailsProblem, detailsToSend } from './templateDetails'
 
-// Manage templates (an organization's admins): the organization's templates, drafts and published — each one's details
-// changed, published or taken back, or deleted — and its categories, added, renamed or deleted. A change to a published
-// template reaches everyone at once; reports already made from one keep their copy whatever happens to it. Each change
-// is made one at a time, and what went wrong is said beside the dialog's buttons.
+// Manage templates (an organization's admins): the organization's templates, drafts and published — each one renamed
+// (its title clicked), opened in the builder to be edited (`onEdit`, TemplateEditor), published or taken back, or
+// deleted — and its categories, added, renamed or deleted. A published template's changes are kept apart from it until
+// they're published (RW-361); where the service can't do that, it's taken back to a draft first, asking. Reports
+// already made from a template keep their copy whatever happens to it. Each change is made one at a time, and what
+// went wrong is said beside the dialog's buttons.
 //
-// Props: authentication, onClose.
+// Props: authentication, onEdit (opens a template to be edited; without it there's no Edit), onClose.
 
 const S = REPORTS_STRINGS
 const M = S.manageTemplates
@@ -45,6 +52,12 @@ const listManaged = async (authentication) => {
   return [first, ...(await Promise.all(more))].flatMap((page) => page.templates).sort(byTitle)
 }
 
+// A published template with changes waiting to be published (RW-361).
+const hasChangesWaiting = (template) => template.status === 'PUBLISHED' && !!template.hasDraft
+
+// A published template that's taken back to a draft before it's changed: the service can't keep its changes apart.
+const mustUnpublishFirst = (template) => template.status === 'PUBLISHED' && !keepsTemplateDrafts(template)
+
 const dateOf = (iso) => {
   const date = new Date(iso)
   return Number.isNaN(date.getTime())
@@ -61,15 +74,16 @@ export class ManageTemplatesDialog extends React.Component {
     categories: [],
     ownCategories: null,
     loadError: null,
-    // What's being changed: a template's details, a template or category waiting to be deleted, a category's name.
-    editingId: null,
-    draft: null,
-    confirmingId: null,
+    // What's being changed: a template's title or a category's name (`renamingId`), and a change that's asked about
+    // first (`confirming`: { id, action }, the action 'delete', 'discard', 'unpublishToEdit' or 'unpublishToRename').
+    confirming: null,
     renamingId: null,
     renameText: '',
     newCategory: '',
     busyId: null,
     error: null,
+    // What's said once a change is made, when there's more to say than the list shows.
+    notice: null,
   }
 
   componentDidMount() {
@@ -110,54 +124,117 @@ export class ManageTemplatesDialog extends React.Component {
     )
   }
 
-  // One change at a time: `run` makes it and resolves with how the lists then are; what went wrong is said.
+  // One change at a time: `run` makes it and resolves with how the lists then are; what went wrong is said. Resolves
+  // with whether it was made.
   change = async (busyId, action, run) => {
     if (this.state.busyId) {
-      return
+      return false
     }
-    this.setState({ busyId, error: null })
+    this.setState({ busyId, error: null, notice: null })
     try {
       const next = await run()
       if (this.mounted) {
         this.setState({ ...next, busyId: null })
       }
+      return true
     } catch (error) {
       if (this.mounted) {
         this.setState({ busyId: null, error: describeReportError(error, action).message })
       }
+      return false
     }
   }
+
+  confirm = (id, action) => this.setState({ confirming: { id, action }, renamingId: null, error: null, notice: null })
 
   replaceTemplate = (templates, id, change) =>
     templates.map((template) => (template.id === id ? change(template) : template))
 
   // ---------------------------------------------------------------- templates
 
-  startEditing = (template) =>
-    this.setState({ editingId: template.id, draft: detailsOf(template), confirmingId: null, error: null })
+  // Its title, clicked: renamed in place.
+  startRenaming = (template) => {
+    if (mustUnpublishFirst(template)) {
+      this.confirm(template.id, 'unpublishToRename')
+      return
+    }
+    this.setState({ renamingId: template.id, renameText: template.title, confirming: null, error: null, notice: null })
+  }
 
-  saveDetails = (template) => {
-    const problem = detailsProblem(this.state.draft)
+  // A draft's new title is saved to it. A published template's is kept with the rest of its changes waiting to be
+  // published (RW-361), which stay as they are.
+  saveTitle = (template) => {
+    const title = this.state.renameText.trim()
+    if (!title || title === template.title) {
+      this.setState({ renamingId: null })
+      return
+    }
+    const problem = detailsProblem({ ...detailsOf(template), title })
     if (problem) {
       this.setState({ error: `${S.errors.lead.templateDetails}: ${problem}.` })
       return
     }
     const { authentication } = this.props
     this.change(template.id, 'templateDetails', async () => {
-      const updated = await updateTemplate({ authentication, id: template.id, ...detailsToSend(this.state.draft) })
+      if (template.status === 'PUBLISHED') {
+        const now = await fetchManagedTemplate({ authentication, id: template.id })
+        const waiting = now.draft || now
+        await saveTemplateDraft({
+          authentication,
+          id: template.id,
+          ...detailsToSend(detailsOf(waiting)),
+          document: waiting.report || now.report,
+          title,
+        })
+        return {
+          renamingId: null,
+          notice: M.titleKept(title),
+          templates: this.replaceTemplate(this.state.templates, template.id, (old) => ({ ...old, hasDraft: true })),
+        }
+      }
+      const updated = await updateTemplate({ authentication, id: template.id, title })
       return {
+        renamingId: null,
         templates: this.replaceTemplate(this.state.templates, template.id, (old) => ({ ...old, ...updated })).sort(
           byTitle,
         ),
-        editingId: null,
-        draft: null,
       }
     })
   }
 
+  // Edit: the whole template in the builder (TemplateEditor).
+  edit = (template) => {
+    if (mustUnpublishFirst(template)) {
+      this.confirm(template.id, 'unpublishToEdit')
+      return
+    }
+    this.props.onEdit(template)
+  }
+
+  // A published template taken back to a draft to be edited or renamed (`then`), where the service can't keep its
+  // changes apart from it: no reports can be started from it until it's published again.
+  unpublishFirst = async (template, then) => {
+    const { authentication } = this.props
+    let draft = template
+    const unpublished = await this.change(template.id, 'unpublish', async () => {
+      const answered = await unpublishTemplate({ authentication, id: template.id })
+      draft = { ...template, ...(answered || {}), status: 'DRAFT' }
+      return {
+        confirming: null,
+        templates: this.replaceTemplate(this.state.templates, template.id, () => draft),
+        ...(then === 'rename' ? { renamingId: template.id, renameText: draft.title } : {}),
+      }
+    })
+    if (unpublished && then === 'edit' && this.mounted) {
+      this.props.onEdit(draft)
+    }
+  }
+
+  // Publishes a draft, or a published template's changes in place of it as it was (RW-361); or takes a published one
+  // back to a draft, which drops changes it had waiting.
   togglePublished = (template) => {
     const { authentication } = this.props
-    const publishing = template.status !== 'PUBLISHED'
+    const publishing = template.status !== 'PUBLISHED' || hasChangesWaiting(template)
     this.change(template.id, publishing ? 'publish' : 'unpublish', async () => {
       const answered = await (publishing ? publishTemplate : unpublishTemplate)({ authentication, id: template.id })
       return {
@@ -165,6 +242,23 @@ export class ManageTemplatesDialog extends React.Component {
           ...old,
           ...(answered || {}),
           status: publishing ? 'PUBLISHED' : 'DRAFT',
+          ...(keepsTemplateDrafts(old) ? { hasDraft: false } : {}),
+        })).sort(byTitle),
+      }
+    })
+  }
+
+  // A published template's changes dropped (RW-361): it stays as it's published.
+  discardChanges = (template) => {
+    const { authentication } = this.props
+    this.change(template.id, 'discardChanges', async () => {
+      await discardTemplateDraft({ authentication, id: template.id })
+      return {
+        confirming: null,
+        templates: this.replaceTemplate(this.state.templates, template.id, (old) => ({
+          ...old,
+          hasDraft: false,
+          draftUpdatedAt: null,
         })),
       }
     })
@@ -176,7 +270,7 @@ export class ManageTemplatesDialog extends React.Component {
       await deleteTemplate({ authentication, id: template.id })
       return {
         templates: this.state.templates.filter((t) => t.id !== template.id),
-        confirmingId: null,
+        confirming: null,
       }
     })
   }
@@ -222,7 +316,7 @@ export class ManageTemplatesDialog extends React.Component {
     this.change(category.id, 'deleteCategory', async () => {
       await deleteTemplateCategory({ authentication, id: category.id })
       return {
-        confirmingId: null,
+        confirming: null,
         ownCategories: this.state.ownCategories.filter((c) => c.id !== category.id),
         categories: this.state.categories.filter((c) => c.id !== category.id),
         // Its templates stay, without a category.
@@ -235,20 +329,176 @@ export class ManageTemplatesDialog extends React.Component {
 
   // ---------------------------------------------------------------- drawing
 
-  renderConfirm(text, onConfirm, busy) {
+  renderConfirm(
+    text,
+    onConfirm,
+    busy,
+    { label = M.delete, variant = 'danger', test = 'reports-manage-confirm-delete' } = {},
+  ) {
     return (
       <div className={`${RS}-manage-confirm`} role='group' aria-label={text}>
         <span>{text}</span>
-        <button type='button' className={`${RS}-button`} onClick={() => this.setState({ confirmingId: null })}>
+        <button type='button' className={`${RS}-button`} onClick={() => this.setState({ confirming: null })}>
           {S.cancel}
         </button>
         <button
           type='button'
           className={`${RS}-button`}
-          data-variant='danger'
-          data-test='reports-manage-confirm-delete'
+          data-variant={variant}
+          data-test={test}
           disabled={busy}
           onClick={onConfirm}
+        >
+          {label}
+        </button>
+      </div>
+    )
+  }
+
+  // What's asked about a template before it's changed.
+  renderTemplateConfirm(template, busy) {
+    const { confirming } = this.state
+    if (confirming?.id !== template.id) {
+      return null
+    }
+    const title = template.title || S.untitled
+    const unpublish = { variant: 'primary', test: 'reports-manage-confirm-unpublish' }
+    const asks = {
+      delete: () => this.renderConfirm(M.deleteConfirm(title), () => this.removeTemplate(template), busy),
+      discard: () =>
+        this.renderConfirm(M.discardConfirm(title), () => this.discardChanges(template), busy, {
+          label: M.discard,
+          test: 'reports-manage-confirm-discard',
+        }),
+      unpublishToEdit: () =>
+        this.renderConfirm(M.unpublishToEdit(title), () => this.unpublishFirst(template, 'edit'), busy, {
+          ...unpublish,
+          label: M.unpublishAndEdit,
+        }),
+      unpublishToRename: () =>
+        this.renderConfirm(M.unpublishToRename(title), () => this.unpublishFirst(template, 'rename'), busy, {
+          ...unpublish,
+          label: M.unpublishAndRename,
+        }),
+    }
+    return asks[confirming.action]?.() || null
+  }
+
+  renderTitle(template, busy) {
+    const { renamingId, renameText, busyId } = this.state
+    const title = template.title || S.untitled
+    if (renamingId === template.id) {
+      return (
+        <input
+          type='text'
+          className={`${RS}-input`}
+          value={renameText}
+          maxLength={TEMPLATE_TITLE_MAX}
+          aria-label={M.renameLabel(title)}
+          data-test='reports-manage-title-input'
+          disabled={busy}
+          autoFocus
+          onChange={(e) => this.setState({ renameText: e.target.value, error: null })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              this.saveTitle(template)
+            } else if (e.key === 'Escape') {
+              e.stopPropagation()
+              this.setState({ renamingId: null })
+            }
+          }}
+        />
+      )
+    }
+    return (
+      <button
+        type='button'
+        className={`${RS}-manage-name`}
+        title={M.renameTitle}
+        data-test='reports-manage-title'
+        disabled={!!busyId}
+        onClick={() => this.startRenaming(template)}
+      >
+        {title}
+      </button>
+    )
+  }
+
+  renderTemplateActions(template, busy) {
+    const { onEdit } = this.props
+    const { confirming, renamingId, renameText, busyId } = this.state
+    const published = template.status === 'PUBLISHED'
+    const waiting = hasChangesWaiting(template)
+    const spinner = (
+      <span className={`${RS}-spin`}>
+        <Icon name='spinner' size={13} />
+      </span>
+    )
+    if (renamingId === template.id) {
+      return (
+        <div className={`${RS}-manage-actions`}>
+          <button
+            type='button'
+            className={`${RS}-button`}
+            disabled={busy}
+            onClick={() => this.setState({ renamingId: null })}
+          >
+            {S.cancel}
+          </button>
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-variant='primary'
+            data-test='reports-manage-save'
+            disabled={busy || !renameText.trim()}
+            onClick={() => this.saveTitle(template)}
+          >
+            {busy ? spinner : null}
+            {M.save}
+          </button>
+        </div>
+      )
+    }
+    return (
+      <div className={`${RS}-manage-actions`}>
+        {onEdit ? (
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-test='reports-manage-edit'
+            disabled={!!busyId}
+            onClick={() => this.edit(template)}
+          >
+            {M.edit}
+          </button>
+        ) : null}
+        <button
+          type='button'
+          className={`${RS}-button`}
+          data-test='reports-manage-publish'
+          disabled={!!busyId}
+          onClick={() => this.togglePublished(template)}
+        >
+          {busy && !confirming ? spinner : null}
+          {waiting ? M.publishChanges : published ? M.unpublish : M.publish}
+        </button>
+        {waiting ? (
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-test='reports-manage-discard'
+            disabled={!!busyId}
+            onClick={() => this.confirm(template.id, 'discard')}
+          >
+            {M.discardChanges}
+          </button>
+        ) : null}
+        <button
+          type='button'
+          className={`${RS}-button`}
+          data-test='reports-manage-delete'
+          disabled={!!busyId}
+          onClick={() => this.confirm(template.id, 'delete')}
         >
           {M.delete}
         </button>
@@ -257,7 +507,7 @@ export class ManageTemplatesDialog extends React.Component {
   }
 
   renderTemplate(template) {
-    const { categories, editingId, draft, confirmingId, busyId } = this.state
+    const { categories, renamingId, busyId } = this.state
     const busy = busyId === template.id
     const published = template.status === 'PUBLISHED'
     const category = categories.find((c) => c.id === template.categoryId)?.name
@@ -268,78 +518,20 @@ export class ManageTemplatesDialog extends React.Component {
       <li key={template.id} className={`${RS}-manage-item`} data-test='reports-manage-template'>
         <div className={`${RS}-manage-row`}>
           <div className={`${RS}-manage-main`}>
-            <span className={`${RS}-manage-name`}>{template.title || S.untitled}</span>
-            {meta ? <span className={`${RS}-manage-meta`}>{meta}</span> : null}
+            {this.renderTitle(template, busy)}
+            {meta && renamingId !== template.id ? <span className={`${RS}-manage-meta`}>{meta}</span> : null}
           </div>
           <span className={`${RS}-manage-status`} data-published={published || undefined}>
             {published ? M.published : M.draft}
           </span>
-          <div className={`${RS}-manage-actions`}>
-            <button
-              type='button'
-              className={`${RS}-button`}
-              disabled={!!busyId}
-              onClick={() => this.startEditing(template)}
-            >
-              {M.edit}
-            </button>
-            <button
-              type='button'
-              className={`${RS}-button`}
-              data-test='reports-manage-publish'
-              disabled={!!busyId}
-              onClick={() => this.togglePublished(template)}
-            >
-              {busy && !confirmingId && editingId !== template.id ? (
-                <span className={`${RS}-spin`}>
-                  <Icon name='spinner' size={13} />
-                </span>
-              ) : null}
-              {published ? M.unpublish : M.publish}
-            </button>
-            <button
-              type='button'
-              className={`${RS}-button`}
-              disabled={!!busyId}
-              onClick={() => this.setState({ confirmingId: template.id, editingId: null, error: null })}
-            >
-              {M.delete}
-            </button>
-          </div>
+          {hasChangesWaiting(template) ? (
+            <span className={`${RS}-manage-status`} data-changes='' data-test='reports-manage-changes'>
+              {M.unpublishedChanges}
+            </span>
+          ) : null}
+          {this.renderTemplateActions(template, busy)}
         </div>
-        {confirmingId === template.id
-          ? this.renderConfirm(M.deleteConfirm(template.title || S.untitled), () => this.removeTemplate(template), busy)
-          : null}
-        {editingId === template.id ? (
-          <div className={`${RS}-manage-edit`}>
-            <TemplateDetailsFields
-              value={draft}
-              categories={categories}
-              disabled={busy}
-              onChange={(next) => this.setState({ draft: next, error: null })}
-            />
-            <div className={`${RS}-manage-edit-actions`}>
-              <button
-                type='button'
-                className={`${RS}-button`}
-                disabled={busy}
-                onClick={() => this.setState({ editingId: null, draft: null })}
-              >
-                {S.cancel}
-              </button>
-              <button
-                type='button'
-                className={`${RS}-button`}
-                data-variant='primary'
-                data-test='reports-manage-save'
-                disabled={busy || !draft.title.trim()}
-                onClick={() => this.saveDetails(template)}
-              >
-                {M.save}
-              </button>
-            </div>
-          </div>
-        ) : null}
+        {this.renderTemplateConfirm(template, busy)}
       </li>
     )
   }
@@ -353,7 +545,7 @@ export class ManageTemplatesDialog extends React.Component {
   }
 
   renderCategory(category) {
-    const { renamingId, renameText, confirmingId, busyId } = this.state
+    const { renamingId, renameText, confirming, busyId } = this.state
     const busy = busyId === category.id
     return (
       <li key={category.id} className={`${RS}-manage-item`} data-test='reports-manage-category'>
@@ -398,7 +590,7 @@ export class ManageTemplatesDialog extends React.Component {
                 className={`${RS}-button`}
                 disabled={!!busyId}
                 onClick={() =>
-                  this.setState({ renamingId: category.id, renameText: category.name, confirmingId: null, error: null })
+                  this.setState({ renamingId: category.id, renameText: category.name, confirming: null, error: null })
                 }
               >
                 {M.rename}
@@ -408,13 +600,13 @@ export class ManageTemplatesDialog extends React.Component {
               type='button'
               className={`${RS}-button`}
               disabled={!!busyId}
-              onClick={() => this.setState({ confirmingId: category.id, renamingId: null, error: null })}
+              onClick={() => this.confirm(category.id, 'delete')}
             >
               {M.delete}
             </button>
           </div>
         </div>
-        {confirmingId === category.id
+        {confirming?.id === category.id
           ? this.renderConfirm(M.deleteCategoryConfirm(category.name), () => this.removeCategory(category), busy)
           : null}
       </li>
@@ -469,7 +661,7 @@ export class ManageTemplatesDialog extends React.Component {
         className={`${RS}-manage-tab`}
         aria-selected={tab === key}
         data-test={`reports-manage-tab-${key}`}
-        onClick={() => this.setState({ tab: key, confirmingId: null, renamingId: null, editingId: null, error: null })}
+        onClick={() => this.setState({ tab: key, confirming: null, renamingId: null, error: null, notice: null })}
       >
         {label}
       </button>
@@ -484,7 +676,7 @@ export class ManageTemplatesDialog extends React.Component {
 
   render() {
     const { onClose } = this.props
-    const { tab, templates, loadError, error, busyId } = this.state
+    const { tab, templates, loadError, error, notice, busyId } = this.state
     let body
     if (templates === null) {
       body = (
@@ -516,7 +708,7 @@ export class ManageTemplatesDialog extends React.Component {
         testId='reports-manage-templates'
         busy={!!busyId}
         onClose={onClose}
-        status={error}
+        status={error || notice}
         statusTone={error ? 'error' : undefined}
         actions={
           <button type='button' className={`${RS}-button`} data-test='reports-manage-close' onClick={onClose}>

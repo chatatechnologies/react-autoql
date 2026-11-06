@@ -167,6 +167,29 @@
   }
 }
 
+// Draft or published, and a published template's changes waiting to be published: in Manage templates' rows and over a
+// template being edited.
+@mixin rs-template-status {
+  flex: none;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid $border;
+  border-radius: 999px;
+  color: $text-2;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &[data-published] {
+    @include accent-soft;
+    border-color: $accent;
+    color: $accent;
+  }
+  &[data-changes] {
+    border-color: $warning;
+    color: $text;
+  }
+}
+
 // Save as template (SaveAsTemplateDialog) and Manage templates (ManageTemplatesDialog): a template's details, the
 // warning before saving one, and the organization's templates and categories, a row each.
 .#{$rs}-layer {
@@ -290,6 +313,30 @@
     white-space: nowrap;
   }
 
+  // A template's title: clicked, it's renamed in place.
+  button.#{$rs}-manage-name {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: inherit;
+    line-height: inherit;
+    text-align: left;
+    cursor: text;
+
+    &:hover:not(:disabled) {
+      text-decoration: underline dotted;
+      text-underline-offset: 3px;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      cursor: default;
+    }
+  }
+
   .#{$rs}-manage-meta {
     display: block;
     margin-top: 0.125rem;
@@ -299,19 +346,7 @@
 
   // Draft, or published: what reports can be started from.
   .#{$rs}-manage-status {
-    flex: none;
-    padding: 0.125rem 0.5rem;
-    border: 1px solid $border;
-    border-radius: 999px;
-    color: $text-2;
-    font-size: 0.6875rem;
-    font-weight: 600;
-
-    &[data-published] {
-      @include accent-soft;
-      border-color: $accent;
-      color: $accent;
-    }
+    @include rs-template-status;
   }
 
   .#{$rs}-manage-actions {
@@ -320,8 +355,7 @@
     gap: 0.375rem;
   }
 
-  .#{$rs}-manage-confirm,
-  .#{$rs}-manage-edit {
+  .#{$rs}-manage-confirm {
     margin: 0 0 0.75rem;
     padding: 0.75rem;
     border: 1px solid $border;
@@ -339,16 +373,6 @@
     > span {
       flex: 1 1 auto;
     }
-  }
-
-  .#{$rs}-manage-edit {
-    max-width: 36rem;
-  }
-
-  .#{$rs}-manage-edit-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
   }
 
   .#{$rs}-manage-add {
@@ -427,5 +451,87 @@
     margin: 0.25rem 0 0;
     color: $danger;
     font-size: 0.75rem;
+  }
+}
+
+// A template being edited (TemplateEditor), in place of the tab strip and the report: a bar with its name, whether
+// it's published, and what can be done with it, over the builder.
+.#{$rs} {
+  .#{$rs}-template-editor-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 3rem;
+    padding: 0.4375rem 1rem;
+    border-bottom: 1px solid $border;
+    background: $surface;
+  }
+
+  .#{$rs}-template-editor-kind {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: $text-2;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .#{$rs}-template-editor-heading {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  // The template's name: clicked, it's renamed in place.
+  .#{$rs}-template-editor-name {
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.25rem 0.375rem;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: $text;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+
+    &:hover:not(:disabled) {
+      border-color: $border;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      cursor: default;
+    }
+  }
+
+  .#{$rs}-input.#{$rs}-template-editor-name-input {
+    max-width: 24rem;
+    padding: 0.25rem 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .#{$rs}-template-status {
+    @include rs-template-status;
+  }
+
+  .#{$rs}-template-editor-actions {
+    flex: none;
+    display: flex;
+    gap: 0.375rem;
   }
 }

@@ -5,10 +5,14 @@ import {
   createTemplateFromReport,
   deleteTemplate,
   deleteTemplateCategory,
+  discardTemplateDraft,
   fetchManagedCategories,
+  fetchManagedTemplate,
   fetchManagedTemplates,
+  keepsTemplateDrafts,
   publishTemplate,
   renameTemplateCategory,
+  saveTemplateDraft,
   unpublishTemplate,
   updateTemplate,
 } from '../run/templatesApi'
@@ -105,6 +109,96 @@ describe('managing templates through AutoQL’s management API', () => {
       body: { title: 'Q3 review', description: null, tags: null },
     })
     expect(sent().body).not.toHaveProperty('category_id')
+  })
+
+  it('reads one template with its document, to edit it', async () => {
+    const document = { schemaVersion: 1, title: 'Quarterly review', page: {}, blocks: [] }
+    axios.request.mockResolvedValue(answer({ ...RAW, document }))
+    const template = await fetchManagedTemplate({ authentication: AUTH, id: 'tp1' })
+    expect(template).toMatchObject({ id: 'tp1', report: document })
+    expect(template).not.toHaveProperty('hasDraft')
+    expect(template).not.toHaveProperty('draft')
+    expect(sent()).toMatchObject({ method: 'get', path: '/autoql/management/api/v1/reports/templates/tp1' })
+  })
+
+  it('turns down a template read without its document', async () => {
+    axios.request.mockResolvedValue(answer(RAW))
+    await expect(fetchManagedTemplate({ authentication: AUTH, id: 'tp1' })).rejects.toBeInstanceOf(ReportsApiError)
+  })
+
+  it('replaces a template’s document along with its details', async () => {
+    const document = { schemaVersion: 1, title: 'Q3 review', page: {}, blocks: [] }
+    axios.request.mockResolvedValue(answer(RAW))
+    await updateTemplate({ authentication: AUTH, id: 'tp1', title: 'Q3 review', document })
+    expect(sent().body).toStrictEqual({ title: 'Q3 review', document })
+  })
+
+  describe('a published template’s changes kept apart until they’re published (RW-361)', () => {
+    const DRAFT = {
+      title: 'Q4 review',
+      description: 'Next quarter',
+      category_id: 'c1',
+      tags: ['Quarterly'],
+      document: { schemaVersion: 1, title: 'Q4 review', page: {}, blocks: [] },
+      updated_at: '2026-11-05T18:00:00Z',
+    }
+
+    it('reads whether a template has any, and what they are', async () => {
+      axios.request.mockResolvedValue(
+        answer({
+          ...RAW,
+          status: 'PUBLISHED',
+          document: {},
+          has_draft: true,
+          draft_updated_at: DRAFT.updated_at,
+          draft: DRAFT,
+        }),
+      )
+      const template = await fetchManagedTemplate({ authentication: AUTH, id: 'tp1' })
+      expect(template).toMatchObject({
+        hasDraft: true,
+        draftUpdatedAt: DRAFT.updated_at,
+        draft: {
+          title: 'Q4 review',
+          description: 'Next quarter',
+          categoryId: 'c1',
+          tags: ['Quarterly'],
+          report: DRAFT.document,
+          updatedAt: DRAFT.updated_at,
+        },
+      })
+      expect(keepsTemplateDrafts(template)).toBe(true)
+    })
+
+    it('reads a template without any as having none', async () => {
+      axios.request.mockResolvedValue(
+        answer({ ...RAW, status: 'PUBLISHED', document: {}, has_draft: false, draft: null }),
+      )
+      const template = await fetchManagedTemplate({ authentication: AUTH, id: 'tp1' })
+      expect(template).toMatchObject({ hasDraft: false, draftUpdatedAt: null, draft: null })
+      expect(keepsTemplateDrafts(template)).toBe(true)
+    })
+
+    it('tells a service that doesn’t keep them', () => {
+      expect(keepsTemplateDrafts({ id: 'tp1', status: 'PUBLISHED' })).toBe(false)
+      expect(keepsTemplateDrafts(null)).toBe(false)
+      // Read by id, what they are (or none) says it does.
+      expect(keepsTemplateDrafts({ id: 'tp1', status: 'PUBLISHED', draft: null })).toBe(true)
+    })
+
+    it('keeps changes apart, and drops them', async () => {
+      axios.request.mockResolvedValue(answer({ ...RAW, status: 'PUBLISHED', has_draft: true }))
+      await saveTemplateDraft({ authentication: AUTH, id: 'tp1', title: 'Q4 review', document: DRAFT.document })
+      expect(sent()).toMatchObject({
+        method: 'put',
+        path: '/autoql/management/api/v1/reports/templates/tp1/draft',
+        body: { title: 'Q4 review', document: DRAFT.document },
+      })
+
+      axios.request.mockResolvedValue(answer(null))
+      await discardTemplateDraft({ authentication: AUTH, id: 'tp1' })
+      expect(sent(1)).toMatchObject({ method: 'delete', path: '/autoql/management/api/v1/reports/templates/tp1/draft' })
+    })
   })
 
   it('publishes, takes back and deletes a template', async () => {
