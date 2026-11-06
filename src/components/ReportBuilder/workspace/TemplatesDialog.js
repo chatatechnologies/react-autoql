@@ -8,7 +8,7 @@ import { STRINGS } from '../strings'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates } from '../run/reportsApi'
 import { describeReportError, newReportId } from './documents'
 import { ReportModal } from './ReportModal'
-import { RS } from './reportsConstants'
+import { BATCH_MAX, RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
 
 // New report › Start from a template: the templates published for the data source (its organization's and the
@@ -29,9 +29,16 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // loadFilterLockSuggestions and filterLockLabels, as in the builder. It starts out as the template's own, which a
 // template keeps from the report it was made from, so Start report waits for the template's document; the preview
 // shows the report for what's chosen. None starts it for everything, even from a template that has one.
+//
+// With onStartEach too, two or more values picked (households, say) can start a report for each of them in one go
+// (RW-353): onStartEach({ templateId, title, starts: [{ id, lock }] }), which resolves once they're under way or
+// rejects with why none were made. At most BATCH_MAX at once.
 
 // A template's own filter lock, from its document.
 const templateLocks = (template) => normalizeFilterLocks(template?.report?.sessionFilterLocks)
+
+// What a report for each can be started for: two or more values picked, each one to include.
+const eachOf = (locks) => (locks.length > 1 && locks.every((lock) => lock.filter_type === 'include') ? locks : null)
 
 const S = REPORTS_STRINGS
 const T = S.templates
@@ -95,6 +102,8 @@ export class TemplatesDialog extends React.Component {
       starting: false,
       startError: null,
       locks: [],
+      // A report for each value picked, rather than one for all of them.
+      forEach: false,
       // The dialog, for the filter lock's popover to open in: one opened outside it couldn't take focus.
       lockHost: null,
     }
@@ -201,22 +210,47 @@ export class TemplatesDialog extends React.Component {
     return this.preview.report
   }
 
-  // Beside Start report: what the report will be for (the report's filter lock), and Change….
+  // The values a report each is started for, when that's what's chosen; null for one report.
+  startsEach() {
+    if (!this.props.enableFilterLocks || !this.props.onStartEach || !this.state.forEach) {
+      return null
+    }
+    return eachOf(this.state.locks)
+  }
+
+  // Beside Start report: what the report will be for (the report's filter lock), and Change…; with two or more values
+  // picked, whether it's one report for all of them or one each.
   renderLock() {
     const labels = this.props.filterLockLabels || {}
+    const { locks, forEach, starting } = this.state
     return (
       <div className={`${RS}-templates-lock`} ref={this.setLockHost} data-test='reports-templates-lock'>
         <span className={`${RS}-templates-lock-label`}>{labels.title || STRINGS.filterLock.title}</span>
         <FilterLockField
           classPrefix={RS}
-          locks={this.state.locks}
+          locks={locks}
           labels={labels}
           authentication={this.props.authentication}
           loadSuggestions={this.props.loadFilterLockSuggestions}
           parentElement={this.state.lockHost || undefined}
-          disabled={this.state.starting}
+          disabled={starting}
           onChange={this.setLocks}
         />
+        {this.props.onStartEach && eachOf(locks) ? (
+          <SelectBox prefix={RS}>
+            <select
+              className={`${RS}-select`}
+              value={forEach ? 'each' : 'all'}
+              aria-label={T.howMany}
+              data-test='reports-templates-how-many'
+              disabled={starting}
+              onChange={(e) => this.setState({ forEach: e.target.value === 'each', startError: null })}
+            >
+              <option value='all'>{T.forAll}</option>
+              <option value='each'>{T.forEach(locks.length)}</option>
+            </select>
+          </SelectBox>
+        ) : null}
       </div>
     )
   }
@@ -224,7 +258,17 @@ export class TemplatesDialog extends React.Component {
   // Waits for the template's document with enableFilterLocks: until it's in, what the template is for isn't known.
   canStart() {
     const { chosenId, chosen, starting } = this.state
-    return !!chosenId && !starting && (!this.props.enableFilterLocks || !!chosen)
+    const each = this.startsEach()
+    return !!chosenId && !starting && (!this.props.enableFilterLocks || !!chosen) && (!each || each.length <= BATCH_MAX)
+  }
+
+  // The id a report from the template is made under for these locks: the same each time it's asked for.
+  startIdFor(templateId, locks) {
+    const startKey = `${templateId}\n${filterLocksKey(locks)}`
+    if (!this.startIds.has(startKey)) {
+      this.startIds.set(startKey, newReportId())
+    }
+    return this.startIds.get(startKey)
   }
 
   start = async () => {
@@ -235,17 +279,22 @@ export class TemplatesDialog extends React.Component {
     const locks = this.props.enableFilterLocks ? this.state.locks : []
     // None, from a template that has one, is said: the report is for everything, not for the template's.
     const said = locks.length > 0 || (this.props.enableFilterLocks && templateLocks(this.state.chosen).length > 0)
-    const startKey = `${templateId}\n${filterLocksKey(locks)}`
-    if (!this.startIds.has(startKey)) {
-      this.startIds.set(startKey, newReportId())
-    }
+    const each = this.startsEach()
     this.setState({ starting: true, startError: null })
     try {
-      await this.props.onStart({
-        templateId,
-        id: this.startIds.get(startKey),
-        ...(said ? { sessionFilterLocks: locks } : {}),
-      })
+      if (each) {
+        await this.props.onStartEach({
+          templateId,
+          title: this.state.chosen.title,
+          starts: each.map((lock) => ({ id: this.startIdFor(templateId, [lock]), lock })),
+        })
+      } else {
+        await this.props.onStart({
+          templateId,
+          id: this.startIdFor(templateId, locks),
+          ...(said ? { sessionFilterLocks: locks } : {}),
+        })
+      }
     } catch (error) {
       if (this.mounted) {
         this.setState({ startError: describeReportError(error, 'startFromTemplate').message })
@@ -433,6 +482,8 @@ export class TemplatesDialog extends React.Component {
   render() {
     const { onClose, onManage } = this.props
     const { starting, startError } = this.state
+    const each = this.startsEach()
+    const problem = startError || (each && each.length > BATCH_MAX ? T.tooMany(BATCH_MAX) : null)
     return (
       <ReportModal
         title={T.title}
@@ -442,8 +493,8 @@ export class TemplatesDialog extends React.Component {
         testId='reports-templates'
         busy={starting}
         onClose={onClose}
-        status={startError}
-        statusTone={startError ? 'error' : undefined}
+        status={problem}
+        statusTone={problem ? 'error' : undefined}
         actions={
           <>
             {this.props.enableFilterLocks ? this.renderLock() : null}
@@ -482,6 +533,8 @@ export class TemplatesDialog extends React.Component {
                   </span>
                   {T.starting}
                 </>
+              ) : each ? (
+                T.startEach(each.length)
               ) : (
                 T.start
               )}
