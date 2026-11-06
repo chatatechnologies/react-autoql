@@ -76,6 +76,21 @@ jest.mock('../workspace/ManageTemplatesDialog', () => ({
   },
 }))
 
+// The template editor is a stand-in too, which shows what it was given.
+const mockEditor = { props: null, saveNow: jest.fn(), unsaved: false }
+jest.mock('../workspace/TemplateEditor', () => {
+  const React = require('react')
+  class TemplateEditor extends React.Component {
+    saveNow = () => mockEditor.saveNow()
+    hasUnsaved = () => mockEditor.unsaved
+    render() {
+      mockEditor.props = this.props
+      return <div data-test='template-editor' />
+    }
+  }
+  return { TemplateEditor }
+})
+
 const b64url = (value) => btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const AUTH = { apiKey: 'key', domain: 'https://example.test', token: `h.${b64url({ project_id: 'p1' })}.s` }
 
@@ -147,6 +162,8 @@ beforeEach(() => {
   localStorage.clear()
   mockBuilder.props = null
   mockDialogs.newReport = null
+  mockEditor.props = null
+  mockEditor.unsaved = false
   homeProps.current = null
   fetchReports.mockResolvedValue({ reports: [] })
   fetchReportFolders.mockResolvedValue([{ id: 'f1', name: 'Clients', reportCount: 0 }])
@@ -644,5 +661,52 @@ describe('templates, for those who manage them (canManageTemplates)', () => {
     act(() => mockDialogs.newReport.onManageTemplates())
     expect(screen.queryByTestId('new-report-dialog')).toBeNull()
     expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
+  })
+
+  it('edits a template from Manage templates in place of the tabs, and goes back to Manage templates after', async () => {
+    createReportFromTemplate.mockResolvedValue({ ...stored(), created: true })
+    setup({ canManageTemplates: true, autoQLConfig: { enableDrilldowns: true } })
+    await startFromTemplate()
+    act(() => mockBuilder.props.onChange({ ...mockBuilder.props.report, title: 'Q3 review' }))
+    act(() => homeProps.current.manageTemplates())
+    expect(mockDialogs.manage.onEdit).toEqual(expect.any(Function))
+
+    act(() => mockDialogs.manage.onEdit({ id: 'tp9', title: 'Monthly review', status: 'DRAFT' }))
+    expect(screen.queryByTestId('manage-templates-dialog')).toBeNull()
+    expect(screen.queryByTestId('reports-tabs')).toBeNull()
+    expect(screen.queryByTestId('builder')).toBeNull()
+    expect(screen.getByTestId('template-editor')).toBeTruthy()
+    expect(mockEditor.props).toMatchObject({
+      authentication: AUTH,
+      templateId: 'tp9',
+      title: 'Monthly review',
+      builderProps: { authentication: AUTH, autoQLConfig: { enableDrilldowns: true } },
+    })
+    // What was waiting in the report shown was saved first.
+    await waitFor(() =>
+      expect(saveReport).toHaveBeenCalledWith(
+        expect.objectContaining({ id: T, report: expect.objectContaining({ title: 'Q3 review' }) }),
+      ),
+    )
+
+    // ⌘S saves the template, not the report.
+    saveReport.mockClear()
+    const press = fireEvent.keyDown(window, { key: 's', metaKey: true })
+    expect(press).toBe(false)
+    expect(mockEditor.saveNow).toHaveBeenCalledTimes(1)
+    expect(saveReport).not.toHaveBeenCalled()
+
+    // Its changes that aren't saved count, for the host and the browser.
+    mockEditor.unsaved = true
+    expect(screen.getByTestId('template-editor')).toBeTruthy()
+    const leaving = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(leaving)
+    expect(leaving.defaultPrevented).toBe(true)
+
+    act(() => mockEditor.props.onClose())
+    expect(screen.queryByTestId('template-editor')).toBeNull()
+    expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
+    expect(screen.getByTestId('reports-tabs')).toBeTruthy()
+    expect(screen.getByTestId('builder-title')).toHaveTextContent('Q3 review')
   })
 })

@@ -6,11 +6,9 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import { ReportBuilder } from '../ReportBuilder'
 import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
-import { isCapture } from '../model/blockView'
 import { setSessionFilterLocks, updateBlock } from '../model/reportOperations'
 import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
-import { captureQuestion } from '../run/captureRun'
-import { RERUN_ALL_CONCURRENCY } from '../constants'
+import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
   createReportFolder,
   createReportFromTemplate,
@@ -39,6 +37,7 @@ import {
   SAVE_DELAY_MS,
 } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
+import { fillNoticeOf } from './fillNotice'
 import {
   describeReportError,
   isReportGone,
@@ -56,6 +55,7 @@ import { NewReportDialog } from './NewReportDialog'
 import { DashboardTilesDialog } from './DashboardTilesDialog'
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
 import { ManageTemplatesDialog } from './ManageTemplatesDialog'
+import { TemplateEditor } from './TemplateEditor'
 import './Reports.scss'
 
 // The reports workspace: a user's reports on one data source, kept by AutoQL's report service (run/reportsApi),
@@ -69,7 +69,8 @@ import './Reports.scss'
 // Meanwhile the report shows as it prints, read-only, filling in as each block is answered; then it says how many
 // blocks were filled, and each one that wasn't says why. With canManageTemplates too (an organization's admins), a
 // report can be saved as a template (Report options › Save as template…), and the organization's templates and
-// categories managed (Manage templates, from the templates and the home page).
+// categories managed (Manage templates, from the templates and the home page). Edit there opens a template in the
+// builder in place of the tabs (TemplateEditor), until it's closed.
 //
 // Edits are saved after a short pause, and at once when switching tabs, leaving or hiding the page, pressing the
 // save control or ⌘S / Ctrl+S (ReportSaver, one per report opened here). A save that failed is kept and tried again
@@ -167,61 +168,8 @@ const browserTimeZone = () => {
   }
 }
 
-// How far filling in a report's data has got: its data blocks with an answer (`done`), of all of them (`total`).
-const fillProgress = (report) => {
-  const blocks = (Array.isArray(report?.blocks) ? report.blocks : []).filter((block) => block?.type === 'data')
-  return { done: blocks.filter((block) => isCapture(block.capture)).length, total: blocks.length }
-}
-
-// The blocks of a report made from a template that a fill asks again: every Data block with a question.
-const questionBlocks = (report) =>
-  (Array.isArray(report?.blocks) ? report.blocks : []).filter(
-    (block) => block?.type === 'data' && block.source?.type === 'query' && block.source.query,
-  )
-
-// Why a question asked from here didn't fill its block, as the report service says it of its own fills.
-const fillErrorOf = (blockId, result) => {
-  const referenceId = result.error?.referenceId
-  let reason = 'query_failed'
-  if (result.reason === 'no-data') {
-    reason = 'no_data'
-  } else if (referenceId === '1.1.430' || referenceId === '1.1.431') {
-    reason = 'not_confident'
-  } else if (referenceId === '1.1.522') {
-    reason = 'access_denied'
-  }
-  return {
-    blockId,
-    reason,
-    ...(reason === 'query_failed' && result.error?.message ? { message: result.error.message } : {}),
-  }
-}
-
 // How AutoQL's fill of a report can end.
 const FILL_OVER = ['DONE', 'PARTIAL', 'FAILED']
-
-// What's said over a report AutoQL fills in: how far it's got, and how it went once it's done (or stopped). Said once
-// a fill followed here ends, not each time the report is opened after. How it went is counted on the report as it is
-// now, so blocks rerun (or removed) since count too.
-const fillNoticeOf = (fill, filling, report) => {
-  const { done, total } = fillProgress(report)
-  if (filling) {
-    return { tone: 'info', text: S.workspace.filling(done, total) }
-  }
-  if (fill.stalled) {
-    return { tone: 'warning', text: S.workspace.fillStalled }
-  }
-  if (!fill.ended) {
-    return null
-  }
-  if (done >= total) {
-    return { tone: 'info', text: S.workspace.filled(total) }
-  }
-  if (!done) {
-    return { tone: 'warning', text: S.workspace.notFilled(total) }
-  }
-  return { tone: 'warning', text: S.workspace.partlyFilled(done, total) }
-}
 
 // Whether an ISO time is after another (one that can't be read is before anything).
 const isLater = (iso, than) => {
@@ -450,6 +398,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.pendingLocks = new Map()
     this.locksPutOn = new Map()
     this.root = React.createRef()
+    this.templateEditor = React.createRef()
 
     this.state = {
       reports: null,
@@ -475,9 +424,11 @@ export class ReportsWithoutTheme extends React.Component {
       // The shown report's data, as AutoQL fills it in: { id, dataStatus, dataErrors }, with `ended` once a fill
       // followed here finished, or `stalled` when it stopped without word.
       fill: null,
-      // The report Save as template is open for, and whether Manage templates is open.
+      // The report Save as template is open for, whether Manage templates is open, and the template being edited
+      // ({ id, title }, as Manage templates listed it).
       saveAsTemplateId: null,
       manageTemplatesOpen: false,
+      editingTemplate: null,
     }
   }
 
@@ -566,7 +517,7 @@ export class ReportsWithoutTheme extends React.Component {
     document.removeEventListener('visibilitychange', this.onVisibilityChange)
     this.state.tilePicker?.resolve(null)
     this.stopFollowingFill()
-    this.localFills.forEach((fill) => fill.controllers.forEach((controller) => controller.abort()))
+    this.localFills.forEach((fill) => fill.stop())
     this.localFills.clear()
     // Off to another page: each save finishes, then its saver goes.
     this.savers.forEach((saver) => {
@@ -580,8 +531,10 @@ export class ReportsWithoutTheme extends React.Component {
   // outlive it. Resolves with whether each one reached the server.
   flushAll = (options) => Promise.all([...this.savers.values()].map((saver) => saver.flush(options)))
 
-  // Whether any report has edits the server doesn't have yet.
-  hasUnsavedChanges = () => [...this.savers.values()].some((saver) => saver.hasUnsaved)
+  // Whether any report has edits the server doesn't have yet, or the template being edited has changes that aren't
+  // saved.
+  hasUnsavedChanges = () =>
+    [...this.savers.values()].some((saver) => saver.hasUnsaved) || !!this.templateEditor.current?.hasUnsaved()
 
   // Saves the report shown, now (the save control and ⌘S / Ctrl+S do this).
   saveNow = () => {
@@ -957,10 +910,12 @@ export class ReportsWithoutTheme extends React.Component {
     }
   }
 
-  // A save still waiting or on its way: start it, and let the browser ask before the page closes.
+  // A save still waiting or on its way: start it, and let the browser ask before the page closes. A template being
+  // edited is saved only with its Save, so the browser asks about its changes too.
   onBeforeUnload = (e) => {
     const unsaved = [...this.savers.values()].filter((saver) => saver.hasUnsaved)
-    if (!unsaved.length) {
+    const templateUnsaved = !!this.templateEditor.current?.hasUnsaved()
+    if (!unsaved.length && !templateUnsaved) {
       return
     }
     unsaved.forEach((saver) => saver.flush({ keepalive: true }))
@@ -968,14 +923,15 @@ export class ReportsWithoutTheme extends React.Component {
     e.returnValue = ''
   }
 
-  // ⌘S / Ctrl+S saves the report shown rather than opening the browser's "Save page", while the focus is in the
-  // workspace (its dialogs included) or nowhere in particular. With no report shown, or the focus in the host's own
-  // page, it's left to the host and the browser.
+  // ⌘S / Ctrl+S saves the report shown (or the template being edited) rather than opening the browser's "Save page",
+  // while the focus is in the workspace (its dialogs included) or nowhere in particular. With neither shown, or the
+  // focus in the host's own page, it's left to the host and the browser.
   onKeyDown = (e) => {
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || String(e.key).toLowerCase() !== 's') {
       return
     }
-    if (e.defaultPrevented || !this.shownId) {
+    const editor = this.state.editingTemplate ? this.templateEditor.current : null
+    if (e.defaultPrevented || !(editor || this.shownId)) {
       return
     }
     const target = e.target
@@ -987,7 +943,11 @@ export class ReportsWithoutTheme extends React.Component {
       !!target?.closest?.(`.${RS}-layer`)
     if (here) {
       e.preventDefault()
-      this.saveNow()
+      if (editor) {
+        editor.saveNow()
+      } else {
+        this.saveNow()
+      }
     }
   }
 
@@ -1258,7 +1218,7 @@ export class ReportsWithoutTheme extends React.Component {
     if (this.fillFollow?.id === id) {
       this.stopFollowingFill()
     }
-    this.localFills.get(id)?.controllers.forEach((controller) => controller.abort())
+    this.localFills.get(id)?.stop()
     this.localFills.delete(id)
     this.fillInfo.delete(id)
     this.savers.get(id)?.dispose()
@@ -1407,61 +1367,33 @@ export class ReportsWithoutTheme extends React.Component {
   // asked with the report's filter lock.
   fillHere = (id, sourceId, capturedAt) => {
     const report = this.savers.get(id)?.report
-    const blocks = questionBlocks(report)
-    if (!blocks.length) {
+    if (!questionBlocks(report).length) {
       return
     }
-    const filters = report.sessionFilterLocks
-    const fill = { next: 0, asking: 0, errors: [], controllers: new Set() }
-    this.localFills.set(id, fill)
+    // The fill's place in localFills, there before it asks anything: whether it's still wanted is read from it.
+    const entry = { stop: () => {} }
+    const current = () => this.mounted && this.localFills.get(id) === entry
+    this.localFills.set(id, entry)
     this.showFill(id, { dataStatus: 'RUNNING', dataErrors: [] })
 
-    const finish = () => {
+    const fill = fillQuestions({
+      report,
+      authentication: this.credentialsFor(sourceId),
+      autoQLConfig: this.props.autoQLConfig,
+      capturedAt,
+      isCurrent: current,
+      onAnswer: (block, capture) => this.keepFilled(id, block, capture),
+    })
+    entry.stop = fill.stop
+    fill.done.then(({ total, errors }) => {
+      if (!current()) {
+        return
+      }
       this.localFills.delete(id)
-      const filled = blocks.length - fill.errors.length
-      const dataStatus = !fill.errors.length ? 'DONE' : filled ? 'PARTIAL' : 'FAILED'
-      this.showFill(id, { dataStatus, dataErrors: fill.errors, ended: true })
-    }
-    const askNext = () => {
-      if (!this.mounted || this.localFills.get(id) !== fill) {
-        return
-      }
-      if (fill.next >= blocks.length) {
-        if (!fill.asking) {
-          finish()
-        }
-        return
-      }
-      const block = blocks[fill.next]
-      fill.next += 1
-      fill.asking += 1
-      const controller = typeof AbortController === 'function' ? new AbortController() : null
-      fill.controllers.add(controller)
-      captureQuestion({
-        query: block.source.query,
-        authentication: this.credentialsFor(sourceId),
-        autoQLConfig: this.props.autoQLConfig,
-        filters,
-        signal: controller?.signal,
-        rerun: { kept: block.capture, displayType: block.displayType },
-        capturedAt,
-      }).then((result) => {
-        fill.controllers.delete(controller)
-        fill.asking -= 1
-        if (!this.mounted || this.localFills.get(id) !== fill) {
-          return
-        }
-        if (result.ok) {
-          this.keepFilled(id, block, result.capture)
-        } else if (result.reason !== 'cancelled') {
-          fill.errors.push(fillErrorOf(block.id, result))
-        }
-        askNext()
-      })
-    }
-    for (let i = 0; i < Math.min(RERUN_ALL_CONCURRENCY, blocks.length); i += 1) {
-      askNext()
-    }
+      const filled = total - errors.length
+      const dataStatus = !errors.length ? 'DONE' : filled ? 'PARTIAL' : 'FAILED'
+      this.showFill(id, { dataStatus, dataErrors: errors, ended: true })
+    })
   }
 
   // An answer a fill from here got, kept in its block — while the block still asks that question — and saved.
@@ -1578,6 +1510,15 @@ export class ReportsWithoutTheme extends React.Component {
 
   closeManageTemplates = () => this.setState({ manageTemplatesOpen: false })
 
+  // Manage templates › Edit: the template in the builder, in place of the tabs. What's waiting in the report shown is
+  // saved first. Closed, it's back to Manage templates, which lists them again.
+  editTemplate = (template) => {
+    this.saveNow()
+    this.setState({ manageTemplatesOpen: false, editingTemplate: { id: template.id, title: template.title } })
+  }
+
+  closeTemplateEditor = () => this.setState({ editingTemplate: null, manageTemplatesOpen: this.canManageTemplates() })
+
   openNewReport = () => this.setState({ newReportOpen: true })
 
   closeNewReport = () => this.setState({ newReportOpen: false })
@@ -1619,8 +1560,29 @@ export class ReportsWithoutTheme extends React.Component {
     return this.props.renderHome ? this.props.renderHome(home) : <PlainHome {...home} />
   }
 
+  // What every builder here is handed: a report's, in its tab, and a template's being edited.
+  builderProps = () => ({
+    authentication: this.props.authentication,
+    autoQLConfig: this.props.autoQLConfig,
+    dataFormatting: this.props.dataFormatting,
+    dashboards: this.props.dashboards || NO_DASHBOARDS,
+    branding: this.props.branding,
+    enableBranding: this.props.enableBranding,
+    canEditBranding: this.props.canEditBranding,
+    enableDataBlocks: this.props.enableDataBlocks,
+    enableAnalysis: this.props.enableAnalysis,
+    enableRunReport: this.props.enableRunReport,
+    enableFilterLocks: this.props.enableFilterLocks,
+    loadFilterLockSuggestions: this.props.loadFilterLockSuggestions,
+    filterLockLabels: this.props.filterLockLabels,
+    fontStylesheetUrl: this.props.fontStylesheetUrl,
+    getAuthenticationForProject: this.props.getAuthenticationForProject,
+    onRunComplete: this.props.onRunComplete,
+    onErrorCallback: this.props.onErrorCallback,
+  })
+
   renderEditor = () => {
-    const { authentication, autoQLConfig, dataFormatting, dashboards, dashboardsError } = this.props
+    const { dashboards, dashboardsError } = this.props
     const { openError, saveState } = this.state
     const active = this.activeReport()
     const readOnly = !!active && isNewerSchema(active.report)
@@ -1638,30 +1600,14 @@ export class ReportsWithoutTheme extends React.Component {
         <ReportBuilder
           // A fresh builder — and run state — per report and data source.
           key={`${this.sourceId}:${active.id}`}
-          authentication={authentication}
-          autoQLConfig={autoQLConfig}
-          dataFormatting={dataFormatting}
-          dashboards={dashboards || NO_DASHBOARDS}
+          {...this.builderProps()}
           report={active.report}
           onChange={this.handleChange}
           readOnly={filling}
           dataFill={this.dataFillFor(fill, filling)}
           onSaveAsTemplate={this.canManageTemplates() && !readOnly && !filling ? this.openSaveAsTemplate : undefined}
-          branding={this.props.branding}
-          enableBranding={this.props.enableBranding}
-          canEditBranding={this.props.canEditBranding}
-          enableDataBlocks={this.props.enableDataBlocks}
           pickDashboardTiles={dashboards === undefined ? undefined : this.pickDashboardTiles}
-          enableAnalysis={this.props.enableAnalysis}
-          enableRunReport={this.props.enableRunReport}
-          enableFilterLocks={this.props.enableFilterLocks}
-          loadFilterLockSuggestions={this.props.loadFilterLockSuggestions}
-          filterLockLabels={this.props.filterLockLabels}
           lockChangedAt={this.locksPutOn.get(active.id)}
-          fontStylesheetUrl={this.props.fontStylesheetUrl}
-          getAuthenticationForProject={this.props.getAuthenticationForProject}
-          onRunComplete={this.props.onRunComplete}
-          onErrorCallback={this.props.onErrorCallback}
           toolbarStatus={
             !readOnly && !filling && saveState ? (
               <SaveStatus
@@ -1737,25 +1683,40 @@ export class ReportsWithoutTheme extends React.Component {
       newReportOpen,
       saveAsTemplateId,
       manageTemplatesOpen,
+      editingTemplate,
     } = this.state
     const active = this.activeReport()
     const titleFor = (id) => titleOf(reports?.find((report) => report.id === id))
 
     return (
       <div ref={this.root} className={`${RS}${className ? ` ${className}` : ''}`} data-test='reports'>
-        <ReportTabs
-          tabs={tabs.map((id) => ({ id, title: titleFor(id), notSaved: notSaved.has(id) }))}
-          shownId={shownId}
-          onHome={this.goHome}
-          onSelect={this.openReport}
-          onClose={this.closeTab}
-          onNew={this.openNewReport}
-          newDisabled={reports === null}
-          widths={tabWidths}
-          onResize={this.resizeTab}
-        />
+        {editingTemplate && this.canManageTemplates() ? (
+          <TemplateEditor
+            ref={this.templateEditor}
+            key={editingTemplate.id}
+            authentication={authentication}
+            templateId={editingTemplate.id}
+            title={editingTemplate.title}
+            builderProps={this.builderProps()}
+            onClose={this.closeTemplateEditor}
+          />
+        ) : (
+          <>
+            <ReportTabs
+              tabs={tabs.map((id) => ({ id, title: titleFor(id), notSaved: notSaved.has(id) }))}
+              shownId={shownId}
+              onHome={this.goHome}
+              onSelect={this.openReport}
+              onClose={this.closeTab}
+              onNew={this.openNewReport}
+              newDisabled={reports === null}
+              widths={tabWidths}
+              onResize={this.resizeTab}
+            />
 
-        {shownId === null ? <div className={`${RS}-home`}>{this.renderHome()}</div> : this.renderEditor()}
+            {shownId === null ? <div className={`${RS}-home`}>{this.renderHome()}</div> : this.renderEditor()}
+          </>
+        )}
 
         {newReportOpen ? (
           <NewReportDialog
@@ -1793,7 +1754,11 @@ export class ReportsWithoutTheme extends React.Component {
         ) : null}
 
         {manageTemplatesOpen && this.canManageTemplates() ? (
-          <ManageTemplatesDialog authentication={authentication} onClose={this.closeManageTemplates} />
+          <ManageTemplatesDialog
+            authentication={authentication}
+            onEdit={this.editTemplate}
+            onClose={this.closeManageTemplates}
+          />
         ) : null}
 
         {tilePicker && active && tilePicker.reportId === active.id ? (
