@@ -26,21 +26,109 @@ export const BrandMark = ({ branding, size = 'small' }) => {
   )
 }
 
+// Inline, so the header still reads as it prints (the line cut short at its end), and a button to the keyboard too.
+const InlineButton = ({ className, title, testId, onActivate, children }) => (
+  <span
+    role='button'
+    tabIndex={0}
+    className={className}
+    title={title}
+    data-test={testId}
+    onClick={onActivate}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        onActivate()
+      }
+    }}
+  >
+    {children}
+  </span>
+)
+
+const lockOf = (lock, onLockClick, lockLabel) =>
+  lock ? (
+    <span className={`${RB}-running-lock`} data-test='report-running-lock'>
+      {' · '}
+      {onLockClick ? (
+        <InlineButton
+          className={`${RB}-running-lock-button`}
+          title={STRINGS.filterLock.changeIn(lockLabel || STRINGS.filterLock.title)}
+          testId='report-running-lock-button'
+          onActivate={onLockClick}
+        >
+          {lock}
+        </InlineButton>
+      ) : (
+        lock
+      )}
+    </span>
+  ) : null
+
+// The title where the page is edited (RW-363): a click renames the report in place, as the toolbar's title field
+// does, and Return, Escape or a click elsewhere puts it back. What the report is for opens its setting.
+const EditableRunningTitle = ({ title, onTitleChange, lock, onLockClick, lockLabel }) => {
+  const [editing, setEditing] = React.useState(false)
+  return (
+    <div className={`${RB}-running-title`} data-editing={editing ? '' : undefined}>
+      {editing ? (
+        <input
+          type='text'
+          className={`${RB}-running-title-input`}
+          value={title}
+          placeholder={STRINGS.titlePlaceholder}
+          aria-label={STRINGS.titleLabel}
+          data-test='report-running-title-input'
+          autoFocus
+          onChange={(e) => onTitleChange(e.target.value)}
+          onBlur={() => setEditing(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === 'Escape') {
+              e.preventDefault()
+              e.stopPropagation()
+              setEditing(false)
+            }
+          }}
+        />
+      ) : (
+        <InlineButton
+          className={`${RB}-running-title-text`}
+          title={STRINGS.renameTitle}
+          testId='report-running-title'
+          onActivate={() => setEditing(true)}
+        >
+          {title || STRINGS.untitled}
+        </InlineButton>
+      )}
+      {lockOf(lock, onLockClick, lockLabel)}
+    </div>
+  )
+}
+
 // The title and the lockup, the lockup left, centred or right (branding.position) and the title clear of it. A report
 // with a filter lock says what it's for after its title, on the same line: the header is one line high.
-export const RunningHeader = ({ branding, title, lock }) => (
+//
+// Where the page is edited (RW-363), `onTitleChange` renames the report from its title, and `onLockClick` opens the
+// lock's setting (`lockLabel` names it). As it prints, it's only drawn.
+export const RunningHeader = ({ branding, title, lock, onTitleChange, onLockClick, lockLabel }) => (
   <header
     className={`${RB}-running-header`}
     data-brand-position={hasBranding(branding) ? branding.position || DEFAULT_BRAND_POSITION : undefined}
   >
-    <div className={`${RB}-running-title`}>
-      {title || STRINGS.untitled}
-      {lock ? (
-        <span className={`${RB}-running-lock`} data-test='report-running-lock'>
-          {` · ${lock}`}
-        </span>
-      ) : null}
-    </div>
+    {onTitleChange ? (
+      <EditableRunningTitle
+        title={title}
+        onTitleChange={onTitleChange}
+        lock={lock}
+        onLockClick={onLockClick}
+        lockLabel={lockLabel}
+      />
+    ) : (
+      <div className={`${RB}-running-title`}>
+        {title || STRINGS.untitled}
+        {lockOf(lock)}
+      </div>
+    )}
     <BrandMark branding={branding} />
   </header>
 )
