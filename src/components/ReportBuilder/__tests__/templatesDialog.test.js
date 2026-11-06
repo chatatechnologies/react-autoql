@@ -298,6 +298,99 @@ describe('TemplatesDialog', () => {
     })
   })
 
+  describe('a report for each of the households picked (RW-353)', () => {
+    const lock = (value, filterType = 'include') => ({ key: 'household', value, filter_type: filterType })
+    const BROWN = lock('Brown Family')
+    const NGUYEN = lock('Nguyen Family')
+    const open = async (props = {}) => {
+      const opened = setup({
+        enableFilterLocks: true,
+        filterLockLabels: { title: 'Households', none: 'All households' },
+        onStartEach: jest.fn(() => Promise.resolve()),
+        ...props,
+      })
+      await waitFor(() => expect(names()).toHaveLength(3))
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+      await waitFor(() => expect(startButton()).toBeEnabled())
+      return opened
+    }
+    const pick = (locks) => {
+      mockLock.next = locks
+      fireEvent.click(screen.getByTestId('mock-filter-lock'))
+    }
+    const howMany = () => screen.queryByTestId('reports-templates-how-many')
+
+    it('is offered for two or more, and starts each under an id of its own, the same when it tries again', async () => {
+      const onStartEach = jest
+        .fn()
+        .mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
+        .mockResolvedValue(undefined)
+      const { onStart } = await open({ onStartEach })
+      pick([BROWN])
+      expect(howMany()).toBeNull()
+      pick([BROWN, NGUYEN])
+      expect(howMany()).toHaveValue('all')
+      expect(startButton()).toHaveTextContent('Start report')
+      fireEvent.change(howMany(), { target: { value: 'each' } })
+      expect(within(howMany()).getByRole('option', { name: 'A report for each (2)' })).toBeTruthy()
+      expect(startButton()).toHaveTextContent('Start 2 reports')
+
+      await act(async () => fireEvent.click(startButton()))
+      expect(screen.getByText('The report wasn’t started: couldn’t reach the server.')).toBeInTheDocument()
+      await act(async () => fireEvent.click(startButton()))
+
+      expect(onStart).not.toHaveBeenCalled()
+      const [first, again] = onStartEach.mock.calls.map(([call]) => call)
+      expect(first).toEqual({
+        templateId: 't1',
+        title: 'Household review',
+        starts: [
+          { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: BROWN },
+          { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: NGUYEN },
+        ],
+      })
+      expect(first.starts[0].id).not.toBe(first.starts[1].id)
+      expect(again).toEqual(first)
+    })
+
+    it('starts one report for all of them, as before, unless asked for one each', async () => {
+      const onStartEach = jest.fn()
+      const { onStart } = await open({ onStartEach })
+      pick([BROWN, NGUYEN])
+      await act(async () => fireEvent.click(startButton()))
+      expect(onStartEach).not.toHaveBeenCalled()
+      expect(onStart).toHaveBeenCalledWith({
+        templateId: 't1',
+        id: expect.any(String),
+        sessionFilterLocks: [BROWN, NGUYEN],
+      })
+    })
+
+    it('isn’t offered with a household left out', async () => {
+      await open()
+      pick([BROWN, lock('Nguyen Family', 'exclude')])
+      expect(howMany()).toBeNull()
+    })
+
+    it('isn’t offered without onStartEach', async () => {
+      await open({ onStartEach: undefined })
+      pick([BROWN, NGUYEN])
+      expect(howMany()).toBeNull()
+    })
+
+    it('starts at most 50 at once', async () => {
+      const onStartEach = jest.fn()
+      await open({ onStartEach })
+      pick(Array.from({ length: 51 }, (_, i) => lock(`Household ${i}`)))
+      fireEvent.change(howMany(), { target: { value: 'each' } })
+      expect(startButton()).toBeDisabled()
+      expect(screen.getByText('Up to 50 reports can be started at once. Pick fewer.')).toBeInTheDocument()
+      pick(Array.from({ length: 50 }, (_, i) => lock(`Household ${i}`)))
+      expect(startButton()).toBeEnabled()
+      expect(startButton()).toHaveTextContent('Start 50 reports')
+    })
+  })
+
   it('has no filter lock to choose without enableFilterLocks', async () => {
     setup()
     await waitFor(() => expect(names()).toHaveLength(3))

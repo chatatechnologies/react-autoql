@@ -122,6 +122,7 @@ export const REPORTS_STRINGS = {
     tooManyReports: 'up to 200 reports can be changed at once',
     templateGone: 'that template isn’t published any more',
     templateDeleted: 'the template no longer exists (it may have been deleted)',
+    batchUnderWay: 'reports are still being made from a template; start more once they’re done',
     filling: 'its data is still being filled in',
     busy: 'AutoQL is too busy just now',
     forbidden: 'you don’t have permission to manage templates',
@@ -188,6 +189,39 @@ export const REPORTS_STRINGS = {
     back: 'Back',
     start: 'Start report',
     starting: 'Starting…',
+    // With two or more values picked for the filter lock (households, say): one report for all of them, or one each.
+    howMany: 'Reports to start',
+    forAll: 'One report for all of them',
+    forEach: (n) => `A report for each (${n})`,
+    startEach: (n) => `Start ${n} reports`,
+    tooMany: (max) => `Up to ${max} reports can be started at once. Pick fewer.`,
+  },
+
+  // A report for each household from a template (RW-353), made and filled in a few at a time while the home page lists
+  // them, in a folder of their own.
+  batch: {
+    folder: (title, day) => `${title} — ${day}`,
+    title: (title, value) => `${title} — ${value}`,
+    making: (settled, total, folder) =>
+      `Making ${total} reports in “${folder}”: ${settled} done so far. Keep this page open until they’re all done.`,
+    made: (made, total, folder) =>
+      made < total
+        ? `${made} of ${total} reports ${made === 1 ? 'is' : 'are'} in “${folder}”.`
+        : total === 1
+        ? `Your report is in “${folder}”.`
+        : total === 2
+        ? `Both reports are in “${folder}”.`
+        : `All ${total} reports are in “${folder}”.`,
+    partly: (n) =>
+      n === 1
+        ? '1 of them is missing some data: open it to see why, and Rerun it.'
+        : `${n} of them are missing some data: open one to see why, and Rerun it.`,
+    notMade: (n, total, reason) =>
+      n === total
+        ? `None of the ${total} reports were made: ${reason}.`
+        : `${n} of the ${total} reports ${n === 1 ? 'wasn’t' : 'weren’t'} made: ${reason}. Start ${
+            n === 1 ? 'it' : 'them'
+          } again from the template.`,
   },
 
   // Report options › Save as template… (an organization's admins): a draft made from the report as it's saved.
