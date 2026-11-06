@@ -90,7 +90,7 @@ const PageSetup = ({ page, onPageChange, brandFonts }) => (
     />
     <Note>{P.showInterpretationNote}</Note>
     <Divider />
-    <SectionLabel>{P.frontMatter}</SectionLabel>
+    <SectionLabel setting='frontMatter'>{P.frontMatter}</SectionLabel>
     <Toggle label={P.coverPage} checked={page.coverPage} onChange={(coverPage) => onPageChange({ coverPage })} />
     <Toggle
       label={P.tableOfContents}
@@ -634,7 +634,7 @@ export const storePanelOpen = (open) => {
 // The report's filter lock (model/filterLocks.js), over its page setup: what every question in it is asked for.
 const ReportFilterLock = ({ report, labels, authentication, loadSuggestions, onChange }) => (
   <>
-    <SectionLabel>{labels?.title || STRINGS.filterLock.title}</SectionLabel>
+    <SectionLabel setting='lock'>{labels?.title || STRINGS.filterLock.title}</SectionLabel>
     <FilterLockField
       locks={report.sessionFilterLocks}
       labels={labels}

@@ -83,6 +83,9 @@ const isRerunnable = (block) => block?.type === 'data' && !!block.askedHere && b
 // How long a deleted block can be put back for.
 const UNDO_REMOVE_MS = 10000
 
+// What takes the focus when the panel is opened at one of its settings: its first control.
+const FOCUSABLE_SETTING = 'button:not([disabled]), input:not([disabled]), select:not([disabled])'
+
 const memoize = (fn) => {
   let lastArgs = null
   let lastResult
@@ -608,19 +611,38 @@ export class ReportBuilderWithoutTheme extends React.Component {
     storePanelOpen(panelOpen)
   }
 
-  // Report options › Page setup: the panel with nothing selected, as a click off the blocks gives, shown if it
-  // was hidden and scrolled to its top.
-  onPageSetup = () => {
+  // The panel with nothing selected, as a click off the blocks gives, shown if it was hidden: scrolled to its top
+  // (Report options › Page setup), or to one of its settings (`setting`: 'lock' or 'frontMatter', from the page's
+  // header and the note over it), whose first control takes the focus.
+  showPageSetting = (setting) => {
     if (!this.state.panelOpen) {
       storePanelOpen(true)
     }
     this.setState({ selectedId: null, details: null, panelOpen: true }, () => {
       const panel = this.rootRef.current?.querySelector(`#${this.panelId}`)
-      if (panel) {
-        panel.scrollTop = 0
+      const label = setting ? panel?.querySelector(`[data-page-setting="${setting}"]`) : null
+      if (!label) {
+        if (panel) {
+          panel.scrollTop = 0
+        }
+        return
+      }
+      label.scrollIntoView?.({ block: 'start' })
+      for (let next = label.nextElementSibling; next; next = next.nextElementSibling) {
+        const control = next.matches(FOCUSABLE_SETTING) ? next : next.querySelector(FOCUSABLE_SETTING)
+        if (control) {
+          control.focus()
+          return
+        }
       }
     })
   }
+
+  onPageSetup = () => this.showPageSetting(null)
+
+  onLockSetting = () => this.showPageSetting('lock')
+
+  onFrontMatterSettings = () => this.showPageSetting('frontMatter')
 
   // ---------------------------------------------------------------- the organisation's branding
 
@@ -1274,6 +1296,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
               startPages={editorPages?.startPages}
               pageCount={editorPages?.count}
               frontPages={frontPages}
+              onTitleChange={this.onTitleChange}
+              onLockClick={this.props.enableFilterLocks ? this.onLockSetting : undefined}
+              lockLabel={this.props.filterLockLabels?.title}
+              onPreview={this.openPrintPreview}
+              onFrontMatterSettings={this.onFrontMatterSettings}
             />
           </ZoomFrame>
         </main>
