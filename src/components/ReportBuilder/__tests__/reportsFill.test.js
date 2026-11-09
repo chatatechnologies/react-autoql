@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import '@testing-library/jest-dom'
 import { Reports } from '../workspace/Reports'
 import {
+  createReportFolder,
   createReportFromTemplate,
   fetchReport,
   fetchReportDataStatus,
@@ -35,6 +36,7 @@ jest.mock('../run/reportsApi', () => {
     fetchReport: jest.fn(),
     saveReport: jest.fn(),
     createReport: jest.fn(),
+    createReportFolder: jest.fn(),
     createReportFromTemplate: jest.fn(),
     fetchReportDataStatus: jest.fn(),
     fetchReportFolders: jest.fn(),
@@ -148,6 +150,9 @@ const setup = (props = {}) =>
   )
 
 const fillNotice = () => screen.queryByTestId('reports-fill-notice')
+
+// A fill's heartbeat (data_heartbeat_at), the nth time it moved on.
+const heartbeat = (n) => new Date(Date.UTC(2026, 10, 9, 18) + n * 1000).toISOString()
 
 // New report › Start from a template, as the dialog does it.
 const startFromTemplate = async () => {
@@ -472,6 +477,46 @@ describe('a report whose data AutoQL fills in', () => {
     expect(fetchReport).not.toHaveBeenCalled()
   })
 
+  it('counts a heartbeat that moves on as news, so a slow fill isn’t taken to have stopped (RW-366)', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'RUNNING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    // No block filled for twice as long as a fill can go without news, but its questions asked all along.
+    const started = Date.now()
+    let beats = 0
+    fetchReportDataStatus.mockImplementation(async () =>
+      Date.now() - started < 300
+        ? { dataStatus: 'RUNNING', version: 1, dataHeartbeatAt: heartbeat(++beats), dataErrors: [] }
+        : { dataStatus: 'DONE', version: 2, dataHeartbeatAt: null, dataErrors: [] },
+    )
+    fetchReport.mockResolvedValue(stored({ version: 2, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] }))
+    setup()
+    await startFromTemplate()
+
+    await act(() => new Promise((resolve) => setTimeout(resolve, 250)))
+    expect(mockBuilder.props.readOnly).toBe(true)
+    await waitFor(() => expect(fillNotice()).toHaveTextContent('Your data is in.'))
+  })
+
+  it('takes a fill whose heartbeat stopped moving to have stopped, as one with no news', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'RUNNING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus.mockResolvedValue({
+      dataStatus: 'RUNNING',
+      version: 1,
+      dataHeartbeatAt: heartbeat(1),
+      dataErrors: [],
+    })
+    setup()
+    await startFromTemplate()
+
+    await waitFor(() => expect(mockBuilder.props.readOnly).toBe(false))
+    expect(fillNotice()).toHaveTextContent('Filling in your data stopped before it finished.')
+  })
+
   it('keeps asking, more slowly, when asking fails', async () => {
     createReportFromTemplate.mockResolvedValue({
       ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
@@ -708,5 +753,216 @@ describe('templates, for those who manage them (canManageTemplates)', () => {
     expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
     expect(screen.getByTestId('reports-tabs')).toBeTruthy()
     expect(screen.getByTestId('builder-title')).toHaveTextContent('Q3 review')
+  })
+})
+
+describe('a report for each household from a template (RW-353)', () => {
+  const lock = (value) => ({ key: 'household', value, filter_type: 'include', format_txt: value })
+  const BROWN = lock('Brown Family')
+  const NGUYEN = lock('Nguyen Family')
+  const R1 = 'aaaaaaaa-0000-4000-8000-0000000000b1'
+  const R2 = 'aaaaaaaa-0000-4000-8000-0000000000b2'
+  const STARTS = [
+    { id: R1, lock: BROWN },
+    { id: R2, lock: NGUYEN },
+  ]
+  const FOLDER = /^Monthly review — [A-Z][a-z]{2} \d{1,2}, \d{4}$/
+  // A report AutoQL made from the template for the lock asked for, in the folder asked for.
+  const made = ({ id, sessionFilterLocks, folderId }, rest = {}) => {
+    const report = stored({ id, blocks: [dataBlock('d1'), dataBlock('d2')], ...rest })
+    return { ...report, folderId, report: { ...report.report, sessionFilterLocks }, created: true }
+  }
+  const startEach = async (starts = STARTS) => {
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    await act(() =>
+      mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts }),
+    )
+  }
+  const listed = (id) => homeProps.current.reports.find((report) => report.id === id)
+  const lastSaveOf = (id) =>
+    saveReport.mock.calls
+      .map(([call]) => call)
+      .filter((call) => call.id === id)
+      .pop()
+
+  beforeEach(() => {
+    createReportFolder.mockImplementation(async ({ id, name }) => ({ id, name, reportCount: 0, created: true }))
+    captureQuestion.mockImplementation(async ({ filters }) => ({
+      ok: true,
+      capture: { ...answered, config: { household: filters?.[0]?.value } },
+    }))
+  })
+
+  it('makes one for each in a folder of their own, fills in those AutoQL leaves to the page, and names each', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    expect(screen.queryByTestId('new-report-dialog')).toBeNull()
+    expect(createReportFolder).toHaveBeenCalledWith(expect.objectContaining({ name: expect.stringMatching(FOLDER) }))
+    const folderId = createReportFolder.mock.calls[0][0].id
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in “Monthly review — /))
+    expect(homeProps.current.notices).toHaveLength(1)
+
+    expect(createReportFromTemplate).toHaveBeenCalledWith({
+      authentication: AUTH,
+      id: R1,
+      templateId: 'tp1',
+      folderId,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      sessionFilterLocks: [BROWN],
+    })
+    expect(createReportFromTemplate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: R2, sessionFilterLocks: [NGUYEN] }),
+    )
+    // Each question asked one at a time, with the household its report is for.
+    expect(captureQuestion).toHaveBeenCalledTimes(4)
+    expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ query: 'question d1', filters: [BROWN] }))
+    expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ query: 'question d2', filters: [NGUYEN] }))
+
+    const brown = lastSaveOf(R1).report
+    expect(brown.title).toBe('Quarterly review — Brown Family')
+    expect(brown.blocks.map((block) => block.capture?.config.household)).toEqual(['Brown Family', 'Brown Family'])
+    expect(lastSaveOf(R2).report.title).toBe('Quarterly review — Nguyen Family')
+    expect(listed(R1)).toMatchObject({ title: 'Quarterly review — Brown Family', folderId, dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ title: 'Quarterly review — Nguyen Family', folderId, dataStatus: 'DONE' })
+    // The home page stays as it was: no tab opened for any of them.
+    expect(screen.queryByTestId('builder')).toBeNull()
+  })
+
+  it('follows the fills AutoQL runs, and names each report once it’s filled', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    const polls = {}
+    fetchReportDataStatus.mockImplementation(async ({ id }) => {
+      polls[id] = (polls[id] || 0) + 1
+      return polls[id] < 2
+        ? { dataStatus: 'RUNNING', version: 2, dataUpdatedAt: null, dataErrors: [] }
+        : { dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] }
+    })
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      )
+    })
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in/))
+    expect(captureQuestion).not.toHaveBeenCalled()
+    expect(lastSaveOf(R1)).toMatchObject({ version: 3, report: { title: 'Quarterly review — Brown Family' } })
+    expect(lastSaveOf(R1).report.blocks[0].capture).toEqual(answered)
+    expect(listed(R2)).toMatchObject({ title: 'Quarterly review — Nguyen Family', dataStatus: 'DONE' })
+  })
+
+  it('keeps following a fill whose heartbeat moves on, past when it’d be taken to have stopped (RW-366)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    const started = Date.now()
+    let beats = 0
+    fetchReportDataStatus.mockImplementation(async () =>
+      Date.now() - started < 300
+        ? { dataStatus: 'RUNNING', version: 2, dataHeartbeatAt: heartbeat(++beats), dataErrors: [] }
+        : { dataStatus: 'DONE', version: 3, dataHeartbeatAt: null, dataErrors: [] },
+    )
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      )
+    })
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in/))
+    // Neither was taken to have stopped while its heartbeat moved on: both were filled in by AutoQL.
+    expect(homeProps.current.notices[0].text).not.toMatch(/missing some data/)
+    expect(listed(R1)).toMatchObject({ dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ dataStatus: 'DONE' })
+    expect(captureQuestion).not.toHaveBeenCalled()
+  })
+
+  it('puts the household on a report AutoQL made for the template’s own (before RW-352), and fills it in here', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made({ ...start, sessionFilterLocks: undefined }))
+    setup({ enableFilterLocks: true })
+    await startEach([{ id: R1, lock: BROWN }])
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Your report is in “Monthly review — /))
+    expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ filters: [BROWN] }))
+    expect(lastSaveOf(R1).report).toMatchObject({
+      title: 'Quarterly review — Brown Family',
+      sessionFilterLocks: [BROWN],
+    })
+  })
+
+  it('says which reports are missing data, and why any weren’t made', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => {
+      if (start.id === R2) {
+        throw new ReportsApiError({ status: 404, code: 'REPORT_TEMPLATE_NOT_FOUND' })
+      }
+      return made(start)
+    })
+    captureQuestion.mockImplementation(async ({ query }) =>
+      query === 'question d2'
+        ? { ok: false, reason: 'error', error: { message: 'Failed' } }
+        : { ok: true, capture: answered },
+    )
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices).toHaveLength(2))
+    expect(homeProps.current.notices).toEqual([
+      {
+        tone: 'error',
+        text: '1 of the 2 reports wasn’t made: that template isn’t published any more. Start it again from the template.',
+      },
+      {
+        tone: 'info',
+        text: expect.stringMatching(
+          /^1 of 2 reports is in “Monthly review — .+”\. 1 of them is missing some data: open it to see why, and Rerun it\.$/,
+        ),
+      },
+    ])
+    expect(listed(R1)).toMatchObject({ dataStatus: 'PARTIAL' })
+    expect(listed(R2)).toBeUndefined()
+  })
+
+  it('makes one batch at a time, and says so', async () => {
+    createReportFromTemplate.mockReturnValue(new Promise(() => {}))
+    setup({ enableFilterLocks: true })
+    await startEach()
+    expect(homeProps.current.notices[0].text).toMatch(/^Making 2 reports in “Monthly review — .+”: 0 done so far\./)
+
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    await expect(
+      mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts: STARTS }),
+    ).rejects.toMatchObject({ code: 'REPORT_BATCH_UNDER_WAY' })
+  })
+
+  it('makes none when their folder can’t be made, and can be tried again', async () => {
+    createReportFolder.mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    setup({ enableFilterLocks: true })
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    const start = () =>
+      mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts: STARTS })
+
+    // Turned down before anything changes, so outside act: act doesn't wait for a rejection.
+    await expect(start()).rejects.toMatchObject({ status: 0 })
+    expect(createReportFromTemplate).not.toHaveBeenCalled()
+    expect(screen.getByTestId('new-report-dialog')).toBeTruthy()
+
+    await act(start)
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in/))
+  })
+
+  it('isn’t offered without enableFilterLocks', async () => {
+    setup()
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    expect(mockDialogs.newReport.onStartEachFromTemplate).toBeUndefined()
   })
 })

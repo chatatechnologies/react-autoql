@@ -158,7 +158,8 @@ const CATEGORY_ACTIONS = ['categories', 'category', 'deleteCategory']
 // 'startFromTemplate', 'fill', 'manageTemplates', 'saveTemplate', 'templateDetails', 'publish', 'unpublish',
 // 'deleteTemplate', and for one being edited 'openTemplate', 'editTemplate' and 'discardChanges'; for their categories
 // 'categories', 'category' and 'deleteCategory'), and whether trying again
-// later can help: it can when the service couldn't be reached or failed, not when it turned the request down.
+// later can help: it can when the service couldn't be reached or failed, not when it turned the request down. `reason`
+// is the line without its lead, for saying it of several at once.
 export const describeReportError = (error, action) => {
   const known = error instanceof ReportsApiError
   const status = known ? error.status : 0
@@ -227,6 +228,9 @@ export const describeReportError = (error, action) => {
     // Saved while AutoQL fills in its data: it goes through once the fill is done.
     reason = E.filling
     retry = true
+  } else if (code === 'REPORT_BATCH_UNDER_WAY') {
+    // Not the service's: a report for each household is still being made from a template here (RW-353).
+    reason = E.batchUnderWay
   } else if (code === 'REPORT_FILL_REJECTED') {
     reason = E.busy
     retry = true
@@ -245,7 +249,7 @@ export const describeReportError = (error, action) => {
   } else {
     reason = E.refused
   }
-  return { message: `${E.lead[action] || E.lead.save}: ${reason}.`, retry }
+  return { message: `${E.lead[action] || E.lead.save}: ${reason}.`, reason, retry }
 }
 
 // Whether a failed call was the service turning the token away.

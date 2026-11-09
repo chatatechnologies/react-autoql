@@ -2,6 +2,7 @@ import React from 'react'
 import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { Icon } from './icons'
+import { Icon as AppIcon } from '../../Icon'
 import { FIT, ZOOM_LEVELS } from './ZoomFrame'
 import { ReportOptions } from './ReportOptions'
 
@@ -52,15 +53,21 @@ export const Toolbar = ({
         {previewMeta ? <span className={`${RB}-toolbar-meta`}>{previewMeta}</span> : null}
       </div>
     ) : (
-      <input
-        type='text'
-        className={`${RB}-title-input`}
-        value={title}
-        placeholder={STRINGS.titlePlaceholder}
-        aria-label={STRINGS.titleLabel}
-        data-test='report-builder-title'
-        onChange={(e) => onTitleChange(e.target.value)}
-      />
+      // It looks like the title it is, so it shows it can be changed when the pointer is on it (RW-363).
+      <div className={`${RB}-title-field`}>
+        <input
+          type='text'
+          className={`${RB}-title-input`}
+          value={title}
+          placeholder={STRINGS.titlePlaceholder}
+          aria-label={STRINGS.titleLabel}
+          data-test='report-builder-title'
+          onChange={(e) => onTitleChange(e.target.value)}
+        />
+        <span className={`${RB}-title-pencil`} aria-hidden='true'>
+          <AppIcon type='edit' />
+        </span>
+      </div>
     )}
     <div className={`${RB}-toolbar-actions`}>
       {status ? (

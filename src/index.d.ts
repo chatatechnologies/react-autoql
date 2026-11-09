@@ -857,6 +857,8 @@ export interface ReportDataProgress {
   // Moves on with every block filled.
   version: number
   dataUpdatedAt: string | null
+  // Moves on after every question the fill asks, failed ones too. Null from a service that doesn't send it.
+  dataHeartbeatAt: string | null
   dataErrors: ReportDataError[]
 }
 
