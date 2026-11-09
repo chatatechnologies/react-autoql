@@ -86,6 +86,24 @@ describe('ChataRoseChart', () => {
     expect(setup().find('g.rose-hatch-key').exists()).toBe(false)
   })
 
+  test('without a timeline beside it, the hatch key is centred under the rose, which makes room for it', () => {
+    const outerRadius = (wrapper) => Math.max(...wrapper.find('.rose-grid circle').map((circle) => circle.prop('r')))
+    const withNegative = setup({ initialChartControls: { roseValueColumnIndices: [3] } })
+    const key = withNegative.find('g.rose-hatch-key')
+    expect(key.closest('g.rose-plot').exists()).toBe(true)
+    const [x, y] = key
+      .prop('transform')
+      .match(/translate\(([-\d.]+), ([-\d.]+)\)/)
+      .slice(1)
+      .map(Number)
+    // Centred on the rose (its width is the swatch, a gap and the text), below its bottom labels
+    expect(x).toBeCloseTo(-(12 + 6 + 'Negative'.length * 11 * 0.6) / 2)
+    expect(y).toBeCloseTo(outerRadius(withNegative) + 8 + 11 + 8)
+    // Without negatives there's no key, so the rose doesn't keep room for one
+    const withoutNegative = setup({ initialChartControls: { roseValueColumnIndices: [2] } })
+    expect(outerRadius(withoutNegative)).toBeGreaterThan(outerRadius(withNegative))
+  })
+
   test('saves picks through onChartControlsChange', () => {
     const onChartControlsChange = jest.fn()
     const wrapper = setup({ onChartControlsChange, initialChartControls: { showAverageLine: true } })

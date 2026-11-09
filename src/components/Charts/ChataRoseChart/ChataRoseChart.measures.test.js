@@ -298,6 +298,16 @@ describe('ChataRoseChart measures mode', () => {
     expect(wrapper.find('g.rose-hatch-key').text()).toBe('Negative')
   })
 
+  test('with the timeline beside the rose, the hatch key sits under the timeline, lined up with its legend', () => {
+    const wrapper = setupInPeriod()
+    const timeline = wrapper.find(TimeAnimationTimeline)
+    const key = wrapper.find('g.rose-hatch-key')
+    expect(key.closest('g.rose-plot').exists()).toBe(false)
+    expect(key.prop('transform')).toBe(
+      `translate(${timeline.prop('x') + 6}, ${timeline.prop('y') + timeline.prop('height') + 8})`,
+    )
+  })
+
   test('each measure wedge has its own color, and none is hatched on a min-max scale', () => {
     const wrapper = setupInPeriod({ initialChartControls: { roseScale: 'minmax' } })
     expect(new Set(getWedges(wrapper).map((wedge) => wedge.prop('fill'))).size).toBe(3)

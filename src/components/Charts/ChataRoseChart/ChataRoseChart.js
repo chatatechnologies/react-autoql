@@ -81,6 +81,8 @@ const TIMELINE_BELOW_HEIGHT = 80
 const TIMELINE_BESIDE_MIN_HEIGHT = 100
 const TIMELINE_SPARK_ROOM = 30
 const TIMELINE_GAP = 16
+// The timeline's legend rows start this far in
+const TIMELINE_LEGEND_PADDING = 6
 
 const FALLBACK_COLORS = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
 // Negative wedges keep their color and are hatched with diagonal stripes this far apart, each this wide,
@@ -89,6 +91,9 @@ const HATCH_SPACING = 6
 const HATCH_STRIPE_WIDTH = 2
 const HATCH_STRIPE_OPACITY = 0.55
 const HATCH_KEY_SIZE = 12
+// Room for the hatch key under the rose, and its gap from what's above it
+const HATCH_KEY_ROOM = 20
+const HATCH_KEY_GAP = 8
 
 const escapeHtml = (value = '') => {
   return `${value}`
@@ -453,8 +458,31 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     areaHeight,
     Math.max(TIMELINE_BESIDE_MIN_HEIGHT, getTimelineMinHeight(timelineSeriesCount) + TIMELINE_SPARK_ROOM),
   )
-  const plotHeight =
-    timelinePlacement === 'below' ? Math.max(0, areaHeight - timelineBelowHeight - TIMELINE_GAP) : areaHeight
+  // The hatch key goes under the timeline when that's beside the rose, otherwise under the rose, which
+  // keeps room for it when a wedge might be hatched (the exact check needs the layout, so this one is rough)
+  const hatchKeyUnderRose = timelinePlacement !== 'beside'
+  const mightHatch = useMemo(() => {
+    const hasNegative = (indices) => (props.data || []).some((row) => indices.some((index) => Number(row?.[index]) < 0))
+    if (!isMeasures) {
+      return hasNegative(valueColumnIndices)
+    }
+    if (effectiveScale === 'normalized') {
+      return animation.isActive
+    }
+    return effectiveScale !== 'minmax' && hasNegative(validMeasureColumnIndices)
+  }, [
+    props.data,
+    isMeasures,
+    valueColumnIndices,
+    validMeasureColumnIndices.join(','),
+    effectiveScale,
+    animation.isActive,
+  ])
+  const hatchKeyRoom = hatchKeyUnderRose && mightHatch ? HATCH_KEY_ROOM : 0
+  const plotHeight = Math.max(
+    0,
+    (timelinePlacement === 'below' ? areaHeight - timelineBelowHeight - TIMELINE_GAP : areaHeight) - hatchKeyRoom,
+  )
   // Room kept beside the rose for labels: no more than its longest label needs
   const labelWidth = Math.min(LABEL_RESERVED_WIDTH, plotWidth * 0.2, longestLabelWidth)
   const outerRadius = Math.max(
@@ -913,17 +941,22 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return frames.some((frame) => frame.categories.some((category) => category.values.some((value) => value < 0)))
   }, [measureData, frameData, allData])
 
-  const renderHatchKey = () => {
-    if (!hasHatching) {
+  // Under the rose, centred on it (in the rose's own coordinates); or under the timeline beside it, lined up
+  // with the timeline's legend
+  const renderHatchKey = (underRose) => {
+    // The rose draws the hatch pattern, so the key only shows with it
+    if (!hasHatching || underRose !== hatchKeyUnderRose || !(outerRadius > 0) || categories.length <= 1) {
       return null
     }
     const label = isMeasures && effectiveScale === 'normalized' ? 'Below average' : 'Negative'
+    const width = HATCH_KEY_SIZE + 6 + label.length * CHAR_WIDTH
+    const transform = underRose
+      ? `translate(${-width / 2}, ${outerRadius + LABEL_OFFSET + FONT_SIZE + HATCH_KEY_GAP})`
+      : `translate(${roseLayout.timelineX + TIMELINE_LEGEND_PADDING}, ${
+          getTimelineBesideY() + timelineBesideHeight + HATCH_KEY_GAP
+        })`
     return (
-      <g
-        className='rose-hatch-key'
-        transform={`translate(${-roseLayout.centerX + 4}, ${plotHeight / 2 - HATCH_KEY_SIZE - 4})`}
-        style={{ pointerEvents: 'none' }}
-      >
+      <g className='rose-hatch-key' transform={transform} style={{ pointerEvents: 'none' }}>
         <rect
           width={HATCH_KEY_SIZE}
           height={HATCH_KEY_SIZE}
@@ -931,7 +964,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
           fill={themeSecondaryTextColor}
           mask={`url(#${gradientIdPrefix}-hatch-mask)`}
         />
-        <text x={HATCH_KEY_SIZE + 6} y={HATCH_KEY_SIZE - 2} fontSize={TICK_FONT_SIZE} fill={themeSecondaryTextColor}>
+        <text x={HATCH_KEY_SIZE + 6} y={HATCH_KEY_SIZE - 2} fontSize={FONT_SIZE} fill={themeSecondaryTextColor}>
           {label}
         </text>
       </g>
@@ -1184,16 +1217,16 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     [frameData, measureData, valueColumnIndices, palette, columns, formattingConfig],
   )
 
+  // Beside the rose, the timeline is centred on it vertically
+  const getTimelineBesideY = () =>
+    Math.min(Math.max(MARGIN_TOP, centerY - timelineBesideHeight / 2), MARGIN_TOP + areaHeight - timelineBesideHeight)
+
   const renderTimeline = () => {
     if (!timelinePlacement) {
       return null
     }
-    // Beside the rose, the timeline is centred on it vertically
     const isBeside = timelinePlacement === 'beside'
-    const besideY = Math.min(
-      Math.max(MARGIN_TOP, centerY - timelineBesideHeight / 2),
-      MARGIN_TOP + areaHeight - timelineBesideHeight,
-    )
+    const besideY = getTimelineBesideY()
     return (
       <TimeAnimationTimeline
         x={isBeside ? roseLayout.timelineX : 0}
@@ -1265,7 +1298,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
           {renderGrid()}
           {renderWedges()}
           {renderLabels()}
-          {renderHatchKey()}
+          {renderHatchKey(true)}
         </g>
       ) : (
         <text
@@ -1280,6 +1313,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       )}
 
       {renderTimeline()}
+      {renderHatchKey(false)}
 
       <RoseSettingsControl
         mode={isMeasures ? 'measures' : 'values'}
