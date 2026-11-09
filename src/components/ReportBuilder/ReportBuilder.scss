@@ -989,6 +989,18 @@
   // The running header as the page is edited (RW-363): its title renames the report, and what the report is for
   // opens that setting. They read as they print (inline, the line cut short at its end) until the pointer is on
   // them; while the title is typed in, the field takes the line.
+  //
+  // A click gives them the focus, which scrolls an `overflow: hidden` box to show them: the household, cut off at the
+  // end of the line, pushed the title's start out of view. `clip` cuts the line the same way and can't scroll. Only
+  // a Tab to one scrolls the line to show it (PageFurniture.js), and it reads as it prints again once it's left.
+  .#{$rb}-page-header .#{$rb}-running-title {
+    overflow: clip;
+
+    &:has(:focus-visible) {
+      overflow: hidden;
+    }
+  }
+
   .#{$rb}-page-header .#{$rb}-running-title[data-editing] {
     display: flex;
     align-items: baseline;

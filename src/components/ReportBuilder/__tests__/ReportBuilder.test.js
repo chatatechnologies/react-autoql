@@ -2663,6 +2663,26 @@ describe('the title where it shows on the page (RW-363)', () => {
     expect(document.activeElement).toBe(within(panel()).getByTestId('report-filter-lock-change'))
   })
 
+  it('scrolls the line to what a Tab reaches, and not for a click', () => {
+    setup(
+      { ...createEmptyReport({ title: 'Quarterly review' }), sessionFilterLocks: [BROWN] },
+      { enableFilterLocks: true, filterLockLabels: LABELS },
+    )
+    const [lock] = screen.getAllByTestId('report-running-lock-button')
+    lock.scrollIntoView = jest.fn()
+    const matches = jest.spyOn(lock, 'matches')
+
+    // A click focuses it without :focus-visible: the line stays as it prints.
+    matches.mockReturnValue(false)
+    act(() => lock.focus())
+    expect(lock.scrollIntoView).not.toHaveBeenCalled()
+
+    act(() => lock.blur())
+    matches.mockImplementation((selector) => selector === ':focus-visible')
+    act(() => lock.focus())
+    expect(lock.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
+  })
+
   it('leaves what the report is for as it is without enableFilterLocks', () => {
     setup({ ...createEmptyReport(), sessionFilterLocks: [BROWN] })
     expect(screen.queryByTestId('report-running-lock-button')).toBeNull()

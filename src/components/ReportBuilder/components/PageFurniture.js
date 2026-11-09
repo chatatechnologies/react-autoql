@@ -26,6 +26,20 @@ export const BrandMark = ({ branding, size = 'small' }) => {
   )
 }
 
+// A Tab to one that the line cuts off scrolls the line to show it, while it has the focus (ReportBuilder.scss lets
+// the line scroll only then). A click doesn't: it would leave the title's start out of view.
+const showIfTabbedTo = (e) => {
+  let tabbed = false
+  try {
+    tabbed = e.currentTarget.matches(':focus-visible')
+  } catch (error) {
+    // Without :focus-visible, the line stays as it prints.
+  }
+  if (tabbed) {
+    e.currentTarget.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+  }
+}
+
 // Inline, so the header still reads as it prints (the line cut short at its end), and a button to the keyboard too.
 const InlineButton = ({ className, title, testId, onActivate, children }) => (
   <span
@@ -35,6 +49,7 @@ const InlineButton = ({ className, title, testId, onActivate, children }) => (
     title={title}
     data-test={testId}
     onClick={onActivate}
+    onFocus={showIfTabbedTo}
     onKeyDown={(e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
