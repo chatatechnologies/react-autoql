@@ -179,24 +179,23 @@ describe('ChataRoseChart measures mode', () => {
     }
   }
 
-  test('the timeline is only as tall as its lines need, centred beside the rose', () => {
+  test('the timeline is as tall as the rose and its labels', () => {
     const timeline = setupInPeriod().find(TimeAnimationTimeline)
-    expect(timeline.prop('height')).toBeLessThan(390)
-    // Centred on the rose, which is centred in the 390px below the top margin
-    expect(timeline.prop('y') + timeline.prop('height') / 2).toBeCloseTo(10 + 390 / 2)
+    // The rose fills the 390px below the top margin, so the timeline does too
+    expect(timeline.prop('height')).toBe(390)
+    expect(timeline.prop('y')).toBe(10)
   })
 
-  test('the timeline sits just past the rose, and the two are centred together', () => {
+  test('the rose sits at the left, and the timeline stretches from just past it to the buttons', () => {
     const wrapper = setupInPeriod()
     const timeline = wrapper.find(TimeAnimationTimeline)
     const rose = getRoseExtent(wrapper)
     // 16px between the rose's labels and the timeline (labels are estimated, so allow a few px)
     expect(timeline.prop('x') - rose.right).toBeGreaterThanOrEqual(16)
     expect(timeline.prop('x') - rose.right).toBeLessThan(24)
-    // The same room either side of the group, in the 753px left of the buttons
-    const leftRoom = rose.left
-    const rightRoom = 753 - (timeline.prop('x') + timeline.prop('width'))
-    expect(Math.abs(leftRoom - rightRoom)).toBeLessThan(8)
+    // No empty space either side, in the 753px left of the buttons (labels are estimated, so allow a few px)
+    expect(rose.left).toBeLessThan(8)
+    expect(timeline.prop('x') + timeline.prop('width')).toBe(753)
   })
 
   test('each measure has its own color in the timeline', () => {
@@ -288,6 +287,14 @@ describe('ChataRoseChart measures mode', () => {
     )
     expect(wrapper.find('circle.rose-average-ring').exists()).toBe(false)
     expect(getTickLabels(wrapper).every((label) => label.endsWith('σ'))).toBe(true)
+  })
+
+  // The key doesn't come and go during playback: it shows if any period has a hatched wedge
+  test('the hatch key stays while showing a period with no hatched wedges', () => {
+    // On actual values, only Profit on the last day (-30) is negative
+    const wrapper = goToPeriod(setup({ initialChartControls: { roseScale: 'linear' } }), 0)
+    expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
+    expect(wrapper.find('g.rose-hatch-key').text()).toBe('Negative')
   })
 
   test('each measure wedge has its own color, and none is hatched on a min-max scale', () => {
@@ -413,9 +420,11 @@ describe('ChataRoseChart measures mode with dates that cannot be grouped into pe
     expect(wrapper.find(TimeAnimationControl).prop('animation').isAvailable).toBe(false)
   })
 
-  test('on a wide chart the timeline stays a modest width, and the rose is as tall as the chart allows', () => {
+  test('on a wide chart the timeline takes the spare width, and the rose is as tall as the chart allows', () => {
     const wide = setupInPeriod({ width: 1600, height: 400 })
-    expect(wide.find(TimeAnimationTimeline).prop('width')).toBeLessThanOrEqual(300)
+    const timeline = wide.find(TimeAnimationTimeline)
+    expect(timeline.prop('x') + timeline.prop('width')).toBe(1600 - 37 - 10)
+    expect(timeline.prop('width')).toBeGreaterThan(1000)
     expect(Math.max(...wide.find('.rose-grid circle').map((c) => c.prop('r')))).toBe((400 - 10) / 2 - 11 - 8)
   })
 })
