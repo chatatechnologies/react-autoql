@@ -73,7 +73,7 @@ const MARGIN_TOP = 10
 // The time animation's timeline sits beside the rose when there's room, otherwise under it
 const TIMELINE_BESIDE_MIN_WIDTH = 480
 const TIMELINE_MIN_WIDTH = 150
-// Room kept for the timeline beside the rose when sizing the rose; the timeline then gets all the width left
+// Width the timeline gets beside the rose when there's no spare room to give it
 const TIMELINE_MAX_WIDTH = 300
 const TIMELINE_WIDTH_RATIO = 0.3
 const TIMELINE_BELOW_HEIGHT = 80
@@ -439,17 +439,20 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return Math.min(MAX_LABEL_WIDTH, longest * CHAR_WIDTH + LABEL_EDGE_PADDING)
   }, [isMeasures, validMeasureColumnIndices.join(','), props.data, categoryColumnIndex, props.columns])
 
-  // The rose is sized first, keeping a modest share of the width for a timeline beside it. The rose then
-  // sits at the left and the timeline stretches across all the width left (see getRoseLayout).
-  const timelineReservedWidth =
+  // The rose is the focus: beside it, the timeline gets a modest share of the width, and only as much
+  // height as its lines need
+  const timelineWidth =
     timelinePlacement === 'beside'
       ? Math.min(TIMELINE_MAX_WIDTH, Math.max(TIMELINE_MIN_WIDTH, areaWidth * TIMELINE_WIDTH_RATIO))
-      : 0
-  const plotWidth =
-    timelinePlacement === 'beside' ? Math.max(0, areaWidth - timelineReservedWidth - TIMELINE_GAP) : areaWidth
+      : areaWidth
+  const plotWidth = timelinePlacement === 'beside' ? Math.max(0, areaWidth - timelineWidth - TIMELINE_GAP) : areaWidth
   // The timeline has a row per value layer (or measure); below the rose, it's tall enough for all of them
   const timelineSeriesCount = isMeasures ? validMeasureColumnIndices.length : valueColumnIndices.length
   const timelineBelowHeight = Math.max(TIMELINE_BELOW_HEIGHT, getTimelineMinHeight(timelineSeriesCount))
+  const timelineBesideHeight = Math.min(
+    areaHeight,
+    Math.max(TIMELINE_BESIDE_MIN_HEIGHT, getTimelineMinHeight(timelineSeriesCount) + TIMELINE_SPARK_ROOM),
+  )
   const plotHeight =
     timelinePlacement === 'below' ? Math.max(0, areaHeight - timelineBelowHeight - TIMELINE_GAP) : areaHeight
   // Room kept beside the rose for labels: no more than its longest label needs
@@ -459,15 +462,6 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     Math.min(plotWidth / 2 - labelWidth - LABEL_OFFSET, plotHeight / 2 - FONT_SIZE - LABEL_OFFSET),
   )
   const innerRadius = outerRadius * INNER_RADIUS_RATIO
-  // Beside the rose, the timeline is as tall as the rose and its labels, so its lines use the room
-  const timelineBesideHeight = Math.min(
-    areaHeight,
-    Math.max(
-      TIMELINE_BESIDE_MIN_HEIGHT,
-      getTimelineMinHeight(timelineSeriesCount) + TIMELINE_SPARK_ROOM,
-      2 * (outerRadius + LABEL_OFFSET + FONT_SIZE),
-    ),
-  )
   const centerX = plotWidth / 2
   const centerY = MARGIN_TOP + plotHeight / 2
   const maxCategories = getRoseMaxCategories(outerRadius)
@@ -1068,17 +1062,17 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       { left: outerRadius, right: outerRadius },
     )
 
-  // With the timeline beside it, the rose sits at the left, and the timeline starts just past the rose's
-  // right-hand labels and stretches to the buttons, so the chart has no empty space either side
+  // With the timeline beside it, the rose and timeline are placed as one group, centred: the timeline
+  // sits just past the rose's right-hand labels rather than at the far edge, so there's no gap between them
   const getRoseLayout = () => {
     const labels = placeLabels(centerX, plotWidth - centerX)
     if (timelinePlacement !== 'beside' || !(outerRadius > 0)) {
-      return { centerX, labels, timelineX: 0, timelineWidth: areaWidth }
+      return { centerX, labels }
     }
     const reach = getLabelReach(labels)
-    const roseCenterX = reach.left
-    const timelineX = roseCenterX + reach.right + TIMELINE_GAP
-    return { centerX: roseCenterX, labels, timelineX, timelineWidth: Math.max(0, areaWidth - timelineX) }
+    const groupWidth = reach.left + reach.right + TIMELINE_GAP + timelineWidth
+    const roseCenterX = Math.max(0, (areaWidth - groupWidth) / 2) + reach.left
+    return { centerX: roseCenterX, labels, timelineX: roseCenterX + reach.right + TIMELINE_GAP }
   }
   const roseLayout = getRoseLayout()
 
@@ -1204,7 +1198,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       <TimeAnimationTimeline
         x={isBeside ? roseLayout.timelineX : 0}
         y={isBeside ? besideY : totalHeight - timelineBelowHeight}
-        width={roseLayout.timelineWidth}
+        width={timelineWidth}
         height={isBeside ? timelineBesideHeight : timelineBelowHeight}
         frames={animation.frames}
         series={timelineSeries}
