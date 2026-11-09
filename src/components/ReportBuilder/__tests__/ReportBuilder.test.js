@@ -2592,3 +2592,112 @@ describe('a report’s filter lock (RW-351)', () => {
     expect(within(panel()).queryByTestId('report-filter-lock')).toBeNull()
   })
 })
+
+describe('the title where it shows on the page (RW-363)', () => {
+  const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include', format_txt: 'Brown Family' }
+  const LABELS = { title: 'Households', none: 'All households' }
+  const heading = { id: 'h', type: 'heading', text: 'Overview', level: 2, width: 'full' }
+  const withFrontMatter = (report) => ({ ...report, page: { ...report.page, coverPage: true, tableOfContents: true } })
+
+  it('renames the report from the page’s header, as the title field does', () => {
+    const { lastReport, container } = setup(createEmptyReport({ title: 'Quarterly review' }))
+    const [title] = screen.getAllByTestId('report-running-title')
+    expect(title.textContent).toBe('Quarterly review')
+    expect(title.title).toBe('Click to rename the report')
+
+    fireEvent.click(title)
+    const input = screen.getByTestId('report-running-title-input')
+    expect(document.activeElement).toBe(input)
+    fireEvent.change(input, { target: { value: 'Monthly review' } })
+    expect(lastReport().title).toBe('Monthly review')
+    expect(screen.getByTestId('report-builder-title').value).toBe('Monthly review')
+
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.queryByTestId('report-running-title-input')).toBeNull()
+    expect(screen.getAllByTestId('report-running-title')[0].textContent).toBe('Monthly review')
+    // The toolbar's field says it can be changed too.
+    expect(container.querySelector('.react-autoql-report-builder-title-pencil')).toBeTruthy()
+  })
+
+  it('stops renaming on Escape and when the field is left', () => {
+    setup(createEmptyReport({ title: 'Quarterly review' }))
+    fireEvent.click(screen.getAllByTestId('report-running-title')[0])
+    fireEvent.keyDown(screen.getByTestId('report-running-title-input'), { key: 'Escape' })
+    expect(screen.queryByTestId('report-running-title-input')).toBeNull()
+
+    fireEvent.click(screen.getAllByTestId('report-running-title')[0])
+    fireEvent.blur(screen.getByTestId('report-running-title-input'))
+    expect(screen.queryByTestId('report-running-title-input')).toBeNull()
+  })
+
+  it('opens the household’s setting from what the report is for, whatever was selected', () => {
+    setup(
+      { ...createEmptyReport({ blocks: [heading] }), sessionFilterLocks: [BROWN] },
+      { enableFilterLocks: true, filterLockLabels: LABELS },
+    )
+    selectBlock('Heading')
+    expect(within(panel()).queryByTestId('report-filter-lock-change')).toBeNull()
+
+    const [lock] = screen.getAllByTestId('report-running-lock-button')
+    expect(lock.textContent).toBe('Brown Family')
+    expect(lock.title).toBe('Change households in the side panel')
+    fireEvent.click(lock)
+    expect(document.activeElement).toBe(within(panel()).getByTestId('report-filter-lock-change'))
+  })
+
+  it('works from the keyboard, and reads as it prints until it’s renamed', () => {
+    setup(
+      { ...createEmptyReport({ title: 'Quarterly review' }), sessionFilterLocks: [BROWN] },
+      { enableFilterLocks: true, filterLockLabels: LABELS },
+    )
+    const [title] = screen.getAllByTestId('report-running-title')
+    expect(title.getAttribute('role')).toBe('button')
+    expect(title.closest('.react-autoql-report-builder-running-title').textContent).toBe(
+      'Quarterly review · Brown Family',
+    )
+    fireEvent.keyDown(title, { key: 'Enter' })
+    expect(screen.getByTestId('report-running-title-input')).toBeTruthy()
+    fireEvent.keyDown(screen.getByTestId('report-running-title-input'), { key: 'Escape' })
+
+    fireEvent.keyDown(screen.getAllByTestId('report-running-lock-button')[0], { key: ' ' })
+    expect(document.activeElement).toBe(within(panel()).getByTestId('report-filter-lock-change'))
+  })
+
+  it('scrolls the line to what a Tab reaches, and not for a click', () => {
+    setup(
+      { ...createEmptyReport({ title: 'Quarterly review' }), sessionFilterLocks: [BROWN] },
+      { enableFilterLocks: true, filterLockLabels: LABELS },
+    )
+    const [lock] = screen.getAllByTestId('report-running-lock-button')
+    lock.scrollIntoView = jest.fn()
+    const matches = jest.spyOn(lock, 'matches')
+
+    // A click focuses it without :focus-visible: the line stays as it prints.
+    matches.mockReturnValue(false)
+    act(() => lock.focus())
+    expect(lock.scrollIntoView).not.toHaveBeenCalled()
+
+    act(() => lock.blur())
+    matches.mockImplementation((selector) => selector === ':focus-visible')
+    act(() => lock.focus())
+    expect(lock.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
+  })
+
+  it('leaves what the report is for as it is without enableFilterLocks', () => {
+    setup({ ...createEmptyReport(), sessionFilterLocks: [BROWN] })
+    expect(screen.queryByTestId('report-running-lock-button')).toBeNull()
+    expect(screen.getAllByTestId('report-running-lock')[0].textContent).toBe(' · Brown Family')
+  })
+
+  it('says what the cover and contents are made from, and opens their settings and the preview', async () => {
+    setup(withFrontMatter(createEmptyReport({ blocks: [heading] })))
+    expect(screen.getByText(/made from the report’s title and headings\./)).toBeTruthy()
+    selectBlock('Heading')
+
+    fireEvent.click(screen.getByTestId('report-front-matter-settings'))
+    expect(document.activeElement).toBe(within(panel()).getByRole('switch', { name: 'Cover page' }))
+
+    fireEvent.click(screen.getByTestId('report-front-matter-preview'))
+    await waitFor(() => expect(screen.getByTestId('report-builder-toolbar-heading').textContent).toBe('Print preview'))
+  })
+})

@@ -10,10 +10,13 @@ import {
   createTemplateFromReport,
   deleteTemplate,
   deleteTemplateCategory,
+  discardTemplateDraft,
   fetchManagedCategories,
+  fetchManagedTemplate,
   fetchManagedTemplates,
   publishTemplate,
   renameTemplateCategory,
+  saveTemplateDraft,
   unpublishTemplate,
   updateTemplate,
 } from '../run/templatesApi'
@@ -28,8 +31,11 @@ jest.mock('../run/templatesApi', () => ({
   ...jest.requireActual('../run/templatesApi'),
   createTemplateFromReport: jest.fn(),
   fetchManagedTemplates: jest.fn(),
+  fetchManagedTemplate: jest.fn(),
   fetchManagedCategories: jest.fn(),
   updateTemplate: jest.fn(),
+  saveTemplateDraft: jest.fn(),
+  discardTemplateDraft: jest.fn(),
   publishTemplate: jest.fn(),
   unpublishTemplate: jest.fn(),
   deleteTemplate: jest.fn(),
@@ -183,10 +189,11 @@ describe('SaveAsTemplateDialog', () => {
 })
 
 describe('ManageTemplatesDialog', () => {
-  const open = () => {
+  const open = (props = {}) => {
     const onClose = jest.fn()
-    render(<ManageTemplatesDialog authentication={AUTH} onClose={onClose} />)
-    return { onClose }
+    const onEdit = jest.fn()
+    render(<ManageTemplatesDialog authentication={AUTH} onEdit={onEdit} onClose={onClose} {...props} />)
+    return { onClose, onEdit }
   }
   const rows = () => screen.queryAllByTestId('reports-manage-template')
   const row = (title) => rows().find((item) => item.textContent.includes(title))
@@ -236,25 +243,169 @@ describe('ManageTemplatesDialog', () => {
     expect(row('Household review')).toHaveTextContent('Draft')
   })
 
-  it('changes a template’s details, taking away what’s cleared', async () => {
-    updateTemplate.mockImplementation(async ({ id, title }) => template(id, title, { tags: [] }))
+  it('renames a draft in place, by its title', async () => {
+    updateTemplate.mockImplementation(async ({ id, title }) => template(id, title))
     open()
     await waitFor(() => expect(rows()).toHaveLength(2))
-    fireEvent.click(within(row('New accounts')).getByRole('button', { name: 'Edit' }))
-    fireEvent.change(screen.getByTestId('reports-template-title'), { target: { value: 'Accounts opened' } })
-    fireEvent.change(screen.getByTestId('reports-template-tags'), { target: { value: '' } })
-    await act(async () => fireEvent.click(screen.getByTestId('reports-manage-save')))
+    fireEvent.click(within(row('Household review')).getByTestId('reports-manage-title'))
+    const input = screen.getByRole('textbox', { name: 'Rename Household review' })
+    fireEvent.change(input, { target: { value: 'Not this' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(screen.queryByTestId('reports-manage-title-input')).toBeNull()
+    expect(updateTemplate).not.toHaveBeenCalled()
 
-    expect(updateTemplate).toHaveBeenCalledWith({
-      authentication: AUTH,
-      id: 'tp2',
-      title: 'Accounts opened',
-      description: null,
-      categoryId: 'c1',
-      tags: null,
+    fireEvent.click(within(row('Household review')).getByTestId('reports-manage-title'))
+    fireEvent.change(screen.getByTestId('reports-manage-title-input'), { target: { value: ' Annual review ' } })
+    await act(async () => fireEvent.keyDown(screen.getByTestId('reports-manage-title-input'), { key: 'Enter' }))
+
+    expect(updateTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp1', title: 'Annual review' })
+    expect(rows()[0]).toHaveTextContent('Annual review')
+    expect(screen.queryByTestId('reports-manage-title-input')).toBeNull()
+  })
+
+  it('opens a draft to be edited in the builder', async () => {
+    const { onEdit } = open()
+    await waitFor(() => expect(rows()).toHaveLength(2))
+    fireEvent.click(within(row('Household review')).getByTestId('reports-manage-edit'))
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'tp1', status: 'DRAFT' }))
+  })
+
+  it('offers no Edit without somewhere to edit', async () => {
+    open({ onEdit: undefined })
+    await waitFor(() => expect(rows()).toHaveLength(2))
+    expect(screen.queryByTestId('reports-manage-edit')).toBeNull()
+  })
+
+  it('asks to unpublish a published template before it’s edited or renamed, where its changes can’t be kept apart', async () => {
+    unpublishTemplate.mockResolvedValue(null)
+    const { onEdit } = open()
+    await waitFor(() => expect(rows()).toHaveLength(2))
+
+    fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-edit'))
+    expect(
+      screen.getByText(
+        '“New accounts” is published. Unpublish it to edit it? No reports can be started from it until it’s published again.',
+      ),
+    ).toBeTruthy()
+    expect(onEdit).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(unpublishTemplate).not.toHaveBeenCalled()
+
+    fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-title'))
+    expect(screen.getByText(/Unpublish it to rename it\?/)).toBeTruthy()
+    await act(async () => fireEvent.click(screen.getByTestId('reports-manage-confirm-unpublish')))
+    expect(unpublishTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp2' })
+    // A draft now, being renamed.
+    const input = screen.getByTestId('reports-manage-title-input')
+    expect(input).toHaveValue('New accounts')
+    expect(input.closest('[data-test="reports-manage-template"]')).toHaveTextContent('Draft')
+
+    fireEvent.keyDown(screen.getByTestId('reports-manage-title-input'), { key: 'Escape' })
+    unpublishTemplate.mockClear()
+    // A draft now: edited straight away.
+    fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-edit'))
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'tp2', status: 'DRAFT' }))
+    expect(unpublishTemplate).not.toHaveBeenCalled()
+  })
+
+  it('unpublishes one, then opens it to be edited', async () => {
+    unpublishTemplate.mockResolvedValue(null)
+    const { onEdit } = open()
+    await waitFor(() => expect(rows()).toHaveLength(2))
+    fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-edit'))
+    await act(async () => fireEvent.click(screen.getByTestId('reports-manage-confirm-unpublish')))
+    expect(unpublishTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp2' })
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'tp2', status: 'DRAFT' }))
+  })
+
+  describe('where a published template’s changes are kept apart until they’re published (RW-361)', () => {
+    const DOCUMENT = { schemaVersion: 1, title: 'New accounts', page: {}, blocks: [] }
+
+    it('edits one straight away', async () => {
+      fetchManagedTemplates.mockResolvedValue({
+        templates: [template('tp2', 'New accounts', { status: 'PUBLISHED', hasDraft: false })],
+        totalPages: 1,
+      })
+      const { onEdit } = open()
+      await waitFor(() => expect(rows()).toHaveLength(1))
+      expect(row('New accounts')).not.toHaveTextContent('Unpublished changes')
+      fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-edit'))
+      expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: 'tp2', status: 'PUBLISHED' }))
+      expect(unpublishTemplate).not.toHaveBeenCalled()
     })
-    expect(row('Accounts opened')).toBeTruthy()
-    expect(screen.queryByTestId('reports-manage-save')).toBeNull()
+
+    it('keeps a new title with its other changes, which stay as they are', async () => {
+      fetchManagedTemplates.mockResolvedValue({
+        templates: [
+          template('tp2', 'New accounts', { status: 'PUBLISHED', categoryId: 'c1', tags: ['Monthly'], hasDraft: true }),
+        ],
+        totalPages: 1,
+      })
+      fetchManagedTemplate.mockResolvedValue(
+        template('tp2', 'New accounts', {
+          status: 'PUBLISHED',
+          report: DOCUMENT,
+          hasDraft: true,
+          draft: {
+            title: 'New accounts',
+            description: 'Opened this month',
+            categoryId: 'c1',
+            tags: ['Monthly'],
+            report: { ...DOCUMENT, title: 'Accounts opened' },
+          },
+        }),
+      )
+      saveTemplateDraft.mockResolvedValue(null)
+      open()
+      await waitFor(() => expect(rows()).toHaveLength(1))
+      fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-title'))
+      fireEvent.change(screen.getByTestId('reports-manage-title-input'), { target: { value: 'Accounts opened' } })
+      await act(async () => fireEvent.keyDown(screen.getByTestId('reports-manage-title-input'), { key: 'Enter' }))
+
+      expect(saveTemplateDraft).toHaveBeenCalledWith({
+        authentication: AUTH,
+        id: 'tp2',
+        title: 'Accounts opened',
+        description: 'Opened this month',
+        categoryId: 'c1',
+        tags: ['Monthly'],
+        document: { ...DOCUMENT, title: 'Accounts opened' },
+      })
+      expect(updateTemplate).not.toHaveBeenCalled()
+      expect(
+        screen.getByText('“Accounts opened” is kept with the template’s unpublished changes. Publish them to use it.'),
+      ).toBeTruthy()
+      expect(row('New accounts')).toHaveTextContent('Unpublished changes')
+    })
+
+    it('publishes a template’s changes, or discards them once asked', async () => {
+      fetchManagedTemplates.mockResolvedValue({
+        templates: [
+          template('tp2', 'New accounts', { status: 'PUBLISHED', hasDraft: true }),
+          template('tp3', 'Quarterly review', { status: 'PUBLISHED', hasDraft: true }),
+        ],
+        totalPages: 1,
+      })
+      publishTemplate.mockResolvedValue(template('tp2', 'Accounts opened', { status: 'PUBLISHED' }))
+      discardTemplateDraft.mockResolvedValue(undefined)
+      open()
+      await waitFor(() => expect(rows()).toHaveLength(2))
+      expect(row('New accounts')).toHaveTextContent('Unpublished changes')
+      expect(within(row('New accounts')).queryByRole('button', { name: 'Unpublish' })).toBeNull()
+
+      await act(async () => fireEvent.click(within(row('New accounts')).getByTestId('reports-manage-publish')))
+      expect(publishTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp2' })
+      expect(unpublishTemplate).not.toHaveBeenCalled()
+      expect(row('Accounts opened')).not.toHaveTextContent('Unpublished changes')
+      expect(row('Accounts opened')).toHaveTextContent('Published')
+
+      fireEvent.click(within(row('Quarterly review')).getByTestId('reports-manage-discard'))
+      expect(screen.getByText('Discard the unpublished changes to “Quarterly review”? It stays as it’s published.'))
+      await act(async () => fireEvent.click(screen.getByTestId('reports-manage-confirm-discard')))
+      expect(discardTemplateDraft).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp3' })
+      expect(row('Quarterly review')).not.toHaveTextContent('Unpublished changes')
+      expect(row('Quarterly review')).toHaveTextContent('Published')
+    })
   })
 
   it('deletes a template once asked', async () => {

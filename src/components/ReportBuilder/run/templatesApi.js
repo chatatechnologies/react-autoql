@@ -74,9 +74,18 @@ export const createTemplateFromReport = async ({ authentication, reportId, title
   return required(templateOf(data), 'template')
 }
 
-// Changes a template's details: what's left out stays as it is, and null takes away its description, its category or
-// its tags. A published template's change reaches everyone at once.
-export const updateTemplate = async ({ authentication, id, title, description, categoryId, tags }) => {
+// One of the templates the token's user manages, draft or published, with its document as `report`, and its pending
+// changes as `draft` where the service keeps those (RW-361).
+export const fetchManagedTemplate = async ({ authentication, id, signal }) => {
+  const { data } = await call({ authentication, path: pathOf('templates', id), signal })
+  const template = required(templateOf(data), 'template')
+  required(template.report, 'template')
+  return template
+}
+
+// What a template's details and document are changed to: what's left out stays as it is, and null takes away a
+// description, a category or tags.
+const changesOf = ({ title, description, categoryId, tags, document }) => {
   const body = {}
   if (title !== undefined) {
     body.title = title
@@ -90,8 +99,46 @@ export const updateTemplate = async ({ authentication, id, title, description, c
   if (tags !== undefined) {
     body.tags = tags
   }
-  const { data } = await call({ authentication, method: 'put', path: pathOf('templates', id), data: body })
+  if (document !== undefined) {
+    body.document = document
+  }
+  return body
+}
+
+// Changes a template's details, and its document (`document`), which AutoQL rebuilds as it does a template made from a
+// report. A published template's change reaches everyone at once: one whose changes the service keeps apart until
+// they're published (RW-361) is changed with saveTemplateDraft instead.
+export const updateTemplate = async ({ authentication, id, ...changes }) => {
+  const { data } = await call({
+    authentication,
+    method: 'put',
+    path: pathOf('templates', id),
+    data: changesOf(changes),
+  })
   return required(templateOf(data), 'template')
+}
+
+// Whether the service keeps a published template's changes apart until they're published (RW-361): it says whether a
+// template has any (listed), or what they are (read by id).
+export const keepsTemplateDrafts = (template) =>
+  typeof template?.hasDraft === 'boolean' || (!!template && template.draft !== undefined)
+
+// Keeps changes to a published template apart, to be published later (RW-361): its details and document as they'll
+// be, as updateTemplate takes them. Everyone goes on starting reports from the template as it was until they're
+// published (publishTemplate), and discardTemplateDraft drops them.
+export const saveTemplateDraft = async ({ authentication, id, ...changes }) => {
+  const { data } = await call({
+    authentication,
+    method: 'put',
+    path: `${pathOf('templates', id)}/draft`,
+    data: changesOf(changes),
+  })
+  return templateOf(data)
+}
+
+// Drops a published template's changes that weren't published (RW-361). There being none is fine.
+export const discardTemplateDraft = async ({ authentication, id }) => {
+  await call({ authentication, method: 'delete', path: `${pathOf('templates', id)}/draft` })
 }
 
 // Publishes a template, so reports can be started from it; publishing one that is already is fine. One of more than

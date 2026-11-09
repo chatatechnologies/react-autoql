@@ -6,11 +6,9 @@ import { authenticationType, autoQLConfigType, dataFormattingType } from '../../
 import { ReportBuilder } from '../ReportBuilder'
 import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
-import { isCapture } from '../model/blockView'
-import { setSessionFilterLocks, updateBlock } from '../model/reportOperations'
+import { setSessionFilterLocks, setTitle, updateBlock } from '../model/reportOperations'
 import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
-import { captureQuestion } from '../run/captureRun'
-import { RERUN_ALL_CONCURRENCY } from '../constants'
+import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
   createReportFolder,
   createReportFromTemplate,
@@ -30,6 +28,8 @@ import {
   updateReportTag,
 } from '../run/reportsApi'
 import {
+  BATCH_AT_ONCE,
+  BATCH_QUESTIONS_AT_ONCE,
   DEFAULT_STORAGE_PREFIX,
   FILL_POLL_MAX_MS,
   FILL_POLL_MS,
@@ -39,11 +39,13 @@ import {
   SAVE_DELAY_MS,
 } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
+import { fillNoticeOf } from './fillNotice'
 import {
   describeReportError,
   isReportGone,
   isUnauthorized,
   newReportId,
+  REPORT_TITLE_MAX,
   stripQueryResponses,
   titleOf,
   withBlocksAdded,
@@ -56,6 +58,7 @@ import { NewReportDialog } from './NewReportDialog'
 import { DashboardTilesDialog } from './DashboardTilesDialog'
 import { SaveAsTemplateDialog } from './SaveAsTemplateDialog'
 import { ManageTemplatesDialog } from './ManageTemplatesDialog'
+import { TemplateEditor } from './TemplateEditor'
 import './Reports.scss'
 
 // The reports workspace: a user's reports on one data source, kept by AutoQL's report service (run/reportsApi),
@@ -69,7 +72,10 @@ import './Reports.scss'
 // Meanwhile the report shows as it prints, read-only, filling in as each block is answered; then it says how many
 // blocks were filled, and each one that wasn't says why. With canManageTemplates too (an organization's admins), a
 // report can be saved as a template (Report options › Save as template…), and the organization's templates and
-// categories managed (Manage templates, from the templates and the home page).
+// categories managed (Manage templates, from the templates and the home page). Edit there opens a template in the
+// builder in place of the tabs (TemplateEditor), until it's closed. With enableFilterLocks, a template can start a
+// report for each household picked in one go (startEachFromTemplate): made and filled in a few at a time while the
+// home page lists them.
 //
 // Edits are saved after a short pause, and at once when switching tabs, leaving or hiding the page, pressing the
 // save control or ⌘S / Ctrl+S (ReportSaver, one per report opened here). A save that failed is kept and tried again
@@ -167,61 +173,14 @@ const browserTimeZone = () => {
   }
 }
 
-// How far filling in a report's data has got: its data blocks with an answer (`done`), of all of them (`total`).
-const fillProgress = (report) => {
-  const blocks = (Array.isArray(report?.blocks) ? report.blocks : []).filter((block) => block?.type === 'data')
-  return { done: blocks.filter((block) => isCapture(block.capture)).length, total: blocks.length }
-}
-
-// The blocks of a report made from a template that a fill asks again: every Data block with a question.
-const questionBlocks = (report) =>
-  (Array.isArray(report?.blocks) ? report.blocks : []).filter(
-    (block) => block?.type === 'data' && block.source?.type === 'query' && block.source.query,
-  )
-
-// Why a question asked from here didn't fill its block, as the report service says it of its own fills.
-const fillErrorOf = (blockId, result) => {
-  const referenceId = result.error?.referenceId
-  let reason = 'query_failed'
-  if (result.reason === 'no-data') {
-    reason = 'no_data'
-  } else if (referenceId === '1.1.430' || referenceId === '1.1.431') {
-    reason = 'not_confident'
-  } else if (referenceId === '1.1.522') {
-    reason = 'access_denied'
-  }
-  return {
-    blockId,
-    reason,
-    ...(reason === 'query_failed' && result.error?.message ? { message: result.error.message } : {}),
-  }
-}
-
 // How AutoQL's fill of a report can end.
 const FILL_OVER = ['DONE', 'PARTIAL', 'FAILED']
 
-// What's said over a report AutoQL fills in: how far it's got, and how it went once it's done (or stopped). Said once
-// a fill followed here ends, not each time the report is opened after. How it went is counted on the report as it is
-// now, so blocks rerun (or removed) since count too.
-const fillNoticeOf = (fill, filling, report) => {
-  const { done, total } = fillProgress(report)
-  if (filling) {
-    return { tone: 'info', text: S.workspace.filling(done, total) }
-  }
-  if (fill.stalled) {
-    return { tone: 'warning', text: S.workspace.fillStalled }
-  }
-  if (!fill.ended) {
-    return null
-  }
-  if (done >= total) {
-    return { tone: 'info', text: S.workspace.filled(total) }
-  }
-  if (!done) {
-    return { tone: 'warning', text: S.workspace.notFilled(total) }
-  }
-  return { tone: 'warning', text: S.workspace.partlyFilled(done, total) }
-}
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// A fill's heartbeat that moved on since it was last heard: it's still asking, even with no block filled since.
+const heartbeatMoved = (progress, before) =>
+  !!progress.dataHeartbeatAt && progress.dataHeartbeatAt !== before?.dataHeartbeatAt
 
 // Whether an ISO time is after another (one that can't be read is before anything).
 const isLater = (iso, than) => {
@@ -253,6 +212,35 @@ const NAME_MAX = 80
 // A name the service would turn down (empty, or over 80 characters once trimmed), refused before asking it.
 const BAD_NAME = () => new ReportsApiError({ status: 422, code: 'REPORT_NAME_INVALID' })
 const isBadName = (name) => !name || Array.from(name).length > NAME_MAX
+
+// Text cut to `max` code points, with an ellipsis when it had more.
+const clipped = (text, max) => {
+  const points = Array.from(text)
+  return points.length > max ? `${points.slice(0, Math.max(max - 1, 1)).join('')}…` : text
+}
+
+// A report for each household (RW-353): their folder, named for the template and the day, within a folder name's
+// length; and each report's title, its own and the household it's for, within a title's.
+const batchFolderName = (title, date) => {
+  const day = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+  const room = NAME_MAX - Array.from(S.batch.folder('', day)).length
+  return S.batch.folder(clipped((title || '').trim() || S.untitled, room), day)
+}
+const batchTitleOf = (title, lock) => {
+  const value = clipped(String(lock.format_txt || lock.value), 80)
+  const room = REPORT_TITLE_MAX - Array.from(S.batch.title('', value)).length
+  return S.batch.title(clipped((typeof title === 'string' && title.trim()) || S.untitled, room), value)
+}
+
+// Whether a report made from a template is for the lock asked for: a service before RW-352 makes it for the template's.
+const lockKeptOn = (report, lock) => filterLocksKey(report?.sessionFilterLocks) === filterLocksKey([lock])
+
+// A report AutoQL made but couldn't fill: too busy to take it on.
+const busyAtStart = (detail) =>
+  detail.dataStatus === 'FAILED' && (detail.dataErrors || []).some((error) => error?.reason === 'busy')
+
+// What a saver starts from: the report as stored.
+const storedOf = (detail) => ({ report: detail.report, version: detail.version, updatedAt: detail.updatedAt })
 
 // When a report was last saved, for the plain home page: minutes for the last hour, then the date.
 const editedLabel = (iso, now = new Date()) => {
@@ -450,6 +438,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.pendingLocks = new Map()
     this.locksPutOn = new Map()
     this.root = React.createRef()
+    this.templateEditor = React.createRef()
 
     this.state = {
       reports: null,
@@ -475,9 +464,11 @@ export class ReportsWithoutTheme extends React.Component {
       // The shown report's data, as AutoQL fills it in: { id, dataStatus, dataErrors }, with `ended` once a fill
       // followed here finished, or `stalled` when it stopped without word.
       fill: null,
-      // The report Save as template is open for, and whether Manage templates is open.
+      // The report Save as template is open for, whether Manage templates is open, and the template being edited
+      // ({ id, title }, as Manage templates listed it).
       saveAsTemplateId: null,
       manageTemplatesOpen: false,
+      editingTemplate: null,
     }
   }
 
@@ -560,13 +551,14 @@ export class ReportsWithoutTheme extends React.Component {
 
   componentWillUnmount() {
     this.mounted = false
+    this.batch = null
     window.removeEventListener('pagehide', this.onPageHide)
     window.removeEventListener('beforeunload', this.onBeforeUnload)
     window.removeEventListener('keydown', this.onKeyDown)
     document.removeEventListener('visibilitychange', this.onVisibilityChange)
     this.state.tilePicker?.resolve(null)
     this.stopFollowingFill()
-    this.localFills.forEach((fill) => fill.controllers.forEach((controller) => controller.abort()))
+    this.localFills.forEach((fill) => fill.stop())
     this.localFills.clear()
     // Off to another page: each save finishes, then its saver goes.
     this.savers.forEach((saver) => {
@@ -580,8 +572,10 @@ export class ReportsWithoutTheme extends React.Component {
   // outlive it. Resolves with whether each one reached the server.
   flushAll = (options) => Promise.all([...this.savers.values()].map((saver) => saver.flush(options)))
 
-  // Whether any report has edits the server doesn't have yet.
-  hasUnsavedChanges = () => [...this.savers.values()].some((saver) => saver.hasUnsaved)
+  // Whether any report has edits the server doesn't have yet, or the template being edited has changes that aren't
+  // saved.
+  hasUnsavedChanges = () =>
+    [...this.savers.values()].some((saver) => saver.hasUnsaved) || !!this.templateEditor.current?.hasUnsaved()
 
   // Saves the report shown, now (the save control and ⌘S / Ctrl+S do this).
   saveNow = () => {
@@ -957,10 +951,12 @@ export class ReportsWithoutTheme extends React.Component {
     }
   }
 
-  // A save still waiting or on its way: start it, and let the browser ask before the page closes.
+  // A save still waiting or on its way: start it, and let the browser ask before the page closes. A template being
+  // edited is saved only with its Save, so the browser asks about its changes too.
   onBeforeUnload = (e) => {
     const unsaved = [...this.savers.values()].filter((saver) => saver.hasUnsaved)
-    if (!unsaved.length) {
+    const templateUnsaved = !!this.templateEditor.current?.hasUnsaved()
+    if (!unsaved.length && !templateUnsaved) {
       return
     }
     unsaved.forEach((saver) => saver.flush({ keepalive: true }))
@@ -968,14 +964,15 @@ export class ReportsWithoutTheme extends React.Component {
     e.returnValue = ''
   }
 
-  // ⌘S / Ctrl+S saves the report shown rather than opening the browser's "Save page", while the focus is in the
-  // workspace (its dialogs included) or nowhere in particular. With no report shown, or the focus in the host's own
-  // page, it's left to the host and the browser.
+  // ⌘S / Ctrl+S saves the report shown (or the template being edited) rather than opening the browser's "Save page",
+  // while the focus is in the workspace (its dialogs included) or nowhere in particular. With neither shown, or the
+  // focus in the host's own page, it's left to the host and the browser.
   onKeyDown = (e) => {
     if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || String(e.key).toLowerCase() !== 's') {
       return
     }
-    if (e.defaultPrevented || !this.shownId) {
+    const editor = this.state.editingTemplate ? this.templateEditor.current : null
+    if (e.defaultPrevented || !(editor || this.shownId)) {
       return
     }
     const target = e.target
@@ -987,7 +984,11 @@ export class ReportsWithoutTheme extends React.Component {
       !!target?.closest?.(`.${RS}-layer`)
     if (here) {
       e.preventDefault()
-      this.saveNow()
+      if (editor) {
+        editor.saveNow()
+      } else {
+        this.saveNow()
+      }
     }
   }
 
@@ -1089,7 +1090,16 @@ export class ReportsWithoutTheme extends React.Component {
     this.stopFollowingFill()
     this.setState({ fill: { id, dataStatus, dataErrors } })
     if (isFillingData(dataStatus)) {
-      const follow = { id, sourceId, version, dataStatus, heardAt: Date.now(), delay: FILL_POLL_MS, timer: null }
+      const follow = {
+        id,
+        sourceId,
+        version,
+        dataStatus,
+        dataHeartbeatAt: null,
+        heardAt: Date.now(),
+        delay: FILL_POLL_MS,
+        timer: null,
+      }
       this.fillFollow = follow
       this.checkFillLater(follow)
     }
@@ -1159,10 +1169,15 @@ export class ReportsWithoutTheme extends React.Component {
         return
       }
     }
-    // Any news — a block filled, the fill under way — says it's still going.
-    if (progress.version !== follow.version || progress.dataStatus !== follow.dataStatus) {
+    // Any news — a block filled, the fill under way, its heartbeat moving on — says it's still going.
+    if (
+      progress.version !== follow.version ||
+      progress.dataStatus !== follow.dataStatus ||
+      heartbeatMoved(progress, follow)
+    ) {
       follow.version = progress.version
       follow.dataStatus = progress.dataStatus
+      follow.dataHeartbeatAt = progress.dataHeartbeatAt
       follow.heardAt = Date.now()
     } else if (filling && stalled()) {
       return
@@ -1258,7 +1273,7 @@ export class ReportsWithoutTheme extends React.Component {
     if (this.fillFollow?.id === id) {
       this.stopFollowingFill()
     }
-    this.localFills.get(id)?.controllers.forEach((controller) => controller.abort())
+    this.localFills.get(id)?.stop()
     this.localFills.delete(id)
     this.fillInfo.delete(id)
     this.savers.get(id)?.dispose()
@@ -1404,64 +1419,47 @@ export class ReportsWithoutTheme extends React.Component {
   // time, each answer kept the way its block is set up and as of when the report was started, while it shows
   // read-only with how far it's got. Each answer is saved as it comes. It goes on while another report is shown, and
   // stops if this one is deleted or the page goes away; what it hadn't asked by then can be rerun. Every question is
-  // asked with the report's filter lock.
-  fillHere = (id, sourceId, capturedAt) => {
+  // asked with the report's filter lock. Resolves with { total, errors } once it's over, or null if it stopped.
+  fillHere = (id, sourceId, capturedAt, { concurrency } = {}) => {
     const report = this.savers.get(id)?.report
-    const blocks = questionBlocks(report)
-    if (!blocks.length) {
-      return
+    if (!questionBlocks(report).length) {
+      return Promise.resolve({ total: 0, errors: [] })
     }
-    const filters = report.sessionFilterLocks
-    const fill = { next: 0, asking: 0, errors: [], controllers: new Set() }
-    this.localFills.set(id, fill)
+    let settle
+    const over = new Promise((resolve) => {
+      settle = resolve
+    })
+    // The fill's place in localFills, there before it asks anything: whether it's still wanted is read from it.
+    const entry = { stop: () => settle(null) }
+    const current = () => this.mounted && this.localFills.get(id) === entry
+    this.localFills.set(id, entry)
     this.showFill(id, { dataStatus: 'RUNNING', dataErrors: [] })
 
-    const finish = () => {
+    const fill = fillQuestions({
+      report,
+      authentication: this.credentialsFor(sourceId),
+      autoQLConfig: this.props.autoQLConfig,
+      capturedAt,
+      ...(concurrency ? { concurrency } : {}),
+      isCurrent: current,
+      onAnswer: (block, capture) => this.keepFilled(id, block, capture),
+    })
+    entry.stop = () => {
+      fill.stop()
+      settle(null)
+    }
+    fill.done.then(({ total, errors }) => {
+      if (!current()) {
+        settle(null)
+        return
+      }
       this.localFills.delete(id)
-      const filled = blocks.length - fill.errors.length
-      const dataStatus = !fill.errors.length ? 'DONE' : filled ? 'PARTIAL' : 'FAILED'
-      this.showFill(id, { dataStatus, dataErrors: fill.errors, ended: true })
-    }
-    const askNext = () => {
-      if (!this.mounted || this.localFills.get(id) !== fill) {
-        return
-      }
-      if (fill.next >= blocks.length) {
-        if (!fill.asking) {
-          finish()
-        }
-        return
-      }
-      const block = blocks[fill.next]
-      fill.next += 1
-      fill.asking += 1
-      const controller = typeof AbortController === 'function' ? new AbortController() : null
-      fill.controllers.add(controller)
-      captureQuestion({
-        query: block.source.query,
-        authentication: this.credentialsFor(sourceId),
-        autoQLConfig: this.props.autoQLConfig,
-        filters,
-        signal: controller?.signal,
-        rerun: { kept: block.capture, displayType: block.displayType },
-        capturedAt,
-      }).then((result) => {
-        fill.controllers.delete(controller)
-        fill.asking -= 1
-        if (!this.mounted || this.localFills.get(id) !== fill) {
-          return
-        }
-        if (result.ok) {
-          this.keepFilled(id, block, result.capture)
-        } else if (result.reason !== 'cancelled') {
-          fill.errors.push(fillErrorOf(block.id, result))
-        }
-        askNext()
-      })
-    }
-    for (let i = 0; i < Math.min(RERUN_ALL_CONCURRENCY, blocks.length); i += 1) {
-      askNext()
-    }
+      const filled = total - errors.length
+      const dataStatus = !errors.length ? 'DONE' : filled ? 'PARTIAL' : 'FAILED'
+      this.showFill(id, { dataStatus, dataErrors: errors, ended: true })
+      settle({ total, errors })
+    })
+    return over
   }
 
   // An answer a fill from here got, kept in its block — while the block still asks that question — and saved.
@@ -1559,6 +1557,230 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState({ tilePicker: null })
   }
 
+  // ---------------------------------------------------------------- a report for each household (RW-353)
+
+  // New report › Start from a template, a report for each value picked for the filter lock (each household, say): in
+  // a folder of their own, named for the template and the day, each for one of them and named for it. They're made and
+  // filled in a few at a time — by AutoQL, or by this page where AutoQL doesn't fill reports itself — while the home
+  // page lists them and says how it's going. Each is saved as it's done, so the page stays open until then. `starts`
+  // are [{ id, lock }], an id for each from the dialog (the same one when it tries again). Resolves once they're under
+  // way; rejects with why none were made.
+  startEachFromTemplate = async ({ templateId, title, starts }) => {
+    if (this.batch) {
+      throw new ReportsApiError({ status: 409, code: 'REPORT_BATCH_UNDER_WAY' })
+    }
+    const sourceId = this.sourceId
+    // What the reports' data is as of, wherever it's filled in.
+    const startedAt = new Date().toISOString()
+    const batch = { sourceId, templateId, startedAt, folder: null, total: starts.length, queue: [...starts] }
+    Object.assign(batch, { done: 0, partly: 0, gone: 0, failed: [] })
+    // Under way from here: another can't start while this one's folder is made.
+    this.batch = batch
+    this.saveNow()
+    try {
+      batch.folder = await this.createFolder(batchFolderName(title, new Date()))
+    } catch (error) {
+      this.batch = this.batch === batch ? null : this.batch
+      throw error
+    }
+    if (this.batch !== batch || !this.stillOn(sourceId)) {
+      this.batch = this.batch === batch ? null : this.batch
+      return
+    }
+    this.setState({ newReportOpen: false, actionError: null })
+    this.sayBatch(batch)
+    const worker = async () => {
+      while (batch.queue.length && this.batch === batch) {
+        await this.makeOneOfBatch(batch, batch.queue.shift())
+        this.sayBatch(batch)
+      }
+    }
+    Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, starts.length) }, worker)).then(() => this.endBatch(batch))
+  }
+
+  // One of a batch's reports: made for its lock, filled in, and named for it. What became of it is counted.
+  makeOneOfBatch = async (batch, { id, lock }) => {
+    let detail
+    try {
+      detail = await createReportFromTemplate({
+        authentication: this.credentialsFor(batch.sourceId),
+        id,
+        templateId: batch.templateId,
+        folderId: batch.folder.id,
+        timeZone: browserTimeZone(),
+        sessionFilterLocks: [lock],
+      })
+    } catch (error) {
+      this.unauthorized(error)
+      batch.failed.push(error)
+      return
+    }
+    this.listBatchReport(batch, summaryOf(detail))
+    const filled = this.batch === batch ? await this.fillBatchReport(batch, detail, lock) : null
+    if (!filled || !(await this.nameBatchReport(batch, detail.id, lock, filled.saver))) {
+      batch.gone += 1
+      return
+    }
+    batch.done += 1
+    if (filled.dataStatus !== 'DONE') {
+      batch.partly += 1
+    }
+    this.listBatchReport(batch, { id: detail.id, dataStatus: filled.dataStatus })
+  }
+
+  // A batch report's data, asked with its lock: filled in by AutoQL, or by this page where AutoQL doesn't fill reports,
+  // couldn't take this one, or made it for another lock (a service before RW-352). Resolves with how it went
+  // ({ dataStatus, saver }, the saver when it was filled in here), or null when it stopped: it was deleted, the
+  // page went away, or it couldn't be read.
+  fillBatchReport = async (batch, detail, lock) => {
+    const { id } = detail
+    const filling = isFillingData(detail.dataStatus)
+    if (filling) {
+      const ended = await this.awaitBatchFill(batch, id)
+      if (!ended || lockKeptOn(detail.report, lock)) {
+        return ended
+      }
+    } else if (detail.dataStatus !== 'NONE' && !busyAtStart(detail) && lockKeptOn(detail.report, lock)) {
+      return { dataStatus: detail.dataStatus }
+    }
+    // Filled in here, through its saver, as a report started here is.
+    const saver = filling
+      ? await this.batchSaver(batch, id)
+      : this.makeSaver(id, batch.sourceId, detail.report, storedOf(detail))
+    if (!saver) {
+      return null
+    }
+    if (!lockKeptOn(saver.report, lock)) {
+      saver.edit(setSessionFilterLocks(saver.report, [lock]))
+    }
+    this.listBatchReport(batch, { id, dataStatus: 'RUNNING' })
+    const over = await this.fillHere(id, batch.sourceId, batch.startedAt, { concurrency: BATCH_QUESTIONS_AT_ONCE })
+    if (!over) {
+      return null
+    }
+    const failed = over.errors.length
+    return { dataStatus: !failed ? 'DONE' : failed < over.total ? 'PARTIAL' : 'FAILED', saver }
+  }
+
+  // AutoQL's fill of a batch report, followed until it ends — or until there's been no news of it for long enough —
+  // the home page's list saying how it's going. Resolves with how it ended, or null once it's gone or the batch stopped.
+  awaitBatchFill = async (batch, id) => {
+    let delay = FILL_POLL_MS
+    let heardAt = Date.now()
+    let last = null
+    for (;;) {
+      await wait(delay)
+      if (this.batch !== batch) {
+        return null
+      }
+      let progress
+      try {
+        progress = await fetchReportDataStatus({ authentication: this.credentialsFor(batch.sourceId), id })
+      } catch (error) {
+        if (isReportGone(error)) {
+          return null
+        }
+        this.unauthorized(error)
+        progress = null
+      }
+      if (progress) {
+        const moved = progress.version !== last?.version || progress.dataStatus !== last?.dataStatus
+        // A heartbeat moving on is news too, though the list has nothing new to show.
+        if (moved || heartbeatMoved(progress, last)) {
+          heardAt = Date.now()
+        }
+        if (moved) {
+          this.listBatchReport(batch, { id, dataStatus: progress.dataStatus })
+        }
+        last = progress
+      }
+      if (progress && !isFillingData(progress.dataStatus)) {
+        return { dataStatus: progress.dataStatus }
+      }
+      if (Date.now() - heardAt >= FILL_STALL_MS) {
+        return { dataStatus: 'FAILED' }
+      }
+      delay = progress ? FILL_POLL_MS : Math.min(delay * 2, FILL_POLL_MAX_MS)
+    }
+  }
+
+  // The saver to change a batch report through: its own while it's shown here or has edits waiting, otherwise one at
+  // the version AutoQL has now (its fill moved it on). Null when it couldn't be read.
+  batchSaver = async (batch, id) => {
+    const open = this.savers.get(id)
+    if (open && (this.shownId === id || open.hasUnsaved)) {
+      return open
+    }
+    let detail
+    try {
+      detail = await fetchReport({ authentication: this.credentialsFor(batch.sourceId), id })
+    } catch (error) {
+      this.unauthorized(error)
+      return null
+    }
+    return this.mounted ? this.makeSaver(id, batch.sourceId, detail.report, storedOf(detail)) : null
+  }
+
+  // A batch report named for its lock ("<its title> — <the household>") and saved, with its answers when it was filled
+  // in here. Resolves with whether it was saved.
+  nameBatchReport = async (batch, id, lock, known) => {
+    const saver = known || (await this.batchSaver(batch, id))
+    if (!saver) {
+      return false
+    }
+    const title = batchTitleOf(saver.report?.title, lock)
+    saver.edit(setTitle(saver.report, title))
+    if (this.stillOn(batch.sourceId)) {
+      this.setState(({ opened, reports }) => ({
+        opened: opened?.id === id ? { id, report: saver.report } : opened,
+        reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
+      }))
+    }
+    return saver.flush()
+  }
+
+  // A batch report on the home page's list: added as it's made, and changed as it fills in.
+  listBatchReport = (batch, report) => {
+    if (!this.stillOn(batch.sourceId)) {
+      return
+    }
+    this.setState(({ reports }) => {
+      if (!reports) {
+        return null
+      }
+      const listed = reports.some((r) => r.id === report.id)
+      return {
+        reports: listed ? reports.map((r) => (r.id === report.id ? { ...r, ...report } : r)) : [report, ...reports],
+      }
+    })
+  }
+
+  // What the home page says while a batch is made.
+  sayBatch = (batch) => {
+    if (this.batch === batch && this.stillOn(batch.sourceId)) {
+      const settled = batch.done + batch.gone + batch.failed.length
+      this.setState({ notice: S.batch.making(settled, batch.total, batch.folder.name) })
+    }
+  }
+
+  // And once it's over: how many were made, and filled in; and why any weren't made.
+  endBatch = (batch) => {
+    if (this.batch !== batch) {
+      return
+    }
+    this.batch = null
+    if (!this.stillOn(batch.sourceId)) {
+      return
+    }
+    const { done, partly, failed, total, folder } = batch
+    const said = done ? [S.batch.made(done, total, folder.name), partly ? S.batch.partly(partly) : null] : []
+    const why = failed.length ? describeReportError(failed[0], 'startFromTemplate').reason : null
+    this.setState({
+      notice: said.filter(Boolean).join(' ') || null,
+      actionError: why ? S.batch.notMade(failed.length, total, why) : null,
+    })
+  }
+
   // ---------------------------------------------------------------- templates, for those who manage them
 
   canManageTemplates = () => !!(this.props.enableTemplates && this.props.canManageTemplates)
@@ -1577,6 +1799,15 @@ export class ReportsWithoutTheme extends React.Component {
   openManageTemplates = () => this.setState({ newReportOpen: false, saveAsTemplateId: null, manageTemplatesOpen: true })
 
   closeManageTemplates = () => this.setState({ manageTemplatesOpen: false })
+
+  // Manage templates › Edit: the template in the builder, in place of the tabs. What's waiting in the report shown is
+  // saved first. Closed, it's back to Manage templates, which lists them again.
+  editTemplate = (template) => {
+    this.saveNow()
+    this.setState({ manageTemplatesOpen: false, editingTemplate: { id: template.id, title: template.title } })
+  }
+
+  closeTemplateEditor = () => this.setState({ editingTemplate: null, manageTemplatesOpen: this.canManageTemplates() })
 
   openNewReport = () => this.setState({ newReportOpen: true })
 
@@ -1619,8 +1850,29 @@ export class ReportsWithoutTheme extends React.Component {
     return this.props.renderHome ? this.props.renderHome(home) : <PlainHome {...home} />
   }
 
+  // What every builder here is handed: a report's, in its tab, and a template's being edited.
+  builderProps = () => ({
+    authentication: this.props.authentication,
+    autoQLConfig: this.props.autoQLConfig,
+    dataFormatting: this.props.dataFormatting,
+    dashboards: this.props.dashboards || NO_DASHBOARDS,
+    branding: this.props.branding,
+    enableBranding: this.props.enableBranding,
+    canEditBranding: this.props.canEditBranding,
+    enableDataBlocks: this.props.enableDataBlocks,
+    enableAnalysis: this.props.enableAnalysis,
+    enableRunReport: this.props.enableRunReport,
+    enableFilterLocks: this.props.enableFilterLocks,
+    loadFilterLockSuggestions: this.props.loadFilterLockSuggestions,
+    filterLockLabels: this.props.filterLockLabels,
+    fontStylesheetUrl: this.props.fontStylesheetUrl,
+    getAuthenticationForProject: this.props.getAuthenticationForProject,
+    onRunComplete: this.props.onRunComplete,
+    onErrorCallback: this.props.onErrorCallback,
+  })
+
   renderEditor = () => {
-    const { authentication, autoQLConfig, dataFormatting, dashboards, dashboardsError } = this.props
+    const { dashboards, dashboardsError } = this.props
     const { openError, saveState } = this.state
     const active = this.activeReport()
     const readOnly = !!active && isNewerSchema(active.report)
@@ -1638,30 +1890,14 @@ export class ReportsWithoutTheme extends React.Component {
         <ReportBuilder
           // A fresh builder — and run state — per report and data source.
           key={`${this.sourceId}:${active.id}`}
-          authentication={authentication}
-          autoQLConfig={autoQLConfig}
-          dataFormatting={dataFormatting}
-          dashboards={dashboards || NO_DASHBOARDS}
+          {...this.builderProps()}
           report={active.report}
           onChange={this.handleChange}
           readOnly={filling}
           dataFill={this.dataFillFor(fill, filling)}
           onSaveAsTemplate={this.canManageTemplates() && !readOnly && !filling ? this.openSaveAsTemplate : undefined}
-          branding={this.props.branding}
-          enableBranding={this.props.enableBranding}
-          canEditBranding={this.props.canEditBranding}
-          enableDataBlocks={this.props.enableDataBlocks}
           pickDashboardTiles={dashboards === undefined ? undefined : this.pickDashboardTiles}
-          enableAnalysis={this.props.enableAnalysis}
-          enableRunReport={this.props.enableRunReport}
-          enableFilterLocks={this.props.enableFilterLocks}
-          loadFilterLockSuggestions={this.props.loadFilterLockSuggestions}
-          filterLockLabels={this.props.filterLockLabels}
           lockChangedAt={this.locksPutOn.get(active.id)}
-          fontStylesheetUrl={this.props.fontStylesheetUrl}
-          getAuthenticationForProject={this.props.getAuthenticationForProject}
-          onRunComplete={this.props.onRunComplete}
-          onErrorCallback={this.props.onErrorCallback}
           toolbarStatus={
             !readOnly && !filling && saveState ? (
               <SaveStatus
@@ -1737,25 +1973,40 @@ export class ReportsWithoutTheme extends React.Component {
       newReportOpen,
       saveAsTemplateId,
       manageTemplatesOpen,
+      editingTemplate,
     } = this.state
     const active = this.activeReport()
     const titleFor = (id) => titleOf(reports?.find((report) => report.id === id))
 
     return (
       <div ref={this.root} className={`${RS}${className ? ` ${className}` : ''}`} data-test='reports'>
-        <ReportTabs
-          tabs={tabs.map((id) => ({ id, title: titleFor(id), notSaved: notSaved.has(id) }))}
-          shownId={shownId}
-          onHome={this.goHome}
-          onSelect={this.openReport}
-          onClose={this.closeTab}
-          onNew={this.openNewReport}
-          newDisabled={reports === null}
-          widths={tabWidths}
-          onResize={this.resizeTab}
-        />
+        {editingTemplate && this.canManageTemplates() ? (
+          <TemplateEditor
+            ref={this.templateEditor}
+            key={editingTemplate.id}
+            authentication={authentication}
+            templateId={editingTemplate.id}
+            title={editingTemplate.title}
+            builderProps={this.builderProps()}
+            onClose={this.closeTemplateEditor}
+          />
+        ) : (
+          <>
+            <ReportTabs
+              tabs={tabs.map((id) => ({ id, title: titleFor(id), notSaved: notSaved.has(id) }))}
+              shownId={shownId}
+              onHome={this.goHome}
+              onSelect={this.openReport}
+              onClose={this.closeTab}
+              onNew={this.openNewReport}
+              newDisabled={reports === null}
+              widths={tabWidths}
+              onResize={this.resizeTab}
+            />
 
-        {shownId === null ? <div className={`${RS}-home`}>{this.renderHome()}</div> : this.renderEditor()}
+            {shownId === null ? <div className={`${RS}-home`}>{this.renderHome()}</div> : this.renderEditor()}
+          </>
+        )}
 
         {newReportOpen ? (
           <NewReportDialog
@@ -1771,6 +2022,7 @@ export class ReportsWithoutTheme extends React.Component {
             loadFilterLockSuggestions={this.props.loadFilterLockSuggestions}
             filterLockLabels={this.props.filterLockLabels}
             onStartFromTemplate={this.startFromTemplate}
+            onStartEachFromTemplate={this.props.enableFilterLocks ? this.startEachFromTemplate : undefined}
             onManageTemplates={this.canManageTemplates() ? this.openManageTemplates : undefined}
             previewProps={{
               branding: this.props.branding,
@@ -1793,7 +2045,11 @@ export class ReportsWithoutTheme extends React.Component {
         ) : null}
 
         {manageTemplatesOpen && this.canManageTemplates() ? (
-          <ManageTemplatesDialog authentication={authentication} onClose={this.closeManageTemplates} />
+          <ManageTemplatesDialog
+            authentication={authentication}
+            onEdit={this.editTemplate}
+            onClose={this.closeManageTemplates}
+          />
         ) : null}
 
         {tilePicker && active && tilePicker.reportId === active.id ? (

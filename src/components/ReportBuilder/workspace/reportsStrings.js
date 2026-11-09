@@ -86,6 +86,9 @@ export const REPORTS_STRINGS = {
       organize: 'Nothing was changed',
       templates: 'Templates couldn’t be loaded',
       template: 'This template couldn’t be shown',
+      openTemplate: 'This template couldn’t be opened',
+      editTemplate: 'The template wasn’t saved',
+      discardChanges: 'The changes weren’t discarded',
       startFromTemplate: 'The report wasn’t started',
       fill: 'How filling in its data is going couldn’t be checked',
       manageTemplates: 'Templates couldn’t be loaded',
@@ -118,6 +121,8 @@ export const REPORTS_STRINGS = {
     reportLimit: 'that’s over the limit of 1,000 reports',
     tooManyReports: 'up to 200 reports can be changed at once',
     templateGone: 'that template isn’t published any more',
+    templateDeleted: 'the template no longer exists (it may have been deleted)',
+    batchUnderWay: 'reports are still being made from a template; start more once they’re done',
     filling: 'its data is still being filled in',
     busy: 'AutoQL is too busy just now',
     forbidden: 'you don’t have permission to manage templates',
@@ -184,6 +189,39 @@ export const REPORTS_STRINGS = {
     back: 'Back',
     start: 'Start report',
     starting: 'Starting…',
+    // With two or more values picked for the filter lock (households, say): one report for all of them, or one each.
+    howMany: 'Reports to start',
+    forAll: 'One report for all of them',
+    forEach: (n) => `A report for each (${n})`,
+    startEach: (n) => `Start ${n} reports`,
+    tooMany: (max) => `Up to ${max} reports can be started at once. Pick fewer.`,
+  },
+
+  // A report for each household from a template (RW-353), made and filled in a few at a time while the home page lists
+  // them, in a folder of their own.
+  batch: {
+    folder: (title, day) => `${title} — ${day}`,
+    title: (title, value) => `${title} — ${value}`,
+    making: (settled, total, folder) =>
+      `Making ${total} reports in “${folder}”: ${settled} done so far. Keep this page open until they’re all done.`,
+    made: (made, total, folder) =>
+      made < total
+        ? `${made} of ${total} reports ${made === 1 ? 'is' : 'are'} in “${folder}”.`
+        : total === 1
+        ? `Your report is in “${folder}”.`
+        : total === 2
+        ? `Both reports are in “${folder}”.`
+        : `All ${total} reports are in “${folder}”.`,
+    partly: (n) =>
+      n === 1
+        ? '1 of them is missing some data: open it to see why, and Rerun it.'
+        : `${n} of them are missing some data: open one to see why, and Rerun it.`,
+    notMade: (n, total, reason) =>
+      n === total
+        ? `None of the ${total} reports were made: ${reason}.`
+        : `${n} of the ${total} reports ${n === 1 ? 'wasn’t' : 'weren’t'} made: ${reason}. Start ${
+            n === 1 ? 'it' : 'them'
+          } again from the template.`,
   },
 
   // Report options › Save as template… (an organization's admins): a draft made from the report as it's saved.
@@ -212,7 +250,7 @@ export const REPORTS_STRINGS = {
   // Manage templates (an organization's admins): its templates, drafts and published, and its categories.
   manageTemplates: {
     title: 'Manage templates',
-    what: 'Your organization’s templates. Reports can be started only from published ones, and a change to one reaches everyone at once.',
+    what: 'Your organization’s templates. Reports can be started only from published ones. Click a title to rename it.',
     open: 'Manage templates…',
     tabs: 'Templates and categories',
     templatesTab: 'Templates',
@@ -221,10 +259,25 @@ export const REPORTS_STRINGS = {
     noTemplates: 'No templates yet. Save a report as one from its ⋮ menu.',
     draft: 'Draft',
     published: 'Published',
+    unpublishedChanges: 'Unpublished changes',
     edited: (date) => `Edited ${date}`,
+    renameTitle: 'Click to rename',
     edit: 'Edit',
     publish: 'Publish',
+    publishChanges: 'Publish changes',
     unpublish: 'Unpublish',
+    discardChanges: 'Discard changes',
+    discard: 'Discard',
+    discardConfirm: (title) => `Discard the unpublished changes to “${title}”? It stays as it’s published.`,
+    // A published template, where its changes can't be kept apart from it until they're published (before RW-361).
+    unpublishToEdit: (title) =>
+      `“${title}” is published. Unpublish it to edit it? No reports can be started from it until it’s published again.`,
+    unpublishToRename: (title) =>
+      `“${title}” is published. Unpublish it to rename it? No reports can be started from it until it’s published again.`,
+    unpublishAndEdit: 'Unpublish and edit',
+    unpublishAndRename: 'Unpublish and rename',
+    // A published template's new title, kept with its changes (RW-361).
+    titleKept: (title) => `“${title}” is kept with the template’s unpublished changes. Publish them to use it.`,
     delete: 'Delete',
     deleteConfirm: (title) => `Delete “${title}”? Reports already made from it keep their copy.`,
     save: 'Save',
@@ -235,6 +288,53 @@ export const REPORTS_STRINGS = {
     rename: 'Rename',
     renameLabel: (name) => `Rename ${name}`,
     deleteCategoryConfirm: (name) => `Delete “${name}”? Its templates stay, without a category.`,
+  },
+
+  // A template opened from Manage templates › Edit (an organization's admins): the whole of it in the builder, its
+  // questions asked on the admin's data to show how its reports will look.
+  templateEditor: {
+    kind: 'Template',
+    untitled: 'Untitled template',
+    rename: 'Click to rename',
+    nameLabel: 'Template name',
+    opening: 'Opening the template…',
+    details: 'Details…',
+    detailsTitle: 'Template details',
+    detailsWhat: 'Its title, and how it’s found in Start from a template. They’re saved with the template.',
+    detailsInvalid: 'These details can’t be used',
+    apply: 'Apply',
+    save: 'Save',
+    saving: 'Saving…',
+    publish: 'Publish',
+    publishChanges: 'Publish changes',
+    publishing: 'Publishing…',
+    discardChanges: 'Discard changes',
+    saved: 'Saved. Publish it in Manage templates, or here, to let others start reports from it.',
+    savedChanges: 'Saved. Reports are started from the template as it’s published until you publish the changes.',
+    leaveTitle: 'Leave without saving?',
+    leaveWhat: 'Changes made since the template was last saved will be lost.',
+    keepEditing: 'Keep editing',
+    leave: 'Leave',
+    discardTitle: 'Discard the unpublished changes?',
+    discardWhat: 'The template stays as it’s published, and these changes are lost.',
+    keep: 'Keep them',
+    discard: 'Discard',
+    newerVersion: 'This template was saved by a newer version of the app, so it can’t be changed here.',
+    publishedNoDrafts: 'This template is published. Unpublish it in Manage templates to edit it.',
+    // Its questions, asked on the admin's data while it opens, with the keys fillNoticeOf takes.
+    fill: {
+      filling: (done, total) =>
+        `Asking its questions on your data, to show how its reports will look: ${done} of ${total} so far. You can edit it once they’re answered.`,
+      filled: () =>
+        'Its questions are answered with your data, to show how its reports will look. The template doesn’t keep the answers.',
+      partlyFilled: (done, total) =>
+        `${done} of ${total} questions were answered. Select the others to see why, and Rerun them.`,
+      notFilled: (total) =>
+        total === 1
+          ? 'Its question couldn’t be answered. Select its block to see why, and Rerun it.'
+          : `None of its ${total} questions could be answered. Select one to see why, and Rerun it.`,
+      fillStalled: 'Asking its questions stopped before it finished. Blocks without data can be rerun.',
+    },
   },
 
   // Dashboard tiles into a report: an empty Data block's "Pick dashboard tiles…", or New report from a dashboard.

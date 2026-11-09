@@ -140,15 +140,26 @@ export const describeBlock = (block) => {
 // What's done to folders and tags, rather than to reports.
 const ORGANIZER_ACTIONS = ['organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag']
 
-// What's done to templates and their categories (Save as template, Manage templates).
-const TEMPLATE_ACTIONS = ['saveTemplate', 'templateDetails', 'publish', 'unpublish', 'deleteTemplate']
+// What's done to templates and their categories (Save as template, Manage templates, a template being edited).
+const TEMPLATE_ACTIONS = [
+  'saveTemplate',
+  'templateDetails',
+  'publish',
+  'unpublish',
+  'deleteTemplate',
+  'openTemplate',
+  'editTemplate',
+  'discardChanges',
+]
 const CATEGORY_ACTIONS = ['categories', 'category', 'deleteCategory']
 
 // The one line to show for a failed call ('load', 'open', 'save', 'add' or 'delete'; for folders and tags
 // 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'; for templates 'templates', 'template',
-// 'startFromTemplate', 'fill', 'manageTemplates', 'saveTemplate', 'templateDetails', 'publish', 'unpublish' and
-// 'deleteTemplate'; for their categories 'categories', 'category' and 'deleteCategory'), and whether trying again
-// later can help: it can when the service couldn't be reached or failed, not when it turned the request down.
+// 'startFromTemplate', 'fill', 'manageTemplates', 'saveTemplate', 'templateDetails', 'publish', 'unpublish',
+// 'deleteTemplate', and for one being edited 'openTemplate', 'editTemplate' and 'discardChanges'; for their categories
+// 'categories', 'category' and 'deleteCategory'), and whether trying again
+// later can help: it can when the service couldn't be reached or failed, not when it turned the request down. `reason`
+// is the line without its lead, for saying it of several at once.
 export const describeReportError = (error, action) => {
   const known = error instanceof ReportsApiError
   const status = known ? error.status : 0
@@ -186,7 +197,7 @@ export const describeReportError = (error, action) => {
   } else if (code === 'REPORT_TAGS_INVALID') {
     reason = TEMPLATE_ACTIONS.includes(action) ? E.tooManyTemplateTags : E.tooManyTags
   } else if (code === 'REPORT_LIMIT_EXCEEDED') {
-    if (action === 'publish' || action === 'templateDetails') {
+    if (action === 'publish' || action === 'templateDetails' || action === 'editTemplate') {
       reason = E.publishLimit
     } else if (TEMPLATE_ACTIONS.includes(action)) {
       reason = E.templateLimit
@@ -211,11 +222,15 @@ export const describeReportError = (error, action) => {
   } else if (code === 'REPORT_BULK_REQUEST_INVALID') {
     reason = E.tooManyReports
   } else if (code === 'REPORT_TEMPLATE_NOT_FOUND') {
-    reason = E.templateGone
+    // Gone from those who manage it; no longer published, for everyone else.
+    reason = TEMPLATE_ACTIONS.includes(action) ? E.templateDeleted : E.templateGone
   } else if (code === 'REPORT_DATA_FILL_IN_PROGRESS') {
     // Saved while AutoQL fills in its data: it goes through once the fill is done.
     reason = E.filling
     retry = true
+  } else if (code === 'REPORT_BATCH_UNDER_WAY') {
+    // Not the service's: a report for each household is still being made from a template here (RW-353).
+    reason = E.batchUnderWay
   } else if (code === 'REPORT_FILL_REJECTED') {
     reason = E.busy
     retry = true
@@ -234,7 +249,7 @@ export const describeReportError = (error, action) => {
   } else {
     reason = E.refused
   }
-  return { message: `${E.lead[action] || E.lead.save}: ${reason}.`, retry }
+  return { message: `${E.lead[action] || E.lead.save}: ${reason}.`, reason, retry }
 }
 
 // Whether a failed call was the service turning the token away.

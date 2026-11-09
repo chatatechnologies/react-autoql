@@ -252,9 +252,25 @@ export const pageOf = (data) => {
   }
 }
 
+// A published template's pending changes, kept apart until they're published (RW-361): its details and document as
+// they'll be.
+const templateDraftOf = (raw) =>
+  isObject(raw)
+    ? {
+        title: text(raw.title),
+        description: text(raw.description),
+        categoryId: idOrNull(raw.category_id),
+        tags: Array.isArray(raw.tags) ? raw.tags.filter((tag) => typeof tag === 'string') : [],
+        report: isObject(raw.document) ? raw.document : null,
+        updatedAt: text(raw.updated_at),
+      }
+    : null
+
 // A template as listed (without its document), or with it as `report` when it was asked for by id. `scope` is
 // INTEGRATOR (everyone's) or ORGANIZATION (`organizationId`'s); `status` DRAFT or PUBLISHED, though only published
-// ones are listed to start a report from.
+// ones are listed to start a report from. Where the service keeps a published template's changes apart until they're
+// published (RW-361), it also says whether there are any (`hasDraft`, `draftUpdatedAt`) and, asked for by id, what
+// they are (`draft`, or null); a service without that leaves them out.
 export const templateOf = (raw) =>
   isObject(raw) && typeof raw.id === 'string'
     ? {
@@ -272,6 +288,10 @@ export const templateOf = (raw) =>
         createdAt: text(raw.created_at),
         updatedAt: text(raw.updated_at),
         ...(isObject(raw.document) ? { report: raw.document } : {}),
+        ...(typeof raw.has_draft === 'boolean'
+          ? { hasDraft: raw.has_draft, draftUpdatedAt: text(raw.draft_updated_at) || null }
+          : {}),
+        ...('draft' in raw ? { draft: templateDraftOf(raw.draft) } : {}),
       }
     : null
 
@@ -374,14 +394,16 @@ export const createReportFromTemplate = async ({
   return { ...detailOf(data), created: status === 201 }
 }
 
-// How filling a report's data is going: { dataStatus, version, dataUpdatedAt, dataErrors }. Every block filled
-// moves the report to a new version, so a version that changed means there's more to show.
+// How filling a report's data is going: { dataStatus, version, dataUpdatedAt, dataHeartbeatAt, dataErrors }. Every
+// block filled moves the report to a new version, so a version that changed means there's more to show. The heartbeat
+// moves after every question the fill asks, failed ones too (null from a service that doesn't send it).
 export const fetchReportDataStatus = async ({ authentication, id, signal }) => {
   const { data } = await call({ authentication, path: `${pathOf(id)}/data`, signal })
   return {
     dataStatus: dataStatusOf(data?.data_status),
     version: count(data?.version),
     dataUpdatedAt: text(data?.data_updated_at) || null,
+    dataHeartbeatAt: text(data?.data_heartbeat_at) || null,
     dataErrors: dataErrorsOf(data?.data_errors),
   }
 }

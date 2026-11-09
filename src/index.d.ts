@@ -857,6 +857,8 @@ export interface ReportDataProgress {
   // Moves on with every block filled.
   version: number
   dataUpdatedAt: string | null
+  // Moves on after every question the fill asks, failed ones too. Null from a service that doesn't send it.
+  dataHeartbeatAt: string | null
   dataErrors: ReportDataError[]
 }
 
@@ -877,6 +879,21 @@ export interface ReportTemplate {
   updatedAt: string
   // Asked for by id: what a report started from it begins as.
   report?: Report
+  // Where the service keeps a published template's changes apart until they're published (RW-361): whether there are
+  // any, and, asked for by id from the management API, what they are.
+  hasDraft?: boolean
+  draftUpdatedAt?: string | null
+  draft?: ReportTemplateDraft | null
+}
+
+// A published template's changes, kept apart until they're published (RW-361).
+export interface ReportTemplateDraft {
+  title: string
+  description: string
+  categoryId: string | null
+  tags: string[]
+  report: Report | null
+  updatedAt: string
 }
 
 export interface ReportTemplateCategory {
@@ -996,16 +1013,30 @@ export declare function createTemplateFromReport(
     tags?: string[]
   },
 ): Promise<ReportTemplate>
-// What's left out stays as it is; null takes away a description, a category or the tags.
+// One managed template, draft or published, with its document as `report` (and its pending changes as `draft`, where
+// the service keeps those).
+export declare function fetchManagedTemplate(
+  options: ReportsCall & { id: string; signal?: AbortSignal },
+): Promise<ReportTemplate & { report: Report }>
+// What's left out stays as it is; null takes away a description, a category or the tags. `document` replaces the
+// template's document, which AutoQL rebuilds as it does one made from a report.
+export interface ReportTemplateChanges {
+  title?: string
+  description?: string | null
+  categoryId?: string | null
+  tags?: string[] | null
+  document?: Report
+}
 export declare function updateTemplate(
-  options: ReportsCall & {
-    id: string
-    title?: string
-    description?: string | null
-    categoryId?: string | null
-    tags?: string[] | null
-  },
+  options: ReportsCall & { id: string } & ReportTemplateChanges,
 ): Promise<ReportTemplate>
+// Whether the service keeps a published template's changes apart until they're published (RW-361).
+export declare function keepsTemplateDrafts(template: ReportTemplate | null | undefined): boolean
+// Keeps changes to a published template apart until it's published again (RW-361).
+export declare function saveTemplateDraft(
+  options: ReportsCall & { id: string } & ReportTemplateChanges,
+): Promise<ReportTemplate | null>
+export declare function discardTemplateDraft(options: ReportsCall & { id: string }): Promise<void>
 export declare function publishTemplate(options: ReportsCall & { id: string }): Promise<ReportTemplate | null>
 export declare function unpublishTemplate(options: ReportsCall & { id: string }): Promise<ReportTemplate | null>
 // Reports already made from it keep their copy.
