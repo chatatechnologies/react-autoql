@@ -2619,18 +2619,44 @@ describe('the title where it shows on the page (RW-363)', () => {
     expect(container.querySelector('.react-autoql-report-builder-title-pencil')).toBeTruthy()
   })
 
-  it('stops renaming on Escape and when the field is left', () => {
-    setup(createEmptyReport({ title: 'Quarterly review' }))
-    fireEvent.click(screen.getAllByTestId('report-running-title')[0])
-    fireEvent.keyDown(screen.getByTestId('report-running-title-input'), { key: 'Escape' })
-    expect(screen.queryByTestId('report-running-title-input')).toBeNull()
+  it('puts the title back on Escape, and keeps a new one on Return or when the field is left', () => {
+    const { lastReport } = setup(createEmptyReport({ title: 'Quarterly review' }))
+    const rename = (to) => {
+      fireEvent.click(screen.getAllByTestId('report-running-title')[0])
+      const input = screen.getByTestId('report-running-title-input')
+      fireEvent.change(input, { target: { value: to } })
+      return input
+    }
 
-    fireEvent.click(screen.getAllByTestId('report-running-title')[0])
-    fireEvent.blur(screen.getByTestId('report-running-title-input'))
+    fireEvent.keyDown(rename('Monthly review'), { key: 'Escape' })
     expect(screen.queryByTestId('report-running-title-input')).toBeNull()
+    expect(lastReport().title).toBe('Quarterly review')
+
+    fireEvent.keyDown(rename('Monthly review'), { key: 'Enter' })
+    expect(lastReport().title).toBe('Monthly review')
+
+    fireEvent.blur(rename('Yearly review'))
+    expect(screen.queryByTestId('report-running-title-input')).toBeNull()
+    expect(lastReport().title).toBe('Yearly review')
   })
 
-  it('opens the household’s setting from what the report is for, whatever was selected', () => {
+  it('puts the toolbar’s title back on Escape too, and keeps a new one on Return', () => {
+    const { lastReport } = setup(createEmptyReport({ title: 'Quarterly review' }))
+    const field = screen.getByTestId('report-builder-title')
+
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Monthly review' } })
+    fireEvent.keyDown(field, { key: 'Escape' })
+    expect(lastReport().title).toBe('Quarterly review')
+    expect(document.activeElement).not.toBe(field)
+
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Monthly review' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(lastReport().title).toBe('Monthly review')
+  })
+
+  it('opens the household picker from what the report is for, whatever was selected', async () => {
     setup(
       { ...createEmptyReport({ blocks: [heading] }), sessionFilterLocks: [BROWN] },
       { enableFilterLocks: true, filterLockLabels: LABELS },
@@ -2642,10 +2668,12 @@ describe('the title where it shows on the page (RW-363)', () => {
     expect(lock.textContent).toBe('Brown Family')
     expect(lock.title).toBe('Change households in the side panel')
     fireEvent.click(lock)
-    expect(document.activeElement).toBe(within(panel()).getByTestId('report-filter-lock-change'))
+    // Not only the setting, which may already be in view: its picker, so the click shows something.
+    expect(within(panel()).getByTestId('report-filter-lock-change')).toBeTruthy()
+    expect(await screen.findByPlaceholderText('Search & select a filter')).toBeTruthy()
   })
 
-  it('works from the keyboard, and reads as it prints until it’s renamed', () => {
+  it('works from the keyboard, and reads as it prints until it’s renamed', async () => {
     setup(
       { ...createEmptyReport({ title: 'Quarterly review' }), sessionFilterLocks: [BROWN] },
       { enableFilterLocks: true, filterLockLabels: LABELS },
@@ -2660,7 +2688,7 @@ describe('the title where it shows on the page (RW-363)', () => {
     fireEvent.keyDown(screen.getByTestId('report-running-title-input'), { key: 'Escape' })
 
     fireEvent.keyDown(screen.getAllByTestId('report-running-lock-button')[0], { key: ' ' })
-    expect(document.activeElement).toBe(within(panel()).getByTestId('report-filter-lock-change'))
+    expect(await screen.findByPlaceholderText('Search & select a filter')).toBeTruthy()
   })
 
   it('scrolls the line to what a Tab reaches, and not for a click', () => {

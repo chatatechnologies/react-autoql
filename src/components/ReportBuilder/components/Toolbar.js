@@ -6,6 +6,41 @@ import { Icon as AppIcon } from '../../Icon'
 import { FIT, ZOOM_LEVELS } from './ZoomFrame'
 import { ReportOptions } from './ReportOptions'
 
+// The report's title. It looks like the title it is, so it shows it can be changed when the pointer is on it
+// (RW-363). Return keeps the new name, and Escape puts back the one it had when the field was clicked into.
+const TitleField = ({ title, onTitleChange }) => {
+  const started = React.useRef(title)
+  return (
+    <div className={`${RB}-title-field`}>
+      <input
+        type='text'
+        className={`${RB}-title-input`}
+        value={title}
+        placeholder={STRINGS.titlePlaceholder}
+        aria-label={STRINGS.titleLabel}
+        data-test='report-builder-title'
+        onFocus={() => {
+          started.current = title
+        }}
+        onChange={(e) => onTitleChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (e.key === 'Escape' && title !== started.current) {
+              onTitleChange(started.current)
+            }
+            e.currentTarget.blur()
+          }
+        }}
+      />
+      <span className={`${RB}-title-pencil`} aria-hidden='true'>
+        <AppIcon type='edit' />
+      </span>
+    </div>
+  )
+}
+
 // Run, preview and print are the builder's own; a host adds nothing to make a report work. Run shows only
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
 // `status` is the host's own element (toolbarStatus), set apart just before them. The zoom (ZoomFrame) is how
@@ -53,21 +88,7 @@ export const Toolbar = ({
         {previewMeta ? <span className={`${RB}-toolbar-meta`}>{previewMeta}</span> : null}
       </div>
     ) : (
-      // It looks like the title it is, so it shows it can be changed when the pointer is on it (RW-363).
-      <div className={`${RB}-title-field`}>
-        <input
-          type='text'
-          className={`${RB}-title-input`}
-          value={title}
-          placeholder={STRINGS.titlePlaceholder}
-          aria-label={STRINGS.titleLabel}
-          data-test='report-builder-title'
-          onChange={(e) => onTitleChange(e.target.value)}
-        />
-        <span className={`${RB}-title-pencil`} aria-hidden='true'>
-          <AppIcon type='edit' />
-        </span>
-      </div>
+      <TitleField title={title} onTitleChange={onTitleChange} />
     )}
     <div className={`${RB}-toolbar-actions`}>
       {status ? (

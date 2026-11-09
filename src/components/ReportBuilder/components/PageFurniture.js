@@ -81,9 +81,12 @@ const lockOf = (lock, onLockClick, lockLabel) =>
   ) : null
 
 // The title where the page is edited (RW-363): a click renames the report in place, as the toolbar's title field
-// does, and Return, Escape or a click elsewhere puts it back. What the report is for opens its setting.
+// does. Return or a click elsewhere keeps the new name, and Escape puts back the one it had. What the report is for
+// opens its picker.
 const EditableRunningTitle = ({ title, onTitleChange, lock, onLockClick, lockLabel }) => {
   const [editing, setEditing] = React.useState(false)
+  // The title when the field opened, which Escape puts back.
+  const opened = React.useRef(title)
   return (
     <div className={`${RB}-running-title`} data-editing={editing ? '' : undefined}>
       {editing ? (
@@ -101,6 +104,9 @@ const EditableRunningTitle = ({ title, onTitleChange, lock, onLockClick, lockLab
             if (e.key === 'Enter' || e.key === 'Escape') {
               e.preventDefault()
               e.stopPropagation()
+              if (e.key === 'Escape' && title !== opened.current) {
+                onTitleChange(opened.current)
+              }
               setEditing(false)
             }
           }}
@@ -110,7 +116,10 @@ const EditableRunningTitle = ({ title, onTitleChange, lock, onLockClick, lockLab
           className={`${RB}-running-title-text`}
           title={STRINGS.renameTitle}
           testId='report-running-title'
-          onActivate={() => setEditing(true)}
+          onActivate={() => {
+            opened.current = title
+            setEditing(true)
+          }}
         >
           {title || STRINGS.untitled}
         </InlineButton>

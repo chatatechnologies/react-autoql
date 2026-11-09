@@ -80,4 +80,39 @@ describe('FilterLockField', () => {
     fireEvent.keyDown(screen.getByTestId('report-filter-lock-change'), { key: 'Escape' })
     expect(outerKeyDown).toHaveBeenCalledTimes(1)
   })
+
+  it('gives Change… the focus back once the list has loaded, so Escape still closes the popover', async () => {
+    let loaded
+    setup({ loadSuggestions: () => new Promise((resolve) => (loaded = resolve)) })
+    const change = screen.getByTestId('report-filter-lock-change')
+    act(() => change.focus())
+    fireEvent.click(change)
+    // Disabled while the list loads, it loses the focus to the page in a browser (here, by way of a field that goes).
+    const gone = document.createElement('input')
+    document.body.appendChild(gone)
+    act(() => gone.focus())
+    act(() => gone.remove())
+    expect(document.activeElement).toBe(document.body)
+
+    await act(async () => loaded(['Brown Family']))
+    expect(screen.getByTestId('popover')).toHaveAttribute('data-open', 'true')
+    expect(document.activeElement).toBe(change)
+    fireEvent.keyDown(document.activeElement, { key: 'Escape' })
+    expect(screen.getByTestId('popover')).toHaveAttribute('data-open', 'false')
+  })
+
+  it('leaves the focus where it went while the list loaded', async () => {
+    let loaded
+    setup({ loadSuggestions: () => new Promise((resolve) => (loaded = resolve)) })
+    const change = screen.getByTestId('report-filter-lock-change')
+    act(() => change.focus())
+    fireEvent.click(change)
+    const elsewhere = document.createElement('input')
+    document.body.appendChild(elsewhere)
+    act(() => elsewhere.focus())
+
+    await act(async () => loaded([]))
+    expect(document.activeElement).toBe(elsewhere)
+    elsewhere.remove()
+  })
 })

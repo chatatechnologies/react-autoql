@@ -25,6 +25,11 @@ export class FilterLockField extends React.Component {
 
   state = { open: false, loading: false, failed: false, suggestions: null, seed: 0 }
 
+  // The row Change… is in. The popover takes its button's ref to place itself, so the button is found from here.
+  row = React.createRef()
+
+  changeButton = () => this.row.current?.querySelector('button')
+
   componentDidUpdate(prevProps) {
     // Changed from outside rather than in the popover: it starts again from the new one.
     const key = filterLocksKey(this.props.locks)
@@ -41,6 +46,10 @@ export class FilterLockField extends React.Component {
     if (this.props.disabled || this.state.loading) {
       return
     }
+    // Change… is disabled while the list loads, and loses the focus to the page: it gets it back once the popover is
+    // open, so Escape still closes it.
+    const button = this.changeButton()
+    const focused = !!button && document.activeElement === button
     if (this.props.loadSuggestions && !this.state.suggestions) {
       this.setState({ loading: true, failed: false })
       let suggestions
@@ -60,7 +69,12 @@ export class FilterLockField extends React.Component {
         suggestions: (Array.isArray(suggestions) ? suggestions : []).filter((value) => typeof value === 'string'),
       })
     }
-    this.setState({ open: true })
+    this.setState({ open: true }, () => {
+      const lost = !document.activeElement || document.activeElement === document.body
+      if (focused && lost) {
+        this.changeButton()?.focus()
+      }
+    })
   }
 
   close = () => this.setState({ open: false })
@@ -89,7 +103,7 @@ export class FilterLockField extends React.Component {
 
     return (
       <div className={`${classPrefix}-filter-lock`} data-test='report-filter-lock'>
-        <div className={`${classPrefix}-filter-lock-row`} onKeyDown={this.onKeyDown}>
+        <div className={`${classPrefix}-filter-lock-row`} onKeyDown={this.onKeyDown} ref={this.row}>
           <span className={`${classPrefix}-filter-lock-value`} data-test='report-filter-lock-value'>
             {summarizeFilterLocks(locks) || labels.none || L.none}
           </span>

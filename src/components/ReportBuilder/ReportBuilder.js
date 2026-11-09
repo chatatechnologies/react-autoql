@@ -613,8 +613,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   // The panel with nothing selected, as a click off the blocks gives, shown if it was hidden: scrolled to its top
   // (Report options › Page setup), or to one of its settings (`setting`: 'lock' or 'frontMatter', from the page's
-  // header and the note over it), whose first control takes the focus.
-  showPageSetting = (setting) => {
+  // header and the note over it), whose first control takes the focus. With `open`, it's clicked too: the household
+  // in the page's header opens its picker, so the click does something to see.
+  showPageSetting = (setting, { open = false } = {}) => {
     if (!this.state.panelOpen) {
       storePanelOpen(true)
     }
@@ -632,6 +633,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
         const control = next.matches(FOCUSABLE_SETTING) ? next : next.querySelector(FOCUSABLE_SETTING)
         if (control) {
           control.focus()
+          if (open) {
+            control.click()
+          }
           return
         }
       }
@@ -640,7 +644,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   onPageSetup = () => this.showPageSetting(null)
 
-  onLockSetting = () => this.showPageSetting('lock')
+  onLockSetting = () => this.showPageSetting('lock', { open: true })
 
   onFrontMatterSettings = () => this.showPageSetting('frontMatter')
 
