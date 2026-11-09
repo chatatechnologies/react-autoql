@@ -214,13 +214,15 @@ describe('ChataRoseChart measures mode', () => {
     expect(wrapper.find('path.rose-wedge-dimmed')).toHaveLength(0)
   })
 
-  // AQLP-1097: the whole rose is one row (the period), so it's hovered, described and drilled into as one
-  test('every wedge lists the period and all of its measures, and is hovered as one rose', () => {
+  // AQLP-1097: the whole rose is one row (the period), so it's hovered and drilled into as one, but each
+  // wedge's tooltip is only about its own measure
+  test('the whole rose is hovered as one, and a tooltip shows only the hovered measure', () => {
     const wrapper = setupInPeriod()
     expect(wrapper.find('g.rose-wedges-measures').find('path.rose-wedge')).toHaveLength(3)
     const tooltip = getWedge(wrapper, 'Revenue').prop('data-tooltip-html')
-    expect(tooltip.startsWith('<strong>Date:</strong> Jan 4, 2024<br/><strong>Revenue:</strong> $50.00')).toBe(true)
-    expect(tooltip).toContain('<strong>COGS:</strong> $80.00<br/><strong>Profit:</strong> -$30.00')
+    expect(tooltip.startsWith('<strong>Revenue:</strong> $50.00<br/><strong>Date:</strong> Jan 4, 2024')).toBe(true)
+    expect(tooltip).not.toContain('COGS')
+    expect(tooltip).not.toContain('Profit')
   })
 
   test('clicking a wedge makes the whole rose active for that period', () => {
@@ -284,7 +286,7 @@ describe('ChataRoseChart measures mode', () => {
     expect(wrapper.find('g.rose-hatch-key').text()).toBe('Below average')
     // COGS on the last day: 80, against a daily average of 65 that usually varies by about 11
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
-      '<strong>COGS:</strong> $80.00<br/><strong>Profit:</strong> -$30.00<br/>COGS: 1.3× its usual variation above its daily average of $65.00<br/>Typical range: $53.82 – $76.18',
+      '<strong>COGS:</strong> $80.00<br/><strong>Date:</strong> Jan 4, 2024<br/>1.3× its usual variation above its daily average of $65.00<br/>Typical range: $53.82 – $76.18',
     )
     expect(wrapper.find('circle.rose-average-ring').exists()).toBe(false)
     expect(getTickLabels(wrapper).every((label) => label.endsWith('σ'))).toBe(true)
@@ -325,7 +327,7 @@ describe('ChataRoseChart measures mode', () => {
     expect(getTickLabels(wrapper)).toEqual(['25%', '50%', '75%'])
     // COGS is at its highest on the last day; nothing is below zero on a min-max scale
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
-      'COGS: 100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
+      '100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
     )
     expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
   })

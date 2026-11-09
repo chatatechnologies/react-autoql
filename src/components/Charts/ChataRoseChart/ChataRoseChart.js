@@ -747,32 +747,29 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       : `Click to see all rows for ${label}`
   }
 
-  // The whole rose is one row (a period, or all of the data), so every wedge has the same tooltip: the
-  // period, every measure's value, then what the hovered wedge means on the current scale in plain words
-  const getMeasureTooltipHtml = (hoveredCategory) => {
-    const lines = []
+  // The hovered measure and its value, the period, then what the wedge means on the current scale in plain
+  // words. Hover and clicks are for the whole rose (the period), but the tooltip is only about the wedge.
+  const getMeasureTooltipHtml = (category) => {
+    const name = escapeHtml(getCategoryName(category))
+    const { measureValue, measureColumnIndex } = category
+    const lines = [
+      measureValue === null
+        ? `<strong>${name}</strong>`
+        : `<strong>${name}:</strong> ${escapeHtml(formatValue(measureValue, measureColumnIndex))}`,
+    ]
     if (animation.currentFrame) {
       lines.push(`<strong>${escapeHtml(getColumnLabel(animation.column))}:</strong> ${escapeHtml(getPeriodLabel())}`)
     }
-    categories.forEach(({ measureValue, measureColumnIndex, ...category }) => {
-      const name = escapeHtml(getCategoryName({ measureColumnIndex, ...category }))
-      const value =
-        measureValue === null ? '<em>No data</em>' : escapeHtml(formatValue(measureValue, measureColumnIndex))
-      lines.push(`<strong>${name}:</strong> ${value}`)
-    })
-    const { measureValue, measureColumnIndex } = hoveredCategory
-    if (measureValue !== null) {
+    if (measureValue === null) {
+      lines.push('<em>No data in this period</em>')
+    } else {
       describeMeasureValue({
         scale: effectiveScale,
         value: measureValue,
-        stats: hoveredCategory.stats,
+        stats: category.stats,
         grouping: animation.settings.grouping,
         formatValue: (value) => formatValue(value, measureColumnIndex),
-      }).forEach(({ text, isNote }, i) => {
-        // The first line names the measure it's about
-        const line = i === 0 && !isNote ? `${getCategoryName(hoveredCategory)}: ${text}` : text
-        lines.push(isNote ? `<em>${escapeHtml(line)}</em>` : escapeHtml(line))
-      })
+      }).forEach(({ text, isNote }) => lines.push(isNote ? `<em>${escapeHtml(text)}</em>` : escapeHtml(text)))
     }
     const drilldownHint = getMeasureDrilldownHint()
     if (drilldownHint) {
