@@ -336,6 +336,7 @@ describe('starting a report from a template', () => {
         data_status: 'PARTIAL',
         version: 7,
         data_updated_at: '2026-10-28T18:00:00Z',
+        data_heartbeat_at: '2026-10-28T18:00:05Z',
         data_errors: [
           { block_id: 'b1', reason: 'not_confident' },
           { block_id: 'b2', reason: 'query_failed', message: 'Column not found' },
@@ -347,12 +348,21 @@ describe('starting a report from a template', () => {
       dataStatus: 'PARTIAL',
       version: 7,
       dataUpdatedAt: '2026-10-28T18:00:00Z',
+      dataHeartbeatAt: '2026-10-28T18:00:05Z',
       dataErrors: [
         { blockId: 'b1', reason: 'not_confident' },
         { blockId: 'b2', reason: 'query_failed', message: 'Column not found' },
       ],
     })
     expect(sent().path).toBe(`/autoql/api/v1/reports/${ID}/data`)
+  })
+
+  it('reads no heartbeat from a service that doesn’t send one (RW-366)', async () => {
+    axios.request.mockResolvedValue(answer({ data_status: 'RUNNING', version: 1 }))
+    expect(await fetchReportDataStatus({ authentication: AUTH, id: ID })).toMatchObject({
+      dataStatus: 'RUNNING',
+      dataHeartbeatAt: null,
+    })
   })
 
   it('is filling while pending or running, and reads anything it doesn’t know as nothing filling it', async () => {
