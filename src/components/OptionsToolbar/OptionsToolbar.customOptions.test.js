@@ -65,4 +65,24 @@ describe('OptionsToolbar custom options', () => {
     expect(callback.mock.calls[0][1].captureForReport()).toStrictEqual({ ok: false, reason: 'unsupported' })
     toolbar.unmount()
   })
+
+  it("give the tile's saved query id, not a cached run's", () => {
+    const callback = jest.fn()
+    const { data } = responseTestCases[8]
+    const queryResponse = {
+      ...responseTestCases[8],
+      data: { ...data, data: { ...data.data, query_id: 'q_cached_run', drilldown_query_id: 'q_saved' } },
+    }
+    const ref = responseRef({ queryResponse, props: { queryId: 'q_cached_run' }, queryID: 'q_cached_run' })
+    const toolbar = mount(
+      <OptionsToolbar
+        {...OptionsToolbar.defaultProps}
+        responseRef={ref}
+        customOptions={[{ name: 'Add to Report...', callback }]}
+      />,
+    )
+    clickCustomOption(toolbar, 'Add to Report...')
+    expect(callback.mock.calls[0][0].queryId).toBe('q_saved')
+    toolbar.unmount()
+  })
 })

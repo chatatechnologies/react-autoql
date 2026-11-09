@@ -90,6 +90,17 @@ export const getResponseRowCount = (response) => {
 }
 
 /**
+ * The query id to drill down on, export, and hand on to anything that reuses the answer.
+ *
+ * A cached dashboard run's own `query_id` has no stored post-processor request, so
+ * drilling down or exporting on it fails (1.1.572). Its response names the tile's saved
+ * query as `drilldown_query_id`, which wins; then the `queryId` a tile pins its
+ * QueryOutput to; then the answer's own id.
+ */
+export const getPinnedQueryId = (queryResponse, pinnedQueryId, answerQueryId) =>
+  queryResponse?.data?.data?.drilldown_query_id || pinnedQueryId || answerQueryId || queryResponse?.data?.data?.query_id
+
+/**
  * Does a query response carry an answer we can act on?
  *
  * The backend returns HTTP 200 for a lot of non-answers, so "did the request
