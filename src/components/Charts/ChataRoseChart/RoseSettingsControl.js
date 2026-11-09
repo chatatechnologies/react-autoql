@@ -32,6 +32,7 @@ const RoseSettingsControl = ({
   onScaleChange,
   measuresDisabledReason,
   periodScalesDisabledReason,
+  showsAllData,
   x,
   y,
   size,
@@ -101,6 +102,12 @@ const RoseSettingsControl = ({
               })}
             </div>
             <div className='rose-settings-description'>{SCALE_DESCRIPTIONS[scale]}</div>
+            {showsAllData && !periodScalesDisabledReason && (
+              <div className='rose-settings-description'>
+                Showing the totals of all periods. Normalized and Range compare periods, so picking one shows the latest
+                period.
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -168,8 +175,10 @@ RoseSettingsControl.propTypes = {
   onScaleChange: PropTypes.func.isRequired,
   // Set when the data can't be shown as measures; the option is disabled with this as its tooltip
   measuresDisabledReason: PropTypes.string,
-  // Set while not playing over time: the scales that compare periods are disabled with this as their tooltip
+  // Set when there are no periods to compare: those scales are disabled with this as their tooltip
   periodScalesDisabledReason: PropTypes.string,
+  // True while the rose shows the totals of all of the data rather than one period
+  showsAllData: PropTypes.bool,
   x: PropTypes.number.isRequired,
   y: PropTypes.number.isRequired,
   size: PropTypes.number,
@@ -179,6 +188,7 @@ RoseSettingsControl.propTypes = {
 RoseSettingsControl.defaultProps = {
   measuresDisabledReason: undefined,
   periodScalesDisabledReason: undefined,
+  showsAllData: false,
   size: 30,
   chartTooltipID: undefined,
 }

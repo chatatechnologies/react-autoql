@@ -354,14 +354,22 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     persistRoseControls({ roseValueColumnIndices: nextValueColumnIndices })
   }
 
+  // Measures open on the latest period, like they do when the chart opens
   const handleModeChange = (nextMode) => {
     setMode(nextMode)
     persistRoseControls({ roseMode: nextMode })
+    if (nextMode === 'measures' && !animation.isActive) {
+      animation.showLatestFrame()
+    }
   }
 
+  // Normalized and range compare periods, so picking one while showing all of the data shows the latest period
   const handleScaleChange = (nextScale) => {
     setScale(nextScale)
     persistRoseControls({ roseScale: nextScale })
+    if (PERIOD_SCALES.includes(nextScale) && !animation.isActive) {
+      animation.showLatestFrame()
+    }
   }
 
   const handleMeasureColumnsChange = (nextMeasureColumnIndices) => {
@@ -385,7 +393,8 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
   // Dates and numbers can be stepped through. In values mode, not the category (it's already spread
   // around the circle) or a value column. In measures mode any of them can be, and stepping through a
-  // measure takes it out of the measures. Both modes show all of the data until played over time.
+  // measure takes it out of the measures. Values mode opens on all of the data; measures mode opens on
+  // the latest period, since its default scale compares periods, and closing the timeline shows the totals.
   const animation = useTimeAnimation({
     data: props.data,
     columns,
@@ -396,13 +405,14 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       : [...(categoryColumnIndex >= 0 ? [categoryColumnIndex] : []), ...valueColumnIndices],
     dataFormatting: formattingConfig,
     includeNumberColumns: true,
+    startOnLatestFrame: isMeasures,
   })
 
   // While playing over time, the column being stepped through can't also be a measure
   const stepColumnIndex = animation.isActive ? animation.settings.columnIndex : undefined
   const availableMeasureOptionIndices = measureOptionIndices.filter((index) => index !== stepColumnIndex)
-  // Normalized and range compare periods with each other, so they only apply while playing over time.
-  // Until then, wedges show the totals of all of the data on the actual-values scale.
+  // Normalized and range compare periods with each other, so they only apply while showing a period.
+  // Showing all of the data, wedges are the totals on the actual-values scale.
   const isPeriodScale = PERIOD_SCALES.includes(scale)
   const effectiveScale = !animation.isActive && isPeriodScale ? 'linear' : scale
   const validMeasureColumnIndices = measureColumnIndices.filter((index) =>
@@ -1268,8 +1278,9 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         mode={isMeasures ? 'measures' : 'values'}
         scale={effectiveScale}
         periodScalesDisabledReason={
-          animation.isActive ? undefined : 'Compares periods, so it applies while playing over time'
+          animation.isAvailable ? undefined : 'Compares periods, so it needs a date or number column to step through'
         }
+        showsAllData={!animation.isActive}
         onModeChange={handleModeChange}
         onScaleChange={handleScaleChange}
         measuresDisabledReason={measuresDisabledReason}

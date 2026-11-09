@@ -19,11 +19,10 @@ const SEEK_TWEEN_DURATION = 300
 // Shared playback state for stepping a chart through time. The chart passes in its data and renders
 // `currentFrame.rows` in place of its data while `isActive`. Settings persist under one
 // `timeAnimation` key in chart controls so every chart type saves them the same way; the play state
-// does not persist, so a saved chart always opens showing all of its data.
+// does not persist, so a saved chart opens showing all of its data (or the latest period, see below).
 // - includeNumberColumns: number columns can be stepped through, not just dates. A date column is still
 //   the default; with none, the first number column is.
-// - showOneFrame: for charts that only ever show one period. Always active, opens on the latest period,
-//   and exit() just pauses.
+// - startOnLatestFrame: opens on the latest period (paused) instead of on all of the data.
 export const useTimeAnimation = ({
   data,
   columns,
@@ -32,7 +31,7 @@ export const useTimeAnimation = ({
   excludedColumnIndices = [],
   dataFormatting,
   includeNumberColumns = false,
-  showOneFrame = false,
+  startOnLatestFrame = false,
 }) => {
   const saved = initialChartControls?.timeAnimation || {}
   const isAggregated = useMemo(() => isAggregation(columns), [columns])
@@ -53,11 +52,10 @@ export const useTimeAnimation = ({
   const [loop, setLoop] = useState(saved.loop ?? true)
   const [cumulative, setCumulative] = useState(!!saved.cumulative)
 
-  const [activeState, setIsActive] = useState(false)
+  const [activeState, setIsActive] = useState(startOnLatestFrame)
   const [isPlaying, setIsPlaying] = useState(false)
   // null means the last frame
-  const [frameIndex, setFrameIndex] = useState(showOneFrame ? null : 0)
-  const firstFrameIndex = showOneFrame ? null : 0
+  const [frameIndex, setFrameIndex] = useState(startOnLatestFrame ? null : 0)
 
   // Auto-corrections stay local (not persisted) so dashboards don't loop
   const validColumnIndex = columnOptionIndices.includes(columnIndex) ? columnIndex : defaultColumnIndex
@@ -80,7 +78,7 @@ export const useTimeAnimation = ({
   )
 
   const isAvailable = frames.length > 1
-  const isActive = showOneFrame ? frames.length > 0 : activeState
+  const isActive = activeState
   const lastFrameIndex = Math.max(0, frames.length - 1)
   const currentFrameIndex = Math.min(frameIndex ?? lastFrameIndex, lastFrameIndex)
   const frameInterval = TIME_ANIMATION_BASE_INTERVAL / speed
@@ -155,10 +153,20 @@ export const useTimeAnimation = ({
   const exit = () => {
     setIsActive(false)
     setIsPlaying(false)
-    setFrameIndex(firstFrameIndex)
+    setFrameIndex(0)
   }
 
-  // Changing what a frame is restarts from the first one
+  // Shows the latest period, paused
+  const showLatestFrame = () => {
+    if (!isAvailable) {
+      return
+    }
+    setIsActive(true)
+    setIsPlaying(false)
+    setFrameIndex(null)
+  }
+
+  // Changing what a frame is restarts playback from the first period, or a paused view on the latest
   const updateSettings = (updates) => {
     if ('columnIndex' in updates) {
       setColumnIndex(updates.columnIndex)
@@ -176,7 +184,8 @@ export const useTimeAnimation = ({
       setCumulative(updates.cumulative)
     }
     if ('columnIndex' in updates || 'grouping' in updates || 'cumulative' in updates) {
-      setFrameIndex(firstFrameIndex)
+      // Playback restarts from the first period; a paused view stays on the latest
+      setFrameIndex(isPlaying ? 0 : null)
     }
     persist(updates)
   }
@@ -197,12 +206,12 @@ export const useTimeAnimation = ({
     settings: { columnIndex: validColumnIndex, grouping, speed, loop, cumulative },
     columnOptionIndices,
     includeNumberColumns,
-    showOneFrame,
     groupingOptions,
     play,
     pause,
     togglePlay,
     goToFrame,
+    showLatestFrame,
     exit,
     updateSettings,
     getDrilldown: () =>

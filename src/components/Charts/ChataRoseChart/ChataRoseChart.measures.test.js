@@ -63,22 +63,53 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedges(wrapper)).toHaveLength(3)
   })
 
-  // AQLP-1099: no time grouping until played over time
-  test('opens on the totals of all of the data, on the actual-values scale, with no timeline', () => {
+  // Opens on the latest period, since the default scale compares periods
+  test('opens on the latest period, on the normalized scale', () => {
     const wrapper = setup()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getWedge(wrapper, 'Revenue').prop('data-tooltip-html')).toContain('<strong>Revenue:</strong> $50.00')
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
+    expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeUndefined()
+  })
+
+  // AQLP-1099: closing the timeline shows the totals of all of the data
+  const closeTimeline = (wrapper) => {
+    act(() => wrapper.find(TimeAnimationTimeline).prop('onClose')())
+    wrapper.update()
+    return wrapper
+  }
+
+  test('closing the timeline shows the totals on the actual-values scale; normalized and range stay clickable', () => {
+    const wrapper = closeTimeline(setup())
     expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(false)
     // Revenue over the four days: 100 + 200 + 150 + 50
     const tooltip = getWedge(wrapper, 'Revenue').prop('data-tooltip-html')
     expect(tooltip).toContain('<strong>Revenue:</strong> $500.00')
     expect(tooltip).not.toContain('<strong>Date:</strong>')
     expect(getTickLabels(wrapper).some((label) => label.endsWith('σ'))).toBe(false)
-    // Normalized and range compare periods, so they wait for playing over time
     expect(getSettings(wrapper).prop('scale')).toBe('linear')
-    expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeTruthy()
+    expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeUndefined()
+    expect(getSettings(wrapper).prop('showsAllData')).toBe(true)
+  })
+
+  test('picking a scale that compares periods while showing the totals shows the latest period', () => {
+    const wrapper = closeTimeline(setup())
+    act(() => getSettings(wrapper).prop('onScaleChange')('minmax'))
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getSettings(wrapper).prop('scale')).toBe('minmax')
+  })
+
+  test('switching to measures opens on the latest period', () => {
+    const wrapper = setup({ initialChartControls: { roseMode: 'values' } })
+    expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(false)
+    act(() => getSettings(wrapper).prop('onModeChange')('measures'))
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
   })
 
   test('playing over time splits the data into periods on the saved scale, and closing goes back', () => {
-    const wrapper = setupInPeriod()
+    const wrapper = goToPeriod(closeTimeline(setup()))
     expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
     expect(getWedge(wrapper, 'Revenue').prop('data-tooltip-html')).toContain('$50.00')
     expect(getSettings(wrapper).prop('scale')).toBe('normalized')
@@ -204,7 +235,7 @@ describe('ChataRoseChart measures mode', () => {
   })
 
   test('without a period to drill into, wedges do not look clickable', () => {
-    const wrapper = setup()
+    const wrapper = closeTimeline(setup())
     expect(wrapper.find('g.rose-wedges-no-drilldown').exists()).toBe(true)
     expect(getWedge(setupInPeriod(), 'Revenue').prop('data-tooltip-html')).toContain('Click to see')
     expect(setupInPeriod().find('g.rose-wedges-no-drilldown').exists()).toBe(false)
@@ -308,9 +339,6 @@ describe('ChataRoseChart measures mode', () => {
       initialChartControls: { roseMode: 'measures' },
     })
     expect(wrapper.find('text.rose-empty-message').exists()).toBe(false)
-    // Until played over time, Round is a measure like the others
-    expect(getWedges(wrapper)).toHaveLength(4)
-    goToPeriod(wrapper)
 
     const animation = wrapper.find(TimeAnimationControl).prop('animation')
     expect(animation.columnOptionIndices).toEqual([0, 1, 2, 3])
