@@ -178,6 +178,10 @@ const FILL_OVER = ['DONE', 'PARTIAL', 'FAILED']
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// A fill's heartbeat that moved on since it was last heard: it's still asking, even with no block filled since.
+const heartbeatMoved = (progress, before) =>
+  !!progress.dataHeartbeatAt && progress.dataHeartbeatAt !== before?.dataHeartbeatAt
+
 // Whether an ISO time is after another (one that can't be read is before anything).
 const isLater = (iso, than) => {
   const time = Date.parse(iso)
@@ -1086,7 +1090,16 @@ export class ReportsWithoutTheme extends React.Component {
     this.stopFollowingFill()
     this.setState({ fill: { id, dataStatus, dataErrors } })
     if (isFillingData(dataStatus)) {
-      const follow = { id, sourceId, version, dataStatus, heardAt: Date.now(), delay: FILL_POLL_MS, timer: null }
+      const follow = {
+        id,
+        sourceId,
+        version,
+        dataStatus,
+        dataHeartbeatAt: null,
+        heardAt: Date.now(),
+        delay: FILL_POLL_MS,
+        timer: null,
+      }
       this.fillFollow = follow
       this.checkFillLater(follow)
     }
@@ -1156,10 +1169,15 @@ export class ReportsWithoutTheme extends React.Component {
         return
       }
     }
-    // Any news — a block filled, the fill under way — says it's still going.
-    if (progress.version !== follow.version || progress.dataStatus !== follow.dataStatus) {
+    // Any news — a block filled, the fill under way, its heartbeat moving on — says it's still going.
+    if (
+      progress.version !== follow.version ||
+      progress.dataStatus !== follow.dataStatus ||
+      heartbeatMoved(progress, follow)
+    ) {
       follow.version = progress.version
       follow.dataStatus = progress.dataStatus
+      follow.dataHeartbeatAt = progress.dataHeartbeatAt
       follow.heardAt = Date.now()
     } else if (filling && stalled()) {
       return
@@ -1665,10 +1683,16 @@ export class ReportsWithoutTheme extends React.Component {
         this.unauthorized(error)
         progress = null
       }
-      if (progress && (progress.version !== last?.version || progress.dataStatus !== last?.dataStatus)) {
-        heardAt = Date.now()
+      if (progress) {
+        const moved = progress.version !== last?.version || progress.dataStatus !== last?.dataStatus
+        // A heartbeat moving on is news too, though the list has nothing new to show.
+        if (moved || heartbeatMoved(progress, last)) {
+          heardAt = Date.now()
+        }
+        if (moved) {
+          this.listBatchReport(batch, { id, dataStatus: progress.dataStatus })
+        }
         last = progress
-        this.listBatchReport(batch, { id, dataStatus: progress.dataStatus })
       }
       if (progress && !isFillingData(progress.dataStatus)) {
         return { dataStatus: progress.dataStatus }

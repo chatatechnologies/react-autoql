@@ -151,6 +151,9 @@ const setup = (props = {}) =>
 
 const fillNotice = () => screen.queryByTestId('reports-fill-notice')
 
+// A fill's heartbeat (data_heartbeat_at), the nth time it moved on.
+const heartbeat = (n) => new Date(Date.UTC(2026, 10, 9, 18) + n * 1000).toISOString()
+
 // New report › Start from a template, as the dialog does it.
 const startFromTemplate = async () => {
   await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
@@ -472,6 +475,46 @@ describe('a report whose data AutoQL fills in', () => {
     await waitFor(() => expect(mockBuilder.props.readOnly).toBe(false))
     expect(fillNotice()).toHaveTextContent('Filling in your data stopped before it finished.')
     expect(fetchReport).not.toHaveBeenCalled()
+  })
+
+  it('counts a heartbeat that moves on as news, so a slow fill isn’t taken to have stopped (RW-366)', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'RUNNING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    // No block filled for twice as long as a fill can go without news, but its questions asked all along.
+    const started = Date.now()
+    let beats = 0
+    fetchReportDataStatus.mockImplementation(async () =>
+      Date.now() - started < 300
+        ? { dataStatus: 'RUNNING', version: 1, dataHeartbeatAt: heartbeat(++beats), dataErrors: [] }
+        : { dataStatus: 'DONE', version: 2, dataHeartbeatAt: null, dataErrors: [] },
+    )
+    fetchReport.mockResolvedValue(stored({ version: 2, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] }))
+    setup()
+    await startFromTemplate()
+
+    await act(() => new Promise((resolve) => setTimeout(resolve, 250)))
+    expect(mockBuilder.props.readOnly).toBe(true)
+    await waitFor(() => expect(fillNotice()).toHaveTextContent('Your data is in.'))
+  })
+
+  it('takes a fill whose heartbeat stopped moving to have stopped, as one with no news', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'RUNNING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus.mockResolvedValue({
+      dataStatus: 'RUNNING',
+      version: 1,
+      dataHeartbeatAt: heartbeat(1),
+      dataErrors: [],
+    })
+    setup()
+    await startFromTemplate()
+
+    await waitFor(() => expect(mockBuilder.props.readOnly).toBe(false))
+    expect(fillNotice()).toHaveTextContent('Filling in your data stopped before it finished.')
   })
 
   it('keeps asking, more slowly, when asking fails', async () => {
@@ -812,6 +855,33 @@ describe('a report for each household from a template (RW-353)', () => {
     expect(lastSaveOf(R1)).toMatchObject({ version: 3, report: { title: 'Quarterly review — Brown Family' } })
     expect(lastSaveOf(R1).report.blocks[0].capture).toEqual(answered)
     expect(listed(R2)).toMatchObject({ title: 'Quarterly review — Nguyen Family', dataStatus: 'DONE' })
+  })
+
+  it('keeps following a fill whose heartbeat moves on, past when it’d be taken to have stopped (RW-366)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    const started = Date.now()
+    let beats = 0
+    fetchReportDataStatus.mockImplementation(async () =>
+      Date.now() - started < 300
+        ? { dataStatus: 'RUNNING', version: 2, dataHeartbeatAt: heartbeat(++beats), dataErrors: [] }
+        : { dataStatus: 'DONE', version: 3, dataHeartbeatAt: null, dataErrors: [] },
+    )
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      )
+    })
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in/))
+    // Neither was taken to have stopped while its heartbeat moved on: both were filled in by AutoQL.
+    expect(homeProps.current.notices[0].text).not.toMatch(/missing some data/)
+    expect(listed(R1)).toMatchObject({ dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ dataStatus: 'DONE' })
+    expect(captureQuestion).not.toHaveBeenCalled()
   })
 
   it('puts the household on a report AutoQL made for the template’s own (before RW-352), and fills it in here', async () => {

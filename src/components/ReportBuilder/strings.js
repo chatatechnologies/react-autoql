@@ -4,6 +4,8 @@ export const STRINGS = {
   untitled: 'Untitled report',
   titlePlaceholder: 'Untitled report',
   titleLabel: 'Report title',
+  // The title in the page's running header, which renames the report too (RW-363).
+  renameTitle: 'Click to rename the report',
 
   run: 'Run report',
   runAgain: 'Run again',
@@ -167,10 +169,13 @@ export const STRINGS = {
 
   emptyReportTitle: 'This report is empty',
   emptyReportBody: 'Add a block from the left. A Data block reads a dashboard tile, or asks a question of its own.',
+  // Over the first page: what it starts with, what that's made from, and where to see it and change it (RW-363).
   frontMatter: {
-    both: 'Starts with a cover page and a table of contents. See them in Preview.',
-    cover: 'Starts with a cover page. See it in Preview.',
-    toc: 'Starts with a table of contents. See it in Preview.',
+    both: 'Starts with a cover page and a table of contents, made from the report’s title and headings.',
+    cover: 'Starts with a cover page, made from the report’s title.',
+    toc: 'Starts with a table of contents, made from the report’s headings.',
+    preview: 'Preview',
+    settings: 'Settings',
   },
 
   headingPlaceholder: 'Heading',
@@ -266,6 +271,8 @@ export const STRINGS = {
     loading: 'Loading…',
     loadFailed: 'The list didn’t load. Try again.',
     note: 'Every question in the report is asked for it. After changing it, Rerun all asks them again.',
+    // After the title in the page's header: it opens the setting in the side panel (RW-363).
+    changeIn: (title) => `Change ${title.toLowerCase()} in the side panel`,
   },
 
   panel: {

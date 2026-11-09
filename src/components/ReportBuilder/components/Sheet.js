@@ -210,6 +210,10 @@ const PageGap = ({ fill, footer, header, marginIn }) => (
 // one sheet. Blocks stay in one list either way, so moving to another page never remounts one: the pages
 // are white plates drawn behind them, apart from each other as the preview's are. The print preview stays
 // the source of truth for what prints.
+//
+// Each page's header renames the report from its title (`onTitleChange`) and opens the filter lock's setting from
+// what it's for (`onLockClick`, `lockLabel`). The note over the first page, when it starts with a cover page or
+// contents, opens the preview (`onPreview`) and their settings (`onFrontMatterSettings`).
 export class Sheet extends React.Component {
   static defaultProps = {
     // Block id → the content page it starts on (getStartPages), or null for one sheet.
@@ -302,6 +306,11 @@ export class Sheet extends React.Component {
       richEditor,
       richBlockId,
       onFormattingLeave,
+      onTitleChange,
+      onLockClick,
+      lockLabel,
+      onPreview,
+      onFrontMatterSettings,
     } = this.props
     const { fills, plates } = this.state
     const { page, blocks } = report
@@ -322,6 +331,9 @@ export class Sheet extends React.Component {
             branding={branding}
             title={report.title}
             lock={summarizeFilterLocks(report.sessionFilterLocks)}
+            onTitleChange={onTitleChange}
+            onLockClick={onLockClick}
+            lockLabel={lockLabel}
           />
         </div>
       ) : null
@@ -368,6 +380,32 @@ export class Sheet extends React.Component {
             }}
           >
             {note}
+            {onPreview ? (
+              <>
+                {' '}
+                <button
+                  type='button'
+                  className={`${RB}-front-matter-link`}
+                  data-test='report-front-matter-preview'
+                  onClick={onPreview}
+                >
+                  {STRINGS.frontMatter.preview}
+                </button>
+              </>
+            ) : null}
+            {onFrontMatterSettings ? (
+              <>
+                {' · '}
+                <button
+                  type='button'
+                  className={`${RB}-front-matter-link`}
+                  data-test='report-front-matter-settings'
+                  onClick={onFrontMatterSettings}
+                >
+                  {STRINGS.frontMatter.settings}
+                </button>
+              </>
+            ) : null}
           </div>
         ) : null}
         {header}

@@ -394,14 +394,16 @@ export const createReportFromTemplate = async ({
   return { ...detailOf(data), created: status === 201 }
 }
 
-// How filling a report's data is going: { dataStatus, version, dataUpdatedAt, dataErrors }. Every block filled
-// moves the report to a new version, so a version that changed means there's more to show.
+// How filling a report's data is going: { dataStatus, version, dataUpdatedAt, dataHeartbeatAt, dataErrors }. Every
+// block filled moves the report to a new version, so a version that changed means there's more to show. The heartbeat
+// moves after every question the fill asks, failed ones too (null from a service that doesn't send it).
 export const fetchReportDataStatus = async ({ authentication, id, signal }) => {
   const { data } = await call({ authentication, path: `${pathOf(id)}/data`, signal })
   return {
     dataStatus: dataStatusOf(data?.data_status),
     version: count(data?.version),
     dataUpdatedAt: text(data?.data_updated_at) || null,
+    dataHeartbeatAt: text(data?.data_heartbeat_at) || null,
     dataErrors: dataErrorsOf(data?.data_errors),
   }
 }
