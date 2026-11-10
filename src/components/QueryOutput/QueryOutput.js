@@ -9,7 +9,7 @@ import dayjs from '../../js/dayjsWithPlugins'
 
 import { TOOLTIP_COPY_TEXTS } from '../../js/Constants'
 import { uniqueValues } from '../../js/arrayUtils'
-import { cloneResponseSharingRows } from '../../js/responseUtils'
+import { cloneResponseSharingRows, getPinnedQueryId } from '../../js/responseUtils'
 import { arePropsEqualByIdentity } from '../../js/propsEqual'
 import {
   FOLLOW_ON_FILTERS_DEBOUNCE_MS,
@@ -2291,7 +2291,7 @@ export class QueryOutput extends React.Component {
     const sessionFilters = [...baseFilters]
     let response
 
-    const sourceQuery = this.props.queryId || this.queryID
+    const sourceQuery = getPinnedQueryId(this.queryResponse, this.props.queryId, this.queryID)
 
     if (isDrilldown(this.queryResponse)) {
       try {
@@ -2595,7 +2595,7 @@ export class QueryOutput extends React.Component {
             const response = await runDrilldown({
               ...getAuthentication(this.props.authentication),
               ...getAutoQLConfig(this.props.autoQLConfig),
-              queryID: this.props.queryId || this.queryID,
+              queryID: getPinnedQueryId(this.queryResponse, this.props.queryId, this.queryID),
               source: this.props.source,
               groupBys,
               pageSize,

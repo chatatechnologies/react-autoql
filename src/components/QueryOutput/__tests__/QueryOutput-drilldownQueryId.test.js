@@ -75,4 +75,19 @@ describe('QueryOutput drilldown query id pinning', () => {
 
     wrapper.unmount()
   })
+
+  // A cached run's own query has no stored post-processor request (1.1.572); the response names the
+  // tile's saved query as drilldown_query_id, which wins even over a queryId prop holding the run's id.
+  it("uses the drilldown_query_id a cached tile response carries, not the cached run's id", async () => {
+    const cached = _cloneDeep(baseTestCase)
+    cached.data.data.query_id = 'q_cached_run'
+    cached.data.data.drilldown_query_id = 'q_saved'
+    const wrapper = mountWithResponse({ queryResponse: cached, queryId: 'q_cached_run' })
+
+    await runApiDrilldown(wrapper)
+
+    expect(runDrilldown.mock.calls[0][0].queryID).toBe('q_saved')
+
+    wrapper.unmount()
+  })
 })

@@ -187,6 +187,9 @@ export const STRINGS = {
     notRun: 'Run the report to load this.',
     noCapture:
       'No data was kept for this block. Add it again with “Add to Report…” from its dashboard or the Query view.',
+    // A question asked in the report that has no answer yet, as a block of a report made from a template has.
+    notAsked: 'No answer yet. Rerun asks the question.',
+    noAnswer: 'No answer yet.',
     asOf: (when) => `As of ${when}`,
     filteredBy: (what) => `Filtered: ${what}`,
     loading: 'Loading…',
@@ -280,9 +283,11 @@ export const STRINGS = {
     askCaptureNote: 'Press Enter to ask. The answer is kept as it comes back — nothing reruns by itself.',
     orTiles: 'or pick dashboard tiles',
     askedNote: 'This is the answer as it came back when the question was asked, kept as it was.',
+    notAskedNote: 'This block has its question and how to show the answer, but no answer yet.',
     rerun: 'Rerun',
     rerunning: 'Asking again…',
-    rerunNote: 'Asks the question again, and keeps the new answer in place of this one.',
+    rerunNote: 'Asks the question again, and shows the new answer in place of this one, set up the same way.',
+    firstAskNote: 'Asks the question, and shows the answer the way this block is set up.',
 
     analysisResult: 'Result',
     chooseResult: 'Choose a result…',

@@ -27,7 +27,7 @@ import { ConditionBuilder } from '../ConditionBuilder'
 import { ErrorBoundary } from '../../../containers/ErrorHOC'
 import { NotificationQueryResponse } from '../NotificationQueryResponse'
 
-import { authenticationType, autoQLConfigType, dataFormattingType } from '../../../props/types'
+import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../../props/types'
 
 import './NotificationItem.scss'
 
@@ -80,6 +80,7 @@ export default class NotificationItem extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
+    valueActionCallbacks: valueActionCallbacksType,
   }
 
   static defaultProps = {
@@ -97,6 +98,7 @@ export default class NotificationItem extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
+    valueActionCallbacks: undefined,
     onRuleFetchCallback: () => {},
     updateScrollbars: () => {},
     onExpandCallback: () => {},
@@ -553,6 +555,7 @@ export default class NotificationItem extends React.Component {
                     showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
                     enableBillingGate={this.props.enableBillingGate}
                     onQuotaExceeded={this.props.onQuotaExceeded}
+                    valueActionCallbacks={this.props.valueActionCallbacks}
                   />
                 )}
               </>
