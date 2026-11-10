@@ -1,5 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { normalizeStyle, snapTableRows } from './reportSchema'
+import { normalizeFilterLocks } from './filterLocks'
 
 // Pure, immutable edits to a normalized report. Each returns a new report; inputs are never mutated.
 
@@ -104,6 +105,13 @@ export const duplicateBlock = (report, id) => {
 export const updatePageSetup = (report, patch) => ({ ...report, page: { ...report.page, ...patch } })
 
 export const setTitle = (report, title) => ({ ...report, title })
+
+// The report's filter lock, which every question in it is asked with (model/filterLocks.js). None takes it away.
+export const setSessionFilterLocks = (report, locks) => {
+  const { sessionFilterLocks, ...rest } = report
+  const kept = normalizeFilterLocks(locks)
+  return kept.length ? { ...report, sessionFilterLocks: kept } : rest
+}
 
 // Pointing a data block at a new source clears nothing else: rows stay what the author chose.
 export const setDataSource = (report, id, source) => updateBlock(report, id, { source })

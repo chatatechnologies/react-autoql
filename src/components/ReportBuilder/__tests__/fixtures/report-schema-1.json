@@ -13,6 +13,16 @@
     "coverPage": true,
     "tableOfContents": false
   },
+  "sessionFilterLocks": [
+    {
+      "key": "household",
+      "value": "Lindqvist Family",
+      "filter_type": "include",
+      "canonical_key": "household_name",
+      "format_txt": "Lindqvist Family",
+      "show_message": "Household"
+    }
+  ],
   "blocks": [
     {
       "id": "1a7c3e90-2b4d-4f61-8a5e-0c9d8b7a6f51",

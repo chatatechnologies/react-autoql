@@ -1,7 +1,7 @@
 import React from 'react'
 import { formatElement, getDataFormatting } from 'autoql-fe-utils'
 import { RB, TEXT_SIZES, TEXT_WEIGHTS, TYPEFACES } from '../constants'
-import { STRINGS } from '../strings'
+import { STRINGS, unfilledText } from '../strings'
 import { LoadingDots } from '../../LoadingDots'
 import { ReportTable } from './ReportTable'
 import { ReportChart } from './ReportChart'
@@ -245,6 +245,12 @@ const statusText = (view, canRun, canCapture) => {
         return canCapture ? STRINGS.data.notAsked : STRINGS.data.noAnswer
       }
       return STRINGS.data.noCapture
+    case 'template':
+      return STRINGS.data.fromTemplate
+    case 'filling':
+      return STRINGS.data.filling
+    case 'unfilled':
+      return unfilledText(view, { canRerun: canCapture })
     case 'loading':
       return STRINGS.data.loading
     case 'stale':
@@ -300,7 +306,7 @@ const DataContent = ({
     return (
       <div className={`${RB}-data`} data-state={view.state}>
         {title}
-        <Placeholder tone={view.state === 'error' || view.state === 'missing' ? 'warning' : undefined}>
+        <Placeholder tone={['error', 'missing', 'unfilled'].includes(view.state) ? 'warning' : undefined}>
           {statusText(view, canRun, canCapture)}
         </Placeholder>
       </div>

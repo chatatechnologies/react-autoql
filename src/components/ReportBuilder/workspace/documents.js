@@ -140,9 +140,26 @@ export const describeBlock = (block) => {
 // What's done to folders and tags, rather than to reports.
 const ORGANIZER_ACTIONS = ['organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag']
 
+// What's done to templates and their categories (Save as template, Manage templates, a template being edited).
+const TEMPLATE_ACTIONS = [
+  'saveTemplate',
+  'templateDetails',
+  'publish',
+  'unpublish',
+  'deleteTemplate',
+  'openTemplate',
+  'editTemplate',
+  'discardChanges',
+]
+const CATEGORY_ACTIONS = ['categories', 'category', 'deleteCategory']
+
 // The one line to show for a failed call ('load', 'open', 'save', 'add' or 'delete'; for folders and tags
-// 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'), and whether trying again later can
-// help: it can when the service couldn't be reached or failed, not when it turned the request down.
+// 'organizers', 'folder', 'deleteFolder', 'tag', 'deleteTag' and 'organize'; for templates 'templates', 'template',
+// 'startFromTemplate', 'fill', 'manageTemplates', 'saveTemplate', 'templateDetails', 'publish', 'unpublish',
+// 'deleteTemplate', and for one being edited 'openTemplate', 'editTemplate' and 'discardChanges'; for their categories
+// 'categories', 'category' and 'deleteCategory'), and whether trying again
+// later can help: it can when the service couldn't be reached or failed, not when it turned the request down. `reason`
+// is the line without its lead, for saying it of several at once.
 export const describeReportError = (error, action) => {
   const known = error instanceof ReportsApiError
   const status = known ? error.status : 0
@@ -172,13 +189,51 @@ export const describeReportError = (error, action) => {
   } else if (code === 'REPORT_TAG_NAME_TAKEN') {
     reason = E.tagNameTaken
   } else if (code === 'REPORT_NAME_INVALID') {
-    reason = E.nameInvalid
+    reason = TEMPLATE_ACTIONS.includes(action)
+      ? E.templateNameInvalid
+      : CATEGORY_ACTIONS.includes(action)
+      ? E.categoryNameInvalid
+      : E.nameInvalid
   } else if (code === 'REPORT_TAGS_INVALID') {
-    reason = E.tooManyTags
+    reason = TEMPLATE_ACTIONS.includes(action) ? E.tooManyTemplateTags : E.tooManyTags
   } else if (code === 'REPORT_LIMIT_EXCEEDED') {
-    reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
+    if (action === 'publish' || action === 'templateDetails' || action === 'editTemplate') {
+      reason = E.publishLimit
+    } else if (TEMPLATE_ACTIONS.includes(action)) {
+      reason = E.templateLimit
+    } else if (CATEGORY_ACTIONS.includes(action)) {
+      reason = E.categoryLimit
+    } else {
+      reason = ORGANIZER_ACTIONS.includes(action) ? E.organizerLimit : E.reportLimit
+    }
+  } else if (code === 'REPORT_CATEGORY_NOT_FOUND') {
+    reason = E.categoryGone
+  } else if (code === 'REPORT_CATEGORY_NAME_EXISTS') {
+    reason = E.categoryNameTaken
+  } else if (code === 'REPORT_TEMPLATE_CONTAINS_DATA') {
+    reason = E.templateHasData
+  } else if (code === 'REPORT_TEMPLATE_BLOCK_NOT_PORTABLE') {
+    reason = E.blockNotPortable
+  } else if (code === 'REPORT_TEMPLATE_SCOPE_INVALID' || code === 'REPORT_ORGANIZATION_UNKNOWN') {
+    reason = E.notYourOrganization
+  } else if (code === 'REPORT_ORGANIZATION_UNAVAILABLE') {
+    reason = E.organizationUnavailable
+    retry = true
   } else if (code === 'REPORT_BULK_REQUEST_INVALID') {
     reason = E.tooManyReports
+  } else if (code === 'REPORT_TEMPLATE_NOT_FOUND') {
+    // Gone from those who manage it; no longer published, for everyone else.
+    reason = TEMPLATE_ACTIONS.includes(action) ? E.templateDeleted : E.templateGone
+  } else if (code === 'REPORT_DATA_FILL_IN_PROGRESS') {
+    // Saved while AutoQL fills in its data: it goes through once the fill is done.
+    reason = E.filling
+    retry = true
+  } else if (code === 'REPORT_BATCH_UNDER_WAY') {
+    // Not the service's: a report for each household is still being made from a template here (RW-353).
+    reason = E.batchUnderWay
+  } else if (code === 'REPORT_FILL_REJECTED') {
+    reason = E.busy
+    retry = true
   } else if (code === 'REPORT_VERSION_CONFLICT') {
     // Blocks kept being added elsewhere while it saved (a conflict of any other kind isn't an error).
     reason = E.keptChanging
@@ -189,10 +244,12 @@ export const describeReportError = (error, action) => {
   } else if (status >= 500) {
     reason = E.serverFailed
     retry = true
+  } else if (status === 403 && [...TEMPLATE_ACTIONS, ...CATEGORY_ACTIONS, 'manageTemplates'].includes(action)) {
+    reason = E.forbidden
   } else {
     reason = E.refused
   }
-  return { message: `${E.lead[action] || E.lead.save}: ${reason}.`, retry }
+  return { message: `${E.lead[action] || E.lead.save}: ${reason}.`, reason, retry }
 }
 
 // Whether a failed call was the service turning the token away.

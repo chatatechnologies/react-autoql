@@ -18,6 +18,7 @@ import { PAGE_CLASS } from '../../print/printFrame'
 import { formatPrintedDate } from '../../run/reportRun'
 import { boxStyleOf, Continued, PaperBlock } from '../PaperBlock'
 import { footerText, hasDataBlocks, RunningFooter, RunningHeader } from '../PageFurniture'
+import { summarizeFilterLocks } from '../../model/filterLocks'
 import { CoverPage, TableOfContents } from './FrontMatter'
 import { FIT, ZoomFrame } from '../ZoomFrame'
 
@@ -238,7 +239,11 @@ export class PrintPreview extends React.Component {
         >
           {showHeader ? (
             <div className={`${RB}-page-header`} style={{ height: inches(geometry.headerIn) }}>
-              <RunningHeader branding={branding} title={report.title} />
+              <RunningHeader
+                branding={branding}
+                title={report.title}
+                lock={summarizeFilterLocks(report.sessionFilterLocks)}
+              />
             </div>
           ) : null}
           <div
@@ -326,6 +331,7 @@ export class PrintPreview extends React.Component {
           children: (
             <CoverPage
               title={report.title}
+              lock={summarizeFilterLocks(report.sessionFilterLocks)}
               branding={branding}
               generated={formatPrintedDate(generatedAt)}
               dataAsOf={runAt ? formatPrintedDate(runAt, { time: true }) : ''}

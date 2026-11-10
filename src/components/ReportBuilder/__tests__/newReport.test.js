@@ -35,6 +35,16 @@ jest.mock('../workspace/DashboardTilesDialog', () => {
   return { DashboardTilesDialog, __calls: calls }
 })
 
+// The templates are tested on their own (templatesDialog.test.js). Here it's a stand-in that starts from one, or goes
+// back.
+const mockTemplates = { props: null }
+jest.mock('../workspace/TemplatesDialog', () => ({
+  TemplatesDialog: (props) => {
+    mockTemplates.props = props
+    return require('react').createElement('div', { 'data-test': 'templates' })
+  },
+}))
+
 const ask = captureQuestion
 const AUTH = { apiKey: 'k', domain: 'https://example.test', token: 't' }
 const CAPTURE = { version: 1, displayType: 'table', data: { rows: [], columns: [] } }
@@ -262,6 +272,28 @@ describe('NewReportDialog', () => {
     rerender(dialog({ dashboards: DASHBOARDS }))
     expect(screen.getByLabelText('Dashboard')).toHaveValue('db_1')
     expect(screen.getByRole('button', { name: 'Choose tiles…' })).toBeEnabled()
+  })
+
+  it('offers a template only where the host turns templates on, and opens them in its place', () => {
+    const { unmount } = open()
+    expect(screen.queryByRole('radio', { name: /Start from a template/ })).toBeNull()
+    expect(screen.getByText('Start from a question, a dashboard, or a blank page.')).toBeInTheDocument()
+    unmount()
+
+    const onStartFromTemplate = jest.fn()
+    const previewProps = { branding: { name: 'Northwind' } }
+    open({ enableTemplates: true, onStartFromTemplate, previewProps })
+    expect(screen.getByText('Start from a question, a dashboard, a template, or a blank page.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('radio', { name: /Start from a template/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Choose a template…' }))
+
+    expect(screen.getByTestId('templates')).toBeInTheDocument()
+    expect(screen.queryByTestId('reports-new-report')).toBeNull()
+    expect(mockTemplates.props).toMatchObject({ authentication: AUTH, previewProps, onStart: onStartFromTemplate })
+
+    // Back comes back here, with the template still chosen.
+    act(() => mockTemplates.props.onClose())
+    expect(screen.getByRole('radio', { name: /Start from a template/ })).toBeChecked()
   })
 
   it('starts a blank page', () => {

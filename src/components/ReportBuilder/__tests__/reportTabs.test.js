@@ -1,12 +1,19 @@
 import React from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { ReportTabs } from '../workspace/ReportTabs'
-import { DEFAULT_STORAGE_PREFIX, TAB_WIDTHS_STORAGE_KEY, TABS_STORAGE_KEY } from '../workspace/reportsConstants'
+import {
+  DEFAULT_STORAGE_PREFIX,
+  PENDING_LOCKS_STORAGE_KEY,
+  TAB_WIDTHS_STORAGE_KEY,
+  TABS_STORAGE_KEY,
+} from '../workspace/reportsConstants'
 import {
   loadOpenTabs,
+  loadPendingLocks,
   loadTabWidths,
   MIN_TAB_WIDTH,
   saveOpenTabs,
+  savePendingLocks,
   saveTabWidths,
   widthsFor,
   withTabClosed,
@@ -134,6 +141,45 @@ describe('where tabs are remembered', () => {
     })
     expect(loadOpenTabs(PREFIX, 'p1')).toEqual([])
     expect(loadTabWidths(PREFIX, 'p1')).toEqual({})
+  })
+})
+
+describe('filter locks still to put on', () => {
+  const KEY = `${PREFIX}${PENDING_LOCKS_STORAGE_KEY}`
+  const BROWN = [{ key: 'household', value: 'Brown Family', filter_type: 'include' }]
+
+  it('keeps them by report under the prefix, until none is left, and goes with the rest at sign-out', () => {
+    savePendingLocks(PREFIX, new Map([['r1', BROWN]]))
+    expect(JSON.parse(window.localStorage.getItem(KEY))).toEqual({ r1: BROWN })
+    expect(loadPendingLocks(PREFIX)).toEqual(new Map([['r1', BROWN]]))
+
+    savePendingLocks(PREFIX, new Map())
+    expect(window.localStorage.getItem(KEY)).toBeNull()
+
+    savePendingLocks(PREFIX, new Map([['r1', BROWN]]))
+    signOut()
+    expect(loadPendingLocks(PREFIX).size).toBe(0)
+  })
+
+  it('keeps the newest 50, and reads back only what can be a lock', () => {
+    savePendingLocks(PREFIX, new Map(Array.from({ length: 60 }, (_, i) => [`r${i}`, BROWN])))
+    const kept = loadPendingLocks(PREFIX)
+    expect(kept.size).toBe(50)
+    expect(kept.has('r59')).toBe(true)
+    expect(kept.has('r9')).toBe(false)
+
+    window.localStorage.setItem(KEY, JSON.stringify({ r1: BROWN, r2: 'Brown Family', '': BROWN }))
+    expect(loadPendingLocks(PREFIX)).toEqual(new Map([['r1', BROWN]]))
+  })
+
+  it('keeps nothing without a prefix, and carries on when storage is blocked', () => {
+    savePendingLocks(undefined, new Map([['r1', BROWN]]))
+    expect(window.localStorage.length).toBe(0)
+
+    jest.spyOn(window.Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    expect(() => savePendingLocks(PREFIX, new Map([['r1', BROWN]]))).not.toThrow()
   })
 })
 
