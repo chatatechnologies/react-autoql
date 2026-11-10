@@ -1,12 +1,18 @@
 import React from 'react'
 import { Icon } from '../components/icons'
 import { fetchReportCategories } from '../run/reportsApi'
-import { createTemplateFromReport } from '../run/templatesApi'
+import { createTemplateFromReport, fetchManagedTemplate, updateTemplate } from '../run/templatesApi'
 import { describeBlock, describeReportError } from './documents'
 import { ReportModal } from './ReportModal'
 import { RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
-import { detailsOf, detailsProblem, detailsToSend, TemplateDetailsFields } from './templateDetails'
+import {
+  detailsOf,
+  detailsProblem,
+  detailsToSend,
+  TemplateDetailsFields,
+  withQuestionsAskedHere,
+} from './templateDetails'
 
 // Report options › Save as template… (an organization's admins): a draft template for the organization, made from the
 // report as AutoQL has it — so it's saved first (`flush`, which resolves with whether it was). AutoQL takes the data
@@ -73,6 +79,7 @@ export class SaveAsTemplateDialog extends React.Component {
           categoryId: categoryId || undefined,
           tags: tags || undefined,
         })
+        await this.markQuestionsAskedHere(saved)
       } catch (failure) {
         error =
           failure?.code === 'REPORT_TEMPLATE_BLOCK_NOT_PORTABLE'
@@ -84,6 +91,26 @@ export class SaveAsTemplateDialog extends React.Component {
     }
     if (this.mounted) {
       this.setState({ saving: false, error, saved })
+    }
+  }
+
+  // Every question in the new template marked as one its reports can ask again (Rerun), as a template saved from
+  // Manage templates' editor is: AutoQL keeps each block as the report had it, and an answer added from the Query
+  // view isn't marked. The template is made either way; if this doesn't go through, its reports rerun what the
+  // report asked itself, as before.
+  markQuestionsAskedHere = async (saved) => {
+    const { authentication } = this.props
+    try {
+      const document = (await fetchManagedTemplate({ authentication, id: saved.id }))?.report
+      if (!document) {
+        return
+      }
+      const marked = withQuestionsAskedHere(document)
+      if (marked.blocks.some((block, i) => block !== document.blocks[i])) {
+        await updateTemplate({ authentication, id: saved.id, document: marked })
+      }
+    } catch (error) {
+      // Left as it was made.
     }
   }
 

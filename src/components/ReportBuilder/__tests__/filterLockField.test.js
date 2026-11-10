@@ -7,10 +7,14 @@ import { FilterLockField } from '../components/FilterLockField'
 // what the field does around it — the host's list loaded when it first opens, the locks it's handed session-scoped,
 // and Escape closing the popover without reaching the dialog or builder around it.
 
-const mockPopover = { props: null }
+const mockPopover = { props: null, mounts: 0 }
 jest.mock('../../FilterLockPopover', () => ({
   FilterLockPopover: (props) => {
     mockPopover.props = props
+    // Started again (a new key): mounted afresh.
+    require('react').useEffect(() => {
+      mockPopover.mounts += 1
+    }, [])
     return (
       <div data-test='popover' data-open={String(!!props.isOpen)}>
         {props.children}
@@ -35,6 +39,7 @@ const open = () => act(async () => fireEvent.click(screen.getByTestId('report-fi
 
 beforeEach(() => {
   mockPopover.props = null
+  mockPopover.mounts = 0
 })
 
 describe('FilterLockField', () => {
@@ -67,6 +72,25 @@ describe('FilterLockField', () => {
     expect(onChange).not.toHaveBeenCalled()
     act(() => mockPopover.props.onChange([]))
     expect(onChange).toHaveBeenCalledWith([])
+  })
+
+  it('starts the popover again on a change from outside, even one back to what it last set itself', () => {
+    const NGUYEN = { key: 'household', value: 'Nguyen Family', filter_type: 'include' }
+    const onChange = jest.fn()
+    const field = (locks) => <FilterLockField locks={locks} labels={{ none: 'All households' }} onChange={onChange} />
+    const { rerender } = render(field([BROWN]))
+    act(() => mockPopover.props.onChange([{ ...NGUYEN, isSession: true }]))
+    expect(onChange).toHaveBeenCalledTimes(1)
+
+    // The host takes the popover's change: it carries on as it is.
+    const mounted = mockPopover.mounts
+    rerender(field([NGUYEN]))
+    expect(mockPopover.mounts).toBe(mounted)
+    // Then changed from outside, there and back: it starts again each time.
+    rerender(field([BROWN]))
+    expect(mockPopover.mounts).toBe(mounted + 1)
+    rerender(field([NGUYEN]))
+    expect(mockPopover.mounts).toBe(mounted + 2)
   })
 
   it('closes the popover on Escape without it reaching what the field is in', async () => {

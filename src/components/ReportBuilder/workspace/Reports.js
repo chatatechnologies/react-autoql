@@ -39,7 +39,7 @@ import {
   SAVE_DELAY_MS,
 } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
-import { fillNoticeOf } from './fillNotice'
+import { filledDataFill, fillNoticeOf } from './fillNotice'
 import {
   describeReportError,
   isReportGone,
@@ -448,6 +448,8 @@ export class ReportsWithoutTheme extends React.Component {
     // to offer Rerun all.
     this.pendingLocks = new Map()
     this.locksPutOn = new Map()
+    // Batch reports being named, whose savers the report shown isn't to replace meanwhile (readFilled).
+    this.naming = new Set()
     this.root = React.createRef()
     this.templateEditor = React.createRef()
 
@@ -1231,7 +1233,9 @@ export class ReportsWithoutTheme extends React.Component {
       this.unauthorized(error)
       return false
     }
-    if (this.mounted && this.shownId === id && !this.savers.get(id)?.hasUnsaved) {
+    // Not over a saver still in use: one with edits waiting, one this page fills in, or a batch's naming one.
+    const inUse = !!this.savers.get(id)?.hasUnsaved || this.localFills.has(id) || this.naming.has(id)
+    if (this.mounted && this.shownId === id && !inUse) {
       this.showStored(id, sourceId, detail, { follow: false })
     }
     return true
@@ -1252,11 +1256,7 @@ export class ReportsWithoutTheme extends React.Component {
     if (last && last.fill === fill && last.filling === filling) {
       return last.value
     }
-    const errors = {}
-    ;(fill.dataErrors || []).forEach(({ blockId, reason, message }) => {
-      errors[blockId] = { reason, message }
-    })
-    const value = filling ? { state: 'filling' } : { state: 'filled', errors }
+    const value = filling ? { state: 'filling' } : filledDataFill(fill.dataErrors)
     this.lastDataFill = { fill, filling, value }
     return value
   }
@@ -1374,7 +1374,8 @@ export class ReportsWithoutTheme extends React.Component {
   //
   // With `sessionFilterLocks` it's made for them (the report's filter lock, model/filterLocks.js), and filled in with
   // them; an empty list (none, over a template's own) is sent as it is. With none, the report is for everything, even
-  // if the service's copy came with a lock: the dialog starts out with the template's own, so none is a choice.
+  // if the service's copy came with a lock: the dialog starts out with the template's own, so none is a choice. A host
+  // without filter locks picks nothing, and the report keeps whatever lock the service's copy came with.
   // A service that doesn't take them yet (before RW-352) makes the report as the template has it, and fills it in
   // that way: the report gets what was picked here once it can be changed (kept in this browser until then), and the
   // builder offers Rerun all to ask every question with it. Filled in from this page, it's asked with what was picked
@@ -1400,7 +1401,10 @@ export class ReportsWithoutTheme extends React.Component {
     if (!this.stillOn(sourceId)) {
       return
     }
-    if (filterLocksKey(detail.report?.sessionFilterLocks) !== filterLocksKey(locks)) {
+    // What was picked in the dialog is put on: with filter locks, none sent is none picked (the dialog showed none).
+    // Without them nothing is picked, and the report is as AutoQL made it, the template's own lock and all.
+    const picked = Array.isArray(sessionFilterLocks) || !!this.props.enableFilterLocks
+    if (picked && filterLocksKey(detail.report?.sessionFilterLocks) !== filterLocksKey(locks)) {
       this.pendingLocks.set(detail.id, locks)
       this.keepPendingLocks()
     }
@@ -1453,11 +1457,12 @@ export class ReportsWithoutTheme extends React.Component {
   // time, each answer kept the way its block is set up and as of when the report was started, while it shows
   // read-only with how far it's got. Each answer is saved as it comes. It goes on while another report is shown, and
   // stops if this one is deleted or the page goes away; what it hadn't asked by then can be rerun. Every question is
-  // asked with the report's filter lock. Resolves with { total, errors } once it's over, or null if it stopped.
+  // asked with the report's filter lock. Resolves with { total, errors, dataStatus } once it's over, or null if it
+  // stopped — as a fill of the same report already under way does when this one starts.
   fillHere = (id, sourceId, capturedAt, { concurrency } = {}) => {
     const report = this.savers.get(id)?.report
     if (!questionBlocks(report).length) {
-      return Promise.resolve({ total: 0, errors: [] })
+      return Promise.resolve({ total: 0, errors: [], dataStatus: 'DONE' })
     }
     let settle
     const over = new Promise((resolve) => {
@@ -1466,6 +1471,8 @@ export class ReportsWithoutTheme extends React.Component {
     // The fill's place in localFills, there before it asks anything: whether it's still wanted is read from it.
     const entry = { stop: () => settle(null) }
     const current = () => this.mounted && this.localFills.get(id) === entry
+    // One already under way gives way, its caller hearing it stopped, so no one waits on it for ever.
+    this.localFills.get(id)?.stop()
     this.localFills.set(id, entry)
     this.showFill(id, { dataStatus: 'RUNNING', dataErrors: [] })
 
@@ -1491,7 +1498,7 @@ export class ReportsWithoutTheme extends React.Component {
       const filled = total - errors.length
       const dataStatus = !errors.length ? 'DONE' : filled ? 'PARTIAL' : 'FAILED'
       this.showFill(id, { dataStatus, dataErrors: errors, ended: true })
-      settle({ total, errors })
+      settle({ total, errors, dataStatus })
     })
     return over
   }
@@ -1716,8 +1723,7 @@ export class ReportsWithoutTheme extends React.Component {
     if (!over) {
       return null
     }
-    const failed = over.errors.length
-    return { dataStatus: !failed ? 'DONE' : failed < over.total ? 'PARTIAL' : 'FAILED', saver }
+    return { dataStatus: over.dataStatus, saver }
   }
 
   // AutoQL's fill of a batch report, followed until it ends — or until there's been no news of it for long enough —
@@ -1781,20 +1787,26 @@ export class ReportsWithoutTheme extends React.Component {
 
   // A batch report named for its lock ("<its title> — <the household>") and saved, with its answers when it was filled
   // in here. Resolves with whether it was saved.
+  // `known` is the saver it was filled in through, if it's still the report's: one since replaced isn't saved through.
   nameBatchReport = async (batch, id, lock, known) => {
-    const saver = known || (await this.batchSaver(batch, id))
-    if (!saver) {
-      return false
+    this.naming.add(id)
+    try {
+      const saver = known && this.savers.get(id) === known ? known : await this.batchSaver(batch, id)
+      if (!saver) {
+        return false
+      }
+      const title = batchTitleOf(saver.report?.title, lock)
+      saver.edit(setTitle(saver.report, title))
+      if (this.stillOn(batch.sourceId)) {
+        this.setState(({ opened, reports }) => ({
+          opened: opened?.id === id ? { id, report: saver.report } : opened,
+          reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
+        }))
+      }
+      return await saver.flush()
+    } finally {
+      this.naming.delete(id)
     }
-    const title = batchTitleOf(saver.report?.title, lock)
-    saver.edit(setTitle(saver.report, title))
-    if (this.stillOn(batch.sourceId)) {
-      this.setState(({ opened, reports }) => ({
-        opened: opened?.id === id ? { id, report: saver.report } : opened,
-        reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
-      }))
-    }
-    return saver.flush()
   }
 
   // A batch report on the home page's list: added as it's made, and changed as it fills in.

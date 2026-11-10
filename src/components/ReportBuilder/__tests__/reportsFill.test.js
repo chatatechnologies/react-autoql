@@ -375,6 +375,18 @@ describe('a report started from a template for a filter lock (RW-351)', () => {
       ),
     )
   })
+
+  it('leaves a report as AutoQL made it, the template’s lock and all, when no choice was made', async () => {
+    // A host without filter locks: the dialog sends none.
+    createReportFromTemplate.mockResolvedValue(copyLockedTo(BROWN))
+    setup()
+    await startFromTemplate()
+
+    expect(createReportFromTemplate.mock.calls[0][0]).not.toHaveProperty('sessionFilterLocks')
+    expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ query: 'question d1', filters: [BROWN] }))
+    expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+    expect(localStorage.getItem('test.reportPendingLocks')).toBeNull()
+  })
 })
 
 describe('a report whose data AutoQL fills in', () => {
@@ -712,6 +724,38 @@ describe('a report made from a template that AutoQL doesn’t fill in (NONE)', (
     expect(mockBuilder.props.readOnly).toBe(true)
     expect(captureQuestion).not.toHaveBeenCalled()
   })
+
+  it('stops a fill under way when the same report is filled in again, so whoever waits on it hears it stopped', async () => {
+    answers()
+    createReportFromTemplate.mockResolvedValue({ ...stored({ blocks: [dataBlock('d1')] }), created: true })
+    const workspace = React.createRef()
+    setup({ ref: workspace })
+    await startFromTemplate()
+
+    const { sourceId } = workspace.current
+    let first
+    act(() => {
+      first = workspace.current.fillHere(T, sourceId, new Date().toISOString())
+    })
+    act(() => {
+      workspace.current.fillHere(T, sourceId, new Date().toISOString())
+    })
+    const waited = new Promise((resolve) => setTimeout(() => resolve('still waiting'), 50))
+    await expect(Promise.race([first, waited])).resolves.toBeNull()
+  })
+
+  it('doesn’t put the stored copy over a report this page is still filling in', async () => {
+    answers()
+    createReportFromTemplate.mockResolvedValue({ ...stored({ blocks: [dataBlock('d1')] }), created: true })
+    const workspace = React.createRef()
+    setup({ ref: workspace })
+    await startFromTemplate()
+
+    const filling = workspace.current.savers.get(T)
+    fetchReport.mockResolvedValue(stored({ version: 2, blocks: [dataBlock('d1', answered)] }))
+    await act(() => workspace.current.readFilled({ id: T, sourceId: workspace.current.sourceId }))
+    expect(workspace.current.savers.get(T)).toBe(filling)
+  })
 })
 
 describe('templates, for those who manage them (canManageTemplates)', () => {
@@ -1024,6 +1068,28 @@ describe('a report for each household from a template (RW-353)', () => {
       mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts: STARTS }),
     )
     expect(homeProps.current.notices[0].text).toMatch(/^Making 2 reports in “Monthly review — .+”: 0 done so far\./)
+  })
+
+  it('names a batch report through the saver it has now, not one replaced while it was filled in', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    // Read again at a later version, as the report shown is while AutoQL fills it.
+    fetchReport.mockImplementation(async ({ id }) => ({ ...made({ id, sessionFilterLocks: [BROWN] }), version: 9 }))
+    const workspace = React.createRef()
+    setup({ enableFilterLocks: true, ref: workspace })
+    const fill = workspace.current.fillBatchReport
+    workspace.current.fillBatchReport = async (batch, detail, forLock) => {
+      const filled = await fill(batch, detail, forLock)
+      if (detail.id === R1) {
+        // Its saver replaced meanwhile: the one it was filled through is gone.
+        workspace.current.savers.get(R1).dispose()
+        workspace.current.savers.delete(R1)
+      }
+      return filled
+    }
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in “Monthly review — /))
+    expect(lastSaveOf(R1)).toMatchObject({ version: 9, report: { title: 'Quarterly review — Brown Family' } })
   })
 
   it('keeps nothing of a batch report once it’s named and saved', async () => {

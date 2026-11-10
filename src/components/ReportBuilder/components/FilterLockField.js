@@ -31,11 +31,17 @@ export class FilterLockField extends React.Component {
   changeButton = () => this.row.current?.querySelector('button')
 
   componentDidUpdate(prevProps) {
-    // Changed from outside rather than in the popover: it starts again from the new one.
     const key = filterLocksKey(this.props.locks)
-    if (key !== filterLocksKey(prevProps.locks) && key !== this.changedTo) {
+    if (key === filterLocksKey(prevProps.locks)) {
+      return
+    }
+    // Changed from outside rather than in the popover: it starts again from the new one.
+    if (key !== this.changedTo) {
       this.setState(({ seed }) => ({ seed: seed + 1 }))
     }
+    // The popover's own change has come back (or was overtaken): whatever comes after is from outside, even one back
+    // to what the popover last set.
+    this.changedTo = null
   }
 
   componentWillUnmount() {

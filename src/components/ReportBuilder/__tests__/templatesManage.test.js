@@ -98,6 +98,11 @@ describe('SaveAsTemplateDialog', () => {
     return { flush, onClose, onManage }
   }
   const save = () => act(async () => fireEvent.click(screen.getByTestId('reports-save-as-template-save')))
+  // What a test here gives the template reads and writes stays with it.
+  afterEach(() => {
+    fetchManagedTemplate.mockReset()
+    updateTemplate.mockReset()
+  })
 
   it('says first that what it keeps can still name clients, and starts from the report’s title', async () => {
     open()
@@ -154,6 +159,52 @@ describe('SaveAsTemplateDialog', () => {
     )
     fireEvent.click(screen.getByTestId('reports-save-as-template-manage'))
     expect(onManage).toHaveBeenCalled()
+  })
+
+  it('marks every question in the draft as one its reports can ask again, as a report doesn’t', async () => {
+    createTemplateFromReport.mockResolvedValue(template('tp1', 'Quarterly review'))
+    const document = {
+      ...REPORT,
+      blocks: [
+        { id: 'b7', type: 'data', source: { type: 'query', query: 'aum by household' } },
+        { id: 'b8', type: 'data', source: { type: 'query', query: 'cash by account' }, askedHere: true },
+        { id: 'h1', type: 'heading', text: 'Q3' },
+      ],
+    }
+    fetchManagedTemplate.mockResolvedValue({ ...template('tp1', 'Quarterly review'), report: document })
+    updateTemplate.mockResolvedValue(template('tp1', 'Quarterly review'))
+    open()
+    await save()
+
+    expect(fetchManagedTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp1' })
+    expect(updateTemplate).toHaveBeenCalledWith({
+      authentication: AUTH,
+      id: 'tp1',
+      document: { ...document, blocks: [{ ...document.blocks[0], askedHere: true }, ...document.blocks.slice(1)] },
+    })
+    expect(screen.getByTestId('reports-save-as-template-saved')).toBeInTheDocument()
+  })
+
+  it('changes nothing in a draft whose questions are marked already, and keeps one marking couldn’t reach', async () => {
+    createTemplateFromReport.mockResolvedValue(template('tp1', 'Quarterly review'))
+    fetchManagedTemplate.mockResolvedValueOnce({
+      ...template('tp1', 'Quarterly review'),
+      report: { ...REPORT, blocks: [{ ...REPORT.blocks[0], askedHere: true }] },
+    })
+    open()
+    await save()
+    expect(updateTemplate).not.toHaveBeenCalled()
+    expect(screen.getByTestId('reports-save-as-template-saved')).toBeInTheDocument()
+  })
+
+  it('is made even when its questions can’t be marked', async () => {
+    createTemplateFromReport.mockResolvedValue(template('tp1', 'Quarterly review'))
+    fetchManagedTemplate.mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
+    open()
+    await save()
+    expect(screen.getByTestId('reports-save-as-template-saved')).toHaveTextContent(
+      '“Quarterly review” is saved as a draft.',
+    )
   })
 
   it('makes nothing when the report couldn’t be saved first', async () => {

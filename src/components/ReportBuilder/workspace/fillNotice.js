@@ -4,6 +4,16 @@ import { REPORTS_STRINGS } from './reportsStrings'
 
 const S = REPORTS_STRINGS
 
+// A fill that's over, as the builder shows it on its blocks (its dataFill): why each block it couldn't fill wasn't,
+// from the errors as the report service gives them ([{ blockId, reason, message? }]).
+export const filledDataFill = (dataErrors) => {
+  const errors = {}
+  ;(Array.isArray(dataErrors) ? dataErrors : []).forEach(({ blockId, reason, message }) => {
+    errors[blockId] = { reason, message }
+  })
+  return { state: 'filled', errors }
+}
+
 // How far filling in a report's data has got: its questions with an answer (`done`), of all of them (`total`). A
 // Data block with no question isn't counted: a fill has nothing to ask it.
 export const fillProgress = (report) => {

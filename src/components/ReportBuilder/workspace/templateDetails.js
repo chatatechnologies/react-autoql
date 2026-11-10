@@ -13,6 +13,18 @@ const E = REPORTS_STRINGS.errors
 
 let fieldIds = 0
 
+// Every question in a template is one its reports can ask again (Rerun) — after a fill, or once their filter lock
+// changes — and so can whoever edits it. A template saved from a report keeps each block as the report had it, where
+// an answer added from the Query view isn't marked so: it is here, however the template was made.
+export const withQuestionsAskedHere = (report) => ({
+  ...report,
+  blocks: (Array.isArray(report?.blocks) ? report.blocks : []).map((block) =>
+    block?.type === 'data' && block.source?.type === 'query' && block.source.query && !block.askedHere
+      ? { ...block, askedHere: true }
+      : block,
+  ),
+})
+
 // Tags as typed, "Quarterly, AUM": each once (whatever its case), without the spaces around it.
 export const parseTags = (text) => {
   const seen = new Set()

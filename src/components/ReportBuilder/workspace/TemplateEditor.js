@@ -15,11 +15,17 @@ import {
   updateTemplate,
 } from '../run/templatesApi'
 import { describeBlock, describeReportError, stripQueryResponses } from './documents'
-import { fillNoticeOf } from './fillNotice'
+import { filledDataFill, fillNoticeOf } from './fillNotice'
 import { ReportModal } from './ReportModal'
 import { RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
-import { detailsOf, detailsProblem, detailsToSend, TemplateDetailsFields } from './templateDetails'
+import {
+  detailsOf,
+  detailsProblem,
+  detailsToSend,
+  TemplateDetailsFields,
+  withQuestionsAskedHere,
+} from './templateDetails'
 
 // A template opened from Manage templates › Edit (an organization's admins): the whole of it in the builder, in place
 // of the workspace's tabs, the way a report is shown. Its questions are asked on the admin's own data as it opens, so
@@ -37,16 +43,6 @@ const M = S.manageTemplates
 const FILLING = { state: 'filling' }
 
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true })
-
-// Every question in a template is one its reports can ask again (Rerun), and so can the admin here.
-const withQuestionsAskedHere = (report) => ({
-  ...report,
-  blocks: (Array.isArray(report?.blocks) ? report.blocks : []).map((block) =>
-    block?.type === 'data' && block.source?.type === 'query' && block.source.query && !block.askedHere
-      ? { ...block, askedHere: true }
-      : block,
-  ),
-})
 
 // What a template is saved as: its document without the answers shown here. AutoQL takes out whatever else of the
 // admin's data is left in it (table filters, legends, an analysis's wording), as it does for Save as template.
@@ -210,11 +206,7 @@ export class TemplateEditor extends React.Component {
       return null
     }
     if (this.lastFill?.fill !== fill) {
-      const errors = {}
-      fill.errors.forEach(({ blockId, reason, message }) => {
-        errors[blockId] = { reason, message }
-      })
-      this.lastFill = { fill, value: { state: 'filled', errors } }
+      this.lastFill = { fill, value: filledDataFill(fill.errors) }
     }
     return this.lastFill.value
   }
