@@ -282,6 +282,46 @@ describe('a report started from a template for a filter lock (RW-351)', () => {
     expect(mockBuilder.props.lockChangedAt).toBeUndefined()
   })
 
+  it('fills it in here as of after the lock is on, so its answers aren’t taken for older than the lock', async () => {
+    let madeAt
+    createReportFromTemplate.mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      madeAt = Date.now()
+      return { ...stored({ blocks: [dataBlock('d1')] }), created: true }
+    })
+    setup({ enableFilterLocks: true })
+    await startFor([BROWN])
+
+    expect(captureQuestion).toHaveBeenCalledTimes(1)
+    expect(Date.parse(captureQuestion.mock.calls[0][0].capturedAt)).toBeGreaterThanOrEqual(madeAt)
+  })
+
+  it('keeps a lock AutoQL didn’t in this browser, so it’s put on after a reload while the report filled', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'RUNNING', version: 1, dataErrors: [] })
+    const page = setup({ enableFilterLocks: true })
+    await startFor([BROWN])
+    expect(JSON.parse(localStorage.getItem('test.reportPendingLocks'))).toStrictEqual({ [T]: [BROWN] })
+    page.unmount()
+
+    // The page opened again on the report, once its fill is over.
+    fetchReports.mockResolvedValue({ reports: [{ ...stored(), report: undefined }] })
+    filledLater(documentOf([dataBlock('d1', answered)]))
+    setup({ enableFilterLocks: true, shownReportId: T })
+
+    await waitFor(() => expect(mockBuilder.props?.report.sessionFilterLocks).toStrictEqual([BROWN]))
+    expect(typeof mockBuilder.props.lockChangedAt).toBe('number')
+    await waitFor(() =>
+      expect(saveReport).toHaveBeenCalledWith(
+        expect.objectContaining({ id: T, report: expect.objectContaining({ sessionFilterLocks: [BROWN] }) }),
+      ),
+    )
+    expect(localStorage.getItem('test.reportPendingLocks')).toBeNull()
+  })
+
   // A template that kept a lock, which AutoQL's copy of it then comes with: what's picked is what the report is for.
   const copyLockedTo = (lock, { dataStatus } = {}) => ({
     ...stored({ dataStatus, blocks: [dataBlock('d1')] }),
@@ -515,6 +555,27 @@ describe('a report whose data AutoQL fills in', () => {
 
     await waitFor(() => expect(mockBuilder.props.readOnly).toBe(false))
     expect(fillNotice()).toHaveTextContent('Filling in your data stopped before it finished.')
+  })
+
+  it('drops a report deleted just as its fill moved on, as when asking how it’s going finds it gone', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'RUNNING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    // A block was filled (the version moved on), but the report is gone by the time it's read.
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'RUNNING', version: 2, dataErrors: [] })
+    fetchReport.mockRejectedValue(new ReportsApiError({ status: 404, code: 'REPORT_NOT_FOUND' }))
+    setup()
+    await startFromTemplate()
+
+    await waitFor(() => expect(screen.queryByTestId('builder')).toBeNull())
+    expect(homeProps.current.notices).toEqual([
+      expect.objectContaining({ text: '“Quarterly review” was deleted in another tab or window.' }),
+    ])
+    // No longer followed.
+    const asked = fetchReportDataStatus.mock.calls.length
+    await new Promise((resolve) => setTimeout(resolve, 60))
+    expect(fetchReportDataStatus).toHaveBeenCalledTimes(asked)
   })
 
   it('keeps asking, more slowly, when asking fails', async () => {
@@ -939,6 +1000,41 @@ describe('a report for each household from a template (RW-353)', () => {
     await expect(
       mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts: STARTS }),
     ).rejects.toMatchObject({ code: 'REPORT_BATCH_UNDER_WAY' })
+  })
+
+  it('ends a batch one of whose reports went wrong, saying so, and another can be started', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    const workspace = React.createRef()
+    setup({ enableFilterLocks: true, ref: workspace })
+    const fill = workspace.current.fillBatchReport
+    workspace.current.fillBatchReport = (batch, detail, forLock) =>
+      detail.id === R2 ? Promise.reject(new Error('Lost on the way')) : fill(batch, detail, forLock)
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices).toHaveLength(2))
+    expect(homeProps.current.notices[0]).toMatchObject({
+      tone: 'error',
+      text: expect.stringMatching(/^1 of the 2 reports wasn’t made/),
+    })
+    expect(homeProps.current.notices[1].text).toMatch(/^1 of 2 reports is in “Monthly review — /)
+
+    createReportFromTemplate.mockReturnValue(new Promise(() => {}))
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    await act(() =>
+      mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts: STARTS }),
+    )
+    expect(homeProps.current.notices[0].text).toMatch(/^Making 2 reports in “Monthly review — .+”: 0 done so far\./)
+  })
+
+  it('keeps nothing of a batch report once it’s named and saved', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    const workspace = React.createRef()
+    setup({ enableFilterLocks: true, ref: workspace })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in “Monthly review — /))
+    expect(workspace.current.savers.has(R1)).toBe(false)
+    expect(workspace.current.savers.has(R2)).toBe(false)
   })
 
   it('makes none when their folder can’t be made, and can be tried again', async () => {

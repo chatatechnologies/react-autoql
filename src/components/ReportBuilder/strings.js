@@ -224,6 +224,7 @@ export const STRINGS = {
       too_large: 'Its answer would make the report too large to save.',
       tile_unavailable: 'The dashboard tile it comes from isn’t available to you.',
       no_question: 'This block has no question to ask.',
+      unsupported: 'That answer can’t be kept in a report yet.',
       stale_block: 'This block changed while its data was being filled in.',
       busy: 'AutoQL was too busy to fill this in.',
       interrupted: 'Filling this in was interrupted.',

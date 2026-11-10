@@ -1,11 +1,13 @@
 import { isCapture } from '../model/blockView'
+import { questionBlocks } from '../run/fillQuestions'
 import { REPORTS_STRINGS } from './reportsStrings'
 
 const S = REPORTS_STRINGS
 
-// How far filling in a report's data has got: its data blocks with an answer (`done`), of all of them (`total`).
+// How far filling in a report's data has got: its questions with an answer (`done`), of all of them (`total`). A
+// Data block with no question isn't counted: a fill has nothing to ask it.
 export const fillProgress = (report) => {
-  const blocks = (Array.isArray(report?.blocks) ? report.blocks : []).filter((block) => block?.type === 'data')
+  const blocks = questionBlocks(report)
   return { done: blocks.filter((block) => isCapture(block.capture)).length, total: blocks.length }
 }
 

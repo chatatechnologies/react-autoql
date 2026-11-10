@@ -824,6 +824,7 @@ export interface ReportDataError {
     | 'too_large'
     | 'tile_unavailable'
     | 'no_question'
+    | 'unsupported'
     | 'stale_block'
     | 'busy'
     | 'interrupted'

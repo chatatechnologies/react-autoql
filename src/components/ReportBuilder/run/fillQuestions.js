@@ -17,6 +17,9 @@ export const fillErrorOf = (blockId, result) => {
   let reason = 'query_failed'
   if (result.reason === 'no-data') {
     reason = 'no_data'
+  } else if (result.reason === 'unsupported') {
+    // It answered, with something a report can't keep (yet): asking again comes back the same.
+    reason = 'unsupported'
   } else if (referenceId === '1.1.430' || referenceId === '1.1.431') {
     reason = 'not_confident'
   } else if (referenceId === '1.1.522') {
@@ -75,27 +78,42 @@ export const fillQuestions = ({
     asking += 1
     const controller = typeof AbortController === 'function' ? new AbortController() : null
     controllers.add(controller)
-    ask({
-      query: block.source.query,
-      authentication,
-      autoQLConfig,
-      filters,
-      signal: controller?.signal,
-      rerun: { kept: block.capture, displayType: block.displayType },
-      capturedAt,
-    }).then((result) => {
+    const settle = (result) => {
       controllers.delete(controller)
       asking -= 1
       if (!wanted()) {
         return
       }
-      if (result.ok) {
-        onAnswer?.(block, result.capture)
-      } else if (result.reason !== 'cancelled') {
-        errors.push(fillErrorOf(block.id, result))
+      if (result?.ok) {
+        try {
+          onAnswer?.(block, result.capture)
+        } catch (error) {
+          errors.push(fillErrorOf(block.id, { reason: 'error', error: { message: error?.message } }))
+        }
+      } else if (result?.reason !== 'cancelled') {
+        errors.push(fillErrorOf(block.id, result || {}))
       }
       askNext()
-    })
+    }
+    // Whatever goes wrong with one question (a request that can't be built, an answer that can't be kept) is that
+    // block's error, and the fill goes on to the next: it always ends.
+    let asked
+    try {
+      asked = Promise.resolve(
+        ask({
+          query: block.source.query,
+          authentication,
+          autoQLConfig,
+          filters,
+          signal: controller?.signal,
+          rerun: { kept: block.capture, displayType: block.displayType },
+          capturedAt,
+        }),
+      )
+    } catch (error) {
+      asked = Promise.reject(error)
+    }
+    asked.then(settle, (error) => settle({ ok: false, reason: 'error', error: { message: error?.message } }))
   }
 
   if (!blocks.length) {

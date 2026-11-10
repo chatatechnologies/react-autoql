@@ -51,7 +51,17 @@ import {
   withBlocksAdded,
 } from './documents'
 import { ReportSaver } from './ReportSaver'
-import { loadOpenTabs, loadTabWidths, saveOpenTabs, saveTabWidths, widthsFor, withTabClosed, withTabOpen } from './tabs'
+import {
+  loadOpenTabs,
+  loadPendingLocks,
+  loadTabWidths,
+  saveOpenTabs,
+  savePendingLocks,
+  saveTabWidths,
+  widthsFor,
+  withTabClosed,
+  withTabOpen,
+} from './tabs'
 import { ReportTabs } from './ReportTabs'
 import { SaveStatus } from './SaveStatus'
 import { NewReportDialog } from './NewReportDialog'
@@ -433,8 +443,9 @@ export class ReportsWithoutTheme extends React.Component {
     // Reports made from a template filled in from here, while AutoQL can't fill them itself: id → the fill under way.
     this.localFills = new Map()
     // Reports started from a template whose copy the service made with another filter lock than the one picked (or
-    // with one when none was): id → the one picked, put on once they're filled in (applyPendingLock), and then id →
-    // when it was, for the builder to offer Rerun all.
+    // with one when none was): id → the one picked, put on once they're filled in (applyPendingLock) and kept in this
+    // browser until then (keepPendingLocks), so a reload doesn't lose it; and then id → when it was, for the builder
+    // to offer Rerun all.
     this.pendingLocks = new Map()
     this.locksPutOn = new Map()
     this.root = React.createRef()
@@ -640,6 +651,12 @@ export class ReportsWithoutTheme extends React.Component {
           this.unauthorized(missing)
         }
         const prefix = this.storagePrefix()
+        // A report started before a reload for a filter lock the service didn't keep still gets it once it's shown.
+        loadPendingLocks(prefix).forEach((locks, id) => {
+          if (!this.pendingLocks.has(id)) {
+            this.pendingLocks.set(id, normalizeFilterLocks(locks))
+          }
+        })
         const listed = new Set(reports.map((report) => report.id))
         const mayHave = (id) => !!missing || listed.has(id)
         const kept = loadOpenTabs(prefix, sourceId).filter(mayHave)
@@ -1164,6 +1181,12 @@ export class ReportsWithoutTheme extends React.Component {
       if (!current()) {
         return
       }
+      if (read === 'gone') {
+        // Deleted somewhere else, as the status check finds too.
+        this.stopFollowingFill()
+        this.loadShown()
+        return
+      }
       if (!read) {
         tryAgain()
         return
@@ -1196,12 +1219,15 @@ export class ReportsWithoutTheme extends React.Component {
   }
 
   // The report as the fill has left it so far, shown in place of what was, with its saver at the new version: nothing
-  // was edited meanwhile. Resolves with whether it could be read.
+  // was edited meanwhile. Resolves with whether it could be read, or 'gone' when it's been deleted.
   readFilled = async ({ id, sourceId }) => {
     let detail
     try {
       detail = await fetchReport({ authentication: this.credentialsFor(sourceId), id })
     } catch (error) {
+      if (isReportGone(error)) {
+        return 'gone'
+      }
       this.unauthorized(error)
       return false
     }
@@ -1276,6 +1302,9 @@ export class ReportsWithoutTheme extends React.Component {
     this.localFills.get(id)?.stop()
     this.localFills.delete(id)
     this.fillInfo.delete(id)
+    if (this.pendingLocks.delete(id)) {
+      this.keepPendingLocks()
+    }
     this.savers.get(id)?.dispose()
     this.savers.delete(id)
     this.saverSources.delete(id)
@@ -1347,12 +1376,11 @@ export class ReportsWithoutTheme extends React.Component {
   // them; an empty list (none, over a template's own) is sent as it is. With none, the report is for everything, even
   // if the service's copy came with a lock: the dialog starts out with the template's own, so none is a choice.
   // A service that doesn't take them yet (before RW-352) makes the report as the template has it, and fills it in
-  // that way: the report gets what was picked here once it can be changed, and the builder offers Rerun all to ask
-  // every question with it. Filled in from this page, it's asked with what was picked from the start.
+  // that way: the report gets what was picked here once it can be changed (kept in this browser until then), and the
+  // builder offers Rerun all to ask every question with it. Filled in from this page, it's asked with what was picked
+  // from the start.
   startFromTemplate = async ({ templateId, id, sessionFilterLocks }) => {
     const sourceId = this.sourceId
-    // What the report's data is as of, wherever it's filled in.
-    const startedAt = new Date().toISOString()
     const locks = normalizeFilterLocks(sessionFilterLocks)
     this.saveNow()
     let detail
@@ -1374,6 +1402,7 @@ export class ReportsWithoutTheme extends React.Component {
     }
     if (filterLocksKey(detail.report?.sessionFilterLocks) !== filterLocksKey(locks)) {
       this.pendingLocks.set(detail.id, locks)
+      this.keepPendingLocks()
     }
     this.setState(({ reports }) => ({
       newReportOpen: false,
@@ -1386,9 +1415,13 @@ export class ReportsWithoutTheme extends React.Component {
     // start.
     if (detail.dataStatus === 'NONE') {
       this.applyPendingLock({ now: true })
-      this.fillHere(detail.id, sourceId, startedAt)
+      // As of now, with the lock on: answers asked with it aren't taken for older than it (and Rerun all offered).
+      this.fillHere(detail.id, sourceId, new Date().toISOString())
     }
   }
+
+  // What pendingLocks has, kept in this browser under the host's prefix.
+  keepPendingLocks = () => savePendingLocks(this.storagePrefix(), this.pendingLocks)
 
   // The filter lock a report was started for, where the service's copy has another (pendingLocks), put on the shown
   // report as an edit once its fill is over (none takes the copy's off): put on before then, the version the fill
@@ -1407,6 +1440,7 @@ export class ReportsWithoutTheme extends React.Component {
       return
     }
     this.pendingLocks.delete(id)
+    this.keepPendingLocks()
     // Put on after a fill without it, the answers it left aren't for it. Before this page's own fill, they aren't
     // asked yet.
     if (!now) {
@@ -1591,11 +1625,19 @@ export class ReportsWithoutTheme extends React.Component {
     this.sayBatch(batch)
     const worker = async () => {
       while (batch.queue.length && this.batch === batch) {
-        await this.makeOneOfBatch(batch, batch.queue.shift())
+        const start = batch.queue.shift()
+        try {
+          await this.makeOneOfBatch(batch, start)
+        } catch (error) {
+          // One that went wrong is counted as not made, and the others go on.
+          batch.failed.push(error)
+        }
         this.sayBatch(batch)
       }
     }
-    Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, starts.length) }, worker)).then(() => this.endBatch(batch))
+    // However its reports went, the batch ends, so another can start.
+    const end = () => this.endBatch(batch)
+    Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, starts.length) }, worker)).then(end, end)
   }
 
   // One of a batch's reports: made for its lock, filled in, and named for it. What became of it is counted.
@@ -1616,16 +1658,32 @@ export class ReportsWithoutTheme extends React.Component {
       return
     }
     this.listBatchReport(batch, summaryOf(detail))
-    const filled = this.batch === batch ? await this.fillBatchReport(batch, detail, lock) : null
-    if (!filled || !(await this.nameBatchReport(batch, detail.id, lock, filled.saver))) {
-      batch.gone += 1
+    try {
+      const filled = this.batch === batch ? await this.fillBatchReport(batch, detail, lock) : null
+      if (!filled || !(await this.nameBatchReport(batch, detail.id, lock, filled.saver))) {
+        batch.gone += 1
+        return
+      }
+      batch.done += 1
+      if (filled.dataStatus !== 'DONE') {
+        batch.partly += 1
+      }
+      this.listBatchReport(batch, { id: detail.id, dataStatus: filled.dataStatus })
+    } finally {
+      this.releaseBatchSaver(detail.id)
+    }
+  }
+
+  // A batch report done with: its saver goes, unless it's shown or open in a tab here or still has edits to save, so
+  // a batch's answers aren't held for the rest of the session. One opened later gets a saver as any report does.
+  releaseBatchSaver = (id) => {
+    const saver = this.savers.get(id)
+    if (!saver || saver.hasUnsaved || this.shownId === id || this.state.tabs?.includes(id)) {
       return
     }
-    batch.done += 1
-    if (filled.dataStatus !== 'DONE') {
-      batch.partly += 1
-    }
-    this.listBatchReport(batch, { id: detail.id, dataStatus: filled.dataStatus })
+    saver.dispose()
+    this.savers.delete(id)
+    this.saverSources.delete(id)
   }
 
   // A batch report's data, asked with its lock: filled in by AutoQL, or by this page where AutoQL doesn't fill reports,

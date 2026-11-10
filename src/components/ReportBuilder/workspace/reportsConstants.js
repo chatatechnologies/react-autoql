@@ -23,7 +23,9 @@ export const BATCH_MAX = 50
 export const BATCH_AT_ONCE = 3
 export const BATCH_QUESTIONS_AT_ONCE = 1
 
-// Where the open tabs and their widths are remembered in the browser, after the host's prefix.
+// Where the open tabs and their widths are remembered in the browser, after the host's prefix, and the filter locks
+// reports are still to get.
 export const DEFAULT_STORAGE_PREFIX = 'react-autoql.'
 export const TABS_STORAGE_KEY = 'reportTabs'
 export const TAB_WIDTHS_STORAGE_KEY = 'reportTabWidths'
+export const PENDING_LOCKS_STORAGE_KEY = 'reportPendingLocks'
