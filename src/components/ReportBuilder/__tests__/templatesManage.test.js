@@ -3,7 +3,8 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import '@testing-library/jest-dom'
 import { SaveAsTemplateDialog } from '../workspace/SaveAsTemplateDialog'
 import { ManageTemplatesDialog } from '../workspace/ManageTemplatesDialog'
-import { parseTags } from '../workspace/templateDetails'
+import { detailsProblem, parseTags } from '../workspace/templateDetails'
+import { REPORTS_STRINGS } from '../workspace/reportsStrings'
 import { fetchReportCategories, ReportsApiError } from '../run/reportsApi'
 import {
   createTemplateCategory,
@@ -76,6 +77,21 @@ describe('parseTags', () => {
   it('splits on commas, trims, and keeps each tag once whatever its case', () => {
     expect(parseTags(' Quarterly, AUM ,, quarterly,Fees ')).toEqual(['Quarterly', 'AUM', 'Fees'])
     expect(parseTags('')).toEqual([])
+  })
+})
+
+describe('detailsProblem', () => {
+  const details = (rest) => ({ title: 'Quarterly review', description: '', categoryId: '', tags: '', ...rest })
+  const E = REPORTS_STRINGS.errors
+
+  it('counts a description by character, as the service does: an emoji is one', () => {
+    expect(detailsProblem(details({ description: '📈'.repeat(1024) }))).toBeNull()
+    expect(detailsProblem(details({ description: '📈'.repeat(1025) }))).toBe(E.templateNameInvalid)
+  })
+
+  it('says a tag is too long, not the title', () => {
+    expect(detailsProblem(details({ tags: `Quarterly, ${'a'.repeat(81)}` }))).toBe(E.templateTagInvalid)
+    expect(detailsProblem(details({ tags: 'a'.repeat(80) }))).toBeNull()
   })
 })
 

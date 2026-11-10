@@ -1055,12 +1055,17 @@ describe('a report for each household from a template (RW-353)', () => {
       detail.id === R2 ? Promise.reject(new Error('Lost on the way')) : fill(batch, detail, forLock)
     await startEach()
 
-    await waitFor(() => expect(homeProps.current.notices).toHaveLength(2))
-    expect(homeProps.current.notices[0]).toMatchObject({
-      tone: 'error',
-      text: expect.stringMatching(/^1 of the 2 reports wasn’t made/),
-    })
-    expect(homeProps.current.notices[1].text).toMatch(/^1 of 2 reports is in “Monthly review — /)
+    // It was made, so it's in the folder: not finished, rather than not made.
+    await waitFor(() =>
+      expect(homeProps.current.notices).toEqual([
+        {
+          tone: 'info',
+          text: expect.stringMatching(
+            /^Both reports are in “Monthly review — .+”\. 1 of them wasn’t finished here: open it to check its data and its name\.$/,
+          ),
+        },
+      ]),
+    )
 
     createReportFromTemplate.mockReturnValue(new Promise(() => {}))
     fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
@@ -1068,6 +1073,31 @@ describe('a report for each household from a template (RW-353)', () => {
       mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts: STARTS }),
     )
     expect(homeProps.current.notices[0].text).toMatch(/^Making 2 reports in “Monthly review — .+”: 0 done so far\./)
+  })
+
+  it('leaves a report whose fill went quiet to AutoQL, unnamed, and says it wasn’t finished here', async () => {
+    createReportFromTemplate.mockImplementation(async (start) =>
+      made(start, start.id === R1 ? { dataStatus: 'RUNNING' } : {}),
+    )
+    // AutoQL's fill of the first never moves on.
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'RUNNING', version: 1, dataErrors: [] })
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() =>
+      expect(homeProps.current.notices).toEqual([
+        {
+          tone: 'info',
+          text: expect.stringMatching(
+            /^Both reports are in “Monthly review — .+”\. 1 of them wasn’t finished here: open it to check its data and its name\.$/,
+          ),
+        },
+      ]),
+    )
+    // Nothing written to it from here, while AutoQL may still be: no name, and none of this page's answers.
+    expect(lastSaveOf(R1)).toBeUndefined()
+    expect(captureQuestion).not.toHaveBeenCalledWith(expect.objectContaining({ filters: [BROWN] }))
+    expect(lastSaveOf(R2).report.title).toBe('Quarterly review — Nguyen Family')
   })
 
   it('names a batch report through the saver it has now, not one replaced while it was filled in', async () => {

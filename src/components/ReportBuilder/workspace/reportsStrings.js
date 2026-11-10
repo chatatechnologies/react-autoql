@@ -130,6 +130,7 @@ export const REPORTS_STRINGS = {
       'a title can be 1 to 200 characters, a description up to 1,024, and a tag up to 80, without commas',
     categoryNameInvalid: 'a name can be 1 to 256 characters',
     tooManyTemplateTags: 'a template can carry up to 20 tags',
+    templateTagInvalid: 'a tag can be up to 80 characters',
     templateLimit: 'that’s over the limit of 500 templates',
     publishLimit: 'a published template can have up to 50 data blocks',
     categoryLimit: 'that’s over the limit of 100 categories',
@@ -216,6 +217,11 @@ export const REPORTS_STRINGS = {
       n === 1
         ? '1 of them is missing some data: open it to see why, and Rerun it.'
         : `${n} of them are missing some data: open one to see why, and Rerun it.`,
+    // Made, but not finished here: AutoQL's fill of it went quiet, or filling it in or naming it went wrong.
+    unfinished: (n) =>
+      n === 1
+        ? '1 of them wasn’t finished here: open it to check its data and its name.'
+        : `${n} of them weren’t finished here: open them to check their data and names.`,
     notMade: (n, total, reason) =>
       n === total
         ? `None of the ${total} reports were made: ${reason}.`

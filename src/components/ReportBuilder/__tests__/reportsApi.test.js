@@ -15,8 +15,10 @@ import {
   isFillingData,
   organizeReports,
   renameReportFolder,
+  REPORT_SUMMARY_FIELDS,
   ReportsApiError,
   saveReport,
+  summaryOfDetail,
   updateReportTag,
 } from '../run/reportsApi'
 
@@ -93,6 +95,17 @@ describe('AutoQL’s report service', () => {
     expect(request.path).toBe('/autoql/api/v1/reports')
     expect(request.query).toEqual({ page_size: '200', tag_ids: 'a,b', key: 'k 1' })
     expect(request.headers.Authorization).toBe('Bearer t')
+  })
+
+  it('lists a report with the summary’s fields, which a report read with its document comes down to', async () => {
+    axios.request.mockResolvedValue(
+      answer({ items: [STORED], pagination: { current_page: 1, page_size: 200, total_pages: 1, total_items: 1 } }),
+    )
+    const { reports } = await fetchReports({ authentication: AUTH })
+    expect(Object.keys(reports[0])).toEqual(REPORT_SUMMARY_FIELDS)
+
+    axios.request.mockResolvedValue(answer({ ...STORED, project_id: 'CT_1', document: DOCUMENT }))
+    expect(summaryOfDetail(await fetchReport({ authentication: AUTH, id: ID }))).toEqual(reports[0])
   })
 
   it('reads a report with its document as stored, keys and all', async () => {

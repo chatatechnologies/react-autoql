@@ -183,7 +183,26 @@ const dataErrorsOf = (value) =>
       ...(typeof error.message === 'string' && error.message ? { message: error.message } : {}),
     }))
 
-// A report as listed: everything but its document. `templateId` is the template it was made from, if it was.
+// What a report summary has, as the list has it: everything but its document. A report read with its document has
+// them too (summaryOfDetail), so the list is kept here, once.
+export const REPORT_SUMMARY_FIELDS = [
+  'id',
+  'title',
+  'sizeBytes',
+  'version',
+  'folderId',
+  'tagIds',
+  'templateId',
+  'dataStatus',
+  'createdAt',
+  'updatedAt',
+]
+
+// A report as the list has it, from one read with its document (or anything with its fields).
+export const summaryOfDetail = (detail) =>
+  Object.fromEntries(REPORT_SUMMARY_FIELDS.map((field) => [field, detail?.[field]]))
+
+// A report as listed: REPORT_SUMMARY_FIELDS. `templateId` is the template it was made from, if it was.
 const summaryOf = (raw) =>
   isObject(raw) && typeof raw.id === 'string'
     ? {

@@ -80,6 +80,10 @@ let panelIds = 0
 // A question asked in the report, which Rerun asks again.
 const isRerunnable = (block) => block?.type === 'data' && !!block.askedHere && block.source?.type === 'query'
 
+// What Rerun all hears of a block taken out (or no longer asking a question) since it started: done, with nothing
+// to rerun.
+const NOTHING_TO_RERUN = 'nothing to rerun'
+
 // How long a deleted block can be put back for.
 const UNDO_REMOVE_MS = 10000
 
@@ -901,12 +905,19 @@ export class ReportBuilderWithoutTheme extends React.Component {
       }
       const id = ids[job.next]
       job.next += 1
-      // Taken out, or asking something else, since: there's nothing of it to rerun.
       const block = this.getLatestReport().blocks.find((b) => b.id === id)
-      const asking = isRerunnable(block)
-        ? this.askQuestion(id, block.source.query, { rerun: true, capturedAt: job.capturedAt })
-        : Promise.resolve(null)
-      job.asking.add(id)
+      let asking
+      if (!isRerunnable(block)) {
+        // Taken out, or asking something else, since: there's nothing of it to rerun.
+        asking = Promise.resolve(NOTHING_TO_RERUN)
+      } else if (this.pendingSeqs[id]) {
+        // Being rerun on its own already: that Rerun is left to answer (and Stop leaves it be), so this one doesn't
+        // count it as rerun.
+        asking = Promise.resolve(null)
+      } else {
+        job.asking.add(id)
+        asking = this.askQuestion(id, block.source.query, { rerun: true, capturedAt: job.capturedAt })
+      }
       asking.then((answered) => {
         job.asking.delete(id)
         if (!this.mounted || this.rerunAllJob !== job) {
@@ -914,7 +925,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
         }
         this.setState(({ rerunAll }) => {
           const done = rerunAll.done + 1
-          const failed = rerunAll.failed + (answered === false ? 1 : 0)
+          // Not answered, or its answer dropped (the lock changed meanwhile): it wasn't rerun.
+          const failed = rerunAll.failed + (answered === false || answered === null ? 1 : 0)
           if (done < rerunAll.total) {
             return { rerunAll: { ...rerunAll, done, failed } }
           }

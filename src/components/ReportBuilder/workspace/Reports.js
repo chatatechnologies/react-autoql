@@ -25,6 +25,7 @@ import {
   organizeReports as organizeStoredReports,
   renameReportFolder,
   ReportsApiError,
+  summaryOfDetail,
   updateReportTag,
 } from '../run/reportsApi'
 import {
@@ -140,31 +141,6 @@ const listReports = async (authentication) => {
   }
 }
 
-// A report as the list has it, from a report read with its document.
-const summaryOf = ({
-  id,
-  title,
-  sizeBytes,
-  version,
-  folderId,
-  tagIds,
-  templateId,
-  dataStatus,
-  createdAt,
-  updatedAt,
-}) => ({
-  id,
-  title,
-  sizeBytes,
-  version,
-  folderId,
-  tagIds,
-  templateId,
-  dataStatus,
-  createdAt,
-  updatedAt,
-})
-
 // The list once a report is opened: with its title and data status as stored, or with the report added if the list
 // didn't have it (it was on a page that failed to list), so its tab has its title.
 const withOpened = (reports, detail) =>
@@ -172,7 +148,7 @@ const withOpened = (reports, detail) =>
     ? reports.map((report) =>
         report.id === detail.id ? { ...report, title: detail.title, dataStatus: detail.dataStatus } : report,
       )
-    : [...reports, summaryOf(detail)]
+    : [...reports, summaryOfDetail(detail)]
 
 // The browser's time zone, which AutoQL asks a template's questions in.
 const browserTimeZone = () => {
@@ -1411,7 +1387,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState(({ reports }) => ({
       newReportOpen: false,
       notice: null,
-      reports: [summaryOf(detail), ...(reports || []).filter((report) => report.id !== detail.id)],
+      reports: [summaryOfDetail(detail), ...(reports || []).filter((report) => report.id !== detail.id)],
     }))
     this.setTabs((tabs) => withTabOpen(tabs, detail.id))
     this.select(detail.id, { detail, sourceId })
@@ -1614,7 +1590,7 @@ export class ReportsWithoutTheme extends React.Component {
     // What the reports' data is as of, wherever it's filled in.
     const startedAt = new Date().toISOString()
     const batch = { sourceId, templateId, startedAt, folder: null, total: starts.length, queue: [...starts] }
-    Object.assign(batch, { done: 0, partly: 0, gone: 0, failed: [] })
+    Object.assign(batch, { done: 0, partly: 0, unfinished: 0, gone: 0, failed: [] })
     // Under way from here: another can't start while this one's folder is made.
     this.batch = batch
     this.saveNow()
@@ -1664,11 +1640,18 @@ export class ReportsWithoutTheme extends React.Component {
       batch.failed.push(error)
       return
     }
-    this.listBatchReport(batch, summaryOf(detail))
+    this.listBatchReport(batch, summaryOfDetail(detail))
     try {
       const filled = this.batch === batch ? await this.fillBatchReport(batch, detail, lock) : null
-      if (!filled || !(await this.nameBatchReport(batch, detail.id, lock, filled.saver))) {
+      if (!filled) {
+        // Deleted, or the page went away.
         batch.gone += 1
+        return
+      }
+      // Made, but AutoQL's fill went quiet (it may still be writing it, so it's left alone), or it couldn't be
+      // named: in the folder, not finished here.
+      if (filled.stalled || !(await this.nameBatchReport(batch, detail.id, lock, filled.saver))) {
+        batch.unfinished += 1
         return
       }
       batch.done += 1
@@ -1676,6 +1659,9 @@ export class ReportsWithoutTheme extends React.Component {
         batch.partly += 1
       }
       this.listBatchReport(batch, { id: detail.id, dataStatus: filled.dataStatus })
+    } catch (error) {
+      // Made, then filling it in or naming it went wrong: in the folder, not finished.
+      batch.unfinished += 1
     } finally {
       this.releaseBatchSaver(detail.id)
     }
@@ -1695,14 +1681,14 @@ export class ReportsWithoutTheme extends React.Component {
 
   // A batch report's data, asked with its lock: filled in by AutoQL, or by this page where AutoQL doesn't fill reports,
   // couldn't take this one, or made it for another lock (a service before RW-352). Resolves with how it went
-  // ({ dataStatus, saver }, the saver when it was filled in here), or null when it stopped: it was deleted, the
-  // page went away, or it couldn't be read.
+  // ({ dataStatus, saver }, the saver when it was filled in here), { stalled: true } when AutoQL's fill went quiet,
+  // or null when it stopped: it was deleted, the page went away, or it couldn't be read.
   fillBatchReport = async (batch, detail, lock) => {
     const { id } = detail
     const filling = isFillingData(detail.dataStatus)
     if (filling) {
       const ended = await this.awaitBatchFill(batch, id)
-      if (!ended || lockKeptOn(detail.report, lock)) {
+      if (!ended || ended.stalled || lockKeptOn(detail.report, lock)) {
         return ended
       }
     } else if (detail.dataStatus !== 'NONE' && !busyAtStart(detail) && lockKeptOn(detail.report, lock)) {
@@ -1727,7 +1713,8 @@ export class ReportsWithoutTheme extends React.Component {
   }
 
   // AutoQL's fill of a batch report, followed until it ends — or until there's been no news of it for long enough —
-  // the home page's list saying how it's going. Resolves with how it ended, or null once it's gone or the batch stopped.
+  // the home page's list saying how it's going. Resolves with how it ended, { stalled: true } once there's been no
+  // news of it for that long (AutoQL may still be writing it), or null once it's gone or the batch stopped.
   awaitBatchFill = async (batch, id) => {
     let delay = FILL_POLL_MS
     let heardAt = Date.now()
@@ -1762,7 +1749,7 @@ export class ReportsWithoutTheme extends React.Component {
         return { dataStatus: progress.dataStatus }
       }
       if (Date.now() - heardAt >= FILL_STALL_MS) {
-        return { dataStatus: 'FAILED' }
+        return { stalled: true }
       }
       delay = progress ? FILL_POLL_MS : Math.min(delay * 2, FILL_POLL_MAX_MS)
     }
@@ -1828,7 +1815,7 @@ export class ReportsWithoutTheme extends React.Component {
   // What the home page says while a batch is made.
   sayBatch = (batch) => {
     if (this.batch === batch && this.stillOn(batch.sourceId)) {
-      const settled = batch.done + batch.gone + batch.failed.length
+      const settled = batch.done + batch.unfinished + batch.gone + batch.failed.length
       this.setState({ notice: S.batch.making(settled, batch.total, batch.folder.name) })
     }
   }
@@ -1842,8 +1829,19 @@ export class ReportsWithoutTheme extends React.Component {
     if (!this.stillOn(batch.sourceId)) {
       return
     }
-    const { done, partly, failed, total, folder } = batch
-    const said = done ? [S.batch.made(done, total, folder.name), partly ? S.batch.partly(partly) : null] : []
+    const { done, partly, unfinished, failed, total, folder } = batch
+    // In the folder: those made and named, and those made but not finished here.
+    const inFolder = done + unfinished
+    const said = []
+    if (inFolder) {
+      said.push(S.batch.made(inFolder, total, folder.name))
+      if (partly) {
+        said.push(S.batch.partly(partly))
+      }
+      if (unfinished) {
+        said.push(S.batch.unfinished(unfinished))
+      }
+    }
     const why = failed.length ? describeReportError(failed[0], 'startFromTemplate').reason : null
     this.setState({
       notice: said.filter(Boolean).join(' ') || null,

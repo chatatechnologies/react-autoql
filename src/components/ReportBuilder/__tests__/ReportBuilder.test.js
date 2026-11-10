@@ -1524,6 +1524,32 @@ describe('questions asked in the builder (enableDataBlocks)', () => {
       expect(spy).not.toHaveBeenCalled()
     })
 
+    it('leaves a block already being rerun on its own to that Rerun, Stop and all, and doesn’t count it as rerun', async () => {
+      const waiting = answers()
+      setupAsking(createEmptyReport({ blocks: [unanswered('a'), unanswered('b'), unanswered('c')] }))
+      // The first block's own Rerun, on its way.
+      selectBlock('Data', 0)
+      fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+      expect(waiting.map((w) => w.query)).toEqual(['question a'])
+
+      fireEvent.click(screen.getByTestId('report-builder-rerun-all-start'))
+      expect(waiting.map((w) => w.query)).toEqual(['question a', 'question b', 'question c'])
+      // Stopping Rerun all leaves that Rerun be.
+      await act(async () => fireEvent.click(screen.getByTestId('report-builder-rerun-all-stop')))
+      expect(within(panel()).getByTestId('report-builder-rerun').textContent).toBe('Asking again…')
+    })
+
+    it('says a block it didn’t rerun wasn’t, rather than that all of them were', async () => {
+      const waiting = answers()
+      setupAsking(createEmptyReport({ blocks: [unanswered('a'), unanswered('b')] }))
+      selectBlock('Data', 0)
+      fireEvent.click(within(panel()).getByTestId('report-builder-rerun'))
+      fireEvent.click(screen.getByTestId('report-builder-rerun-all-start'))
+
+      await act(async () => waiting[1].resolve(responseOf(rowsOf(2))))
+      await waitFor(() => expect(bar()?.textContent).toContain('1 of 2 blocks didn’t answer.'))
+    })
+
     it('says how many didn’t answer, until that’s dismissed', async () => {
       runQuery.mockImplementation((request) =>
         request.query === 'question b'

@@ -46,10 +46,11 @@ export const detailsOf = (template) => ({
 export const detailsProblem = (details) => {
   const title = details.title.trim()
   const tags = parseTags(details.tags)
+  // Characters counted as the service counts them, by code point (an emoji is one), on what's sent.
   if (
     !title ||
     Array.from(title).length > TEMPLATE_TITLE_MAX ||
-    details.description.length > TEMPLATE_DESCRIPTION_MAX
+    Array.from(details.description.trim()).length > TEMPLATE_DESCRIPTION_MAX
   ) {
     return E.templateNameInvalid
   }
@@ -57,7 +58,7 @@ export const detailsProblem = (details) => {
     return E.tooManyTemplateTags
   }
   if (tags.some((tag) => Array.from(tag).length > TEMPLATE_TAG_MAX)) {
-    return E.templateNameInvalid
+    return E.templateTagInvalid
   }
   return null
 }

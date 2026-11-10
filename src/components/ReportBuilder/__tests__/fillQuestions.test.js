@@ -71,6 +71,12 @@ describe('how far a fill has got', () => {
       text: REPORTS_STRINGS.workspace.filled(4),
     })
   })
+
+  test('says nothing of a fill that had nothing to fill in', () => {
+    const none = { ...REPORT, blocks: REPORT.blocks.filter((block) => !asked.includes(block)) }
+    expect(fillProgress(none)).toStrictEqual({ done: 0, total: 0 })
+    expect(fillNoticeOf({ ended: true }, false, none)).toBeNull()
+  })
 })
 
 describe('fillErrorOf', () => {

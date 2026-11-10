@@ -33,7 +33,8 @@ export const fillNoticeOf = (fill, filling, report, words = S.workspace) => {
   if (fill.stalled) {
     return { tone: 'warning', text: words.fillStalled }
   }
-  if (!fill.ended) {
+  // Not over yet, or over with nothing to fill in: nothing to say.
+  if (!fill.ended || !total) {
     return null
   }
   if (done >= total) {
