@@ -480,6 +480,44 @@ body.react-autoql-no-select {
   }
 }
 
+// Asks a new question about a value label cell's value (see createValueLabelQueryButton). Only
+// shown while the cell is hovered, so it doesn't crowd the table or show up in exports. It sits
+// beside the value rather than over it: the value gives up the room and truncates.
+.react-autoql-cell-value-wrapper.has-vl-query-btn {
+  gap: 4px;
+
+  .react-autoql-cell-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .react-autoql-cell-vl-query-btn {
+    display: none;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid var(--react-autoql-border-color);
+    border-radius: 4px;
+    background: var(--react-autoql-background-color-secondary);
+    color: var(--react-autoql-text-color-primary);
+    font-size: 12px;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--react-autoql-accent-color);
+      border-color: var(--react-autoql-accent-color);
+    }
+  }
+}
+
+.tabulator-cell:hover .react-autoql-cell-value-wrapper.has-vl-query-btn .react-autoql-cell-vl-query-btn {
+  display: flex;
+}
+
 // Screen-reader-only description of a value's link (see createValueActionLink). Not selectable,
 // so selecting the table's text by hand and copying it doesn't pick up "Open in new tab".
 .react-autoql-cell-value-action-hint {

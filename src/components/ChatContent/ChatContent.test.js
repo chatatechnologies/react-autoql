@@ -715,3 +715,23 @@ describe('scrolling to a message', () => {
     expect(container.scrollTop).toBe(700)
   })
 })
+
+describe('filters on a question', () => {
+  const lock = { key: 'category_canonical', value: 'bakery', format_txt: 'Bakery', show_message: 'Category' }
+
+  const lastMessage = (wrapper) => wrapper.state('messages')[wrapper.state('messages').length - 1]
+
+  test('the question keeps the locks it was sent with', () => {
+    const wrapper = setup()
+    wrapper.instance().onInputSubmit('sales by month', 'msg-1', { filters: [lock] })
+    expect(lastMessage(wrapper)).toEqual(expect.objectContaining({ isResponse: false, filters: [lock] }))
+  })
+
+  test('a question sent without locks has none', () => {
+    const wrapper = setup()
+    wrapper.instance().onInputSubmit('sales by month', 'msg-1', { filters: [] })
+    expect(lastMessage(wrapper).filters).toBeUndefined()
+    wrapper.instance().onInputSubmit('sales by month', 'msg-2')
+    expect(lastMessage(wrapper).filters).toBeUndefined()
+  })
+})

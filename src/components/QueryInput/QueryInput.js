@@ -495,7 +495,7 @@ class QueryInput extends React.Component {
     }
   }
 
-  animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation, scope }) => {
+  animateInputTextAndSubmit = ({ query, userSelection, source, skipQueryValidation, scope, filters }) => {
     animateInputText({
       text: query,
       inputRef: this.inputRef,
@@ -506,6 +506,7 @@ class QueryInput extends React.Component {
           skipQueryValidation: skipQueryValidation ?? true,
           source,
           scope,
+          filters,
         })
       },
     })
@@ -631,7 +632,21 @@ class QueryInput extends React.Component {
     this.axiosSourceDataPreview?.cancel(REQUEST_CANCELLED_ERROR)
   }
 
-  submitQuery = ({ queryText, userSelection, skipQueryValidation, source } = {}) => {
+  // queryFilters plus any locks for this query only, without repeating a lock already applied
+  getQueryFilters = (extraFilters) => {
+    if (!extraFilters?.length) {
+      return this.props.queryFilters
+    }
+
+    const lockKey = (filter) => `${filter?.key}|${filter?.value}`
+    const queryFilters = this.props.queryFilters ?? []
+    const newFilters = extraFilters.filter((filter) => !queryFilters.some((f) => lockKey(f) === lockKey(filter)))
+
+    return [...queryFilters, ...newFilters]
+  }
+
+  // filters: extra locks for this query only, on top of queryFilters (e.g. a value label cell's value)
+  submitQuery = ({ queryText, userSelection, skipQueryValidation, source, filters } = {}) => {
     const query = queryText || this.state.inputValue
     if (!query) {
       return
@@ -673,7 +688,7 @@ class QueryInput extends React.Component {
       source: mergeSources(this.props.source, source ?? 'user'),
       scope: this.props.scope,
       AutoAEId: this.props.AutoAEId,
-      filters: this.props.queryFilters,
+      filters: this.getQueryFilters(filters),
       pageSize: this.props.dataPageSize,
       cancelToken: this.axiosSource.token,
       sessionId: this.props.querySessionId,
@@ -689,7 +704,7 @@ class QueryInput extends React.Component {
     if (query.trim()) {
       const id = uuid()
 
-      this.props.onSubmit(query, id)
+      this.props.onSubmit(query, id, { filters: requestData.filters })
 
       this.addQueryToHistory(query)
 

@@ -20,6 +20,8 @@ import { shouldShowSummaryButton, getSummaryButtonDisabledState, getFollowOnQuer
 import { useMagicWandBillingGate, getMagicWandBillingErrorState, MAGIC_WAND_BILLING_GATE_MESSAGES } from '../../hooks/billing'
 import { isDatalessResponse } from '../../js/responseUtils'
 import { arePropsEqualByIdentity } from '../../js/propsEqual'
+import { lang } from '../../js/Localization'
+import { getFilterLockLabel, getFilterLockSummary } from '../../js/filterLockSummary'
 
 import { Icon } from '../Icon'
 import { QueryOutput } from '../QueryOutput'
@@ -141,6 +143,9 @@ export class ChatMessage extends React.Component {
     text: PropTypes.string,
     id: PropTypes.string.isRequired,
     onSuggestionClick: PropTypes.func,
+    onValueLabelQuery: PropTypes.func,
+    // The locks a question was sent with, shown on its bubble
+    filters: PropTypes.arrayOf(PropTypes.shape({})),
     response: PropTypes.shape({}),
     content: PropTypes.oneOfType([PropTypes.string, PropTypes.shape({})]),
     enableColumnVisibilityManager: PropTypes.bool,
@@ -1561,6 +1566,7 @@ export class ChatMessage extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           queryResponse={this.props.response}
           onSuggestionClick={this.props.onSuggestionClick}
+          onValueLabelQuery={this.props.onValueLabelQuery}
           tableOptions={this.props.tableOptions}
           dataFormatting={this.props.dataFormatting}
           appliedFilters={this.props.appliedFilters}
@@ -1733,6 +1739,34 @@ export class ChatMessage extends React.Component {
     )
   }
 
+  // Under a question's bubble, what it was filtered on: the first few values, with the full list,
+  // grouped by category, in the tooltip.
+  renderRequestFilters = () => {
+    const filters = this.props.filters
+    if (this.props.isResponse || !filters?.length) {
+      return null
+    }
+
+    const MAX_SHOWN = 2
+    const shown = filters.slice(0, MAX_SHOWN).map(getFilterLockLabel).join(', ')
+    const remaining = filters.length - MAX_SHOWN
+
+    return (
+      <div
+        className='chat-message-request-filters'
+        data-test='chat-message-request-filters'
+        data-tooltip-id={this.props.tooltipID}
+        data-tooltip-content={getFilterLockSummary(filters, lang.queryFilterSummaryTooltipTitle)}
+      >
+        <Icon type='filter' />
+        <span className='chat-message-request-filters-text'>
+          {shown}
+          {remaining > 0 ? ` +${remaining}` : ''}
+        </span>
+      </div>
+    )
+  }
+
   onQueryOutputResize = (dimensions) => {
     this.setState({
       isResizable: true,
@@ -1785,6 +1819,7 @@ export class ChatMessage extends React.Component {
               {this.renderContent()}
               {this.renderSummaryFooter()}
             </div>
+            {this.renderRequestFilters()}
           </div>
           {!!this.responseRef && (
             <div className='chat-message-rt-container'>

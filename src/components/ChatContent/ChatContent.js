@@ -13,6 +13,7 @@ import {
 
 import { authenticationType, autoQLConfigType, dataFormattingType, valueActionCallbacksType } from '../../props/types'
 import { lang } from '../../js/Localization'
+import { getFilterLockSummary } from '../../js/filterLockSummary'
 import { fetchSubjectListCached } from '../../js/subjectListService'
 import { fetchQueryTitle } from '../../js/queryTitleService'
 import { isScreenSize, subscribeToScreenSize } from '../../js/breakpoints'
@@ -1094,6 +1095,11 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // A question asked about a table cell's value: run it with a session lock on that value
+  onValueLabelQuery = ({ query, filters }) => {
+    this.animateInputTextAndSubmit({ query, filters, skipQueryValidation: true })
+  }
+
   onNoneOfTheseClick = (queryMessageID) => {
     this.addRequestMessage('None of these', queryMessageID)
     this.setState({ isQueryRunning: true })
@@ -1286,12 +1292,14 @@ export default class ChatContent extends React.Component {
     })
   }
 
-  addRequestMessage = (text, queryMessageID) => {
+  addRequestMessage = (text, queryMessageID, filters) => {
     this.addMessage(
       this.createMessage({
         content: text,
         isResponse: false,
         queryMessageID,
+        // The locks the query was sent with, shown on the question's bubble
+        filters: filters?.length ? filters : undefined,
       }),
     )
   }
@@ -1351,9 +1359,9 @@ export default class ChatContent extends React.Component {
       })
   }
 
-  onInputSubmit = (query, id) => {
+  onInputSubmit = (query, id, { filters } = {}) => {
     this.requestSessionTitle(query)
-    this.addRequestMessage(query, id)
+    this.addRequestMessage(query, id, filters)
     this.setState({ isInputDisabled: true })
     this.responseDelayTimeout = setTimeout(() => {
       this.setState({ isQueryRunning: true })
@@ -1566,41 +1574,8 @@ export default class ChatContent extends React.Component {
     this.props.onFilterLockChange?.(lockedFilters)
   }
 
-  // A plain-text summary of what the next query is scoped to, grouped by the
-  // category each value came from and split by include/exclude. Text rather than
-  // HTML so a filter value — which is user data — can never inject markup; the
-  // newlines render because the tooltip class sets white-space: pre-line.
-  getFilterSummary = () => {
-    const filters = this.state.lockedFilters ?? []
-
-    if (!filters.length) {
-      return undefined
-    }
-
-    const groups = []
-    filters.forEach((filter) => {
-      const category = filter.show_message || 'Filter'
-      const isExcluded = filter.filter_type === 'exclude'
-      let group = groups.find((g) => g.category === category && g.isExcluded === isExcluded)
-
-      if (!group) {
-        group = { category, isExcluded, values: [] }
-        groups.push(group)
-      }
-
-      group.values.push(filter.value)
-    })
-
-    const MAX_VALUES_PER_GROUP = 4
-    const lines = groups.map(({ category, isExcluded, values }) => {
-      const shown = values.slice(0, MAX_VALUES_PER_GROUP)
-      const remaining = values.length - shown.length
-      const suffix = remaining > 0 ? `, +${remaining} more` : ''
-      return `${category}${isExcluded ? ' (excluded)' : ''}: ${shown.join(', ')}${suffix}`
-    })
-
-    return [lang.filterSummaryTooltipTitle, ...lines].join('\n')
-  }
+  // What the next query is scoped to, for the lock button's tooltip
+  getFilterSummary = () => getFilterLockSummary(this.state.lockedFilters, lang.filterSummaryTooltipTitle)
 
   renderFilterLockPopover = () => {
     const filterSummary = this.getFilterSummary()
@@ -1854,8 +1829,10 @@ export default class ChatContent extends React.Component {
                       onDrilldownStart={this.onDrilldownStart}
                       onDrilldownEnd={this.onDrilldownEnd}
                       isResponse={message.isResponse}
+                      filters={message.filters}
                       isChataThinking={this.isChataThinking()}
                       onSuggestionClick={this.animateInputTextAndSubmit}
+                      onValueLabelQuery={this.onValueLabelQuery}
                       setGeneratingSummary={this.setGeneratingSummary}
                       customToolbarOptions={this.props.customToolbarOptions}
                       valueActionCallbacks={this.props.valueActionCallbacks}

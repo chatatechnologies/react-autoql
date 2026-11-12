@@ -1,0 +1,69 @@
+.value-label-query-popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 300px;
+  max-width: 380px;
+  padding: 12px;
+}
+
+.value-label-query-popover-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--react-autoql-text-color-primary);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.value-label-query-popover-lock {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--react-autoql-text-color-primary);
+}
+
+.value-label-query-popover-category {
+  color: var(--react-autoql-text-color-placeholder);
+}
+
+.value-label-query-popover-error {
+  font-size: 0.8125rem;
+  color: var(--react-autoql-danger-color);
+}
+
+.value-label-query-popover-input-wrapper {
+  position: relative;
+  width: 100%;
+
+  // The query input's send button is placed for that input's 10px margin; this one has none
+  .value-label-query-popover-send-button {
+    right: 5px;
+  }
+}
+
+// Shaped like the query input: a pill, with room on the right for the send button
+.value-label-query-popover-input {
+  width: 100%;
+  height: 36px;
+  padding: 8px 38px 8px 16px;
+  box-sizing: border-box;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 18px;
+  outline: none;
+  background-color: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  font-family: inherit;
+  font-size: 0.875rem;
+  letter-spacing: 0.04em;
+  transition: border-color 0.2s ease;
+
+  &::placeholder {
+    color: var(--react-autoql-text-color-placeholder);
+  }
+
+  &:focus {
+    border-color: var(--react-autoql-accent-color);
+  }
+}

@@ -442,3 +442,29 @@ describe('scrolling a message into view', () => {
     expect(runScroll({ containerHeight: 400, messageTop: 300, messageHeight: 900, toolbarTop: 270 })).toBe(260)
   })
 })
+
+describe('filters on a question', () => {
+  const bakery = { value: 'bakery', format_txt: 'Bakery', show_message: 'Category' }
+  const west = { value: 'west', show_message: 'Region', filter_type: 'exclude' }
+  const east = { value: 'east', show_message: 'Region' }
+
+  const setupRequest = (filters) =>
+    setup({ isResponse: false, response: undefined, type: undefined, content: 'sales by month', filters })
+
+  test('shows the first values and how many more, with every lock in the tooltip', () => {
+    const indicator = findByTestAttr(setupRequest([bakery, west, east]), 'chat-message-request-filters')
+
+    expect(indicator.find('.chat-message-request-filters-text').text()).toBe('Bakery, west +1')
+    expect(indicator.prop('data-tooltip-content')).toBe(
+      'This query was filtered by:\nCategory: Bakery\nRegion (excluded): west\nRegion: east',
+    )
+  })
+
+  test('nothing for a question without locks', () => {
+    expect(findByTestAttr(setupRequest(undefined), 'chat-message-request-filters').exists()).toBe(false)
+  })
+
+  test('nothing on a response', () => {
+    expect(findByTestAttr(setup({ filters: [bakery] }), 'chat-message-request-filters').exists()).toBe(false)
+  })
+})

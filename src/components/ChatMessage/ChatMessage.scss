@@ -885,3 +885,27 @@
     }
   }
 }
+
+// The locks a question was sent with, under its bubble (see renderRequestFilters)
+.chat-message-request-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 100%;
+  margin-top: 4px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-placeholder);
+  cursor: default;
+
+  .react-autoql-icon {
+    flex-shrink: 0;
+  }
+
+  .chat-message-request-filters-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

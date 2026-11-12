@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactDOMServer from 'react-dom/server'
 import axios from 'axios'
 import { v4 as uuid } from 'uuid'
 import PropTypes from 'prop-types'
@@ -82,6 +83,7 @@ import {
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Popover } from '../Popover'
 import { Tooltip } from '../Tooltip'
 import { ChataTable } from '../ChataTable'
 import { AddColumnBtn } from '../AddColumnBtn'
@@ -91,6 +93,7 @@ import { ReverseTranslation } from '../ReverseTranslation'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { QueryValidationMessage } from '../QueryValidationMessage'
 import { DataTruncatedNotice } from '../DataTruncatedNotice'
+import ValueLabelQueryPopoverContent from '../ValueLabelQueryPopover/ValueLabelQueryPopoverContent'
 import {
   PIVOT_OTHER_COLUMN_NAME,
   naturalCompare,
@@ -116,6 +119,7 @@ import {
   hasValueActionValue,
   runValueActionCallback,
 } from '../../js/valueActions'
+import { isValueLabelColumn } from '../../js/valueLabelHelpers'
 
 import { withTheme } from '../../theme'
 import { dataFormattingType, autoQLConfigType, authenticationType, valueActionCallbacksType } from '../../props/types'
@@ -134,6 +138,9 @@ const OUTPUT_IDENTITY_PROPS = new Set([
   'queryFilters',
   'subjects',
 ])
+
+// The button on a value label cell that opens ValueLabelQueryPopover
+const VL_QUERY_BTN_CLASS = 'react-autoql-cell-vl-query-btn'
 
 export class QueryOutput extends React.Component {
   constructor(props) {
@@ -415,6 +422,9 @@ export class QueryOutput extends React.Component {
     onNoneOfTheseClick: PropTypes.func,
     autoChartAggregations: PropTypes.bool,
     onRTValueLabelClick: PropTypes.func,
+    // Runs a new query with a lock on a table cell's value: ({ query, filters }). Only when it's
+    // set do value label cells get the button that asks about their value.
+    onValueLabelQuery: PropTypes.func,
     isTaskModule: PropTypes.bool,
     onDrilldownStart: PropTypes.func,
     onDrilldownEnd: PropTypes.func,
@@ -527,6 +537,7 @@ export class QueryOutput extends React.Component {
     enableTableSorting: true,
     preferredDisplayType: undefined,
     onRTValueLabelClick: undefined,
+    onValueLabelQuery: undefined,
     mutable: true,
     showSuggestionPrefix: true,
     shouldRender: true,
@@ -2751,6 +2762,12 @@ export class QueryOutput extends React.Component {
       return
     }
 
+    const valueLabelQueryButton = e?.target?.closest?.(`.${VL_QUERY_BTN_CLASS}`)
+    if (valueLabelQueryButton) {
+      this.openValueLabelQueryPopover(cell, valueLabelQueryButton)
+      return
+    }
+
     // "Other" stands for many legend values at once, none of which is its name - there is
     // no single group to drill into.
     if (columnDefinition?.pivot || columnDefinition?.isPivotOtherColumn) {
@@ -3971,6 +3988,99 @@ export class QueryOutput extends React.Component {
     runValueActionCallback({ action, value: cellValue, row, context, callbacks: this.props.valueActionCallbacks })
   }
 
+  canAskAboutCellValue = (column, cellValue) =>
+    !!this.props.onValueLabelQuery && isValueLabelColumn(column) && hasValueActionValue(cellValue)
+
+  // Shown while the cell is hovered (see QueryOutput.scss). Clicks are handled in onTableCellClick.
+  createValueLabelQueryButton = (cell) => {
+    if (!this.VL_QUERY_ICON) {
+      this.VL_QUERY_ICON = ReactDOMServer.renderToStaticMarkup(<Icon type='search' />)
+    }
+
+    const tooltip = 'Ask about this value'
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = VL_QUERY_BTN_CLASS
+    button.setAttribute('aria-label', tooltip)
+    button.innerHTML = this.VL_QUERY_ICON
+
+    // Same tooltip swap as a value's link: the cell's own tooltip is the right-click to copy hint
+    button.addEventListener('mouseenter', () => cell.getElement()?.setAttribute('data-tooltip-content', tooltip))
+    button.addEventListener('mouseleave', () =>
+      cell.getElement()?.setAttribute('data-tooltip-content', TOOLTIP_COPY_TEXTS.DEFAULT),
+    )
+
+    return button
+  }
+
+  openValueLabelQueryPopover = (cell, button) => {
+    const column = this.getColumns()?.find((col) => col.field === cell.getField())
+    const value = cell.getValue()
+    const containerRect = this.responseContainerRef?.getBoundingClientRect()
+    if (!column || !hasValueActionValue(value) || !containerRect) {
+      return
+    }
+
+    // Relative to the response container, so the popover's anchor moves with it when the chat scrolls
+    const buttonRect = button.getBoundingClientRect()
+    this.setState({
+      valueLabelQueryCell: {
+        column,
+        value,
+        formattedValue: formatElement({
+          element: value,
+          column,
+          config: getDataFormatting(this.props.dataFormatting),
+          forExport: true,
+        }),
+        anchor: {
+          top: buttonRect.top - containerRect.top,
+          left: buttonRect.left - containerRect.left,
+          width: buttonRect.width,
+          height: buttonRect.height,
+        },
+      },
+    })
+  }
+
+  closeValueLabelQueryPopover = () => {
+    if (this._isMounted && this.state.valueLabelQueryCell) {
+      this.setState({ valueLabelQueryCell: undefined })
+    }
+  }
+
+  onValueLabelQuerySubmit = ({ query, lock }) => {
+    this.closeValueLabelQueryPopover()
+    this.props.onValueLabelQuery?.({ query, filters: [lock] })
+  }
+
+  renderValueLabelQueryPopover = () => {
+    const cell = this.state.valueLabelQueryCell
+    if (!cell) {
+      return null
+    }
+
+    return (
+      <Popover
+        isOpen
+        positions={['bottom', 'top', 'left', 'right']}
+        align='center'
+        onClickOutside={this.closeValueLabelQueryPopover}
+        content={
+          <ValueLabelQueryPopoverContent
+            authentication={this.props.authentication}
+            column={cell.column}
+            value={cell.value}
+            formattedValue={cell.formattedValue}
+            onSubmit={this.onValueLabelQuerySubmit}
+          />
+        }
+      >
+        <div className='react-autoql-vl-query-popover-anchor' style={{ position: 'absolute', ...cell.anchor }} />
+      </Popover>
+    )
+  }
+
   // The link around a cell's value in a column with a value_action. A link is a real anchor so
   // cmd/middle-click and "copy link" work; a callback is a button that calls the host app.
   // Clicks are handled in onTableCellClick. Returns the link and a visually hidden hint that
@@ -4139,6 +4249,11 @@ export class QueryOutput extends React.Component {
         }
 
         wrapper.appendChild(valueContainer)
+
+        if (withValueAction && this.canAskAboutCellValue(newCol, cellValue)) {
+          wrapper.classList.add('has-vl-query-btn')
+          wrapper.appendChild(this.createValueLabelQueryButton(cell))
+        }
 
         if (cellValue != null && cellValue !== '') {
           onRendered(() => {
@@ -6092,6 +6207,7 @@ export class QueryOutput extends React.Component {
           {this.renderResponse()}
           {this.props.reverseTranslationPlacement !== 'top' && this.renderFooter()}
           {this.renderCompactReverseTranslation()}
+          {this.renderValueLabelQueryPopover()}
         </div>
         {!this.props.tooltipID && !this.props.isResizing && !this.props.isUserResizing && (
           <Tooltip tooltipId={this.TOOLTIP_ID} />

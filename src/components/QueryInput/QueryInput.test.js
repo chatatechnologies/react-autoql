@@ -74,3 +74,30 @@ describe('speech to text', () => {
     expect(wrapper.state('inputValue')).toBe('typed')
   })
 })
+
+describe('getQueryFilters', () => {
+  const sessionLock = { key: 'region_canonical', value: 'west', isSession: true }
+  const bakeryLock = { key: 'category_canonical', value: 'bakery', isSession: true }
+
+  test('uses queryFilters as-is when the query adds no locks', () => {
+    const queryFilters = [sessionLock]
+    const wrapper = setup({ queryFilters })
+    expect(wrapper.instance().getQueryFilters()).toBe(queryFilters)
+    expect(wrapper.instance().getQueryFilters([])).toBe(queryFilters)
+  })
+
+  test('adds the query locks after queryFilters', () => {
+    const wrapper = setup({ queryFilters: [sessionLock] })
+    expect(wrapper.instance().getQueryFilters([bakeryLock])).toEqual([sessionLock, bakeryLock])
+  })
+
+  test('works without queryFilters', () => {
+    const wrapper = setup({ queryFilters: undefined })
+    expect(wrapper.instance().getQueryFilters([bakeryLock])).toEqual([bakeryLock])
+  })
+
+  test('does not repeat a lock that is already applied', () => {
+    const wrapper = setup({ queryFilters: [bakeryLock] })
+    expect(wrapper.instance().getQueryFilters([{ ...bakeryLock }])).toEqual([bakeryLock])
+  })
+})
