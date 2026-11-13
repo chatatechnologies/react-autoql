@@ -37,21 +37,104 @@ const setup = (props = {}) =>
     </svg>,
   )
 
+// Steps into one period, as the timeline does (the latest, unless another is given)
+const goToPeriod = (wrapper, frameIndex) => {
+  const animation = wrapper.find(TimeAnimationControl).prop('animation')
+  act(() => animation.goToFrame(frameIndex ?? animation.frames.length - 1))
+  wrapper.update()
+  return wrapper
+}
+const setupInPeriod = (props) => goToPeriod(setup(props))
+
 const getWedges = (wrapper) => wrapper.find('path.rose-wedge')
-const getWedge = (wrapper, measure) =>
-  getWedges(wrapper).filterWhere((wedge) => wedge.prop('data-tooltip-html').startsWith(`<strong>${measure}`))
+const getWedge = (wrapper, measure) => {
+  const columnIndex = columns.findIndex((column) => column.display_name === measure)
+  return getWedges(wrapper).filterWhere((wedge) => wedge.key() === `measure:${columnIndex}|0`)
+}
 const getSettings = (wrapper) => wrapper.find(RoseSettingsControl)
 const getMeasurePicker = (wrapper) =>
   wrapper.find(SankeyColumnSelector).filterWhere((selector) => selector.prop('pathTitle') === 'Measures')
 const getTickLabels = (wrapper) => wrapper.find('text.rose-tick-label').map((text) => text.text())
 
 describe('ChataRoseChart measures mode', () => {
-  test('is the default with a date column and 3+ number columns: one wedge per measure, latest period', () => {
+  test('is the default with a date column and 3+ number columns: one wedge per measure', () => {
     const wrapper = setup()
     expect(getSettings(wrapper).prop('mode')).toBe('measures')
     expect(getWedges(wrapper)).toHaveLength(3)
-    expect(getWedge(wrapper, 'Revenue').prop('data-tooltip-html')).toContain('$50.00')
+  })
+
+  // Opens on the latest period, since the default scale compares periods
+  test('opens on the latest period, on the normalized scale', () => {
+    const wrapper = setup()
     expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getWedge(wrapper, 'Revenue').prop('data-tooltip-html')).toContain('<strong>Revenue:</strong> $50.00')
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
+    expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeUndefined()
+  })
+
+  // AQLP-1099: closing the timeline shows the totals of all of the data
+  const closeTimeline = (wrapper) => {
+    act(() => wrapper.find(TimeAnimationTimeline).prop('onClose')())
+    wrapper.update()
+    return wrapper
+  }
+
+  test('closing the timeline shows the totals on the actual-values scale; normalized and range stay clickable', () => {
+    const wrapper = closeTimeline(setup())
+    expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(false)
+    // Revenue over the four days: 100 + 200 + 150 + 50
+    const tooltip = getWedge(wrapper, 'Revenue').prop('data-tooltip-html')
+    expect(tooltip).toContain('<strong>Revenue:</strong> $500.00')
+    expect(tooltip).not.toContain('<strong>Date:</strong>')
+    expect(getTickLabels(wrapper).some((label) => label.endsWith('σ'))).toBe(false)
+    // The saved scale stays selected in the settings; only the drawing falls back to actual values
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
+    expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeUndefined()
+    expect(getSettings(wrapper).prop('showsAllData')).toBe(true)
+  })
+
+  test('showing the totals, the settings keep the saved scale checked, and picking it shows the latest period', () => {
+    const wrapper = closeTimeline(setup())
+    act(() => wrapper.find('.rose-settings-control rect.sankey-path-button-rect').simulate('click'))
+    wrapper.update()
+    expect(wrapper.find('.rose-settings-control rect').prop('data-tooltip-html')).toContain(
+      'Normalized (z-score)<br/>Showing the totals as actual values',
+    )
+    const selected = wrapper.find('.rose-settings-options .sankey-column-dropdown-item-selected')
+    expect(selected.text()).toContain('Normalized')
+    act(() => selected.simulate('click'))
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
+  })
+
+  test('picking a scale that compares periods while showing the totals shows the latest period', () => {
+    const wrapper = closeTimeline(setup())
+    act(() => getSettings(wrapper).prop('onScaleChange')('minmax'))
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getSettings(wrapper).prop('scale')).toBe('minmax')
+  })
+
+  test('switching to measures opens on the latest period', () => {
+    const wrapper = setup({ initialChartControls: { roseMode: 'values' } })
+    expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(false)
+    act(() => getSettings(wrapper).prop('onModeChange')('measures'))
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+  })
+
+  test('playing over time splits the data into periods on the saved scale, and closing goes back', () => {
+    const wrapper = goToPeriod(closeTimeline(setup()))
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getWedge(wrapper, 'Revenue').prop('data-tooltip-html')).toContain('$50.00')
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
+    expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeUndefined()
+
+    act(() => wrapper.find(TimeAnimationTimeline).prop('onClose')())
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(false)
+    expect(getWedge(wrapper, 'Revenue').prop('data-tooltip-html')).toContain('$500.00')
   })
 
   // Whatever decides the wedges uses the rose wedge icon; layers means the series stacked in a wedge
@@ -113,14 +196,14 @@ describe('ChataRoseChart measures mode', () => {
   }
 
   test('the timeline is only as tall as its lines need, centred beside the rose', () => {
-    const timeline = setup().find(TimeAnimationTimeline)
+    const timeline = setupInPeriod().find(TimeAnimationTimeline)
     expect(timeline.prop('height')).toBeLessThan(390)
     // Centred on the rose, which is centred in the 390px below the top margin
     expect(timeline.prop('y') + timeline.prop('height') / 2).toBeCloseTo(10 + 390 / 2)
   })
 
   test('the timeline sits just past the rose, and the two are centred together', () => {
-    const wrapper = setup()
+    const wrapper = setupInPeriod()
     const timeline = wrapper.find(TimeAnimationTimeline)
     const rose = getRoseExtent(wrapper)
     // 16px between the rose's labels and the timeline (labels are estimated, so allow a few px)
@@ -133,18 +216,47 @@ describe('ChataRoseChart measures mode', () => {
   })
 
   test('each measure has its own color in the timeline', () => {
-    const series = setup().find(TimeAnimationTimeline).prop('series')
+    const series = setupInPeriod().find(TimeAnimationTimeline).prop('series')
     expect(new Set(series.map((item) => item.color)).size).toBe(3)
   })
 
   test('hovering a wedge does not single anything out', () => {
-    const wrapper = setup()
+    const wrapper = setupInPeriod()
     act(() => {
       getWedge(wrapper, 'COGS').simulate('mouseenter')
     })
     wrapper.update()
     expect(wrapper.find(TimeAnimationTimeline).prop('highlightedKey')).toBeUndefined()
     expect(wrapper.find('path.rose-wedge-dimmed')).toHaveLength(0)
+  })
+
+  // AQLP-1097: the whole rose is one row (the period), so it's hovered and drilled into as one, but each
+  // wedge's tooltip is only about its own measure
+  test('the whole rose is hovered as one, and a tooltip shows only the hovered measure', () => {
+    const wrapper = setupInPeriod()
+    expect(wrapper.find('g.rose-wedges-measures').find('path.rose-wedge')).toHaveLength(3)
+    const tooltip = getWedge(wrapper, 'Revenue').prop('data-tooltip-html')
+    expect(tooltip.startsWith('<strong>Revenue:</strong> $50.00<br/><strong>Date:</strong> Jan 4, 2024')).toBe(true)
+    expect(tooltip).not.toContain('COGS')
+    expect(tooltip).not.toContain('Profit')
+  })
+
+  test('clicking a wedge makes the whole rose active for that period', () => {
+    const onChartClick = jest.fn()
+    const wrapper = setupInPeriod({ onChartClick })
+    getWedge(wrapper, 'Profit').simulate('click')
+    wrapper.update()
+    expect(getWedges(wrapper).filterWhere((wedge) => wedge.hasClass('active'))).toHaveLength(3)
+    // Another period isn't the one drilled into
+    goToPeriod(wrapper, 0)
+    expect(getWedges(wrapper).filterWhere((wedge) => wedge.hasClass('active'))).toHaveLength(0)
+  })
+
+  test('without a period to drill into, wedges do not look clickable', () => {
+    const wrapper = closeTimeline(setup())
+    expect(wrapper.find('g.rose-wedges-no-drilldown').exists()).toBe(true)
+    expect(getWedge(setupInPeriod(), 'Revenue').prop('data-tooltip-html')).toContain('Click to see')
+    expect(setupInPeriod().find('g.rose-wedges-no-drilldown').exists()).toBe(false)
   })
 
   test('is not the default without a date column', () => {
@@ -168,12 +280,26 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedges(wrapper)).toHaveLength(3)
   })
 
-  // Measures are told apart by their position and labels, so color only says positive or negative
-  test('normalized: wedges are blue above the average and red below it, with rings in standard deviations', () => {
-    const wrapper = setup()
+  // AQLP-1095: each measure has its timeline color, and a wedge below its average is hatched
+  test('normalized: each measure in its own color, hatched below its average, with rings in standard deviations', () => {
+    const wrapper = setupInPeriod()
+    const timelineColors = wrapper
+      .find(TimeAnimationTimeline)
+      .prop('series')
+      .map((series) => series.color)
+    const gradientColor = (wedge) =>
+      wrapper
+        .find(`radialGradient#${wedge.prop('fill').match(/url\(#(.+)\)/)[1]}`)
+        .find('stop')
+        .first()
+        .prop('stopColor')
+    expect(['Revenue', 'COGS', 'Profit'].map((measure) => gradientColor(getWedge(wrapper, measure)))).toEqual(
+      timelineColors,
+    )
     // On the last day Revenue is below its average and COGS above
-    expect(getWedge(wrapper, 'Revenue').prop('fill')).toContain('-negative')
-    expect(getWedge(wrapper, 'COGS').prop('fill')).toContain('-positive')
+    expect(getWedge(wrapper, 'Revenue').prop('mask')).toContain('hatch')
+    expect(getWedge(wrapper, 'COGS').prop('mask')).toBeUndefined()
+    expect(wrapper.find('g.rose-hatch-key').text()).toBe('Below average')
     // COGS on the last day: 80, against a daily average of 65 that usually varies by about 11
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
       '<strong>COGS:</strong> $80.00<br/><strong>Date:</strong> Jan 4, 2024<br/>1.3× its usual variation above its daily average of $65.00<br/>Typical range: $53.82 – $76.18',
@@ -182,16 +308,34 @@ describe('ChataRoseChart measures mode', () => {
     expect(getTickLabels(wrapper).every((label) => label.endsWith('σ'))).toBe(true)
   })
 
-  test('every positive measure wedge is the same color', () => {
-    const wrapper = setup({ initialChartControls: { roseScale: 'minmax' } })
-    const fills = getWedges(wrapper).map((wedge) => wedge.prop('fill'))
-    expect(new Set(fills).size).toBe(1)
-    expect(fills[0]).toContain('-positive')
+  // The key doesn't come and go during playback: it shows if any period has a hatched wedge
+  test('the hatch key stays while showing a period with no hatched wedges', () => {
+    // On actual values, only Profit on the last day (-30) is negative
+    const wrapper = goToPeriod(setup({ initialChartControls: { roseScale: 'linear' } }), 0)
+    expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
+    expect(wrapper.find('g.rose-hatch-key').text()).toBe('Negative')
+  })
+
+  test('with the timeline beside the rose, the hatch key sits under the timeline, lined up with its legend', () => {
+    const wrapper = setupInPeriod()
+    const timeline = wrapper.find(TimeAnimationTimeline)
+    const key = wrapper.find('g.rose-hatch-key')
+    expect(key.closest('g.rose-plot').exists()).toBe(false)
+    expect(key.prop('transform')).toBe(
+      `translate(${timeline.prop('x') + 6}, ${timeline.prop('y') + timeline.prop('height') + 8})`,
+    )
+  })
+
+  test('each measure wedge has its own color, and none is hatched on a min-max scale', () => {
+    const wrapper = setupInPeriod({ initialChartControls: { roseScale: 'minmax' } })
+    expect(new Set(getWedges(wrapper).map((wedge) => wedge.prop('fill'))).size).toBe(3)
+    expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
+    expect(wrapper.find('g.rose-hatch-key').exists()).toBe(false)
   })
 
   test('changing the scale redraws and saves it', () => {
     const onChartControlsChange = jest.fn()
-    const wrapper = setup({ onChartControlsChange })
+    const wrapper = setupInPeriod({ onChartControlsChange })
     act(() => getSettings(wrapper).prop('onScaleChange')('minmax'))
     wrapper.update()
     expect(onChartControlsChange).toHaveBeenLastCalledWith(expect.objectContaining({ roseScale: 'minmax' }))
@@ -201,11 +345,11 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedge(wrapper, 'COGS').prop('data-tooltip-html')).toContain(
       '100% of the way from its lowest ($50.00) to its highest ($80.00): its highest period',
     )
-    expect(getWedges(wrapper).filterWhere((wedge) => wedge.prop('fill').includes('-negative'))).toHaveLength(0)
+    expect(getWedges(wrapper).filterWhere((wedge) => !!wedge.prop('mask'))).toHaveLength(0)
   })
 
   test('offers Count for list queries, and never the column being stepped through', () => {
-    const wrapper = setup()
+    const wrapper = setupInPeriod()
     const options = getMeasurePicker(wrapper).prop('pathColumnOptionIndices')
     expect(options).toEqual([SANKEY_VALUE_COUNT_SENTINEL, 1, 2, 3])
   })
@@ -221,21 +365,22 @@ describe('ChataRoseChart measures mode', () => {
     expect(getWedges(wrapper)).toHaveLength(2)
   })
 
-  test('without a date column, asks for a column to step through, which can be any column', () => {
+  // AQLP-1094: with no date column, the first column that can be stepped through is picked, so the
+  // chart isn't blank until one is picked by hand
+  test('without a date column, steps through the first number column, which can be changed', () => {
     const roundColumn = { name: 'game.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }
     const wrapper = setup({
       columns: [roundColumn, ...measureColumns],
       data: data.map((row, i) => [i + 1, ...row.slice(1)]),
       initialChartControls: { roseMode: 'measures' },
     })
-    expect(wrapper.find('text.rose-empty-message').text()).toBe('Pick a column to step through in the time settings')
+    expect(wrapper.find('text.rose-empty-message').exists()).toBe(false)
 
     const animation = wrapper.find(TimeAnimationControl).prop('animation')
     expect(animation.columnOptionIndices).toEqual([0, 1, 2, 3])
-    act(() => animation.updateSettings({ columnIndex: 0 }))
-    wrapper.update()
+    expect(animation.settings.columnIndex).toBe(0)
 
-    // Round is now what's stepped through, so it's no longer a measure
+    // Round is what's stepped through, so it's not a measure
     expect(getMeasurePicker(wrapper).prop('pathColumnOptionIndices')).not.toContain(0)
     expect(getWedges(wrapper)).toHaveLength(3)
     expect(
@@ -244,20 +389,25 @@ describe('ChataRoseChart measures mode', () => {
         .prop('frames')
         .map((frame) => frame.rawValue),
     ).toEqual([1, 2, 3, 4])
+
+    // Not while showing the totals either, or it would vanish from the measures once a period is shown
+    act(() => wrapper.find(TimeAnimationTimeline).prop('onClose')())
+    wrapper.update()
+    expect(getMeasurePicker(wrapper).prop('pathColumnOptionIndices')).not.toContain(0)
   })
 
   test("a measure wedge's tooltip says a click opens every row in the period", () => {
-    expect(getWedge(setup(), 'Profit').prop('data-tooltip-html')).toContain(
+    expect(getWedge(setupInPeriod(), 'Profit').prop('data-tooltip-html')).toContain(
       '<em>Click to see all rows for Jan 4, 2024</em>',
     )
     // No hint when a click wouldn't do anything
-    const noDrilldowns = setup({ autoQLConfig: { enableDrilldowns: false } })
+    const noDrilldowns = setupInPeriod({ autoQLConfig: { enableDrilldowns: false } })
     expect(getWedge(noDrilldowns, 'Profit').prop('data-tooltip-html')).not.toContain('Click to see')
   })
 
   test('a measure wedge drills into the period being shown', () => {
     const onChartClick = jest.fn()
-    const wrapper = setup({ onChartClick })
+    const wrapper = setupInPeriod({ onChartClick })
     getWedge(wrapper, 'Profit').simulate('click')
     expect(onChartClick).toHaveBeenCalledWith({
       filters: [expect.objectContaining({ name: 'fin.date', operator: 'between' })],
@@ -265,12 +415,12 @@ describe('ChataRoseChart measures mode', () => {
     })
   })
 
-  test('the timeline has one line per measure in its own units, and no close button', () => {
-    const wrapper = setup()
+  test('the timeline has one line per measure in its own units, and a close button', () => {
+    const wrapper = setupInPeriod()
     const timeline = wrapper.find(TimeAnimationTimeline)
     expect(timeline.prop('series').map((series) => series.label)).toEqual(['Revenue', 'COGS', 'Profit'])
     expect(timeline.prop('series')[0].values).toEqual([100, 200, 150, 50])
-    expect(timeline.prop('onClose')).toBeUndefined()
+    expect(timeline.prop('onClose')).toEqual(expect.any(Function))
   })
 
   test('Measures is unavailable with fewer than two measures', () => {
@@ -292,19 +442,20 @@ describe('ChataRoseChart measures mode with dates that cannot be grouped into pe
     ['grouped, with no precision', { precision: undefined, groupable: true }],
   ])('%s: steps through each date value', (_, dateProps) => {
     const groupedColumns = [{ ...dateColumn, ...dateProps }, ...measureColumns]
-    const wrapper = setup({ columns: groupedColumns })
+    const wrapper = setupInPeriod({ columns: groupedColumns })
     expect(wrapper.find('text.rose-empty-message').exists()).toBe(false)
     expect(getWedges(wrapper)).toHaveLength(3)
     expect(wrapper.find(TimeAnimationTimeline).prop('frames')).toHaveLength(4)
   })
 
-  test('says which column has nothing to step through when no row has a value in it', () => {
+  test('with no values in the date column, shows the totals and has nothing to play over', () => {
     const wrapper = setup({ data: data.map((row) => [null, ...row.slice(1)]) })
-    expect(wrapper.find('text.rose-empty-message').text()).toBe('No Date values to step through')
+    expect(getWedges(wrapper)).toHaveLength(3)
+    expect(wrapper.find(TimeAnimationControl).prop('animation').isAvailable).toBe(false)
   })
 
   test('on a wide chart the timeline stays a modest width, and the rose is as tall as the chart allows', () => {
-    const wide = setup({ width: 1600, height: 400 })
+    const wide = setupInPeriod({ width: 1600, height: 400 })
     expect(wide.find(TimeAnimationTimeline).prop('width')).toBeLessThanOrEqual(300)
     expect(Math.max(...wide.find('.rose-grid circle').map((c) => c.prop('r')))).toBe((400 - 10) / 2 - 11 - 8)
   })

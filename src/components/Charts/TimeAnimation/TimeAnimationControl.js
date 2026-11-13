@@ -28,7 +28,7 @@ const TimeAnimationControl = ({ animation, columns, x, y, size, chartTooltipID }
     return null
   }
 
-  const { isAvailable, isPlaying, settings, columnOptionIndices, groupingOptions, includeAllColumns } = animation
+  const { isAvailable, isPlaying, settings, columnOptionIndices, groupingOptions, includeNumberColumns } = animation
   const disabled = !isAvailable
   const getColumnLabel = (index) => columns[index]?.display_name || columns[index]?.name || ''
 
@@ -90,7 +90,7 @@ const TimeAnimationControl = ({ animation, columns, x, y, size, chartTooltipID }
       <div className='sankey-column-dropdown-title'>Play over time</div>
       <div className='time-animation-settings-body'>
         <div className='time-animation-setting'>
-          <div className='time-animation-setting-label'>{includeAllColumns ? 'Step through' : 'Date column'}</div>
+          <div className='time-animation-setting-label'>{includeNumberColumns ? 'Step through' : 'Date column'}</div>
           {columnOptionIndices.length > 1 || settings.columnIndex === undefined ? (
             <Select
               size='small'
@@ -269,7 +269,7 @@ TimeAnimationControl.propTypes = {
       cumulative: PropTypes.bool,
     }),
     columnOptionIndices: PropTypes.arrayOf(PropTypes.number),
-    includeAllColumns: PropTypes.bool,
+    includeNumberColumns: PropTypes.bool,
     groupingOptions: PropTypes.arrayOf(PropTypes.string),
     togglePlay: PropTypes.func,
     updateSettings: PropTypes.func,

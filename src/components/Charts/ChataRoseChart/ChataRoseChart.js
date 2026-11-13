@@ -26,6 +26,7 @@ import { buildNumericCategories } from './numericCategories'
 import { isIdLikeColumn } from './idColumns'
 import {
   DEFAULT_ROSE_SCALE,
+  PERIOD_SCALES,
   ROSE_SCALES,
   buildMeasureFrames,
   describeMeasureValue,
@@ -80,9 +81,19 @@ const TIMELINE_BELOW_HEIGHT = 80
 const TIMELINE_BESIDE_MIN_HEIGHT = 100
 const TIMELINE_SPARK_ROOM = 30
 const TIMELINE_GAP = 16
+// The timeline's legend rows start this far in
+const TIMELINE_LEGEND_PADDING = 6
 
 const FALLBACK_COLORS = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
-const FALLBACK_NEGATIVE_COLOR = '#CA0B00'
+// Negative wedges keep their color and are hatched with diagonal stripes this far apart, each this wide,
+// showing this much of the fill: visible, but quieter than a second color would be
+const HATCH_SPACING = 6
+const HATCH_STRIPE_WIDTH = 2
+const HATCH_STRIPE_OPACITY = 0.55
+const HATCH_KEY_SIZE = 12
+// Room for the hatch key under the rose, and its gap from what's above it
+const HATCH_KEY_ROOM = 20
+const HATCH_KEY_GAP = 8
 
 const escapeHtml = (value = '') => {
   return `${value}`
@@ -348,14 +359,24 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     persistRoseControls({ roseValueColumnIndices: nextValueColumnIndices })
   }
 
+  // Measures open on the latest period, like they do when the chart opens
   const handleModeChange = (nextMode) => {
     setMode(nextMode)
     persistRoseControls({ roseMode: nextMode })
+    if (nextMode === 'measures' && !animation.isActive) {
+      animation.showLatestFrame()
+    }
   }
 
+  // Normalized and range compare periods, so picking one while showing all of the data shows the latest period
   const handleScaleChange = (nextScale) => {
-    setScale(nextScale)
-    persistRoseControls({ roseScale: nextScale })
+    if (nextScale !== scale) {
+      setScale(nextScale)
+      persistRoseControls({ roseScale: nextScale })
+    }
+    if (PERIOD_SCALES.includes(nextScale) && !animation.isActive) {
+      animation.showLatestFrame()
+    }
   }
 
   const handleMeasureColumnsChange = (nextMeasureColumnIndices) => {
@@ -377,23 +398,31 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     [props.dataFormatting, props.autoQLConfig],
   )
 
-  // A date category is already spread around the circle, so it can't also be what plays over time. In
-  // measures mode one period is always shown.
+  // Dates and numbers can be stepped through. In values mode, not the category (it's already spread
+  // around the circle) or a value column. In measures mode any of them can be, and stepping through a
+  // measure takes it out of the measures. Values mode opens on all of the data; measures mode opens on
+  // the latest period, since its default scale compares periods, and closing the timeline shows the totals.
   const animation = useTimeAnimation({
     data: props.data,
     columns,
     initialChartControls: props.initialChartControls,
     onChartControlsChange: props.onChartControlsChange,
-    // Any column can be stepped through in measures mode; picking a measure takes it out of the measures
-    excludedColumnIndices: isMeasures ? [] : categoryColumnIndex >= 0 ? [categoryColumnIndex] : [],
+    excludedColumnIndices: isMeasures
+      ? []
+      : [...(categoryColumnIndex >= 0 ? [categoryColumnIndex] : []), ...valueColumnIndices],
     dataFormatting: formattingConfig,
-    includeAllColumns: isMeasures,
-    showOneFrame: isMeasures,
+    includeNumberColumns: true,
+    startOnLatestFrame: isMeasures,
   })
 
-  // The column being stepped through can't also be a measure
+  // The column being stepped through can't also be a measure. That holds while showing the totals too,
+  // or a measure picked then would vanish as soon as a period is shown.
   const stepColumnIndex = animation.settings.columnIndex
   const availableMeasureOptionIndices = measureOptionIndices.filter((index) => index !== stepColumnIndex)
+  // Normalized and range compare periods with each other, so they only apply while showing a period.
+  // Showing all of the data, wedges are the totals on the actual-values scale.
+  const isPeriodScale = PERIOD_SCALES.includes(scale)
+  const effectiveScale = !animation.isActive && isPeriodScale ? 'linear' : scale
   const validMeasureColumnIndices = measureColumnIndices.filter((index) =>
     availableMeasureOptionIndices.includes(index),
   )
@@ -432,8 +461,31 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     areaHeight,
     Math.max(TIMELINE_BESIDE_MIN_HEIGHT, getTimelineMinHeight(timelineSeriesCount) + TIMELINE_SPARK_ROOM),
   )
-  const plotHeight =
-    timelinePlacement === 'below' ? Math.max(0, areaHeight - timelineBelowHeight - TIMELINE_GAP) : areaHeight
+  // The hatch key goes under the timeline when that's beside the rose, otherwise under the rose, which
+  // keeps room for it when a wedge might be hatched (the exact check needs the layout, so this one is rough)
+  const hatchKeyUnderRose = timelinePlacement !== 'beside'
+  const mightHatch = useMemo(() => {
+    const hasNegative = (indices) => (props.data || []).some((row) => indices.some((index) => Number(row?.[index]) < 0))
+    if (!isMeasures) {
+      return hasNegative(valueColumnIndices)
+    }
+    if (effectiveScale === 'normalized') {
+      return animation.isActive
+    }
+    return effectiveScale !== 'minmax' && hasNegative(validMeasureColumnIndices)
+  }, [
+    props.data,
+    isMeasures,
+    valueColumnIndices,
+    validMeasureColumnIndices.join(','),
+    effectiveScale,
+    animation.isActive,
+  ])
+  const hatchKeyRoom = hatchKeyUnderRose && mightHatch ? HATCH_KEY_ROOM : 0
+  const plotHeight = Math.max(
+    0,
+    (timelinePlacement === 'below' ? areaHeight - timelineBelowHeight - TIMELINE_GAP : areaHeight) - hatchKeyRoom,
+  )
   // Room kept beside the rose for labels: no more than its longest label needs
   const labelWidth = Math.min(LABEL_RESERVED_WIDTH, plotWidth * 0.2, longestLabelWidth)
   const outerRadius = Math.max(
@@ -493,14 +545,22 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       numericCategories,
     ],
   )
-  // Measures mode: one category per measure in each period, scaled against every period
+  // Measures mode: one category per measure in each period, scaled against every period. Until played
+  // over time, one frame holds all of the data.
   const measureData = useMemo(
-    () => (isMeasures ? buildMeasureFrames(animation.frames, validMeasureColumnIndices, scale) : null),
-    [isMeasures, animation.frames, validMeasureColumnIndices.join(','), scale],
+    () =>
+      isMeasures
+        ? buildMeasureFrames(
+            animation.isActive ? animation.frames : [{ key: 'all', rows: props.data || [] }],
+            validMeasureColumnIndices,
+            effectiveScale,
+          )
+        : null,
+    [isMeasures, animation.isActive, animation.frames, props.data, validMeasureColumnIndices.join(','), effectiveScale],
   )
 
   const categories = measureData
-    ? measureData.frames[animation.frameIndex]?.categories ?? []
+    ? measureData.frames[animation.isActive ? animation.frameIndex : 0]?.categories ?? []
     : frameData
     ? frameData[animation.frameIndex]?.categories ?? []
     : allData.categories
@@ -526,7 +586,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
   const angleStep = categories.length ? (2 * Math.PI) / categories.length : 0
 
-  // One segment per category and value column, stacked outward. Negative values are drawn by magnitude.
+  // One segment per category and value column, stacked outward. Negative values are drawn by magnitude, hatched.
   // While playing over time, empty segments are kept (with no thickness) so they can grow and shrink.
   const keepEmptySegments = animation.isActive
   const segments = useMemo(() => {
@@ -621,8 +681,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return chartPalette.length ? chartPalette : FALLBACK_COLORS
   }, [props.themeConfig])
   const layerColors = valueColumnIndices.map((_, layer) => palette[layer % palette.length])
-  // Each measure's line in the timeline has its own color. The wedges don't use these: they're told apart
-  // by position and label, and colored only by sign: the first chart color, or red when negative.
+  // Each measure has the same color in its wedge and its line in the timeline
   const measureColors = validMeasureColumnIndices.map((_, i) => palette[i % palette.length])
 
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
@@ -630,7 +689,6 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
   const themeTextColor = getThemeValue('text-color-primary')
   const themeSecondaryTextColor = getThemeValue('text-color-secondary') || themeTextColor
   const themeBorderColor = getThemeValue('border-color') || '#D8D8D8'
-  const negativeColor = getThemeValue('danger-color') || FALLBACK_NEGATIVE_COLOR
 
   const categoryColumn = columns[categoryColumnIndex]
   const getColumnLabel = (column) => column?.display_name || column?.name || ''
@@ -680,7 +738,6 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         : animation.currentFrame.label
       : ''
 
-  // The measure and its value, the period, then what the wedge means on the current scale in plain words
   // A measure isn't a value to filter on, so clicking a measure wedge opens every row in the period being
   // shown. The tooltip says so, so it isn't mistaken for a drilldown on that measure.
   const getMeasureDrilldownHint = () => {
@@ -693,9 +750,9 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       : `Click to see all rows for ${label}`
   }
 
+  // The hovered measure and its value, the period, then what the wedge means on the current scale in plain
+  // words. Hover and clicks are for the whole rose (the period), but the tooltip is only about the wedge.
   const getMeasureTooltipHtml = (category) => {
-    const drilldownHint = getMeasureDrilldownHint()
-    const hintLine = drilldownHint ? `<em>${escapeHtml(drilldownHint)}</em>` : null
     const name = escapeHtml(getCategoryName(category))
     const { measureValue, measureColumnIndex } = category
     const lines = [
@@ -708,16 +765,20 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     }
     if (measureValue === null) {
       lines.push('<em>No data in this period</em>')
-      return [...lines, hintLine].filter(Boolean).join('<br/>')
+    } else {
+      describeMeasureValue({
+        scale: effectiveScale,
+        value: measureValue,
+        stats: category.stats,
+        grouping: animation.settings.grouping,
+        formatValue: (value) => formatValue(value, measureColumnIndex),
+      }).forEach(({ text, isNote }) => lines.push(isNote ? `<em>${escapeHtml(text)}</em>` : escapeHtml(text)))
     }
-    describeMeasureValue({
-      scale,
-      value: measureValue,
-      stats: category.stats,
-      grouping: animation.settings.grouping,
-      formatValue: (value) => formatValue(value, measureColumnIndex),
-    }).forEach(({ text, isNote }) => lines.push(isNote ? `<em>${escapeHtml(text)}</em>` : escapeHtml(text)))
-    return [...lines, hintLine].filter(Boolean).join('<br/>')
+    const drilldownHint = getMeasureDrilldownHint()
+    if (drilldownHint) {
+      lines.push(`<em>${escapeHtml(drilldownHint)}</em>`)
+    }
+    return lines.join('<br/>')
   }
 
   const getTooltipHtml = (category, isNotToScale) => {
@@ -745,13 +806,16 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return lines.join('<br/>')
   }
 
+  // The whole rose is active once its period is drilled into
+  const getMeasureActiveKey = () => `rose-period-${animation.currentFrame?.key}`
+
   // A measure isn't a value to filter on, so a measure wedge drills into the period being shown
-  const onMeasureWedgeClick = (category) => {
+  const onMeasureWedgeClick = () => {
     const frameDrilldown = animation.getDrilldown()
     if (!frameDrilldown) {
       return
     }
-    const key = `rose-${category.key}`
+    const key = getMeasureActiveKey()
     setActiveKey(key)
     if (frameDrilldown.groupBy) {
       props.onChartClick({ groupBys: [frameDrilldown.groupBy], activeKey: key })
@@ -766,7 +830,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
     if (category.measureColumnIndex !== undefined) {
       if (enableDrilldowns && props.onChartClick) {
-        onMeasureWedgeClick(category)
+        onMeasureWedgeClick()
       }
       return
     }
@@ -846,19 +910,71 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         <stop offset='100%' stopColor={color} stopOpacity={BAR_GRADIENT_OPACITY_STOPS[2]} />
       </radialGradient>
     )
+    // Negative wedges are masked with diagonal stripes that let less of the fill through. The mask's content
+    // is far bigger than any chart, so it covers whatever it's applied to (the rose or the key).
     return (
       <defs>
         {layerColors.map((color, layer) => renderGradient(`${gradientIdPrefix}-${layer}`, color))}
-        {renderGradient(`${gradientIdPrefix}-positive`, palette[0])}
-        {renderGradient(`${gradientIdPrefix}-negative`, negativeColor)}
+        {measureColors.map((color, i) => renderGradient(`${gradientIdPrefix}-measure-${i}`, color))}
+        <pattern
+          id={`${gradientIdPrefix}-hatch`}
+          patternUnits='userSpaceOnUse'
+          width={HATCH_SPACING}
+          height={HATCH_SPACING}
+          patternTransform='rotate(45)'
+        >
+          <rect width={HATCH_SPACING} height={HATCH_SPACING} fill='white' />
+          <rect width={HATCH_STRIPE_WIDTH} height={HATCH_SPACING} fill='black' fillOpacity={1 - HATCH_STRIPE_OPACITY} />
+        </pattern>
+        <mask id={`${gradientIdPrefix}-hatch-mask`} maskContentUnits='userSpaceOnUse'>
+          <rect x={-10000} y={-10000} width={20000} height={20000} fill={`url(#${gradientIdPrefix}-hatch)`} />
+        </mask>
       </defs>
+    )
+  }
+
+  // Says what hatching means, in the bottom-left corner of the rose's area, when any wedge is hatched
+  // Shown whenever any period has a hatched wedge, not just the one showing, so it doesn't come and go
+  // during playback
+  const hasHatching = useMemo(() => {
+    const frames = measureData?.frames ?? frameData ?? [allData]
+    return frames.some((frame) => frame.categories.some((category) => category.values.some((value) => value < 0)))
+  }, [measureData, frameData, allData])
+
+  // Under the rose, centred on it (in the rose's own coordinates); or under the timeline beside it, lined up
+  // with the timeline's legend
+  const renderHatchKey = (underRose) => {
+    // The rose draws the hatch pattern, so the key only shows with it
+    if (!hasHatching || underRose !== hatchKeyUnderRose || !(outerRadius > 0) || categories.length <= 1) {
+      return null
+    }
+    const label = isMeasures && effectiveScale === 'normalized' ? 'Below average' : 'Negative'
+    const width = HATCH_KEY_SIZE + 6 + label.length * CHAR_WIDTH
+    const transform = underRose
+      ? `translate(${-width / 2}, ${outerRadius + LABEL_OFFSET + FONT_SIZE + HATCH_KEY_GAP})`
+      : `translate(${roseLayout.timelineX + TIMELINE_LEGEND_PADDING}, ${
+          getTimelineBesideY() + timelineBesideHeight + HATCH_KEY_GAP
+        })`
+    return (
+      <g className='rose-hatch-key' transform={transform} style={{ pointerEvents: 'none' }}>
+        <rect
+          width={HATCH_KEY_SIZE}
+          height={HATCH_KEY_SIZE}
+          rx={2}
+          fill={themeSecondaryTextColor}
+          mask={`url(#${gradientIdPrefix}-hatch-mask)`}
+        />
+        <text x={HATCH_KEY_SIZE + 6} y={HATCH_KEY_SIZE - 2} fontSize={FONT_SIZE} fill={themeSecondaryTextColor}>
+          {label}
+        </text>
+      </g>
     )
   }
 
   const renderGrid = () => {
     const tickFormatColumnIndex = valueColumnIndices[0]
     const tickLabels = measureData
-      ? getMeasureScaleTicks(scale, scaleMaxStack, formatMeasureTick)
+      ? getMeasureScaleTicks(effectiveScale, scaleMaxStack, formatMeasureTick)
       : radiusScale.ticks(4).map((tick) => ({ magnitude: tick, label: formatValue(tick, tickFormatColumnIndex) }))
     const visibleTicks = tickLabels.filter(
       ({ magnitude }) => magnitude > 0 && radiusScale(magnitude) < outerRadius - TICK_FONT_SIZE,
@@ -1020,36 +1136,62 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     )
   }
 
-  const renderWedges = () =>
-    segments.map((segment) => {
-      const isActive = activeKey === `rose-${segment.category.key}`
-      const fill =
-        segment.value < 0
-          ? `url(#${gradientIdPrefix}-negative)`
-          : segment.category.measureIndex !== undefined
-          ? `url(#${gradientIdPrefix}-positive)`
-          : `url(#${gradientIdPrefix}-${segment.layer})`
+  const renderSegment = (segment) => {
+    const isMeasure = segment.category.measureIndex !== undefined
+    const isActive = activeKey === (isMeasure ? getMeasureActiveKey() : `rose-${segment.category.key}`)
+    const fill = isMeasure
+      ? `url(#${gradientIdPrefix}-measure-${segment.category.measureIndex})`
+      : `url(#${gradientIdPrefix}-${segment.layer})`
+    return (
+      <path
+        key={segment.key}
+        ref={(element) => {
+          if (element) {
+            pathRefs.current.set(segment.key, element)
+          } else {
+            pathRefs.current.delete(segment.key)
+          }
+        }}
+        className={`rose-wedge${isActive ? ' active' : ''}${segment.category.isOther ? ' rose-wedge-other' : ''}`}
+        d={arcGenerator(segment)}
+        fill={fill}
+        mask={segment.value < 0 ? `url(#${gradientIdPrefix}-hatch-mask)` : undefined}
+        stroke={segment.isNotToScale ? themeSecondaryTextColor : undefined}
+        strokeDasharray={segment.isNotToScale ? '3,2' : undefined}
+        data-tooltip-id={props.chartTooltipID}
+        data-tooltip-html={getTooltipHtml(segment.category, segment.isNotToScale)}
+        onClick={(e) => onWedgeClick(e, segment.category)}
+      />
+    )
+  }
+
+  // Hover and drilldowns are for a whole wedge (a row), not one of its stacked segments, so each wedge's
+  // segments are grouped and hovered together. In measures mode the whole rose is one row (the period), so
+  // it's all hovered together.
+  const renderWedges = () => {
+    if (isMeasures) {
+      const canDrillDown = !!getMeasureDrilldownHint()
       return (
-        <path
-          key={segment.key}
-          ref={(element) => {
-            if (element) {
-              pathRefs.current.set(segment.key, element)
-            } else {
-              pathRefs.current.delete(segment.key)
-            }
-          }}
-          className={`rose-wedge${isActive ? ' active' : ''}${segment.category.isOther ? ' rose-wedge-other' : ''}`}
-          d={arcGenerator(segment)}
-          fill={fill}
-          stroke={segment.isNotToScale ? themeSecondaryTextColor : undefined}
-          strokeDasharray={segment.isNotToScale ? '3,2' : undefined}
-          data-tooltip-id={props.chartTooltipID}
-          data-tooltip-html={getTooltipHtml(segment.category, segment.isNotToScale)}
-          onClick={(e) => onWedgeClick(e, segment.category)}
-        />
+        <g className={`rose-wedges rose-wedges-measures${canDrillDown ? '' : ' rose-wedges-no-drilldown'}`}>
+          {segments.map(renderSegment)}
+        </g>
       )
+    }
+    const segmentsByCategory = new Map()
+    segments.forEach((segment) => {
+      const key = segment.category.key
+      segmentsByCategory.set(key, [...(segmentsByCategory.get(key) || []), segment])
     })
+    return (
+      <g className='rose-wedges'>
+        {Array.from(segmentsByCategory.entries()).map(([key, categorySegments]) => (
+          <g key={key} className='rose-wedge-group'>
+            {categorySegments.map(renderSegment)}
+          </g>
+        ))}
+      </g>
+    )
+  }
 
   // One sparkline per value layer: the layer summed over all categories in each period. In measures mode,
   // one per measure, in its own units and color.
@@ -1075,16 +1217,16 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     [frameData, measureData, valueColumnIndices, palette, columns, formattingConfig],
   )
 
+  // Beside the rose, the timeline is centred on it vertically
+  const getTimelineBesideY = () =>
+    Math.min(Math.max(MARGIN_TOP, centerY - timelineBesideHeight / 2), MARGIN_TOP + areaHeight - timelineBesideHeight)
+
   const renderTimeline = () => {
     if (!timelinePlacement) {
       return null
     }
-    // Beside the rose, the timeline is centred on it vertically
     const isBeside = timelinePlacement === 'beside'
-    const besideY = Math.min(
-      Math.max(MARGIN_TOP, centerY - timelineBesideHeight / 2),
-      MARGIN_TOP + areaHeight - timelineBesideHeight,
-    )
+    const besideY = getTimelineBesideY()
     return (
       <TimeAnimationTimeline
         x={isBeside ? roseLayout.timelineX : 0}
@@ -1101,20 +1243,17 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         tweenDuration={prefersReducedMotion() ? 0 : animation.tweenDuration}
         ease={animation.ease}
         onSeek={animation.goToFrame}
-        onClose={isMeasures ? undefined : animation.exit}
+        onClose={animation.exit}
       />
     )
   }
 
   const getEmptyMessage = () => {
     if (isMeasures) {
-      if (stepColumnIndex === undefined) {
-        return 'Pick a column to step through in the time settings'
-      }
       if (validMeasureColumnIndices.length < MIN_MEASURES) {
         return `Pick at least ${MIN_MEASURES} measures`
       }
-      if (!animation.frames.length) {
+      if (animation.isActive && !animation.frames.length) {
         return `No ${getColumnLabel(animation.column)} values to step through`
       }
       return 'No values to display'
@@ -1157,8 +1296,9 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         <g className='rose-plot' transform={`translate(${roseLayout.centerX}, ${centerY})`}>
           {renderGradients()}
           {renderGrid()}
-          <g className='rose-wedges'>{renderWedges()}</g>
+          {renderWedges()}
           {renderLabels()}
+          {renderHatchKey(true)}
         </g>
       ) : (
         <text
@@ -1173,10 +1313,15 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
       )}
 
       {renderTimeline()}
+      {renderHatchKey(false)}
 
       <RoseSettingsControl
         mode={isMeasures ? 'measures' : 'values'}
         scale={scale}
+        periodScalesDisabledReason={
+          animation.isAvailable ? undefined : 'Compares periods, so it needs a date or number column to step through'
+        }
+        showsAllData={!animation.isActive}
         onModeChange={handleModeChange}
         onScaleChange={handleScaleChange}
         measuresDisabledReason={measuresDisabledReason}

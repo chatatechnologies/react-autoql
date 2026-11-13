@@ -13,7 +13,7 @@
 }
 
 .time-animation-control-hit {
-  fill: var(--react-autoql-background-color-hover);
+  fill: var(--react-autoql-hover-color);
   fill-opacity: 0;
   opacity: 1 !important;
   outline: none;
@@ -107,7 +107,7 @@
   }
 
   &:hover {
-    background: var(--react-autoql-background-color-hover);
+    background: var(--react-autoql-hover-color);
   }
 
   &.time-animation-segment-active {

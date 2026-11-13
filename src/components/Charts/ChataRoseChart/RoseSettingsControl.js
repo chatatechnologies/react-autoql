@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 
 import { Icon } from '../../Icon'
 import { Popover } from '../../Popover'
-import { ROSE_SCALES, ROSE_SCALE_LABELS } from './measureScales'
+import { PERIOD_SCALES, ROSE_SCALES, ROSE_SCALE_LABELS } from './measureScales'
 
 import '../ChataSankeyDiagram/ChataSankeyDiagram.scss'
 import '../TimeAnimation/TimeAnimation.scss'
@@ -13,7 +13,7 @@ const MODE_LABELS = { values: 'Values of a column', measures: 'Measures' }
 
 const SCALE_DESCRIPTIONS = {
   normalized:
-    "How unusual this period is for each measure: its distance from the measure's average across all periods, compared with how much it usually varies. 1σ is a typical swing; beyond 2σ is rare. Blue is above average, red is below.",
+    "How unusual this period is for each measure: its distance from the measure's average across all periods, compared with how much it usually varies. 1σ is a typical swing; beyond 2σ is rare. Hatched wedges are below average.",
   minmax:
     'Where this period falls between the measure\'s lowest and highest period: 0% is its lowest, 100% its highest. Good for "is this a high or low period for this measure?"',
   linear:
@@ -31,12 +31,16 @@ const RoseSettingsControl = ({
   onModeChange,
   onScaleChange,
   measuresDisabledReason,
+  periodScalesDisabledReason,
+  showsAllData,
   x,
   y,
   size,
   chartTooltipID,
 }) => {
   const [showSettings, setShowSettings] = useState(false)
+  // Normalized and range compare periods, so the totals are drawn as actual values until a period is shown
+  const showsTotalsAsActualValues = showsAllData && PERIOD_SCALES.includes(scale)
 
   const renderSegmented = (options, value, onChange) => (
     <div className='time-animation-segmented'>
@@ -81,20 +85,35 @@ const RoseSettingsControl = ({
             <div className='time-animation-setting-label'>Scale</div>
             {/* A list rather than segments: the names are too long to sit side by side */}
             <div className='rose-settings-options'>
-              {ROSE_SCALES.map((value) => (
-                <div
-                  key={value}
-                  className={`sankey-column-dropdown-item${
-                    value === scale ? ' sankey-column-dropdown-item-selected' : ''
-                  }`}
-                  onClick={() => value !== scale && onScaleChange(value)}
-                >
-                  {value === scale && <Icon type='check' className='sankey-column-dropdown-item-check' />}
-                  <span>{ROSE_SCALE_LABELS[value]}</span>
-                </div>
-              ))}
+              {ROSE_SCALES.map((value) => {
+                const disabledReason = PERIOD_SCALES.includes(value) ? periodScalesDisabledReason : undefined
+                return (
+                  <div
+                    key={value}
+                    className={`sankey-column-dropdown-item${
+                      value === scale ? ' sankey-column-dropdown-item-selected' : ''
+                    }${disabledReason ? ' sankey-column-dropdown-item-disabled' : ''}`}
+                    data-tooltip-id={disabledReason ? chartTooltipID : undefined}
+                    data-tooltip-content={disabledReason}
+                    // Picking the saved period scale again while showing the totals shows the latest period
+                    onClick={() =>
+                      !disabledReason && (value !== scale || showsTotalsAsActualValues) && onScaleChange(value)
+                    }
+                  >
+                    {value === scale && <Icon type='check' className='sankey-column-dropdown-item-check' />}
+                    <span>{ROSE_SCALE_LABELS[value]}</span>
+                  </div>
+                )
+              })}
             </div>
             <div className='rose-settings-description'>{SCALE_DESCRIPTIONS[scale]}</div>
+            {showsAllData && !periodScalesDisabledReason && (
+              <div className='rose-settings-description'>
+                {showsTotalsAsActualValues
+                  ? `Showing the totals of all periods as actual values. ${ROSE_SCALE_LABELS[scale]} compares periods, so picking it shows the latest period.`
+                  : 'Showing the totals of all periods. Normalized and Range compare periods, so picking one shows the latest period.'}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -126,7 +145,7 @@ const RoseSettingsControl = ({
             data-tooltip-id={chartTooltipID}
             data-tooltip-html={`<strong>Wedges are:</strong><br/>${MODE_LABELS[mode]}${
               mode === 'measures' ? `, ${ROSE_SCALE_LABELS[scale]}` : ''
-            }`}
+            }${showsTotalsAsActualValues ? '<br/>Showing the totals as actual values' : ''}`}
             style={{ cursor: 'pointer' }}
           />
           <g
@@ -162,6 +181,10 @@ RoseSettingsControl.propTypes = {
   onScaleChange: PropTypes.func.isRequired,
   // Set when the data can't be shown as measures; the option is disabled with this as its tooltip
   measuresDisabledReason: PropTypes.string,
+  // Set when there are no periods to compare: those scales are disabled with this as their tooltip
+  periodScalesDisabledReason: PropTypes.string,
+  // True while the rose shows the totals of all of the data rather than one period
+  showsAllData: PropTypes.bool,
   x: PropTypes.number.isRequired,
   y: PropTypes.number.isRequired,
   size: PropTypes.number,
@@ -170,6 +193,8 @@ RoseSettingsControl.propTypes = {
 
 RoseSettingsControl.defaultProps = {
   measuresDisabledReason: undefined,
+  periodScalesDisabledReason: undefined,
+  showsAllData: false,
   size: 30,
   chartTooltipID: undefined,
 }

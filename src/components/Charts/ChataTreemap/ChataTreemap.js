@@ -54,6 +54,8 @@ const BUTTON_TOP = 10
 const BUTTON_STEP = 35
 const BUTTON_ICON_SIZE = 20
 const MARGIN_TOP = 10
+// Room under the boxes for the note about rows left out for having no positive value
+const EXCLUDED_NOTE_HEIGHT = 18
 
 const FALLBACK_COLORS = ['#5C7AFF', '#00C1D4', '#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f']
 
@@ -312,7 +314,10 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   const buttonX = totalWidth - BUTTON_RIGHT_OFFSET
   // Keep the treemap clear of the right-side controls
   const chartWidth = Math.max(0, buttonX - 10)
-  const chartHeight = Math.max(0, totalHeight - MARGIN_TOP)
+  // A box can't have a negative size, so rows without a positive value are left out, and a note under the
+  // boxes says how many (rather than only the tooltips)
+  const showExcludedNote = !!tree && excludedRowCount > 0
+  const chartHeight = Math.max(0, totalHeight - MARGIN_TOP - (showExcludedNote ? EXCLUDED_NOTE_HEIGHT : 0))
 
   const hierarchyRoot = useMemo(() => {
     if (!tree) {
@@ -430,6 +435,7 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
   const enableDrilldowns = getAutoQLConfig(props.autoQLConfig).enableDrilldowns
   // Set inline (not via CSS var) so labels keep their color in the exported PNG
   const themeTextColor = getThemeValue('text-color-primary')
+  const themeSecondaryTextColor = getThemeValue('text-color-secondary') || themeTextColor
   const isCountValue = valueColumnIndex === TREEMAP_VALUE_COUNT_SENTINEL
   const valueColumn = isCountValue ? undefined : columns[valueColumnIndex]
 
@@ -658,6 +664,31 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
     return 'No positive values to display'
   }
 
+  const renderExcludedNote = () => {
+    if (!showExcludedNote) {
+      return null
+    }
+    const valueLabel = valueColumn?.display_name || valueColumn?.name || 'value'
+    const note = `${excludedRowCount} ${
+      excludedRowCount === 1 ? 'row' : 'rows'
+    } with zero, negative or empty ${valueLabel} not shown`
+    // Cut to the chart's width on narrow charts, with the full note on hover
+    const text = truncateToWidth(note, chartWidth)
+    return (
+      <text
+        className='treemap-excluded-note'
+        x={0}
+        y={MARGIN_TOP + chartHeight + EXCLUDED_NOTE_HEIGHT - 5}
+        fontSize={FONT_SIZE}
+        fill={themeSecondaryTextColor}
+        data-tooltip-id={text !== note ? props.chartTooltipID : undefined}
+        data-tooltip-content={text !== note ? note : undefined}
+      >
+        {text}
+      </text>
+    )
+  }
+
   const renderWarning = () => {
     if (!isDataTruncated) {
       return null
@@ -704,6 +735,8 @@ const ChataTreemap = forwardRef((props, forwardedRef) => {
           </text>
         )}
       </svg>
+
+      {renderExcludedNote()}
 
       {/* Fit to screen - same styling as the Sankey reset zoom button */}
       <g

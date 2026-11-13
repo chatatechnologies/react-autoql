@@ -52,6 +52,18 @@ describe('ChataRoseChart', () => {
     expect(getWedges(wrapper)).toHaveLength(6)
   })
 
+  // AQLP-1097: a wedge's segments are one row, so they're hovered and described together
+  test("a wedge's stacked segments are hovered as one, and share a tooltip with every value", () => {
+    const wrapper = setup({ initialChartControls: { roseValueColumnIndices: [2, 3] } })
+    const groups = wrapper.find('g.rose-wedge-group')
+    expect(groups).toHaveLength(3)
+    groups.forEach((group) => {
+      const segments = group.find('path.rose-wedge')
+      expect(segments).toHaveLength(2)
+      expect(new Set(segments.map((segment) => segment.prop('data-tooltip-html'))).size).toBe(1)
+    })
+  })
+
   test('uses the persisted category column', () => {
     const wrapper = setup({ initialChartControls: { roseCategoryColumnIndex: 1 } })
     expect(getWedges(wrapper)).toHaveLength(2)
@@ -63,10 +75,33 @@ describe('ChataRoseChart', () => {
     expect(getSelector(wrapper, 'Values').prop('pathColumnIndices')).toEqual([2])
   })
 
-  test('fills negative values with the negative gradient', () => {
+  // AQLP-1095: a negative value keeps its series' color, hatched, and a key says what hatching means
+  test('hatches negative values in their own color, with a key', () => {
     const wrapper = setup({ initialChartControls: { roseValueColumnIndices: [3] } })
-    const fills = getWedges(wrapper).map((w) => w.prop('fill'))
-    expect(fills.filter((fill) => fill.includes('-negative'))).toHaveLength(1)
+    const wedges = getWedges(wrapper)
+    expect(new Set(wedges.map((w) => w.prop('fill'))).size).toBe(1)
+    expect(wedges.filterWhere((w) => !!w.prop('mask'))).toHaveLength(1)
+    expect(wrapper.find('g.rose-hatch-key').text()).toBe('Negative')
+    // No negatives, no key
+    expect(setup().find('g.rose-hatch-key').exists()).toBe(false)
+  })
+
+  test('without a timeline beside it, the hatch key is centred under the rose, which makes room for it', () => {
+    const outerRadius = (wrapper) => Math.max(...wrapper.find('.rose-grid circle').map((circle) => circle.prop('r')))
+    const withNegative = setup({ initialChartControls: { roseValueColumnIndices: [3] } })
+    const key = withNegative.find('g.rose-hatch-key')
+    expect(key.closest('g.rose-plot').exists()).toBe(true)
+    const [x, y] = key
+      .prop('transform')
+      .match(/translate\(([-\d.]+), ([-\d.]+)\)/)
+      .slice(1)
+      .map(Number)
+    // Centred on the rose (its width is the swatch, a gap and the text), below its bottom labels
+    expect(x).toBeCloseTo(-(12 + 6 + 'Negative'.length * 11 * 0.6) / 2)
+    expect(y).toBeCloseTo(outerRadius(withNegative) + 8 + 11 + 8)
+    // Without negatives there's no key, so the rose doesn't keep room for one
+    const withoutNegative = setup({ initialChartControls: { roseValueColumnIndices: [2] } })
+    expect(outerRadius(withoutNegative)).toBeGreaterThan(outerRadius(withNegative))
   })
 
   test('saves picks through onChartControlsChange', () => {

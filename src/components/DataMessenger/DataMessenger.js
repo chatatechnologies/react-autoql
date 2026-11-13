@@ -23,8 +23,8 @@ import { ChatContent } from '../ChatContent'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { AgentMessenger } from '../AgentMessenger'
 import { Tooltip } from '../Tooltip'
-import { Select } from '../Select'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
+import ProjectSelect from './ProjectSelect'
 
 // Utils
 import { withTheme } from '../../theme'
@@ -843,39 +843,33 @@ export class DataMessenger extends React.Component {
     )
   }
 
-  projectSelectorHeader = () => {
+  hasProjectSelect = () => {
+    return !!this.props?.autoQLConfig?.enableProjectSelect && this.props?.projectSelectList?.length > 0
+  }
+
+  // The project switcher sits with the right-hand controls instead of taking the
+  // title's place, so the page name stays put whichever project is active.
+  renderProjectSelect = () => {
+    if (!this.hasProjectSelect()) {
+      return null
+    }
+
     return (
-      <div className='react-autoql-header-project-selector-container'>
-        <Select
-          className='react-autoql-header-project-selector'
-          size='small'
-          outlined={false}
-          fullWidth={true}
-          placeholder='Select a new project'
-          options={this.props.projectSelectList.map((project) => {
-            return {
-              value: project?.projectId,
-              label: <span dangerouslySetInnerHTML={{ __html: project.displayName }} />,
-            }
-          })}
-          label={null}
-          value={this.props.selectedProjectId}
-          onChange={(option) => {
-            this.clearMessages()
-            this.props.onProjectSelectChange(option)
-          }}
-          color='text'
-        />
-      </div>
+      <ProjectSelect
+        projects={this.props.projectSelectList}
+        value={this.props.selectedProjectId}
+        popoverParentElement={this.messengerDrawerRef}
+        tooltipID={this.TOOLTIP_ID}
+        onChange={(projectId) => {
+          this.clearMessages()
+          this.props.onProjectSelectChange(projectId)
+        }}
+      />
     )
   }
 
   renderHeaderTitle = () => {
     let title = ''
-
-    if (this.props?.autoQLConfig?.enableProjectSelect && this.props?.projectSelectList?.length > 0) {
-      return this.projectSelectorHeader()
-    }
 
     switch (this.state.activePage) {
       case 'data-messenger': {
@@ -934,6 +928,7 @@ export class DataMessenger extends React.Component {
           {isBrowser ? this.renderHeaderNav() : null}
         </div>
         <div className={`react-autoql-header-right-container ${isMobile ? 'mobile-hidden' : ''}`}>
+          {this.renderProjectSelect()}
           {this.renderRightHeaderContent()}
           {isBrowser ? (
             <>

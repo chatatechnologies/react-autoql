@@ -252,4 +252,30 @@ describe('ChataRoseChart time animation', () => {
     const wrapper = setup({ columns: dateOnly, data: data.map((row) => [row[1], row[2]]) })
     expect(wrapper.find('g.time-animation-control').exists()).toBe(false)
   })
+
+  // AQLP-1093: dates and numbers can be stepped through, but not strings or the columns already drawn
+  test('offers date and unused number columns to step through, never strings', () => {
+    const units = { name: 'sales.units', display_name: 'Units', type: 'QUANTITY', is_visible: true }
+    const store = { name: 'sales.store', display_name: 'Store', type: 'STRING', is_visible: true }
+    const wrapper = setup({
+      columns: [...columns, units, store],
+      data: data.map((row, i) => [...row, i + 1, `S${i}`]),
+      initialChartControls: { roseValueColumnIndices: [2], timeAnimation: { grouping: 'MONTH' } },
+    })
+    const animation = wrapper.find(TimeAnimationControl).prop('animation')
+    expect(animation.columnOptionIndices).toEqual([1, 3])
+  })
+
+  // AQLP-1094: no date column, but an unused number column: it's picked, so play works straight away
+  test('without a date column, the first unused number column is ready to play over', () => {
+    const round = { name: 'sales.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }
+    const wrapper = setup({
+      columns: [columns[0], round, columns[2]],
+      data: data.map((row, i) => [row[0], (i % 2) + 1, row[2]]),
+      initialChartControls: { roseValueColumnIndices: [2] },
+    })
+    const animation = wrapper.find(TimeAnimationControl).prop('animation')
+    expect(animation.settings.columnIndex).toBe(1)
+    expect(animation.isAvailable).toBe(true)
+  })
 })
