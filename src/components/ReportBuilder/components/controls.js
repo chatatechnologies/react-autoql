@@ -16,7 +16,12 @@ export const useStableId = (prefix = 'field') => {
   return ref.current
 }
 
-export const SectionLabel = ({ children }) => <div className={`${RB}-section-label`}>{children}</div>
+// `setting` names it for the builder to open the panel at (data-page-setting).
+export const SectionLabel = ({ children, setting }) => (
+  <div className={`${RB}-section-label`} data-page-setting={setting || undefined}>
+    {children}
+  </div>
+)
 
 export const Note = ({ children, tone }) => (
   <p className={`${RB}-note`} data-tone={tone || undefined}>

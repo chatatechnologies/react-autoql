@@ -205,3 +205,44 @@ describe('executeReport', () => {
     expect(results.a.pageSize).toBe(100)
   })
 })
+
+describe('a block whose answer AutoQL fills in', () => {
+  // As a report made from a template has it: its question and how it's shown, but no answer.
+  const unanswered = block(
+    { type: 'query', query: 'aum by account' },
+    { askedHere: true, capture: { version: 1, displayType: 'table', config: { displayType: 'table' } } },
+  )
+  const captured = {
+    version: 1,
+    capturedAt: '2026-10-28T18:00:00.000Z',
+    displayType: 'table',
+    data: { columns: COLUMNS, rows: rowsOf(3), count_rows: 3 },
+    config: { displayType: 'table' },
+  }
+
+  it('waits for it in a template, and while the report’s data is filled in', () => {
+    expect(view(unanswered, undefined, { fill: { state: 'template' } })).toMatchObject({
+      state: 'template',
+      title: 'aum by account',
+      askedHere: true,
+    })
+    expect(view(unanswered, undefined, { fill: { state: 'filling' } }).state).toBe('filling')
+  })
+
+  it('says why it couldn’t be filled in', () => {
+    const error = { reason: 'query_failed', message: 'Column not found' }
+    expect(view(unanswered, undefined, { fill: { state: 'filled', error } })).toMatchObject({
+      state: 'unfilled',
+      reason: 'query_failed',
+      message: 'Column not found',
+    })
+    // Filled in without a word against it: no answer yet, as before.
+    expect(view(unanswered, undefined, { fill: { state: 'filled' } }).state).toBe('not-run')
+  })
+
+  it('shows the answer once it has one, whatever the fill says', () => {
+    const answered = { ...unanswered, capture: captured }
+    expect(view(answered, undefined, { fill: { state: 'filling' } }).state).toBe('ready')
+    expect(view(answered, undefined, { fill: { state: 'filled', error: { reason: 'timeout' } } }).state).toBe('ready')
+  })
+})

@@ -2,15 +2,23 @@ import axios from 'axios'
 import {
   appendReportBlock,
   createReport,
+  createReportFromTemplate,
   createReportTag,
   deleteReport,
   deleteReportFolder,
   fetchReport,
+  fetchReportCategories,
+  fetchReportDataStatus,
   fetchReports,
+  fetchReportTemplate,
+  fetchReportTemplates,
+  isFillingData,
   organizeReports,
   renameReportFolder,
+  REPORT_SUMMARY_FIELDS,
   ReportsApiError,
   saveReport,
+  summaryOfDetail,
   updateReportTag,
 } from '../run/reportsApi'
 
@@ -70,6 +78,9 @@ describe('AutoQL’s report service', () => {
           version: 3,
           folderId: null,
           tagIds: ['a'],
+          // Not made from a template, so nothing has filled it.
+          templateId: null,
+          dataStatus: 'NONE',
           createdAt: STORED.created_at,
           updatedAt: STORED.updated_at,
         },
@@ -84,6 +95,17 @@ describe('AutoQL’s report service', () => {
     expect(request.path).toBe('/autoql/api/v1/reports')
     expect(request.query).toEqual({ page_size: '200', tag_ids: 'a,b', key: 'k 1' })
     expect(request.headers.Authorization).toBe('Bearer t')
+  })
+
+  it('lists a report with the summary’s fields, which a report read with its document comes down to', async () => {
+    axios.request.mockResolvedValue(
+      answer({ items: [STORED], pagination: { current_page: 1, page_size: 200, total_pages: 1, total_items: 1 } }),
+    )
+    const { reports } = await fetchReports({ authentication: AUTH })
+    expect(Object.keys(reports[0])).toEqual(REPORT_SUMMARY_FIELDS)
+
+    axios.request.mockResolvedValue(answer({ ...STORED, project_id: 'CT_1', document: DOCUMENT }))
+    expect(summaryOfDetail(await fetchReport({ authentication: AUTH, id: ID }))).toEqual(reports[0])
   })
 
   it('reads a report with its document as stored, keys and all', async () => {
@@ -202,5 +224,164 @@ describe('AutoQL’s report service', () => {
       body: { name: 'Clients' },
     })
     expect(sent(3)).toMatchObject({ method: 'delete', path: '/autoql/api/v1/reports/folders/f1' })
+  })
+})
+
+describe('starting a report from a template', () => {
+  const TEMPLATE = {
+    id: 'tp1',
+    scope: 'ORGANIZATION',
+    organization_public_id: 'org-1',
+    title: 'Quarterly review',
+    description: 'For every household',
+    category_id: 'c1',
+    tags: ['Quarterly', 'AUM'],
+    status: 'PUBLISHED',
+    database_model: 'wealth',
+    size_bytes: 900,
+    published_at: '2026-10-27T16:00:00Z',
+    created_at: '2026-10-26T16:00:00Z',
+    updated_at: '2026-10-27T15:00:00Z',
+  }
+
+  it('lists the templates published for the data source, filtered as asked, in the host’s names', async () => {
+    axios.request.mockResolvedValue(
+      answer({ items: [TEMPLATE], pagination: { current_page: 1, page_size: 50, total_pages: 1, total_items: 1 } }),
+    )
+    const result = await fetchReportTemplates({
+      authentication: AUTH,
+      q: 'review',
+      tags: ['AUM', 'Quarterly'],
+      categoryId: 'c1',
+      pageSize: 50,
+    })
+    expect(result.templates).toEqual([
+      {
+        id: 'tp1',
+        scope: 'ORGANIZATION',
+        organizationId: 'org-1',
+        title: 'Quarterly review',
+        description: 'For every household',
+        categoryId: 'c1',
+        tags: ['Quarterly', 'AUM'],
+        status: 'PUBLISHED',
+        databaseModel: 'wealth',
+        sizeBytes: 900,
+        publishedAt: TEMPLATE.published_at,
+        createdAt: TEMPLATE.created_at,
+        updatedAt: TEMPLATE.updated_at,
+      },
+    ])
+    expect(result).toMatchObject({ page: 1, totalItems: 1 })
+    expect(sent()).toMatchObject({ method: 'get', path: '/autoql/api/v1/reports/templates' })
+    expect(sent().query).toEqual({ q: 'review', tags: 'AUM,Quarterly', category_id: 'c1', page_size: '50', key: 'k 1' })
+  })
+
+  it('reads a template with what a report started from it begins as', async () => {
+    axios.request.mockResolvedValueOnce(answer({ ...TEMPLATE, document: DOCUMENT }))
+    axios.request.mockResolvedValueOnce(answer(TEMPLATE))
+    expect((await fetchReportTemplate({ authentication: AUTH, id: 'tp1' })).report).toEqual(DOCUMENT)
+    expect(sent(0).path).toBe('/autoql/api/v1/reports/templates/tp1')
+    // One without its document is no use to start from.
+    await expect(fetchReportTemplate({ authentication: AUTH, id: 'tp1' })).rejects.toBeInstanceOf(ReportsApiError)
+  })
+
+  it('lists the categories', async () => {
+    axios.request.mockResolvedValue(
+      answer({ items: [{ id: 'c1', scope: 'INTEGRATOR', organization_public_id: null, name: 'Reviews' }, {}] }),
+    )
+    expect(await fetchReportCategories({ authentication: AUTH })).toEqual([
+      { id: 'c1', scope: 'INTEGRATOR', organizationId: null, name: 'Reviews' },
+    ])
+    expect(sent().path).toBe('/autoql/api/v1/reports/categories')
+  })
+
+  it('makes the report from the template under the host’s id, in the folder and time zone given', async () => {
+    axios.request.mockResolvedValue(
+      answer(
+        {
+          ...STORED,
+          template_id: 'tp1',
+          data_status: 'PENDING',
+          data_errors: null,
+          project_id: 'CT_1',
+          document: DOCUMENT,
+        },
+        201,
+      ),
+    )
+    const made = await createReportFromTemplate({
+      authentication: AUTH,
+      id: ID,
+      templateId: 'tp1',
+      folderId: 'f',
+      timeZone: 'America/Denver',
+    })
+    expect(made).toMatchObject({ id: ID, templateId: 'tp1', dataStatus: 'PENDING', dataErrors: [], created: true })
+    expect(sent()).toMatchObject({
+      method: 'post',
+      path: '/autoql/api/v1/reports',
+      body: { id: ID, template_id: 'tp1', folder_id: 'f', time_zone: 'America/Denver' },
+    })
+    expect(sent().body).not.toHaveProperty('session_filter_locks')
+  })
+
+  it('makes it for a filter lock, as session_filter_locks (RW-352)', async () => {
+    const lock = [{ key: 'household', value: 'Brown Family', filter_type: 'include' }]
+    axios.request.mockResolvedValue(
+      answer({ ...STORED, template_id: 'tp1', data_status: 'PENDING', project_id: 'CT_1', document: DOCUMENT }, 201),
+    )
+    await createReportFromTemplate({ authentication: AUTH, id: ID, templateId: 'tp1', sessionFilterLocks: lock })
+    expect(sent().body).toMatchObject({ id: ID, template_id: 'tp1', session_filter_locks: lock })
+  })
+
+  it('makes it for everything with an empty filter lock, even from a template made for one', async () => {
+    axios.request.mockResolvedValue(
+      answer({ ...STORED, template_id: 'tp1', data_status: 'PENDING', project_id: 'CT_1', document: DOCUMENT }, 201),
+    )
+    await createReportFromTemplate({ authentication: AUTH, id: ID, templateId: 'tp1', sessionFilterLocks: [] })
+    expect(sent().body).toMatchObject({ id: ID, template_id: 'tp1', session_filter_locks: [] })
+  })
+
+  it('says how filling the report’s data is going, and why blocks weren’t filled', async () => {
+    axios.request.mockResolvedValue(
+      answer({
+        data_status: 'PARTIAL',
+        version: 7,
+        data_updated_at: '2026-10-28T18:00:00Z',
+        data_heartbeat_at: '2026-10-28T18:00:05Z',
+        data_errors: [
+          { block_id: 'b1', reason: 'not_confident' },
+          { block_id: 'b2', reason: 'query_failed', message: 'Column not found' },
+          { reason: 'no block' },
+        ],
+      }),
+    )
+    expect(await fetchReportDataStatus({ authentication: AUTH, id: ID })).toEqual({
+      dataStatus: 'PARTIAL',
+      version: 7,
+      dataUpdatedAt: '2026-10-28T18:00:00Z',
+      dataHeartbeatAt: '2026-10-28T18:00:05Z',
+      dataErrors: [
+        { blockId: 'b1', reason: 'not_confident' },
+        { blockId: 'b2', reason: 'query_failed', message: 'Column not found' },
+      ],
+    })
+    expect(sent().path).toBe(`/autoql/api/v1/reports/${ID}/data`)
+  })
+
+  it('reads no heartbeat from a service that doesn’t send one (RW-366)', async () => {
+    axios.request.mockResolvedValue(answer({ data_status: 'RUNNING', version: 1 }))
+    expect(await fetchReportDataStatus({ authentication: AUTH, id: ID })).toMatchObject({
+      dataStatus: 'RUNNING',
+      dataHeartbeatAt: null,
+    })
+  })
+
+  it('is filling while pending or running, and reads anything it doesn’t know as nothing filling it', async () => {
+    expect(['PENDING', 'RUNNING'].every(isFillingData)).toBe(true)
+    expect(['NONE', 'DONE', 'PARTIAL', 'FAILED', undefined].some(isFillingData)).toBe(false)
+    axios.request.mockResolvedValue(answer({ ...STORED, data_status: 'SOMETHING_NEW', document: DOCUMENT }))
+    expect((await fetchReport({ authentication: AUTH, id: ID })).dataStatus).toBe('NONE')
   })
 })

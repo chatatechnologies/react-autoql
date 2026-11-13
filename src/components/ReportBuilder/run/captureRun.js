@@ -24,13 +24,20 @@ const turnedDown = (error) => {
 // kept with "Add to Report…"), which the question doesn't answer with. If the service turns that order down (a
 // column it sorts by is gone, say), it's asked once more without one; any other failure is the answer, as asking
 // again wouldn't help, and an answer that came back unsorted would drop the table's sort for good.
+//
+// `capturedAt` is when the answer is said to be from: now by default, or when the questions asked together started
+// (Rerun all, a report filled in from a template), so they all read as of one time.
+//
+// `filters` is the report's filter lock (model/filterLocks.js), which every question in it is asked with.
 export const captureQuestion = ({
   query,
   authentication,
   autoQLConfig,
+  filters,
   signal,
   cancelToken,
   rerun,
+  capturedAt,
   runQueryFn = runQuery,
 } = {}) => {
   const text = typeof query === 'string' ? query.trim() : ''
@@ -40,7 +47,7 @@ export const captureQuestion = ({
 
   // Up to a chart's worth of rows: how it will be shown isn't known until it answers.
   const request = {
-    ...buildQuestionRequest({ query: text, authentication, autoQLConfig }),
+    ...buildQuestionRequest({ query: text, authentication, autoQLConfig, filters }),
     pageSize: MAX_CHART_ROWS,
     cancelToken: signal ?? cancelToken,
   }
@@ -72,11 +79,17 @@ export const captureQuestion = ({
         if (cancelled()) {
           return { ok: false, reason: 'cancelled' }
         }
+        const at = capturedAt ? { capturedAt } : {}
         if (!rerun) {
-          return captureFromResponse(response)
+          return captureFromResponse(response, at)
         }
         const settings = (typeof rerun.current === 'function' && rerun.current()) || rerun
-        return recaptureFromResponse(response, { kept: settings.kept, displayType: settings.displayType, orders })
+        return recaptureFromResponse(response, {
+          kept: settings.kept,
+          displayType: settings.displayType,
+          orders,
+          ...at,
+        })
       },
       (error) => {
         if (cancelled()) {

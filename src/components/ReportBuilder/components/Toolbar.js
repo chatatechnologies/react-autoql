@@ -2,14 +2,51 @@ import React from 'react'
 import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { Icon } from './icons'
+import { Icon as AppIcon } from '../../Icon'
 import { FIT, ZOOM_LEVELS } from './ZoomFrame'
 import { ReportOptions } from './ReportOptions'
+
+// The report's title. It looks like the title it is, so it shows it can be changed when the pointer is on it
+// (RW-363). Return keeps the new name, and Escape puts back the one it had when the field was clicked into.
+const TitleField = ({ title, onTitleChange }) => {
+  const started = React.useRef(title)
+  return (
+    <div className={`${RB}-title-field`}>
+      <input
+        type='text'
+        className={`${RB}-title-input`}
+        value={title}
+        placeholder={STRINGS.titlePlaceholder}
+        aria-label={STRINGS.titleLabel}
+        data-test='report-builder-title'
+        onFocus={() => {
+          started.current = title
+        }}
+        onChange={(e) => onTitleChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            if (e.key === 'Escape' && title !== started.current) {
+              onTitleChange(started.current)
+            }
+            e.currentTarget.blur()
+          }
+        }}
+      />
+      <span className={`${RB}-title-pencil`} aria-hidden='true'>
+        <AppIcon type='edit' />
+      </span>
+    </div>
+  )
+}
 
 // Run, preview and print are the builder's own; a host adds nothing to make a report work. Run shows only
 // when the builder runs reports itself (enableRunReport); otherwise blocks carry the data they were added with.
 // `status` is the host's own element (toolbarStatus), set apart just before them. The zoom (ZoomFrame) is how
 // large the pages show, in the editor and the preview alike. In the editor, the panel button beside Preview
-// hides and shows the properties panel (`panelId`), and the report options menu (⋮) ends the row.
+// hides and shows the properties panel (`panelId`), and the report options menu (⋮) ends the row. Read-only, it's
+// the report's title, how its pages are set up and the zoom: nothing that edits it, prints it or leaves the preview.
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -22,6 +59,7 @@ export const Toolbar = ({
   onCancelRun,
   showRun = true,
   previewOpen,
+  readOnly = false,
   previewMeta,
   onOpenPreview,
   onClosePreview,
@@ -37,23 +75,20 @@ export const Toolbar = ({
   optionsRef,
   onPageSetup,
   onBranding,
+  onSaveAsTemplate,
+  onRerunAll,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
       <div className={`${RB}-toolbar-title`} data-readonly=''>
-        <span className={`${RB}-toolbar-heading`}>{STRINGS.preview.title}</span>
+        {/* Read-only, there's no editor to name it: the report's own title. */}
+        <span className={`${RB}-toolbar-heading`} data-test='report-builder-toolbar-heading'>
+          {readOnly ? title || STRINGS.untitled : STRINGS.preview.title}
+        </span>
         {previewMeta ? <span className={`${RB}-toolbar-meta`}>{previewMeta}</span> : null}
       </div>
     ) : (
-      <input
-        type='text'
-        className={`${RB}-title-input`}
-        value={title}
-        placeholder={STRINGS.titlePlaceholder}
-        aria-label={STRINGS.titleLabel}
-        data-test='report-builder-title'
-        onChange={(e) => onTitleChange(e.target.value)}
-      />
+      <TitleField title={title} onTitleChange={onTitleChange} />
     )}
     <div className={`${RB}-toolbar-actions`}>
       {status ? (
@@ -123,7 +158,7 @@ export const Toolbar = ({
           <Icon name='panel' size={15} />
         </button>
       ) : null}
-      {previewOpen ? (
+      {readOnly ? null : previewOpen ? (
         <button
           type='button'
           className={`${RB}-button`}
@@ -144,20 +179,28 @@ export const Toolbar = ({
           {STRINGS.openPreview}
         </button>
       )}
-      <button
-        type='button'
-        className={`${RB}-button`}
-        data-variant='primary'
-        title={STRINGS.printTitle}
-        disabled={printing}
-        data-test='report-builder-print'
-        onClick={onPrint}
-      >
-        <Icon name='printer' size={13} />
-        {printing ? STRINGS.printing : STRINGS.print}
-      </button>
+      {readOnly ? null : (
+        <button
+          type='button'
+          className={`${RB}-button`}
+          data-variant='primary'
+          title={STRINGS.printTitle}
+          disabled={printing}
+          data-test='report-builder-print'
+          onClick={onPrint}
+        >
+          <Icon name='printer' size={13} />
+          {printing ? STRINGS.printing : STRINGS.print}
+        </button>
+      )}
       {!previewOpen && onPageSetup ? (
-        <ReportOptions ref={optionsRef} onPageSetup={onPageSetup} onBranding={onBranding} />
+        <ReportOptions
+          ref={optionsRef}
+          onPageSetup={onPageSetup}
+          onBranding={onBranding}
+          onSaveAsTemplate={onSaveAsTemplate}
+          onRerunAll={onRerunAll}
+        />
       ) : null}
     </div>
   </div>

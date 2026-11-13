@@ -190,12 +190,40 @@
     font-size: 0.75rem;
   }
 
-  .#{$rb}-title-input {
+  // The report's title, which looks like a title: an outline and a pencil say it can be changed when the pointer
+  // is on it (RW-363).
+  .#{$rb}-title-field {
+    position: relative;
+    display: flex;
     flex: 1 1 12rem;
     min-width: 8rem;
     max-width: 28rem;
+
+    &:hover > .#{$rb}-title-pencil,
+    &:focus-within > .#{$rb}-title-pencil {
+      opacity: 1;
+    }
+  }
+
+  .#{$rb}-title-pencil {
+    position: absolute;
+    top: 50%;
+    right: 0.4375rem;
+    display: flex;
+    transform: translateY(-50%);
+    color: $text-2;
+    font-size: 0.875rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+  }
+
+  .#{$rb}-title-input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
     margin: 0;
-    padding: 0.25rem 0.4375rem;
+    padding: 0.25rem 1.75rem 0.25rem 0.4375rem;
     border: 1px solid transparent;
     border-radius: 4px;
     background: transparent;
@@ -407,6 +435,11 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: $text-2;
+
+    // Opened at from the page (showPageSetting), the setting keeps the panel's top padding above it.
+    &[data-page-setting] {
+      scroll-margin-top: 0.875rem;
+    }
   }
 
   // ---------------------------------------------------------------- palette
@@ -935,6 +968,88 @@
     color: #6e767d;
   }
 
+  // Preview and Settings, in the note (RW-363).
+  .#{$rb}-front-matter-link {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: $accent;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  // The running header as the page is edited (RW-363): its title renames the report, and what the report is for
+  // opens that setting. They read as they print (inline, the line cut short at its end) until the pointer is on
+  // them; while the title is typed in, the field takes the line.
+  //
+  // A click gives them the focus, which scrolls an `overflow: hidden` box to show them: the household, cut off at the
+  // end of the line, pushed the title's start out of view. `clip` cuts the line the same way and can't scroll. Only
+  // a Tab to one scrolls the line to show it (PageFurniture.js), and it reads as it prints again once it's left.
+  .#{$rb}-page-header .#{$rb}-running-title {
+    overflow: clip;
+
+    &:has(:focus-visible) {
+      overflow: hidden;
+    }
+  }
+
+  .#{$rb}-page-header .#{$rb}-running-title[data-editing] {
+    display: flex;
+    align-items: baseline;
+    overflow: visible;
+
+    > .#{$rb}-running-lock {
+      flex: none;
+      white-space: pre;
+    }
+  }
+
+  .#{$rb}-running-title-text {
+    border-radius: 2pt;
+    cursor: text;
+
+    &:hover {
+      box-shadow: 0 0 0 1.5pt $border;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rb}-running-title-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 0 0 -2pt;
+    padding: 0 2pt;
+    border: none;
+    border-radius: 2pt;
+    box-shadow: 0 0 0 1px $accent;
+    background: #ffffff;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    outline: none;
+  }
+
+  .#{$rb}-running-lock-button {
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
   .#{$rb}-sheet-blocks {
     display: flex;
     flex-direction: column;
@@ -1428,6 +1543,34 @@
         cursor: pointer;
       }
     }
+  }
+
+  // A report's filter lock in the panel (FilterLockField): what it is, and Change….
+  .#{$rb}-filter-lock {
+    margin: 0 0 0.5rem;
+  }
+
+  .#{$rb}-filter-lock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .#{$rb}-filter-lock-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 0.875rem;
+    color: $text;
+  }
+
+  .#{$rb}-filter-lock-failed {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: $text-2;
   }
 
   .#{$rb}-note {

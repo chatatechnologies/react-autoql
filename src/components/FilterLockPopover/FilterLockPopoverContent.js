@@ -106,6 +106,12 @@ export default class FilterLockPopover extends React.Component {
      * later query, which is surprising if the user only meant "just this once".
      */
     persistNewFilters: PropTypes.bool,
+    /**
+     * Whether each row has its "Persist" toggle. Off where the locks belong to
+     * something other than the user (a report's filter lock): with every lock
+     * session-scoped and no toggle, nothing here reaches the filter-locking API.
+     */
+    showPersistToggle: PropTypes.bool,
   }
 
   static defaultProps = {
@@ -118,6 +124,7 @@ export default class FilterLockPopover extends React.Component {
     suggestionList: undefined,
     suggestionListTitle: undefined,
     persistNewFilters: true,
+    showPersistToggle: true,
   }
 
   componentDidMount = () => {
@@ -734,6 +741,28 @@ export default class FilterLockPopover extends React.Component {
     }
   }
 
+  /**
+   * react-autosuggest opens the list on focus, typing or the arrow keys. Picking
+   * a value (or Escape) closes it but leaves the search box focused, so clicking
+   * back into the box did nothing: the user had to click away and back in to see
+   * the list again. Reopen it the way ArrowDown does.
+   *
+   * ⚠️ Reads react-autosuggest's own state and calls its revealSuggestions(),
+   * which it has no public API for (pinned at 10.1.0).
+   */
+  onInputClick = () => {
+    const autoSuggest = this.autoSuggest
+    if (!autoSuggest?.state?.isFocused || !autoSuggest.state.isCollapsed) {
+      return
+    }
+
+    const value = this.state.inputValue
+    if (this.shouldRenderSuggestions(value, 'suggestions-revealed')) {
+      this.onSuggestionsFetchRequested({ value, reason: 'suggestions-revealed' })
+      autoSuggest.revealSuggestions?.()
+    }
+  }
+
   getKey = (filter) => {
     const key = filter.key || filter.canonical
     const value = filter.value || filter.keyword
@@ -948,6 +977,7 @@ export default class FilterLockPopover extends React.Component {
     return (
       <span className='react-autoql-vl-autocomplete-input-wrapper'>
         <Autosuggest
+          ref={(ref) => (this.autoSuggest = ref)}
           id='react-autoql-filter-menu-input'
           className='react-autoql-vl-autocomplete-input'
           highlightFirstSuggestion
@@ -963,6 +993,7 @@ export default class FilterLockPopover extends React.Component {
           multiSection={true}
           inputProps={{
             onChange: this.onInputChange,
+            onClick: this.onInputClick,
             value: this.state.inputValue,
             disabled: this.props.isFetchingFilters || this.state.isFetchingFilters,
             placeholder: 'Search & select a filter',
@@ -1018,7 +1049,7 @@ export default class FilterLockPopover extends React.Component {
             onChange={(value) => this.handleExcludeToggle(category, value)}
           />
         </div>
-        {i === 0 ? (
+        {i === 0 && this.props.showPersistToggle ? (
           <div className='persist-toggle-column'>
             <h4>Persist</h4>
             <Icon
@@ -1057,13 +1088,15 @@ export default class FilterLockPopover extends React.Component {
           {filterName}
         </div>
         <div className='react-autoql-filter-list-item-actions'>
-          <Checkbox
-            className='persist-toggle'
-            data-test='react-autoql-filter-lock-persist-toggle'
-            type='switch'
-            checked={!filter.isSession}
-            onChange={() => this.handlePersistToggle(filter)}
-          />
+          {this.props.showPersistToggle ? (
+            <Checkbox
+              className='persist-toggle'
+              data-test='react-autoql-filter-lock-persist-toggle'
+              type='switch'
+              checked={!filter.isSession}
+              onChange={() => this.handlePersistToggle(filter)}
+            />
+          ) : null}
           <Icon
             className='react-autoql-remove-filter-icon'
             tooltip='Remove filter'
