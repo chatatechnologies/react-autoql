@@ -370,8 +370,10 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
   // Normalized and range compare periods, so picking one while showing all of the data shows the latest period
   const handleScaleChange = (nextScale) => {
-    setScale(nextScale)
-    persistRoseControls({ roseScale: nextScale })
+    if (nextScale !== scale) {
+      setScale(nextScale)
+      persistRoseControls({ roseScale: nextScale })
+    }
     if (PERIOD_SCALES.includes(nextScale) && !animation.isActive) {
       animation.showLatestFrame()
     }
@@ -413,8 +415,9 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     startOnLatestFrame: isMeasures,
   })
 
-  // While playing over time, the column being stepped through can't also be a measure
-  const stepColumnIndex = animation.isActive ? animation.settings.columnIndex : undefined
+  // The column being stepped through can't also be a measure. That holds while showing the totals too,
+  // or a measure picked then would vanish as soon as a period is shown.
+  const stepColumnIndex = animation.settings.columnIndex
   const availableMeasureOptionIndices = measureOptionIndices.filter((index) => index !== stepColumnIndex)
   // Normalized and range compare periods with each other, so they only apply while showing a period.
   // Showing all of the data, wedges are the totals on the actual-values scale.
@@ -1314,7 +1317,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
 
       <RoseSettingsControl
         mode={isMeasures ? 'measures' : 'values'}
-        scale={effectiveScale}
+        scale={scale}
         periodScalesDisabledReason={
           animation.isAvailable ? undefined : 'Compares periods, so it needs a date or number column to step through'
         }

@@ -87,9 +87,25 @@ describe('ChataRoseChart measures mode', () => {
     expect(tooltip).toContain('<strong>Revenue:</strong> $500.00')
     expect(tooltip).not.toContain('<strong>Date:</strong>')
     expect(getTickLabels(wrapper).some((label) => label.endsWith('σ'))).toBe(false)
-    expect(getSettings(wrapper).prop('scale')).toBe('linear')
+    // The saved scale stays selected in the settings; only the drawing falls back to actual values
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
     expect(getSettings(wrapper).prop('periodScalesDisabledReason')).toBeUndefined()
     expect(getSettings(wrapper).prop('showsAllData')).toBe(true)
+  })
+
+  test('showing the totals, the settings keep the saved scale checked, and picking it shows the latest period', () => {
+    const wrapper = closeTimeline(setup())
+    act(() => wrapper.find('.rose-settings-control rect.sankey-path-button-rect').simulate('click'))
+    wrapper.update()
+    expect(wrapper.find('.rose-settings-control rect').prop('data-tooltip-html')).toContain(
+      'Normalized (z-score)<br/>Showing the totals as actual values',
+    )
+    const selected = wrapper.find('.rose-settings-options .sankey-column-dropdown-item-selected')
+    expect(selected.text()).toContain('Normalized')
+    act(() => selected.simulate('click'))
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(3)
+    expect(getSettings(wrapper).prop('scale')).toBe('normalized')
   })
 
   test('picking a scale that compares periods while showing the totals shows the latest period', () => {
@@ -373,6 +389,11 @@ describe('ChataRoseChart measures mode', () => {
         .prop('frames')
         .map((frame) => frame.rawValue),
     ).toEqual([1, 2, 3, 4])
+
+    // Not while showing the totals either, or it would vanish from the measures once a period is shown
+    act(() => wrapper.find(TimeAnimationTimeline).prop('onClose')())
+    wrapper.update()
+    expect(getMeasurePicker(wrapper).prop('pathColumnOptionIndices')).not.toContain(0)
   })
 
   test("a measure wedge's tooltip says a click opens every row in the period", () => {

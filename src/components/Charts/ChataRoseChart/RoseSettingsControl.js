@@ -39,6 +39,8 @@ const RoseSettingsControl = ({
   chartTooltipID,
 }) => {
   const [showSettings, setShowSettings] = useState(false)
+  // Normalized and range compare periods, so the totals are drawn as actual values until a period is shown
+  const showsTotalsAsActualValues = showsAllData && PERIOD_SCALES.includes(scale)
 
   const renderSegmented = (options, value, onChange) => (
     <div className='time-animation-segmented'>
@@ -93,7 +95,10 @@ const RoseSettingsControl = ({
                     }${disabledReason ? ' sankey-column-dropdown-item-disabled' : ''}`}
                     data-tooltip-id={disabledReason ? chartTooltipID : undefined}
                     data-tooltip-content={disabledReason}
-                    onClick={() => !disabledReason && value !== scale && onScaleChange(value)}
+                    // Picking the saved period scale again while showing the totals shows the latest period
+                    onClick={() =>
+                      !disabledReason && (value !== scale || showsTotalsAsActualValues) && onScaleChange(value)
+                    }
                   >
                     {value === scale && <Icon type='check' className='sankey-column-dropdown-item-check' />}
                     <span>{ROSE_SCALE_LABELS[value]}</span>
@@ -104,8 +109,9 @@ const RoseSettingsControl = ({
             <div className='rose-settings-description'>{SCALE_DESCRIPTIONS[scale]}</div>
             {showsAllData && !periodScalesDisabledReason && (
               <div className='rose-settings-description'>
-                Showing the totals of all periods. Normalized and Range compare periods, so picking one shows the latest
-                period.
+                {showsTotalsAsActualValues
+                  ? `Showing the totals of all periods as actual values. ${ROSE_SCALE_LABELS[scale]} compares periods, so picking it shows the latest period.`
+                  : 'Showing the totals of all periods. Normalized and Range compare periods, so picking one shows the latest period.'}
               </div>
             )}
           </div>
@@ -139,7 +145,7 @@ const RoseSettingsControl = ({
             data-tooltip-id={chartTooltipID}
             data-tooltip-html={`<strong>Wedges are:</strong><br/>${MODE_LABELS[mode]}${
               mode === 'measures' ? `, ${ROSE_SCALE_LABELS[scale]}` : ''
-            }`}
+            }${showsTotalsAsActualValues ? '<br/>Showing the totals as actual values' : ''}`}
             style={{ cursor: 'pointer' }}
           />
           <g
