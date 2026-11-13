@@ -12,10 +12,14 @@ import {
   TYPEFACES,
   WIDTH_OPTIONS,
 } from '../constants'
+import { normalizeFilterLocks } from './filterLocks'
 
 // A report is a template: its blocks say what to show, never the data itself. Everything here is
 // plain JSON, so a host can persist it as-is. Query responses live only in the builder's state.
 
+// Schema 1 is frozen: AutoQL's report service builds templates and fills data blocks from it, and tests against
+// the sample in __tests__/fixtures/report-schema-1.json. A new optional field can be added to it; any other change
+// to what's stored takes a new version, and the report service has to hear about it.
 export const REPORT_SCHEMA_VERSION = 1
 
 export const DEFAULT_PAGE_SETUP = {
@@ -32,7 +36,7 @@ export const DEFAULT_PAGE_SETUP = {
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
-const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
+export const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v)
 const oneOf = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback)
 const optionKeys = (options) => options.map(([key]) => key)
 
@@ -190,18 +194,28 @@ export const createEmptyReport = (overrides = {}) => {
 }
 
 // Fills defaults, validates every value against the options the builder offers, and gives each
-// block an id. Unknown top-level fields and unknown block types are kept.
+// block an id. Unknown top-level fields and unknown block types are kept. A filter lock (model/filterLocks.js) keeps
+// only real locks, and goes when none is left, so a report without one never gains the field.
 export const normalizeReport = (report) => {
   if (!isObject(report)) {
     return createEmptyReport()
   }
-  return {
+  const normalized = {
     ...report,
     schemaVersion: typeof report.schemaVersion === 'number' ? report.schemaVersion : REPORT_SCHEMA_VERSION,
     title: typeof report.title === 'string' ? report.title : '',
     page: normalizePageSetup(report.page),
     blocks: (Array.isArray(report.blocks) ? report.blocks : []).map(normalizeBlock).filter(Boolean),
   }
+  if ('sessionFilterLocks' in report) {
+    const locks = normalizeFilterLocks(report.sessionFilterLocks)
+    if (locks.length) {
+      normalized.sessionFilterLocks = locks
+    } else {
+      delete normalized.sessionFilterLocks
+    }
+  }
+  return normalized
 }
 
 export const isNewerSchema = (report) => (report?.schemaVersion || 0) > REPORT_SCHEMA_VERSION

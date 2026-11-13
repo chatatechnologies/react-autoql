@@ -18,7 +18,8 @@ import {
 // (block.capture — QueryOutput.captureForReport). The editor, the measurer and the printed pages all render
 // from this, so they can't disagree.
 //
-// state: empty | missing | unsupported | not-run | loading | stale | error | ready
+// state: empty | missing | unsupported | not-run | loading | stale | error | ready, and for a block with no answer
+// where AutoQL fills in the data (`fill`): template | filling | unfilled
 
 // The tile's saved date precision and type overrides, applied the way QueryOutput applies them.
 const withOverrides = (columns, overrides) =>
@@ -183,8 +184,10 @@ const captureResult = (capture) => {
   return captureResults.get(capture)
 }
 
-// `requestKey` is what the block would fetch now; `running` says a run in flight is fetching exactly that.
-export const getDataBlockView = ({ block, tileIndex, result, requestKey, running = false }) => {
+// `requestKey` is what the block would fetch now; `running` says a run in flight is fetching exactly that. `fill` is
+// { state, error } where AutoQL fills in the report's data (ReportBuilder's dataFill): `error` says why it couldn't
+// fill this block.
+export const getDataBlockView = ({ block, tileIndex, result, requestKey, running = false, fill }) => {
   const { source } = block || {}
   const capture = isCapture(block?.capture) ? block.capture : null
   if (!source && !capture) {
@@ -193,7 +196,14 @@ export const getDataBlockView = ({ block, tileIndex, result, requestKey, running
 
   const found = source?.type === 'tile' ? resolveTile(tileIndex || {}, source) : null
   const tile = found?.tile
-  const base = { ...describeSource(block, found), sourceType: source?.type, tile, dashboard: found?.dashboard }
+  const base = {
+    ...describeSource(block, found),
+    sourceType: source?.type,
+    // A question asked in the report, which can be asked again (Rerun) — with an answer yet or not.
+    askedHere: !!block.askedHere && source?.type === 'query',
+    tile,
+    dashboard: found?.dashboard,
+  }
 
   // What was captured stands on its own — even if its tile has since been removed — until a run replaces it.
   const ran = !!result && result.requestKey === requestKey && result.status === 'success'
@@ -212,6 +222,17 @@ export const getDataBlockView = ({ block, tileIndex, result, requestKey, running
         filterLabel: getFilterLabel(capture.table?.filters, capture.data.columns),
       },
     })
+  }
+
+  // No answer yet, in a template ('template'), while AutoQL fills in the report's data ('filling'), or once it has,
+  // which says why it couldn't fill this one ('unfilled').
+  if (fill?.state && !result && !running) {
+    if (fill.state === 'template' || fill.state === 'filling') {
+      return { ...base, state: fill.state }
+    }
+    if (fill.error) {
+      return { ...base, state: 'unfilled', reason: fill.error.reason, message: fill.error.message }
+    }
   }
 
   if (source?.type === 'tile') {

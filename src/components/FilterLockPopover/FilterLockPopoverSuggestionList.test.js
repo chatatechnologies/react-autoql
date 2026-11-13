@@ -445,6 +445,60 @@ describe('list identity', () => {
   })
 })
 
+describe('clicking back into the search box', () => {
+  // react-autosuggest only opens the list on focus, typing or the arrow keys, and a pick or
+  // Escape shuts it with the box still focused.
+  const input = (wrapper) => wrapper.find('input.react-autoql-vl-autocomplete-input')
+  const rows = (wrapper) => wrapper.update().find('li.react-autosuggest__suggestion')
+
+  test('opens the list again after a pick', async () => {
+    const wrapper = setup()
+    input(wrapper).simulate('focus')
+    expect(rows(wrapper)).toHaveLength(3)
+
+    rows(wrapper).at(2).simulate('mousedown')
+    rows(wrapper).at(2).simulate('click')
+    // react-autosuggest finishes a pick on a timeout.
+    await new Promise((resolve) => setTimeout(resolve))
+    expect(rows(wrapper)).toHaveLength(0)
+
+    input(wrapper).simulate('click')
+    expect(rows(wrapper)).toHaveLength(3)
+    wrapper.unmount()
+  })
+
+  test('opens the list again after Escape', () => {
+    const wrapper = setup()
+    input(wrapper).simulate('focus')
+    input(wrapper).simulate('keydown', { keyCode: 27 })
+    expect(rows(wrapper)).toHaveLength(0)
+
+    input(wrapper).simulate('click')
+    expect(rows(wrapper)).toHaveLength(3)
+    wrapper.unmount()
+  })
+
+  test('leaves an open list as it is, and an unfocused box to its focus', () => {
+    const wrapper = setup()
+    input(wrapper).simulate('click')
+    expect(rows(wrapper)).toHaveLength(0)
+
+    input(wrapper).simulate('focus')
+    input(wrapper).simulate('click')
+    expect(rows(wrapper)).toHaveLength(3)
+    wrapper.unmount()
+  })
+
+  test('keeps the value-label autocomplete shut while the box is empty', () => {
+    const wrapper = mount(<FilterLockPopoverContent authentication={sampleAuth} isOpen />)
+    input(wrapper).simulate('focus')
+    input(wrapper).simulate('click')
+    expect(rows(wrapper)).toHaveLength(0)
+    expect(fetchVLAutocomplete).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
 describe('without suggestionList', () => {
   test('still uses the value-label autocomplete', () => {
     const wrapper = mount(<FilterLockPopoverContent authentication={sampleAuth} isOpen />)

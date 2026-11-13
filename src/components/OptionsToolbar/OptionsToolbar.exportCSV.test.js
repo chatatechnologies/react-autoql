@@ -73,6 +73,20 @@ describe('OptionsToolbar fetchCSVAndExport query id', () => {
 
     wrapper.unmount()
   })
+
+  it("prefers the drilldown_query_id a cached tile response carries over the cached run's id", () => {
+    const wrapper = setup({
+      props: { queryId: 'q_cached_run' },
+      queryID: 'q_cached_run',
+      queryResponse: { data: { data: { text: 'SELECT 1', query_id: 'q_cached_run', drilldown_query_id: 'q_saved' } } },
+    })
+
+    wrapper.instance().fetchCSVAndExport()
+
+    expect(exportCSV.mock.calls[0][0].queryId).toBe('q_saved')
+
+    wrapper.unmount()
+  })
 })
 
 describe('OptionsToolbar fetchCSVAndExport failures', () => {
