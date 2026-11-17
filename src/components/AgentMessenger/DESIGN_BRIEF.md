@@ -169,8 +169,6 @@ The markup is stable; write specs against these hooks.
 │       │   │           │   │   ├── .react-autoql-agent-table-fade    (+ .is-hidden)
 │       │   │           │   │   └── .react-autoql-agent-table-pager   (+ .is-hidden)
 │       │   │           │   └── .react-autoql-agent-table-footer
-│       │   │           │       ├── .react-autoql-agent-table-track
-│       │   │           │       │   └── .react-autoql-agent-table-thumb
 │       │   │           │       └── .react-autoql-agent-table-range
 │       │   │           └── .react-autoql-agent-status-item      (+ .is-error | .is-info)
 │       │   │               ├── .react-autoql-agent-status-title

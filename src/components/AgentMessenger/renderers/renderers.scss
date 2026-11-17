@@ -211,26 +211,11 @@
 .react-autoql-agent-table-footer {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
   padding: 0.4375rem 0.75rem;
   border-top: 1px solid var(--am-border);
   background-color: var(--am-b1);
-}
-
-.react-autoql-agent-table-track {
-  position: relative;
-  flex: 1;
-  height: 3px;
-  border-radius: 2px;
-  background-color: var(--am-b3);
-}
-
-.react-autoql-agent-table-thumb {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  border-radius: 2px;
-  background-color: var(--am-accent);
 }
 
 .react-autoql-agent-table-range {
