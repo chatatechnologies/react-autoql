@@ -206,4 +206,11 @@ describe('RunningHeader as it prints', () => {
     const { container: other } = render(<RunningHeader title='Quarterly review — Brown Family' lock='Nguyen Family' />)
     expect(titleOf(other)).toBe('Quarterly review — Brown Family · Nguyen Family')
   })
+
+  it('names a long household once when the title has it cut short', () => {
+    const household = 'The Alexandra and Benjamin Featherstonehaugh-Montgomery Family Trust and Foundation Fund'
+    const title = `Quarterly review — ${Array.from(household).slice(0, 79).join('')}…`
+    const { container } = render(<RunningHeader title={title} lock={household} />)
+    expect(titleOf(container)).toBe(title)
+  })
 })

@@ -2,6 +2,7 @@ import React from 'react'
 import { RB } from '../constants'
 import { STRINGS } from '../strings'
 import { brandFontFaceCss, DEFAULT_BRAND_POSITION } from '../model/branding'
+import { titleLockName } from '../model/filterLocks'
 
 // The organisation's branding (model/branding.js), as the pages draw it.
 
@@ -130,9 +131,15 @@ const EditableRunningTitle = ({ title, onTitleChange, lock, onLockClick, lockLab
 }
 
 // Whether a title already ends with what the report is for, as a report made for each household is titled ("<its
-// title> — <the household>", RW-353): its header then doesn't say it a second time (RW-373).
-const titleEndsWithLock = (title, lock) =>
-  typeof title === 'string' && typeof lock === 'string' && !!lock && title.trimEnd().endsWith(` — ${lock}`)
+// title> — <the household>", RW-353, a long household cut short there): its header then doesn't say it a second
+// time (RW-373).
+const titleEndsWithLock = (title, lock) => {
+  if (typeof title !== 'string' || typeof lock !== 'string' || !lock) {
+    return false
+  }
+  const ending = title.trimEnd()
+  return ending.endsWith(` — ${lock}`) || ending.endsWith(` — ${titleLockName(lock)}`)
+}
 
 // The title and the lockup, the lockup left, centred or right (branding.position) and the title clear of it. A report
 // with a filter lock says what it's for after its title, on the same line, unless its title already ends with it:
