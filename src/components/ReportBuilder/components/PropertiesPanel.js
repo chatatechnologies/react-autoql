@@ -265,6 +265,8 @@ const RowsField = ({ block, view, onBlockChange }) => {
   // Before a run the column's display name isn't known, and its raw name ("sum(amount)") isn't one to show.
   const ordered = (view?.tile?.orders || []).some((order) => order?.name)
   const orderLabel = ready ? view.orderLabel : null
+  // A table that shows every row of its answer isn't its "first N rows" (RW-375).
+  const allShown = ready && !!view.complete
 
   let which
   // A capture keeps the order its table had when it was added, whatever its source.
@@ -273,16 +275,18 @@ const RowsField = ({ block, view, onBlockChange }) => {
       which = P.rowsCaptured(orderLabel)
     } else if (ordered) {
       which = P.rowsCapturedUnnamed
-    } else {
+    } else if (!allShown) {
       which = P.rowsCapturedUnsorted(block.rows)
     }
   } else if (block.source?.type === 'query') {
-    which = P.rowsQuestion(block.rows)
+    if (!allShown) {
+      which = P.rowsQuestion(block.rows)
+    }
   } else if (orderLabel) {
     which = P.rowsRanked(orderLabel)
   } else if (ordered) {
     which = P.rowsRankedUnnamed
-  } else {
+  } else if (!allShown) {
     which = P.rowsUnranked(block.rows)
   }
 
