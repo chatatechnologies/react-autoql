@@ -1868,6 +1868,9 @@ export class ReportsWithoutTheme extends React.Component {
 
   closeManageTemplates = () => this.setState({ manageTemplatesOpen: false })
 
+  // Manage templates › New report, offered while there's no template yet: a report to save as one.
+  newReportFromManageTemplates = () => this.setState({ manageTemplatesOpen: false, newReportOpen: true })
+
   // Manage templates › Edit: the template in the builder, in place of the tabs. What's waiting in the report shown is
   // saved first. Closed, it's back to Manage templates, which lists them again.
   editTemplate = (template) => {
@@ -2116,6 +2119,7 @@ export class ReportsWithoutTheme extends React.Component {
           <ManageTemplatesDialog
             authentication={authentication}
             onEdit={this.editTemplate}
+            onNewReport={this.newReportFromManageTemplates}
             onClose={this.closeManageTemplates}
           />
         ) : null}

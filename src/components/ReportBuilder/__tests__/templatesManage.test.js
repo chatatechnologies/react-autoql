@@ -275,6 +275,32 @@ describe('ManageTemplatesDialog', () => {
     })
   })
 
+  it('says in the middle when there’s no template yet, how one’s made, and offers New report', async () => {
+    fetchManagedTemplates.mockResolvedValue({ templates: [], totalPages: 1 })
+    fetchManagedCategories.mockResolvedValue([])
+    const onNewReport = jest.fn()
+    open({ onNewReport })
+
+    const none = await screen.findByTestId('reports-manage-no-templates')
+    expect(none).toHaveTextContent('No templates yet')
+    expect(none).toHaveTextContent('Make a report, then save it as a template from its ⋮ menu.')
+    fireEvent.click(within(none).getByRole('button', { name: 'New report' }))
+    expect(onNewReport).toHaveBeenCalled()
+
+    // The same for categories, with nothing to start from there: one is added above it.
+    fireEvent.click(screen.getByTestId('reports-manage-tab-categories'))
+    const noCategories = screen.getByTestId('reports-manage-no-categories')
+    expect(noCategories).toHaveTextContent('No categories yet')
+    expect(within(noCategories).queryByRole('button')).toBeNull()
+  })
+
+  it('offers no New report without somewhere to start one', async () => {
+    fetchManagedTemplates.mockResolvedValue({ templates: [], totalPages: 1 })
+    open()
+    const none = await screen.findByTestId('reports-manage-no-templates')
+    expect(within(none).queryByRole('button')).toBeNull()
+  })
+
   it('lists the organization’s templates, A to Z, drafts and published', async () => {
     open()
     await waitFor(() => expect(rows()).toHaveLength(2))

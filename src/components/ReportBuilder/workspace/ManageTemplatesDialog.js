@@ -30,7 +30,10 @@ import { detailsOf, detailsProblem, detailsToSend } from './templateDetails'
 // already made from a template keep their copy whatever happens to it. Each change is made one at a time, and what
 // went wrong is said beside the dialog's buttons.
 //
-// Props: authentication, onEdit (opens a template to be edited; without it there's no Edit), onClose.
+// With no template yet, it says how one is made, and offers New report (`onNewReport`) to make the report first.
+//
+// Props: authentication, onEdit (opens a template to be edited; without it there's no Edit), onNewReport (closes it
+// for New report; without it there's no New report), onClose.
 
 const S = REPORTS_STRINGS
 const M = S.manageTemplates
@@ -536,10 +539,43 @@ export class ManageTemplatesDialog extends React.Component {
     )
   }
 
+  // Nothing in a tab yet: said in the middle of it, with how to make one (`how`) and what can be done from here.
+  renderNone({ test, icon, title, how, action }) {
+    return (
+      <div className={`${RS}-manage-none`} data-test={test}>
+        {icon ? (
+          <span className={`${RS}-manage-none-icon`}>
+            <Icon name={icon} size={20} />
+          </span>
+        ) : null}
+        <p className={`${RS}-manage-none-title`}>{title}</p>
+        {how ? <p>{how}</p> : null}
+        {action}
+      </div>
+    )
+  }
+
   renderTemplates() {
     const { templates } = this.state
     if (!templates.length) {
-      return <p className={`${RS}-manage-empty`}>{M.noTemplates}</p>
+      const { onNewReport } = this.props
+      return this.renderNone({
+        test: 'reports-manage-no-templates',
+        icon: 'template',
+        title: M.noTemplates,
+        how: M.noTemplatesHow,
+        action: onNewReport ? (
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-variant='primary'
+            data-test='reports-manage-new-report'
+            onClick={onNewReport}
+          >
+            {M.newReport}
+          </button>
+        ) : null,
+      })
     }
     return <ul className={`${RS}-manage-list`}>{templates.map((template) => this.renderTemplate(template))}</ul>
   }
@@ -646,7 +682,7 @@ export class ManageTemplatesDialog extends React.Component {
         {ownCategories.length ? (
           <ul className={`${RS}-manage-list`}>{ownCategories.map((category) => this.renderCategory(category))}</ul>
         ) : (
-          <p className={`${RS}-manage-empty`}>{M.noCategories}</p>
+          this.renderNone({ test: 'reports-manage-no-categories', title: M.noCategories })
         )}
       </>
     )

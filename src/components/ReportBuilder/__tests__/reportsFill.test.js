@@ -813,6 +813,15 @@ describe('templates, for those who manage them (canManageTemplates)', () => {
     expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
   })
 
+  it('goes from Manage templates to New report, for a report to save as a template', async () => {
+    setup({ canManageTemplates: true })
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    act(() => homeProps.current.manageTemplates())
+    act(() => mockDialogs.manage.onNewReport())
+    expect(screen.queryByTestId('manage-templates-dialog')).toBeNull()
+    expect(screen.getByTestId('new-report-dialog')).toBeTruthy()
+  })
+
   it('edits a template from Manage templates in place of the tabs, and goes back to Manage templates after', async () => {
     createReportFromTemplate.mockResolvedValue({ ...stored(), created: true })
     setup({ canManageTemplates: true, autoQLConfig: { enableDrilldowns: true } })
