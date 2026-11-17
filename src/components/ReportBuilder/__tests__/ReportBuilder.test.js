@@ -575,6 +575,41 @@ describe('running a report', () => {
     expect(container.querySelector('[data-block-id="a"]').querySelectorAll('tbody tr[data-row]')).toHaveLength(50)
   })
 
+  it('says a question’s or an unsorted tile’s table shows its first rows only while it’s cut off (RW-375)', async () => {
+    const dashboards = [
+      {
+        id: 'd1',
+        name: 'Book of business',
+        tiles: [{ i: 'u', title: 'Accounts', query: 'accounts', displayType: 'table' }],
+      },
+    ]
+    const blocks = createEmptyReport({
+      blocks: [
+        { id: 'q', type: 'data', source: { type: 'query', query: 'aum by account' }, rows: 25 },
+        { id: 'u', type: 'data', source: tileSourceOf('u'), rows: 25 },
+      ],
+    })
+    const noteOf = (index) => {
+      selectBlock('Data', index)
+      return within(panel()).getByText(/A printed page can’t scroll/).textContent
+    }
+
+    runQuery.mockResolvedValue(responseOf(rowsOf(100), 30044))
+    const cutOff = setupRunning(blocks, { dashboards })
+    fireEvent.click(screen.getByTestId('report-builder-run'))
+    await waitFor(() => expect(cutOff.container.querySelectorAll('tbody tr[data-row]')).toHaveLength(50))
+    expect(noteOf(0)).toContain('Nothing sorts a question’s rows, so these are the first 25 as returned.')
+    expect(noteOf(1)).toContain('The tile isn’t sorted, so these are the first 25 rows as returned, not a top 25.')
+    cutOff.unmount()
+
+    runQuery.mockResolvedValue(responseOf(rowsOf(9)))
+    const whole = setupRunning(blocks, { dashboards })
+    fireEvent.click(screen.getByTestId('report-builder-run'))
+    await waitFor(() => expect(whole.container.querySelectorAll('tbody tr[data-row]')).toHaveLength(18))
+    expect(noteOf(0)).not.toMatch(/first|as returned/)
+    expect(noteOf(1)).not.toMatch(/first|not a top/)
+  })
+
   it('totals a complete result, and only then', async () => {
     runQuery.mockResolvedValue(responseOf(rowsOf(8)))
     setupRunning(report())
@@ -964,6 +999,14 @@ describe('blocks that carry what was captured (the default: no Run report)', () 
     expect(within(panel()).getByText(/The table wasn’t sorted when it was added/).textContent).toContain(
       'these are its first 25 rows, not a top 25',
     )
+  })
+
+  it('says nothing of first rows when a capture shows every row (RW-375)', () => {
+    setup(captured(captureOf({ rows: rowsOf(9), countRows: 9 })))
+    selectBlock('Data')
+    const rows = within(panel()).getByTestId('report-builder-rows')
+    expect(rows.selectedOptions[0].textContent).toBe('All 9 rows')
+    expect(within(panel()).getByText(/A printed page can’t scroll/).textContent).not.toMatch(/first|not a top/)
   })
 
   it('shows every captured row once Rows asks for them', () => {
