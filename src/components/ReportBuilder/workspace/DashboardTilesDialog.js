@@ -135,7 +135,9 @@ export class DashboardTilesDialog extends React.Component {
 
   // Once a dashboard's Dashboard is mounted, has it answer its tiles from its cached answers, as the dashboard page
   // does on load — unless every tile with a question has an answer already, as the host may have passed in. Once
-  // per mounted Dashboard. The tiles an earlier run ended without an answer for are loading again meanwhile.
+  // per mounted Dashboard. Each tile's question is asked on its own (executeSingleTile), so a tile that ends without
+  // an answer stops loading when its own request ends, not the slowest tile's (RW-374). The tiles an earlier run
+  // ended without an answer for are loading again meanwhile.
   runAnswers() {
     const dashboardRef = this.dashboardRef
     if (!dashboardRef || dashboardRef === this.answeredBy) {
@@ -146,38 +148,42 @@ export class DashboardTilesDialog extends React.Component {
     if (!tiles.some((tile) => hasQuestion(tile) && !tile.queryResponse)) {
       return
     }
-    this.setUnanswered(dashboard, NO_KEYS)
-    try {
-      dashboardRef
-        .executeCachedDashboard?.()
-        ?.then?.((answered) => this.noteUnanswered(dashboardRef, dashboard, answered))
-        ?.catch?.(() => {
-          // Each tile shows its own error.
+    this.clearUnanswered(dashboard)
+    tiles.filter(hasQuestion).forEach((tile) => {
+      const key = getTileKey(tile)
+      let asked
+      try {
+        asked = dashboardRef.executeSingleTile?.(key)
+      } catch (error) {
+        // The tile shows its own error.
+        return
+      }
+      Promise.resolve(asked)
+        .then((answered) => this.noteUnanswered(dashboardRef, dashboard, key, answered))
+        .catch(() => {
+          // Cancelled, or the tile shows its own error.
         })
-    } catch (error) {
-      // Each tile shows its own error.
-    }
+    })
   }
 
-  // Once the Dashboard has asked every tile's question, each tile comes back with the answer it ended with. A tile
-  // that ended with none (its request failed, or was cut off, with no response at all) stops loading here (RW-374).
-  // What a Dashboard no longer shown, or one of a closed dialog, comes back with is dropped.
-  noteUnanswered = (dashboardRef, dashboard, answered) => {
-    if (this.unmounted || dashboardRef !== this.answeredBy || !Array.isArray(answered)) {
+  // A tile's question comes back with the tile and the answer it ended with. One that ended with none (its request
+  // failed, or was cut off, with no response at all) isn't loading any more (RW-374). Nothing back means nothing was
+  // asked. What a Dashboard no longer shown, or one of a closed dialog, comes back with is dropped.
+  noteUnanswered = (dashboardRef, dashboard, key, answered) => {
+    if (this.unmounted || dashboardRef !== this.answeredBy || !answered || answered.queryResponse) {
       return
     }
-    const keys = answered.filter((tile) => hasQuestion(tile) && !tile.queryResponse).map(getTileKey)
-    if (keys.length) {
-      this.setUnanswered(dashboard, new Set(keys))
-    }
+    const id = String(dashboard.id)
+    this.setState(({ unansweredById }) => ({
+      unansweredById: { ...unansweredById, [id]: new Set([...(unansweredById[id] || NO_KEYS), key]) },
+    }))
   }
 
-  setUnanswered = (dashboard, keys) => {
+  clearUnanswered = (dashboard) => {
     const id = String(dashboard?.id)
-    if (!dashboard || (!keys.size && !this.state.unansweredById[id]?.size)) {
-      return
+    if (dashboard && this.state.unansweredById[id]?.size) {
+      this.setState(({ unansweredById }) => ({ unansweredById: { ...unansweredById, [id]: NO_KEYS } }))
     }
-    this.setState(({ unansweredById }) => ({ unansweredById: { ...unansweredById, [id]: keys } }))
   }
 
   // The Dashboard's tiles, answers included as they arrive: kept for this dashboard, and handed to the host. An answer
