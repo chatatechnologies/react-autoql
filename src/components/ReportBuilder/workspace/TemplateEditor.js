@@ -3,6 +3,7 @@ import { Icon } from '../components/icons'
 import { ReportBuilder } from '../ReportBuilder'
 import { isNewerSchema } from '../model/reportSchema'
 import { setTitle, updateBlock } from '../model/reportOperations'
+import { withoutApproval } from '../model/approval'
 import { fetchReportCategories } from '../run/reportsApi'
 import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
@@ -44,10 +45,11 @@ const FILLING = { state: 'filling' }
 
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true })
 
-// What a template is saved as: its document without the answers shown here. AutoQL takes out whatever else of the
-// admin's data is left in it (table filters, legends, an analysis's wording), as it does for Save as template.
+// What a template is saved as: its document without the answers shown here, and never approved (RW-372). AutoQL takes
+// out whatever else of the admin's data is left in it (table filters, legends, an analysis's wording), as it does for
+// Save as template.
 export const templateDocumentOf = (report) => {
-  const asked = withQuestionsAskedHere(report)
+  const asked = withQuestionsAskedHere(withoutApproval(report))
   return stripQueryResponses({
     ...asked,
     blocks: asked.blocks.map((block) => {

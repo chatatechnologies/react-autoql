@@ -4,7 +4,8 @@ import { authenticationType } from '../../../props/types'
 import { Icon } from '../components/icons'
 import { createEmptyReport } from '../model/reportSchema'
 import { normalizeFilterLocks } from '../model/filterLocks'
-import { appendReportBlock, createReport, fetchReports } from '../run/reportsApi'
+import { appendReportBlock, createReport, fetchReport, fetchReports } from '../run/reportsApi'
+import { heldApproval } from '../model/approval'
 import { REPORTS_PAGE_SIZE, RS } from './reportsConstants'
 import {
   REPORT_TITLE_MAX,
@@ -24,6 +25,9 @@ import './Reports.scss'
 // of one of the user's saved reports, or of a new one. The reports are the user's own on the token's data source,
 // kept by AutoQL's report service. Afterwards the host hears where it went (onAdded): it shows its own confirmation,
 // and may open the report.
+//
+// With enableApproval (RW-372), a report chosen is read to see whether it's approved: adding to it returns it to
+// draft (its approval holds for the report as it was approved), which is said under it before anything is added.
 
 const S = REPORTS_STRINGS.addToReport
 
@@ -58,12 +62,16 @@ export class AddToReportDialog extends React.Component {
     // Called once the block is added, before onClose, with { id, title, created }: created is true when a new
     // report was made for it.
     onAdded: PropTypes.func,
+    // Reports are approved before they go out (Reports' enableApproval): a report chosen that's approved says adding
+    // to it returns it to draft. Off by default.
+    enableApproval: PropTypes.bool,
   }
 
   static defaultProps = {
     authentication: undefined,
     sessionFilterLocks: undefined,
     onAdded: undefined,
+    enableApproval: false,
   }
 
   constructor(props) {
@@ -82,6 +90,8 @@ export class AddToReportDialog extends React.Component {
       name: '',
       error: null,
       adding: false,
+      // With enableApproval: report id → whether it's approved, once it's been read.
+      approved: {},
     }
   }
 
@@ -100,6 +110,26 @@ export class AddToReportDialog extends React.Component {
     if (isNaming(this.state) && !isNaming(prevState)) {
       this.nameRef.current?.focus()
     }
+    if (this.state.chosenId !== prevState.chosenId) {
+      this.checkApproved(this.state.chosenId)
+    }
+  }
+
+  // Whether a report chosen is approved, read once while the dialog is open. Nothing is said where it can't be read:
+  // adding still returns an approved report to draft.
+  checkApproved = (id) => {
+    const { authentication, enableApproval } = this.props
+    if (!enableApproval || !id || id === NEW_REPORT || id in this.state.approved) {
+      return
+    }
+    fetchReport({ authentication, id }).then(
+      (detail) => {
+        if (this.mounted) {
+          this.setState(({ approved }) => ({ approved: { ...approved, [id]: !!heldApproval(detail?.report, id) } }))
+        }
+      },
+      () => {},
+    )
   }
 
   componentWillUnmount() {
@@ -242,6 +272,11 @@ export class AddToReportDialog extends React.Component {
                 <span className={`${RS}-choice-name`}>{titleOf(report)}</span>
                 {edited ? <span className={`${RS}-choice-aside`}>{edited}</span> : null}
               </label>
+              {checked && this.state.approved[report.id] ? (
+                <p className={`${RS}-choice-more ${RS}-choice-note`} data-test='reports-add-to-report-approved'>
+                  {S.approved}
+                </p>
+              ) : null}
             </li>
           )
         })}

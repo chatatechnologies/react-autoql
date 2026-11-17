@@ -345,6 +345,12 @@ export class ReportsWithoutTheme extends React.Component {
     enableFilterLocks: PropTypes.bool,
     loadFilterLockSuggestions: PropTypes.func,
     filterLockLabels: PropTypes.shape({ title: PropTypes.string, none: PropTypes.string }),
+    // Reports are approved before they go out (RW-372): a report prints as a draft, with DRAFT across every page, until
+    // it's approved, and then "Prepared by {name}, {date}" at the foot of every page (see ReportBuilder's
+    // enableApproval). approverName is the signed-in user's name, which approvals are made under. Templates, and the
+    // reports started from them, start as drafts. Off by default.
+    enableApproval: PropTypes.bool,
+    approverName: PropTypes.string,
     // Passed on to each report's ReportBuilder.
     branding: PropTypes.object,
     enableBranding: PropTypes.bool,
@@ -379,6 +385,8 @@ export class ReportsWithoutTheme extends React.Component {
     enableFilterLocks: false,
     loadFilterLockSuggestions: undefined,
     filterLockLabels: undefined,
+    enableApproval: false,
+    approverName: undefined,
     branding: undefined,
     enableBranding: false,
     canEditBranding: false,
@@ -1327,9 +1335,15 @@ export class ReportsWithoutTheme extends React.Component {
       opened: opened?.id === id ? { id, report: next } : opened,
       reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
     }))
-    // Saved by a newer version of the builder: shown, but never saved over.
+    // Saved by a newer version of the builder: shown, but never saved over. Approved, or back to draft (RW-372), it's
+    // saved at once rather than after the pause edits wait for.
     if (!isNewerSchema(next)) {
-      this.savers.get(id)?.edit(next)
+      const saver = this.savers.get(id)
+      const approvalChanged = !!saver && saver.report?.approval !== next?.approval
+      saver?.edit(next)
+      if (approvalChanged) {
+        saver.flush()
+      }
     }
   }
 
@@ -2005,6 +2019,9 @@ export class ReportsWithoutTheme extends React.Component {
           onSaveAsTemplate={this.canManageTemplates() && !readOnly && !filling ? this.openSaveAsTemplate : undefined}
           pickDashboardTiles={dashboards === undefined ? undefined : this.pickDashboardTiles}
           lockChangedAt={this.locksPutOn.get(active.id)}
+          enableApproval={this.props.enableApproval}
+          approverName={this.props.approverName}
+          reportId={active.id}
           toolbarStatus={
             !readOnly && !filling && saveState ? (
               <SaveStatus

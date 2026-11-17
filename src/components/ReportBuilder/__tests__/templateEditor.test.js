@@ -118,6 +118,11 @@ beforeEach(() => {
 })
 
 describe('templateDocumentOf', () => {
+  it('leaves out an approval the report had (RW-372)', () => {
+    const approval = { name: 'Dana Lee', at: '2026-11-17T18:00:00.000Z', fingerprint: 'abc' }
+    expect(templateDocumentOf({ ...DOCUMENT, approval })).not.toHaveProperty('approval')
+  })
+
   it('leaves out the answers, and makes every question one its reports can ask again', () => {
     const report = {
       ...DOCUMENT,

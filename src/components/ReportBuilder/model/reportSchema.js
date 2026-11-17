@@ -13,6 +13,7 @@ import {
   WIDTH_OPTIONS,
 } from '../constants'
 import { normalizeFilterLocks } from './filterLocks'
+import { normalizeApproval } from './approval'
 
 // A report is a template: its blocks say what to show, never the data itself. Everything here is
 // plain JSON, so a host can persist it as-is. Query responses live only in the builder's state.
@@ -195,7 +196,8 @@ export const createEmptyReport = (overrides = {}) => {
 
 // Fills defaults, validates every value against the options the builder offers, and gives each
 // block an id. Unknown top-level fields and unknown block types are kept. A filter lock (model/filterLocks.js) keeps
-// only real locks, and goes when none is left, so a report without one never gains the field.
+// only real locks, and goes when none is left, so a report without one never gains the field. An approval
+// (model/approval.js, an optional field the report service doesn't read) is kept when it could be one.
 export const normalizeReport = (report) => {
   if (!isObject(report)) {
     return createEmptyReport()
@@ -213,6 +215,14 @@ export const normalizeReport = (report) => {
       normalized.sessionFilterLocks = locks
     } else {
       delete normalized.sessionFilterLocks
+    }
+  }
+  if ('approval' in report) {
+    const approval = normalizeApproval(report.approval)
+    if (approval) {
+      normalized.approval = approval
+    } else {
+      delete normalized.approval
     }
   }
   return normalized

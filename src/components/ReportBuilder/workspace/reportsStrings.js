@@ -398,5 +398,7 @@ export const REPORTS_STRINGS = {
     noDataSource: 'Reports can’t be used until a data source is selected.',
     adding: 'Adding…',
     add: 'Add to report',
+    // With enableApproval (RW-372), said under an approved report while it's chosen.
+    approved: 'This report is approved. Adding to it returns it to draft.',
   },
 }

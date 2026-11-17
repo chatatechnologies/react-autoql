@@ -233,6 +233,19 @@ describe('SaveAsTemplateDialog', () => {
     )
   })
 
+  it('leaves out an approval the report had (RW-372): AutoQL copies the report as it was', async () => {
+    createTemplateFromReport.mockResolvedValue(template('tp1', 'Q3 book review'))
+    // Its questions marked already, and titled as it's saved: only the approval is taken out.
+    const document = { ...REPORT, blocks: [{ ...REPORT.blocks[0], askedHere: true }] }
+    const approval = { name: 'Dana Lee', at: '2026-11-17T18:00:00.000Z', fingerprint: 'abc' }
+    fetchManagedTemplate.mockResolvedValue({ ...template('tp1', 'Q3 book review'), report: { ...document, approval } })
+    updateTemplate.mockResolvedValue(template('tp1', 'Q3 book review'))
+    open()
+    await save()
+
+    expect(updateTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp1', document })
+  })
+
   it('is made even when its questions can’t be marked', async () => {
     createTemplateFromReport.mockResolvedValue(template('tp1', 'Quarterly review'))
     fetchManagedTemplate.mockRejectedValueOnce(new ReportsApiError({ status: 0 }))

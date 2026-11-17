@@ -941,7 +941,12 @@ describe('templates, for those who manage them (canManageTemplates)', () => {
 
   it('edits a template from Manage templates in place of the tabs, and goes back to Manage templates after', async () => {
     createReportFromTemplate.mockResolvedValue({ ...stored(), created: true })
-    setup({ canManageTemplates: true, autoQLConfig: { enableDrilldowns: true } })
+    setup({
+      canManageTemplates: true,
+      autoQLConfig: { enableDrilldowns: true },
+      enableApproval: true,
+      approverName: 'Dana Lee',
+    })
     await startFromTemplate()
     act(() => mockBuilder.props.onChange({ ...mockBuilder.props.report, title: 'Q3 review' }))
     act(() => homeProps.current.manageTemplates())
@@ -958,6 +963,9 @@ describe('templates, for those who manage them (canManageTemplates)', () => {
       title: 'Monthly review',
       builderProps: { authentication: AUTH, autoQLConfig: { enableDrilldowns: true } },
     })
+    // A template is never approved (RW-372): its builder has no approval.
+    expect(mockEditor.props.builderProps).not.toHaveProperty('enableApproval')
+    expect(mockEditor.props.builderProps).not.toHaveProperty('approverName')
     // What was waiting in the report shown was saved first.
     await waitFor(() =>
       expect(saveReport).toHaveBeenCalledWith(
