@@ -2743,6 +2743,35 @@ describe('the title where it shows on the page (RW-363)', () => {
     expect(screen.getAllByTestId('report-running-lock')[0].textContent).toBe(' · Brown Family')
   })
 
+  // A report made for each household is titled "<its title> — <the household>" (RW-353).
+  it('names the household once when the title already ends with it (RW-373)', () => {
+    setup(
+      { ...createEmptyReport({ title: 'Quarterly review — Brown Family' }), sessionFilterLocks: [BROWN] },
+      { enableFilterLocks: true, filterLockLabels: LABELS },
+    )
+    const titles = screen.getAllByTestId('report-running-title')
+    titles.forEach((title) =>
+      expect(title.closest('.react-autoql-report-builder-running-title').textContent).toBe(
+        'Quarterly review — Brown Family',
+      ),
+    )
+    expect(screen.queryAllByTestId('report-running-lock')).toHaveLength(0)
+    // It's still set in the side panel.
+    expect(within(panel()).getByTestId('report-filter-lock-value').textContent).toBe('Brown Family')
+  })
+
+  it('still names the household when the title ends with another one (RW-373)', () => {
+    const NGUYEN = { key: 'household', value: 'Nguyen Family', filter_type: 'include', format_txt: 'Nguyen Family' }
+    setup(
+      { ...createEmptyReport({ title: 'Quarterly review — Brown Family' }), sessionFilterLocks: [NGUYEN] },
+      { enableFilterLocks: true, filterLockLabels: LABELS },
+    )
+    const [title] = screen.getAllByTestId('report-running-title')
+    expect(title.closest('.react-autoql-report-builder-running-title').textContent).toBe(
+      'Quarterly review — Brown Family · Nguyen Family',
+    )
+  })
+
   it('says what the cover and contents are made from, and opens their settings and the preview', async () => {
     setup(withFrontMatter(createEmptyReport({ blocks: [heading] })))
     expect(screen.getByText(/made from the report’s title and headings\./)).toBeTruthy()
