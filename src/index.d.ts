@@ -1118,6 +1118,8 @@ export declare function deleteReportTag(options: ReportsCall & { id: string }): 
 export interface ReportsNotice {
   tone: 'error' | 'info'
   text: string
+  // A batch being made from a template (RW-371) says how it's going with Stop.
+  action?: { label: string; onClick: () => void }
 }
 
 // What renderHome draws the home page from.
@@ -1216,6 +1218,11 @@ export interface ReportsProps {
   // signed-in user's name. Templates, and reports started from them, start as drafts. Off by default.
   enableApproval?: boolean
   approverName?: string
+  // With enableFilterLocks: the most reports one batch from a template may make (a report for each household), so it
+  // can differ by role; null for no limit. 50 by default (RW-371).
+  batchLimit?: number | null
+  // Told when a batch of reports starts (true) and once it's over (false): ask before leaving while one runs.
+  onBatchRunningChange?: (running: boolean) => void
   // Passed on to each report's ReportBuilder.
   branding?: ReportBranding
   enableBranding?: boolean
@@ -1238,6 +1245,10 @@ export declare class Reports extends React.Component<ReportsProps> {
   hasUnsavedChanges(): boolean
   // Saves the report shown, now.
   saveNow(): void
+  // Whether a batch of reports is being made from a template here (RW-371).
+  isBatchRunning(): boolean
+  // Stops it: the reports under way are finished, and no more are started.
+  stopBatch(): void
   // Lists the reports again.
   reload(): void
 }

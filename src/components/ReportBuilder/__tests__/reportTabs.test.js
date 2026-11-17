@@ -2,6 +2,8 @@ import React from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { ReportTabs } from '../workspace/ReportTabs'
 import {
+  BATCH_LEASE_MS,
+  BATCH_LEASE_STORAGE_KEY,
   DEFAULT_STORAGE_PREFIX,
   PENDING_LOCKS_STORAGE_KEY,
   PENDING_TITLES_STORAGE_KEY,
@@ -13,6 +15,8 @@ import {
   loadPendingLocks,
   loadPendingTitles,
   loadTabWidths,
+  releaseBatchLease,
+  takeBatchLease,
   MIN_TAB_WIDTH,
   saveOpenTabs,
   savePendingLocks,
@@ -222,6 +226,41 @@ describe('template names still to put on', () => {
       throw new Error('QuotaExceededError')
     })
     expect(() => savePendingTitles(PREFIX, new Map([['r1', NAME]]))).not.toThrow()
+  })
+})
+
+describe('one batch at a time in this browser (RW-371)', () => {
+  const KEY = `${PREFIX}${BATCH_LEASE_STORAGE_KEY}`
+
+  it('is taken by one tab, renewed by it, and turned down for another until it’s let go or runs out', () => {
+    expect(takeBatchLease(PREFIX, 'tab-a', 1000)).toBe(true)
+    expect(JSON.parse(window.localStorage.getItem(KEY))).toEqual({ owner: 'tab-a', heartbeatAt: 1000 })
+    expect(takeBatchLease(PREFIX, 'tab-b', 2000)).toBe(false)
+    expect(takeBatchLease(PREFIX, 'tab-a', 3000)).toBe(true)
+    expect(JSON.parse(window.localStorage.getItem(KEY)).heartbeatAt).toBe(3000)
+
+    // Another tab can't let it go.
+    releaseBatchLease(PREFIX, 'tab-b')
+    expect(takeBatchLease(PREFIX, 'tab-b', 4000)).toBe(false)
+    releaseBatchLease(PREFIX, 'tab-a')
+    expect(window.localStorage.getItem(KEY)).toBeNull()
+    expect(takeBatchLease(PREFIX, 'tab-b', 5000)).toBe(true)
+
+    // Not renewed for long enough: the tab that held it is gone.
+    expect(takeBatchLease(PREFIX, 'tab-c', 5000 + BATCH_LEASE_MS)).toBe(true)
+    expect(JSON.parse(window.localStorage.getItem(KEY)).owner).toBe('tab-c')
+  })
+
+  it('lets every tab make one without a prefix, or with what’s kept unreadable, or with storage blocked', () => {
+    expect(takeBatchLease(undefined, 'tab-a')).toBe(true)
+    expect(takeBatchLease(undefined, 'tab-b')).toBe(true)
+    window.localStorage.setItem(KEY, '{not json')
+    expect(takeBatchLease(PREFIX, 'tab-a')).toBe(true)
+    jest.spyOn(window.Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    window.localStorage.removeItem(KEY)
+    expect(takeBatchLease(PREFIX, 'tab-b')).toBe(true)
   })
 })
 

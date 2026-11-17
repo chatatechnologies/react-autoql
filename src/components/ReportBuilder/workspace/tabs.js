@@ -1,4 +1,6 @@
 import {
+  BATCH_LEASE_MS,
+  BATCH_LEASE_STORAGE_KEY,
   PENDING_LOCKS_STORAGE_KEY,
   PENDING_TITLES_STORAGE_KEY,
   TAB_WIDTHS_STORAGE_KEY,
@@ -176,6 +178,58 @@ export const savePendingTitles = (prefix, pending) => {
     writeAll(key, Object.fromEntries(Array.from(pending).slice(-MAX_PENDING_LOCKS)))
   } catch (error) {
     // Storage full or blocked: a title waits only while the page is open.
+  }
+}
+
+// ---------------------------------------------------------------- one batch at a time (RW-371)
+
+// The lease on making a batch of reports in this browser: { owner, heartbeatAt }, `owner` the tab holding it. Without a
+// prefix, nothing is kept, and every tab may make one. Storage that can't be read or written doesn't stop a batch.
+const readLease = (key) => {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) || 'null')
+    return isObject(parsed) && typeof parsed.owner === 'string' && typeof parsed.heartbeatAt === 'number'
+      ? parsed
+      : null
+  } catch (error) {
+    return null
+  }
+}
+
+// Who else is making a batch: the tab holding a lease renewed in the last BATCH_LEASE_MS, unless it's `owner`.
+export const batchLeaseHolder = (prefix, owner, now = Date.now()) => {
+  const key = keyFor(prefix, BATCH_LEASE_STORAGE_KEY)
+  const lease = key ? readLease(key) : null
+  return lease && lease.owner !== owner && now - lease.heartbeatAt < BATCH_LEASE_MS ? lease.owner : null
+}
+
+// Takes (or renews) the lease for `owner`: false while another tab holds it.
+export const takeBatchLease = (prefix, owner, now = Date.now()) => {
+  const key = keyFor(prefix, BATCH_LEASE_STORAGE_KEY)
+  if (!key) {
+    return true
+  }
+  if (batchLeaseHolder(prefix, owner, now)) {
+    return false
+  }
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ owner, heartbeatAt: now }))
+  } catch (error) {
+    // Kept nowhere: this tab goes on.
+  }
+  return true
+}
+
+// Lets another tab make one: only `owner`'s own lease goes.
+export const releaseBatchLease = (prefix, owner) => {
+  const key = keyFor(prefix, BATCH_LEASE_STORAGE_KEY)
+  if (!key || readLease(key)?.owner !== owner) {
+    return
+  }
+  try {
+    window.localStorage.removeItem(key)
+  } catch (error) {
+    // It runs out by itself.
   }
 }
 

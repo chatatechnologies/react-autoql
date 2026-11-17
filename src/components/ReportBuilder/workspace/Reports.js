@@ -30,6 +30,7 @@ import {
 } from '../run/reportsApi'
 import {
   BATCH_AT_ONCE,
+  BATCH_HEARTBEAT_MS,
   BATCH_QUESTIONS_AT_ONCE,
   DEFAULT_STORAGE_PREFIX,
   FILL_POLL_MAX_MS,
@@ -57,14 +58,17 @@ import {
   loadPendingLocks,
   loadPendingTitles,
   loadTabWidths,
+  releaseBatchLease,
   saveOpenTabs,
   savePendingLocks,
   savePendingTitles,
   saveTabWidths,
+  takeBatchLease,
   widthsFor,
   withTabClosed,
   withTabOpen,
 } from './tabs'
+import { lookUpFilterLock } from '../run/filterLockLookup'
 import { ReportTabs } from './ReportTabs'
 import { SaveStatus } from './SaveStatus'
 import { NewReportDialog } from './NewReportDialog'
@@ -292,6 +296,14 @@ const PlainHome = ({ reports, listError, retryList, openReport, notices }) => {
       {notices.map((notice) => (
         <p key={notice.text} className={notice.tone === 'error' ? `${RS}-error` : `${RS}-note`} role='status'>
           {notice.text}
+          {notice.action ? (
+            <>
+              {' '}
+              <button type='button' className={`${RS}-button`} onClick={notice.action.onClick}>
+                {notice.action.label}
+              </button>
+            </>
+          ) : null}
         </p>
       ))}
       {content}
@@ -351,6 +363,11 @@ export class ReportsWithoutTheme extends React.Component {
     // reports started from them, start as drafts. Off by default.
     enableApproval: PropTypes.bool,
     approverName: PropTypes.string,
+    // With enableFilterLocks: the most reports one batch from a template may make (a report for each household, RW-371),
+    // so it can differ by role; null for no limit. 50 by default. And told when a batch starts (true) and once it's
+    // over (false), to ask before leaving while one runs: stopBatch() and isBatchRunning() go with it.
+    batchLimit: PropTypes.number,
+    onBatchRunningChange: PropTypes.func,
     // Passed on to each report's ReportBuilder.
     branding: PropTypes.object,
     enableBranding: PropTypes.bool,
@@ -387,6 +404,8 @@ export class ReportsWithoutTheme extends React.Component {
     filterLockLabels: undefined,
     enableApproval: false,
     approverName: undefined,
+    batchLimit: undefined,
+    onBatchRunningChange: undefined,
     branding: undefined,
     enableBranding: false,
     canEditBranding: false,
@@ -402,6 +421,8 @@ export class ReportsWithoutTheme extends React.Component {
 
   constructor(props) {
     super(props)
+    // This tab, as the one holding the lease on making a batch in this browser (RW-371).
+    this.tabId = newReportId()
     // One saver per report opened here, so each keeps its own waiting or failed save, and the data source each
     // is on: its saves go with that one's credentials (the latest seen), even once another is shown.
     this.savers = new Map()
@@ -456,6 +477,8 @@ export class ReportsWithoutTheme extends React.Component {
       notSaved: NO_IDS,
       actionError: null,
       notice: null,
+      // What a batch being made says, while it runs (RW-371): { text, stoppable }.
+      batchNotice: null,
       deletingId: null,
       tilePicker: null,
       newReportOpen: false,
@@ -554,6 +577,9 @@ export class ReportsWithoutTheme extends React.Component {
 
   componentWillUnmount() {
     this.mounted = false
+    if (this.batch) {
+      this.dropBatch(this.batch)
+    }
     this.batch = null
     window.removeEventListener('pagehide', this.onPageHide)
     window.removeEventListener('beforeunload', this.onBeforeUnload)
@@ -579,6 +605,9 @@ export class ReportsWithoutTheme extends React.Component {
   // saved.
   hasUnsavedChanges = () =>
     [...this.savers.values()].some((saver) => saver.hasUnsaved) || !!this.templateEditor.current?.hasUnsaved()
+
+  // Whether a batch of reports is being made here (RW-371): a host asks before leaving while one is.
+  isBatchRunning = () => !!this.batch
 
   // Saves the report shown, now (the save control and ⌘S / Ctrl+S do this).
   saveNow = () => {
@@ -613,6 +642,7 @@ export class ReportsWithoutTheme extends React.Component {
       listError: null,
       listMissing: null,
       notice: null,
+      batchNotice: null,
       actionError: null,
       tabs: [],
       tabWidths: {},
@@ -967,11 +997,12 @@ export class ReportsWithoutTheme extends React.Component {
   }
 
   // A save still waiting or on its way: start it, and let the browser ask before the page closes. A template being
-  // edited is saved only with its Save, so the browser asks about its changes too.
+  // edited is saved only with its Save, so the browser asks about its changes too, as it does while a batch of reports
+  // is being made (RW-371): the reports not made yet wouldn't be.
   onBeforeUnload = (e) => {
     const unsaved = [...this.savers.values()].filter((saver) => saver.hasUnsaved)
     const templateUnsaved = !!this.templateEditor.current?.hasUnsaved()
-    if (!unsaved.length && !templateUnsaved) {
+    if (!unsaved.length && !templateUnsaved && !this.batch) {
       return
     }
     unsaved.forEach((saver) => saver.flush({ keepalive: true }))
@@ -1630,34 +1661,52 @@ export class ReportsWithoutTheme extends React.Component {
   // a folder of their own, named for the template and the day, each for one of them and named for it. They're made and
   // filled in a few at a time — by AutoQL, or by this page where AutoQL doesn't fill reports itself — while the home
   // page lists them and says how it's going. Each is saved as it's done, so the page stays open until then. `starts`
-  // are [{ id, lock }], an id for each from the dialog (the same one when it tries again). Resolves once they're under
-  // way; rejects with why none were made.
+  // are [{ id, lock }], or [{ id, name }] for values picked all at once, each looked up as its report is made (RW-371);
+  // an id for each from the dialog (the same one when it tries again). Resolves once they're under way; rejects with
+  // why none were made.
+  //
+  // RW-371: one batch at a time in this browser, whichever tab (a lease kept under the host's prefix); the reports made
+  // in the day's folder from the same template earlier (a batch stopped, or the page closed on one) aren't made again;
+  // Stop (stopBatch) lets those under way finish and starts no more; and the host hears while one runs
+  // (onBatchRunningChange), as the browser does before the page closes.
   startEachFromTemplate = async ({ templateId, title, starts }) => {
     if (this.batch) {
       throw new ReportsApiError({ status: 409, code: 'REPORT_BATCH_UNDER_WAY' })
+    }
+    if (!takeBatchLease(this.storagePrefix(), this.tabId)) {
+      throw new ReportsApiError({ status: 409, code: 'REPORT_BATCH_ELSEWHERE' })
     }
     const sourceId = this.sourceId
     // What the reports' data is as of, wherever it's filled in.
     const startedAt = new Date().toISOString()
     const batch = { sourceId, templateId, title, startedAt, folder: null, total: starts.length, queue: [...starts] }
-    Object.assign(batch, { done: 0, partly: 0, unfinished: 0, gone: 0, failed: [] })
+    Object.assign(batch, { done: 0, partly: 0, unfinished: 0, gone: 0, failed: [], notFound: [], skipped: 0 })
+    batch.stopped = false
     // Under way from here: another can't start while this one's folder is made.
     this.batch = batch
+    this.leaseTimer = setInterval(() => this.keepBatchLease(batch), BATCH_HEARTBEAT_MS)
+    this.props.onBatchRunningChange?.(true)
     this.saveNow()
     try {
       batch.folder = await this.createFolder(batchFolderName(title, new Date()))
+      await this.skipMadeAlready(batch)
     } catch (error) {
-      this.batch = this.batch === batch ? null : this.batch
+      this.dropBatch(batch)
       throw error
     }
     if (this.batch !== batch || !this.stillOn(sourceId)) {
-      this.batch = this.batch === batch ? null : this.batch
+      this.dropBatch(batch)
       return
     }
-    this.setState({ newReportOpen: false, actionError: null })
+    // What the last batch said goes: this one says how it's going.
+    this.setState({ newReportOpen: false, actionError: null, notice: null })
+    if (!batch.queue.length) {
+      this.endBatch(batch)
+      return
+    }
     this.sayBatch(batch)
     const worker = async () => {
-      while (batch.queue.length && this.batch === batch) {
+      while (batch.queue.length && this.batch === batch && !batch.stopped) {
         const start = batch.queue.shift()
         try {
           await this.makeOneOfBatch(batch, start)
@@ -1670,11 +1719,97 @@ export class ReportsWithoutTheme extends React.Component {
     }
     // However its reports went, the batch ends, so another can start.
     const end = () => this.endBatch(batch)
-    Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, starts.length) }, worker)).then(end, end)
+    Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, batch.queue.length) }, worker)).then(end, end)
   }
 
-  // One of a batch's reports: made for its lock, filled in, and named for it. What became of it is counted.
-  makeOneOfBatch = async (batch, { id, lock }) => {
+  // Picking up again (RW-371): a report already in the batch's folder — the day's — from the same template, for one of
+  // the values asked for, is left as it is, and isn't made again. One that was named is known by its name ("<the
+  // template's name> — <the value>"); one that wasn't (its page closed first) is read for what it's for. What's left to
+  // make is the batch.
+  skipMadeAlready = async (batch) => {
+    const authentication = this.credentialsFor(batch.sourceId)
+    const inFolder = []
+    for (let page = 1; ; page += 1) {
+      const listed = await fetchReports({
+        authentication,
+        folderId: batch.folder.id,
+        page,
+        pageSize: REPORTS_PAGE_SIZE,
+      })
+      inFolder.push(...(listed?.reports || []))
+      if (page >= (listed?.totalPages || 1)) {
+        break
+      }
+    }
+    const fromTemplate = inFolder.filter((report) => report.templateId === batch.templateId)
+    if (!fromTemplate.length) {
+      return
+    }
+    const valueOf = (start) => (start.lock ? start.lock.format_txt || start.lock.value : start.name)
+    const titleFor = (start) => batchTitleOf(batch.title, start.lock || { value: start.name })
+    const titled = new Set(fromTemplate.map((report) => report.title))
+    const made = new Set(batch.queue.filter((start) => titled.has(titleFor(start))).map(valueOf))
+    // Not named yet: what it's for is in it.
+    const namedAs = `${batch.title} — `
+    const unnamed = batch.title ? fromTemplate.filter((report) => !report.title?.startsWith(namedAs)) : fromTemplate
+    for (const report of unnamed) {
+      const detail = await fetchReport({ authentication, id: report.id })
+      ;(detail?.report?.sessionFilterLocks || []).forEach((lock) => {
+        ;[lock.format_txt, lock.value].forEach((text) => text !== undefined && made.add(String(text)))
+      })
+    }
+    const sameValue = (a, b) => `${a}`.trim().toLowerCase() === `${b}`.trim().toLowerCase()
+    const left = batch.queue.filter((start) => ![...made].some((value) => sameValue(value, valueOf(start))))
+    batch.skipped = batch.queue.length - left.length
+    batch.queue = left
+    batch.total = left.length
+  }
+
+  // Stop (RW-371): the reports under way are finished, and no more are started. The batch ends once they are.
+  stopBatch = () => {
+    const batch = this.batch
+    if (!batch || batch.stopped || !batch.folder) {
+      return
+    }
+    batch.stopped = true
+    this.sayBatch(batch)
+  }
+
+  // Still making one: the lease is kept, so no other tab starts a batch meanwhile.
+  keepBatchLease = (batch) => {
+    if (this.batch === batch) {
+      takeBatchLease(this.storagePrefix(), this.tabId)
+    }
+  }
+
+  // The batch is over here (ended, or dropped as the page goes): its lease goes, and the host hears.
+  dropBatch = (batch) => {
+    if (this.batch !== batch) {
+      return
+    }
+    this.batch = null
+    clearInterval(this.leaseTimer)
+    releaseBatchLease(this.storagePrefix(), this.tabId)
+    this.props.onBatchRunningChange?.(false)
+  }
+
+  // One of a batch's reports: made for its lock, filled in, and named for it. What became of it is counted. One picked
+  // by name is looked up first: a value that isn't there (or is more than one) gets no report, and is said.
+  makeOneOfBatch = async (batch, start) => {
+    const { id } = start
+    let { lock } = start
+    if (!lock) {
+      try {
+        lock = await lookUpFilterLock({ authentication: this.credentialsFor(batch.sourceId), value: start.name })
+      } catch (error) {
+        if (error?.code === 'NOT_FOUND' || error?.code === 'AMBIGUOUS') {
+          batch.notFound.push(start.name)
+        } else {
+          batch.failed.push(error)
+        }
+        return
+      }
+    }
     let detail
     try {
       detail = await createReportFromTemplate({
@@ -1862,38 +1997,56 @@ export class ReportsWithoutTheme extends React.Component {
     })
   }
 
-  // What the home page says while a batch is made.
+  // What the home page says while a batch is made, with Stop (RW-371); and once Stop is chosen, that it's stopping. Each
+  // report done keeps the batch's lease too.
   sayBatch = (batch) => {
+    if (this.batch === batch) {
+      this.keepBatchLease(batch)
+    }
     if (this.batch === batch && this.stillOn(batch.sourceId)) {
-      const settled = batch.done + batch.unfinished + batch.gone + batch.failed.length
-      this.setState({ notice: S.batch.making(settled, batch.total, batch.folder.name) })
+      const settled = batch.done + batch.unfinished + batch.gone + batch.failed.length + batch.notFound.length
+      const text = batch.stopped
+        ? S.batch.stopping(batch.folder.name)
+        : S.batch.making(settled, batch.total, batch.folder.name)
+      this.setState({ batchNotice: { text, stoppable: !batch.stopped } })
     }
   }
 
-  // And once it's over: how many were made, and filled in; and why any weren't made.
+  // And once it's over: how many were made, and filled in; those there already; and why any weren't made.
   endBatch = (batch) => {
     if (this.batch !== batch) {
       return
     }
-    this.batch = null
+    this.dropBatch(batch)
     if (!this.stillOn(batch.sourceId)) {
       return
     }
-    const { done, partly, unfinished, failed, total, folder } = batch
+    const { done, partly, unfinished, failed, notFound, skipped, total, folder, stopped } = batch
     // In the folder: those made and named, and those made but not finished here.
     const inFolder = done + unfinished
     const said = []
-    if (inFolder) {
+    if (stopped) {
+      said.push(S.batch.stopped(inFolder, total, folder.name))
+    } else if (inFolder) {
       said.push(S.batch.made(inFolder, total, folder.name))
-      if (partly) {
-        said.push(S.batch.partly(partly))
-      }
-      if (unfinished) {
-        said.push(S.batch.unfinished(unfinished))
-      }
+    } else if (!total && skipped) {
+      said.push(S.batch.allThere(skipped, folder.name))
+    }
+    if (partly) {
+      said.push(S.batch.partly(partly))
+    }
+    if (unfinished) {
+      said.push(S.batch.unfinished(unfinished))
+    }
+    if (skipped && total) {
+      said.push(S.batch.skipped(skipped))
+    }
+    if (notFound.length) {
+      said.push(S.batch.notFound(notFound.slice(0, 3), Math.max(notFound.length - 3, 0)))
     }
     const why = failed.length ? describeReportError(failed[0], 'startFromTemplate').reason : null
     this.setState({
+      batchNotice: null,
       notice: said.filter(Boolean).join(' ') || null,
       actionError: why ? S.batch.notMade(failed.length, total, why) : null,
     })
@@ -1938,9 +2091,28 @@ export class ReportsWithoutTheme extends React.Component {
 
   // ---------------------------------------------------------------- drawing
 
+  // What a batch being made says on the home page, with Stop while it can be stopped (RW-371).
+  batchNoticesOf = (batchNotice) => {
+    if (!batchNotice) {
+      return []
+    }
+    const action = batchNotice.stoppable ? { label: S.batch.stop, onClick: this.stopBatch } : null
+    return [{ tone: 'info', text: batchNotice.text, ...(action ? { action } : {}) }]
+  }
+
   renderHome = () => {
-    const { reports, listError, listMissing, deletingId, actionError, notice, folders, tags, organizersError } =
-      this.state
+    const {
+      reports,
+      listError,
+      listMissing,
+      deletingId,
+      actionError,
+      notice,
+      batchNotice,
+      folders,
+      tags,
+      organizersError,
+    } = this.state
     const home = {
       reports,
       listError,
@@ -1963,6 +2135,7 @@ export class ReportsWithoutTheme extends React.Component {
       notices: [
         ...(actionError ? [{ tone: 'error', text: actionError }] : []),
         ...(listMissing ? [{ tone: 'error', text: listMissing }] : []),
+        ...this.batchNoticesOf(batchNotice),
         ...(notice ? [{ tone: 'info', text: notice }] : []),
       ],
       newReport: this.openNewReport,
@@ -2147,6 +2320,7 @@ export class ReportsWithoutTheme extends React.Component {
             filterLockLabels={this.props.filterLockLabels}
             onStartFromTemplate={this.startFromTemplate}
             onStartEachFromTemplate={this.props.enableFilterLocks ? this.startEachFromTemplate : undefined}
+            batchLimit={this.props.batchLimit}
             onManageTemplates={this.canManageTemplates() ? this.openManageTemplates : undefined}
             previewProps={{
               branding: this.props.branding,

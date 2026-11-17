@@ -231,6 +231,9 @@ export const describeReportError = (error, action) => {
   } else if (code === 'REPORT_BATCH_UNDER_WAY') {
     // Not the service's: a report for each household is still being made from a template here (RW-353).
     reason = E.batchUnderWay
+  } else if (code === 'REPORT_BATCH_ELSEWHERE') {
+    // Not the service's either: another tab in this browser is making a batch (RW-371).
+    reason = E.batchElsewhere
   } else if (code === 'REPORT_FILL_REJECTED') {
     reason = E.busy
     retry = true

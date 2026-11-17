@@ -46,6 +46,13 @@ describe('FilterLockField', () => {
   it('shows the lock, or the host’s word for none', () => {
     setup({ locks: [] })
     expect(screen.getByTestId('report-filter-lock-value')).toHaveTextContent('All households')
+    expect(screen.getByTestId('report-filter-lock-change')).toHaveTextContent('Change…')
+  })
+
+  it('says what its button is for where Change… isn’t the word', () => {
+    setup({ locks: [], labels: { none: 'None picked yet', change: 'Pick…' } })
+    expect(screen.getByTestId('report-filter-lock-value')).toHaveTextContent('None picked yet')
+    expect(screen.getByTestId('report-filter-lock-change')).toHaveTextContent('Pick…')
   })
 
   it('hands the popover the report’s locks session-scoped, with no Persist toggle', () => {

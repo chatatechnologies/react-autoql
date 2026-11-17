@@ -1,7 +1,7 @@
 import React from 'react'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { matchingTemplates, TemplatesDialog } from '../workspace/TemplatesDialog'
+import { batchMinutes, matchingTemplates, TemplatesDialog } from '../workspace/TemplatesDialog'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates, ReportsApiError } from '../run/reportsApi'
 
 // New report › Start from a template: the templates published for the data source, searched by title and narrowed by
@@ -23,11 +23,18 @@ jest.mock('../ReportBuilder', () => ({
   },
 }))
 
-// The filter lock's field (RW-351) as a button that picks the lock a test sets: the popover is FilterLockField's own.
+// The filter lock's field (RW-351) as a button that picks the lock a test sets, saying what its own button would
+// (data-change): the popover is FilterLockField's own.
 const mockLock = { next: [] }
 jest.mock('../components/FilterLockField', () => ({
   FilterLockField: (props) => (
-    <button type='button' data-test='mock-filter-lock' onClick={() => props.onChange(mockLock.next)}>
+    <button
+      type='button'
+      data-test='mock-filter-lock'
+      data-change={props.labels?.change || 'Change…'}
+      disabled={props.disabled}
+      onClick={() => props.onChange(mockLock.next)}
+    >
       {props.locks?.length ? props.locks.map((lock) => lock.value).join(', ') : props.labels?.none}
     </button>
   ),
@@ -77,6 +84,14 @@ const setup = (props = {}) => {
 
 const names = () => screen.queryAllByTestId('reports-templates-item').map((radio) => radio.closest('label').textContent)
 const startButton = () => screen.getByTestId('reports-templates-start')
+// Who the report is for, under the templates: 'all', 'some' or 'each'.
+const forOption = (key) => screen.getByTestId(`reports-templates-for-${key}`)
+// The footer: its buttons, and the line beside them.
+const footerButtons = () =>
+  within(startButton().parentElement)
+    .getAllByRole('button')
+    .map((button) => button.textContent)
+const status = () => startButton().parentElement.querySelector('[role="status"]')
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -191,7 +206,7 @@ describe('TemplatesDialog', () => {
     expect(again).toEqual(first)
   })
 
-  it('starts it for the filter lock chosen beside Start report, as another report for another lock', async () => {
+  it('starts it for whom it’s chosen for under the templates, as another report for another lock', async () => {
     const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include' }
     const { onStart } = setup({
       enableFilterLocks: true,
@@ -200,15 +215,41 @@ describe('TemplatesDialog', () => {
     await waitFor(() => expect(names()).toHaveLength(3))
     fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
     await waitFor(() => expect(startButton()).toBeEnabled())
-    expect(screen.getByTestId('reports-templates-lock')).toHaveTextContent('HouseholdsAll households')
-
+    // Under the templates, each saying what it makes: everything (the host's word for none), or the households picked.
+    // Without onStartEach, there's no report for each.
+    const choices = screen.getByRole('radiogroup', { name: 'Households' })
+    expect(
+      within(choices)
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label').textContent),
+    ).toEqual(['All householdsOne report across all of them', 'Specific householdsOne report for the ones you pick'])
+    expect(forOption('all')).toBeChecked()
+    expect(footerButtons()).toEqual(['Back', 'Start report'])
+    expect(status().textContent).toBe('')
     await act(async () => fireEvent.click(startButton()))
+
+    // Specific households, with none picked yet: it says so, Change… is Pick…, and there's nothing to start.
+    fireEvent.click(forOption('some'))
+    expect(screen.getByTestId('mock-filter-lock')).toHaveTextContent('None picked yet')
+    expect(screen.getByTestId('mock-filter-lock')).toHaveAttribute('data-change', 'Pick…')
+    expect(startButton()).toBeDisabled()
     mockLock.next = [BROWN]
     fireEvent.click(screen.getByTestId('mock-filter-lock'))
-    expect(screen.getByTestId('reports-templates-lock')).toHaveTextContent('Brown Family')
+    expect(screen.getByTestId('mock-filter-lock')).toHaveTextContent('Brown Family')
+    expect(screen.getByTestId('mock-filter-lock')).toHaveAttribute('data-change', 'Change…')
+    expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
     await act(async () => fireEvent.click(startButton()))
 
-    const [everything, brown] = onStart.mock.calls.map(([call]) => call)
+    // Everything again, the same report as before; the households picked are kept, should they be chosen again.
+    fireEvent.click(forOption('all'))
+    expect(screen.queryByTestId('mock-filter-lock')).toBeNull()
+    expect(mockBuilder.props.report).not.toHaveProperty('sessionFilterLocks')
+    await act(async () => fireEvent.click(startButton()))
+    fireEvent.click(forOption('some'))
+    expect(screen.getByTestId('mock-filter-lock')).toHaveTextContent('Brown Family')
+
+    const [everything, brown, everythingAgain] = onStart.mock.calls.map(([call]) => call)
+    expect(everythingAgain).toEqual(everything)
     expect(everything).toEqual({
       templateId: 't1',
       title: 'Household review',
@@ -221,6 +262,16 @@ describe('TemplatesDialog', () => {
       sessionFilterLocks: [BROWN],
     })
     expect(brown.id).not.toBe(everything.id)
+  })
+
+  it('has Manage templates beside the templates’ title, and only Back and Start under them', async () => {
+    const onManage = jest.fn()
+    setup({ onManage })
+    await waitFor(() => expect(names()).toHaveLength(3))
+    expect(screen.getByRole('heading', { name: 'Templates' })).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('reports-templates-manage'))
+    expect(onManage).toHaveBeenCalled()
+    expect(footerButtons()).toEqual(['Back', 'Start report'])
   })
 
   describe('a template made for a filter lock (its document has one)', () => {
@@ -247,11 +298,12 @@ describe('TemplatesDialog', () => {
     }
     const lockShown = () => screen.getByTestId('reports-templates-lock')
 
-    it('starts the report for it once its document is in, or for what’s chosen instead, and says none', async () => {
+    it('starts the report for it once its document is in, or for what’s chosen instead, or for everything', async () => {
       const { onStart } = setup({ enableFilterLocks: true, filterLockLabels: LABELS })
       await chooseFirst()
       expect(startButton()).toBeDisabled()
       await act(async () => arrive())
+      expect(forOption('some')).toBeChecked()
       expect(lockShown()).toHaveTextContent('Brown Family')
       expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
       await act(async () => fireEvent.click(startButton()))
@@ -261,9 +313,12 @@ describe('TemplatesDialog', () => {
       expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([NGUYEN])
       await act(async () => fireEvent.click(startButton()))
 
+      // None picked: nothing to start until one is, or everything is chosen.
       mockLock.next = []
       fireEvent.click(screen.getByTestId('mock-filter-lock'))
-      expect(lockShown()).toHaveTextContent('All households')
+      expect(lockShown()).toHaveTextContent('None picked yet')
+      expect(startButton()).toBeDisabled()
+      fireEvent.click(forOption('all'))
       expect(mockBuilder.props.report).not.toHaveProperty('sessionFilterLocks')
       await act(async () => fireEvent.click(startButton()))
 
@@ -281,22 +336,35 @@ describe('TemplatesDialog', () => {
       await act(async () => arrive())
       fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
       await waitFor(() => expect(mockBuilder.props.report.title).toBe('New accounts'))
-      expect(lockShown()).toHaveTextContent('All households')
+      expect(forOption('all')).toBeChecked()
+      expect(screen.queryByTestId('mock-filter-lock')).toBeNull()
       await act(async () => fireEvent.click(startButton()))
       expect(onStart).toHaveBeenLastCalledWith({ templateId: 't2', title: 'New accounts', id: expect.any(String) })
 
       fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+      expect(forOption('some')).toBeChecked()
       expect(lockShown()).toHaveTextContent('Brown Family')
     })
 
-    it('keeps what was chosen beside Start report while the template’s document came', async () => {
+    it('keeps the households picked under the templates while the template’s document came', async () => {
       setup({ enableFilterLocks: true, filterLockLabels: LABELS })
       await chooseFirst()
+      fireEvent.click(forOption('some'))
       mockLock.next = [NGUYEN]
       fireEvent.click(screen.getByTestId('mock-filter-lock'))
       await act(async () => arrive())
       expect(lockShown()).toHaveTextContent('Nguyen Family')
       expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([NGUYEN])
+    })
+
+    it('keeps everything, chosen while the template’s document came', async () => {
+      setup({ enableFilterLocks: true, filterLockLabels: LABELS })
+      await chooseFirst()
+      fireEvent.click(forOption('some'))
+      fireEvent.click(forOption('all'))
+      await act(async () => arrive())
+      expect(forOption('all')).toBeChecked()
+      expect(mockBuilder.props.report).not.toHaveProperty('sessionFilterLocks')
     })
 
     it('starts it as before without enableFilterLocks: shown as the template has it, started without', async () => {
@@ -318,7 +386,7 @@ describe('TemplatesDialog', () => {
     })
   })
 
-  describe('a report for each of the households picked (RW-353)', () => {
+  describe('a report for each of the households picked, without the host’s list (RW-353)', () => {
     const lock = (value, filterType = 'include') => ({ key: 'household', value, filter_type: filterType })
     const BROWN = lock('Brown Family')
     const NGUYEN = lock('Nguyen Family')
@@ -338,25 +406,26 @@ describe('TemplatesDialog', () => {
       mockLock.next = locks
       fireEvent.click(screen.getByTestId('mock-filter-lock'))
     }
-    const howMany = () => screen.queryByTestId('reports-templates-how-many')
 
-    it('is offered for two or more, and starts each under an id of its own, the same when it tries again', async () => {
+    it('starts each under an id of its own, the same when it tries again', async () => {
       const onStartEach = jest
         .fn()
         .mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
         .mockResolvedValue(undefined)
       const { onStart } = await open({ onStartEach })
-      pick([BROWN])
-      expect(howMany()).toBeNull()
+      fireEvent.click(forOption('each'))
+      expect(screen.getByTestId('mock-filter-lock')).toHaveTextContent('None picked yet')
+      expect(startButton()).toBeDisabled()
       pick([BROWN, NGUYEN])
-      expect(howMany()).toHaveValue('all')
-      expect(startButton()).toHaveTextContent('Start report')
-      fireEvent.change(howMany(), { target: { value: 'each' } })
-      expect(within(howMany()).getByRole('option', { name: 'A report for each (2)' })).toBeTruthy()
       expect(startButton()).toHaveTextContent('Start 2 reports')
+      expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
 
+      // It asks first (RW-371).
+      await act(async () => fireEvent.click(startButton()))
+      expect(onStartEach).not.toHaveBeenCalled()
       await act(async () => fireEvent.click(startButton()))
       expect(screen.getByText('The report wasn’t started: couldn’t reach the server.')).toBeInTheDocument()
+      await act(async () => fireEvent.click(startButton()))
       await act(async () => fireEvent.click(startButton()))
 
       expect(onStart).not.toHaveBeenCalled()
@@ -373,10 +442,13 @@ describe('TemplatesDialog', () => {
       expect(again).toEqual(first)
     })
 
-    it('starts one report for all of them, as before, unless asked for one each', async () => {
+    it('starts one report for all of those picked under Specific households, kept when Each is chosen', async () => {
       const onStartEach = jest.fn()
       const { onStart } = await open({ onStartEach })
+      fireEvent.click(forOption('some'))
       pick([BROWN, NGUYEN])
+      expect(startButton()).toHaveTextContent('Start report')
+      expect(status().textContent).toBe('')
       await act(async () => fireEvent.click(startButton()))
       expect(onStartEach).not.toHaveBeenCalled()
       expect(onStart).toHaveBeenCalledWith({
@@ -385,37 +457,269 @@ describe('TemplatesDialog', () => {
         id: expect.any(String),
         sessionFilterLocks: [BROWN, NGUYEN],
       })
+
+      fireEvent.click(forOption('each'))
+      expect(screen.getByTestId('mock-filter-lock')).toHaveTextContent('Brown Family, Nguyen Family')
+      expect(startButton()).toHaveTextContent('Start 2 reports')
     })
 
-    it('isn’t offered with a household left out', async () => {
+    it('won’t start a report for each with a household left out, and says why', async () => {
       await open()
+      fireEvent.click(forOption('each'))
       pick([BROWN, lock('Nguyen Family', 'exclude')])
-      expect(howMany()).toBeNull()
+      expect(startButton()).toBeDisabled()
+      expect(status()).toHaveTextContent('A report for each can’t be made for excluded households. Remove them.')
+      // As one report, it can be.
+      fireEvent.click(forOption('some'))
+      expect(startButton()).toBeEnabled()
+      expect(status().textContent).toBe('')
     })
 
     it('isn’t offered without onStartEach', async () => {
       await open({ onStartEach: undefined })
-      pick([BROWN, NGUYEN])
-      expect(howMany()).toBeNull()
+      expect(screen.queryByTestId('reports-templates-for-each')).toBeNull()
     })
 
     it('starts at most 50 at once', async () => {
-      const onStartEach = jest.fn()
-      await open({ onStartEach })
+      await open({ onStartEach: jest.fn() })
+      fireEvent.click(forOption('each'))
       pick(Array.from({ length: 51 }, (_, i) => lock(`Household ${i}`)))
-      fireEvent.change(howMany(), { target: { value: 'each' } })
       expect(startButton()).toBeDisabled()
-      expect(screen.getByText('Up to 50 reports can be started at once. Pick fewer.')).toBeInTheDocument()
+      expect(status()).toHaveTextContent('Up to 50 reports can be started at once. Pick fewer.')
       pick(Array.from({ length: 50 }, (_, i) => lock(`Household ${i}`)))
       expect(startButton()).toBeEnabled()
       expect(startButton()).toHaveTextContent('Start 50 reports')
+      expect(status()).toHaveTextContent('About 4 minutes. Keep this page open while they’re made.')
     })
   })
 
-  it('has no filter lock to choose without enableFilterLocks', async () => {
+  describe('a report for each household in the host’s list (RW-371)', () => {
+    const LABELS = { title: 'Households', none: 'All households' }
+    const NAMES = ['Nguyen Family', 'Brown Family', 'Brown Family', '  ', 'Adeyemi Family']
+    const open = async (props = {}) => {
+      const onStartEach = jest.fn(() => Promise.resolve())
+      const opened = setup({
+        enableFilterLocks: true,
+        filterLockLabels: LABELS,
+        onStartEach,
+        loadFilterLockSuggestions: jest.fn(async () => NAMES),
+        ...props,
+      })
+      await waitFor(() => expect(names()).toHaveLength(3))
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
+      await waitFor(() => expect(startButton()).toBeEnabled())
+      return { ...opened, onStartEach }
+    }
+    const count = () => screen.queryByTestId('reports-templates-for-count')
+    const editList = () => screen.queryByTestId('reports-templates-edit-list')
+    const ticked = () =>
+      within(screen.getByTestId('reports-templates-pick'))
+        .getAllByRole('checkbox')
+        .map((box) => box.checked)
+    const pickAll = () => screen.getByTestId('reports-templates-pick-all')
+
+    it('is every household in the host’s list, started by name once it’s asked', async () => {
+      const { onStartEach, onStart } = await open()
+      expect(
+        within(screen.getByRole('radiogroup', { name: 'Households' }))
+          .getAllByRole('radio')
+          .map((radio) => radio.closest('label').textContent),
+      ).toEqual([
+        'All householdsOne report across all of them',
+        'Specific householdsOne report for the ones you pick',
+        'Each householdA separate report for each',
+      ])
+      expect(count()).toBeNull()
+      fireEvent.click(forOption('each'))
+      // Each once, without the blank one; and the preview is the template's, for none of them.
+      expect(count()).toHaveTextContent('3 of 3 get a report')
+      expect(editList()).toHaveTextContent('Edit list…')
+      expect(startButton()).toHaveTextContent('Start 3 reports')
+      expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
+      expect(mockBuilder.props.report).not.toHaveProperty('sessionFilterLocks')
+
+      fireEvent.click(startButton())
+      expect(onStartEach).not.toHaveBeenCalled()
+      expect(status()).toHaveTextContent('Make 3 reports? It takes about a minute, and this page has to stay open.')
+      expect(footerButtons()).toEqual(['Cancel', 'Make 3 reports'])
+      expect(forOption('all')).toBeDisabled()
+      expect(editList()).toBeDisabled()
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+      expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
+      expect(footerButtons()).toEqual(['Back', 'Start 3 reports'])
+      expect(onStartEach).not.toHaveBeenCalled()
+
+      fireEvent.click(startButton())
+      await act(async () => fireEvent.click(startButton()))
+      expect(onStart).not.toHaveBeenCalled()
+      expect(onStartEach).toHaveBeenCalledWith({
+        templateId: 't1',
+        title: 'Household review',
+        starts: ['Adeyemi Family', 'Brown Family', 'Nguyen Family'].map((name) => ({
+          id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+          name,
+        })),
+      })
+      const ids = onStartEach.mock.calls[0][0].starts.map((start) => start.id)
+      expect(new Set(ids).size).toBe(3)
+    })
+
+    it('unticks any in the list shown in the preview’s place, or every one to tick a few', async () => {
+      await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(editList())
+      expect(editList()).toHaveAttribute('aria-expanded', 'true')
+      expect(ticked()).toEqual([true, true, true])
+      expect(pickAll()).toHaveTextContent('Untick all')
+      fireEvent.change(screen.getByTestId('reports-templates-pick-search'), { target: { value: 'brown' } })
+      expect(ticked()).toHaveLength(1)
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Brown Family' }))
+      expect(screen.getByTestId('reports-templates-pick')).toHaveTextContent(
+        '2 of 3 get a report. Untick any that shouldn’t.',
+      )
+      expect(pickAll()).toHaveTextContent('Tick all')
+      fireEvent.click(screen.getByTestId('reports-templates-pick-done'))
+      expect(screen.queryByTestId('reports-templates-pick')).toBeNull()
+      expect(count()).toHaveTextContent('2 of 3 get a report')
+      expect(startButton()).toHaveTextContent('Start 2 reports')
+
+      // Every one ticked again, then none, then one.
+      fireEvent.click(editList())
+      fireEvent.click(pickAll())
+      expect(ticked()).toEqual([true, true, true])
+      fireEvent.click(pickAll())
+      expect(ticked()).toEqual([false, false, false])
+      expect(startButton()).toBeDisabled()
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Nguyen Family' }))
+      expect(startButton()).toHaveTextContent('Start 1 report')
+      expect(status()).toHaveTextContent('About a minute. Keep this page open while it’s made.')
+
+      // Another choice closes the list; chosen again, a report for each keeps what's unticked.
+      fireEvent.click(forOption('all'))
+      expect(screen.queryByTestId('reports-templates-pick')).toBeNull()
+      expect(startButton()).toHaveTextContent('Start report')
+      expect(status().textContent).toBe('')
+      fireEvent.click(forOption('each'))
+      expect(count()).toHaveTextContent('1 of 3 get a report')
+      expect(screen.queryByTestId('reports-templates-pick')).toBeNull()
+    })
+
+    it('says how many are below what’s in sight, and Show more scrolls down to them', async () => {
+      await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(editList())
+      // jsdom lays nothing out: rows 30px high, in a list 60px high, so two of the three are in sight.
+      const list = within(screen.getByTestId('reports-templates-pick')).getByRole('list')
+      let scrolled = 0
+      Object.defineProperty(list, 'clientHeight', { configurable: true, value: 60 })
+      Object.defineProperty(list, 'scrollTop', {
+        configurable: true,
+        get: () => scrolled,
+        set: (value) => {
+          scrolled = value
+        },
+      })
+      Array.from(list.children).forEach((item, i) => {
+        Object.defineProperty(item, 'offsetTop', { configurable: true, value: i * 30 })
+        Object.defineProperty(item, 'offsetHeight', { configurable: true, value: 30 })
+      })
+      fireEvent.scroll(list)
+      await waitFor(() => expect(screen.getByTestId('reports-templates-pick-more')).toHaveTextContent('1 more below'))
+
+      fireEvent.click(screen.getByTestId('reports-templates-pick-more'))
+      expect(scrolled).toBeGreaterThan(0)
+      expect(screen.queryByTestId('reports-templates-pick-more')).toBeNull()
+
+      // Scrolled back up, it says so again.
+      scrolled = 0
+      fireEvent.scroll(list)
+      await waitFor(() => expect(screen.getByTestId('reports-templates-pick-more')).toBeInTheDocument())
+    })
+
+    it('says when there are more than the host’s limit, and won’t start; none for no limit', async () => {
+      const many = Array.from({ length: 51 }, (_, i) => `Household ${i}`)
+      await open({ batchLimit: 2 })
+      fireEvent.click(forOption('each'))
+      expect(startButton()).toBeDisabled()
+      expect(status()).toHaveTextContent('Up to 2 reports can be started at once. Pick fewer.')
+      cleanup()
+
+      await open({ loadFilterLockSuggestions: jest.fn(async () => many) })
+      fireEvent.click(forOption('each'))
+      expect(status()).toHaveTextContent('Up to 50 reports can be started at once. Pick fewer.')
+      cleanup()
+
+      await open({ batchLimit: null, loadFilterLockSuggestions: jest.fn(async () => many) })
+      fireEvent.click(forOption('each'))
+      expect(startButton()).toBeEnabled()
+      expect(startButton()).toHaveTextContent('Start 51 reports')
+      expect(status()).toHaveTextContent('About 4 minutes. Keep this page open while they’re made.')
+    })
+
+    it('says the list is loading, and won’t start until it’s in', async () => {
+      let give
+      await open({
+        loadFilterLockSuggestions: jest.fn(
+          () =>
+            new Promise((resolve) => {
+              give = resolve
+            }),
+        ),
+      })
+      fireEvent.click(forOption('each'))
+      expect(count()).toHaveTextContent('Loading the list…')
+      expect(editList()).toBeNull()
+      expect(startButton()).toBeDisabled()
+      await act(async () => give(NAMES))
+      expect(count()).toHaveTextContent('3 of 3 get a report')
+      expect(startButton()).toBeEnabled()
+    })
+
+    it('is for the households picked without the host’s list, or where it couldn’t be loaded', async () => {
+      await open({ loadFilterLockSuggestions: undefined })
+      fireEvent.click(forOption('each'))
+      expect(screen.getByTestId('mock-filter-lock')).toHaveTextContent('None picked yet')
+      expect(editList()).toBeNull()
+      cleanup()
+
+      await open({ loadFilterLockSuggestions: jest.fn(() => Promise.reject(new Error('no list'))) })
+      fireEvent.click(forOption('each'))
+      await waitFor(() => expect(screen.getByTestId('mock-filter-lock')).toBeInTheDocument())
+      expect(editList()).toBeNull()
+    })
+
+    it('is for the list, whatever was picked under Specific households', async () => {
+      await open()
+      fireEvent.click(forOption('some'))
+      mockLock.next = [{ key: 'household', value: 'Nguyen Family', filter_type: 'exclude' }]
+      fireEvent.click(screen.getByTestId('mock-filter-lock'))
+      fireEvent.click(forOption('each'))
+      expect(startButton()).toBeEnabled()
+      expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
+    })
+
+    it('stays chosen from one template to the next', async () => {
+      await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
+      await waitFor(() => expect(mockBuilder.props.report.title).toBe('New accounts'))
+      expect(forOption('each')).toBeChecked()
+      expect(startButton()).toHaveTextContent('Start 3 reports')
+    })
+
+    it('says about how long a batch takes: to the minute under ten, to five above', () => {
+      expect(batchMinutes(2)).toBe(1)
+      expect(batchMinutes(40)).toBe(3)
+      expect(batchMinutes(173)).toBe(15)
+      expect(batchMinutes(500)).toBe(40)
+    })
+  })
+
+  it('has nothing to choose who it’s for without enableFilterLocks, nor a title over the templates alone', async () => {
     setup()
     await waitFor(() => expect(names()).toHaveLength(3))
     expect(screen.queryByTestId('reports-templates-lock')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Templates' })).toBeNull()
   })
 
   it('says when there are no templates, and when they couldn’t be loaded', async () => {

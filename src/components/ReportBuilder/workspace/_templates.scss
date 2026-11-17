@@ -4,12 +4,14 @@
 // as it prints (a read-only ReportBuilder).
 
 .#{$rs}-layer {
+  // On a short screen, the column scrolls as a whole rather than squeeze the list of templates to nothing.
   .#{$rs}-templates-aside {
     flex: none;
     display: flex;
     flex-direction: column;
     width: 20rem;
     min-height: 0;
+    overflow-y: auto;
     border-right: 1px solid $border;
   }
 
@@ -24,6 +26,53 @@
     .#{$rs}-input,
     .#{$rs}-select {
       font-size: 0.8125rem;
+    }
+  }
+
+  // The templates' title, and Manage templates beside it.
+  .#{$rs}-templates-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  // What each part of the column is: the templates, and who the report is for.
+  .#{$rs}-templates-heading {
+    margin: 0;
+    color: $text-2;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  // An action that's only text: Manage templates, Edit list…. In the text's own colour, underlined, so it reads as a
+  // link at a small size where the accent colour wouldn't be legible enough.
+  .#{$rs}-templates-link {
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 2px;
+    background: none;
+    color: $text;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 550;
+    text-decoration: underline;
+    text-decoration-color: $text-2;
+    text-underline-offset: 0.1875rem;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      color: $accent;
+      text-decoration-color: currentColor;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   }
 
@@ -60,7 +109,7 @@
 
   .#{$rs}-templates-list {
     flex: 1 1 auto;
-    min-height: 0;
+    min-height: 7.5rem;
     overflow-y: auto;
     margin: 0;
     padding: 0.5rem;
@@ -456,24 +505,254 @@
   }
 }
 
-// Beside Start report, with enableFilterLocks: what the report will be for (the report's filter lock) and Change…,
-// which opens FilterLockPopover inside the dialog. It takes the room the status line would, which stays for errors.
+// The list a report for each is made for (RW-371), in the preview's place: every value ticked, searched, to untick any.
 .#{$rs}-layer {
-  .#{$rs}-templates-lock {
+  .#{$rs}-templates-pick {
+    padding: 0;
+    background: $surface;
+  }
+
+  .#{$rs}-templates-pick-head {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid $border;
+
+    > .#{$rs}-input {
+      flex: 1 1 12rem;
+      min-width: 0;
+      font-size: 0.8125rem;
+    }
+  }
+
+  .#{$rs}-templates-pick-titles {
+    flex: 1 1 100%;
+  }
+
+  .#{$rs}-templates-pick-title {
+    margin: 0;
+    color: $text;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .#{$rs}-templates-pick-what {
+    margin: 0.125rem 0 0;
+    color: $text-2;
+    font-size: 0.8125rem;
+  }
+
+  // The list, and what floats over its foot (templates-pick-more).
+  .#{$rs}-templates-pick-body {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  // A grid that fills row by row and scrolls down, however long the list: columns in a box of fixed height would add
+  // more columns off to the side instead. That it scrolls is shown three ways, as Chrome's guidance on scrollability
+  // hints has it for a list bounded by a dialog's own parts: its scrollbar stays in sight where the system hides it until
+  // it's scrolled; a faint shadow lies along an edge with more beyond it (fixed to the box, under covers that move with
+  // the list, so a cover hides its shadow at the end it's scrolled to); and the count floats over its foot. Relative, so
+  // its rows measure from its top.
+  .#{$rs}-templates-pick-list {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    align-content: start;
+    column-gap: 1.5rem;
+    margin: 0;
+    padding: 0.375rem 1.25rem 0.75rem;
+    list-style: none;
+    background: linear-gradient($surface 30%, transparent) center top / 100% 2.5rem no-repeat local,
+      linear-gradient(transparent, $surface 70%) center bottom / 100% 2.5rem no-repeat local,
+      radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.12), transparent) center top / 100% 0.625rem no-repeat
+        scroll,
+      radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.12), transparent) center bottom / 100% 0.625rem
+        no-repeat scroll,
+      $surface;
+
+    &::-webkit-scrollbar {
+      width: 0.75rem;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      border: 3px solid transparent;
+      border-radius: 999px;
+      background: $border padding-box;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: $text-2;
+    }
+
+    // Where there's no ::-webkit-scrollbar (Firefox), the standard properties.
+    @supports not selector(::-webkit-scrollbar) {
+      scrollbar-width: thin;
+      scrollbar-color: $border transparent;
+    }
+  }
+
+  // While there's more below, the rows fade out along the list's foot (clear of its scrollbar), so the count floats on a
+  // clean edge rather than over a name. Clicks go through to the rows.
+  .#{$rs}-templates-pick-fade {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0;
+    left: 0;
+    height: 3.5rem;
+    background: linear-gradient(to bottom, transparent, $surface 80%);
+    pointer-events: none;
+  }
+
+  // How many more are below what's in sight, floating over the list's foot: chosen, it scrolls down to them.
+  .#{$rs}-templates-pick-more {
+    position: absolute;
+    bottom: 0.875rem;
+    left: 50%;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0.3125rem 0.8125rem 0.3125rem 0.6875rem;
+    transform: translateX(-50%);
+    border: 1px solid $border;
+    border-radius: 999px;
+    background: $surface;
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.2);
+    color: $text;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 550;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+
+    > .#{$rb}-icon {
+      flex: none;
+      color: $accent;
+    }
+
+    &:hover {
+      border-color: $accent;
+    }
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .#{$rs}-templates-pick-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    min-width: 0;
-    margin-right: auto;
+    padding: 0.3125rem 0;
+    color: $text;
+    font-size: 0.8125rem;
+    cursor: pointer;
+
+    > input {
+      flex: none;
+      margin: 0;
+    }
+  }
+}
+
+// Under the templates, with enableFilterLocks: who the report is for, one of three, each saying what it makes, as a
+// template is chosen above it. The one chosen shows its part under it: the values picked and Change… (FilterLockField,
+// which opens FilterLockPopover inside the dialog), or how many get a report and Edit list….
+.#{$rs}-layer {
+  .#{$rs}-templates-for {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem 0.5rem 0.625rem;
+    border-top: 1px solid $border;
+
+    > .#{$rs}-templates-heading {
+      padding: 0 0.5rem;
+    }
   }
 
-  .#{$rs}-templates-lock-label {
-    flex: none;
+  .#{$rs}-templates-for-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  // As a template in the list: a radio, a name, and a line under it.
+  .#{$rs}-templates-for-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0.4375rem 0.625rem;
+    border-radius: 4px;
+    color: $text;
+    font-size: 0.8125rem;
+    cursor: pointer;
+
+    &:hover {
+      background: $hover;
+    }
+
+    > input[type='radio'] {
+      flex: none;
+      width: 0.875rem;
+      height: 0.875rem;
+      margin: 0.1875rem 0 0;
+      accent-color: $accent;
+      cursor: inherit;
+    }
+
+    &[data-checked] {
+      @include accent-soft;
+    }
+
+    &:has(> input:disabled) {
+      cursor: default;
+    }
+  }
+
+  .#{$rs}-templates-for-what {
+    display: block;
+    margin-top: 0.0625rem;
     color: $text-2;
     font-size: 0.75rem;
   }
 
+  // Lined up with the option's name, over the radio's width and the gap after it.
+  .#{$rs}-templates-for-detail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.625rem;
+    min-width: 0;
+    padding: 0.125rem 0.625rem 0.25rem 2.125rem;
+
+    .#{$rs}-filter-lock-value {
+      max-width: none;
+    }
+  }
+
+  .#{$rs}-templates-for-count {
+    color: $text;
+    font-size: 0.75rem;
+  }
+
   .#{$rs}-filter-lock {
+    flex: 1 1 auto;
     min-width: 0;
   }
 
@@ -499,6 +778,13 @@
     margin: 0.25rem 0 0;
     color: $danger;
     font-size: 0.75rem;
+  }
+
+  // The household picker (FilterLockPopover), opened inside the dialog: no wider than its own cap (480px). Every
+  // popover's 95vw (.react-tiny-popover-container) comes later in the stylesheet, and would stretch it across the
+  // dialog.
+  .filter-lock-popover:not(.filter-lock-popover-mobile) {
+    max-width: 480px;
   }
 }
 
