@@ -149,6 +149,8 @@ const SankeyColumnSelector = ({
     // At the limit the other columns stay listed, disabled, so it's clear why they can't be added
     const isFull = pathColumnIndices.length >= maxPathColumns
     const limitMessage = `Maximum of ${maxPathColumns} columns reached`
+    // Out of what can actually be picked, not the cap, when there are fewer columns than that
+    const pickableCount = Math.min(maxPathColumns, Math.max(categoricalColumns.length, pathColumnIndices.length))
 
     return (
       <div
@@ -229,7 +231,7 @@ const SankeyColumnSelector = ({
           </div>
         )}
         <div className='sankey-path-add-title'>
-          Add column ({pathColumnIndices.length} of {maxPathColumns})
+          Add column ({pathColumnIndices.length} of {pickableCount})
         </div>
         {isFull && availableColumns.length > 0 && (
           <div className='sankey-path-limit-notice'>{limitMessage}. Remove one to add another.</div>
@@ -237,7 +239,7 @@ const SankeyColumnSelector = ({
         <CustomScrollbars className='sankey-column-dropdown-container' suppressScrollX>
           {availableColumns.length === 0 ? (
             <div className='sankey-column-dropdown-empty'>
-              {isFull ? limitMessage : 'No additional categorical columns available'}
+              {isFull ? limitMessage : 'No additional columns available'}
             </div>
           ) : (
             availableColumns.map(({ col, index }) => (

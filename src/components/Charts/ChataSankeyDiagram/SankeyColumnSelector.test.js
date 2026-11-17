@@ -117,6 +117,18 @@ describe('SankeyColumnSelector path mode', () => {
     const item = wrapper.find('.sankey-column-dropdown-container .sankey-column-dropdown-item').first()
     expect(item.hasClass('sankey-column-dropdown-item-disabled')).toBe(false)
   })
+
+  test('with fewer columns than the maximum, the count is out of the columns that can be picked', () => {
+    const wrapper = setup({ pathColumnIndices: [0, 1, 2], pathColumnOptionIndices: [0, 1, 2], maxPathColumns: 24 })
+    expect(wrapper.find('.sankey-path-add-title').text()).toBe('Add column (3 of 3)')
+    expect(wrapper.find('.sankey-path-limit-notice').exists()).toBe(false)
+    expect(wrapper.find('.sankey-column-dropdown-empty').text()).toBe('No additional columns available')
+  })
+
+  test('with more columns than the maximum, the count is out of the maximum', () => {
+    const wrapper = setup({ pathColumnIndices: [0], pathColumnOptionIndices: [0, 1, 2], maxPathColumns: 2 })
+    expect(wrapper.find('.sankey-path-add-title').text()).toBe('Add column (1 of 2)')
+  })
 })
 
 describe('SankeyColumnSelector popover clicks', () => {
