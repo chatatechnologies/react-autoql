@@ -357,6 +357,8 @@ export const REPORTS_STRINGS = {
     noQuestion: 'No question',
     unsupported: 'Pivot tables, network graphs, Sankey charts and treemaps can’t be added yet',
     noData: 'No data to add',
+    // Its question ended without an answer: the request failed, or was cut off (RW-374).
+    notLoaded: 'Its answer didn’t load. Refresh the dashboard to try again.',
     loading: 'Loading…',
     stillLoading: (n) => (n === 1 ? '1 tile is still loading.' : `${n} tiles are still loading.`),
     tileFailed: (title, message) => `“${title}”: ${message}`,
