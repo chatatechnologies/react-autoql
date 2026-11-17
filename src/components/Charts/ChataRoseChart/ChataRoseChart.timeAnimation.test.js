@@ -266,6 +266,36 @@ describe('ChataRoseChart time animation', () => {
     expect(animation.columnOptionIndices).toEqual([1, 3])
   })
 
+  test('a step that makes only one period is not offered', () => {
+    const wrapper = setup()
+    expect(wrapper.find(TimeAnimationControl).prop('animation').groupingOptions).toEqual(['DAY', 'WEEK', 'MONTH'])
+  })
+
+  test('picking a column with only one period hides the timeline, and picking a usable one brings it back', () => {
+    const single = { name: 'sales.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }
+    const wrapper = setup({
+      columns: [...columns, single],
+      data: data.map((row) => [...row, 1]),
+      initialChartControls: { roseValueColumnIndices: [2], timeAnimation: { grouping: 'MONTH' } },
+    })
+    act(() => {
+      wrapper.find(TimeAnimationControl).prop('animation').goToFrame(2)
+    })
+    wrapper.update()
+    act(() => {
+      wrapper.find(TimeAnimationControl).prop('animation').updateSettings({ columnIndex: 3 })
+    })
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(false)
+
+    act(() => {
+      wrapper.find(TimeAnimationControl).prop('animation').updateSettings({ columnIndex: 1 })
+    })
+    wrapper.update()
+    expect(wrapper.find(TimeAnimationTimeline).exists()).toBe(true)
+    expect(wrapper.find(TimeAnimationTimeline).prop('frameIndex')).toBe(2)
+  })
+
   // AQLP-1094: no date column, but an unused number column: it's picked, so play works straight away
   test('without a date column, the first unused number column is ready to play over', () => {
     const round = { name: 'sales.round', display_name: 'Round', type: 'QUANTITY', is_visible: true }

@@ -128,14 +128,19 @@ const getDateRange = (data, columnIndex, column) => {
   return { minDate, maxDate }
 }
 
-// Groupings that stay under the frame limit for this data
+// Groupings that stay under the frame limit for this data, leaving out any that make only one period
+// (nothing to step through), unless none make more
 export const getAvailableGroupings = (data = [], columnIndex, column, isAggregated) => {
   const options = getGroupingOptions(column, isAggregated)
   const { minDate, maxDate } = getDateRange(data, columnIndex, column)
   if (!minDate) {
     return []
   }
-  return options.filter((grouping) => countBuckets(minDate, maxDate, grouping, column) <= MAX_TIME_ANIMATION_FRAMES)
+  const underLimit = options.filter(
+    (grouping) => countBuckets(minDate, maxDate, grouping, column) <= MAX_TIME_ANIMATION_FRAMES,
+  )
+  const steppable = underLimit.filter((grouping) => countBuckets(minDate, maxDate, grouping, column) > 1)
+  return steppable.length ? steppable : underLimit
 }
 
 export const getDefaultGrouping = (data = [], columnIndex, column, isAggregated) => {

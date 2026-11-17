@@ -78,7 +78,8 @@ export const useTimeAnimation = ({
   )
 
   const isAvailable = frames.length > 1
-  const isActive = activeState
+  // Hidden (not turned off) while there's only one period, so picking a usable column brings it back
+  const isActive = activeState && isAvailable
   const lastFrameIndex = Math.max(0, frames.length - 1)
   const currentFrameIndex = Math.min(frameIndex ?? lastFrameIndex, lastFrameIndex)
   const frameInterval = TIME_ANIMATION_BASE_INTERVAL / speed
@@ -88,11 +89,10 @@ export const useTimeAnimation = ({
   const ease = isPlaying ? easeLinear : easeCubicInOut
 
   useEffect(() => {
-    if (!isAvailable && (activeState || isPlaying)) {
-      setIsActive(false)
+    if (!isAvailable && isPlaying) {
       setIsPlaying(false)
     }
-  }, [isAvailable, activeState, isPlaying])
+  }, [isAvailable, isPlaying])
 
   useEffect(() => {
     if (!isPlaying || !isActive) {

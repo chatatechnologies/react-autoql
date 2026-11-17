@@ -131,6 +131,16 @@ describe('groupings by frame count', () => {
     expect(monthFrames.length).toBeLessThanOrEqual(MAX_TIME_ANIMATION_FRAMES)
   })
 
+  test('leaves out groupings that would make only one period', () => {
+    // January to March 2024: one quarter and one year
+    expect(getAvailableGroupings(data, 1, dateColumn, false)).toEqual(['DAY', 'WEEK', 'MONTH'])
+  })
+
+  test('keeps every grouping when none makes more than one period', () => {
+    const oneDay = [['East', '2024-01-15T00:00:00.000Z', 1]]
+    expect(getAvailableGroupings(oneDay, 1, dateColumn, false)).toEqual(['DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'])
+  })
+
   test('defaults to the finest grouping with a manageable number of frames', () => {
     // 48 days is over the preferred frame count, so weeks
     expect(getDefaultGrouping(data, 1, dateColumn, false)).toBe('WEEK')
