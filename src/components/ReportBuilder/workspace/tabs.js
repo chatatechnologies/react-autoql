@@ -1,4 +1,9 @@
-import { PENDING_LOCKS_STORAGE_KEY, TAB_WIDTHS_STORAGE_KEY, TABS_STORAGE_KEY } from './reportsConstants'
+import {
+  PENDING_LOCKS_STORAGE_KEY,
+  PENDING_TITLES_STORAGE_KEY,
+  TAB_WIDTHS_STORAGE_KEY,
+  TABS_STORAGE_KEY,
+} from './reportsConstants'
 
 // The reports open as tabs in the workspace: which ones, in order, per data source, kept in this browser so
 // they're there next time, and the widths their edges were dragged to. Both are kept under the host's storage
@@ -148,6 +153,29 @@ export const savePendingLocks = (prefix, pending) => {
     writeAll(key, Object.fromEntries(Array.from(pending).slice(-MAX_PENDING_LOCKS)))
   } catch (error) {
     // Storage full or blocked: a lock waits only while the page is open.
+  }
+}
+
+// The name of the template a report was started from, which the report is titled with once AutoQL has filled it in:
+// the service makes it with its template's document, titled as the report the template was saved from. Kept the same
+// way as a pending lock, and for as many reports.
+export const loadPendingTitles = (prefix) =>
+  new Map(
+    Object.entries(readAll(keyFor(prefix, PENDING_TITLES_STORAGE_KEY))).filter(
+      ([id, title]) => id.length > 0 && typeof title === 'string' && !!title.trim(),
+    ),
+  )
+
+// `pending` is a Map of report id → title, oldest first; the newest are kept.
+export const savePendingTitles = (prefix, pending) => {
+  const key = keyFor(prefix, PENDING_TITLES_STORAGE_KEY)
+  if (!key) {
+    return
+  }
+  try {
+    writeAll(key, Object.fromEntries(Array.from(pending).slice(-MAX_PENDING_LOCKS)))
+  } catch (error) {
+    // Storage full or blocked: a title waits only while the page is open.
   }
 }
 

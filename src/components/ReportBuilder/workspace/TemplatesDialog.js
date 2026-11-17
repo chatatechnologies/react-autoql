@@ -20,9 +20,9 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // here. A template's document is fetched when it's chosen, and kept while the dialog is open.
 //
 // Props: authentication, autoQLConfig, dataFormatting, previewProps (more for the preview's ReportBuilder: branding,
-// enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, id, sessionFilterLocks? }),
-// which resolves once the report is made or rejects with why not, and onManage (Manage templates, for an
-// organization's admins).
+// enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, title, id,
+// sessionFilterLocks? }), which resolves once the report is made or rejects with why not, and onManage (Manage
+// templates, for an organization's admins). `title` is the template's name, which its reports are titled with.
 //
 // With enableFilterLocks, the report can be started for one value, or several, of what the host's data locks on (its
 // households, say): the report's filter lock (model/filterLocks.js), chosen beside Start report with the host's
@@ -192,18 +192,23 @@ export class TemplatesDialog extends React.Component {
     this.setState({ locks })
   }
 
-  // The chosen template as it would start: for what's chosen beside Start report. Made again only when either changes,
-  // so the preview isn't handed a new document on every render.
+  // The chosen template as it would start: titled with the template's name, as its reports are, and for what's chosen
+  // beside Start report. Made again only when either changes, so the preview isn't handed a new document on every
+  // render.
   previewReport() {
     const { chosen, locks } = this.state
-    if (!this.props.enableFilterLocks) {
-      return chosen.report
+    if (!chosen?.report) {
+      return chosen?.report
     }
-    const key = filterLocksKey(locks)
+    const withLocks = !!this.props.enableFilterLocks
+    const key = withLocks ? filterLocksKey(locks) : ''
     if (this.preview?.chosen !== chosen || this.preview.key !== key) {
-      const report = { ...chosen.report, sessionFilterLocks: locks }
-      if (!locks.length) {
-        delete report.sessionFilterLocks
+      const report = { ...chosen.report, ...(chosen.title ? { title: chosen.title } : {}) }
+      if (withLocks) {
+        report.sessionFilterLocks = locks
+        if (!locks.length) {
+          delete report.sessionFilterLocks
+        }
       }
       this.preview = { chosen, key, report }
     }
@@ -262,6 +267,13 @@ export class TemplatesDialog extends React.Component {
     return !!chosenId && !starting && (!this.props.enableFilterLocks || !!chosen) && (!each || each.length <= BATCH_MAX)
   }
 
+  // The chosen template's name, which its reports are titled with: from its document once it's in, and from the list
+  // until then (without enableFilterLocks, it can be started before its document is in).
+  chosenTitle() {
+    const { chosenId, chosen, templates } = this.state
+    return (chosen || (templates || []).find((template) => template.id === chosenId))?.title || undefined
+  }
+
   // The id a report from the template is made under for these locks: the same each time it's asked for.
   startIdFor(templateId, locks) {
     const startKey = `${templateId}\n${filterLocksKey(locks)}`
@@ -285,12 +297,13 @@ export class TemplatesDialog extends React.Component {
       if (each) {
         await this.props.onStartEach({
           templateId,
-          title: this.state.chosen.title,
+          title: this.chosenTitle(),
           starts: each.map((lock) => ({ id: this.startIdFor(templateId, [lock]), lock })),
         })
       } else {
         await this.props.onStart({
           templateId,
+          title: this.chosenTitle(),
           id: this.startIdFor(templateId, locks),
           ...(said ? { sessionFilterLocks: locks } : {}),
         })

@@ -55,9 +55,11 @@ import { ReportSaver } from './ReportSaver'
 import {
   loadOpenTabs,
   loadPendingLocks,
+  loadPendingTitles,
   loadTabWidths,
   saveOpenTabs,
   savePendingLocks,
+  savePendingTitles,
   saveTabWidths,
   widthsFor,
   withTabClosed,
@@ -206,7 +208,7 @@ const clipped = (text, max) => {
 }
 
 // A report for each household (RW-353): their folder, named for the template and the day, within a folder name's
-// length; and each report's title, its own and the household it's for, within a title's.
+// length; and each report's title, the template's name and the household it's for, within a title's.
 const batchFolderName = (title, date) => {
   const day = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
   const room = NAME_MAX - Array.from(S.batch.folder('', day)).length
@@ -419,11 +421,14 @@ export class ReportsWithoutTheme extends React.Component {
     // Reports made from a template filled in from here, while AutoQL can't fill them itself: id → the fill under way.
     this.localFills = new Map()
     // Reports started from a template whose copy the service made with another filter lock than the one picked (or
-    // with one when none was): id → the one picked, put on once they're filled in (applyPendingLock) and kept in this
+    // with one when none was): id → the one picked, put on once they're filled in (applyPendingChanges) and kept in this
     // browser until then (keepPendingLocks), so a reload doesn't lose it; and then id → when it was, for the builder
     // to offer Rerun all.
     this.pendingLocks = new Map()
     this.locksPutOn = new Map()
+    // Reports started from a template, titled as the report the template was saved from: id → the template's name,
+    // which they're titled with once they're filled in (applyPendingChanges), kept in this browser the same way.
+    this.pendingTitles = new Map()
     // Batch reports being named, whose savers the report shown isn't to replace meanwhile (readFilled).
     this.naming = new Set()
     this.root = React.createRef()
@@ -515,8 +520,9 @@ export class ReportsWithoutTheme extends React.Component {
       saveTabWidths(prefix, this.sourceId, widthsFor(this.state.tabWidths, this.state.tabs))
     }
 
-    // A report started for a filter lock the service didn't keep: it gets it once it's shown and can be changed.
-    this.applyPendingLock()
+    // A report started for a filter lock the service didn't keep, or from a template: it gets that lock, and the
+    // template's name, once it's shown and can be changed.
+    this.applyPendingChanges()
 
     // A tiles picker opened for a report that's no longer the one shown (deleted in another tab, say) answers
     // "nothing".
@@ -633,6 +639,12 @@ export class ReportsWithoutTheme extends React.Component {
         loadPendingLocks(prefix).forEach((locks, id) => {
           if (!this.pendingLocks.has(id)) {
             this.pendingLocks.set(id, normalizeFilterLocks(locks))
+          }
+        })
+        // And one started from a template still gets the template's name.
+        loadPendingTitles(prefix).forEach((title, id) => {
+          if (!this.pendingTitles.has(id)) {
+            this.pendingTitles.set(id, title)
           }
         })
         const listed = new Set(reports.map((report) => report.id))
@@ -1281,6 +1293,9 @@ export class ReportsWithoutTheme extends React.Component {
     if (this.pendingLocks.delete(id)) {
       this.keepPendingLocks()
     }
+    if (this.pendingTitles.delete(id)) {
+      this.keepPendingTitles()
+    }
     this.savers.get(id)?.dispose()
     this.savers.delete(id)
     this.saverSources.delete(id)
@@ -1356,7 +1371,11 @@ export class ReportsWithoutTheme extends React.Component {
   // that way: the report gets what was picked here once it can be changed (kept in this browser until then), and the
   // builder offers Rerun all to ask every question with it. Filled in from this page, it's asked with what was picked
   // from the start.
-  startFromTemplate = async ({ templateId, id, sessionFilterLocks }) => {
+  //
+  // `title` is the template's name, which the report is titled with: the service makes it with the template's
+  // document, titled as the report the template was saved from. Like a lock it didn't keep, it's put on once the report
+  // can be changed.
+  startFromTemplate = async ({ templateId, title, id, sessionFilterLocks }) => {
     const sourceId = this.sourceId
     const locks = normalizeFilterLocks(sessionFilterLocks)
     this.saveNow()
@@ -1384,6 +1403,11 @@ export class ReportsWithoutTheme extends React.Component {
       this.pendingLocks.set(detail.id, locks)
       this.keepPendingLocks()
     }
+    const templateName = typeof title === 'string' ? title.trim() : ''
+    if (templateName && detail.report?.title !== templateName) {
+      this.pendingTitles.set(detail.id, templateName)
+      this.keepPendingTitles()
+    }
     this.setState(({ reports }) => ({
       newReportOpen: false,
       notice: null,
@@ -1394,24 +1418,27 @@ export class ReportsWithoutTheme extends React.Component {
     // An AutoQL that doesn't fill reports in itself (yet) leaves it to this page, which asks with the lock from the
     // start.
     if (detail.dataStatus === 'NONE') {
-      this.applyPendingLock({ now: true })
+      this.applyPendingChanges({ now: true })
       // As of now, with the lock on: answers asked with it aren't taken for older than it (and Rerun all offered).
       this.fillHere(detail.id, sourceId, new Date().toISOString())
     }
   }
 
-  // What pendingLocks has, kept in this browser under the host's prefix.
+  // What pendingLocks and pendingTitles have, kept in this browser under the host's prefix.
   keepPendingLocks = () => savePendingLocks(this.storagePrefix(), this.pendingLocks)
+  keepPendingTitles = () => savePendingTitles(this.storagePrefix(), this.pendingTitles)
 
-  // The filter lock a report was started for, where the service's copy has another (pendingLocks), put on the shown
-  // report as an edit once its fill is over (none takes the copy's off): put on before then, the version the fill
-  // leaves would take its place. `now` puts it on before this page fills it in. A report filled in for another lock
-  // says so (the builder offers Rerun all).
-  applyPendingLock = ({ now = false } = {}) => {
+  // What a report started from a template is still to get, put on the shown report as one edit once its fill is over:
+  // the filter lock it was started for, where the service's copy has another (pendingLocks; none takes the copy's
+  // off), and the template's name as its title (pendingTitles). Put on before then, the version the fill leaves would
+  // take its place. `now` puts them on before this page fills it in. A report filled in for another lock says so (the
+  // builder offers Rerun all).
+  applyPendingChanges = ({ now = false } = {}) => {
     const id = this.shownId
     const locks = id ? this.pendingLocks.get(id) : null
+    const title = id ? this.pendingTitles.get(id) : null
     const saver = id ? this.savers.get(id) : null
-    if (!locks || !saver?.report || this.localFills.has(id)) {
+    if ((!locks && !title) || !saver?.report || this.localFills.has(id)) {
       return
     }
     // AutoQL's fill over: NONE says it won't fill this one, which this page does, from the start (`now`).
@@ -1419,14 +1446,23 @@ export class ReportsWithoutTheme extends React.Component {
     if (!now && !(fill?.id === id && FILL_OVER.includes(fill.dataStatus))) {
       return
     }
-    this.pendingLocks.delete(id)
-    this.keepPendingLocks()
-    // Put on after a fill without it, the answers it left aren't for it. Before this page's own fill, they aren't
-    // asked yet.
-    if (!now) {
-      this.locksPutOn.set(id, Date.now())
+    let next = saver.report
+    if (locks) {
+      this.pendingLocks.delete(id)
+      this.keepPendingLocks()
+      // Put on after a fill without it, the answers it left aren't for it. Before this page's own fill, they aren't
+      // asked yet.
+      if (!now) {
+        this.locksPutOn.set(id, Date.now())
+      }
+      next = setSessionFilterLocks(next, locks)
     }
-    this.handleChange(setSessionFilterLocks(saver.report, locks))
+    if (title) {
+      this.pendingTitles.delete(id)
+      this.keepPendingTitles()
+      next = setTitle(next, title)
+    }
+    this.handleChange(next)
   }
 
   // A report made from a template, filled in from this page as AutoQL would fill it: its questions asked a few at a
@@ -1589,7 +1625,7 @@ export class ReportsWithoutTheme extends React.Component {
     const sourceId = this.sourceId
     // What the reports' data is as of, wherever it's filled in.
     const startedAt = new Date().toISOString()
-    const batch = { sourceId, templateId, startedAt, folder: null, total: starts.length, queue: [...starts] }
+    const batch = { sourceId, templateId, title, startedAt, folder: null, total: starts.length, queue: [...starts] }
     Object.assign(batch, { done: 0, partly: 0, unfinished: 0, gone: 0, failed: [] })
     // Under way from here: another can't start while this one's folder is made.
     this.batch = batch
@@ -1772,8 +1808,8 @@ export class ReportsWithoutTheme extends React.Component {
     return this.mounted ? this.makeSaver(id, batch.sourceId, detail.report, storedOf(detail)) : null
   }
 
-  // A batch report named for its lock ("<its title> — <the household>") and saved, with its answers when it was filled
-  // in here. Resolves with whether it was saved.
+  // A batch report named for its template and lock ("<the template's name> — <the household>", or its own title where
+  // the batch has no name) and saved, with its answers when it was filled in here. Resolves with whether it was saved.
   // `known` is the saver it was filled in through, if it's still the report's: one since replaced isn't saved through.
   nameBatchReport = async (batch, id, lock, known) => {
     this.naming.add(id)
@@ -1782,7 +1818,7 @@ export class ReportsWithoutTheme extends React.Component {
       if (!saver) {
         return false
       }
-      const title = batchTitleOf(saver.report?.title, lock)
+      const title = batchTitleOf(batch.title || saver.report?.title, lock)
       saver.edit(setTitle(saver.report, title))
       if (this.stillOn(batch.sourceId)) {
         this.setState(({ opened, reports }) => ({

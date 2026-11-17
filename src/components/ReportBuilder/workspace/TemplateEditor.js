@@ -2,7 +2,7 @@ import React from 'react'
 import { Icon } from '../components/icons'
 import { ReportBuilder } from '../ReportBuilder'
 import { isNewerSchema } from '../model/reportSchema'
-import { updateBlock } from '../model/reportOperations'
+import { setTitle, updateBlock } from '../model/reportOperations'
 import { fetchReportCategories } from '../run/reportsApi'
 import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
@@ -59,6 +59,21 @@ export const templateDocumentOf = (report) => {
       return unanswered
     }),
   })
+}
+
+// A template has one name: its own is the title on its pages, as it is on the reports started from it. Renamed in its
+// details, its pages follow; renamed on its pages, its details do (not while the title there is empty).
+const withOneName = (change, { details, report }) => {
+  const named = change.details?.title
+  const pages = change.report || report
+  if (named && pages && pages.title !== named) {
+    return { ...change, report: setTitle(pages, named) }
+  }
+  const titled = typeof change.report?.title === 'string' ? change.report.title.trim() : ''
+  if (!change.details && titled && details && titled !== details.title) {
+    return { ...change, details: { ...details, title: titled } }
+  }
+  return change
 }
 
 // Whether a published template has changes waiting to be published: said in a list, or seen in one read by id.
@@ -144,8 +159,11 @@ export class TemplateEditor extends React.Component {
         }
         // A published template's changes waiting to be published, when it has some, are what's edited.
         const draft = template.draft || null
-        const report = withQuestionsAskedHere(draft?.report || template.report)
-        this.setState({ template, report, details: detailsOf(draft || template) })
+        const details = detailsOf(draft || template)
+        // Its pages titled with its name (withOneName), whatever the report it was saved from was called.
+        const asked = withQuestionsAskedHere(draft?.report || template.report)
+        const report = details.title && asked && asked.title !== details.title ? setTitle(asked, details.title) : asked
+        this.setState({ template, report, details })
         if (!isNewerSchema(report)) {
           this.fillIn(report)
         }
@@ -231,7 +249,7 @@ export class TemplateEditor extends React.Component {
 
   edit = (change) => {
     this.edits += 1
-    this.setState({ ...change, edited: true, saved: false })
+    this.setState({ ...withOneName(change, this.state), edited: true, saved: false })
   }
 
   onChange = (report) => {

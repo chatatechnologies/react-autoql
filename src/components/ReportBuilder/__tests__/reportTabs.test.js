@@ -4,16 +4,19 @@ import { ReportTabs } from '../workspace/ReportTabs'
 import {
   DEFAULT_STORAGE_PREFIX,
   PENDING_LOCKS_STORAGE_KEY,
+  PENDING_TITLES_STORAGE_KEY,
   TAB_WIDTHS_STORAGE_KEY,
   TABS_STORAGE_KEY,
 } from '../workspace/reportsConstants'
 import {
   loadOpenTabs,
   loadPendingLocks,
+  loadPendingTitles,
   loadTabWidths,
   MIN_TAB_WIDTH,
   saveOpenTabs,
   savePendingLocks,
+  savePendingTitles,
   saveTabWidths,
   widthsFor,
   withTabClosed,
@@ -180,6 +183,45 @@ describe('filter locks still to put on', () => {
       throw new Error('QuotaExceededError')
     })
     expect(() => savePendingLocks(PREFIX, new Map([['r1', BROWN]]))).not.toThrow()
+  })
+})
+
+describe('template names still to put on', () => {
+  const KEY = `${PREFIX}${PENDING_TITLES_STORAGE_KEY}`
+  const NAME = 'Household Report'
+
+  it('keeps them by report under the prefix, until none is left, and goes with the rest at sign-out', () => {
+    savePendingTitles(PREFIX, new Map([['r1', NAME]]))
+    expect(JSON.parse(window.localStorage.getItem(KEY))).toEqual({ r1: NAME })
+    expect(loadPendingTitles(PREFIX)).toEqual(new Map([['r1', NAME]]))
+
+    savePendingTitles(PREFIX, new Map())
+    expect(window.localStorage.getItem(KEY)).toBeNull()
+
+    savePendingTitles(PREFIX, new Map([['r1', NAME]]))
+    signOut()
+    expect(loadPendingTitles(PREFIX).size).toBe(0)
+  })
+
+  it('keeps the newest 50, and reads back only what can be a name', () => {
+    savePendingTitles(PREFIX, new Map(Array.from({ length: 60 }, (_, i) => [`r${i}`, NAME])))
+    const kept = loadPendingTitles(PREFIX)
+    expect(kept.size).toBe(50)
+    expect(kept.has('r59')).toBe(true)
+    expect(kept.has('r9')).toBe(false)
+
+    window.localStorage.setItem(KEY, JSON.stringify({ r1: NAME, r2: [NAME], r3: '  ', '': NAME }))
+    expect(loadPendingTitles(PREFIX)).toEqual(new Map([['r1', NAME]]))
+  })
+
+  it('keeps nothing without a prefix, and carries on when storage is blocked', () => {
+    savePendingTitles(undefined, new Map([['r1', NAME]]))
+    expect(window.localStorage.length).toBe(0)
+
+    jest.spyOn(window.Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    expect(() => savePendingTitles(PREFIX, new Map([['r1', NAME]]))).not.toThrow()
   })
 })
 

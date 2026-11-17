@@ -151,7 +151,8 @@ describe('TemplatesDialog', () => {
     expect(screen.getByText('Choose a template to see it here.')).toBeInTheDocument()
 
     fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
-    expect(await screen.findByTestId('preview-builder')).toHaveTextContent('t2 report')
+    // Titled with the template's name, as its reports are: its document keeps the title of the report it was saved from.
+    expect(await screen.findByTestId('preview-builder')).toHaveTextContent('New accounts')
     expect(mockBuilder.props).toMatchObject({
       readOnly: true,
       dataFill: { state: 'template' },
@@ -164,9 +165,9 @@ describe('TemplatesDialog', () => {
 
     // Chosen again later, it's shown from what was fetched.
     fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
-    await screen.findByText('t1 report')
+    await waitFor(() => expect(screen.getByTestId('preview-builder')).toHaveTextContent('Household review'))
     fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
-    expect(screen.getByTestId('preview-builder')).toHaveTextContent('t2 report')
+    expect(screen.getByTestId('preview-builder')).toHaveTextContent('New accounts')
     expect(fetchReportTemplate).toHaveBeenCalledTimes(2)
   })
 
@@ -182,7 +183,11 @@ describe('TemplatesDialog', () => {
     await act(async () => fireEvent.click(startButton()))
     expect(onStart).toHaveBeenCalledTimes(2)
     const [first, again] = onStart.mock.calls.map(([call]) => call)
-    expect(first).toEqual({ templateId: 't1', id: expect.stringMatching(/^[0-9a-f-]{36}$/) })
+    expect(first).toEqual({
+      templateId: 't1',
+      title: 'Household review',
+      id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    })
     expect(again).toEqual(first)
   })
 
@@ -204,9 +209,14 @@ describe('TemplatesDialog', () => {
     await act(async () => fireEvent.click(startButton()))
 
     const [everything, brown] = onStart.mock.calls.map(([call]) => call)
-    expect(everything).toEqual({ templateId: 't1', id: expect.stringMatching(/^[0-9a-f-]{36}$/) })
+    expect(everything).toEqual({
+      templateId: 't1',
+      title: 'Household review',
+      id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    })
     expect(brown).toEqual({
       templateId: 't1',
+      title: 'Household review',
       id: expect.stringMatching(/^[0-9a-f-]{36}$/),
       sessionFilterLocks: [BROWN],
     })
@@ -258,9 +268,10 @@ describe('TemplatesDialog', () => {
       await act(async () => fireEvent.click(startButton()))
 
       const [brown, nguyen, everything] = onStart.mock.calls.map(([call]) => call)
-      expect(brown).toEqual({ templateId: 't1', id: expect.any(String), sessionFilterLocks: [BROWN] })
-      expect(nguyen).toEqual({ templateId: 't1', id: expect.any(String), sessionFilterLocks: [NGUYEN] })
-      expect(everything).toEqual({ templateId: 't1', id: expect.any(String), sessionFilterLocks: [] })
+      const started = { templateId: 't1', title: 'Household review', id: expect.any(String) }
+      expect(brown).toEqual({ ...started, sessionFilterLocks: [BROWN] })
+      expect(nguyen).toEqual({ ...started, sessionFilterLocks: [NGUYEN] })
+      expect(everything).toEqual({ ...started, sessionFilterLocks: [] })
       expect(new Set([brown.id, nguyen.id, everything.id]).size).toBe(3)
     })
 
@@ -269,10 +280,10 @@ describe('TemplatesDialog', () => {
       await chooseFirst()
       await act(async () => arrive())
       fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
-      await waitFor(() => expect(mockBuilder.props.report.title).toBe('t2 report'))
+      await waitFor(() => expect(mockBuilder.props.report.title).toBe('New accounts'))
       expect(lockShown()).toHaveTextContent('All households')
       await act(async () => fireEvent.click(startButton()))
-      expect(onStart).toHaveBeenLastCalledWith({ templateId: 't2', id: expect.any(String) })
+      expect(onStart).toHaveBeenLastCalledWith({ templateId: 't2', title: 'New accounts', id: expect.any(String) })
 
       fireEvent.click(screen.getAllByTestId('reports-templates-item')[0])
       expect(lockShown()).toHaveTextContent('Brown Family')
@@ -294,7 +305,16 @@ describe('TemplatesDialog', () => {
       await act(async () => arrive())
       expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
       await act(async () => fireEvent.click(startButton()))
-      expect(onStart).toHaveBeenCalledWith({ templateId: 't1', id: expect.any(String) })
+      expect(onStart).toHaveBeenCalledWith({ templateId: 't1', title: 'Household review', id: expect.any(String) })
+    })
+
+    it('starts it under the template’s name before its document is in, where it can be started then', async () => {
+      const { onStart } = setup()
+      await chooseFirst()
+      expect(startButton()).toBeEnabled()
+      await act(async () => fireEvent.click(startButton()))
+      expect(onStart).toHaveBeenCalledWith({ templateId: 't1', title: 'Household review', id: expect.any(String) })
+      await act(async () => arrive())
     })
   })
 
@@ -361,6 +381,7 @@ describe('TemplatesDialog', () => {
       expect(onStartEach).not.toHaveBeenCalled()
       expect(onStart).toHaveBeenCalledWith({
         templateId: 't1',
+        title: 'Household review',
         id: expect.any(String),
         sessionFilterLocks: [BROWN, NGUYEN],
       })

@@ -210,7 +210,8 @@ describe('TemplateEditor', () => {
     expect(updateTemplate).toHaveBeenCalledWith({
       authentication: AUTH,
       id: 'tp1',
-      title: 'Monthly review',
+      // The title on its pages is its name: renamed there, it's renamed.
+      title: 'Monthly client review',
       description: 'One for each household',
       categoryId: 'c1',
       tags: ['Monthly'],
@@ -257,6 +258,46 @@ describe('TemplateEditor', () => {
         tags: ['Monthly', 'AUM'],
       }),
     )
+  })
+
+  describe('one name for the template and its pages, as its reports are titled with it', () => {
+    it('opens its pages under its name, not the title of the report it was saved from', async () => {
+      fetchManagedTemplate.mockResolvedValue(template({ report: { ...DOCUMENT, title: 'Brown Family review' } }))
+      await openFilled()
+      expect(mockBuilder.props.report.title).toBe('Monthly review')
+      // Nothing to save for that alone.
+      expect(button('save')).toBeDisabled()
+    })
+
+    it('renames its pages when it’s renamed, by its name or in Details…', async () => {
+      await openFilled()
+      fireEvent.click(button('name'))
+      fireEvent.change(button('name-input'), { target: { value: 'Monthly household review' } })
+      fireEvent.keyDown(button('name-input'), { key: 'Enter' })
+      expect(mockBuilder.props.report.title).toBe('Monthly household review')
+
+      fireEvent.click(button('details'))
+      fireEvent.change(screen.getByTestId('reports-template-title'), { target: { value: 'Household review' } })
+      fireEvent.click(button('details-apply'))
+      expect(mockBuilder.props.report.title).toBe('Household review')
+
+      await click('save')
+      expect(updateTemplate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Household review',
+          document: expect.objectContaining({ title: 'Household review' }),
+        }),
+      )
+    })
+
+    it('is renamed when its pages are, but not to nothing', async () => {
+      await openFilled()
+      editTitle('Monthly client review')
+      expect(button('name')).toHaveTextContent('Monthly client review')
+
+      editTitle('  ')
+      expect(button('name')).toHaveTextContent('Monthly client review')
+    })
   })
 
   it('turns down details the service wouldn’t take before keeping them', async () => {
@@ -353,7 +394,7 @@ describe('TemplateEditor', () => {
         expect.objectContaining({
           authentication: AUTH,
           id: 'tp1',
-          title: 'Monthly review',
+          title: 'Monthly client review',
           document: expect.objectContaining({ title: 'Monthly client review' }),
         }),
       )
@@ -385,7 +426,8 @@ describe('TemplateEditor', () => {
       )
       const { onClose } = await openFilled()
       expect(button('name')).toHaveTextContent('Monthly review (new)')
-      expect(mockBuilder.props.report.title).toBe('Monthly review, new layout')
+      // Its pages under the name it has waiting, whatever they were saved with.
+      expect(mockBuilder.props.report.title).toBe('Monthly review (new)')
       expect(button('changes')).toHaveTextContent('Unpublished changes')
       expect(button('publish')).toBeEnabled()
 

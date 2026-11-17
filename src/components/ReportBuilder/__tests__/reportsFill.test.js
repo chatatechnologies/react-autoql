@@ -154,12 +154,12 @@ const fillNotice = () => screen.queryByTestId('reports-fill-notice')
 // A fill's heartbeat (data_heartbeat_at), the nth time it moved on.
 const heartbeat = (n) => new Date(Date.UTC(2026, 10, 9, 18) + n * 1000).toISOString()
 
-// New report › Start from a template, as the dialog does it.
-const startFromTemplate = async () => {
+// New report › Start from a template, as the dialog does it (`start`: more it says, such as the template's name).
+const startFromTemplate = async (start = {}) => {
   await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
   fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
   expect(mockDialogs.newReport.enableTemplates).toBe(true)
-  await act(() => mockDialogs.newReport.onStartFromTemplate({ templateId: 'tp1', id: T }))
+  await act(() => mockDialogs.newReport.onStartFromTemplate({ templateId: 'tp1', id: T, ...start }))
 }
 
 beforeEach(() => {
@@ -216,6 +216,92 @@ describe('starting a report from a template', () => {
   })
 })
 
+// AutoQL makes it from the template's document, titled as the report the template was saved from ('Quarterly review'
+// here): it's titled with the template's name once it can be changed.
+describe('a report started from a template, titled with the template’s name', () => {
+  const tab = (name) => within(screen.getByTestId('reports-tabs')).queryByRole('button', { name })
+  const savedAs = (title, rest = {}) =>
+    expect(saveReport).toHaveBeenCalledWith(
+      expect.objectContaining({ id: T, ...rest, report: expect.objectContaining({ title }) }),
+    )
+
+  it('is titled with it from the start when it’s filled in here', async () => {
+    createReportFromTemplate.mockResolvedValue({ ...stored({ blocks: [dataBlock('d1')] }), created: true })
+    setup()
+    await startFromTemplate({ title: 'Monthly review' })
+
+    expect(screen.getByTestId('builder-title')).toHaveTextContent('Monthly review')
+    expect(tab('Monthly review')).toBeTruthy()
+    expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ query: 'question d1' }))
+    await waitFor(() => savedAs('Monthly review'))
+    expect(localStorage.getItem('test.reportPendingTitles')).toBeNull()
+  })
+
+  it('is titled with it once AutoQL’s fill is over, not while it fills', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus
+      .mockResolvedValueOnce({ dataStatus: 'RUNNING', version: 2, dataErrors: [] })
+      .mockResolvedValue({ dataStatus: 'DONE', version: 3, dataErrors: [] })
+    fetchReport.mockResolvedValue({
+      ...stored({ version: 3, dataStatus: 'DONE' }),
+      report: documentOf([dataBlock('d1', answered)]),
+    })
+    setup()
+    await startFromTemplate({ title: 'Monthly review' })
+
+    // Not while it's filled in: what the fill leaves would take its place.
+    expect(mockBuilder.props.readOnly).toBe(true)
+    expect(screen.getByTestId('builder-title')).toHaveTextContent('Quarterly review')
+
+    await waitFor(() => expect(screen.getByTestId('builder-title')).toHaveTextContent('Monthly review'))
+    expect(mockBuilder.props.readOnly).toBe(false)
+    expect(mockBuilder.props.report.blocks[0].capture).toEqual(answered)
+    expect(tab('Monthly review')).toBeTruthy()
+    await waitFor(() => savedAs('Monthly review', { version: 3 }))
+  })
+
+  it('keeps it in this browser, so the report is titled with it after a reload while it filled', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'RUNNING', version: 1, dataErrors: [] })
+    const page = setup()
+    await startFromTemplate({ title: 'Monthly review' })
+    expect(JSON.parse(localStorage.getItem('test.reportPendingTitles'))).toStrictEqual({ [T]: 'Monthly review' })
+    page.unmount()
+
+    // The page opened again on the report, once its fill is over.
+    fetchReports.mockResolvedValue({ reports: [{ ...stored(), report: undefined }] })
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataErrors: [] })
+    fetchReport.mockResolvedValue({
+      ...stored({ version: 3, dataStatus: 'DONE' }),
+      report: documentOf([dataBlock('d1', answered)]),
+    })
+    setup({ shownReportId: T })
+
+    await waitFor(() => expect(mockBuilder.props?.report.title).toBe('Monthly review'))
+    await waitFor(() => savedAs('Monthly review'))
+    expect(localStorage.getItem('test.reportPendingTitles')).toBeNull()
+  })
+
+  it('keeps nothing for a report already titled with it', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'RUNNING', version: 1, dataErrors: [] })
+    setup()
+    await startFromTemplate({ title: ' Quarterly review ' })
+
+    expect(screen.getByTestId('builder-title')).toHaveTextContent('Quarterly review')
+    expect(localStorage.getItem('test.reportPendingTitles')).toBeNull()
+  })
+})
+
 describe('a report started from a template for a filter lock (RW-351)', () => {
   const BROWN = { key: 'household', value: 'Brown Family', filter_type: 'include', format_txt: 'Brown Family' }
   const startFor = async (locks) => {
@@ -266,6 +352,37 @@ describe('a report started from a template for a filter lock (RW-351)', () => {
           id: T,
           version: 3,
           report: expect.objectContaining({ sessionFilterLocks: [BROWN] }),
+        }),
+      ),
+    )
+  })
+
+  it('puts the lock on and titles it with the template’s name together, once its fill is over', async () => {
+    createReportFromTemplate.mockResolvedValue({
+      ...stored({ dataStatus: 'PENDING', blocks: [dataBlock('d1')] }),
+      created: true,
+    })
+    filledLater(documentOf([dataBlock('d1', answered)]))
+    setup({ enableFilterLocks: true })
+    await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
+    await act(() =>
+      mockDialogs.newReport.onStartFromTemplate({
+        templateId: 'tp1',
+        title: 'Monthly review',
+        id: T,
+        sessionFilterLocks: [BROWN],
+      }),
+    )
+
+    await waitFor(() => expect(mockBuilder.props.report.title).toBe('Monthly review'))
+    expect(mockBuilder.props.report.sessionFilterLocks).toStrictEqual([BROWN])
+    await waitFor(() =>
+      expect(saveReport).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          id: T,
+          version: 3,
+          report: expect.objectContaining({ title: 'Monthly review', sessionFilterLocks: [BROWN] }),
         }),
       ),
     )
@@ -936,11 +1053,11 @@ describe('a report for each household from a template (RW-353)', () => {
     expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ query: 'question d2', filters: [NGUYEN] }))
 
     const brown = lastSaveOf(R1).report
-    expect(brown.title).toBe('Quarterly review — Brown Family')
+    expect(brown.title).toBe('Monthly review — Brown Family')
     expect(brown.blocks.map((block) => block.capture?.config.household)).toEqual(['Brown Family', 'Brown Family'])
-    expect(lastSaveOf(R2).report.title).toBe('Quarterly review — Nguyen Family')
-    expect(listed(R1)).toMatchObject({ title: 'Quarterly review — Brown Family', folderId, dataStatus: 'DONE' })
-    expect(listed(R2)).toMatchObject({ title: 'Quarterly review — Nguyen Family', folderId, dataStatus: 'DONE' })
+    expect(lastSaveOf(R2).report.title).toBe('Monthly review — Nguyen Family')
+    expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family', folderId, dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ title: 'Monthly review — Nguyen Family', folderId, dataStatus: 'DONE' })
     // The home page stays as it was: no tab opened for any of them.
     expect(screen.queryByTestId('builder')).toBeNull()
   })
@@ -966,9 +1083,9 @@ describe('a report for each household from a template (RW-353)', () => {
 
     await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in/))
     expect(captureQuestion).not.toHaveBeenCalled()
-    expect(lastSaveOf(R1)).toMatchObject({ version: 3, report: { title: 'Quarterly review — Brown Family' } })
+    expect(lastSaveOf(R1)).toMatchObject({ version: 3, report: { title: 'Monthly review — Brown Family' } })
     expect(lastSaveOf(R1).report.blocks[0].capture).toEqual(answered)
-    expect(listed(R2)).toMatchObject({ title: 'Quarterly review — Nguyen Family', dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ title: 'Monthly review — Nguyen Family', dataStatus: 'DONE' })
   })
 
   it('keeps following a fill whose heartbeat moves on, past when it’d be taken to have stopped (RW-366)', async () => {
@@ -1006,7 +1123,7 @@ describe('a report for each household from a template (RW-353)', () => {
     await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Your report is in “Monthly review — /))
     expect(captureQuestion).toHaveBeenCalledWith(expect.objectContaining({ filters: [BROWN] }))
     expect(lastSaveOf(R1).report).toMatchObject({
-      title: 'Quarterly review — Brown Family',
+      title: 'Monthly review — Brown Family',
       sessionFilterLocks: [BROWN],
     })
   })
@@ -1106,7 +1223,7 @@ describe('a report for each household from a template (RW-353)', () => {
     // Nothing written to it from here, while AutoQL may still be: no name, and none of this page's answers.
     expect(lastSaveOf(R1)).toBeUndefined()
     expect(captureQuestion).not.toHaveBeenCalledWith(expect.objectContaining({ filters: [BROWN] }))
-    expect(lastSaveOf(R2).report.title).toBe('Quarterly review — Nguyen Family')
+    expect(lastSaveOf(R2).report.title).toBe('Monthly review — Nguyen Family')
   })
 
   it('names a batch report through the saver it has now, not one replaced while it was filled in', async () => {
@@ -1128,7 +1245,7 @@ describe('a report for each household from a template (RW-353)', () => {
     await startEach()
 
     await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in “Monthly review — /))
-    expect(lastSaveOf(R1)).toMatchObject({ version: 9, report: { title: 'Quarterly review — Brown Family' } })
+    expect(lastSaveOf(R1)).toMatchObject({ version: 9, report: { title: 'Monthly review — Brown Family' } })
   })
 
   it('keeps nothing of a batch report once it’s named and saved', async () => {

@@ -213,6 +213,26 @@ describe('SaveAsTemplateDialog', () => {
     expect(screen.getByTestId('reports-save-as-template-saved')).toBeInTheDocument()
   })
 
+  it('titles its pages with the name it’s saved under, where AutoQL copied the report’s', async () => {
+    createTemplateFromReport.mockResolvedValue(template('tp1', 'Household Report'))
+    // Its questions marked already: only its title is changed.
+    const document = { ...REPORT, blocks: [{ ...REPORT.blocks[0], askedHere: true }] }
+    fetchManagedTemplate.mockResolvedValue({ ...template('tp1', 'Household Report'), report: document })
+    updateTemplate.mockResolvedValue(template('tp1', 'Household Report'))
+    open()
+    fireEvent.change(screen.getByTestId('reports-template-title'), { target: { value: ' Household Report ' } })
+    await save()
+
+    expect(updateTemplate).toHaveBeenCalledWith({
+      authentication: AUTH,
+      id: 'tp1',
+      document: { ...document, title: 'Household Report' },
+    })
+    expect(screen.getByTestId('reports-save-as-template-saved')).toHaveTextContent(
+      '“Household Report” is saved as a draft.',
+    )
+  })
+
   it('is made even when its questions can’t be marked', async () => {
     createTemplateFromReport.mockResolvedValue(template('tp1', 'Quarterly review'))
     fetchManagedTemplate.mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
