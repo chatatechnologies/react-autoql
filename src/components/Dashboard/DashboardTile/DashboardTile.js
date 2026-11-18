@@ -33,7 +33,6 @@ import LoadingDots from '../../LoadingDots/LoadingDots.js'
 import ErrorBoundary from '../../../containers/ErrorHOC/ErrorHOC'
 import { ReverseTranslation } from '../../ReverseTranslation'
 import { Popover } from '../../Popover'
-import FollowOnModal from '../../FollowOnModal/FollowOnModal'
 
 import {
   authenticationType,
@@ -114,8 +113,6 @@ export class DashboardTile extends React.Component {
       isTopExecuted: !!tile.queryResponse,
       localRTFilterResponse: null,
       isRTHovered: false,
-      isFollowOnModalOpen: false,
-      followOnResults: [],
       queryResponseVersion: 0,
       isProjectModalOpen: false,
       pendingProjectId: undefined,
@@ -188,7 +185,6 @@ export class DashboardTile extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
-    enableFollowOnQuery: PropTypes.bool,
     showResetQueryOption: PropTypes.bool,
     // List of projects the tile can be assigned to (multi-project dashboards). When omitted or empty, no picker is shown.
     projectSelectList: PropTypes.arrayOf(
@@ -249,7 +245,6 @@ export class DashboardTile extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
-    enableFollowOnQuery: false,
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
     onTileAuthExpired: undefined,
@@ -1692,10 +1687,6 @@ export class DashboardTile extends React.Component {
 
   onPNGDownloadFinish = () => this.props.onPNGDownloadFinish({ tileId: this.props.tile.i })
 
-  onOpenFollowOnModal = () => {
-    this.setState({ isFollowOnModalOpen: true })
-  }
-
   onDrilldownStart = (activeKey) =>
     this.props.onDrilldownStart({
       tileId: this.props.tile.i,
@@ -1779,8 +1770,6 @@ export class DashboardTile extends React.Component {
               showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
               enableBillingGate={this.props.enableBillingGate}
               onQuotaExceeded={this.props.onQuotaExceeded}
-              enableFollowOnQuery={this.props.enableFollowOnQuery}
-              onOpenFollowOnModal={this.onOpenFollowOnModal}
               isEditing={this.props.isEditing}
               source={this.getDashboardSource()}
               scope={this.props.scope}
@@ -2045,19 +2034,6 @@ export class DashboardTile extends React.Component {
           )}
           {this.props.isEditing && this.renderDragHandles()}
           {this.props.isEditing && this.renderDeleteBtn()}
-          {this.props.enableFollowOnQuery && (
-            <FollowOnModal
-              isVisible={this.state.isFollowOnModalOpen}
-              onClose={() => this.setState({ isFollowOnModalOpen: false })}
-              authentication={this.getTileAuthentication()}
-              autoQLConfig={this.getTileAutoQLConfig()}
-              dataFormatting={this.props.dataFormatting}
-              responseRef={this.state.responseRef}
-              queryResponse={this.props.tile?.queryResponse}
-              initialResults={this.state.followOnResults}
-              onResultsChange={(results) => this.setState({ followOnResults: results })}
-            />
-          )}
         </div>
       </ErrorBoundary>
     )

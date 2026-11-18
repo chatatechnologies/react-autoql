@@ -81,11 +81,3 @@ export function getSummaryButtonDisabledState({ queryResponse, isGenerating, isC
 
   return { isDisabled, tooltip }
 }
-
-export function getFollowOnQueryDisabledState({ queryResponse }) {
-  const isTooLarge = isMagicWandDatasetTooLarge(queryResponse)
-  return {
-    isDisabled: isTooLarge,
-    tooltip: isTooLarge ? LARGE_DATASET_TOOLTIP : undefined,
-  }
-}
