@@ -190,7 +190,6 @@ export class DataMessenger extends React.Component {
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
     enableCyclicalDates: PropTypes.bool,
-    enableFollowOnQuery: PropTypes.bool,
     // Splits the Data Messenger chat into user sessions: a tab bar with a close
     // button per tab and a "+" for a new one. Each session gets its own UUID,
     // sent along with the queries the user types in it. Default false — no tabs
@@ -284,7 +283,6 @@ export class DataMessenger extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
-    enableFollowOnQuery: false,
     enableSessions: false,
     setMobileActivePage: () => {},
     // Callbacks

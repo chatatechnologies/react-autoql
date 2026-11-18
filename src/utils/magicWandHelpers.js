@@ -15,7 +15,7 @@ export function isMagicWandDatasetTooLarge(queryResponse) {
 }
 
 /**
- * Shared visibility rules for query action buttons (magic wand, follow-on queries, etc.)
+ * Shared visibility rules for query action buttons (magic wand, report analysis, etc.)
  * Returns false for single-value responses, empty data, previews, and disabled features.
  */
 export function shouldShowQueryActionButton(enableFeature, queryResponse) {

@@ -153,7 +153,6 @@ class DashboardWithoutTheme extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
-    enableFollowOnQuery: PropTypes.bool,
     enableResetQuery: PropTypes.bool,
     // List of projects tiles can be assigned to (multi-project dashboards). When omitted, no per-tile project picker is shown.
     projectSelectList: PropTypes.arrayOf(
@@ -210,7 +209,6 @@ class DashboardWithoutTheme extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
-    enableFollowOnQuery: false,
     enableResetQuery: false,
     projectSelectList: undefined,
     getAuthenticationForProject: undefined,
@@ -1536,7 +1534,6 @@ class DashboardWithoutTheme extends React.Component {
             showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
             enableBillingGate={this.props.enableBillingGate}
             onQuotaExceeded={this.props.onQuotaExceeded}
-            enableFollowOnQuery={this.props.enableFollowOnQuery}
             showResetQueryOption={this.props.enableResetQuery}
             projectSelectList={this.props.projectSelectList}
             getAuthenticationForProject={this.props.getAuthenticationForProject}
