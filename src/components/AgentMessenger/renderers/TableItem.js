@@ -161,8 +161,6 @@ const TableItem = ({ data, dataFormatting, maxHeight, isRevealed, onRevealComple
 
   const canScrollX = scroll.scrollWidth > scroll.width + 1
   const isAtEnd = !canScrollX || scroll.left + scroll.width >= scroll.scrollWidth - 2
-  const thumbWidth = canScrollX ? Math.max(8, (scroll.width / scroll.scrollWidth) * 100) : 100
-  const thumbLeft = canScrollX ? (scroll.left / (scroll.scrollWidth - scroll.width)) * (100 - thumbWidth) : 0
 
   return (
     <div className={`react-autoql-agent-table-item${isRevealed ? '' : ' animate-in'}`} ref={wrapperRef}>
@@ -196,12 +194,6 @@ const TableItem = ({ data, dataFormatting, maxHeight, isRevealed, onRevealComple
 
       {canScrollX && (
         <div className='react-autoql-agent-table-footer'>
-          <div className='react-autoql-agent-table-track'>
-            <div
-              className='react-autoql-agent-table-thumb'
-              style={{ width: `${thumbWidth}%`, left: `${thumbLeft}%` }}
-            />
-          </div>
           {!!visibleRange && (
             <span className='react-autoql-agent-table-range'>
               {visibleRange.first}–{visibleRange.last} of {visibleRange.total}

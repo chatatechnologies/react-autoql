@@ -11,16 +11,20 @@ import { DashboardTilesDialog } from '../workspace/DashboardTilesDialog'
 
 jest.mock('../../Dashboard', () => {
   const mockReact = require('react')
-  // Every stand-in mounted, newest last; whether one answers its tiles as it mounts; and what a tile's capture comes
-  // back as, by key, when not a one-row table.
-  const shared = { mounted: [], answerOnMount: true, results: {} }
+  // Every stand-in mounted, newest last; whether one answers its tiles as it mounts; what a tile's capture comes
+  // back as, by key, when not a one-row table; and what asking a tile's question ends with: the tile with the answer
+  // it got (or a promise of it), as the real Dashboard's executeSingleTile resolves (nothing when not set).
+  const shared = { mounted: [], answerOnMount: true, results: {}, run: null }
   const answered = (tile) => ({
     ...tile,
     queryResponse: tile.queryResponse || { data: { data: { rows: [['A', 1]] } } },
   })
 
   class Dashboard extends mockReact.Component {
-    executeCachedDashboard = jest.fn(() => Promise.resolve())
+    executeSingleTile = jest.fn((key) => {
+      const tile = this.props.tiles.find((t) => String(t.key ?? t.i) === String(key))
+      return Promise.resolve(shared.run && tile ? shared.run(tile) : undefined)
+    })
 
     captureTilesForReport = jest.fn(({ tileKeys }) =>
       tileKeys.map((key) => {
@@ -110,6 +114,7 @@ afterEach(() => {
   stub.mounted.length = 0
   stub.answerOnMount = true
   stub.results = {}
+  stub.run = null
 })
 
 describe('DashboardTilesDialog', () => {
@@ -218,7 +223,7 @@ describe('DashboardTilesDialog', () => {
     await waitFor(() => expect(boxes()[0]).not.toBeDisabled())
 
     expect(stub.mounted).toHaveLength(1)
-    expect(stub.mounted[0].executeCachedDashboard).toHaveBeenCalledTimes(1)
+    expect(stub.mounted[0].executeSingleTile.mock.calls.map(([key]) => key)).toEqual(['b', 'c', 'a'])
     expect(onTilesChange).toHaveBeenCalledTimes(1)
     const [id, tiles] = onTilesChange.mock.calls[0]
     expect(id).toBe('db_1')
@@ -239,7 +244,7 @@ describe('DashboardTilesDialog', () => {
     open({ dashboards: [dashboard('db_1', { tiles })] })
 
     expect(stub.mounted[0].props.tiles).toBe(tiles)
-    expect(stub.mounted[0].executeCachedDashboard).not.toHaveBeenCalled()
+    expect(stub.mounted[0].executeSingleTile).not.toHaveBeenCalled()
     expect(boxes().map((box) => box.disabled)).toEqual([false, false, true, true])
   })
 
@@ -261,6 +266,65 @@ describe('DashboardTilesDialog', () => {
 
     answer('b')
     expect(status().textContent).toBe('')
+  })
+
+  // A request that fails, or is cut off, with no response at all leaves a tile without an answer (RW-374).
+  const NOT_LOADED = 'Its answer didn’t load. Refresh the dashboard to try again.'
+
+  it('says a tile’s answer didn’t load once its question ends without one, and stops counting it (RW-374)', async () => {
+    stub.answerOnMount = false
+    // Asking the tiles ends with an answer for Sales, and with none for AUM.
+    stub.run = (tile) => ({ ...tile, queryResponse: tile.key === 'b' ? ANSWER : undefined })
+    open()
+    expect(labels()[0]).toBe('AUMLoading…')
+
+    await waitFor(() => expect(labels()[0]).toBe(`AUM${NOT_LOADED}`))
+    expect(boxes()[0]).toBeDisabled()
+    // Sales's answer reaches the dialog as answers do; until then it's still loading.
+    expect(status()).toHaveTextContent('1 tile is still loading.')
+    answer('b')
+    expect(status().textContent).toBe('')
+    expect(boxes()[1]).toBeEnabled()
+
+    // An answer that comes in later still counts.
+    answer('a')
+    expect(boxes()[0]).toBeEnabled()
+  })
+
+  it('asks again for the tiles a dashboard ended without, when it’s shown again (RW-374)', async () => {
+    stub.answerOnMount = false
+    stub.run = (tile) => ({ ...tile, queryResponse: undefined })
+    open({ dashboards: [dashboard('db_1'), dashboard('db_2')] })
+    await waitFor(() => expect(labels()[0]).toBe(`AUM${NOT_LOADED}`))
+
+    const select = screen.getByLabelText('Dashboard')
+    fireEvent.change(select, { target: { value: 'db_2' } })
+    await waitFor(() => expect(labels()[0]).toBe(`AUM${NOT_LOADED}`))
+
+    fireEvent.change(select, { target: { value: 'db_1' } })
+    expect(stub.mounted[2].executeSingleTile).toHaveBeenCalledTimes(3)
+    expect(labels()[0]).toBe('AUMLoading…')
+    await waitFor(() => expect(labels()[0]).toBe(`AUM${NOT_LOADED}`))
+  })
+
+  it('says so as soon as a tile’s own question ends, while another is still being asked (RW-374)', async () => {
+    stub.answerOnMount = false
+    // AUM's request fails at once; Sales's is still on its way.
+    let answerSales
+    const salesAsked = new Promise((resolve) => {
+      answerSales = resolve
+    })
+    stub.run = (tile) => (tile.key === 'b' ? salesAsked : { ...tile, queryResponse: undefined })
+    open()
+
+    await waitFor(() => expect(labels()[0]).toBe(`AUM${NOT_LOADED}`))
+    expect(labels()[1]).toBe('SalesLoading…')
+    expect(status()).toHaveTextContent('1 tile is still loading.')
+
+    await act(async () => answerSales({ key: 'b', queryResponse: ANSWER }))
+    answer('b')
+    expect(status().textContent).toBe('')
+    expect(boxes()[1]).toBeEnabled()
   })
 
   it('says a tile’s answer has no data to add', () => {
@@ -299,7 +363,7 @@ describe('DashboardTilesDialog', () => {
     expect(labels()).toEqual(['By advisor'])
     expect(stub.mounted).toHaveLength(2)
     expect(stub.mounted[1].props).toMatchObject({ dashboardId: 'db_2', isProjectDashboard: true })
-    expect(stub.mounted[1].executeCachedDashboard).toHaveBeenCalledTimes(1)
+    expect(stub.mounted[1].executeSingleTile).toHaveBeenCalledTimes(1)
     // The ticks start again.
     expect(ticks()).toEqual([false])
     expect(screen.getByRole('button', { name: 'Add tiles' })).toBeDisabled()
@@ -307,7 +371,7 @@ describe('DashboardTilesDialog', () => {
     // Back to the first, which has its answers already: nothing is asked again.
     fireEvent.change(select, { target: { value: 'db_1' } })
     expect(stub.mounted).toHaveLength(3)
-    expect(stub.mounted[2].executeCachedDashboard).not.toHaveBeenCalled()
+    expect(stub.mounted[2].executeSingleTile).not.toHaveBeenCalled()
     expect(boxes().map((box) => box.disabled)).toEqual([false, false, true, true])
     expect(onTilesChange.mock.calls.map(([id]) => id)).toEqual(['db_1', 'db_2', 'db_1'])
   })
@@ -357,7 +421,7 @@ describe('DashboardTilesDialog', () => {
 
     rerender(dialog({ dashboards: [dashboard('db_1', { tiles: [] })] }))
     expect(screen.getByText('This dashboard has no tiles.')).toBeInTheDocument()
-    expect(stub.mounted[0].executeCachedDashboard).not.toHaveBeenCalled()
+    expect(stub.mounted[0].executeSingleTile).not.toHaveBeenCalled()
   })
 
   it('closes without adding anything', () => {

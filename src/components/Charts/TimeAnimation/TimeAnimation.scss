@@ -13,7 +13,7 @@
 }
 
 .time-animation-control-hit {
-  fill: var(--react-autoql-background-color-hover);
+  fill: var(--react-autoql-hover-color);
   fill-opacity: 0;
   opacity: 1 !important;
   outline: none;
@@ -107,12 +107,33 @@
   }
 
   &:hover {
-    background: var(--react-autoql-background-color-hover);
+    background: var(--react-autoql-hover-color);
   }
 
   &.time-animation-segment-active {
     background: var(--react-autoql-accent-color-secondary);
   }
+}
+
+// Colors are also set inline so they carry over to the exported PNG, which doesn't get these rules.
+// These keep the timeline in step with the theme if it changes after the chart rendered.
+.time-animation-timeline-title,
+.time-animation-timeline-label,
+.time-animation-timeline-value {
+  fill: var(--react-autoql-text-color-primary);
+}
+
+.time-animation-timeline-axis-label {
+  fill: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-primary));
+}
+
+.time-animation-timeline-axis {
+  stroke: var(--react-autoql-border-color);
+}
+
+.time-animation-timeline-marker-line,
+.time-animation-timeline-dot {
+  stroke: var(--react-autoql-text-color-primary);
 }
 
 .time-animation-timeline-hit {

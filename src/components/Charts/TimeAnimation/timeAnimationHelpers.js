@@ -6,6 +6,7 @@ import {
   getEndOfWeek,
   getWeekStartDay,
   formatElement,
+  isColumnNumberType,
 } from 'autoql-fe-utils'
 
 // Chart-agnostic: turns a date column into an ordered list of frames (one per period), each holding
@@ -34,16 +35,22 @@ export const getGroupingLabel = (grouping) => GROUPING_LABELS[grouping] ?? group
 const isDateColumn = (column) => column?.type === ColumnTypes.DATE
 const isDateStringColumn = (column) => column?.type === ColumnTypes.DATE_STRING
 
-// Date columns, or with includeAllColumns any visible column (dates first), since things like a "Round"
-// column can be stepped through too
-export const getTimeAnimationColumnOptions = (columns = [], excludedColumnIndices = [], includeAllColumns = false) => {
+// Date columns, or with includeNumberColumns number columns too (dates first), since things like a "Round"
+// or "Year" number column can be stepped through. Strings have no order to step through, so never are.
+export const getTimeAnimationColumnOptions = (
+  columns = [],
+  excludedColumnIndices = [],
+  includeNumberColumns = false,
+) => {
   const visible = columns
     .map((column, index) => ({ column, index }))
     .filter(({ column, index }) => column && column.is_visible !== false && !excludedColumnIndices.includes(index))
   const isDate = ({ column }) => isDateColumn(column) || isDateStringColumn(column)
   const dates = visible.filter(isDate)
-  const others = includeAllColumns ? visible.filter((option) => !isDate(option)) : []
-  return [...dates, ...others].map(({ index }) => index)
+  const numbers = includeNumberColumns
+    ? visible.filter((option) => !isDate(option) && isColumnNumberType(option.column))
+    : []
+  return [...dates, ...numbers].map(({ index }) => index)
 }
 
 // Groupings a column can be bucketed into. Grouped (aggregated) data is locked to the query's own
@@ -121,14 +128,19 @@ const getDateRange = (data, columnIndex, column) => {
   return { minDate, maxDate }
 }
 
-// Groupings that stay under the frame limit for this data
+// Groupings that stay under the frame limit for this data, leaving out any that make only one period
+// (nothing to step through), unless none make more
 export const getAvailableGroupings = (data = [], columnIndex, column, isAggregated) => {
   const options = getGroupingOptions(column, isAggregated)
   const { minDate, maxDate } = getDateRange(data, columnIndex, column)
   if (!minDate) {
     return []
   }
-  return options.filter((grouping) => countBuckets(minDate, maxDate, grouping, column) <= MAX_TIME_ANIMATION_FRAMES)
+  const underLimit = options.filter(
+    (grouping) => countBuckets(minDate, maxDate, grouping, column) <= MAX_TIME_ANIMATION_FRAMES,
+  )
+  const steppable = underLimit.filter((grouping) => countBuckets(minDate, maxDate, grouping, column) > 1)
+  return steppable.length ? steppable : underLimit
 }
 
 export const getDefaultGrouping = (data = [], columnIndex, column, isAggregated) => {

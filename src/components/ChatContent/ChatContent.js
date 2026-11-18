@@ -150,7 +150,6 @@ export default class ChatContent extends React.Component {
     showMagicWandQuoteButton: PropTypes.bool,
     enableBillingGate: PropTypes.bool,
     onQuotaExceeded: PropTypes.func,
-    enableFollowOnQuery: PropTypes.bool,
     // Whether a failed query may fall back to related queries. When a query comes
     // back with a "no results for this phrasing" or 5xx reference id, the backend
     // is asked for queries close to what was typed and the answer is replaced by
@@ -222,7 +221,6 @@ export default class ChatContent extends React.Component {
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
     onQuotaExceeded: undefined,
-    enableFollowOnQuery: false,
     enableQuerySuggestions: false,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
@@ -1913,7 +1911,6 @@ export default class ChatContent extends React.Component {
                       showMagicWandQuoteButton={this.props.showMagicWandQuoteButton}
                       enableBillingGate={this.props.enableBillingGate}
                       onQuotaExceeded={this.props.onQuotaExceeded}
-                      enableFollowOnQuery={this.props.enableFollowOnQuery}
                       enableQuerySuggestions={this.props.enableQuerySuggestions}
                     />
                   )

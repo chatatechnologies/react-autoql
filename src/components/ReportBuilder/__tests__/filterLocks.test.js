@@ -1,4 +1,4 @@
-import { filterLocksKey, normalizeFilterLocks, summarizeFilterLocks } from '../model/filterLocks'
+import { filterLocksKey, normalizeFilterLocks, summarizeFilterLocks, titleLockName } from '../model/filterLocks'
 import { createEmptyReport, normalizeReport } from '../model/reportSchema'
 import { setSessionFilterLocks } from '../model/reportOperations'
 
@@ -74,5 +74,16 @@ describe('a report’s filter lock', () => {
     const unlocked = setSessionFilterLocks(locked, [])
     expect(unlocked).not.toHaveProperty('sessionFilterLocks')
     expect(unlocked).toStrictEqual(report)
+  })
+
+  it('is cut to 80 characters in a title, with an ellipsis (RW-353, RW-373)', () => {
+    expect(titleLockName('Brown Family')).toBe('Brown Family')
+    expect(titleLockName(1042)).toBe('1042')
+    const long = 'The Alexandra and Benjamin Featherstonehaugh-Montgomery Family Trust and Foundation Fund'
+    expect(Array.from(long).length).toBeGreaterThan(80)
+    const cut = titleLockName(long)
+    expect(Array.from(cut)).toHaveLength(80)
+    expect(cut).toBe(`${Array.from(long).slice(0, 79).join('')}…`)
+    expect(titleLockName(Array.from(long).slice(0, 80).join(''))).toBe(Array.from(long).slice(0, 80).join(''))
   })
 })

@@ -7,6 +7,8 @@ import {
   createDateDrilldownFilter,
   getGradientOpacityStops,
   createTooltipContentCache,
+  createStackTooltipContentCache,
+  getSameRowSeriesIndices,
 } from '../chartPropHelpers'
 
 const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('vertical')
@@ -14,6 +16,7 @@ const [OPACITY_1, OPACITY_2, OPACITY_3] = getGradientOpacityStops('vertical')
 export default class StackedColumns extends PureComponent {
   // Tooltip HTML is the same on every layout pass; see createTooltipContentCache
   getTooltipContent = createTooltipContentCache()
+  getStackTooltipContent = createStackTooltipContentCache()
 
   static propTypes = chartElementPropTypes
   static defaultProps = chartElementDefaultProps
@@ -89,12 +92,28 @@ export default class StackedColumns extends PureComponent {
       )
     })
 
+    // Series that are number columns of the same row: the whole stack is one drilldown, so it
+    // hovers, activates and shows its tooltip as one (pivot and split-by segments stay separate)
+    const sameRowSeriesIndices = getSameRowSeriesIndices(this.props)
+
     const stackedColumns = this.props.data.map((d, index) => {
       let prevPosValue = 0
       let prevNegValue = 0
       const bandwidth = xScale.bandwidth()
       const cornerRadius = Math.max(0, Math.min(bandwidth / 2, 3)) // Slight rounding for modern look
-      
+
+      const stackTooltip = sameRowSeriesIndices
+        ? this.getStackTooltipContent({
+            row: d,
+            columns,
+            seriesIndices: sameRowSeriesIndices,
+            stringColumnIndex,
+            dataFormatting,
+          })
+        : null
+      const isStackActive =
+        !!sameRowSeriesIndices && visibleIndices.some((colIndex) => this.state.activeKey === getKey(colIndex, index))
+
       const bars = visibleIndices
         .map((colIndex) => {
           const rawValue = d[colIndex]
@@ -125,20 +144,24 @@ export default class StackedColumns extends PureComponent {
             return null
           }
 
-          const tooltip = this.getTooltipContent({
-            row: d,
-            columns,
-            colIndex,
-            colIndex2: stringColumnIndex,
-            legendColumn,
-            dataFormatting,
-            aggregated: this.props.isAggregated,
-          })
+          const tooltip =
+            stackTooltip ??
+            this.getTooltipContent({
+              row: d,
+              columns,
+              colIndex,
+              colIndex2: stringColumnIndex,
+              legendColumn,
+              dataFormatting,
+              aggregated: this.props.isAggregated,
+            })
+
+          const isActive = isStackActive || this.state.activeKey === getKey(colIndex, index)
 
           return (
             <rect
               key={getKey(colIndex, index)}
-              className={`bar${this.state.activeKey === getKey(colIndex, index) ? ' active' : ''}`}
+              className={`bar${isActive ? ' active' : ''}`}
               x={xScale.getValue(d[stringColumnIndex])}
               y={y}
               width={bandwidth}
@@ -152,9 +175,19 @@ export default class StackedColumns extends PureComponent {
             />
           )
         })
+
+      if (sameRowSeriesIndices) {
+        // Hovering any segment highlights the whole stack (see .chart-stack-group in ChataChart.scss)
+        return (
+          <g key={`stack-${index}`} className='chart-stack-group'>
+            {bars}
+          </g>
+        )
+      }
+
       return bars
     })
-    
+
     return (
       <g data-test='stacked-columns'>
         <defs>{gradientDefs}</defs>

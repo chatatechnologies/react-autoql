@@ -176,7 +176,10 @@
     align-items: center;
     justify-content: flex-end;
     gap: 2px;
-    flex-shrink: 0;
+    // Shrinkable only so the project pill can truncate its name; the buttons
+    // beside it are all flex: none.
+    flex: 0 1 auto;
+    min-width: 0;
 
     &.mobile-hidden {
       display: none !important;
@@ -219,24 +222,6 @@
     font-weight: 600;
     letter-spacing: -0.008em;
     white-space: nowrap;
-
-    .react-autoql-header-project-selector-container {
-      flex: 1;
-      padding: 0;
-      margin: 0;
-      // The Select is fullWidth, so without a floor it collapses to its text
-      // inside the header's min-width: 0 flex row.
-      min-width: 180px;
-    }
-
-    .react-autoql-header-project-selector {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      flex: 1;
-      padding: 0;
-      margin: 0;
-    }
   }
 
   .react-autoql-header-nav {
@@ -579,6 +564,160 @@
   // that the button is not an accent-filled tab.
   .react-autoql-notifications-badge-dot {
     border-color: var(--react-autoql-background-color-primary);
+  }
+}
+
+// Project switcher: a quiet chip beside the window controls, in the same family
+// as the page nav - neutral wash on hover, accent ring while its menu is open.
+.react-autoql-drawer .chat-header-container .react-autoql-project-select-pill {
+  gap: 6px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 200px;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  margin-right: 6px;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  border-radius: 999px;
+  background-color: var(--react-autoql-background-color-secondary, transparent);
+  color: var(--react-autoql-text-color-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background-color: var(--react-autoql-dm-header-btn-hover);
+  }
+
+  &.is-open {
+    border-color: var(--react-autoql-accent-color);
+    background-color: rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.08
+    );
+
+    .react-autoql-project-select-pill-caret {
+      transform: rotate(180deg);
+    }
+  }
+
+  .react-autoql-project-select-pill-icon {
+    display: flex;
+    flex: none;
+    color: var(--react-autoql-accent-color);
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .react-autoql-project-select-pill-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.is-placeholder {
+      color: var(--react-autoql-text-color-placeholder);
+    }
+  }
+
+  .react-autoql-project-select-pill-caret {
+    display: flex;
+    flex: none;
+    font-size: 0.625rem;
+    color: var(--react-autoql-text-color-placeholder);
+    transition: transform 0.2s ease;
+  }
+}
+
+// The shared Popover container already draws a border and shadow, so the menu's
+// surface lives on the container (as ConfirmPopover does) rather than on a second
+// card inside it - two would show as a double border.
+.react-tiny-popover-container.react-autoql-project-select-popover:not(.react-autoql-popover-mobile) {
+  border-radius: 12px;
+  border: 1px solid var(--react-autoql-border-color, rgba(0, 0, 0, 0.1));
+  background-color: var(--react-autoql-background-color-secondary);
+  box-shadow: 0 8px 24px var(--react-autoql-box-shadow-color, rgba(24, 28, 35, 0.16));
+
+  .popover-container-content {
+    border-radius: inherit;
+  }
+}
+
+// Portalled into the drawer root, outside the header, so it is styled on its own
+// rather than under .chat-header-container.
+.react-autoql-project-select-menu {
+  width: 240px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  box-sizing: border-box;
+  color: var(--react-autoql-text-color-primary);
+  font-family: var(--react-autoql-font-family), sans-serif;
+
+  .react-autoql-project-select-menu-title {
+    padding: 4px 8px 6px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--react-autoql-text-color-placeholder);
+  }
+
+  .react-autoql-project-select-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .react-autoql-project-select-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    line-height: 1.3;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--react-autoql-dm-header-btn-hover, rgba(128, 134, 142, 0.16));
+    }
+
+    &.is-active {
+      font-weight: 600;
+      color: var(--react-autoql-accent-color);
+      background-color: rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.1
+      );
+    }
+  }
+
+  .react-autoql-project-select-row-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .react-autoql-project-select-check {
+    display: flex;
+    flex: none;
+    font-size: 0.8125rem;
   }
 }
 

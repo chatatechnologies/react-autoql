@@ -33,16 +33,21 @@ describe('getTimeAnimationColumnOptions', () => {
   })
 })
 
-describe('getTimeAnimationColumnOptions with every column', () => {
-  test('offers date columns first, then the other visible columns, minus the excluded ones', () => {
+describe('getTimeAnimationColumnOptions with number columns', () => {
+  test('offers date columns first, then visible number columns, minus the excluded ones', () => {
     const cols = [
       { type: 'STRING' },
       { type: 'QUANTITY' },
       { type: 'DATE' },
-      { type: 'STRING', is_visible: false },
+      { type: 'QUANTITY', is_visible: false },
       { type: 'DOLLAR_AMT' },
+      { type: 'DATE_STRING' },
     ]
-    expect(getTimeAnimationColumnOptions(cols, [4], true)).toEqual([2, 0, 1])
+    expect(getTimeAnimationColumnOptions(cols, [4], true)).toEqual([2, 5, 1])
+  })
+
+  test('never offers string columns', () => {
+    expect(getTimeAnimationColumnOptions([{ type: 'STRING' }, { type: 'QUANTITY' }], [], true)).toEqual([1])
   })
 })
 
@@ -124,6 +129,16 @@ describe('groupings by frame count', () => {
     expect(available).toEqual(['MONTH', 'QUARTER', 'YEAR'])
     const monthFrames = buildTimeFrames({ data: longData, columns, columnIndex: 1, grouping: 'MONTH' })
     expect(monthFrames.length).toBeLessThanOrEqual(MAX_TIME_ANIMATION_FRAMES)
+  })
+
+  test('leaves out groupings that would make only one period', () => {
+    // January to March 2024: one quarter and one year
+    expect(getAvailableGroupings(data, 1, dateColumn, false)).toEqual(['DAY', 'WEEK', 'MONTH'])
+  })
+
+  test('keeps every grouping when none makes more than one period', () => {
+    const oneDay = [['East', '2024-01-15T00:00:00.000Z', 1]]
+    expect(getAvailableGroupings(oneDay, 1, dateColumn, false)).toEqual(['DAY', 'WEEK', 'MONTH', 'QUARTER', 'YEAR'])
   })
 
   test('defaults to the finest grouping with a manageable number of frames', () => {

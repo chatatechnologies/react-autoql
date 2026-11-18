@@ -232,6 +232,7 @@ const TimeAnimationTimeline = ({
         x2={sparkX + sparkWidth}
         y1={sparkBottom}
         y2={sparkBottom}
+        className='time-animation-timeline-axis'
         stroke={borderColor}
         style={{ pointerEvents: 'none' }}
       />
@@ -247,7 +248,14 @@ const TimeAnimationTimeline = ({
       ))}
 
       <g ref={markerRef} className='time-animation-timeline-marker' transform={`translate(${markerX}, 0)`}>
-        <line y1={sparkTop} y2={sparkBottom} stroke={textColor} strokeOpacity={0.5} strokeDasharray='2,2' />
+        <line
+          className='time-animation-timeline-marker-line'
+          y1={sparkTop}
+          y2={sparkBottom}
+          stroke={textColor}
+          strokeOpacity={0.5}
+          strokeDasharray='2,2'
+        />
       </g>
       {series.map(({ key, color }, i) => (
         <circle
@@ -282,6 +290,7 @@ const TimeAnimationTimeline = ({
       <text
         x={sparkX}
         y={height - 2}
+        className='time-animation-timeline-axis-label'
         fontSize={AXIS_FONT_SIZE}
         fill={secondaryTextColor}
         style={{ pointerEvents: 'none' }}
@@ -291,6 +300,7 @@ const TimeAnimationTimeline = ({
       <text
         x={sparkX + sparkWidth}
         y={height - 2}
+        className='time-animation-timeline-axis-label'
         fontSize={AXIS_FONT_SIZE}
         textAnchor='end'
         fill={secondaryTextColor}

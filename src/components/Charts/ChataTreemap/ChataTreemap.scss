@@ -10,6 +10,17 @@
     }
   }
 
+  /* Colors are also set inline so they carry over to the exported PNG, which doesn't get these
+     rules. These keep the chart in step with the theme if it changes after the chart rendered. */
+  .treemap-label,
+  .treemap-empty-message {
+    fill: var(--react-autoql-text-color-primary);
+  }
+
+  .treemap-excluded-note {
+    fill: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-primary));
+  }
+
   /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs */
   .treemap-leaf-rect {
     transition: fill-opacity 0.3s ease;

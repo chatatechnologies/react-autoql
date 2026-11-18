@@ -79,6 +79,22 @@ describe('buildTreemapTree', () => {
 })
 
 describe('ChataTreemap', () => {
+  // AQLP-1092: boxes can't have a negative size, so those rows are left out, and the chart says so
+  test('notes under the chart how many rows were left out for having no positive value', () => {
+    const wrapper = setup({ initialChartControls: { treemapGroupColumnIndices: [0, 1], treemapValueColumnIndex: 2 } })
+    expect(wrapper.find('text.treemap-excluded-note').text()).toBe(
+      '2 rows with zero, negative or empty Amount not shown',
+    )
+    // The boxes make room for it
+    expect(wrapper.find('svg.react-autoql-treemap-viz').prop('height')).toBeLessThan(400 - 10)
+  })
+
+  test('has no note when every row is shown', () => {
+    const wrapper = setup({ data: data.filter((row) => row[2] > 0) })
+    expect(wrapper.find('text.treemap-excluded-note').exists()).toBe(false)
+    expect(wrapper.find('svg.react-autoql-treemap-viz').prop('height')).toBe(400 - 10)
+  })
+
   test('renders one box per leaf and per parent group', () => {
     const wrapper = setup()
     expect(findByTestAttr(wrapper, 'react-autoql-treemap').exists()).toBe(true)

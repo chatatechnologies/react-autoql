@@ -26,7 +26,7 @@ RUN npm i --legacy-peer-deps file:./react-autoql || (tail -n 80 /root/.npm/_logs
 RUN npm i --legacy-peer-deps && npm run build
 
 # final clean image
-FROM nginx:1.22.0-alpine
+FROM us-east1-docker.pkg.dev/staging-245514/docker-hub/nginx:1.30.7-alpine
 
 COPY config/nginx_template.conf .
 COPY config/start_npm.sh .

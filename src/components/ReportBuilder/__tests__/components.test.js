@@ -4,7 +4,7 @@ import { ReportTable } from '../components/ReportTable'
 import { ReportChart, READ_ONLY_QUERY_OUTPUT_PROPS } from '../components/ReportChart'
 import { CHART_BOX_ATTRIBUTE } from '../print/waitForCharts'
 import { readMeasurements } from '../layout/measure'
-import { footerText } from '../components/PageFurniture'
+import { footerText, RunningHeader } from '../components/PageFurniture'
 
 jest.mock('../../QueryOutput', () => {
   const mockReact = require('react')
@@ -182,5 +182,35 @@ describe('footerText', () => {
     )
     expect(footerText({ generated: '23 Sep 2026', dataAsOf: null })).toBe('Generated 23 Sep 2026 · Not yet run')
     expect(footerText({ generated: '23 Sep 2026', dataAsOf: null, hasData: false })).toBe('Generated 23 Sep 2026')
+  })
+})
+
+// As Preview and print draw it: the title, then what the report is for, unless the title already ends with it, as a
+// report made for each household is titled (RW-373).
+describe('RunningHeader as it prints', () => {
+  const titleOf = (container) => container.querySelector('.react-autoql-report-builder-running-title').textContent
+
+  it('says what the report is for after its title', () => {
+    const { container } = render(<RunningHeader title='Quarterly review' lock='Brown Family' />)
+    expect(titleOf(container)).toBe('Quarterly review · Brown Family')
+  })
+
+  it('names the household once when the title already ends with it', () => {
+    const { container } = render(<RunningHeader title='Quarterly review — Brown Family' lock='Brown Family' />)
+    expect(titleOf(container)).toBe('Quarterly review — Brown Family')
+  })
+
+  it('names it when the title only mentions it, or ends with another household', () => {
+    const { container: middle } = render(<RunningHeader title='Brown Family — quarterly review' lock='Brown Family' />)
+    expect(titleOf(middle)).toBe('Brown Family — quarterly review · Brown Family')
+    const { container: other } = render(<RunningHeader title='Quarterly review — Brown Family' lock='Nguyen Family' />)
+    expect(titleOf(other)).toBe('Quarterly review — Brown Family · Nguyen Family')
+  })
+
+  it('names a long household once when the title has it cut short', () => {
+    const household = 'The Alexandra and Benjamin Featherstonehaugh-Montgomery Family Trust and Foundation Fund'
+    const title = `Quarterly review — ${Array.from(household).slice(0, 79).join('')}…`
+    const { container } = render(<RunningHeader title={title} lock={household} />)
+    expect(titleOf(container)).toBe(title)
   })
 })

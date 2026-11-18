@@ -3,6 +3,8 @@ import { shallow } from 'enzyme'
 import { findByTestAttr } from '../../../../test/testUtils'
 import StackedColumns from './StackedColumns'
 import sampleProps from '../chartTestData'
+import { formatElement } from 'autoql-fe-utils'
+import { makeMultiSeriesVerticalProps, toPivotProps, toSplitProps } from '../multiSeriesTestData'
 import { installGetBBoxMock, uninstallGetBBoxMock } from '../../../../test/utils/getBBoxShim'
 beforeAll(() => installGetBBoxMock())
 afterAll(() => uninstallGetBBoxMock())
@@ -124,5 +126,81 @@ describe('stacked column ordering', () => {
     // The key is that it doesn't throw an error
     const instance = wrapper.instance()
     expect(instance.props.numberColumnIndices).toEqual(numberColumnIndices)
+  })
+})
+
+describe('same-row multi series stacks (AQLP-1098)', () => {
+  const getStackRects = (wrapper, category) => {
+    const x = wrapper.instance().props.xScale(category)
+    return wrapper.find('rect').filterWhere((rect) => rect.prop('x') === x)
+  }
+
+  test('every segment in a stack shares one tooltip with the category and every series value', () => {
+    const props = makeMultiSeriesVerticalProps()
+    const wrapper = setup(props)
+    const rects = getStackRects(wrapper, 'Alpha')
+    expect(rects.length).toBe(3)
+
+    const tooltips = rects.map((rect) => rect.prop('data-tooltip-html'))
+    expect(new Set(tooltips).size).toBe(1)
+
+    const tooltip = tooltips[0]
+    expect(tooltip).toContain('Category')
+    expect(tooltip).toContain('Alpha')
+    ;[1, 2, 3].forEach((colIndex) => {
+      const formatted = formatElement({ element: props.data[0][colIndex], column: props.columns[colIndex], isChart: true })
+      expect(tooltip).toContain(`</strong> ${formatted}</div>`)
+    })
+    expect(tooltip).toContain('Cost')
+    expect(tooltip).toContain('Units')
+    // Series names are HTML-escaped
+    expect(tooltip).toContain('Sales &lt;b&gt;')
+    expect(tooltip).not.toContain('Sales <b>')
+    rects.forEach((rect) => expect(rect.prop('data-tooltip-id')).toBe('chart-tooltip'))
+  })
+
+  test('each stack is grouped so hovering one segment highlights the whole stack', () => {
+    const wrapper = setup(makeMultiSeriesVerticalProps())
+    const stacks = wrapper.find('.chart-stack-group')
+    expect(stacks.length).toBe(3)
+    expect(stacks.at(0).find('rect').length).toBe(3)
+  })
+
+  test('clicking a segment drills down on the row and keeps the whole stack active', () => {
+    const onChartClick = jest.fn()
+    const props = makeMultiSeriesVerticalProps({ onChartClick })
+    const wrapper = setup(props)
+
+    getStackRects(wrapper, 'Beta').at(1).simulate('click')
+
+    expect(onChartClick).toHaveBeenCalledTimes(1)
+    const args = onChartClick.mock.calls[0][0]
+    expect(args.row).toBe(props.data[1])
+    expect(args.stringColumnIndex).toBe(0)
+
+    getStackRects(wrapper, 'Beta').forEach((rect) => expect(rect.hasClass('active')).toBe(true))
+    getStackRects(wrapper, 'Alpha').forEach((rect) => expect(rect.hasClass('active')).toBe(false))
+  })
+
+  test('pivot data keeps per-segment tooltips and no stack hover group', () => {
+    const wrapper = setup(toPivotProps(makeMultiSeriesVerticalProps()))
+    const tooltips = getStackRects(wrapper, 'Alpha').map((rect) => rect.prop('data-tooltip-html'))
+    expect(tooltips.length).toBe(3)
+    expect(new Set(tooltips).size).toBe(3)
+    expect(wrapper.find('.chart-stack-group').exists()).toBe(false)
+  })
+
+  test('pivot data: clicking a segment only activates that segment', () => {
+    const wrapper = setup(toPivotProps(makeMultiSeriesVerticalProps()))
+    getStackRects(wrapper, 'Beta').at(1).simulate('click')
+    const active = getStackRects(wrapper, 'Beta').filterWhere((rect) => rect.hasClass('active'))
+    expect(active.length).toBe(1)
+  })
+
+  test('split-by series keep per-segment tooltips and no stack hover group', () => {
+    const wrapper = setup(toSplitProps(makeMultiSeriesVerticalProps()))
+    const tooltips = getStackRects(wrapper, 'Alpha').map((rect) => rect.prop('data-tooltip-html'))
+    expect(new Set(tooltips).size).toBe(3)
+    expect(wrapper.find('.chart-stack-group').exists()).toBe(false)
   })
 })

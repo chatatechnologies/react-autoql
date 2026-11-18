@@ -7,7 +7,7 @@ import { ReportBuilder } from '../ReportBuilder'
 import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
 import { setSessionFilterLocks, setTitle, updateBlock } from '../model/reportOperations'
-import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
+import { filterLocksKey, normalizeFilterLocks, titleLockName } from '../model/filterLocks'
 import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
   createReportFolder,
@@ -213,7 +213,7 @@ const batchFolderName = (title, date) => {
   return S.batch.folder(clipped((title || '').trim() || S.untitled, room), day)
 }
 const batchTitleOf = (title, lock) => {
-  const value = clipped(String(lock.format_txt || lock.value), 80)
+  const value = titleLockName(lock.format_txt || lock.value)
   const room = REPORT_TITLE_MAX - Array.from(S.batch.title('', value)).length
   return S.batch.title(clipped((typeof title === 'string' && title.trim()) || S.untitled, room), value)
 }

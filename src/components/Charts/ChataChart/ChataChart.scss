@@ -297,6 +297,14 @@
     }
   }
 
+  // Stacks whose segments are number columns of the same row hover as one stack
+  .chart-stack-group:hover {
+    .bar,
+    .column {
+      fill-opacity: 0.7 !important;
+    }
+  }
+
   .stacked-area {
     transition: fill-opacity 0.3s ease;
     fill-opacity: 1 !important;
@@ -397,6 +405,7 @@
     opacity: 0 !important;
     outline: none !important;
     &:hover,
+    &.hovered,
     &.active {
       opacity: 1 !important;
     }

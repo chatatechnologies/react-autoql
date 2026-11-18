@@ -2,16 +2,38 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 
-  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs */
+  /* Matches bar/column hover and active states (ChataChart.scss). Not inline, so it doesn't apply to saved PNGs.
+     A wedge's stacked segments are hovered together, and in measures mode the whole rose is. */
   .rose-wedge {
     transition: fill-opacity 0.3s ease;
     fill-opacity: 1;
     outline: none !important;
 
-    &:hover,
     &.active {
       fill-opacity: 0.7;
     }
+  }
+
+  .rose-wedge-group:hover .rose-wedge,
+  .rose-wedges-measures:hover .rose-wedge {
+    fill-opacity: 0.7;
+  }
+
+  /* Colors are also set inline so they carry over to the exported PNG, which doesn't get these
+     rules. These keep the chart in step with the theme if it changes after the chart rendered. */
+  .rose-label,
+  .rose-empty-message {
+    fill: var(--react-autoql-text-color-primary);
+  }
+
+  .rose-tick-label,
+  .rose-hatch-key-label,
+  .rose-hatch-key-swatch {
+    fill: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-primary));
+  }
+
+  .rose-grid-line {
+    stroke: var(--react-autoql-border-color);
   }
 
   /* Every button icon draws about 15px, whatever padding its icon set builds in. Sizes are set
@@ -27,15 +49,19 @@
       font-size: 17px;
     }
 
-    /* Custom 16-unit icon, drawn across 14 of them */
+    /* Custom 16-unit icon, drawn across almost all of them */
     .react-autoql-icon-rose svg {
-      width: 17px;
-      height: 17px;
+      width: 15px;
+      height: 15px;
     }
   }
 
   &.enable-drilldown .rose-wedge:not(.rose-wedge-other) {
     cursor: pointer;
+  }
+
+  &.enable-drilldown .rose-wedges-no-drilldown .rose-wedge {
+    cursor: default;
   }
 
   &:focus,
