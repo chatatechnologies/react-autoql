@@ -958,13 +958,20 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
     return (
       <g className='rose-hatch-key' transform={transform} style={{ pointerEvents: 'none' }}>
         <rect
+          className='rose-hatch-key-swatch'
           width={HATCH_KEY_SIZE}
           height={HATCH_KEY_SIZE}
           rx={2}
           fill={themeSecondaryTextColor}
           mask={`url(#${gradientIdPrefix}-hatch-mask)`}
         />
-        <text x={HATCH_KEY_SIZE + 6} y={HATCH_KEY_SIZE - 2} fontSize={FONT_SIZE} fill={themeSecondaryTextColor}>
+        <text
+          className='rose-hatch-key-label'
+          x={HATCH_KEY_SIZE + 6}
+          y={HATCH_KEY_SIZE - 2}
+          fontSize={FONT_SIZE}
+          fill={themeSecondaryTextColor}
+        >
           {label}
         </text>
       </g>
@@ -986,6 +993,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
         {[...ticks.map((tick) => radiusScale(tick)), outerRadius].map((radius, i) => (
           <circle
             key={`ring-${i}`}
+            className='rose-grid-line'
             r={radius}
             fill='none'
             stroke={themeBorderColor}
@@ -998,6 +1006,7 @@ const ChataRoseChart = forwardRef((props, forwardedRef) => {
             return (
               <line
                 key={`spoke-${category.key}`}
+                className='rose-grid-line'
                 x1={innerRadius * Math.sin(angle)}
                 y1={-innerRadius * Math.cos(angle)}
                 x2={outerRadius * Math.sin(angle)}
