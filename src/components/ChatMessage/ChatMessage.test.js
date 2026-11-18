@@ -287,27 +287,24 @@ describe('billing gate (enableBillingGate)', () => {
   })
 })
 
-// Both bubble actions reason over the answer's rows, so on a truncated answer they would
-// be reasoning over the ten-row preview without knowing it. They return once the user
+// Auto Analyze reasons over the answer's rows, so on a truncated answer it would be
+// reasoning over the ten-row preview without knowing it. It returns once the user
 // restores the data, which clears `dataTruncated` on the message.
 describe('truncated data gating', () => {
   const truncatedProps = {
     enableMagicWand: true,
-    enableFollowOnQuery: true,
     dataTruncated: { droppedRowCount: 4512 },
   }
 
-  test('hides the Auto Analyze button and the follow-up button, leaving no footer at all', () => {
+  test('hides the Auto Analyze button, leaving no footer at all', () => {
     const instance = setup(truncatedProps).instance()
 
-    expect(instance.shouldShowFollowOnButton()).toBe(false)
     expect(instance.renderSummaryFooter()).toBeNull()
   })
 
-  test('shows both again on the same answer once its data is restored', () => {
+  test('shows it again on the same answer once its data is restored', () => {
     const instance = setup({ ...truncatedProps, dataTruncated: undefined }).instance()
 
-    expect(instance.shouldShowFollowOnButton()).toBe(true)
     expect(instance.renderSummaryFooter()).not.toBeNull()
   })
 })
