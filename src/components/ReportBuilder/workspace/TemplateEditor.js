@@ -32,8 +32,8 @@ import {
 // of the workspace's tabs, the way a report is shown. Its questions are asked on the admin's own data as it opens, so
 // it looks the way its reports will; those answers are only shown, never saved. Nothing is saved until Save: a draft's
 // changes go into it, and a published template's are kept apart from it until they're published (RW-361), so reports
-// go on being started from it as it was. Publish saves, then publishes. Leaving with changes that aren't saved asks
-// first.
+// go on being started from it as it was. Publish asks first (RW-370), then saves, then publishes. Leaving with changes
+// that aren't saved asks first.
 //
 // Props: authentication, templateId, title (the template's, shown while it's read), builderProps (what the workspace
 // hands its own builder), onClose.
@@ -89,6 +89,7 @@ export class TemplateEditor extends React.Component {
     super(props)
     this.keepEditingRef = React.createRef()
     this.keepChangesRef = React.createRef()
+    this.notPublishingRef = React.createRef()
     // Edits made so far: a save leaves those made while it was on its way still to be saved.
     this.edits = 0
     this.fillRun = null
@@ -109,7 +110,8 @@ export class TemplateEditor extends React.Component {
       // The details as they're changed in Details…, and what's wrong with them.
       detailsDraft: null,
       detailsError: null,
-      // What's asked about first ('leave' or 'discard'), and what's under way ('save', 'publish' or 'discard').
+      // What's asked about first ('leave', 'discard' or 'publish'), and what's under way ('save', 'publish' or
+      // 'discard').
       confirming: null,
       busy: null,
       error: null,
@@ -368,6 +370,13 @@ export class TemplateEditor extends React.Component {
     }
   }
 
+  // Publish asks first (RW-370), once the details can be saved as they are; if they can't, why is said instead.
+  askToPublish = () => {
+    if (this.checkDetails()) {
+      this.setState({ confirming: 'publish' })
+    }
+  }
+
   // Saves what's changed, then publishes it: a draft, for everyone to start reports from, or a published template's
   // changes, in place of it as it was. Then it's back to Manage templates.
   publish = () => {
@@ -522,7 +531,7 @@ export class TemplateEditor extends React.Component {
           data-variant='primary'
           data-test='reports-template-editor-publish'
           disabled={!ready || (published && !edited && !waiting)}
-          onClick={this.publish}
+          onClick={this.askToPublish}
         >
           {spinner('publish')}
           {busy === 'publish' ? T.publishing : published ? T.publishChanges : T.publish}
@@ -612,8 +621,11 @@ export class TemplateEditor extends React.Component {
   }
 
   renderDialogs() {
-    const { detailsDraft, detailsError, categories, confirming, busy } = this.state
+    const { detailsDraft, detailsError, categories, confirming, busy, template, details } = this.state
     const stay = () => this.setState({ confirming: null })
+    // What Publish asks (RW-370): a published template's are its changes, as its button says.
+    const changes = template?.status === 'PUBLISHED'
+    const name = (details ? details.title : this.props.title) || T.untitled
     return (
       <>
         {detailsDraft ? (
@@ -700,6 +712,34 @@ export class TemplateEditor extends React.Component {
                   onClick={this.discard}
                 >
                   {T.discard}
+                </button>
+              </>
+            }
+          />
+        ) : null}
+
+        {confirming === 'publish' ? (
+          <ReportModal
+            title={changes ? T.publishChangesTitle(name) : T.publishTitle(name)}
+            description={changes ? T.publishChangesWhat : T.publishWhat}
+            size='small'
+            testId='reports-template-editor-publish-dialog'
+            initialFocus={this.notPublishingRef}
+            busy={!!busy}
+            onClose={stay}
+            actions={
+              <>
+                <button ref={this.notPublishingRef} type='button' className={`${RS}-button`} onClick={stay}>
+                  {S.cancel}
+                </button>
+                <button
+                  type='button'
+                  className={`${RS}-button`}
+                  data-variant='primary'
+                  data-test='reports-template-editor-publish-confirm'
+                  onClick={this.publish}
+                >
+                  {changes ? T.publishChanges : T.publish}
                 </button>
               </>
             }

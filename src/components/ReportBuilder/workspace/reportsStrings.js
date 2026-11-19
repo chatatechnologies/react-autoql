@@ -334,18 +334,48 @@ export const REPORTS_STRINGS = {
     unpublish: 'Unpublish',
     discardChanges: 'Discard changes',
     discard: 'Discard',
-    discardConfirm: (title) => `Discard the unpublished changes to “${title}”? It stays as it’s published.`,
-    // A published template, where its changes can't be kept apart from it until they're published (before RW-361).
-    unpublishToEdit: (title) =>
-      `“${title}” is published. Unpublish it to edit it? No reports can be started from it until it’s published again.`,
-    unpublishToRename: (title) =>
-      `“${title}” is published. Unpublish it to rename it? No reports can be started from it until it’s published again.`,
     unpublishAndEdit: 'Unpublish and edit',
     unpublishAndRename: 'Unpublish and rename',
     // A published template's new title, kept with its changes (RW-361).
     titleKept: (title) => `“${title}” is kept with the template’s unpublished changes. Publish them to use it.`,
     delete: 'Delete',
-    deleteConfirm: (title) => `Delete “${title}”? Reports already made from it keep their copy.`,
+    // What's asked before a change, by the change (RW-370): the question, with the template's or category's name, and
+    // what going on means.
+    asks: {
+      publish: {
+        title: (title) => `Publish “${title}”?`,
+        what: 'Everyone in your organization can start reports from it.',
+      },
+      publishChanges: {
+        title: (title) => `Publish your changes to “${title}”?`,
+        what: 'Reports started from it from now on use them. Reports already made don’t change.',
+      },
+      unpublish: {
+        title: (title) => `Unpublish “${title}”?`,
+        what: 'No one can start a report from it until it’s published again. Reports already made from it don’t change.',
+      },
+      discard: {
+        title: (title) => `Discard the unpublished changes to “${title}”?`,
+        what: 'It stays as it’s published.',
+      },
+      // A published template, where its changes can't be kept apart from it until they're published (before RW-361).
+      unpublishToEdit: {
+        title: (title) => `“${title}” is published. Unpublish it to edit it?`,
+        what: 'No reports can be started from it until it’s published again.',
+      },
+      unpublishToRename: {
+        title: (title) => `“${title}” is published. Unpublish it to rename it?`,
+        what: 'No reports can be started from it until it’s published again.',
+      },
+      delete: {
+        title: (title) => `Delete “${title}”?`,
+        what: 'Reports already made from it keep their copy.',
+      },
+      deleteCategory: {
+        title: (name) => `Delete “${name}”?`,
+        what: 'Its templates stay, without a category.',
+      },
+    },
     save: 'Save',
     noCategories: 'No categories yet',
     newCategory: 'New category',
@@ -353,7 +383,6 @@ export const REPORTS_STRINGS = {
     addCategory: 'Add category',
     rename: 'Rename',
     renameLabel: (name) => `Rename ${name}`,
-    deleteCategoryConfirm: (name) => `Delete “${name}”? Its templates stay, without a category.`,
   },
 
   // A template opened from Manage templates › Edit (an organization's admins): the whole of it in the builder, its
@@ -374,6 +403,11 @@ export const REPORTS_STRINGS = {
     publish: 'Publish',
     publishChanges: 'Publish changes',
     publishing: 'Publishing…',
+    // What Publish and Publish changes ask first (RW-370), as Manage templates does.
+    publishTitle: (title) => `Publish “${title}”?`,
+    publishWhat: 'Everyone in your organization can start reports from it.',
+    publishChangesTitle: (title) => `Publish your changes to “${title}”?`,
+    publishChangesWhat: 'Reports started from it from now on use them. Reports already made don’t change.',
     discardChanges: 'Discard changes',
     saved: 'Saved. Publish it in Manage templates, or here, to let others start reports from it.',
     savedChanges: 'Saved. Reports are started from the template as it’s published until you publish the changes.',

@@ -996,6 +996,11 @@ describe('templates, for those who manage them (canManageTemplates)', () => {
     expect(screen.getByTestId('manage-templates-dialog')).toBeTruthy()
     expect(screen.getByTestId('reports-tabs')).toBeTruthy()
     expect(screen.getByTestId('builder-title')).toHaveTextContent('Q3 review')
+    // With the focus on the template's row (RW-370), back where it was edited from; not once it's opened anew.
+    expect(mockDialogs.manage.focusTemplateId).toBe('tp9')
+    act(() => mockDialogs.manage.onClose())
+    act(() => homeProps.current.manageTemplates())
+    expect(mockDialogs.manage.focusTemplateId).toBeNull()
   })
 })
 

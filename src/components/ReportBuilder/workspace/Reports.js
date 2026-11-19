@@ -489,11 +489,13 @@ export class ReportsWithoutTheme extends React.Component {
       // The shown report's data, as AutoQL fills it in: { id, dataStatus, dataErrors }, with `ended` once a fill
       // followed here finished, or `stalled` when it stopped without word.
       fill: null,
-      // The report Save as template is open for, whether Manage templates is open, and the template being edited
-      // ({ id, title }, as Manage templates listed it).
+      // The report Save as template is open for, whether Manage templates is open, the template being edited
+      // ({ id, title }, as Manage templates listed it), and the one last edited, whose row has the focus when Manage
+      // templates is back (RW-370).
       saveAsTemplateId: null,
       manageTemplatesOpen: false,
       editingTemplate: null,
+      editedTemplateId: null,
     }
   }
 
@@ -2067,7 +2069,8 @@ export class ReportsWithoutTheme extends React.Component {
   // A template is made from the report as AutoQL has it: what's waiting is saved first. Resolves with whether it was.
   saveForTemplate = () => this.savers.get(this.state.saveAsTemplateId)?.flush() ?? Promise.resolve(false)
 
-  openManageTemplates = () => this.setState({ newReportOpen: false, saveAsTemplateId: null, manageTemplatesOpen: true })
+  openManageTemplates = () =>
+    this.setState({ newReportOpen: false, saveAsTemplateId: null, manageTemplatesOpen: true, editedTemplateId: null })
 
   closeManageTemplates = () => this.setState({ manageTemplatesOpen: false })
 
@@ -2075,13 +2078,18 @@ export class ReportsWithoutTheme extends React.Component {
   newReportFromManageTemplates = () => this.setState({ manageTemplatesOpen: false, newReportOpen: true })
 
   // Manage templates › Edit: the template in the builder, in place of the tabs. What's waiting in the report shown is
-  // saved first. Closed, it's back to Manage templates, which lists them again.
+  // saved first. Closed, it's back to Manage templates, which lists them again with the focus on its Edit button.
   editTemplate = (template) => {
     this.saveNow()
     this.setState({ manageTemplatesOpen: false, editingTemplate: { id: template.id, title: template.title } })
   }
 
-  closeTemplateEditor = () => this.setState({ editingTemplate: null, manageTemplatesOpen: this.canManageTemplates() })
+  closeTemplateEditor = () =>
+    this.setState(({ editingTemplate }) => ({
+      editingTemplate: null,
+      manageTemplatesOpen: this.canManageTemplates(),
+      editedTemplateId: editingTemplate?.id ?? null,
+    }))
 
   openNewReport = () => this.setState({ newReportOpen: true })
 
@@ -2347,6 +2355,7 @@ export class ReportsWithoutTheme extends React.Component {
             authentication={authentication}
             onEdit={this.editTemplate}
             onNewReport={this.newReportFromManageTemplates}
+            focusTemplateId={this.state.editedTemplateId}
             onClose={this.closeManageTemplates}
           />
         ) : null}
