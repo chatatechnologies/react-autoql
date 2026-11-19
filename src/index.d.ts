@@ -334,6 +334,9 @@ export interface DataMessengerProps {
   enableQueryQuickStartTopics?: boolean
   enableQueryInputTopics?: boolean
   enableQuerySuggestions?: boolean
+  // Whether a failed chat query is answered with related queries instead of its
+  // error. Follows enableQuerySuggestions when not set.
+  enableQuerySuggestionsOnError?: boolean
   disableColumnSelectionForDataExplorer?: boolean
   enableMagicWand?: boolean
   showMagicWandQuoteButton?: boolean

@@ -2,6 +2,8 @@ import React from 'react'
 import { shallow, mount } from 'enzyme'
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { DataMessenger } from './DataMessenger'
+import { ChatContent } from '../ChatContent'
+import { DataExplorer } from '../DataExplorer'
 import responseTestCases from '../../../test/responseTestCases'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
@@ -31,6 +33,39 @@ describe('renders correctly', () => {
 describe('props', () => {
   test('does not throw warning with expected props', () => {
     checkProps(DataMessenger, defaultProps)
+  })
+
+  // enableQuerySuggestions drives both the Data Explorer's suggestion list and the
+  // chat's related-queries fallback. enableQuerySuggestionsOnError splits off the chat's half.
+  describe('enableQuerySuggestionsOnError', () => {
+    const suggestionPropsFor = (props) => {
+      const instance = shallow(<DataMessenger {...defaultProps} enableDataExplorerTab {...props} />).instance()
+      const chat = shallow(<div>{instance.renderDataMessengerContent()}</div>).find(ChatContent)
+      const explorer = shallow(<div>{instance.renderDataExplorerContent()}</div>).find(DataExplorer)
+      return {
+        chat: chat.prop('enableQuerySuggestions'),
+        explorer: explorer.prop('enableQuerySuggestions'),
+      }
+    }
+
+    test('follows enableQuerySuggestions when not set', () => {
+      expect(suggestionPropsFor({ enableQuerySuggestions: true })).toEqual({ chat: true, explorer: true })
+      expect(suggestionPropsFor({ enableQuerySuggestions: false })).toEqual({ chat: false, explorer: false })
+    })
+
+    test('false turns off the chat fallback and keeps the Data Explorer suggestions', () => {
+      expect(suggestionPropsFor({ enableQuerySuggestions: true, enableQuerySuggestionsOnError: false })).toEqual({
+        chat: false,
+        explorer: true,
+      })
+    })
+
+    test('true turns on the chat fallback without the Data Explorer suggestions', () => {
+      expect(suggestionPropsFor({ enableQuerySuggestions: false, enableQuerySuggestionsOnError: true })).toEqual({
+        chat: true,
+        explorer: false,
+      })
+    })
   })
   describe('showMask', () => {
     test('showMask false does not show mask on drawer open', () => {
