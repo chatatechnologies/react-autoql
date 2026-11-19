@@ -184,12 +184,7 @@ export class DataMessenger extends React.Component {
     // related-queries fallback that answers a failed query with a list of close
     // queries instead of an error. Off by default.
     enableQuerySuggestions: PropTypes.bool,
-    // The chat's half of enableQuerySuggestions on its own: whether a query that
-    // fails with a "no match" or 5xx error is answered with related queries
-    // instead of the error. Follows enableQuerySuggestions when not set, so
-    // nothing changes unless an integrator sets it. Set it to false to keep the
-    // Data Explorer's suggestion list without the fallback, e.g. for LLM projects,
-    // which shouldn't call related-queries.
+    // Chat-only related-queries fallback on error; follows enableQuerySuggestions when unset (false for LLM projects).
     enableQuerySuggestionsOnError: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
@@ -275,7 +270,6 @@ export class DataMessenger extends React.Component {
     enableQueryQuickStartTopics: true,
     enableQueryInputTopics: true,
     enableQuerySuggestions: false,
-    enableQuerySuggestionsOnError: undefined,
     enableDPRTab: false,
     enableAgentTab: false,
     agentInputPlaceholder: undefined,
@@ -1036,8 +1030,6 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
-          // Inside the chat, enableQuerySuggestions only drives the error fallback,
-          // so it takes enableQuerySuggestionsOnError when that is set.
           enableQuerySuggestions={this.props.enableQuerySuggestionsOnError ?? this.props.enableQuerySuggestions}
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
