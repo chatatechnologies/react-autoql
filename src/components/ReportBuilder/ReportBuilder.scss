@@ -287,6 +287,38 @@
     background: $border;
   }
 
+  // Approval (RW-372), before the host's status: a draft, or who approved the report and when, cut short where the
+  // toolbar is narrow (the whole line is its title).
+  .#{$rb}-approval-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    min-width: 0;
+    max-width: 18rem;
+    padding: 0.125rem 0.5rem;
+    border: 1px solid $border;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    color: $text-2;
+    white-space: nowrap;
+
+    &[data-state='approved'] {
+      border-color: $accent;
+      color: $text;
+
+      > .#{$rb}-icon {
+        flex: none;
+        color: $accent;
+      }
+    }
+  }
+
+  .#{$rb}-approval-status-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .#{$rb}-run-label {
     font-size: 0.75rem;
     color: $text-2;
@@ -752,6 +784,19 @@
     align-items: center;
     gap: 0.5625rem;
     padding: 0.875rem 1.125rem 1.125rem;
+
+    // With no status line beside them, the buttons sit at the end (ConfirmDialog).
+    &[data-align='end'] {
+      justify-content: flex-end;
+    }
+  }
+
+  // What going on means, in a question the builder asks (ConfirmDialog).
+  .#{$rb}-confirm-message {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: $text;
   }
 
   .#{$rb}-modal-status {

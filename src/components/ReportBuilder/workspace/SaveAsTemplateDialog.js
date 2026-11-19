@@ -3,6 +3,7 @@ import { Icon } from '../components/icons'
 import { fetchReportCategories } from '../run/reportsApi'
 import { createTemplateFromReport, fetchManagedTemplate, updateTemplate } from '../run/templatesApi'
 import { describeBlock, describeReportError } from './documents'
+import { withoutApproval } from '../model/approval'
 import { ReportModal } from './ReportModal'
 import { RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
@@ -79,7 +80,7 @@ export class SaveAsTemplateDialog extends React.Component {
           categoryId: categoryId || undefined,
           tags: tags || undefined,
         })
-        await this.markQuestionsAskedHere(saved)
+        await this.markQuestionsAskedHere(saved, title)
       } catch (failure) {
         error =
           failure?.code === 'REPORT_TEMPLATE_BLOCK_NOT_PORTABLE'
@@ -96,18 +97,26 @@ export class SaveAsTemplateDialog extends React.Component {
 
   // Every question in the new template marked as one its reports can ask again (Rerun), as a template saved from
   // Manage templates' editor is: AutoQL keeps each block as the report had it, and an answer added from the Query
-  // view isn't marked. The template is made either way; if this doesn't go through, its reports rerun what the
-  // report asked itself, as before.
-  markQuestionsAskedHere = async (saved) => {
+  // view isn't marked. Its pages are titled with the name it was saved under (`title`), not the report's: AutoQL copies
+  // the report as it was, and an approval it had is left out (RW-372). The template is made either way; if this
+  // doesn't go through, its reports rerun what the report asked itself, as before, are still titled with its name, and
+  // still start as drafts (an approval holds for the report it was made for only).
+  markQuestionsAskedHere = async (saved, title) => {
     const { authentication } = this.props
     try {
       const document = (await fetchManagedTemplate({ authentication, id: saved.id }))?.report
       if (!document) {
         return
       }
-      const marked = withQuestionsAskedHere(document)
-      if (marked.blocks.some((block, i) => block !== document.blocks[i])) {
-        await updateTemplate({ authentication, id: saved.id, document: marked })
+      const marked = withQuestionsAskedHere(withoutApproval(document))
+      const retitled = !!title && document.title !== title
+      const unapproved = 'approval' in document
+      if (retitled || unapproved || marked.blocks.some((block, i) => block !== document.blocks[i])) {
+        await updateTemplate({
+          authentication,
+          id: saved.id,
+          document: retitled ? { ...marked, title } : marked,
+        })
       }
     } catch (error) {
       // Left as it was made.

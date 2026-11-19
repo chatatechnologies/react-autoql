@@ -68,6 +68,7 @@ export const STRINGS = {
     branding: 'Branding…',
     saveAsTemplate: 'Save as template…',
     rerunAll: 'Rerun all',
+    approve: 'Approve…',
   },
   // Rerun all: every question asked in the report, asked again a few at a time, and the line over the report that
   // says how it's going — or, before, how many questions have no answer yet.
@@ -431,6 +432,25 @@ export const STRINGS = {
     dataAsOf: 'Data as of',
     page: (n, total) => `Page ${n} of ${total}`,
     notRunYet: 'Not yet run',
+  },
+  // Approval (enableApproval, RW-372): a report prints as a draft until it's approved, and changing an approved one
+  // returns it to draft.
+  approval: {
+    draft: 'Draft',
+    approvedBy: (name, date) => `Approved by ${name}, ${date}`,
+    preparedBy: (name, date) => `Prepared by ${name}, ${date}`,
+    watermark: 'DRAFT',
+    approve: 'Approve…',
+    approveTitle: 'Approve this report',
+    approveConfirm: 'I have reviewed and approved this report.',
+    approveAction: 'Approve',
+    // Not while an answer is still on its way: it would change the report once it's approved.
+    approveWait: 'Wait for the answers on their way, then approve the report.',
+    edit: 'Edit…',
+    editTitle: 'Edit this report',
+    editConfirm: 'This report is approved. Changing it returns it to draft.',
+    editAction: 'Return to draft',
+    cancel: 'Cancel',
   },
 }
 

@@ -26,8 +26,8 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // Props: authentication, autoQLConfig, dataFormatting, dashboards (undefined where the host has none, so there's no
 // dashboard to start from; null while they load), onClose, onStart, onTilesChange (passed on to the tiles),
 // enableTemplates, onStartFromTemplate({ templateId, id, sessionFilterLocks? }), onStartEachFromTemplate (a report for
-// each household picked, RW-353), previewProps, onManageTemplates, enableFilterLocks, loadFilterLockSuggestions and
-// filterLockLabels (passed on to the templates).
+// each household picked, RW-353), batchLimit (the most one may make, RW-371), previewProps, onManageTemplates,
+// enableFilterLocks, loadFilterLockSuggestions and filterLockLabels (passed on to the templates).
 
 const S = REPORTS_STRINGS
 const N = S.newReport
@@ -288,6 +288,7 @@ export class NewReportDialog extends React.Component {
           onClose={this.closeTemplates}
           onStart={this.props.onStartFromTemplate}
           onStartEach={this.props.onStartEachFromTemplate}
+          batchLimit={this.props.batchLimit}
           onManage={this.props.onManageTemplates}
         />
       )
