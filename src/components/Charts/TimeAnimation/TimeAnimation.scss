@@ -115,6 +115,27 @@
   }
 }
 
+// Colors are also set inline so they carry over to the exported PNG, which doesn't get these rules.
+// These keep the timeline in step with the theme if it changes after the chart rendered.
+.time-animation-timeline-title,
+.time-animation-timeline-label,
+.time-animation-timeline-value {
+  fill: var(--react-autoql-text-color-primary);
+}
+
+.time-animation-timeline-axis-label {
+  fill: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-primary));
+}
+
+.time-animation-timeline-axis {
+  stroke: var(--react-autoql-border-color);
+}
+
+.time-animation-timeline-marker-line,
+.time-animation-timeline-dot {
+  stroke: var(--react-autoql-text-color-primary);
+}
+
 .time-animation-timeline-hit {
   cursor: pointer;
   touch-action: none;

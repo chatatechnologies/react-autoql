@@ -4,7 +4,6 @@ import {
   shouldShowQueryActionButton,
   shouldShowSummaryButton,
   getSummaryButtonDisabledState,
-  getFollowOnQueryDisabledState,
 } from '../summaryButtonUtils'
 
 const MAX_DATA_PAGE_SIZE = 50000
@@ -118,35 +117,6 @@ describe('getSummaryButtonDisabledState', () => {
 })
 
 // ---------------------------------------------------------------------------
-// getFollowOnQueryDisabledState
-// ---------------------------------------------------------------------------
-describe('getFollowOnQueryDisabledState', () => {
-  it('is not disabled under the limit', () => {
-    const { isDisabled, tooltip } = getFollowOnQueryDisabledState({ queryResponse: UNDER_LIMIT })
-    expect(isDisabled).toBe(false)
-    expect(tooltip).toBeUndefined()
-  })
-
-  it('is disabled at exactly MAX_DATA_PAGE_SIZE rows', () => {
-    const { isDisabled, tooltip } = getFollowOnQueryDisabledState({ queryResponse: AT_LIMIT })
-    expect(isDisabled).toBe(true)
-    expect(typeof tooltip).toBe('string')
-    expect(tooltip.length).toBeGreaterThan(0)
-  })
-
-  it('is disabled above MAX_DATA_PAGE_SIZE rows', () => {
-    const { isDisabled } = getFollowOnQueryDisabledState({ queryResponse: OVER_LIMIT })
-    expect(isDisabled).toBe(true)
-  })
-
-  it('shares the same tooltip text as getSummaryButtonDisabledState for large datasets', () => {
-    const followOn = getFollowOnQueryDisabledState({ queryResponse: AT_LIMIT })
-    const summary = getSummaryButtonDisabledState({ queryResponse: AT_LIMIT })
-    expect(followOn.tooltip).toBe(summary.tooltip)
-  })
-})
-
-// ---------------------------------------------------------------------------
 // shouldShowSummaryButton — OptionsToolbar path (isMarkdownOnly)
 // hides the button entirely when dataset is too large
 // ---------------------------------------------------------------------------
@@ -207,7 +177,7 @@ describe('shouldShowSummaryButton — ChatMessage path', () => {
 })
 
 // ---------------------------------------------------------------------------
-// shouldShowQueryActionButton — shared gate used by follow-on query visibility
+// shouldShowQueryActionButton — shared gate for actions that reason over the answer's data
 // ---------------------------------------------------------------------------
 describe('shouldShowQueryActionButton', () => {
   it('returns false when feature is disabled', () => {

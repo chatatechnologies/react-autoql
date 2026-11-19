@@ -50,6 +50,12 @@
   }
 }
 
+// Safari draws positioned HTML inside an svg foreignObject at the svg's origin, ignoring the svg
+// transforms, so chart button icons would all pile up in the chart's top left corner
+foreignObject .react-autoql-icon {
+  position: static;
+}
+
 span .react-autoql-icon {
   vertical-align: middle;
   padding-bottom: 3px;

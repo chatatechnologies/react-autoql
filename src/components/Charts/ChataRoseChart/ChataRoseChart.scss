@@ -19,6 +19,23 @@
     fill-opacity: 0.7;
   }
 
+  /* Colors are also set inline so they carry over to the exported PNG, which doesn't get these
+     rules. These keep the chart in step with the theme if it changes after the chart rendered. */
+  .rose-label,
+  .rose-empty-message {
+    fill: var(--react-autoql-text-color-primary);
+  }
+
+  .rose-tick-label,
+  .rose-hatch-key-label,
+  .rose-hatch-key-swatch {
+    fill: var(--react-autoql-text-color-secondary, var(--react-autoql-text-color-primary));
+  }
+
+  .rose-grid-line {
+    stroke: var(--react-autoql-border-color);
+  }
+
   /* Every button icon draws about 15px, whatever padding its icon set builds in. Sizes are set
      explicitly so they don't depend on the inherited font size. */
   .sankey-path-button-icon {
