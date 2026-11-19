@@ -184,6 +184,8 @@ export class DataMessenger extends React.Component {
     // related-queries fallback that answers a failed query with a list of close
     // queries instead of an error. Off by default.
     enableQuerySuggestions: PropTypes.bool,
+    // Chat-only related-queries fallback on error; follows enableQuerySuggestions when unset (false for LLM projects).
+    enableQuerySuggestionsOnError: PropTypes.bool,
     disableColumnSelectionForDataExplorer: PropTypes.bool,
     enableMagicWand: PropTypes.bool,
     showMagicWandQuoteButton: PropTypes.bool,
@@ -1028,7 +1030,7 @@ export class DataMessenger extends React.Component {
           disableAggregationMenu={this.props.disableAggregationMenu}
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
-          enableQuerySuggestions={this.props.enableQuerySuggestions}
+          enableQuerySuggestions={this.props.enableQuerySuggestionsOnError ?? this.props.enableQuerySuggestions}
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
