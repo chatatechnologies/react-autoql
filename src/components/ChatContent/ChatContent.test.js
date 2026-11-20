@@ -3,6 +3,8 @@ import { shallow } from 'enzyme'
 import ChatContent from './ChatContent'
 import { QueryInput } from '../QueryInput'
 import { SessionTabs } from '../SessionTabs'
+import { ChatMessage } from '../ChatMessage'
+import { HowDataMessengerWorks } from '../Onboarding'
 import { fetchQueryTitle } from '../../js/queryTitleService'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
@@ -713,5 +715,41 @@ describe('scrolling to a message', () => {
     const { instance, container } = setupScroll({ messageTop: 450, messageHeight: 355, toolbarTop: 420 })
     instance.scrollToMessageFit('m1')
     expect(container.scrollTop).toBe(700)
+  })
+})
+
+describe('onboarding', () => {
+  const messages = [
+    { id: 'q1', isResponse: false, content: 'first' },
+    { id: 'r1', isResponse: true, response: { data: { data: {} } } },
+    { id: 'q2', isResponse: false, content: 'second' },
+    { id: 'r2', isResponse: true, response: { data: { data: {} } } },
+    { id: 'e1', isResponse: true, type: 'error', content: 'Something went wrong' },
+  ]
+  const getHintFlags = (wrapper) =>
+    wrapper.find(ChatMessage).map((message) => [message.prop('id'), message.prop('showInterpretationHint')])
+
+  test('shows the interpretation hint on the latest answer only', () => {
+    const wrapper = setup({ enableOnboarding: true })
+    wrapper.setState({ messages })
+    expect(getHintFlags(wrapper)).toEqual([
+      ['q1', false],
+      ['r1', false],
+      ['q2', false],
+      ['r2', true],
+      ['e1', false],
+    ])
+  })
+
+  test('shows no hint and no how-it-works card unless enabled', () => {
+    const wrapper = setup()
+    expect(wrapper.find(HowDataMessengerWorks).exists()).toBe(false)
+    wrapper.setState({ messages })
+    expect(getHintFlags(wrapper).every(([, flag]) => flag === false)).toBe(true)
+  })
+
+  test('shows the how-it-works card in the empty state when enabled', () => {
+    const wrapper = setup({ enableOnboarding: true })
+    expect(wrapper.find('.chat-content-empty-state').find(HowDataMessengerWorks).exists()).toBe(true)
   })
 })

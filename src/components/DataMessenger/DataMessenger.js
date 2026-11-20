@@ -23,6 +23,7 @@ import { ChatContent } from '../ChatContent'
 import { ConfirmPopover } from '../ConfirmPopover'
 import { AgentMessenger } from '../AgentMessenger'
 import { Tooltip } from '../Tooltip'
+import { FOLLOW_UPS_DOCS_URL } from '../Onboarding'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import ProjectSelect from './ProjectSelect'
 
@@ -55,16 +56,15 @@ export class DataMessenger extends React.Component {
       'popover-delete-button': true,
     })
 
-    // The one thing worth adding to the empty state beyond "ask a question": where to
-    // look when you don't know what there is to ask about. Only offered when the tab
-    // exists — Quick Topics stays out of it, since the input already shows them.
-    this.dataExplorerEmptyStateSubtitle = (
+    // The one thing worth adding to the empty state beyond "ask a question": that a
+    // thread is a conversation, so the next question can build on the last.
+    this.emptyStateSubtitle = (
       <span>
-        Ask about your data in plain language, or use{' '}
-        <span className='empty-state-de-link' onClick={this.openDataExplorer}>
-          <Icon type='data-search' /> {lang.dataExplorer}
-        </span>{' '}
-        to discover what's available to you.
+        Get answers from your data in seconds.{' '}
+        <a className='empty-state-follow-up-link' href={FOLLOW_UPS_DOCS_URL} target='_blank' rel='noopener noreferrer'>
+          Follow up
+        </a>{' '}
+        to explore further.
       </span>
     )
 
@@ -1007,10 +1007,8 @@ export class DataMessenger extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={this.SOURCE}
-          emptyStateSubtitle={
-            this.props.emptyStateSubtitle ??
-            (this.props.enableDataExplorerTab ? this.dataExplorerEmptyStateSubtitle : undefined)
-          }
+          emptyStateSubtitle={this.props.emptyStateSubtitle ?? this.emptyStateSubtitle}
+          enableOnboarding={true}
           inputPlaceholder={this.props.inputPlaceholder ?? lang.queryPrompt}
           autoChartAggregations={this.props.autoChartAggregations}
           executeQuery={(queryRequestParams) => {

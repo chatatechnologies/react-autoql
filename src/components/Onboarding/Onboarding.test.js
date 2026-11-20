@@ -1,0 +1,66 @@
+import React from 'react'
+import { render, fireEvent } from '@testing-library/react'
+
+import { HowDataMessengerWorks, FOLLOW_UPS_DOCS_URL } from './Onboarding'
+
+// A dismissal is also held in a module-level set for the life of the page, so the
+// component tests below run in order: the card is shown before it is dismissed.
+// Reload behaviour is covered on a fresh copy of the store module instead. The
+// interpretation hint has its own file, InterpretationHint.test.js.
+const loadFreshStore = () => {
+  let store
+  jest.isolateModules(() => {
+    store = require('../../js/onboarding')
+  })
+  return store
+}
+
+describe('onboarding store', () => {
+  beforeEach(() => localStorage.clear())
+
+  test('a dismissal survives a page reload', () => {
+    loadFreshStore().dismissOnboarding('interpretation-hint')
+
+    const reloaded = loadFreshStore()
+    expect(reloaded.isOnboardingDismissed('interpretation-hint')).toBe(true)
+    expect(reloaded.isOnboardingDismissed('how-data-messenger-works')).toBe(false)
+  })
+
+  test('still dismisses for the session when localStorage throws', () => {
+    const store = loadFreshStore()
+    const setItem = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+
+    store.dismissOnboarding('interpretation-hint')
+    expect(store.isOnboardingDismissed('interpretation-hint')).toBe(true)
+
+    setItem.mockRestore()
+  })
+})
+
+describe('HowDataMessengerWorks', () => {
+  beforeAll(() => localStorage.clear())
+
+  test('lists the steps and links to the follow-ups docs', () => {
+    const { getByText } = render(<HowDataMessengerWorks />)
+    expect(getByText('How Data Messenger works', { exact: false })).toBeTruthy()
+    expect(getByText('Start with a query.')).toBeTruthy()
+    expect(getByText('Follow-up.')).toBeTruthy()
+    expect(getByText('New topic? Start a new chat.')).toBeTruthy()
+    expect(getByText('Learn more in the docs →').getAttribute('href')).toBe(
+      'https://chata.readme.io/docs/follow-ups',
+    )
+    expect(FOLLOW_UPS_DOCS_URL).toBe('https://chata.readme.io/docs/follow-ups')
+  })
+
+  test('stays closed once dismissed, and remembers it in localStorage', () => {
+    const first = render(<HowDataMessengerWorks />)
+    fireEvent.click(first.getByLabelText('Dismiss'))
+    expect(first.queryByText('Start with a query.')).toBeNull()
+    first.unmount()
+
+    expect(render(<HowDataMessengerWorks />).queryByText('Start with a query.')).toBeNull()
+    expect(localStorage.getItem('react-autoql-onboarding-dismissed:how-data-messenger-works')).toBe('true')
+  })
+})

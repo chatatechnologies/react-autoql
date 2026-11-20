@@ -30,6 +30,7 @@ import { SessionTabs } from '../SessionTabs'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Tooltip } from '../Tooltip'
+import { HowDataMessengerWorks } from '../Onboarding'
 
 // Styles
 import './ChatContent.scss'
@@ -159,6 +160,10 @@ export default class ChatContent extends React.Component {
     // thread has no messages. Fall back to the defaults in Localization.
     emptyStateTitle: PropTypes.node,
     emptyStateSubtitle: PropTypes.node,
+    // One-time onboarding: the "How Data Messenger works" card in the empty state
+    // and the "check the interpretation" coach mark under the latest answer. Each
+    // stays closed in this browser once dismissed. Default false.
+    enableOnboarding: PropTypes.bool,
     // When false, no message offers the "Delete data response" button. For
     // integrators whose chat is a durable record rather than a scratchpad —
     // removing an answer from the thread is meaningless there, and the button
@@ -224,6 +229,7 @@ export default class ChatContent extends React.Component {
     enableQuerySuggestions: false,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
+    enableOnboarding: false,
     showFilterLockButton: false,
     queryInputLeftContent: undefined,
     filterLockButtonLabel: undefined,
@@ -1789,6 +1795,11 @@ export default class ChatContent extends React.Component {
 
     const { messages } = this.state
     const isEmpty = messages.length === 0 && !this.isChataThinking()
+    // Only the latest answer carries the interpretation coach mark, so it doesn't
+    // repeat down the thread.
+    const interpretationHintMessageId = this.props.enableOnboarding
+      ? [...messages].reverse().find((message) => message.isResponse && message.response)?.id
+      : undefined
 
     let chatMessageVisibility
     let chatMessageOpacity
@@ -1852,6 +1863,7 @@ export default class ChatContent extends React.Component {
                       onDrilldownStart={this.onDrilldownStart}
                       onDrilldownEnd={this.onDrilldownEnd}
                       isResponse={message.isResponse}
+                      showInterpretationHint={message.id === interpretationHintMessageId}
                       isChataThinking={this.isChataThinking()}
                       onSuggestionClick={this.animateInputTextAndSubmit}
                       setGeneratingSummary={this.setGeneratingSummary}
@@ -1932,6 +1944,7 @@ export default class ChatContent extends React.Component {
                 <p className='chat-content-empty-state-subtitle'>
                   {this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}
                 </p>
+                {this.props.enableOnboarding && <HowDataMessengerWorks />}
               </div>
             )}
             {!this.state.isAtBottom && (
