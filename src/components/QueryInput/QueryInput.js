@@ -36,7 +36,7 @@ import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
 import DataPreview from '../DataExplorer/DataPreview'
 import { CustomScrollbars } from '../CustomScrollbars'
-import { TopicSearchField, TopicSearchPanel, filterTopics } from './TopicSearch'
+import { TopicSearchField, TopicSearchPanel } from './TopicSearch'
 import { addRecentTopicSearch } from '../../js/topicSearchHistory'
 
 import { withTheme } from '../../theme'
@@ -66,6 +66,8 @@ class QueryInput extends React.Component {
     this.selectedColumnsByTopic = {}
     // Store dataPreview per topic context to avoid refetching
     this.dataPreviewByTopic = {}
+    // The search results' first entry, for Enter in the search field
+    this.topicSearchResultsRef = React.createRef()
 
     this.state = {
       inputValue: '',
@@ -81,8 +83,8 @@ class QueryInput extends React.Component {
       isExpanded: false,
       topicsCollapsed: false,
       // Quick Topics search: the field replaces the chips, and the panel shows
-      // what it finds. topicSearchSelection is a value (VL) or the text itself
-      // (TEXT) picked from the results; picking a topic opens it as a chip would.
+      // what it finds. topicSearchSelection is the topic or value (VL) picked
+      // from the results, whose preview and sample queries the panel then shows.
       isSearchingTopics: false,
       topicSearchQuery: '',
       topicSearchSelection: null,
@@ -343,9 +345,17 @@ class QueryInput extends React.Component {
     })
   }
 
-  // Opens the search in place of the chips. With text, searches it straight away -
+  // Search is for projects with column selection (not LLM ones, whose Quick Topics
+  // stay as they were): topics and values, as the Data Explorer's input searched.
+  showTopicSearch = () => !this.props.disableColumnSelection
+
+  // Opens the search in place of the chips. With text, it is searched straight away,
   // the way the Data Explorer did when opened with a topic.
   openTopicSearch = (text = '') => {
+    if (!this.showTopicSearch()) {
+      return
+    }
+
     this.setState(
       {
         isSearchingTopics: true,
@@ -356,8 +366,9 @@ class QueryInput extends React.Component {
         topicSearchSelection: null,
       },
       () => {
-        if (text) {
-          this.submitTopicSearch(text, { skipValidation: true })
+        const exactTopic = this.findTopicByName(text)
+        if (exactTopic) {
+          this.selectTopicSearchResult(exactTopic)
         }
       },
     )
@@ -372,58 +383,34 @@ class QueryInput extends React.Component {
     this.setState({ topicSearchQuery: text, topicSearchSelection: null, selectedTopic: null, isExpanded: true })
   }
 
+  findTopicByName = (text) =>
+    text?.trim()
+      ? this.state.topics.find((topic) => normalizeString(topic.displayName) === normalizeString(text))
+      : undefined
+
+  // A topic or value picked from the results: the panel shows its preview and sample
+  // queries. Nothing runs before this.
   onTopicSearchSelect = (item) => {
-    if (!item?.type || item.type === DataExplorerTypes.SUBJECT_TYPE) {
-      // Recent searches are stored as JSON, so map back to the live topic
-      const topic = this.state.topics.find((t) => t.context === item.context) ?? item
-      this.setState({ topicSearchQuery: topic.displayName, topicSearchSelection: null })
-      this.onTopicClick(topic)
-      return
-    }
+    // Recent searches are stored as JSON, so a topic maps back to the live one
+    const selection =
+      item?.type === DataExplorerTypes.VL_TYPE
+        ? item
+        : this.state.topics.find((topic) => topic.context === item?.context) ?? item
 
-    this.setState({ topicSearchQuery: item.displayName, topicSearchSelection: item, selectedTopic: null, isExpanded: true })
+    this.setState({ topicSearchQuery: selection.displayName, topicSearchSelection: selection, isExpanded: true })
   }
 
-  // Enter in the search field: an exact topic name opens it; otherwise the text's
-  // sample queries if the project has them; otherwise a sole matching topic.
-  submitTopicSearch = (text, { skipValidation = false } = {}) => {
-    const query = text?.trim()
-    if (!query) {
-      return
-    }
-
-    let item = this.state.topics.find((topic) => normalizeString(topic.displayName) === normalizeString(query))
-    if (!item && this.showTopicSampleQueries()) {
-      item = { type: DataExplorerTypes.TEXT_TYPE, displayName: query, skipValidation }
-    }
-    if (!item) {
-      const matches = filterTopics(this.state.topics, query)
-      item = matches.length === 1 ? matches[0] : undefined
-    }
-
-    if (item) {
-      addRecentTopicSearch(this.props.authentication, item)
-      this.onTopicSearchSelect(item)
-    }
+  selectTopicSearchResult = (item) => {
+    addRecentTopicSearch(this.props.authentication, item)
+    this.onTopicSearchSelect(item)
   }
 
-  // A spelling/value suggestion picked for searched text
-  onTopicSearchText = (query, userSelection) => {
-    this.setState({
-      topicSearchQuery: query,
-      topicSearchSelection: { type: DataExplorerTypes.TEXT_TYPE, displayName: query, userSelection, skipValidation: true },
-    })
-  }
-
-  // Closing a topic opened from the search goes back to the search results
-  closeTopic = () => {
-    if (!this.state.isSearchingTopics) {
-      this.collapseSuggestions()
-      return
+  // Enter in the search field: an exact topic name, otherwise the first result.
+  submitTopicSearch = (text) => {
+    const item = this.findTopicByName(text) ?? this.topicSearchResultsRef.current?.firstResult
+    if (item && !this.state.topicSearchSelection) {
+      this.selectTopicSearchResult(item)
     }
-
-    this.collapseSuggestions()
-    this.setState({ isExpanded: true })
   }
 
   handleClickOutside = (event) => {
@@ -748,6 +735,13 @@ class QueryInput extends React.Component {
     // Collapse suggestions when submitting a query
     if (this.state.isExpanded) {
       this.collapseSuggestions()
+    }
+
+    // ...and put the topic chips back in place of the search, with the search cleared
+    if (this.state.isSearchingTopics) {
+      newState.isSearchingTopics = false
+      newState.topicSearchQuery = ''
+      newState.topicSearchSelection = null
     }
 
     if (this.props.clearQueryOnSubmit) {
@@ -1173,12 +1167,12 @@ class QueryInput extends React.Component {
             topics={this.state.topics}
             query={this.state.topicSearchQuery}
             selection={this.state.topicSearchSelection}
-            searchValues={!this.props.disableColumnSelection}
-            allowTextSearch={showSampleQueries}
+            dataFormatting={this.props.dataFormatting}
+            showSampleQueries={showSampleQueries}
             onSelect={this.onTopicSearchSelect}
-            onTopicSelect={this.onTopicClick}
-            onSearchText={this.onTopicSearchText}
+            onBack={() => this.setState({ topicSearchSelection: null })}
             onClose={this.collapseSuggestions}
+            resultsRef={this.topicSearchResultsRef}
             executeQuery={this.props.executeQuery}
             tooltipID={this.props.tooltipID}
             scope={this.props.scope}
@@ -1198,7 +1192,7 @@ class QueryInput extends React.Component {
                 this.renderSampleQueriesHeader()
               )}
               <div className='query-suggestions-expanded-header-actions'>
-                <button className='query-suggestions-main-close' onClick={this.closeTopic} type='button'>
+                <button className='query-suggestions-main-close' onClick={this.collapseSuggestions} type='button'>
                   <Icon type='close' />
                 </button>
               </div>
@@ -1266,7 +1260,7 @@ class QueryInput extends React.Component {
               {this.state.isSearchingTopics ? (
                 <TopicSearchField
                   value={this.state.topicSearchQuery}
-                  placeholder={this.props.disableColumnSelection ? 'Search topics' : 'Search topics or values'}
+                  placeholder='Search topics or values'
                   onChange={this.onTopicSearchChange}
                   onSubmit={(text) => this.submitTopicSearch(text)}
                   onClose={this.closeTopicSearch}
@@ -1276,18 +1270,20 @@ class QueryInput extends React.Component {
                 <>
                   {/* Icon only, styled like the chips: search is there when wanted
                       without adding another labelled control to the row. */}
-                  <button
-                    className='quick-topics-search-button'
-                    onClick={() => this.openTopicSearch()}
-                    type='button'
-                    aria-label='Search topics'
-                    data-test='quick-topics-search-button'
-                    data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
-                    data-tooltip-content={this.props.disableColumnSelection ? 'Search topics' : 'Search topics or values'}
-                    data-tooltip-place='top'
-                  >
-                    <Icon type='search' />
-                  </button>
+                  {this.showTopicSearch() && (
+                    <button
+                      className='quick-topics-search-button'
+                      onClick={() => this.openTopicSearch()}
+                      type='button'
+                      aria-label='Search topics or values'
+                      data-test='quick-topics-search-button'
+                      data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                      data-tooltip-content='Search topics or values'
+                      data-tooltip-place='top'
+                    >
+                      <Icon type='search' />
+                    </button>
+                  )}
                   {this.state.topics.map((topic, index) => (
                     <button
                       key={`topic-${index}-${topic.context || ''}`}

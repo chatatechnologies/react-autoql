@@ -89,74 +89,85 @@ describe('Quick Topics sample queries', () => {
 describe('Quick Topics search', () => {
   const findPanel = (wrapper) => wrapper.find('TopicSearchPanel')
   const findField = (wrapper) => wrapper.find('TopicSearchField')
+  const findButton = (wrapper) => wrapper.find('[data-test="quick-topics-search-button"]')
+  const value = { type: 'VL', displayName: 'Acme', valueLabel: { canonical: 'acme' } }
+
+  test('LLM projects (column selection disabled) get no search at all', () => {
+    const wrapper = setup({ disableColumnSelection: true })
+    expect(findButton(wrapper).exists()).toBe(false)
+
+    wrapper.instance().openTopicSearch('transfers')
+    wrapper.update()
+    expect(findField(wrapper).exists()).toBe(false)
+    expect(findPanel(wrapper).exists()).toBe(false)
+  })
 
   test('the search button swaps the chips for a search field and opens the results', () => {
     const wrapper = setup()
-    expect(wrapper.find('.query-suggestion-button').exists()).toBe(true)
-
-    wrapper.find('[data-test="quick-topics-search-button"]').simulate('click')
+    findButton(wrapper).simulate('click')
     expect(findField(wrapper).exists()).toBe(true)
     expect(wrapper.find('.query-suggestion-button').exists()).toBe(false)
-    expect(findPanel(wrapper).exists()).toBe(true)
+    expect(findPanel(wrapper).prop('selection')).toBeNull()
   })
 
-  test('LLM projects search topics only; others search values too', () => {
-    const llm = setup({ disableColumnSelection: true })
-    llm.instance().openTopicSearch()
-    llm.update()
-    expect(findPanel(llm).prop('searchValues')).toBe(false)
-
-    const other = setup()
-    other.instance().openTopicSearch()
-    other.update()
-    expect(findPanel(other).prop('searchValues')).toBe(true)
-  })
-
-  test('Enter on an exact topic name opens that topic', () => {
+  test('picking a result shows it in the panel; back returns to the results', () => {
     const wrapper = setup({ enableTopicSampleQueries: true })
+    wrapper.instance().openTopicSearch()
+    wrapper.update()
+
+    findPanel(wrapper).prop('onSelect')(value)
+    wrapper.update()
+    expect(findPanel(wrapper).prop('selection')).toBe(value)
+    expect(findPanel(wrapper).prop('showSampleQueries')).toBe(true)
+    expect(wrapper.state('topicSearchQuery')).toBe('Acme')
+
+    findPanel(wrapper).prop('onBack')()
+    wrapper.update()
+    expect(findPanel(wrapper).prop('selection')).toBeNull()
+  })
+
+  test('a picked topic is the live topic, even from a recent search stored as JSON', () => {
+    const wrapper = setup()
+    wrapper.instance().openTopicSearch()
+    wrapper.instance().onTopicSearchSelect(JSON.parse(JSON.stringify(topic)))
+    expect(wrapper.state('topicSearchSelection')).toBe(topic)
+  })
+
+  test('Enter picks an exact topic name, otherwise the first result', () => {
+    const wrapper = setup()
     wrapper.instance().openTopicSearch()
     wrapper.instance().submitTopicSearch('transfers')
-    wrapper.update()
-    expect(wrapper.state('selectedTopic')).toBe(topic)
-    expect(findPanel(wrapper).exists()).toBe(false)
+    expect(wrapper.state('topicSearchSelection')).toBe(topic)
+
+    wrapper.instance().onTopicSearchChange('acm')
+    wrapper.instance().topicSearchResultsRef.current = { firstResult: value }
+    wrapper.instance().submitTopicSearch('acm')
+    expect(wrapper.state('topicSearchSelection')).toBe(value)
   })
 
-  test('Enter on other text shows its sample queries when the project has them', () => {
-    const wrapper = setup({ enableTopicSampleQueries: true })
-    wrapper.instance().openTopicSearch()
-    wrapper.instance().submitTopicSearch('fees by wallet')
-    expect(wrapper.state('topicSearchSelection')).toMatchObject({
-      type: 'TEXT',
-      displayName: 'fees by wallet',
-      skipValidation: false,
-    })
-  })
+  test('opening the search with a topic name opens that topic; other text just shows its results', () => {
+    const wrapper = setup()
+    wrapper.instance().openTopicSearch('Transfers')
+    expect(wrapper.state('topicSearchSelection')).toBe(topic)
 
-  test('Enter does nothing for text that matches nothing on an LLM project', () => {
-    const wrapper = setup({ disableColumnSelection: true, enableTopicSampleQueries: true })
-    wrapper.instance().openTopicSearch()
-    wrapper.instance().submitTopicSearch('fees by wallet')
+    wrapper.instance().openTopicSearch('acme')
     expect(wrapper.state('topicSearchSelection')).toBeNull()
-    expect(wrapper.state('selectedTopic')).toBeNull()
+    expect(wrapper.state('topicSearchQuery')).toBe('acme')
   })
 
-  test('opening the search with text searches it straight away, without a spelling check', () => {
-    const wrapper = setup({ enableTopicSampleQueries: true })
-    wrapper.instance().openTopicSearch('fees by wallet')
-    expect(wrapper.state('topicSearchSelection')).toMatchObject({ type: 'TEXT', skipValidation: true })
-    expect(wrapper.state('topicSearchQuery')).toBe('fees by wallet')
-  })
-
-  test('closing a topic opened from the search goes back to the results', () => {
-    const wrapper = setup({ enableTopicSampleQueries: true })
+  test('submitting a query clears the search and brings the chips back', () => {
+    const wrapper = setup({ onSubmit: jest.fn() })
     wrapper.instance().openTopicSearch()
+    wrapper.instance().onTopicSearchChange('acm')
     wrapper.instance().onTopicSearchSelect(topic)
-    wrapper.update()
-    expect(findPanel(wrapper).exists()).toBe(false)
 
-    wrapper.instance().closeTopic()
+    wrapper.instance().submitQuery({ queryText: 'total transfers by wallet' })
     wrapper.update()
-    expect(findPanel(wrapper).exists()).toBe(true)
+    expect(wrapper.state('isSearchingTopics')).toBe(false)
+    expect(wrapper.state('topicSearchQuery')).toBe('')
+    expect(wrapper.state('topicSearchSelection')).toBeNull()
+    expect(findField(wrapper).exists()).toBe(false)
+    expect(wrapper.find('.query-suggestion-button').exists()).toBe(true)
   })
 
   test('closing the search brings the chips back', () => {

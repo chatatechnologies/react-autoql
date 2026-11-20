@@ -7,32 +7,21 @@ import {
   fetchDataExplorerAutocomplete,
   fetchSubjectListV2,
   getAuthentication,
-  runQueryValidation,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
+import { Select } from '../Select'
 import { LoadingDots } from '../LoadingDots'
+import FieldSelector from '../FieldSelector'
 import { CustomScrollbars } from '../CustomScrollbars'
+import DataPreview from '../DataExplorer/DataPreview'
 import { SubjectName } from '../DataExplorer/SubjectName'
 import SampleQueryList from '../DataExplorer/SampleQueryList'
-import { QueryValidationMessage } from '../QueryValidationMessage'
+import { getSampleQueryColumns } from '../../js/sampleQueryColumns'
 import { addRecentTopicSearch, clearRecentTopicSearches, getRecentTopicSearches } from '../../js/topicSearchHistory'
-import { authenticationType } from '../../props/types'
+import { authenticationType, dataFormattingType } from '../../props/types'
 
 const AUTOCOMPLETE_DELAY_MS = 200
-
-const normalize = (text) => `${text ?? ''}`.trim().toLowerCase()
-
-/** Topics whose name contains the text, for the local filter. */
-export const filterTopics = (topics, text) => {
-  const query = normalize(text)
-  return query ? topics.filter((topic) => normalize(topic.displayName).includes(query)) : topics
-}
-
-// A topic narrowed to a searched value. Copied with its prototype, since topics are
-// DataExplorerSubject instances whose methods are used downstream.
-export const withValueLabel = (topic, valueLabel) =>
-  Object.assign(Object.create(Object.getPrototypeOf(topic)), topic, { valueLabel })
 
 // The Quick Topics search box. Takes the place of the topic chips while searching.
 export const TopicSearchField = ({ value, placeholder, onChange, onSubmit, onClose, onFocus }) => (
@@ -81,21 +70,29 @@ const ResultSection = ({ title, action, children }) => (
   </div>
 )
 
-const ResultItem = ({ item, label, onClick }) => (
+const ResultItem = ({ item, onClick }) => (
   <button type='button' className='quick-topics-search-result' onClick={() => onClick(item)}>
-    {label ?? <SubjectName subject={item} />}
+    <SubjectName subject={item} />
   </button>
 )
 
-// What the search finds while typing: recent searches, topics, values (and, for
-// projects with sample queries, the text itself). Picking one calls onSelect.
-const TopicSearchResults = ({ authentication, topics, query, searchValues, allowTextSearch, onSelect }) => {
+const Loading = () => (
+  <div className='quick-topics-search-loading'>
+    <LoadingDots />
+  </div>
+)
+
+// What the search finds, as the Data Explorer's input did: recent searches and every
+// topic before anything is typed, then the topics and values (VLs) the autocomplete
+// relates to the text. Nothing runs until one is picked. `resultsRef.current` is kept
+// pointing at the first result, for Enter in the search field.
+const TopicSearchResults = ({ authentication, topics, query, onSelect, resultsRef }) => {
   const [recentSearches, setRecentSearches] = useState(() => getRecentTopicSearches(authentication))
   const [autocomplete, setAutocomplete] = useState({ text: undefined, suggestions: [], loading: false })
+  const text = query?.trim()
 
   useEffect(() => {
-    const text = query?.trim()
-    if (!searchValues || !text) {
+    if (!text) {
       setAutocomplete({ text: undefined, suggestions: [], loading: false })
       return
     }
@@ -121,14 +118,21 @@ const TopicSearchResults = ({ authentication, topics, query, searchValues, allow
       clearTimeout(timer)
       source?.cancel(REQUEST_CANCELLED_ERROR)
     }
-  }, [query, searchValues])
+  }, [text])
+
+  const isLoading = !!text && (autocomplete.loading || autocomplete.text !== text)
+  const results = text ? (isLoading ? [] : autocomplete.suggestions) : topics
+
+  useEffect(() => {
+    if (resultsRef) {
+      resultsRef.current = { firstResult: results[0] }
+    }
+  })
 
   const select = (item) => {
     setRecentSearches(addRecentTopicSearch(authentication, item))
     onSelect(item)
   }
-
-  const text = query?.trim()
 
   if (!text) {
     return (
@@ -160,83 +164,160 @@ const TopicSearchResults = ({ authentication, topics, query, searchValues, allow
     )
   }
 
-  const textSearch = allowTextSearch ? (
-    <ResultItem
-      item={{ type: DataExplorerTypes.TEXT_TYPE, displayName: text }}
-      label={
-        <span>
-          <Icon type='light-bulb-on' /> Sample queries for <strong>“{text}”</strong>
-        </span>
-      }
-      onClick={select}
-    />
-  ) : null
-
-  if (!searchValues) {
-    const matches = filterTopics(topics, text)
-    return (
-      <>
-        {textSearch}
-        <ResultSection title='Topics'>
-          {matches.length ? (
-            matches.map((topic, i) => <ResultItem key={`topic-${i}-${topic.context}`} item={topic} onClick={select} />)
-          ) : (
-            <div className='quick-topics-search-empty'>No topics match “{text}”</div>
-          )}
-        </ResultSection>
-      </>
-    )
-  }
-
-  const isLoading = autocomplete.loading || autocomplete.text !== text
-
   return (
-    <>
-      {textSearch}
-      <ResultSection title={`Related to “${text}”`}>
-        {isLoading ? (
-          <div className='quick-topics-search-loading'>
-            <LoadingDots />
-          </div>
-        ) : autocomplete.suggestions.length ? (
-          autocomplete.suggestions.map((item, i) => (
-            <ResultItem key={`related-${i}-${item.displayName}`} item={item} onClick={select} />
-          ))
-        ) : (
-          <div className='quick-topics-search-empty'>No results</div>
-        )}
-      </ResultSection>
-    </>
+    <ResultSection title={`Related to “${text}”`}>
+      {isLoading ? (
+        <Loading />
+      ) : results.length ? (
+        results.map((item, i) => <ResultItem key={`related-${i}-${item.displayName}`} item={item} onClick={select} />)
+      ) : (
+        <div className='quick-topics-search-empty'>No results</div>
+      )}
+    </ResultSection>
   )
 }
 
-// After picking a value: the topics that hold it. Picking one opens that topic,
-// narrowed to the value.
-const TopicsForValue = ({ authentication, topics, item, onTopicSelect }) => {
-  const [state, setState] = useState({ loading: true, topics: [], error: undefined })
-  const canonical = item.valueLabel?.canonical
+/**
+ * A topic picked from the search: its data preview and, when the project has them,
+ * its sample queries, on two tabs. Fields picked in either (columns in the preview,
+ * or the field selector) narrow the sample queries, with example values from the
+ * preview - as in the Data Explorer.
+ */
+export const TopicExplorer = ({
+  authentication,
+  dataFormatting,
+  topic,
+  value,
+  showSampleQueries,
+  executeQuery,
+  tooltipID,
+  scope,
+  shouldRender,
+}) => {
+  const [activeTab, setActiveTab] = useState('preview')
+  const [dataPreview, setDataPreview] = useState()
+  const [selectedColumns, setSelectedColumns] = useState([])
+
+  const sampleQueryColumns = getSampleQueryColumns({
+    dataPreview,
+    selectedColumns,
+    valueLabel: value?.valueLabel,
+    dataFormatting,
+  })
+
+  return (
+    <div className='quick-topics-explorer' data-test='quick-topics-explorer'>
+      {showSampleQueries && (
+        <div className='quick-topics-tabs' role='tablist'>
+          {[
+            ['preview', 'Data preview'],
+            ['queries', 'Sample queries'],
+          ].map(([tab, label]) => (
+            <button
+              key={tab}
+              type='button'
+              role='tab'
+              aria-selected={activeTab === tab}
+              className={`quick-topics-tab${activeTab === tab ? ' active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Both tabs stay mounted: the preview's data feeds the sample queries' field
+          picker and example values, so it loads whichever tab is open. */}
+      <div className='query-suggestions-data-preview' hidden={activeTab !== 'preview'}>
+        <DataPreview
+          authentication={authentication}
+          dataFormatting={dataFormatting}
+          subject={topic}
+          shouldRender={shouldRender}
+          tooltipID={tooltipID}
+          selectable={showSampleQueries}
+          disableColumnSelection={!showSampleQueries}
+          selectedColumns={selectedColumns}
+          onColumnSelection={setSelectedColumns}
+          onDataPreview={setDataPreview}
+        />
+      </div>
+      {showSampleQueries && (
+        <div className='quick-topics-sample-queries' hidden={activeTab !== 'queries'}>
+          <div className='quick-topics-sample-queries-header'>
+            <FieldSelector
+              columns={dataPreview?.data?.data?.columns}
+              selectedColumns={selectedColumns}
+              onColumnsChange={setSelectedColumns}
+              selectedSubject={value ?? topic}
+              selectedTopic={value ? topic : null}
+              loading={!dataPreview}
+            />
+          </div>
+          <div className='query-suggestions-sample-list'>
+            <SampleQueryList
+              authentication={authentication}
+              columns={sampleQueryColumns}
+              context={topic.context}
+              valueLabel={value?.valueLabel}
+              searchText=''
+              executeQuery={executeQuery}
+              skipQueryValidation={false}
+              userSelection={null}
+              tooltipID={tooltipID}
+              scope={scope}
+              shouldRender={shouldRender}
+              onSuggestionListResponse={() => {}}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+TopicExplorer.propTypes = {
+  authentication: authenticationType,
+  dataFormatting: dataFormattingType,
+  topic: PropTypes.shape({ context: PropTypes.string }).isRequired,
+  // A value (VL) the topic was found through; narrows the sample queries to it
+  value: PropTypes.shape({ valueLabel: PropTypes.shape({}) }),
+  showSampleQueries: PropTypes.bool,
+  executeQuery: PropTypes.func,
+  tooltipID: PropTypes.string,
+  scope: PropTypes.string,
+  shouldRender: PropTypes.bool,
+}
+
+// A value (VL) picked from the search: the topics (contexts) that hold it, to pick
+// one from - the first by default - and that topic's preview and sample queries.
+const ValueExplorer = ({ authentication, topics, value, ...explorerProps }) => {
+  const [contexts, setContexts] = useState({ loading: true, topics: [], error: undefined })
+  const [selectedContext, setSelectedContext] = useState()
+  const canonical = value.valueLabel?.canonical
 
   useEffect(() => {
     if (!canonical) {
-      setState({ loading: false, topics: [], error: undefined })
+      setContexts({ loading: false, topics: [], error: undefined })
       return
     }
 
     let isCurrent = true
-    setState({ loading: true, topics: [], error: undefined })
+    setContexts({ loading: true, topics: [], error: undefined })
     fetchSubjectListV2({ ...getAuthentication(authentication), valueLabel: canonical })
       .then((subjects) => {
         if (isCurrent) {
           const matches = (subjects ?? [])
             .map((subject) => topics.find((topic) => topic.context === subject.subject))
             .filter(Boolean)
-          setState({ loading: false, topics: matches, error: undefined })
+          setContexts({ loading: false, topics: matches, error: undefined })
+          setSelectedContext(matches[0]?.context)
         }
       })
       .catch((error) => {
         console.error(error)
         if (isCurrent) {
-          setState({ loading: false, topics: [], error })
+          setContexts({ loading: false, topics: [], error })
         }
       })
 
@@ -245,162 +326,99 @@ const TopicsForValue = ({ authentication, topics, item, onTopicSelect }) => {
     }
   }, [canonical])
 
-  return (
-    <ResultSection title={<>Topics with “{item.displayName}”</>}>
-      {state.loading ? (
-        <div className='quick-topics-search-loading'>
-          <LoadingDots />
-        </div>
-      ) : state.error ? (
-        <div className='quick-topics-search-empty'>
-          {state.error?.message || 'Something went wrong while finding topics for this value. Please try again.'}
-        </div>
-      ) : state.topics.length ? (
-        state.topics.map((topic, i) => (
-          <ResultItem
-            key={`value-topic-${i}-${topic.context}`}
-            item={topic}
-            onClick={() => onTopicSelect(withValueLabel(topic, item.valueLabel))}
-          />
-        ))
-      ) : (
-        <div className='quick-topics-search-empty'>No topics hold this value</div>
-      )}
-    </ResultSection>
-  )
-}
+  if (contexts.loading) {
+    return <Loading />
+  }
 
-// After picking the text itself: its spelling/value suggestions if it has any,
-// otherwise sample queries for it.
-const TextSampleQueries = ({ authentication, item, skipValidation, onSearchText, ...sampleQueryProps }) => {
-  const [validation, setValidation] = useState({ loading: !skipValidation, response: undefined })
-  const [userSelection, setUserSelection] = useState(item.userSelection)
-
-  useEffect(() => {
-    setUserSelection(item.userSelection)
-    if (skipValidation) {
-      setValidation({ loading: false, response: undefined })
-      return
-    }
-
-    const source = axios.CancelToken?.source()
-    setValidation({ loading: true, response: undefined })
-    runQueryValidation({ ...getAuthentication(authentication), text: item.displayName, cancelToken: source?.token })
-      .then((response) => {
-        setValidation({
-          loading: false,
-          response: response?.data?.data?.replacements?.length ? response : undefined,
-        })
-      })
-      .catch((error) => {
-        if (error?.data?.message !== REQUEST_CANCELLED_ERROR && error?.message !== REQUEST_CANCELLED_ERROR) {
-          console.error(error)
-          setValidation({ loading: false, response: undefined })
-        }
-      })
-
-    return () => source?.cancel(REQUEST_CANCELLED_ERROR)
-  }, [item.displayName, skipValidation])
-
-  if (validation.loading) {
+  if (contexts.error || !contexts.topics.length) {
     return (
-      <div className='quick-topics-search-loading'>
-        <LoadingDots />
+      <div className='quick-topics-search-empty'>
+        {contexts.error
+          ? contexts.error?.message || 'Something went wrong while finding topics for this value. Please try again.'
+          : 'No topics hold this value'}
       </div>
     )
   }
 
-  if (validation.response) {
-    return (
-      <QueryValidationMessage
-        response={validation.response}
-        onSuggestionClick={({ query, userSelection: picked }) => onSearchText(query, picked)}
-        autoSelectSuggestion={true}
-        submitText='Search'
-        submitIcon='search'
-        scope={sampleQueryProps.scope}
-      />
-    )
-  }
+  const topic = contexts.topics.find((t) => t.context === selectedContext) ?? contexts.topics[0]
 
   return (
-    <SampleQueryList
-      authentication={authentication}
-      searchText={item.displayName}
-      skipQueryValidation={true}
-      userSelection={userSelection}
-      {...sampleQueryProps}
-    />
+    <>
+      <div className='quick-topics-value-context'>
+        <span>Topic:</span>
+        <Select
+          size='small'
+          value={topic.context}
+          options={contexts.topics.map((t) => ({ value: t.context, label: t.displayName }))}
+          onChange={setSelectedContext}
+        />
+      </div>
+      <TopicExplorer
+        key={topic.context}
+        authentication={authentication}
+        topic={topic}
+        value={value}
+        {...explorerProps}
+      />
+    </>
   )
 }
 
 /**
- * The Quick Topics panel while searching. Shows what the search finds; once a value
- * or the text itself is picked (`selection`), shows its topics or sample queries.
- * Picking a topic hands it to onTopicSelect, which opens the usual topic view.
+ * The Quick Topics panel while searching: what the search finds, then the topic or
+ * value picked from it (`selection`), with a back button to the results.
  */
 export const TopicSearchPanel = ({
   authentication,
+  dataFormatting,
   topics,
   query,
   selection,
-  searchValues,
-  allowTextSearch,
+  showSampleQueries,
   onSelect,
-  onTopicSelect,
-  onSearchText,
+  onBack,
   onClose,
+  resultsRef,
   executeQuery,
   tooltipID,
   scope,
   shouldRender,
 }) => {
   const scrollbars = useRef()
+  const explorerProps = { dataFormatting, showSampleQueries, executeQuery, tooltipID, scope, shouldRender }
 
-  let title = 'Search'
   let content
   if (selection?.type === DataExplorerTypes.VL_TYPE) {
     content = (
-      <TopicsForValue authentication={authentication} topics={topics} item={selection} onTopicSelect={onTopicSelect} />
-    )
-  } else if (selection?.type === DataExplorerTypes.TEXT_TYPE) {
-    title = (
-      <span>
-        <Icon type='light-bulb-on' /> Sample queries for “{selection.displayName}”
-      </span>
-    )
-    content = (
-      <TextSampleQueries
-        key={`${selection.displayName}-${selection.skipValidation ? 'validated' : 'raw'}`}
-        authentication={authentication}
-        item={selection}
-        skipValidation={!!selection.skipValidation}
-        onSearchText={onSearchText}
-        executeQuery={executeQuery}
-        tooltipID={tooltipID}
-        scope={scope}
-        shouldRender={shouldRender}
-        onSuggestionListResponse={() => scrollbars.current?.update?.()}
-      />
-    )
-  } else {
-    content = (
-      <TopicSearchResults
+      <ValueExplorer
+        key={selection.displayName}
         authentication={authentication}
         topics={topics}
-        query={query}
-        searchValues={searchValues}
-        allowTextSearch={allowTextSearch}
-        onSelect={onSelect}
+        value={selection}
+        {...explorerProps}
       />
+    )
+  } else if (selection) {
+    content = (
+      <TopicExplorer key={selection.context} authentication={authentication} topic={selection} {...explorerProps} />
     )
   }
 
   return (
-    <div className='query-suggestions-expanded quick-topics-search-panel' data-test='quick-topics-search-panel'>
+    <div
+      className={`query-suggestions-expanded quick-topics-search-panel${selection ? ' has-selection' : ''}`}
+      data-test='quick-topics-search-panel'
+    >
       <div className='query-suggestions-expanded-header'>
         <div className='react-autoql-data-explorer-title-text'>
-          <span className='react-autoql-data-explorer-title-text-sample-queries'>{title}</span>
+          {selection ? (
+            <button type='button' className='quick-topics-search-back' onClick={onBack} aria-label='Back to results'>
+              <Icon type='caret-left' />
+              <SubjectName subject={selection} />
+            </button>
+          ) : (
+            <span className='react-autoql-data-explorer-title-text-sample-queries'>Search</span>
+          )}
         </div>
         <div className='query-suggestions-expanded-header-actions'>
           <button className='query-suggestions-main-close' onClick={onClose} type='button' aria-label='Close'>
@@ -409,9 +427,17 @@ export const TopicSearchPanel = ({
         </div>
       </div>
       <div className='quick-topics-search-body'>
-        <CustomScrollbars ref={scrollbars} autoHide>
-          {content}
-        </CustomScrollbars>
+        {content ?? (
+          <CustomScrollbars ref={scrollbars} autoHide>
+            <TopicSearchResults
+              authentication={authentication}
+              topics={topics}
+              query={query}
+              onSelect={onSelect}
+              resultsRef={resultsRef}
+            />
+          </CustomScrollbars>
+        )}
       </div>
     </div>
   )
@@ -419,19 +445,16 @@ export const TopicSearchPanel = ({
 
 TopicSearchPanel.propTypes = {
   authentication: authenticationType,
+  dataFormatting: dataFormattingType,
   topics: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   query: PropTypes.string,
-  // A value (VL) or the text itself (TEXT) picked from the results
+  // The topic (SUBJECT) or value (VL) picked from the results
   selection: PropTypes.shape({}),
-  // Search values through the Data Explorer autocomplete; off for LLM projects,
-  // which only filter the topic list.
-  searchValues: PropTypes.bool,
-  // Offer sample queries for the typed text itself
-  allowTextSearch: PropTypes.bool,
+  showSampleQueries: PropTypes.bool,
   onSelect: PropTypes.func.isRequired,
-  onTopicSelect: PropTypes.func.isRequired,
-  onSearchText: PropTypes.func.isRequired,
+  onBack: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
+  resultsRef: PropTypes.shape({ current: PropTypes.any }),
   executeQuery: PropTypes.func,
   tooltipID: PropTypes.string,
   scope: PropTypes.string,

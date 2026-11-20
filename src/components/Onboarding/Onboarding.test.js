@@ -42,40 +42,22 @@ describe('onboarding store', () => {
 describe('WhatsNew', () => {
   beforeAll(() => localStorage.clear())
 
-  const Intro = () => <h3>What would you like to know?</h3>
-
-  test('shows the card instead of the intro, linking to the follow-ups docs', () => {
-    const { getByText, queryByText } = render(
-      <WhatsNew>
-        <Intro />
-      </WhatsNew>,
-    )
-    expect(getByText('What’s new')).toBeTruthy()
-    expect(getByText('Follow-ups.')).toBeTruthy()
+  test('shows the New banner, linking to the follow-ups docs', () => {
+    const { getByText } = render(<WhatsNew />)
+    expect(getByText('New')).toBeTruthy()
+    expect(getByText('Follow-ups')).toBeTruthy()
     expect(getByText('New topic?')).toBeTruthy()
     expect(getByText('Learn more →').getAttribute('href')).toBe('https://chata.readme.io/docs/follow-ups')
     expect(FOLLOW_UPS_DOCS_URL).toBe('https://chata.readme.io/docs/follow-ups')
-    expect(queryByText('What would you like to know?')).toBeNull()
   })
 
-  test('once dismissed, the intro comes back and the card stays closed', () => {
-    const first = render(
-      <WhatsNew>
-        <Intro />
-      </WhatsNew>,
-    )
+  test('stays closed once dismissed, and remembers it in localStorage', () => {
+    const first = render(<WhatsNew />)
     fireEvent.click(first.getByLabelText('Dismiss'))
-    expect(first.queryByText('What’s new')).toBeNull()
-    expect(first.getByText('What would you like to know?')).toBeTruthy()
+    expect(first.queryByText('Follow-ups')).toBeNull()
     first.unmount()
 
-    const second = render(
-      <WhatsNew>
-        <Intro />
-      </WhatsNew>,
-    )
-    expect(second.queryByText('What’s new')).toBeNull()
-    expect(second.getByText('What would you like to know?')).toBeTruthy()
+    expect(render(<WhatsNew />).queryByText('Follow-ups')).toBeNull()
     expect(localStorage.getItem('react-autoql-onboarding-dismissed:whats-new-follow-ups')).toBe('true')
   })
 })

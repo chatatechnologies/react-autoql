@@ -65,6 +65,30 @@ describe('props', () => {
       })
     })
   })
+  describe('onboarding', () => {
+    const chatFor = (props = {}) => {
+      const instance = shallow(<DataMessenger {...defaultProps} {...props} />).instance()
+      return shallow(<div>{instance.renderDataMessengerContent()}</div>).find(ChatContent)
+    }
+
+    test('is off without session tabs, and the intro keeps its default subtitle', () => {
+      const chat = chatFor({ enableSessions: false })
+      expect(chat.prop('enableOnboarding')).toBe(false)
+      expect(chat.prop('emptyStateSubtitle')).toBeUndefined()
+    })
+
+    test('is on with session tabs, with the follow-up intro', () => {
+      const chat = chatFor({ enableSessions: true })
+      expect(chat.prop('enableOnboarding')).toBe(true)
+      expect(shallow(<div>{chat.prop('emptyStateSubtitle')}</div>).text()).toContain('Follow up')
+    })
+
+    test('a consumer’s own subtitle still wins', () => {
+      expect(chatFor({ enableSessions: true, emptyStateSubtitle: 'Ask away' }).prop('emptyStateSubtitle')).toBe(
+        'Ask away',
+      )
+    })
+  })
   describe('Data Explorer page (removed)', () => {
     const instanceFor = (props = {}) => shallow(<DataMessenger {...defaultProps} {...props} />).instance()
 

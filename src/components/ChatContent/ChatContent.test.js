@@ -741,7 +741,7 @@ describe('onboarding', () => {
     ])
   })
 
-  test('shows no hint and no What’s new card unless enabled', () => {
+  test('shows no hint and no New banner unless enabled', () => {
     const wrapper = setup()
     expect(wrapper.find(WhatsNew).exists()).toBe(false)
     expect(wrapper.find('.chat-content-empty-state-title').exists()).toBe(true)
@@ -749,11 +749,15 @@ describe('onboarding', () => {
     expect(getHintFlags(wrapper).every(([, flag]) => flag === false)).toBe(true)
   })
 
-  test('when enabled, the empty state is the What’s new card, holding the intro for when it closes', () => {
+  test('when enabled, the New banner sits above the input and stays once there are messages', () => {
     const wrapper = setup({ enableOnboarding: true })
-    const whatsNew = wrapper.find('.chat-content-empty-state').find(WhatsNew)
-    expect(whatsNew.exists()).toBe(true)
-    expect(whatsNew.find('.chat-content-empty-state-title').exists()).toBe(true)
+    expect(wrapper.find('.chat-content-empty-state-title').exists()).toBe(true)
+    expect(wrapper.find('.chat-content-empty-state').find(WhatsNew).exists()).toBe(false)
+    expect(wrapper.find(WhatsNew).exists()).toBe(true)
+
+    wrapper.setState({ messages })
+    expect(wrapper.find('.chat-content-empty-state').exists()).toBe(false)
+    expect(wrapper.find(WhatsNew).exists()).toBe(true)
   })
 })
 

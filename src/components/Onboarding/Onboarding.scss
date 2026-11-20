@@ -21,47 +21,61 @@
   }
 }
 
-// "What's new" card, shown in the Data Messenger's empty state in place of the intro.
-.react-autoql-onboarding-card {
-  position: relative;
-  width: 100%;
-  max-width: 26rem;
+// "New" banner above the Data Messenger's input: badge, two short lines, a docs link
+// and a close button in one row, tinted with the accent.
+.react-autoql-onboarding-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
   box-sizing: border-box;
-  padding: 1.25rem 1.5rem;
-  border: 1px solid var(--react-autoql-border-color);
-  border-radius: 16px;
-  background-color: var(--react-autoql-background-color-secondary);
+  padding: 1rem 1rem 1rem 1.25rem;
+  border: 1px solid
+    rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.35
+    );
+  border-radius: 10px;
+  background: linear-gradient(
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.14
+      ),
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.14
+      )
+    ),
+    var(--react-autoql-background-color-secondary);
   color: var(--react-autoql-text-color-primary);
   text-align: left;
-  // The empty state it sits in ignores pointer events.
-  pointer-events: auto;
-
-  .react-autoql-onboarding-close {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-  }
 }
 
-.react-autoql-onboarding-card-title {
-  margin: 0 1.5rem 0.75rem 0;
-  color: var(--react-autoql-success-color);
-  font-size: 1rem;
+.react-autoql-onboarding-new-badge {
+  flex-shrink: 0;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  background-color: var(--react-autoql-success-color);
+  color: var(--react-autoql-background-color-primary);
+  font-size: 0.6875rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .react-autoql-onboarding-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.625rem;
-  margin: 0 0 0.75rem;
+  flex: 1;
+  min-width: 12rem;
+  margin: 0;
   padding: 0 0 0 1rem;
-  font-size: 0.875rem;
-  line-height: 1.45;
-
-  li::marker {
-    color: var(--react-autoql-accent-color);
-  }
+  font-size: 0.8125rem;
+  line-height: 1.5;
 
   strong {
     font-weight: 700;
@@ -69,13 +83,12 @@
 }
 
 .react-autoql-onboarding-link {
-  display: inline-block;
-  // Lines up with the list text, past the bullets.
-  margin-left: 1rem;
+  flex-shrink: 0;
   color: var(--react-autoql-accent-color);
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   text-decoration: none;
+  white-space: nowrap;
 
   &:hover {
     text-decoration: underline;

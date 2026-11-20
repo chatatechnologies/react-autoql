@@ -787,6 +787,100 @@
   }
 }
 
+// A topic or value picked from the search: back button in the header, then (for a
+// value) the topic it is shown in, then the Data preview / Sample queries tabs.
+.react-autoql-input-query-suggestions.expanded:has(.quick-topics-explorer) {
+  // Room for the tabs (and a value's topic picker) above a useful amount of table.
+  max-height: 380px;
+}
+
+.quick-topics-search-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--react-autoql-text-color-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-icon {
+    color: var(--react-autoql-text-color-placeholder);
+  }
+}
+
+.quick-topics-explorer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+
+  // The panels set their own display, which would otherwise win over [hidden]
+  [hidden] {
+    display: none !important;
+  }
+}
+
+.quick-topics-value-context {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 8px;
+  font-size: 0.8125rem;
+  color: var(--react-autoql-text-color-placeholder);
+}
+
+.quick-topics-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 16px;
+  margin: 0 10px 8px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.quick-topics-tab {
+  margin-bottom: -1px;
+  padding: 4px 0 6px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  &.active {
+    border-bottom-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-primary);
+  }
+}
+
+.quick-topics-sample-queries {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.quick-topics-sample-queries-header {
+  flex-shrink: 0;
+  padding: 0 10px 6px;
+}
+
 .quick-topics-search-empty,
 .quick-topics-search-loading {
   padding: 6px 10px;

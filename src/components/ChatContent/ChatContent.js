@@ -163,9 +163,9 @@ export default class ChatContent extends React.Component {
     // thread has no messages. Fall back to the defaults in Localization.
     emptyStateTitle: PropTypes.node,
     emptyStateSubtitle: PropTypes.node,
-    // One-time onboarding: the "What's new" card in the empty state (in place of the
-    // intro until it is closed) and the "check the interpretation" coach mark on the
-    // first answer. Each stays closed in this browser once dismissed. Default false.
+    // One-time onboarding: the "New" banner above the input and the "check the
+    // interpretation" coach mark on the first answer. Each stays
+    // closed in this browser once dismissed. Default false.
     enableOnboarding: PropTypes.bool,
     // When false, no message offers the "Delete data response" button. For
     // integrators whose chat is a durable record rather than a scratchpad —
@@ -1959,15 +1959,7 @@ export default class ChatContent extends React.Component {
                 )}
               </div>
             </CustomScrollbars>
-            {isEmpty && (
-              <div className='chat-content-empty-state'>
-                {this.props.enableOnboarding ? (
-                  <WhatsNew>{this.renderEmptyStateIntro()}</WhatsNew>
-                ) : (
-                  this.renderEmptyStateIntro()
-                )}
-              </div>
-            )}
+            {isEmpty && <div className='chat-content-empty-state'>{this.renderEmptyStateIntro()}</div>}
             {!this.state.isAtBottom && (
               <button
                 className='scroll-to-bottom-button'
@@ -1987,6 +1979,10 @@ export default class ChatContent extends React.Component {
               <div className='bottom-bar-right' />
             </div>
           </div>
+          {/* Above the input rather than in the empty state, so it stays through the
+              conversation until closed. A row of its own, outside the composer, so it
+              doesn't move the composer's measured top. */}
+          {this.props.enableOnboarding && !hideQueryInput && <WhatsNew />}
           <div
             ref={this.setComposerRef}
             style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}

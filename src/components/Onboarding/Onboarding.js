@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
 import { ONBOARDING_KEYS, useOnboarding } from '../../js/onboarding'
@@ -9,26 +8,21 @@ import './Onboarding.scss'
 export const FOLLOW_UPS_DOCS_URL = 'https://chata.readme.io/docs/follow-ups'
 
 const WHATS_NEW_ITEMS = [
-  { title: 'Follow-ups.', description: 'Each question builds on the previous ones.' },
+  { title: 'Follow-ups', description: 'build on your previous questions.' },
   { title: 'New topic?', description: 'Start a new thread.' },
 ]
 
-// The Data Messenger's empty state while there is something new to point out: the
-// "What's new" card in place of the usual intro (children), which comes back once
-// the card is closed.
-export const WhatsNew = ({ children = null }) => {
+// A "New" banner above the Data Messenger's input, until the user closes it.
+export const WhatsNew = () => {
   const [isVisible, dismiss] = useOnboarding(ONBOARDING_KEYS.WHATS_NEW)
 
   if (!isVisible) {
-    return children
+    return null
   }
 
   return (
-    <div className='react-autoql-onboarding-card' data-test='react-autoql-onboarding-whats-new'>
-      <button type='button' className='react-autoql-onboarding-close' onClick={dismiss} aria-label='Dismiss'>
-        <Icon type='close' />
-      </button>
-      <div className='react-autoql-onboarding-card-title'>What’s new</div>
+    <div className='react-autoql-onboarding-banner' role='note' data-test='react-autoql-onboarding-whats-new'>
+      <span className='react-autoql-onboarding-new-badge'>New</span>
       <ul className='react-autoql-onboarding-list'>
         {WHATS_NEW_ITEMS.map((item, i) => (
           <li key={i}>
@@ -39,12 +33,11 @@ export const WhatsNew = ({ children = null }) => {
       <a className='react-autoql-onboarding-link' href={FOLLOW_UPS_DOCS_URL} target='_blank' rel='noopener noreferrer'>
         Learn more →
       </a>
+      <button type='button' className='react-autoql-onboarding-close' onClick={dismiss} aria-label='Dismiss'>
+        <Icon type='close' />
+      </button>
     </div>
   )
-}
-
-WhatsNew.propTypes = {
-  children: PropTypes.node,
 }
 
 // The answer above the hint keeps changing size while it lays out (a table fills in,

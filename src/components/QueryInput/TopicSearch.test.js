@@ -1,24 +1,55 @@
 import React from 'react'
 import { render, fireEvent, act } from '@testing-library/react'
-import {
-  DataExplorerTypes,
-  fetchDataExplorerAutocomplete,
-  fetchSubjectListV2,
-  runQueryValidation,
-} from 'autoql-fe-utils'
+import { DataExplorerTypes, fetchDataExplorerAutocomplete, fetchSubjectListV2 } from 'autoql-fe-utils'
 
-import { TopicSearchPanel, filterTopics, withValueLabel } from './TopicSearch'
+import { TopicSearchPanel } from './TopicSearch'
 
 jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
   fetchDataExplorerAutocomplete: jest.fn(),
   fetchSubjectListV2: jest.fn(),
-  runQueryValidation: jest.fn(),
 }))
 
+// Stand-ins that show what they were given. The preview reports a small table as
+// soon as it mounts, as the real one does once its fetch returns.
+const preview = {
+  data: { data: { columns: [{ name: 'wallet', type: 'STRING' }], rows: [['Acme'], ['Globex']] } },
+}
+jest.mock('../DataExplorer/DataPreview', () => {
+  const { useEffect } = require('react')
+  return (props) => {
+    useEffect(() => props.onDataPreview(preview), [])
+    return (
+      <button
+        data-test='data-preview'
+        data-subject={props.subject?.context}
+        onClick={() => props.onColumnSelection([0])}
+      >
+        preview
+      </button>
+    )
+  }
+})
 jest.mock('../DataExplorer/SampleQueryList', () => (props) => (
-  <div data-test='sample-query-list' data-search-text={props.searchText} />
+  <div
+    data-test='sample-query-list'
+    data-context={props.context}
+    data-value-label={props.valueLabel?.canonical ?? ''}
+    data-columns={JSON.stringify(props.columns ?? null)}
+  />
 ))
+jest.mock('../FieldSelector', () => () => <div data-test='field-selector' />)
+jest.mock('../Select', () => ({
+  Select: ({ value, options, onChange }) => (
+    <select data-test='context-select' value={value} onChange={(e) => onChange(e.target.value)}>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
+}))
 
 class Topic {
   constructor(context, displayName) {
@@ -26,16 +57,14 @@ class Topic {
     this.displayName = displayName
     this.type = 'SUBJECT'
   }
-  isAggSeed() {
-    return false
-  }
 }
 
-const topics = [new Topic('wallets', 'Wallets'), new Topic('transfers', 'Transfers'), new Topic('fees', 'Transfer fees')]
+const topics = [new Topic('wallets', 'Wallets'), new Topic('transfers', 'Transfers')]
+const $ = (selector) => document.querySelector(`[data-test="${selector}"]`)
 
 const renderPanel = (props = {}) => {
-  const handlers = { onSelect: jest.fn(), onTopicSelect: jest.fn(), onSearchText: jest.fn(), onClose: jest.fn() }
-  const utils = render(<TopicSearchPanel topics={topics} query='' {...handlers} {...props} />)
+  const handlers = { onSelect: jest.fn(), onBack: jest.fn(), onClose: jest.fn() }
+  const utils = render(<TopicSearchPanel topics={topics} query='' showSampleQueries {...handlers} {...props} />)
   return { ...utils, ...handlers }
 }
 
@@ -44,100 +73,108 @@ beforeEach(() => {
   localStorage.clear()
   fetchDataExplorerAutocomplete.mockReset()
   fetchSubjectListV2.mockReset()
-  runQueryValidation.mockReset()
 })
 afterEach(() => jest.useRealTimers())
 
-describe('helpers', () => {
-  test('filterTopics matches anywhere in the name, ignoring case', () => {
-    expect(filterTopics(topics, 'TRANSFER').map((t) => t.context)).toEqual(['transfers', 'fees'])
-    expect(filterTopics(topics, '  ')).toBe(topics)
-  })
-
-  test('withValueLabel keeps the topic a topic', () => {
-    const narrowed = withValueLabel(topics[0], { canonical: 'c' })
-    expect(narrowed.isAggSeed()).toBe(false)
-    expect(narrowed.valueLabel).toEqual({ canonical: 'c' })
-    expect(topics[0].valueLabel).toBeUndefined()
-  })
-})
-
-describe('results while typing', () => {
-  test('lists every topic before anything is typed', () => {
+describe('results', () => {
+  test('list every topic before anything is typed', () => {
     const { getByText } = renderPanel()
     topics.forEach((topic) => expect(getByText(topic.displayName)).toBeTruthy())
-  })
-
-  test('LLM projects filter the topic list and never call the autocomplete', () => {
-    const { queryByText, getByText } = renderPanel({ query: 'fee', searchValues: false })
-    act(() => jest.runAllTimers())
-    expect(getByText('Transfer fees')).toBeTruthy()
-    expect(queryByText('Wallets')).toBeNull()
     expect(fetchDataExplorerAutocomplete).not.toHaveBeenCalled()
   })
 
-  test('other projects search values through the autocomplete', async () => {
+  test('are the topics and values the autocomplete relates to the text, and nothing else', async () => {
     const value = { type: DataExplorerTypes.VL_TYPE, displayName: 'Acme', valueLabel: { canonical: 'acme' } }
-    fetchDataExplorerAutocomplete.mockResolvedValue([value])
+    fetchDataExplorerAutocomplete.mockResolvedValue([topics[1], value])
+    const resultsRef = { current: undefined }
 
-    const { findByText, onSelect } = renderPanel({ query: 'acm', searchValues: true })
+    const { findByText, queryByText, onSelect } = renderPanel({ query: 'ac', resultsRef })
     act(() => jest.runAllTimers())
 
     fireEvent.click(await findByText('Acme'))
-    expect(fetchDataExplorerAutocomplete.mock.calls[0][0]).toMatchObject({ suggestion: 'acm' })
+    expect(fetchDataExplorerAutocomplete.mock.calls[0][0]).toMatchObject({ suggestion: 'ac' })
+    expect(queryByText('Sample queries', { exact: false })).toBeNull()
+    expect(resultsRef.current.firstResult).toBe(topics[1])
     expect(onSelect).toHaveBeenCalledWith(value)
+    expect($('sample-query-list')).toBeNull()
   })
 
-  test('offers sample queries for the text itself only when allowed', () => {
-    const allowed = renderPanel({ query: 'fees', searchValues: false, allowTextSearch: true })
-    expect(allowed.queryByText('Sample queries for', { exact: false })).not.toBeNull()
-    allowed.unmount()
-
-    const notAllowed = renderPanel({ query: 'fees', searchValues: false, allowTextSearch: false })
-    expect(notAllowed.queryByText('Sample queries for', { exact: false })).toBeNull()
-  })
-
-  test('remembers what was picked as a recent search', () => {
+  test('remember what was picked as a recent search', () => {
     const token = `x.${btoa(JSON.stringify({ user_id: 'u', project_id: 'p' }))}.y`
     const first = renderPanel({ authentication: { token } })
     fireEvent.click(first.getByText('Wallets'))
     first.unmount()
 
-    const { getByText } = renderPanel({ authentication: { token } })
-    expect(getByText('Recent')).toBeTruthy()
+    expect(renderPanel({ authentication: { token } }).getByText('Recent')).toBeTruthy()
   })
 })
 
-describe('after picking a value', () => {
-  test('lists the topics that hold it, and opens one narrowed to the value', async () => {
-    fetchSubjectListV2.mockResolvedValue([{ subject: 'transfers' }, { subject: 'unknown' }])
-    const valueLabel = { canonical: 'acme', column_name: 'wallet', keyword: 'Acme' }
+describe('a picked topic', () => {
+  test('shows its data preview and sample queries on two tabs', () => {
+    const { getByRole, onBack } = renderPanel({ selection: topics[1] })
 
-    const { findByText, queryByText, onTopicSelect } = renderPanel({
-      selection: { type: DataExplorerTypes.VL_TYPE, displayName: 'Acme', valueLabel },
-    })
+    expect($('data-preview').getAttribute('data-subject')).toBe('transfers')
+    expect($('data-preview').parentElement.hidden).toBe(false)
+    expect($('sample-query-list').closest('[hidden]')).not.toBeNull()
 
-    fireEvent.click(await findByText('Transfers'))
-    expect(queryByText('Wallets')).toBeNull()
-    expect(fetchSubjectListV2.mock.calls[0][0]).toMatchObject({ valueLabel: 'acme' })
-    expect(onTopicSelect.mock.calls[0][0]).toMatchObject({ context: 'transfers', valueLabel })
+    fireEvent.click(getByRole('tab', { name: 'Sample queries' }))
+    expect($('data-preview').parentElement.hidden).toBe(true)
+    expect($('sample-query-list').closest('[hidden]')).toBeNull()
+    expect($('sample-query-list').getAttribute('data-context')).toBe('transfers')
+
+    fireEvent.click(getByRole('button', { name: 'Back to results' }))
+    expect(onBack).toHaveBeenCalled()
+  })
+
+  test('fields picked in the preview narrow the sample queries, with example values', () => {
+    renderPanel({ selection: topics[1] })
+    expect(JSON.parse($('sample-query-list').getAttribute('data-columns'))).toBeNull()
+
+    fireEvent.click($('data-preview'))
+    expect(JSON.parse($('sample-query-list').getAttribute('data-columns'))).toEqual({ wallet: { value: 'Acme' } })
+  })
+
+  test('shows only the preview, with no tabs, when the project has no sample queries', () => {
+    const { queryByRole } = renderPanel({ selection: topics[1], showSampleQueries: false })
+    expect($('data-preview')).not.toBeNull()
+    expect(queryByRole('tab')).toBeNull()
+    expect($('sample-query-list')).toBeNull()
   })
 })
 
-describe('after picking the text itself', () => {
-  test('shows sample queries for it when it needs no correction', async () => {
-    runQueryValidation.mockResolvedValue({ data: { data: { replacements: [] } } })
-    renderPanel({ selection: { type: DataExplorerTypes.TEXT_TYPE, displayName: 'fees' } })
+describe('a picked value', () => {
+  const value = {
+    type: DataExplorerTypes.VL_TYPE,
+    displayName: 'Acme',
+    valueLabel: { canonical: 'acme', column_name: 'customer', keyword: 'Acme' },
+  }
+
+  test('lets you pick which of its topics to look at, the first by default', async () => {
+    fetchSubjectListV2.mockResolvedValue([{ subject: 'transfers' }, { subject: 'unknown' }, { subject: 'wallets' }])
+    renderPanel({ selection: value })
     await act(async () => {})
 
-    expect(runQueryValidation.mock.calls[0][0]).toMatchObject({ text: 'fees' })
-    // The mocked list is marked with data-test, which getByTestId doesn't read
-    expect(document.querySelector('[data-test="sample-query-list"]').getAttribute('data-search-text')).toBe('fees')
+    expect(fetchSubjectListV2.mock.calls[0][0]).toMatchObject({ valueLabel: 'acme' })
+    const options = [...$('context-select').options].map((option) => option.value)
+    expect(options).toEqual(['transfers', 'wallets'])
+    expect($('data-preview').getAttribute('data-subject')).toBe('transfers')
+
+    fireEvent.change($('context-select'), { target: { value: 'wallets' } })
+    expect($('data-preview').getAttribute('data-subject')).toBe('wallets')
   })
 
-  test('skips the spelling check when asked to', () => {
-    renderPanel({ selection: { type: DataExplorerTypes.TEXT_TYPE, displayName: 'fees', skipValidation: true } })
-    expect(runQueryValidation).not.toHaveBeenCalled()
-    expect(document.querySelector('[data-test="sample-query-list"]')).not.toBeNull()
+  test('narrows the sample queries to the value', async () => {
+    fetchSubjectListV2.mockResolvedValue([{ subject: 'transfers' }])
+    renderPanel({ selection: value })
+    await act(async () => {})
+
+    expect($('sample-query-list').getAttribute('data-value-label')).toBe('acme')
+    expect(JSON.parse($('sample-query-list').getAttribute('data-columns'))).toEqual({ customer: { value: 'Acme' } })
+  })
+
+  test('says so when no topic holds it', async () => {
+    fetchSubjectListV2.mockResolvedValue([])
+    const { findByText } = renderPanel({ selection: value })
+    expect(await findByText('No topics hold this value')).toBeTruthy()
   })
 })

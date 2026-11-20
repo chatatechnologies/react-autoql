@@ -1000,8 +1000,13 @@ export class DataMessenger extends React.Component {
           autoQLConfig={this.props.autoQLConfig}
           isResizing={this.state.isResizing || this.state.isWindowResizing}
           source={this.SOURCE}
-          emptyStateSubtitle={this.props.emptyStateSubtitle ?? this.emptyStateSubtitle}
-          enableOnboarding={true}
+          // Follow-ups, and the onboarding that points them out, only exist with session
+          // tabs: a session is what carries one question's context into the next.
+          // Without them the intro falls back to ChatContent's default subtitle.
+          emptyStateSubtitle={
+            this.props.emptyStateSubtitle ?? (this.props.enableSessions ? this.emptyStateSubtitle : undefined)
+          }
+          enableOnboarding={!!this.props.enableSessions}
           inputPlaceholder={this.props.inputPlaceholder ?? lang.queryPrompt}
           autoChartAggregations={this.props.autoChartAggregations}
           executeQuery={(queryRequestParams) => {
