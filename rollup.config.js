@@ -72,6 +72,12 @@ const common = {
       fileName: 'autoql.esm.css',
       outputStyle: 'compressed',
       processor: () => postcss([autoprefixer()]),
+      // Replaces the plugin's own importer, which resolves every non-relative @import (e.g. @import 'tokens') with
+      // require.resolve, passing the whole concatenated stylesheet (~600 KB) as the lookup path. Node expands that into
+      // one node_modules path per "/" in it - hundreds of MB of strings per import - which ran builds out of memory at
+      // Node's default heap. Nothing here imports from node_modules, so handing every import back to Sass (which finds
+      // the partials on its include paths, as before) gives the same CSS.
+      importer: () => null,
     }),
     image(),
     svg(),
