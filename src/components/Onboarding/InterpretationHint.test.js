@@ -75,8 +75,8 @@ describe('InterpretationHint', () => {
     expect(getHint(page.mount())).toBeNull()
   })
 
-  test('is not affected by dismissing the how-it-works card', () => {
-    localStorage.setItem('react-autoql-onboarding-dismissed:how-data-messenger-works', 'true')
+  test('is not affected by dismissing the What’s new card', () => {
+    localStorage.setItem('react-autoql-onboarding-dismissed:whats-new-follow-ups', 'true')
     page = loadPage()
     expect(getHint(page.mount())).not.toBeNull()
   })

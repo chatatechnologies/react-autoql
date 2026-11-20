@@ -4,7 +4,7 @@ import ChatContent from './ChatContent'
 import { QueryInput } from '../QueryInput'
 import { SessionTabs } from '../SessionTabs'
 import { ChatMessage } from '../ChatMessage'
-import { HowDataMessengerWorks } from '../Onboarding'
+import { WhatsNew } from '../Onboarding'
 import { fetchQueryTitle } from '../../js/queryTitleService'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
@@ -741,15 +741,37 @@ describe('onboarding', () => {
     ])
   })
 
-  test('shows no hint and no how-it-works card unless enabled', () => {
+  test('shows no hint and no What’s new card unless enabled', () => {
     const wrapper = setup()
-    expect(wrapper.find(HowDataMessengerWorks).exists()).toBe(false)
+    expect(wrapper.find(WhatsNew).exists()).toBe(false)
+    expect(wrapper.find('.chat-content-empty-state-title').exists()).toBe(true)
     wrapper.setState({ messages })
     expect(getHintFlags(wrapper).every(([, flag]) => flag === false)).toBe(true)
   })
 
-  test('shows the how-it-works card in the empty state when enabled', () => {
+  test('when enabled, the empty state is the What’s new card, holding the intro for when it closes', () => {
     const wrapper = setup({ enableOnboarding: true })
-    expect(wrapper.find('.chat-content-empty-state').find(HowDataMessengerWorks).exists()).toBe(true)
+    const whatsNew = wrapper.find('.chat-content-empty-state').find(WhatsNew)
+    expect(whatsNew.exists()).toBe(true)
+    expect(whatsNew.find('.chat-content-empty-state-title').exists()).toBe(true)
+  })
+})
+
+describe('openTopicSearch', () => {
+  test('opens the search in a plain thread’s input', () => {
+    const instance = setup().instance()
+    instance.queryInputRef = { openTopicSearch: jest.fn() }
+    instance.openTopicSearch('wallets')
+    expect(instance.queryInputRef.openTopicSearch).toHaveBeenCalledWith('wallets')
+  })
+
+  test('opens it in the active session tab', () => {
+    const wrapper = setup({ enableSessions: true })
+    const instance = wrapper.instance()
+    const active = { openTopicSearch: jest.fn() }
+    instance.sessionRefs[instance.state.activeSessionId] = active
+
+    instance.openTopicSearch('wallets')
+    expect(active.openTopicSearch).toHaveBeenCalledWith('wallets')
   })
 })

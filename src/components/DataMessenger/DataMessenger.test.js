@@ -3,7 +3,6 @@ import { shallow, mount } from 'enzyme'
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { DataMessenger } from './DataMessenger'
 import { ChatContent } from '../ChatContent'
-import { DataExplorer } from '../DataExplorer'
 import responseTestCases from '../../../test/responseTestCases'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
@@ -35,36 +34,62 @@ describe('props', () => {
     checkProps(DataMessenger, defaultProps)
   })
 
-  // enableQuerySuggestions drives both the Data Explorer's suggestion list and the
+  // enableQuerySuggestions drives both the Quick Topics sample queries and the
   // chat's related-queries fallback. enableQuerySuggestionsOnError splits off the chat's half.
   describe('enableQuerySuggestionsOnError', () => {
     const suggestionPropsFor = (props) => {
-      const instance = shallow(<DataMessenger {...defaultProps} enableDataExplorerTab {...props} />).instance()
+      const instance = shallow(<DataMessenger {...defaultProps} {...props} />).instance()
       const chat = shallow(<div>{instance.renderDataMessengerContent()}</div>).find(ChatContent)
-      const explorer = shallow(<div>{instance.renderDataExplorerContent()}</div>).find(DataExplorer)
       return {
         chat: chat.prop('enableQuerySuggestions'),
-        explorer: explorer.prop('enableQuerySuggestions'),
+        topics: chat.prop('enableTopicSampleQueries'),
       }
     }
 
     test('follows enableQuerySuggestions when not set', () => {
-      expect(suggestionPropsFor({ enableQuerySuggestions: true })).toEqual({ chat: true, explorer: true })
-      expect(suggestionPropsFor({ enableQuerySuggestions: false })).toEqual({ chat: false, explorer: false })
+      expect(suggestionPropsFor({ enableQuerySuggestions: true })).toEqual({ chat: true, topics: true })
+      expect(suggestionPropsFor({ enableQuerySuggestions: false })).toEqual({ chat: false, topics: false })
     })
 
-    test('false turns off the chat fallback and keeps the Data Explorer suggestions', () => {
+    test('false turns off the chat fallback and keeps the Quick Topics sample queries', () => {
       expect(suggestionPropsFor({ enableQuerySuggestions: true, enableQuerySuggestionsOnError: false })).toEqual({
         chat: false,
-        explorer: true,
+        topics: true,
       })
     })
 
-    test('true turns on the chat fallback without the Data Explorer suggestions', () => {
+    test('true turns on the chat fallback without the Quick Topics sample queries', () => {
       expect(suggestionPropsFor({ enableQuerySuggestions: false, enableQuerySuggestionsOnError: true })).toEqual({
         chat: true,
-        explorer: false,
+        topics: false,
       })
+    })
+  })
+  describe('Data Explorer page (removed)', () => {
+    const instanceFor = (props = {}) => shallow(<DataMessenger {...defaultProps} {...props} />).instance()
+
+    test('enableDataExplorerTab no longer adds a header button, and warns', () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+      const instance = instanceFor({ enableDataExplorerTab: true, enableNotificationsTab: true })
+      const nav = shallow(<div>{instance.renderHeaderNav()}</div>)
+
+      expect(nav.find('.react-autoql-data-explorer').exists()).toBe(false)
+      expect(warn.mock.calls.some(([message]) => message.includes('enableDataExplorerTab is deprecated'))).toBe(true)
+      warn.mockRestore()
+    })
+
+    test('a defaultTab of data-explorer opens the chat', () => {
+      expect(instanceFor({ defaultTab: 'data-explorer' }).state.activePage).toBe('data-messenger')
+    })
+
+    test('openDataExplorer opens the Quick Topics search in the chat, searching the topic given', () => {
+      const instance = instanceFor({ defaultTab: 'notifications' })
+      instance.dataMessengerContentRef = { openTopicSearch: jest.fn() }
+
+      instance.openDataExplorer('wallets')
+
+      expect(instance.state.activePage).toBe('data-messenger')
+      expect(instance.dataMessengerContentRef.openTopicSearch).toHaveBeenCalledWith('wallets')
     })
   })
   describe('showMask', () => {

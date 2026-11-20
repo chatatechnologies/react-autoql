@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
 import { ONBOARDING_KEYS, useOnboarding } from '../../js/onboarding'
@@ -7,45 +8,43 @@ import './Onboarding.scss'
 
 export const FOLLOW_UPS_DOCS_URL = 'https://chata.readme.io/docs/follow-ups'
 
-const HOW_IT_WORKS_STEPS = [
-  { title: 'Start with a query.', description: 'Ask what you would like to know.' },
-  { title: 'Follow-up.', description: 'Keep going in the same chat. Each question builds on the last.' },
-  { title: 'New topic? Start a new chat.', description: 'So earlier questions don’t affect the answer.' },
+const WHATS_NEW_ITEMS = [
+  { title: 'Follow-ups.', description: 'Each question builds on the previous ones.' },
+  { title: 'New topic?', description: 'Start a new thread.' },
 ]
 
-// Shown under the Data Messenger's empty-state message until the user closes it.
-export const HowDataMessengerWorks = () => {
-  const [isVisible, dismiss] = useOnboarding(ONBOARDING_KEYS.HOW_DATA_MESSENGER_WORKS)
+// The Data Messenger's empty state while there is something new to point out: the
+// "What's new" card in place of the usual intro (children), which comes back once
+// the card is closed.
+export const WhatsNew = ({ children = null }) => {
+  const [isVisible, dismiss] = useOnboarding(ONBOARDING_KEYS.WHATS_NEW)
 
   if (!isVisible) {
-    return null
+    return children
   }
 
   return (
-    <div className='react-autoql-onboarding-card' data-test='react-autoql-onboarding-how-it-works'>
+    <div className='react-autoql-onboarding-card' data-test='react-autoql-onboarding-whats-new'>
       <button type='button' className='react-autoql-onboarding-close' onClick={dismiss} aria-label='Dismiss'>
         <Icon type='close' />
       </button>
-      <div className='react-autoql-onboarding-card-title'>
-        <span className='react-autoql-onboarding-new-badge'>New</span>
-        <span className='react-autoql-onboarding-card-title-separator'> · </span>
-        How Data Messenger works
-      </div>
-      <ol className='react-autoql-onboarding-steps'>
-        {HOW_IT_WORKS_STEPS.map((step, i) => (
-          <li key={i} className='react-autoql-onboarding-step'>
-            <span className='react-autoql-onboarding-step-number'>{i + 1}</span>
-            <span>
-              <strong>{step.title}</strong> {step.description}
-            </span>
+      <div className='react-autoql-onboarding-card-title'>What’s new</div>
+      <ul className='react-autoql-onboarding-list'>
+        {WHATS_NEW_ITEMS.map((item, i) => (
+          <li key={i}>
+            <strong>{item.title}</strong> {item.description}
           </li>
         ))}
-      </ol>
+      </ul>
       <a className='react-autoql-onboarding-link' href={FOLLOW_UPS_DOCS_URL} target='_blank' rel='noopener noreferrer'>
-        Learn more in the docs →
+        Learn more →
       </a>
     </div>
   )
+}
+
+WhatsNew.propTypes = {
+  children: PropTypes.node,
 }
 
 // The answer above the hint keeps changing size while it lays out (a table fills in,

@@ -21,7 +21,7 @@
   }
 }
 
-// "New" card under the Data Messenger's empty-state message.
+// "What's new" card, shown in the Data Messenger's empty state in place of the intro.
 .react-autoql-onboarding-card {
   position: relative;
   width: 100%;
@@ -44,62 +44,34 @@
 }
 
 .react-autoql-onboarding-card-title {
-  margin: 0 1.5rem 1rem 0;
+  margin: 0 1.5rem 0.75rem 0;
+  color: var(--react-autoql-success-color);
   font-size: 1rem;
   font-weight: 700;
 }
 
-.react-autoql-onboarding-new-badge {
-  color: var(--react-autoql-success-color);
-}
-
-.react-autoql-onboarding-card-title-separator {
-  color: var(--react-autoql-success-color);
-}
-
-.react-autoql-onboarding-steps {
+.react-autoql-onboarding-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin: 0 0 1rem;
-  padding: 0;
-  list-style: none;
+  gap: 0.625rem;
+  margin: 0 0 0.75rem;
+  padding: 0 0 0 1rem;
   font-size: 0.875rem;
   line-height: 1.45;
-}
 
-.react-autoql-onboarding-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
+  li::marker {
+    color: var(--react-autoql-accent-color);
+  }
 
   strong {
     font-weight: 700;
   }
 }
 
-.react-autoql-onboarding-step-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  background-color: rgba(
-    var(--react-autoql-accent-color-R),
-    var(--react-autoql-accent-color-G),
-    var(--react-autoql-accent-color-B),
-    0.15
-  );
-  color: var(--react-autoql-accent-color);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
 .react-autoql-onboarding-link {
   display: inline-block;
-  margin-left: 2.25rem;
+  // Lines up with the list text, past the bullets.
+  margin-left: 1rem;
   color: var(--react-autoql-accent-color);
   font-size: 0.875rem;
   font-weight: 700;

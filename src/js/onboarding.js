@@ -5,7 +5,7 @@ import { useCallback, useEffect, useReducer, useState } from 'react'
 // in component state.
 export const ONBOARDING_KEYS = {
   INTERPRETATION_HINT: 'interpretation-hint',
-  HOW_DATA_MESSENGER_WORKS: 'how-data-messenger-works',
+  WHATS_NEW: 'whats-new-follow-ups',
 }
 
 const STORAGE_PREFIX = 'react-autoql-onboarding-dismissed'

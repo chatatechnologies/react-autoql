@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, fireEvent } from '@testing-library/react'
 
-import { HowDataMessengerWorks, FOLLOW_UPS_DOCS_URL } from './Onboarding'
+import { WhatsNew, FOLLOW_UPS_DOCS_URL } from './Onboarding'
 
 // A dismissal is also held in a module-level set for the life of the page, so the
 // component tests below run in order: the card is shown before it is dismissed.
@@ -23,7 +23,7 @@ describe('onboarding store', () => {
 
     const reloaded = loadFreshStore()
     expect(reloaded.isOnboardingDismissed('interpretation-hint')).toBe(true)
-    expect(reloaded.isOnboardingDismissed('how-data-messenger-works')).toBe(false)
+    expect(reloaded.isOnboardingDismissed('whats-new-follow-ups')).toBe(false)
   })
 
   test('still dismisses for the session when localStorage throws', () => {
@@ -39,28 +39,43 @@ describe('onboarding store', () => {
   })
 })
 
-describe('HowDataMessengerWorks', () => {
+describe('WhatsNew', () => {
   beforeAll(() => localStorage.clear())
 
-  test('lists the steps and links to the follow-ups docs', () => {
-    const { getByText } = render(<HowDataMessengerWorks />)
-    expect(getByText('How Data Messenger works', { exact: false })).toBeTruthy()
-    expect(getByText('Start with a query.')).toBeTruthy()
-    expect(getByText('Follow-up.')).toBeTruthy()
-    expect(getByText('New topic? Start a new chat.')).toBeTruthy()
-    expect(getByText('Learn more in the docs →').getAttribute('href')).toBe(
-      'https://chata.readme.io/docs/follow-ups',
+  const Intro = () => <h3>What would you like to know?</h3>
+
+  test('shows the card instead of the intro, linking to the follow-ups docs', () => {
+    const { getByText, queryByText } = render(
+      <WhatsNew>
+        <Intro />
+      </WhatsNew>,
     )
+    expect(getByText('What’s new')).toBeTruthy()
+    expect(getByText('Follow-ups.')).toBeTruthy()
+    expect(getByText('New topic?')).toBeTruthy()
+    expect(getByText('Learn more →').getAttribute('href')).toBe('https://chata.readme.io/docs/follow-ups')
     expect(FOLLOW_UPS_DOCS_URL).toBe('https://chata.readme.io/docs/follow-ups')
+    expect(queryByText('What would you like to know?')).toBeNull()
   })
 
-  test('stays closed once dismissed, and remembers it in localStorage', () => {
-    const first = render(<HowDataMessengerWorks />)
+  test('once dismissed, the intro comes back and the card stays closed', () => {
+    const first = render(
+      <WhatsNew>
+        <Intro />
+      </WhatsNew>,
+    )
     fireEvent.click(first.getByLabelText('Dismiss'))
-    expect(first.queryByText('Start with a query.')).toBeNull()
+    expect(first.queryByText('What’s new')).toBeNull()
+    expect(first.getByText('What would you like to know?')).toBeTruthy()
     first.unmount()
 
-    expect(render(<HowDataMessengerWorks />).queryByText('Start with a query.')).toBeNull()
-    expect(localStorage.getItem('react-autoql-onboarding-dismissed:how-data-messenger-works')).toBe('true')
+    const second = render(
+      <WhatsNew>
+        <Intro />
+      </WhatsNew>,
+    )
+    expect(second.queryByText('What’s new')).toBeNull()
+    expect(second.getByText('What would you like to know?')).toBeTruthy()
+    expect(localStorage.getItem('react-autoql-onboarding-dismissed:whats-new-follow-ups')).toBe('true')
   })
 })

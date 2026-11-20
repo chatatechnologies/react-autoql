@@ -16,7 +16,6 @@ import classNames from 'classnames'
 // Components
 import { Icon } from '../Icon'
 import { ExploreQueries } from '../ExploreQueries'
-import { DataExplorer } from '../DataExplorer'
 import { NotificationIcon } from '../Notifications/NotificationIcon'
 import { NotificationFeed } from '../Notifications/NotificationFeed'
 import { ChatContent } from '../ChatContent'
@@ -79,6 +78,12 @@ export class DataMessenger extends React.Component {
       </span>
     )
 
+    if (props.enableDataExplorerTab !== undefined) {
+      console.warn(
+        'enableDataExplorerTab is deprecated - the provided prop will be ignored. The Data Explorer page has been removed; its topic previews, sample queries and search are in Quick Topics.',
+      )
+    }
+
     if (props.enableAjaxTableData !== undefined) {
       console.warn(
         'enableAjaxtableData is deprecated - the provided prop will be ignored and the default value of "true" will be used instead.',
@@ -92,7 +97,7 @@ export class DataMessenger extends React.Component {
       // changes underneath them - see clearMessages and componentDidUpdate.
       agentMessengerId: uuid(),
       hasError: false,
-      activePage: props.defaultTab,
+      activePage: this.getPage(props.defaultTab),
       width: isBrowser ? props.width : '100vw',
       height: props.height,
       isResizing: false,
@@ -147,9 +152,10 @@ export class DataMessenger extends React.Component {
     // empty. Forwarded to ChatContent, which falls back to its own defaults.
     emptyStateTitle: PropTypes.node,
     emptyStateSubtitle: PropTypes.node,
-    // Data Explorer is the supported way to browse topics and sample queries.
+    // Deprecated and ignored: the Data Explorer page has been removed. Its topic
+    // previews, sample queries and search are in Quick Topics.
     enableDataExplorerTab: PropTypes.bool,
-    // Deprecated: superseded by Data Explorer. Off by default; only enable it for
+    // Deprecated: superseded by Quick Topics. Off by default; only enable it for
     // integrations that haven't migrated yet.
     enableExploreQueriesTab: PropTypes.bool,
     enableNotificationsTab: PropTypes.bool,
@@ -180,7 +186,7 @@ export class DataMessenger extends React.Component {
     enableFilterLocking: PropTypes.bool,
     enableQueryQuickStartTopics: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
-    // Turns on query suggestions: the Data Explorer's suggestion list and the
+    // Turns on query suggestions: the Quick Topics panel's sample queries and the
     // related-queries fallback that answers a failed query with a list of close
     // queries instead of an error. Off by default.
     enableQuerySuggestions: PropTypes.bool,
@@ -248,7 +254,6 @@ export class DataMessenger extends React.Component {
     maxMessages: 50,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
-    enableDataExplorerTab: false,
     enableExploreQueriesTab: false,
     enableNotificationsTab: false,
     resizable: true,
@@ -409,16 +414,22 @@ export class DataMessenger extends React.Component {
     }, 300)
   }
 
+  // The page to show for a tab name. 'data-explorer' is still accepted from
+  // integrations written before that page was removed, and lands on the chat.
+  getPage = (tab) => (tab === 'data-explorer' ? 'data-messenger' : tab)
+
   openDataMessenger = (tab) => {
+    const page = this.getPage(tab)
+
     if (isMobile) {
       if (this.state.isVisible) {
-        this.setState({ activePage: tab })
+        this.setState({ activePage: page })
         return
       }
     }
 
-    if (tab) {
-      this.setState({ activePage: tab })
+    if (page) {
+      this.setState({ activePage: page })
     } else if (isMobile && this.props.mobileActivePage === 'data-messenger') {
       this.setState({ activePage: 'data-messenger' })
     }
@@ -441,14 +452,15 @@ export class DataMessenger extends React.Component {
     })
   }
 
+  // Deprecated: the Data Explorer page has been removed. Kept for integrations that
+  // call it, and opens the Quick Topics search instead - searching `topic` straight
+  // away if given, as the Data Explorer did.
   openDataExplorer = (topic) => {
     if (isMobile) {
-      this.props.setMobileActivePage('data-explorer')
+      this.props.setMobileActivePage('data-messenger')
     }
-    this.setState({ activePage: 'data-explorer' }, () => {
-      if (topic && this.dataExplorerRef?.animateDETextAndSubmit) {
-        this.dataExplorerRef?.animateDETextAndSubmit(topic)
-      }
+    this.setState({ activePage: 'data-messenger' }, () => {
+      this.dataMessengerContentRef?.openTopicSearch(typeof topic === 'string' ? topic : undefined)
     })
   }
 
@@ -672,7 +684,6 @@ export class DataMessenger extends React.Component {
       !this.props.enableExploreQueriesTab &&
       !enableNotifications &&
       !this.props.enableDPRTab &&
-      !this.props.enableDataExplorerTab &&
       !this.props.enableAgentTab
     ) {
       return null
@@ -693,17 +704,7 @@ export class DataMessenger extends React.Component {
           >
             <Icon type='react-autoql-bubbles-outlined' />
           </button>
-          {this.props.enableDataExplorerTab && (
-            <button
-              className={`${navBtnClass('data-explorer')} react-autoql-data-explorer`}
-              onClick={() => this.setState({ activePage: 'data-explorer' })}
-              data-tooltip-content={lang.dataExplorer}
-              data-tooltip-id={this.TOOLTIP_ID}
-            >
-              <Icon type='data-search' />
-            </button>
-          )}
-          {/* Deprecated — Data Explorer replaces this page. */}
+          {/* Deprecated — Quick Topics replaces this page. */}
           {this.props.enableExploreQueriesTab && (
             <button
               className={`${navBtnClass('explore-queries')} react-autoql-explore-queries`}
@@ -880,10 +881,6 @@ export class DataMessenger extends React.Component {
         title = lang.exploreQueries
         break
       }
-      case 'data-explorer': {
-        title = lang.dataExplorer
-        break
-      }
       case 'notifications': {
         title = lang.notifications
         break
@@ -917,9 +914,6 @@ export class DataMessenger extends React.Component {
   }
 
   renderHeaderContent = () => {
-    if (isMobile && this.state.activePage === 'data-explorer') {
-      return null
-    }
     return (
       <>
         <div className={`react-autoql-header-left-container ${isMobile ? 'mobile-hidden' : ''}`}>
@@ -955,7 +949,6 @@ export class DataMessenger extends React.Component {
       <>
         {this.renderDataMessengerContent()}
         {this.renderExploreQueriesContent()}
-        {this.renderDataExplorerContent()}
         {this.renderNotificationsContent()}
         {this.renderDPRContent()}
         {this.renderAgentContent()}
@@ -1029,6 +1022,9 @@ export class DataMessenger extends React.Component {
           allowCustomColumnsOnDrilldown={this.props.allowCustomColumnsOnDrilldown}
           enableQueryInputTopics={this.props.enableQueryInputTopics}
           enableQuerySuggestions={this.props.enableQuerySuggestionsOnError ?? this.props.enableQuerySuggestions}
+          // The Quick Topics panel's sample queries follow the main setting, as the
+          // Data Explorer's did - not the error-fallback override above.
+          enableTopicSampleQueries={this.props.enableQuerySuggestions}
           // With sessions on, this ChatContent hosts the tab bar and one thread
           // per session. "Clear messages" and animateInputTextAndSubmit reach
           // the visible session through the same ref, so nothing here changes.
@@ -1084,41 +1080,6 @@ export class DataMessenger extends React.Component {
           tooltipID={this.TOOLTIP_ID}
           preferRegularTableInitialDisplayType={this.props.preferRegularTableInitialDisplayType}
           onContentChange={(hasContent) => this.setHasClearableMessages('dpr', hasContent)}
-        />
-      </ErrorBoundary>
-    )
-  }
-
-  renderDataExplorerContent = () => {
-    if (!this.props.enableDataExplorerTab) {
-      return null
-    }
-
-    return (
-      <ErrorBoundary>
-        <DataExplorer
-          ref={(r) => (this.dataExplorerRef = r)}
-          authentication={this.props.authentication}
-          dataFormatting={this.props.dataFormatting}
-          shouldRender={this.shouldRenderPage('data-explorer')}
-          tooltipID={this.TOOLTIP_ID}
-          scope={this.props.scope}
-          enableQuerySuggestions={this.props.enableQuerySuggestions}
-          disableColumnSelection={this.props.disableColumnSelectionForDataExplorer}
-          executeQuery={(queryRequestParams) => {
-            if (isMobile) {
-              this.props.setMobileActivePage('data-messenger')
-            }
-            this.setState({ activePage: 'data-messenger' })
-            clearTimeout(this.executeQueryTimeout)
-
-            this.executeQueryTimeout = setTimeout(() => {
-              this.dataMessengerContentRef?.animateInputTextAndSubmit({
-                ...queryRequestParams,
-                source: ['data_explorer'],
-              })
-            }, 500)
-          }}
         />
       </ErrorBoundary>
     )
@@ -1496,8 +1457,6 @@ export class DataMessenger extends React.Component {
     if (this.state.hasError) {
       return null
     }
-    const shouldHideHeader = isMobile && this.state.activePage === 'data-explorer'
-
     return (
       <ErrorBoundary>
         {setLanguage()}
@@ -1529,14 +1488,12 @@ export class DataMessenger extends React.Component {
             onMouseLeave={this.onDrawerMouseLeave}
           >
             {isBrowser && this.renderRestoreHandle()}
-            {!shouldHideHeader && (
-              <div
-                className={`chat-header-container ${isMobile ? 'mobile-hidden' : ''}`}
-                id={isMobile ? 'mobile-version' : null}
-              >
-                {this.renderHeaderContent()}
-              </div>
-            )}
+            <div
+              className={`chat-header-container ${isMobile ? 'mobile-hidden' : ''}`}
+              id={isMobile ? 'mobile-version' : null}
+            >
+              {this.renderHeaderContent()}
+            </div>
             {this.renderBodyContent()}
           </div>
         </Drawer>

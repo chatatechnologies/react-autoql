@@ -30,7 +30,7 @@ import { SessionTabs } from '../SessionTabs'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Tooltip } from '../Tooltip'
-import { HowDataMessengerWorks } from '../Onboarding'
+import { WhatsNew } from '../Onboarding'
 
 // Styles
 import './ChatContent.scss'
@@ -156,13 +156,16 @@ export default class ChatContent extends React.Component {
     // is asked for queries close to what was typed and the answer is replaced by
     // that list. Off unless the integrator asks for it. Default false.
     enableQuerySuggestions: PropTypes.bool,
+    // Sample queries in the Quick Topics panel, under the same rule the Data
+    // Explorer had (see QueryInput). Default false.
+    enableTopicSampleQueries: PropTypes.bool,
     // Headline and supporting line for the centred message shown while the
     // thread has no messages. Fall back to the defaults in Localization.
     emptyStateTitle: PropTypes.node,
     emptyStateSubtitle: PropTypes.node,
-    // One-time onboarding: the "How Data Messenger works" card in the empty state
-    // and the "check the interpretation" coach mark under the latest answer. Each
-    // stays closed in this browser once dismissed. Default false.
+    // One-time onboarding: the "What's new" card in the empty state (in place of the
+    // intro until it is closed) and the "check the interpretation" coach mark on the
+    // first answer. Each stays closed in this browser once dismissed. Default false.
     enableOnboarding: PropTypes.bool,
     // When false, no message offers the "Delete data response" button. For
     // integrators whose chat is a durable record rather than a scratchpad —
@@ -227,6 +230,7 @@ export default class ChatContent extends React.Component {
     enableBillingGate: false,
     onQuotaExceeded: undefined,
     enableQuerySuggestions: false,
+    enableTopicSampleQueries: false,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
     enableOnboarding: false,
@@ -1098,6 +1102,16 @@ export default class ChatContent extends React.Component {
     }
   }
 
+  // Opens the Quick Topics search in the thread on screen, searching `text` if given.
+  openTopicSearch = (text) => {
+    if (this.isSessionHost()) {
+      this.getActiveSessionRef()?.openTopicSearch(text)
+      return
+    }
+
+    this.queryInputRef?.openTopicSearch?.(text)
+  }
+
   onNoneOfTheseClick = (queryMessageID) => {
     this.addRequestMessage('None of these', queryMessageID)
     this.setState({ isQueryRunning: true })
@@ -1788,6 +1802,14 @@ export default class ChatContent extends React.Component {
     )
   }
 
+  renderEmptyStateIntro = () => (
+    <>
+      <Icon type='react-autoql-logo' className='chat-content-empty-state-logo' />
+      <h3 className='chat-content-empty-state-title'>{this.props.emptyStateTitle ?? lang.emptyStateTitle}</h3>
+      <p className='chat-content-empty-state-subtitle'>{this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}</p>
+    </>
+  )
+
   render = () => {
     if (this.isSessionHost()) {
       return this.renderSessions()
@@ -1939,12 +1961,11 @@ export default class ChatContent extends React.Component {
             </CustomScrollbars>
             {isEmpty && (
               <div className='chat-content-empty-state'>
-                <Icon type='react-autoql-logo' className='chat-content-empty-state-logo' />
-                <h3 className='chat-content-empty-state-title'>{this.props.emptyStateTitle ?? lang.emptyStateTitle}</h3>
-                <p className='chat-content-empty-state-subtitle'>
-                  {this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}
-                </p>
-                {this.props.enableOnboarding && <HowDataMessengerWorks />}
+                {this.props.enableOnboarding ? (
+                  <WhatsNew>{this.renderEmptyStateIntro()}</WhatsNew>
+                ) : (
+                  this.renderEmptyStateIntro()
+                )}
               </div>
             )}
             {!this.state.isAtBottom && (
@@ -1997,6 +2018,7 @@ export default class ChatContent extends React.Component {
               executeQuery={this.props.executeQuery}
               enableQueryInputTopics={this.props.enableQueryInputTopics}
               enableQuerySuggestions={this.props.enableQuerySuggestions}
+              enableTopicSampleQueries={this.props.enableTopicSampleQueries}
               // The filter lock sits at the head of the input pill. A consumer's own
               // queryInputLeftContent wins - only one control fits there.
               leftContent={this.getQueryInputLeftContent()}
