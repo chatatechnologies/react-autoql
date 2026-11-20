@@ -26,6 +26,7 @@ import { Spinner } from '../Spinner'
 import { AddColumnBtn } from '../AddColumnBtn'
 import { Popover } from '../Popover'
 import AggMenu from '../AddColumnBtn/AggMenu'
+import { InterpretationHint } from '../Onboarding'
 
 import './ReverseTranslation.scss'
 
@@ -43,6 +44,7 @@ const ReverseTranslation = ({
   localRTFilterResponse,
   compact = false,
   isHovered: externalIsHovered = undefined,
+  showInterpretationHint = false,
 }) => {
   const COMPONENT_KEY = useRef(uuid())
   const isMounted = useRef(false)
@@ -604,6 +606,7 @@ const ReverseTranslation = ({
                 <div>{queryResponse?.data?.data?.interpretation}</div>
               )}
             </div>
+            {showInterpretationHint && <InterpretationHint />}
           </div>
           {!tooltipID && (
             <Tooltip
@@ -631,6 +634,7 @@ ReverseTranslation.propTypes = {
   localRTFilterResponse: PropTypes.shape({}),
   compact: PropTypes.bool,
   isHovered: PropTypes.bool,
+  showInterpretationHint: PropTypes.bool,
 }
 
 export default ReverseTranslation

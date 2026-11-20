@@ -25,6 +25,8 @@ import {
   parseJwt,
   fetchDataPreview,
   transformQueryResponse,
+  DataExplorerTypes,
+  normalizeString,
 } from 'autoql-fe-utils'
 
 import { Icon } from '../Icon'
@@ -34,14 +36,21 @@ import SampleQueryList from '../DataExplorer/SampleQueryList'
 import FieldSelector from '../FieldSelector'
 import DataPreview from '../DataExplorer/DataPreview'
 import { CustomScrollbars } from '../CustomScrollbars'
+import { TopicSearchField, TopicSearchPanel } from './TopicSearch'
+import { addRecentTopicSearch } from '../../js/topicSearchHistory'
 
 import { withTheme } from '../../theme'
 import { dprQuery } from '../../js/dprService'
 import { fetchSubjectListCached } from '../../js/subjectListService'
 import { lang } from '../../js/Localization'
+import { getSampleQueryColumns } from '../../js/sampleQueryColumns'
 import { authenticationType, autoQLConfigType, dataFormattingType } from '../../props/types'
 
 import './QueryInput.scss'
+
+// Rows fetched for a Quick Topic's preview, which example values are picked from.
+// The same as the Data Explorer's preview.
+const TOPIC_DATA_PREVIEW_ROWS = 20
 
 class QueryInput extends React.Component {
   constructor(props) {
@@ -57,6 +66,8 @@ class QueryInput extends React.Component {
     this.selectedColumnsByTopic = {}
     // Store dataPreview per topic context to avoid refetching
     this.dataPreviewByTopic = {}
+    // The search results' first entry, for Enter in the search field
+    this.topicSearchResultsRef = React.createRef()
 
     this.state = {
       inputValue: '',
@@ -71,6 +82,12 @@ class QueryInput extends React.Component {
       selectedTopic: null,
       isExpanded: false,
       topicsCollapsed: false,
+      // Quick Topics search: the field replaces the chips, and the panel shows
+      // what it finds. topicSearchSelection is the topic or value (VL) picked
+      // from the results, whose preview and sample queries the panel then shows.
+      isSearchingTopics: false,
+      topicSearchQuery: '',
+      topicSearchSelection: null,
       leftContentWidth: 0,
       selectedColumns: [],
       dataPreview: undefined,
@@ -112,6 +129,11 @@ class QueryInput extends React.Component {
     shouldRender: PropTypes.bool,
     enableQuerySuggestions: PropTypes.bool,
     enableQueryInputTopics: PropTypes.bool,
+    // Sample queries in the Quick Topics panel. Gated the way the Data Explorer's
+    // were: on, and with column selection allowed (disableColumnSelection false).
+    // Separate from enableQuerySuggestions above, which the Data Messenger sets from
+    // its error-fallback setting.
+    enableTopicSampleQueries: PropTypes.bool,
     columns: PropTypes.array,
     executeQuery: PropTypes.func,
     disableColumnSelection: PropTypes.bool,
@@ -135,6 +157,7 @@ class QueryInput extends React.Component {
     clearQueryOnSubmit: true,
     enableQuerySuggestions: false,
     enableQueryInputTopics: true,
+    enableTopicSampleQueries: false,
     placeholder: undefined,
     dataPageSize: undefined,
     shouldRender: true,
@@ -273,6 +296,10 @@ class QueryInput extends React.Component {
       .catch((error) => console.error('Error fetching topics:', error))
   }
 
+  // Off for LLM projects, which set disableColumnSelection: they get the topic's
+  // data preview instead.
+  showTopicSampleQueries = () => this.props.enableTopicSampleQueries && !this.props.disableColumnSelection
+
   onTopicClick = (topic) => {
     // Restore selectedColumns and dataPreview for this topic if they exist
     const topicKey = topic?.context || 'default'
@@ -284,13 +311,14 @@ class QueryInput extends React.Component {
       {
         selectedTopic: topic,
         isExpanded: true,
-        isDataPreviewLoading: !cachedDataPreview, // Only show loading if we don't have cached data
+        isDataPreviewLoading: !cachedDataPreview && this.showTopicSampleQueries(),
         selectedColumns: savedColumns,
         dataPreview: cachedDataPreview, // Use cached data if available
       },
       () => {
-        // Only fetch data preview if we don't have cached data
-        if (!cachedDataPreview) {
+        // The preview feeds the field picker and the example values in sample
+        // queries. Without sample queries, the panel's DataPreview fetches its own.
+        if (!cachedDataPreview && this.showTopicSampleQueries()) {
           this.fetchDataPreviewData()
         }
       },
@@ -317,6 +345,74 @@ class QueryInput extends React.Component {
     })
   }
 
+  // Search is for projects with column selection (not LLM ones, whose Quick Topics
+  // stay as they were): topics and values, as the Data Explorer's input searched.
+  showTopicSearch = () => !this.props.disableColumnSelection
+
+  // Opens the search in place of the chips. With text, it is searched straight away,
+  // the way the Data Explorer did when opened with a topic.
+  openTopicSearch = (text = '') => {
+    if (!this.showTopicSearch()) {
+      return
+    }
+
+    this.setState(
+      {
+        isSearchingTopics: true,
+        topicsCollapsed: false,
+        isExpanded: true,
+        selectedTopic: null,
+        topicSearchQuery: text,
+        topicSearchSelection: null,
+      },
+      () => {
+        const exactTopic = this.findTopicByName(text)
+        if (exactTopic) {
+          this.selectTopicSearchResult(exactTopic)
+        }
+      },
+    )
+  }
+
+  closeTopicSearch = () => {
+    this.collapseSuggestions()
+    this.setState({ isSearchingTopics: false, topicSearchQuery: '', topicSearchSelection: null })
+  }
+
+  onTopicSearchChange = (text) => {
+    this.setState({ topicSearchQuery: text, topicSearchSelection: null, selectedTopic: null, isExpanded: true })
+  }
+
+  findTopicByName = (text) =>
+    text?.trim()
+      ? this.state.topics.find((topic) => normalizeString(topic.displayName) === normalizeString(text))
+      : undefined
+
+  // A topic or value picked from the results: the panel shows its preview and sample
+  // queries. Nothing runs before this.
+  onTopicSearchSelect = (item) => {
+    // Recent searches are stored as JSON, so a topic maps back to the live one
+    const selection =
+      item?.type === DataExplorerTypes.VL_TYPE
+        ? item
+        : this.state.topics.find((topic) => topic.context === item?.context) ?? item
+
+    this.setState({ topicSearchQuery: selection.displayName, topicSearchSelection: selection, isExpanded: true })
+  }
+
+  selectTopicSearchResult = (item) => {
+    addRecentTopicSearch(this.props.authentication, item)
+    this.onTopicSearchSelect(item)
+  }
+
+  // Enter in the search field: an exact topic name, otherwise the first result.
+  submitTopicSearch = (text) => {
+    const item = this.findTopicByName(text) ?? this.topicSearchResultsRef.current?.firstResult
+    if (item && !this.state.topicSearchSelection) {
+      this.selectTopicSearchResult(item)
+    }
+  }
+
   handleClickOutside = (event) => {
     if (!this.state.isExpanded || !this.queryInputWrapperRef) {
       return
@@ -334,7 +430,9 @@ class QueryInput extends React.Component {
       event.target.closest('.react-autosuggest__container') ||
       event.target.closest('.VLAutocompleteInputPopover__container') ||
       event.target.closest('.VLAutocompleteInputPopover__list') ||
-      event.target.closest('.VLAutocompleteInput__container')
+      event.target.closest('.VLAutocompleteInput__container') ||
+      // The spelling/value suggestion dropdowns in the Quick Topics text search
+      event.target.closest('.react-autoql-select-popover-container')
 
     // Don't close if clicking on a dropdown
     if (isDropdownClick) {
@@ -394,30 +492,13 @@ class QueryInput extends React.Component {
     this.collapseSuggestions()
   }
 
-  getColumnsForSuggestions = () => {
-    // Only include columns if user has explicitly selected them
-    // QueryInput quick topics should never include valueLabel
-    // For quick topics, pass columns without values to keep query_to_start empty
-    if (!this.state.selectedColumns?.length) {
-      return undefined
-    }
-
-    let columns = {}
-
-    this.state.selectedColumns.forEach((columnIndex) => {
-      const column = this.state.dataPreview?.data?.data?.columns[columnIndex]
-      if (column && !columns[column.name]) {
-        // Pass columns without values for quick topics to keep query_to_start empty
-        columns[column.name] = { value: '' }
-
-        if (column.alt_name) {
-          columns[column.name].alternative_column_names = [column.alt_name]
-        }
-      }
+  getColumnsForSuggestions = () =>
+    getSampleQueryColumns({
+      dataPreview: this.state.dataPreview,
+      selectedColumns: this.state.selectedColumns,
+      valueLabel: this.state.selectedTopic?.valueLabel,
+      dataFormatting: this.props.dataFormatting,
     })
-
-    return columns
-  }
 
   fetchDataPreviewData = () => {
     if (!this.state.selectedTopic?.context) {
@@ -431,7 +512,8 @@ class QueryInput extends React.Component {
     fetchDataPreview({
       ...this.props.authentication,
       subject: this.state.selectedTopic?.context,
-      numRows: 1,
+      // Enough rows to pick example values from for the sample queries
+      numRows: TOPIC_DATA_PREVIEW_ROWS,
       source: 'query_input.query_suggestions',
       cancelToken: this.axiosSourceDataPreview.token,
     })
@@ -653,6 +735,13 @@ class QueryInput extends React.Component {
     // Collapse suggestions when submitting a query
     if (this.state.isExpanded) {
       this.collapseSuggestions()
+    }
+
+    // ...and put the topic chips back in place of the search, with the search cleared
+    if (this.state.isSearchingTopics) {
+      newState.isSearchingTopics = false
+      newState.topicSearchQuery = ''
+      newState.topicSearchSelection = null
     }
 
     if (this.props.clearQueryOnSubmit) {
@@ -1062,6 +1151,7 @@ class QueryInput extends React.Component {
     }
 
     const isTopicsBelow = this.props.quickTopicsPlacement === 'below'
+    const showSampleQueries = this.showTopicSampleQueries()
 
     const toggleTopicsCollapsed = () =>
       this.setState((s) => ({
@@ -1071,10 +1161,28 @@ class QueryInput extends React.Component {
 
     const renderExpandedContent = () => (
       <>
+        {this.state.isExpanded && this.state.isSearchingTopics && !this.state.selectedTopic && (
+          <TopicSearchPanel
+            authentication={this.props.authentication}
+            topics={this.state.topics}
+            query={this.state.topicSearchQuery}
+            selection={this.state.topicSearchSelection}
+            dataFormatting={this.props.dataFormatting}
+            showSampleQueries={showSampleQueries}
+            onSelect={this.onTopicSearchSelect}
+            onBack={() => this.setState({ topicSearchSelection: null })}
+            onClose={this.collapseSuggestions}
+            resultsRef={this.topicSearchResultsRef}
+            executeQuery={this.props.executeQuery}
+            tooltipID={this.props.tooltipID}
+            scope={this.props.scope}
+            shouldRender={this.props.shouldRender}
+          />
+        )}
         {this.state.isExpanded && this.state.selectedTopic && (
           <div className='query-suggestions-expanded'>
             <div className='query-suggestions-expanded-header'>
-              {this.props.disableColumnSelection ? (
+              {!showSampleQueries ? (
                 <div className='react-autoql-data-explorer-title-text'>
                   <span className='react-autoql-data-explorer-title-text-sample-queries'>
                     {this.state.selectedTopic.displayName}
@@ -1089,7 +1197,7 @@ class QueryInput extends React.Component {
                 </button>
               </div>
             </div>
-            {this.props.disableColumnSelection ? (
+            {!showSampleQueries ? (
               <div className='query-suggestions-data-preview'>
                 <DataPreview
                   authentication={this.props.authentication}
@@ -1149,18 +1257,47 @@ class QueryInput extends React.Component {
                   <Icon type='lightning' /> Quick Topics:{' '}
                 </span>
               </button>
-              {this.state.topics.map((topic, index) => (
-                <button
-                  key={`topic-${index}-${topic.context || ''}`}
-                  className={`query-suggestion-button ${
-                    this.state.selectedTopic?.context === topic.context ? 'selected' : ''
-                  }`}
-                  onClick={() => this.onTopicClick(topic)}
-                  type='button'
-                >
-                  {topic.displayName}
-                </button>
-              ))}
+              {this.state.isSearchingTopics ? (
+                <TopicSearchField
+                  value={this.state.topicSearchQuery}
+                  placeholder='Search topics or values'
+                  onChange={this.onTopicSearchChange}
+                  onSubmit={(text) => this.submitTopicSearch(text)}
+                  onClose={this.closeTopicSearch}
+                  onFocus={() => !this.state.isExpanded && this.setState({ isExpanded: true })}
+                />
+              ) : (
+                <>
+                  {/* Icon only, styled like the chips: search is there when wanted
+                      without adding another labelled control to the row. */}
+                  {this.showTopicSearch() && (
+                    <button
+                      className='quick-topics-search-button'
+                      onClick={() => this.openTopicSearch()}
+                      type='button'
+                      aria-label='Search topics or values'
+                      data-test='quick-topics-search-button'
+                      data-tooltip-id={this.props.tooltipID ?? this.TOOLTIP_ID}
+                      data-tooltip-content='Search topics or values'
+                      data-tooltip-place='top'
+                    >
+                      <Icon type='search' />
+                    </button>
+                  )}
+                  {this.state.topics.map((topic, index) => (
+                    <button
+                      key={`topic-${index}-${topic.context || ''}`}
+                      className={`query-suggestion-button ${
+                        this.state.selectedTopic?.context === topic.context ? 'selected' : ''
+                      }`}
+                      onClick={() => this.onTopicClick(topic)}
+                      type='button'
+                    >
+                      {topic.displayName}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           </CustomScrollbars>
         </div>

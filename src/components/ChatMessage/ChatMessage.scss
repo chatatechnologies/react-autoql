@@ -255,12 +255,20 @@
   }
 
   .chat-message-rt-container {
+    // Anchors the interpretation coach mark, which floats above this line.
+    position: relative;
     flex: 0 0 auto;
     padding-top: 5px;
     padding-left: 5px;
 
     .react-autoql-reverse-translation {
       background: transparent;
+
+      // The shared bottom padding lifts the glyph above the middle of its box, which
+      // shows once the onboarding pulse draws a ring around it.
+      > .react-autoql-icon-info {
+        padding-bottom: 0;
+      }
     }
   }
 

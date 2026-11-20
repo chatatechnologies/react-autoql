@@ -1,0 +1,249 @@
+.react-autoql-onboarding-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  .react-autoql-icon {
+    font-size: 1rem;
+  }
+}
+
+// "New" banner above the Data Messenger's input: badge, two short lines, a docs link
+// and a close button in one row, tinted with the accent.
+.react-autoql-onboarding-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  box-sizing: border-box;
+  padding: 1rem 1rem 1rem 1.25rem;
+  border: 1px solid
+    rgba(
+      var(--react-autoql-accent-color-R),
+      var(--react-autoql-accent-color-G),
+      var(--react-autoql-accent-color-B),
+      0.35
+    );
+  border-radius: 10px;
+  background: linear-gradient(
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.14
+      ),
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.14
+      )
+    ),
+    var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-primary);
+  text-align: left;
+}
+
+.react-autoql-onboarding-new-badge {
+  flex-shrink: 0;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  background-color: var(--react-autoql-success-color);
+  color: var(--react-autoql-background-color-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.react-autoql-onboarding-list {
+  flex: 1;
+  min-width: 12rem;
+  margin: 0;
+  padding: 0 0 0 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+.react-autoql-onboarding-link {
+  flex-shrink: 0;
+  color: var(--react-autoql-accent-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Coach mark above "Interpreted as", floating over the bottom of the answer so it
+// adds no height to the thread and is on screen whenever the line it points at is.
+// A raised card tinted and outlined in the accent, so it stands out without the
+// glare of an inverted (white-on-dark) bubble. Not a solid accent fill - that is
+// what the user's own messages look like.
+.react-autoql-onboarding-hint {
+  --react-autoql-onboarding-hint-background: linear-gradient(
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.22
+      ),
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.22
+      )
+    ),
+    var(--react-autoql-background-color-secondary);
+
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(22rem, 100%);
+  padding: 10px 12px 10px 16px;
+  border: 1px solid var(--react-autoql-accent-color);
+  border-radius: 10px;
+  background: var(--react-autoql-onboarding-hint-background);
+  color: var(--react-autoql-text-color-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: normal;
+  // Hidden until the answer above has finished laying out (see InterpretationHint).
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+
+  &.react-autoql-onboarding-hint-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  // Arrow pointing down at the start of "Interpreted as". Only its bottom and
+  // right edges are outlined; the rest is hidden under the card.
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 35px;
+    width: 12px;
+    height: 12px;
+    border-right: 1px solid var(--react-autoql-accent-color);
+    border-bottom: 1px solid var(--react-autoql-accent-color);
+    border-bottom-right-radius: 2px;
+    background: var(--react-autoql-onboarding-hint-background);
+    transform: rotate(45deg);
+  }
+
+  strong {
+    font-weight: 700;
+  }
+}
+
+// While the hint is up, a pulsing ring on the info icon it points at.
+.react-autoql-reverse-translation-container:has(.react-autoql-onboarding-hint-visible)
+  .react-autoql-reverse-translation
+  > .react-autoql-icon-info {
+  border-radius: 50%;
+  color: var(--react-autoql-accent-color);
+  animation: react-autoql-onboarding-pulse 1.6s ease-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    box-shadow: 0 0 0 2px
+      rgba(
+        var(--react-autoql-accent-color-R),
+        var(--react-autoql-accent-color-G),
+        var(--react-autoql-accent-color-B),
+        0.8
+      );
+  }
+}
+
+// A steady inner ring, with a glow spreading out from it.
+@keyframes react-autoql-onboarding-pulse {
+  0% {
+    box-shadow: 0 0 0 2px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0.7
+        ),
+      0 0 0 2px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0.9
+        );
+  }
+  70% {
+    box-shadow: 0 0 0 2px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0.7
+        ),
+      0 0 0 11px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0
+        );
+  }
+  100% {
+    box-shadow: 0 0 0 2px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0.7
+        ),
+      0 0 0 11px
+        rgba(
+          var(--react-autoql-accent-color-R),
+          var(--react-autoql-accent-color-G),
+          var(--react-autoql-accent-color-B),
+          0
+        );
+  }
+}
+
+.react-autoql-onboarding-hint-text {
+  flex: 1;
+}
