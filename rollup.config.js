@@ -82,12 +82,10 @@ const common = {
     image(),
     svg(),
     babel({
-      // Every node_modules, not only this folder's: when an app installs this package from a folder (as the example
-      // app's Docker build does), its packages can sit in a node_modules above this one. A string pattern is resolved
-      // against this folder (even "**/…"), so it's a RegExp. Run over TipTap's files there, this config's React
-      // preset fails on their JSX runtime.
+      // Every node_modules, not only this folder's: when an app installs this package from a folder, its packages can
+      // sit in a node_modules above this one. A string pattern is resolved against this folder (even "**/…"), so it's
+      // a RegExp. Run over TipTap's files there, this config's React preset fails on their JSX runtime.
       exclude: /node_modules/,
-      ignore: ['./example'],
       babelHelpers: 'bundled',
     }),
     // The report builder's text editor (TipTap, ProseMirror and what they bring) is bundled, and transpiled for
