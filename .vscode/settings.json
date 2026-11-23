@@ -27,7 +27,6 @@
   "javascript.format.enable": false,
   "javascript.preferences.format.enable": false,
   "eslint.options": { "configFile": "../.eslintrc.json" },
-  "eslint.workingDirectories": ["./examples", "./src"],
-  "eslint.enable": false,
-  "makefile.configureOnOpen": false
+  "eslint.workingDirectories": ["./src"],
+  "eslint.enable": false
 }

@@ -123,6 +123,9 @@ export class ChatMessage extends React.Component {
     dataFormatting: dataFormattingType,
     isResponse: PropTypes.bool.isRequired,
     isIntroMessage: PropTypes.bool,
+    // Shows the one-time "check the interpretation" coach mark under this
+    // message's interpretation. ChatContent sets it on the latest answer only.
+    showInterpretationHint: PropTypes.bool,
     // Forwarded from ChatContent. Left undefined by direct consumers, which
     // keeps the delete button on — only an explicit false removes it.
     enableMessageDelete: PropTypes.bool,
@@ -190,6 +193,7 @@ export class ChatMessage extends React.Component {
     dataFormatting: dataFormattingDefault,
 
     isIntroMessage: false,
+    showInterpretationHint: false,
     source: null,
     scope: undefined,
     querySessionId: undefined,
@@ -1488,6 +1492,7 @@ export class ChatMessage extends React.Component {
                   this.props.autoQLConfig.enableEditReverseTranslation && !isDrilldown(this.responseRef.queryResponse)
                 }
                 localRTFilterResponse={this.state.localRTFilterResponse}
+                showInterpretationHint={this.props.showInterpretationHint}
               />
             </div>
           )}

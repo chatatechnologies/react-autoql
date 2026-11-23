@@ -30,6 +30,7 @@ import { SessionTabs } from '../SessionTabs'
 import { LoadingDots } from '../LoadingDots'
 import ErrorBoundary from '../../containers/ErrorHOC/ErrorHOC'
 import { Tooltip } from '../Tooltip'
+import { WhatsNew } from '../Onboarding'
 
 // Styles
 import './ChatContent.scss'
@@ -155,10 +156,17 @@ export default class ChatContent extends React.Component {
     // is asked for queries close to what was typed and the answer is replaced by
     // that list. Off unless the integrator asks for it. Default false.
     enableQuerySuggestions: PropTypes.bool,
+    // Sample queries in the Quick Topics panel, under the same rule the Data
+    // Explorer had (see QueryInput). Default false.
+    enableTopicSampleQueries: PropTypes.bool,
     // Headline and supporting line for the centred message shown while the
     // thread has no messages. Fall back to the defaults in Localization.
     emptyStateTitle: PropTypes.node,
     emptyStateSubtitle: PropTypes.node,
+    // One-time onboarding: the "New" banner above the input and the "check the
+    // interpretation" coach mark on the first answer. Each stays
+    // closed in this browser once dismissed. Default false.
+    enableOnboarding: PropTypes.bool,
     // When false, no message offers the "Delete data response" button. For
     // integrators whose chat is a durable record rather than a scratchpad —
     // removing an answer from the thread is meaningless there, and the button
@@ -222,8 +230,10 @@ export default class ChatContent extends React.Component {
     enableBillingGate: false,
     onQuotaExceeded: undefined,
     enableQuerySuggestions: false,
+    enableTopicSampleQueries: false,
     emptyStateTitle: undefined,
     emptyStateSubtitle: undefined,
+    enableOnboarding: false,
     showFilterLockButton: false,
     queryInputLeftContent: undefined,
     filterLockButtonLabel: undefined,
@@ -1782,6 +1792,14 @@ export default class ChatContent extends React.Component {
     )
   }
 
+  renderEmptyStateIntro = () => (
+    <>
+      <Icon type='react-autoql-logo' className='chat-content-empty-state-logo' />
+      <h3 className='chat-content-empty-state-title'>{this.props.emptyStateTitle ?? lang.emptyStateTitle}</h3>
+      <p className='chat-content-empty-state-subtitle'>{this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}</p>
+    </>
+  )
+
   render = () => {
     if (this.isSessionHost()) {
       return this.renderSessions()
@@ -1789,6 +1807,14 @@ export default class ChatContent extends React.Component {
 
     const { messages } = this.state
     const isEmpty = messages.length === 0 && !this.isChataThinking()
+    // Only the latest answer carries the interpretation coach mark, so it doesn't
+    // repeat down the thread, and only while the thread is on screen: it pops up
+    // once per page, so one offered in a hidden session tab would be used up where
+    // nobody sees it.
+    const interpretationHintMessageId =
+      this.props.enableOnboarding && this.props.shouldRender
+        ? [...messages].reverse().find((message) => message.isResponse && message.response)?.id
+        : undefined
 
     let chatMessageVisibility
     let chatMessageOpacity
@@ -1852,6 +1878,7 @@ export default class ChatContent extends React.Component {
                       onDrilldownStart={this.onDrilldownStart}
                       onDrilldownEnd={this.onDrilldownEnd}
                       isResponse={message.isResponse}
+                      showInterpretationHint={message.id === interpretationHintMessageId}
                       isChataThinking={this.isChataThinking()}
                       onSuggestionClick={this.animateInputTextAndSubmit}
                       setGeneratingSummary={this.setGeneratingSummary}
@@ -1925,15 +1952,7 @@ export default class ChatContent extends React.Component {
                 )}
               </div>
             </CustomScrollbars>
-            {isEmpty && (
-              <div className='chat-content-empty-state'>
-                <Icon type='react-autoql-logo' className='chat-content-empty-state-logo' />
-                <h3 className='chat-content-empty-state-title'>{this.props.emptyStateTitle ?? lang.emptyStateTitle}</h3>
-                <p className='chat-content-empty-state-subtitle'>
-                  {this.props.emptyStateSubtitle ?? lang.emptyStateSubtitle}
-                </p>
-              </div>
-            )}
+            {isEmpty && <div className='chat-content-empty-state'>{this.renderEmptyStateIntro()}</div>}
             {!this.state.isAtBottom && (
               <button
                 className='scroll-to-bottom-button'
@@ -1953,6 +1972,10 @@ export default class ChatContent extends React.Component {
               <div className='bottom-bar-right' />
             </div>
           </div>
+          {/* Above the input rather than in the empty state, so it stays through the
+              conversation until closed. A row of its own, outside the composer, so it
+              doesn't move the composer's measured top. */}
+          {this.props.enableOnboarding && !hideQueryInput && <WhatsNew />}
           <div
             ref={this.setComposerRef}
             style={{ visibility: queryInputVisibility, opacity: queryInputOpacity, display: queryInputDisplay }}
@@ -1984,6 +2007,7 @@ export default class ChatContent extends React.Component {
               executeQuery={this.props.executeQuery}
               enableQueryInputTopics={this.props.enableQueryInputTopics}
               enableQuerySuggestions={this.props.enableQuerySuggestions}
+              enableTopicSampleQueries={this.props.enableTopicSampleQueries}
               // The filter lock sits at the head of the input pill. A consumer's own
               // queryInputLeftContent wins - only one control fits there.
               leftContent={this.getQueryInputLeftContent()}

@@ -2,6 +2,7 @@ import React from 'react'
 import { shallow, mount } from 'enzyme'
 import { findByTestAttr, checkProps } from '../../../test/testUtils'
 import { DataMessenger } from './DataMessenger'
+import { ChatContent } from '../ChatContent'
 import responseTestCases from '../../../test/responseTestCases'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
@@ -31,6 +32,90 @@ describe('renders correctly', () => {
 describe('props', () => {
   test('does not throw warning with expected props', () => {
     checkProps(DataMessenger, defaultProps)
+  })
+
+  // enableQuerySuggestions drives both the Quick Topics sample queries and the
+  // chat's related-queries fallback. enableQuerySuggestionsOnError splits off the chat's half.
+  describe('enableQuerySuggestionsOnError', () => {
+    const suggestionPropsFor = (props) => {
+      const instance = shallow(<DataMessenger {...defaultProps} {...props} />).instance()
+      const chat = shallow(<div>{instance.renderDataMessengerContent()}</div>).find(ChatContent)
+      return {
+        chat: chat.prop('enableQuerySuggestions'),
+        topics: chat.prop('enableTopicSampleQueries'),
+      }
+    }
+
+    test('follows enableQuerySuggestions when not set', () => {
+      expect(suggestionPropsFor({ enableQuerySuggestions: true })).toEqual({ chat: true, topics: true })
+      expect(suggestionPropsFor({ enableQuerySuggestions: false })).toEqual({ chat: false, topics: false })
+    })
+
+    test('false turns off the chat fallback and keeps the Quick Topics sample queries', () => {
+      expect(suggestionPropsFor({ enableQuerySuggestions: true, enableQuerySuggestionsOnError: false })).toEqual({
+        chat: false,
+        topics: true,
+      })
+    })
+
+    test('true turns on the chat fallback without the Quick Topics sample queries', () => {
+      expect(suggestionPropsFor({ enableQuerySuggestions: false, enableQuerySuggestionsOnError: true })).toEqual({
+        chat: true,
+        topics: false,
+      })
+    })
+  })
+  describe('onboarding', () => {
+    const chatFor = (props = {}) => {
+      const instance = shallow(<DataMessenger {...defaultProps} {...props} />).instance()
+      return shallow(<div>{instance.renderDataMessengerContent()}</div>).find(ChatContent)
+    }
+
+    test('is off without session tabs, and the intro keeps its default subtitle', () => {
+      const chat = chatFor({ enableSessions: false })
+      expect(chat.prop('enableOnboarding')).toBe(false)
+      expect(chat.prop('emptyStateSubtitle')).toBeUndefined()
+    })
+
+    test('is on with session tabs, with the follow-up intro', () => {
+      const chat = chatFor({ enableSessions: true })
+      expect(chat.prop('enableOnboarding')).toBe(true)
+      expect(shallow(<div>{chat.prop('emptyStateSubtitle')}</div>).text()).toContain('Follow up')
+    })
+
+    test('a consumer’s own subtitle still wins', () => {
+      expect(chatFor({ enableSessions: true, emptyStateSubtitle: 'Ask away' }).prop('emptyStateSubtitle')).toBe(
+        'Ask away',
+      )
+    })
+  })
+  describe('Data Explorer page (removed)', () => {
+    const instanceFor = (props = {}) => shallow(<DataMessenger {...defaultProps} {...props} />).instance()
+
+    test('enableDataExplorerTab no longer adds a header button, and warns', () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+      const instance = instanceFor({ enableDataExplorerTab: true, enableNotificationsTab: true })
+      const nav = shallow(<div>{instance.renderHeaderNav()}</div>)
+
+      expect(nav.find('.react-autoql-data-explorer').exists()).toBe(false)
+      expect(warn.mock.calls.some(([message]) => message.includes('enableDataExplorerTab is deprecated'))).toBe(true)
+      warn.mockRestore()
+    })
+
+    test('a defaultTab of data-explorer opens the chat', () => {
+      expect(instanceFor({ defaultTab: 'data-explorer' }).state.activePage).toBe('data-messenger')
+    })
+
+    test('openDataExplorer is kept for host apps but does nothing except warn', () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+      const instance = instanceFor({ defaultTab: 'notifications' })
+
+      instance.openDataExplorer('wallets')
+
+      expect(instance.state.activePage).toBe('notifications')
+      expect(warn.mock.calls.some(([message]) => message.includes('openDataExplorer is deprecated'))).toBe(true)
+      warn.mockRestore()
+    })
   })
   describe('showMask', () => {
     test('showMask false does not show mask on drawer open', () => {

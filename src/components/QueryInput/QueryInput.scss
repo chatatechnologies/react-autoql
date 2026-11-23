@@ -607,8 +607,285 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  // At least the row's width, so the search field can stretch across it
+  min-width: 100%;
+  box-sizing: border-box;
   padding: 8px 10px 8px 6px;
   white-space: nowrap;
+}
+
+// Quick Topics search: an icon-only chip at the head of the row, which turns the
+// row into a search field. Muted like the chips, so it doesn't compete with them.
+.quick-topics-search-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 50%;
+  background-color: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-placeholder);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: var(--react-autoql-hover-color);
+    border-color: var(--react-autoql-hover-color);
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-icon {
+    font-size: 0.875rem;
+  }
+}
+
+.quick-topics-search-field {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 12rem;
+  height: 1.75rem;
+  box-sizing: border-box;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--react-autoql-border-color);
+  border-radius: 16px;
+  background-color: var(--react-autoql-background-color-secondary);
+  color: var(--react-autoql-text-color-placeholder);
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  > .react-autoql-icon {
+    flex-shrink: 0;
+    font-size: 0.875rem;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--react-autoql-text-color-primary);
+    font-size: 0.8125rem;
+    font-family: inherit;
+
+    &::placeholder {
+      color: var(--react-autoql-text-color-placeholder);
+    }
+  }
+}
+
+.quick-topics-search-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--react-autoql-text-color-placeholder);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--react-autoql-hover-color);
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  .react-autoql-icon {
+    font-size: 0.75rem;
+  }
+}
+
+.quick-topics-search-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+
+  .react-autoql-custom-scrollbars {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+}
+
+.quick-topics-search-section {
+  & + & {
+    margin-top: 6px;
+  }
+}
+
+.quick-topics-search-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: var(--react-autoql-text-color-placeholder);
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+.quick-topics-search-clear-history {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.75rem;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+}
+
+.quick-topics-search-result {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--react-autoql-text-color-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    outline: none;
+    background-color: var(--react-autoql-hover-color);
+  }
+
+  .react-autoql-icon {
+    margin-right: 6px;
+    color: var(--react-autoql-text-color-placeholder);
+  }
+}
+
+// A topic or value picked from the search: back button in the header, then (for a
+// value) the topic it is shown in, then the Data preview / Sample queries tabs.
+.react-autoql-input-query-suggestions.expanded:has(.quick-topics-explorer) {
+  // Room for the tabs (and a value's topic picker) above a useful amount of table.
+  max-height: 380px;
+}
+
+.quick-topics-search-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--react-autoql-text-color-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--react-autoql-accent-color);
+  }
+
+  .react-autoql-icon {
+    color: var(--react-autoql-text-color-placeholder);
+  }
+}
+
+.quick-topics-explorer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+
+  // The panels set their own display, which would otherwise win over [hidden]
+  [hidden] {
+    display: none !important;
+  }
+}
+
+.quick-topics-value-context {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 8px;
+  font-size: 0.8125rem;
+  color: var(--react-autoql-text-color-placeholder);
+}
+
+.quick-topics-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 16px;
+  margin: 0 10px 8px;
+  border-bottom: 1px solid var(--react-autoql-border-color);
+}
+
+.quick-topics-tab {
+  margin-bottom: -1px;
+  padding: 4px 0 6px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--react-autoql-text-color-placeholder);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--react-autoql-text-color-primary);
+  }
+
+  &.active {
+    border-bottom-color: var(--react-autoql-accent-color);
+    color: var(--react-autoql-text-color-primary);
+  }
+}
+
+.quick-topics-sample-queries {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.quick-topics-sample-queries-header {
+  flex-shrink: 0;
+  padding: 0 10px 6px;
+}
+
+.quick-topics-search-empty,
+.quick-topics-search-loading {
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  color: var(--react-autoql-text-color-placeholder);
 }
 
 .query-suggestions-buttons-label {

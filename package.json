@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "@react-icons/all-files": "4.1.0",
-    "autoql-fe-utils": "1.14.0",
+    "autoql-fe-utils": "1.14.1",
     "axios": "^1.16.0",
     "caniuse-lite": "1.0.30001692",
     "classnames": "2.5.1",
@@ -164,6 +164,8 @@
     "npm-watch": "0.11.0",
     "postcss": "^8.5.14",
     "prettier": "2.7.1",
+    "react": "16.14.0",
+    "react-dom": "16.14.0",
     "rimraf": "2.7.1",
     "rollup": "^2.80.0",
     "rollup-plugin-gzip": "3.0.0",
