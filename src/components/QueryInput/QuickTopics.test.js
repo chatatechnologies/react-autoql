@@ -96,7 +96,7 @@ describe('Quick Topics search', () => {
     const wrapper = setup({ disableColumnSelection: true })
     expect(findButton(wrapper).exists()).toBe(false)
 
-    wrapper.instance().openTopicSearch('transfers')
+    wrapper.instance().openTopicSearch()
     wrapper.update()
     expect(findField(wrapper).exists()).toBe(false)
     expect(findPanel(wrapper).exists()).toBe(false)
@@ -145,16 +145,6 @@ describe('Quick Topics search', () => {
     expect(wrapper.state('topicSearchSelection')).toBe(value)
   })
 
-  test('opening the search with a topic name opens that topic; other text just shows its results', () => {
-    const wrapper = setup()
-    wrapper.instance().openTopicSearch('Transfers')
-    expect(wrapper.state('topicSearchSelection')).toBe(topic)
-
-    wrapper.instance().openTopicSearch('acme')
-    expect(wrapper.state('topicSearchSelection')).toBeNull()
-    expect(wrapper.state('topicSearchQuery')).toBe('acme')
-  })
-
   test('submitting a query clears the search and brings the chips back', () => {
     const wrapper = setup({ onSubmit: jest.fn() })
     wrapper.instance().openTopicSearch()
@@ -172,7 +162,7 @@ describe('Quick Topics search', () => {
 
   test('closing the search brings the chips back', () => {
     const wrapper = setup()
-    wrapper.instance().openTopicSearch('wal')
+    wrapper.instance().openTopicSearch()
     wrapper.instance().closeTopicSearch()
     wrapper.update()
     expect(findField(wrapper).exists()).toBe(false)

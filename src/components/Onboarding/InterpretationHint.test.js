@@ -15,11 +15,11 @@ const loadPage = () => {
   })
 
   const mounted = []
-  page.mount = () => {
+  page.mount = (answerId) => {
     const container = document.createElement('div')
     document.body.appendChild(container)
     page.act(() => {
-      page.ReactDOM.render(<page.InterpretationHint />, container)
+      page.ReactDOM.render(<page.InterpretationHint answerId={answerId} />, container)
     })
     mounted.push(container)
     return container
@@ -53,6 +53,19 @@ describe('InterpretationHint', () => {
 
     page.unmount(firstAnswer)
     expect(getHint(page.mount())).toBeNull()
+  })
+
+  test('stays with its answer when that answer is hidden and shown again', () => {
+    page = loadPage()
+    const firstAnswer = page.mount('q1')
+    expect(getHint(firstAnswer)).not.toBeNull()
+
+    // Its tab is hidden (the hint unmounts), and an answer elsewhere offers it
+    page.unmount(firstAnswer)
+    expect(getHint(page.mount('q2'))).toBeNull()
+
+    // Back on the first tab, the same answer gets it again
+    expect(getHint(page.mount('q1'))).not.toBeNull()
   })
 
   test('pops up again after a reload until it is dismissed', () => {

@@ -1102,16 +1102,6 @@ export default class ChatContent extends React.Component {
     }
   }
 
-  // Opens the Quick Topics search in the thread on screen, searching `text` if given.
-  openTopicSearch = (text) => {
-    if (this.isSessionHost()) {
-      this.getActiveSessionRef()?.openTopicSearch(text)
-      return
-    }
-
-    this.queryInputRef?.openTopicSearch?.(text)
-  }
-
   onNoneOfTheseClick = (queryMessageID) => {
     this.addRequestMessage('None of these', queryMessageID)
     this.setState({ isQueryRunning: true })
@@ -1818,10 +1808,13 @@ export default class ChatContent extends React.Component {
     const { messages } = this.state
     const isEmpty = messages.length === 0 && !this.isChataThinking()
     // Only the latest answer carries the interpretation coach mark, so it doesn't
-    // repeat down the thread.
-    const interpretationHintMessageId = this.props.enableOnboarding
-      ? [...messages].reverse().find((message) => message.isResponse && message.response)?.id
-      : undefined
+    // repeat down the thread, and only while the thread is on screen: it pops up
+    // once per page, so one offered in a hidden session tab would be used up where
+    // nobody sees it.
+    const interpretationHintMessageId =
+      this.props.enableOnboarding && this.props.shouldRender
+        ? [...messages].reverse().find((message) => message.isResponse && message.response)?.id
+        : undefined
 
     let chatMessageVisibility
     let chatMessageOpacity

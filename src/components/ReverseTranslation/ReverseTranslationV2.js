@@ -606,7 +606,7 @@ const ReverseTranslation = ({
                 <div>{queryResponse?.data?.data?.interpretation}</div>
               )}
             </div>
-            {showInterpretationHint && <InterpretationHint />}
+            {showInterpretationHint && <InterpretationHint answerId={queryResponse?.data?.data?.query_id} />}
           </div>
           {!tooltipID && (
             <Tooltip

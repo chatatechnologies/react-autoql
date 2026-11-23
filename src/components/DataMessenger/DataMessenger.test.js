@@ -106,14 +106,15 @@ describe('props', () => {
       expect(instanceFor({ defaultTab: 'data-explorer' }).state.activePage).toBe('data-messenger')
     })
 
-    test('openDataExplorer opens the Quick Topics search in the chat, searching the topic given', () => {
+    test('openDataExplorer is kept for host apps but does nothing except warn', () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
       const instance = instanceFor({ defaultTab: 'notifications' })
-      instance.dataMessengerContentRef = { openTopicSearch: jest.fn() }
 
       instance.openDataExplorer('wallets')
 
-      expect(instance.state.activePage).toBe('data-messenger')
-      expect(instance.dataMessengerContentRef.openTopicSearch).toHaveBeenCalledWith('wallets')
+      expect(instance.state.activePage).toBe('notifications')
+      expect(warn.mock.calls.some(([message]) => message.includes('openDataExplorer is deprecated'))).toBe(true)
+      warn.mockRestore()
     })
   })
   describe('showMask', () => {

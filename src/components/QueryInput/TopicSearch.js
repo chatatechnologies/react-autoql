@@ -125,7 +125,8 @@ const TopicSearchResults = ({ authentication, topics, query, onSelect, resultsRe
 
   useEffect(() => {
     if (resultsRef) {
-      resultsRef.current = { firstResult: results[0] }
+      // Nothing typed, nothing for Enter to pick: the list is just every topic
+      resultsRef.current = { firstResult: text ? results[0] : undefined }
     }
   })
 

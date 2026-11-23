@@ -77,10 +77,12 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers())
 
 describe('results', () => {
-  test('list every topic before anything is typed', () => {
-    const { getByText } = renderPanel()
+  test('list every topic before anything is typed, with nothing for Enter to pick', () => {
+    const resultsRef = { current: undefined }
+    const { getByText } = renderPanel({ resultsRef })
     topics.forEach((topic) => expect(getByText(topic.displayName)).toBeTruthy())
     expect(fetchDataExplorerAutocomplete).not.toHaveBeenCalled()
+    expect(resultsRef.current.firstResult).toBeUndefined()
   })
 
   test('are the topics and values the autocomplete relates to the text, and nothing else', async () => {

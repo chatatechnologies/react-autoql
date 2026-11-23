@@ -349,29 +349,20 @@ class QueryInput extends React.Component {
   // stay as they were): topics and values, as the Data Explorer's input searched.
   showTopicSearch = () => !this.props.disableColumnSelection
 
-  // Opens the search in place of the chips. With text, it is searched straight away,
-  // the way the Data Explorer did when opened with a topic.
-  openTopicSearch = (text = '') => {
+  // Opens the search in place of the chips
+  openTopicSearch = () => {
     if (!this.showTopicSearch()) {
       return
     }
 
-    this.setState(
-      {
-        isSearchingTopics: true,
-        topicsCollapsed: false,
-        isExpanded: true,
-        selectedTopic: null,
-        topicSearchQuery: text,
-        topicSearchSelection: null,
-      },
-      () => {
-        const exactTopic = this.findTopicByName(text)
-        if (exactTopic) {
-          this.selectTopicSearchResult(exactTopic)
-        }
-      },
-    )
+    this.setState({
+      isSearchingTopics: true,
+      topicsCollapsed: false,
+      isExpanded: true,
+      selectedTopic: null,
+      topicSearchQuery: '',
+      topicSearchSelection: null,
+    })
   }
 
   closeTopicSearch = () => {

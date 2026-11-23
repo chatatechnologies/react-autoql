@@ -452,16 +452,13 @@ export class DataMessenger extends React.Component {
     })
   }
 
-  // Deprecated: the Data Explorer page has been removed. Kept for integrations that
-  // call it, and opens the Quick Topics search instead - searching `topic` straight
-  // away if given, as the Data Explorer did.
-  openDataExplorer = (topic) => {
-    if (isMobile) {
-      this.props.setMobileActivePage('data-messenger')
-    }
-    this.setState({ activePage: 'data-messenger' }, () => {
-      this.dataMessengerContentRef?.openTopicSearch(typeof topic === 'string' ? topic : undefined)
-    })
+  // Deprecated: the Data Explorer page has been removed (its topic previews, sample
+  // queries and search are in Quick Topics). Kept, doing nothing, so host apps that
+  // still call it don't break.
+  openDataExplorer = () => {
+    console.warn(
+      'openDataExplorer is deprecated and does nothing - the Data Explorer page has been removed. Its topic previews, sample queries and search are in Quick Topics.',
+    )
   }
 
   openNotificationFeed = () => {

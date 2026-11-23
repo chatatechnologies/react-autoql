@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import PropTypes from 'prop-types'
 
 import { Icon } from '../Icon'
 import { ONBOARDING_KEYS, useOnboarding } from '../../js/onboarding'
@@ -53,8 +54,13 @@ const HINT_MAX_DELAY_MS = 3000
 // user closes it. It pops up once per page load, on the first answer it's offered
 // to: ChatContent offers it to each thread's latest answer, and once that moves on
 // (a newer answer, another tab) it doesn't pop up again until the page is reloaded.
-export const InterpretationHint = () => {
-  const [isVisible, dismiss] = useOnboarding(ONBOARDING_KEYS.INTERPRETATION_HINT, { oncePerPage: true })
+// `answerId` ties it to the answer, so it comes back on that answer when its tab is
+// hidden and shown again.
+export const InterpretationHint = ({ answerId }) => {
+  const [isVisible, dismiss] = useOnboarding(ONBOARDING_KEYS.INTERPRETATION_HINT, {
+    oncePerPage: true,
+    ownerId: answerId,
+  })
   const [isSettled, setIsSettled] = useState(false)
   const ref = useRef()
 
@@ -114,4 +120,9 @@ export const InterpretationHint = () => {
       </button>
     </div>
   )
+}
+
+InterpretationHint.propTypes = {
+  // The answer's query id
+  answerId: PropTypes.string,
 }

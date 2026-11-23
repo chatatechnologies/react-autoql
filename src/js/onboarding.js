@@ -17,8 +17,13 @@ const getStorageKey = (key) => `${STORAGE_PREFIX}:${key}`
 const dismissedInMemory = new Set()
 const listeners = new Set()
 
-// For prompts that pop up only once per page: the copy that got to show it. Never
-// released, so a later copy (a newer answer, another tab) doesn't pop it up again.
+// What localStorage held for each key, read once: every copy of a prompt asks on
+// every render.
+const storedDismissals = new Map()
+
+// For prompts that pop up only once per page: the owner that got to show it (see
+// useOnboarding's ownerId). Never released, so a later owner (a newer answer,
+// another tab) doesn't pop it up again.
 const owners = new Map()
 let nextCopyId = 0
 
@@ -29,11 +34,17 @@ export const isOnboardingDismissed = (key) => {
     return true
   }
 
-  try {
-    return localStorage.getItem(getStorageKey(key)) === 'true'
-  } catch {
-    return false
+  if (!storedDismissals.has(key)) {
+    let stored = false
+    try {
+      stored = localStorage.getItem(getStorageKey(key)) === 'true'
+    } catch {
+      // Storage can be unavailable in privacy modes and non-browser environments.
+    }
+    storedDismissals.set(key, stored)
   }
+
+  return storedDismissals.get(key)
 }
 
 export const dismissOnboarding = (key) => {
@@ -57,12 +68,16 @@ export const dismissOnboarding = (key) => {
  * @param {string} key a value of ONBOARDING_KEYS
  * @param {object} [options]
  * @param {boolean} [options.oncePerPage] pop up only once per page load: the first
- *   copy to mount shows it, and no other copy does until the page is reloaded, even
- *   if that first copy goes away. A dismissal still hides it for good.
+ *   owner to claim it shows it, and no other does until the page is reloaded, even
+ *   if the first goes away. A dismissal still hides it for good.
+ * @param {string} [options.ownerId] who a oncePerPage prompt belongs to, so a copy
+ *   that unmounts and comes back (its tab hidden and shown again) is still the
+ *   owner. Defaults to this copy alone.
  * @returns {[boolean, function]}
  */
-export const useOnboarding = (key, { oncePerPage = false } = {}) => {
-  const [copyId] = useState(() => nextCopyId++)
+export const useOnboarding = (key, { oncePerPage = false, ownerId } = {}) => {
+  const [copyId] = useState(() => `copy-${nextCopyId++}`)
+  const owner = ownerId ?? copyId
   const [, rerender] = useReducer((count) => count + 1, 0)
 
   useEffect(() => {
@@ -74,16 +89,16 @@ export const useOnboarding = (key, { oncePerPage = false } = {}) => {
     listeners.add(listener)
 
     if (oncePerPage && !owners.has(key)) {
-      owners.set(key, copyId)
+      owners.set(key, owner)
       rerender()
     }
 
     return () => listeners.delete(listener)
-  }, [key, oncePerPage, copyId])
+  }, [key, oncePerPage, owner])
 
   const dismiss = useCallback(() => dismissOnboarding(key), [key])
 
-  const isShown = !isOnboardingDismissed(key) && (!oncePerPage || owners.get(key) === copyId)
+  const isShown = !isOnboardingDismissed(key) && (!oncePerPage || owners.get(key) === owner)
 
   return [isShown, dismiss]
 }

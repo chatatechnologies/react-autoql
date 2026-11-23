@@ -17,6 +17,11 @@ const getStorageKey = (authentication) => {
   }
 }
 
+// What makes two searches the same: a topic and a value can share a name, so the
+// type and the topic's context (or the value's canonical form) are part of it.
+const getSearchKey = (search) =>
+  [search?.type, search?.context ?? search?.valueLabel?.canonical ?? search?.displayName].join('|')
+
 export const getRecentTopicSearches = (authentication) => {
   try {
     const key = getStorageKey(authentication)
@@ -26,7 +31,7 @@ export const getRecentTopicSearches = (authentication) => {
     }
 
     return searches
-      .filter((search, i) => searches.findIndex((other) => other?.displayName === search?.displayName) === i)
+      .filter((search, i) => searches.findIndex((other) => getSearchKey(other) === getSearchKey(search)) === i)
       .slice(0, MAX_RECENT_TOPIC_SEARCHES)
   } catch {
     return []
@@ -48,7 +53,7 @@ const saveRecentTopicSearches = (authentication, searches) => {
 export const addRecentTopicSearch = (authentication, search) => {
   const searches = [
     search,
-    ...getRecentTopicSearches(authentication).filter((other) => other.displayName !== search.displayName),
+    ...getRecentTopicSearches(authentication).filter((other) => getSearchKey(other) !== getSearchKey(search)),
   ].slice(0, MAX_RECENT_TOPIC_SEARCHES)
 
   saveRecentTopicSearches(authentication, searches)

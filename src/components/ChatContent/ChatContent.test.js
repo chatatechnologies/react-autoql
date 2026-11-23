@@ -741,6 +741,12 @@ describe('onboarding', () => {
     ])
   })
 
+  test('offers no hint while the thread is off screen (a hidden session tab)', () => {
+    const wrapper = setup({ enableOnboarding: true, shouldRender: false })
+    wrapper.setState({ messages })
+    expect(getHintFlags(wrapper).every(([, flag]) => flag === false)).toBe(true)
+  })
+
   test('shows no hint and no New banner unless enabled', () => {
     const wrapper = setup()
     expect(wrapper.find(WhatsNew).exists()).toBe(false)
@@ -758,24 +764,5 @@ describe('onboarding', () => {
     wrapper.setState({ messages })
     expect(wrapper.find('.chat-content-empty-state').exists()).toBe(false)
     expect(wrapper.find(WhatsNew).exists()).toBe(true)
-  })
-})
-
-describe('openTopicSearch', () => {
-  test('opens the search in a plain thread’s input', () => {
-    const instance = setup().instance()
-    instance.queryInputRef = { openTopicSearch: jest.fn() }
-    instance.openTopicSearch('wallets')
-    expect(instance.queryInputRef.openTopicSearch).toHaveBeenCalledWith('wallets')
-  })
-
-  test('opens it in the active session tab', () => {
-    const wrapper = setup({ enableSessions: true })
-    const instance = wrapper.instance()
-    const active = { openTopicSearch: jest.fn() }
-    instance.sessionRefs[instance.state.activeSessionId] = active
-
-    instance.openTopicSearch('wallets')
-    expect(active.openTopicSearch).toHaveBeenCalledWith('wallets')
   })
 })

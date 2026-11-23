@@ -26,6 +26,18 @@ describe('onboarding store', () => {
     expect(reloaded.isOnboardingDismissed('whats-new-follow-ups')).toBe(false)
   })
 
+  test('reads localStorage once per prompt, however often it is asked', () => {
+    const store = loadFreshStore()
+    const getItem = jest.spyOn(Storage.prototype, 'getItem')
+
+    for (let i = 0; i < 5; i++) {
+      store.isOnboardingDismissed('interpretation-hint')
+    }
+    expect(getItem).toHaveBeenCalledTimes(1)
+
+    getItem.mockRestore()
+  })
+
   test('still dismisses for the session when localStorage throws', () => {
     const store = loadFreshStore()
     const setItem = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
