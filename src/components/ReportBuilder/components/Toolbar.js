@@ -47,6 +47,11 @@ const TitleField = ({ title, onTitleChange }) => {
 // large the pages show, in the editor and the preview alike. In the editor, the panel button beside Preview
 // hides and shows the properties panel (`panelId`), and the report options menu (⋮) ends the row. Read-only, it's
 // the report's title, how its pages are set up and the zoom: nothing that edits it, prints it or leaves the preview.
+//
+// With approval (RW-372), `approvalStatus` says whether the report is a draft or approved, before the host's status.
+// A draft's preview offers Approve… (`onApprove`; `approveBlocked` says why it can't be yet), as Report options does
+// in the editor. An approved report is `locked`: shown as it prints, under its own title, with Print, and Edit…
+// (`onEdit`) in place of Back to editing.
 export const Toolbar = ({
   title,
   onTitleChange,
@@ -77,13 +82,18 @@ export const Toolbar = ({
   onBranding,
   onSaveAsTemplate,
   onRerunAll,
+  approvalStatus = null,
+  onApprove,
+  approveBlocked = null,
+  locked = false,
+  onEdit,
 }) => (
   <div className={`${RB}-toolbar`} role='toolbar' aria-label={STRINGS.titleLabel}>
     {previewOpen ? (
       <div className={`${RB}-toolbar-title`} data-readonly=''>
-        {/* Read-only, there's no editor to name it: the report's own title. */}
+        {/* Read-only or approved, there's no editor to name it: the report's own title. */}
         <span className={`${RB}-toolbar-heading`} data-test='report-builder-toolbar-heading'>
-          {readOnly ? title || STRINGS.untitled : STRINGS.preview.title}
+          {readOnly || locked ? title || STRINGS.untitled : STRINGS.preview.title}
         </span>
         {previewMeta ? <span className={`${RB}-toolbar-meta`}>{previewMeta}</span> : null}
       </div>
@@ -91,6 +101,12 @@ export const Toolbar = ({
       <TitleField title={title} onTitleChange={onTitleChange} />
     )}
     <div className={`${RB}-toolbar-actions`}>
+      {approvalStatus ? (
+        <>
+          {approvalStatus}
+          {status ? null : <span className={`${RB}-toolbar-separator`} aria-hidden='true' />}
+        </>
+      ) : null}
       {status ? (
         <>
           <div className={`${RB}-toolbar-status`} data-test='report-builder-toolbar-status'>
@@ -158,7 +174,12 @@ export const Toolbar = ({
           <Icon name='panel' size={15} />
         </button>
       ) : null}
-      {readOnly ? null : previewOpen ? (
+      {readOnly ? null : locked ? (
+        <button type='button' className={`${RB}-button`} data-test='report-builder-edit-approved' onClick={onEdit}>
+          <AppIcon type='edit' />
+          {STRINGS.approval.edit}
+        </button>
+      ) : previewOpen ? (
         <button
           type='button'
           className={`${RB}-button`}
@@ -179,6 +200,19 @@ export const Toolbar = ({
           {STRINGS.openPreview}
         </button>
       )}
+      {!readOnly && !locked && previewOpen && onApprove ? (
+        <button
+          type='button'
+          className={`${RB}-button`}
+          disabled={!!approveBlocked}
+          title={approveBlocked || undefined}
+          data-test='report-builder-approve'
+          onClick={onApprove}
+        >
+          <Icon name='check' size={13} />
+          {STRINGS.approval.approve}
+        </button>
+      ) : null}
       {readOnly ? null : (
         <button
           type='button'
@@ -200,6 +234,7 @@ export const Toolbar = ({
           onBranding={onBranding}
           onSaveAsTemplate={onSaveAsTemplate}
           onRerunAll={onRerunAll}
+          onApprove={approveBlocked ? undefined : onApprove}
         />
       ) : null}
     </div>

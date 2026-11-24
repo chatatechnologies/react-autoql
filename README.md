@@ -21,10 +21,6 @@
 
 Full documentation can be found [here](https://chata.readme.io/docs/autoql-react-widgets)
 
-# Demo
-
-A live demo can be found [here](https://chata-ai-test-page-prod.herokuapp.com/)
-
 # Components
 
 ### DataMessenger

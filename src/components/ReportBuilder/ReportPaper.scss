@@ -758,10 +758,43 @@ $warn-rule: #f0dcb0;
   // ---------------------------------------------------------------- a printed page
 
   &.#{$rb}-page {
+    position: relative;
     display: flex;
     flex-direction: column;
     flex: none;
     overflow: hidden;
+  }
+
+  // A report that isn't approved yet (RW-372): DRAFT across the page, corner to corner, over what's on it and faint
+  // enough to read through. It prints too: the print frame copies the page as it is.
+  .#{$rb}-page-watermark {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    > span {
+      // Up the page's diagonal: 8.5 by 11in.
+      transform: rotate(-52deg);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 132pt;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      color: rgba(110, 118, 125, 0.16);
+      white-space: nowrap;
+      user-select: none;
+    }
+  }
+
+  &.#{$rb}-page[data-orientation='landscape'] > .#{$rb}-page-watermark > span {
+    transform: rotate(-38deg);
   }
 
   // Fixed heights (pageGeometry's HEADER_IN / FOOTER_IN); the padding is the gap to the content.

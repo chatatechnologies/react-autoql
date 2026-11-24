@@ -1,5 +1,5 @@
 import React from 'react'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { TemplateEditor, templateDocumentOf } from '../workspace/TemplateEditor'
 import { fetchReportCategories, ReportsApiError } from '../run/reportsApi'
@@ -104,6 +104,11 @@ const openFilled = async (props) => {
 const button = (test) => screen.getByTestId(`reports-template-editor-${test}`)
 const click = (test) => act(async () => fireEvent.click(button(test)))
 const editTitle = (title) => act(() => mockBuilder.props.onChange({ ...mockBuilder.props.report, title }))
+// Publish, or Publish changes, and its question answered (RW-370).
+const publishConfirmed = async () => {
+  fireEvent.click(button('publish'))
+  await click('publish-confirm')
+}
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -118,6 +123,11 @@ beforeEach(() => {
 })
 
 describe('templateDocumentOf', () => {
+  it('leaves out an approval the report had (RW-372)', () => {
+    const approval = { name: 'Dana Lee', at: '2026-11-17T18:00:00.000Z', fingerprint: 'abc' }
+    expect(templateDocumentOf({ ...DOCUMENT, approval })).not.toHaveProperty('approval')
+  })
+
   it('leaves out the answers, and makes every question one its reports can ask again', () => {
     const report = {
       ...DOCUMENT,
@@ -210,7 +220,8 @@ describe('TemplateEditor', () => {
     expect(updateTemplate).toHaveBeenCalledWith({
       authentication: AUTH,
       id: 'tp1',
-      title: 'Monthly review',
+      // The title on its pages is its name: renamed there, it's renamed.
+      title: 'Monthly client review',
       description: 'One for each household',
       categoryId: 'c1',
       tags: ['Monthly'],
@@ -259,6 +270,46 @@ describe('TemplateEditor', () => {
     )
   })
 
+  describe('one name for the template and its pages, as its reports are titled with it', () => {
+    it('opens its pages under its name, not the title of the report it was saved from', async () => {
+      fetchManagedTemplate.mockResolvedValue(template({ report: { ...DOCUMENT, title: 'Brown Family review' } }))
+      await openFilled()
+      expect(mockBuilder.props.report.title).toBe('Monthly review')
+      // Nothing to save for that alone.
+      expect(button('save')).toBeDisabled()
+    })
+
+    it('renames its pages when it’s renamed, by its name or in Details…', async () => {
+      await openFilled()
+      fireEvent.click(button('name'))
+      fireEvent.change(button('name-input'), { target: { value: 'Monthly household review' } })
+      fireEvent.keyDown(button('name-input'), { key: 'Enter' })
+      expect(mockBuilder.props.report.title).toBe('Monthly household review')
+
+      fireEvent.click(button('details'))
+      fireEvent.change(screen.getByTestId('reports-template-title'), { target: { value: 'Household review' } })
+      fireEvent.click(button('details-apply'))
+      expect(mockBuilder.props.report.title).toBe('Household review')
+
+      await click('save')
+      expect(updateTemplate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Household review',
+          document: expect.objectContaining({ title: 'Household review' }),
+        }),
+      )
+    })
+
+    it('is renamed when its pages are, but not to nothing', async () => {
+      await openFilled()
+      editTitle('Monthly client review')
+      expect(button('name')).toHaveTextContent('Monthly client review')
+
+      editTitle('  ')
+      expect(button('name')).toHaveTextContent('Monthly client review')
+    })
+  })
+
   it('turns down details the service wouldn’t take before keeping them', async () => {
     await openFilled()
     fireEvent.click(button('details'))
@@ -269,10 +320,10 @@ describe('TemplateEditor', () => {
     expect(button('save')).toBeDisabled()
   })
 
-  it('publishes a draft, saving what’s changed first, then goes back to Manage templates', async () => {
+  it('publishes a draft once asked, saving what’s changed first, then goes back to Manage templates', async () => {
     const { onClose } = await openFilled()
     editTitle('Monthly client review')
-    await click('publish')
+    await publishConfirmed()
 
     expect(updateTemplate).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'tp1', document: expect.objectContaining({ title: 'Monthly client review' }) }),
@@ -280,6 +331,70 @@ describe('TemplateEditor', () => {
     expect(publishTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp1' })
     expect(updateTemplate.mock.invocationCallOrder[0]).toBeLessThan(publishTemplate.mock.invocationCallOrder[0])
     expect(onClose).toHaveBeenCalled()
+  })
+
+  describe('asks before publishing (RW-370)', () => {
+    const asked = () => screen.queryByTestId('reports-template-editor-publish-dialog')
+    const cancel = () => within(asked()).getByRole('button', { name: 'Cancel' })
+
+    it('asks before publishing a draft: Cancel and Escape change nothing, and the focus goes back to Publish', async () => {
+      const { onClose } = await openFilled()
+      editTitle('Monthly client review')
+      // As it is from the keyboard.
+      button('publish').focus()
+      fireEvent.click(button('publish'))
+
+      expect(asked()).toHaveAccessibleName('Publish “Monthly client review”?')
+      expect(asked()).toHaveAccessibleDescription('Everyone in your organization can start reports from it.')
+      expect(button('publish-confirm')).toHaveTextContent('Publish')
+      expect(button('publish-confirm')).toHaveAttribute('data-variant', 'primary')
+      expect(cancel()).toHaveFocus()
+
+      fireEvent.click(cancel())
+      expect(asked()).toBeNull()
+      expect(button('publish')).toHaveFocus()
+
+      fireEvent.click(button('publish'))
+      fireEvent.keyDown(cancel(), { key: 'Escape' })
+      expect(asked()).toBeNull()
+      expect(button('publish')).toHaveFocus()
+
+      // Nothing was sent, and the template is still open, its changes still to be saved.
+      expect(updateTemplate).not.toHaveBeenCalled()
+      expect(publishTemplate).not.toHaveBeenCalled()
+      expect(onClose).not.toHaveBeenCalled()
+      expect(button('close')).toHaveTextContent('Cancel')
+      expect(button('save')).toBeEnabled()
+    })
+
+    it('asks before publishing a published template’s changes', async () => {
+      fetchManagedTemplate.mockResolvedValue(template({ status: 'PUBLISHED', hasDraft: true, draft: null }))
+      const { onClose } = await openFilled()
+      fireEvent.click(button('publish'))
+      expect(asked()).toHaveAccessibleName('Publish your changes to “Monthly review”?')
+      expect(asked()).toHaveAccessibleDescription(
+        'Reports started from it from now on use them. Reports already made don’t change.',
+      )
+      expect(button('publish-confirm')).toHaveTextContent('Publish changes')
+      fireEvent.click(cancel())
+      expect(publishTemplate).not.toHaveBeenCalled()
+
+      await publishConfirmed()
+      expect(publishTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp1' })
+      // Nothing changed here since: nothing to save first.
+      expect(saveTemplateDraft).not.toHaveBeenCalled()
+      expect(onClose).toHaveBeenCalled()
+    })
+
+    it('says why details can’t be saved instead of asking', async () => {
+      const tags = Array.from({ length: 21 }, (_, i) => `t${i}`)
+      fetchManagedTemplate.mockResolvedValue(template({ tags }))
+      await openFilled()
+      fireEvent.click(button('publish'))
+      expect(asked()).toBeNull()
+      expect(button('error')).toHaveTextContent('The template wasn’t saved: a template can carry up to 20 tags.')
+      expect(publishTemplate).not.toHaveBeenCalled()
+    })
   })
 
   it('says why a change wasn’t saved, naming a block a template can’t keep', async () => {
@@ -295,7 +410,7 @@ describe('TemplateEditor', () => {
     expect(button('close')).toHaveTextContent('Cancel')
 
     publishTemplate.mockRejectedValueOnce(new ReportsApiError({ status: 409, code: 'REPORT_LIMIT_EXCEEDED' }))
-    await click('publish')
+    await publishConfirmed()
     expect(button('error')).toHaveTextContent(
       'The template wasn’t published: a published template can have up to 50 data blocks.',
     )
@@ -353,7 +468,7 @@ describe('TemplateEditor', () => {
         expect.objectContaining({
           authentication: AUTH,
           id: 'tp1',
-          title: 'Monthly review',
+          title: 'Monthly client review',
           document: expect.objectContaining({ title: 'Monthly client review' }),
         }),
       )
@@ -362,7 +477,7 @@ describe('TemplateEditor', () => {
       expect(button('changes')).toHaveTextContent('Unpublished changes')
       expect(button('discard')).toBeEnabled()
 
-      await click('publish')
+      await publishConfirmed()
       expect(publishTemplate).toHaveBeenCalledWith({ authentication: AUTH, id: 'tp1' })
       expect(saveTemplateDraft).toHaveBeenCalledTimes(1)
       expect(onClose).toHaveBeenCalled()
@@ -385,7 +500,8 @@ describe('TemplateEditor', () => {
       )
       const { onClose } = await openFilled()
       expect(button('name')).toHaveTextContent('Monthly review (new)')
-      expect(mockBuilder.props.report.title).toBe('Monthly review, new layout')
+      // Its pages under the name it has waiting, whatever they were saved with.
+      expect(mockBuilder.props.report.title).toBe('Monthly review (new)')
       expect(button('changes')).toHaveTextContent('Unpublished changes')
       expect(button('publish')).toBeEnabled()
 

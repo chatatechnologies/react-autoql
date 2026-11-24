@@ -103,6 +103,13 @@
   }
 }
 
+// The onboarding "New" banner, a row between the thread and the input. Side margins
+// match the input's 12px gutter.
+.chat-content-wrapper > .react-autoql-onboarding-banner {
+  flex-shrink: 0;
+  margin: 6px 12px 12px;
+}
+
 .chat-bar-container {
   flex-shrink: 0;
   padding: 0px;

@@ -272,6 +272,13 @@ $rs: 'react-autoql-reports';
     border-top: 1px solid $border;
   }
 
+  // Said under the report chosen: adding to it returns it to draft (RW-372).
+  p.#{$rs}-choice-note {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: $text;
+  }
+
   // A message in the middle of an area: something loading, something that went wrong, nothing there yet.
   .#{$rs}-message {
     display: flex;

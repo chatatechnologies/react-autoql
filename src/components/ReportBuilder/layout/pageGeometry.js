@@ -7,13 +7,15 @@ export const LETTER_IN = { width: 8.5, height: 11 }
 export const HEADER_IN = 0.55
 export const FOOTER_IN = 0.35
 
-export const getPageGeometry = (page = {}) => {
+// With `approval` (the builder's enableApproval, RW-372), the footer's room is kept on every page whatever the page
+// setup says: an approved report prints "Prepared by …" there, and approving doesn't move what's on the pages.
+export const getPageGeometry = (page = {}, { approval = false } = {}) => {
   const landscape = page.orientation === 'landscape'
   const widthIn = landscape ? LETTER_IN.height : LETTER_IN.width
   const heightIn = landscape ? LETTER_IN.width : LETTER_IN.height
   const marginIn = MARGINS_IN[page.margins] ?? MARGINS_IN.normal
   const headerIn = page.header ? HEADER_IN : 0
-  const footerIn = page.footer || page.pageNumbers ? FOOTER_IN : 0
+  const footerIn = page.footer || page.pageNumbers || approval ? FOOTER_IN : 0
   const contentWidthIn = widthIn - 2 * marginIn
   const contentHeightIn = heightIn - 2 * marginIn - headerIn - footerIn
 

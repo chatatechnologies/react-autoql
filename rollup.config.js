@@ -72,16 +72,20 @@ const common = {
       fileName: 'autoql.esm.css',
       outputStyle: 'compressed',
       processor: () => postcss([autoprefixer()]),
+      // Replaces the plugin's own importer, which resolves every non-relative @import (e.g. @import 'tokens') with
+      // require.resolve, passing the whole concatenated stylesheet (~600 KB) as the lookup path. Node expands that into
+      // one node_modules path per "/" in it - hundreds of MB of strings per import - which ran builds out of memory at
+      // Node's default heap. Nothing here imports from node_modules, so handing every import back to Sass (which finds
+      // the partials on its include paths, as before) gives the same CSS.
+      importer: () => null,
     }),
     image(),
     svg(),
     babel({
-      // Every node_modules, not only this folder's: when an app installs this package from a folder (as the example
-      // app's Docker build does), its packages can sit in a node_modules above this one. A string pattern is resolved
-      // against this folder (even "**/…"), so it's a RegExp. Run over TipTap's files there, this config's React
-      // preset fails on their JSX runtime.
+      // Every node_modules, not only this folder's: when an app installs this package from a folder, its packages can
+      // sit in a node_modules above this one. A string pattern is resolved against this folder (even "**/…"), so it's
+      // a RegExp. Run over TipTap's files there, this config's React preset fails on their JSX runtime.
       exclude: /node_modules/,
-      ignore: ['./example'],
       babelHelpers: 'bundled',
     }),
     // The report builder's text editor (TipTap, ProseMirror and what they bring) is bundled, and transpiled for

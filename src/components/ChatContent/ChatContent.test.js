@@ -3,6 +3,8 @@ import { shallow } from 'enzyme'
 import ChatContent from './ChatContent'
 import { QueryInput } from '../QueryInput'
 import { SessionTabs } from '../SessionTabs'
+import { ChatMessage } from '../ChatMessage'
+import { WhatsNew } from '../Onboarding'
 import { fetchQueryTitle } from '../../js/queryTitleService'
 
 // Prevent react-tooltip from scheduling MutationObservers during tests
@@ -713,5 +715,54 @@ describe('scrolling to a message', () => {
     const { instance, container } = setupScroll({ messageTop: 450, messageHeight: 355, toolbarTop: 420 })
     instance.scrollToMessageFit('m1')
     expect(container.scrollTop).toBe(700)
+  })
+})
+
+describe('onboarding', () => {
+  const messages = [
+    { id: 'q1', isResponse: false, content: 'first' },
+    { id: 'r1', isResponse: true, response: { data: { data: {} } } },
+    { id: 'q2', isResponse: false, content: 'second' },
+    { id: 'r2', isResponse: true, response: { data: { data: {} } } },
+    { id: 'e1', isResponse: true, type: 'error', content: 'Something went wrong' },
+  ]
+  const getHintFlags = (wrapper) =>
+    wrapper.find(ChatMessage).map((message) => [message.prop('id'), message.prop('showInterpretationHint')])
+
+  test('shows the interpretation hint on the latest answer only', () => {
+    const wrapper = setup({ enableOnboarding: true })
+    wrapper.setState({ messages })
+    expect(getHintFlags(wrapper)).toEqual([
+      ['q1', false],
+      ['r1', false],
+      ['q2', false],
+      ['r2', true],
+      ['e1', false],
+    ])
+  })
+
+  test('offers no hint while the thread is off screen (a hidden session tab)', () => {
+    const wrapper = setup({ enableOnboarding: true, shouldRender: false })
+    wrapper.setState({ messages })
+    expect(getHintFlags(wrapper).every(([, flag]) => flag === false)).toBe(true)
+  })
+
+  test('shows no hint and no New banner unless enabled', () => {
+    const wrapper = setup()
+    expect(wrapper.find(WhatsNew).exists()).toBe(false)
+    expect(wrapper.find('.chat-content-empty-state-title').exists()).toBe(true)
+    wrapper.setState({ messages })
+    expect(getHintFlags(wrapper).every(([, flag]) => flag === false)).toBe(true)
+  })
+
+  test('when enabled, the New banner sits above the input and stays once there are messages', () => {
+    const wrapper = setup({ enableOnboarding: true })
+    expect(wrapper.find('.chat-content-empty-state-title').exists()).toBe(true)
+    expect(wrapper.find('.chat-content-empty-state').find(WhatsNew).exists()).toBe(false)
+    expect(wrapper.find(WhatsNew).exists()).toBe(true)
+
+    wrapper.setState({ messages })
+    expect(wrapper.find('.chat-content-empty-state').exists()).toBe(false)
+    expect(wrapper.find(WhatsNew).exists()).toBe(true)
   })
 })

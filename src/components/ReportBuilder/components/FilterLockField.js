@@ -14,7 +14,8 @@ const L = STRINGS.filterLock
 // With `loadSuggestions` (the host's values to lock on, e.g. its households, as a promise of strings) the popover
 // lists those, loaded the first time it opens; without it, the popover searches AutoQL's values as it does anywhere.
 // `parentElement` keeps the popover inside a dialog that traps focus. `classPrefix` is whose styles it takes: the
-// builder's, or the reports workspace's in its dialogs.
+// builder's, or the reports workspace's in its dialogs. `labels`: the popover's `title`, what none is called (`none`),
+// and, where Change… isn't the word, what its button says (`change`).
 export class FilterLockField extends React.Component {
   static defaultProps = {
     locks: [],
@@ -136,7 +137,7 @@ export class FilterLockField extends React.Component {
               disabled={disabled || loading}
               onClick={this.open}
             >
-              {loading ? L.loading : L.change}
+              {loading ? L.loading : labels.change || L.change}
             </button>
           </FilterLockPopover>
         </div>

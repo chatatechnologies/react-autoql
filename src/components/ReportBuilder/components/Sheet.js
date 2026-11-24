@@ -337,15 +337,19 @@ export class Sheet extends React.Component {
           />
         </div>
       ) : null
-    const footerOf = (contentPage) =>
-      geometry.footerIn > 0 ? (
+    // Kept with nothing in it where only approval (RW-372) keeps its room: a draft says nothing there.
+    const footerOf = (contentPage) => {
+      if (!(geometry.footerIn > 0)) {
+        return null
+      }
+      const left = page.footer ? footerLeft : ''
+      const right = page.pageNumbers && paged ? STRINGS.preview.page(frontPages + contentPage + 1, total) : ''
+      return (
         <div className={`${RB}-page-footer`} style={{ height: `${geometry.footerIn}in` }}>
-          <RunningFooter
-            left={page.footer ? footerLeft : ''}
-            right={page.pageNumbers && paged ? STRINGS.preview.page(frontPages + contentPage + 1, total) : ''}
-          />
+          {left || right || page.footer || page.pageNumbers ? <RunningFooter left={left} right={right} /> : null}
         </div>
-      ) : null
+      )
+    }
 
     let pageIndex = 0
 

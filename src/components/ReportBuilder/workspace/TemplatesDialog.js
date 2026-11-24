@@ -8,7 +8,7 @@ import { STRINGS } from '../strings'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates } from '../run/reportsApi'
 import { describeReportError, newReportId } from './documents'
 import { ReportModal } from './ReportModal'
-import { BATCH_MAX, RS } from './reportsConstants'
+import { BATCH_AT_ONCE, BATCH_SECONDS_PER_REPORT, DEFAULT_BATCH_LIMIT, RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
 
 // New report › Start from a template: the templates published for the data source (its organization's and the
@@ -20,25 +20,44 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // here. A template's document is fetched when it's chosen, and kept while the dialog is open.
 //
 // Props: authentication, autoQLConfig, dataFormatting, previewProps (more for the preview's ReportBuilder: branding,
-// enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, id, sessionFilterLocks? }),
-// which resolves once the report is made or rejects with why not, and onManage (Manage templates, for an
-// organization's admins).
+// enableBranding, fontStylesheetUrl), onClose (back to New report), onStart({ templateId, title, id,
+// sessionFilterLocks? }), which resolves once the report is made or rejects with why not, and onManage (Manage
+// templates, for an organization's admins). `title` is the template's name, which its reports are titled with.
 //
-// With enableFilterLocks, the report can be started for one value, or several, of what the host's data locks on (its
-// households, say): the report's filter lock (model/filterLocks.js), chosen beside Start report with the host's
-// loadFilterLockSuggestions and filterLockLabels, as in the builder. It starts out as the template's own, which a
-// template keeps from the report it was made from, so Start report waits for the template's document; the preview
-// shows the report for what's chosen. None starts it for everything, even from a template that has one.
+// With enableFilterLocks, who the report is for is chosen under the templates (renderFor), one of three, each saying
+// what it makes, so the footer has only Back and Start. Everything: no filter lock, even from a template that has one.
+// Specific values of what the host's data locks on (its households, say): the report's filter lock
+// (model/filterLocks.js), picked with the host's loadFilterLockSuggestions and filterLockLabels, as in the builder. It
+// starts out as the template's own, which a template keeps from the report it was made from, so Start report waits for
+// the template's document; the preview shows the report for what's chosen.
 //
-// With onStartEach too, two or more values picked (households, say) can start a report for each of them in one go
-// (RW-353): onStartEach({ templateId, title, starts: [{ id, lock }] }), which resolves once they're under way or
-// rejects with why none were made. At most BATCH_MAX at once.
+// With onStartEach too, a report for each value (RW-353): onStartEach({ templateId, title, starts: [{ id, lock }] }),
+// which resolves once they're under way or rejects with why none were made. With the host's list
+// (loadFilterLockSuggestions), it's every value in it, any unticked again in the list shown in the preview's place
+// (RW-371), started by name (starts: [{ id, name }]), each looked up as its report is made, so a batch of hundreds
+// starts at once; without the list, it's each value picked. At most `batchLimit` at once (DEFAULT_BATCH_LIMIT; null
+// for no limit). A batch says about how long it takes, and asks before it starts.
 
 // A template's own filter lock, from its document.
 const templateLocks = (template) => normalizeFilterLocks(template?.report?.sessionFilterLocks)
 
-// What a report for each can be started for: two or more values picked, each one to include.
-const eachOf = (locks) => (locks.length > 1 && locks.every((lock) => lock.filter_type === 'include') ? locks : null)
+let dialogIds = 0
+
+// What one of the host's values is called, from what they all are ("Households" → "household"), for "a report for each
+// household".
+const oneOf = (what) => what.trim().toLowerCase().replace(/s$/, '')
+
+// The host's values, each once, A to Z: what a report for each is made for.
+const valuesOf = (names) =>
+  Array.from(new Set((Array.isArray(names) ? names : []).filter((n) => typeof n === 'string' && n.trim()))).sort(
+    (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }),
+  )
+
+// About how long a batch of `n` takes, in minutes for "It takes about …": to the minute below ten, to five above.
+export const batchMinutes = (n) => {
+  const minutes = (n * BATCH_SECONDS_PER_REPORT) / BATCH_AT_ONCE / 60
+  return minutes < 10 ? Math.max(1, Math.round(minutes)) : Math.round(minutes / 5) * 5
+}
 
 const S = REPORTS_STRINGS
 const T = S.templates
@@ -82,6 +101,7 @@ export class TemplatesDialog extends React.Component {
   constructor(props) {
     super(props)
     this.searchRef = React.createRef()
+    this.pickListRef = React.createRef()
     // Documents fetched, by template.
     this.documents = new Map()
     // The id each template's report is made under, for each filter lock: a retry after a start that may have gone
@@ -89,6 +109,8 @@ export class TemplatesDialog extends React.Component {
     // report: the service answers an id it has already made with that report, whatever else is asked.
     this.startIds = new Map()
     this.loadRequest = 0
+    dialogIds += 1
+    this.forId = `${RS}-templates-for-${dialogIds}`
     this.state = {
       templates: null,
       categories: [],
@@ -102,8 +124,20 @@ export class TemplatesDialog extends React.Component {
       starting: false,
       startError: null,
       locks: [],
-      // A report for each value picked, rather than one for all of them.
-      forEach: false,
+      // Who the report is for: everything ('all'), the values picked ('some'), or a report for each ('each').
+      mode: 'all',
+      // The host's whole list, for a report for each (RW-371); whether it couldn't be loaded; and the values in it
+      // unticked again.
+      allNames: null,
+      allNamesFailed: false,
+      left: [],
+      // The list a report for each is made for, shown in the preview's place to untick some; what it's searched for; and
+      // how many of it are below what's in sight.
+      picking: false,
+      pickQ: '',
+      pickBelow: 0,
+      // A batch's question before it starts: how many, and about how long.
+      confirming: false,
       // The dialog, for the filter lock's popover to open in: one opened outside it couldn't take focus.
       lockHost: null,
     }
@@ -112,11 +146,21 @@ export class TemplatesDialog extends React.Component {
   componentDidMount() {
     this.mounted = true
     this.load()
+    this.loadAllNames()
+  }
+
+  componentDidUpdate() {
+    this.watchPickList()
+    this.measurePickList()
   }
 
   componentWillUnmount() {
     this.mounted = false
     this.chosenController?.abort()
+    this.pickListObserver?.disconnect()
+    if (typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(this.pickFrame)
+    }
   }
 
   load = () => {
@@ -139,7 +183,7 @@ export class TemplatesDialog extends React.Component {
   }
 
   // A template chosen: shown as soon as its document is in. With enableFilterLocks, the report it starts is for what
-  // the template is for, once that's known, unless something else was chosen beside Start report while it came.
+  // the template is for, once that's known, unless something else was chosen under the templates while it came.
   choose = (id) => {
     if (id === this.state.chosenId) {
       return
@@ -147,7 +191,14 @@ export class TemplatesDialog extends React.Component {
     this.chosenController?.abort()
     this.lockChosenFor = null
     const kept = this.documents.get(id)
-    this.setState({ chosenId: id, chosen: kept || null, chosenError: null, startError: null, ...this.locksOf(kept) })
+    this.setState({
+      chosenId: id,
+      chosen: kept || null,
+      chosenError: null,
+      startError: null,
+      confirming: false,
+      ...this.locksOf(kept),
+    })
     if (kept) {
       return
     }
@@ -184,87 +235,316 @@ export class TemplatesDialog extends React.Component {
     }
   }
 
-  // What the report is for, as the template has it (none before its document is in).
-  locksOf = (template) => (this.props.enableFilterLocks ? { locks: templateLocks(template) } : {})
+  // Who the report is for, as the template has it (everything before its document is in): its own filter lock, or
+  // everything. A report for each, once chosen, stays chosen from one template to the next.
+  locksOf = (template) => {
+    if (!this.props.enableFilterLocks || this.state.mode === 'each') {
+      return {}
+    }
+    const locks = templateLocks(template)
+    return { locks, mode: locks.length ? 'some' : 'all' }
+  }
 
   setLocks = (locks) => {
     this.lockChosenFor = this.state.chosenId
-    this.setState({ locks })
+    this.setState({ locks, confirming: false, startError: null })
   }
 
-  // The chosen template as it would start: for what's chosen beside Start report. Made again only when either changes,
-  // so the preview isn't handed a new document on every render.
-  previewReport() {
-    const { chosen, locks } = this.state
-    if (!this.props.enableFilterLocks) {
-      return chosen.report
+  // Who the report is for, chosen. What was picked or unticked for the others is kept, should they be chosen again.
+  setMode = (mode) => {
+    this.lockChosenFor = this.state.chosenId
+    this.setState({ mode, picking: false, pickQ: '', confirming: false, startError: null })
+  }
+
+  // The filter lock one report is started for: the values picked, or none, for everything. A report for each has its
+  // own, one value each.
+  reportLocks() {
+    return this.props.enableFilterLocks && this.state.mode === 'some' ? this.state.locks : []
+  }
+
+  // ---------------------------------------------------------------- a report for each value in the list (RW-371)
+
+  canSelectAll = () =>
+    !!(this.props.enableFilterLocks && this.props.onStartEach && this.props.loadFilterLockSuggestions)
+
+  // A report for each is for the host's list, unless there's none, or it couldn't be loaded: then it's for each value
+  // picked.
+  listEach = () => this.canSelectAll() && !this.state.allNamesFailed
+
+  // The host's list, as the lock's picker has it: a report for each says how many it makes.
+  loadAllNames = async () => {
+    if (!this.canSelectAll()) {
+      return
     }
-    const key = filterLocksKey(locks)
+    try {
+      const names = valuesOf(await this.props.loadFilterLockSuggestions())
+      if (this.mounted) {
+        this.setState({ allNames: names })
+      }
+    } catch (error) {
+      if (this.mounted) {
+        this.setState({ allNamesFailed: true })
+      }
+    }
+  }
+
+  togglePicking = () => this.setState(({ picking }) => ({ picking: !picking, pickQ: '' }))
+
+  // How many of the list are below what's in sight: those whose middle is past its bottom edge. Measured as it's
+  // scrolled, searched or resized, so the line under it says how many more there are, and goes once there are none.
+  measurePickList = () => {
+    const list = this.pickListRef.current
+    let below = 0
+    if (list) {
+      const bottom = list.scrollTop + list.clientHeight
+      Array.from(list.children).forEach((item) => {
+        if (item.offsetTop + item.offsetHeight / 2 > bottom) {
+          below += 1
+        }
+      })
+    }
+    if (below !== this.state.pickBelow) {
+      this.setState({ pickBelow: below })
+    }
+  }
+
+  onPickScroll = () => {
+    if (typeof requestAnimationFrame !== 'function') {
+      this.measurePickList()
+      return
+    }
+    cancelAnimationFrame(this.pickFrame)
+    this.pickFrame = requestAnimationFrame(this.measurePickList)
+  }
+
+  // The list's size changes with the dialog's (the window resized), which changes what's in sight.
+  watchPickList = () => {
+    const list = this.pickListRef.current
+    if (list === this.pickListWatched) {
+      return
+    }
+    this.pickListObserver?.disconnect()
+    this.pickListWatched = list
+    if (list && typeof ResizeObserver === 'function') {
+      this.pickListObserver = new ResizeObserver(this.onPickScroll)
+      this.pickListObserver.observe(list)
+    }
+  }
+
+  // Show more: a page further down.
+  scrollPickList = () => {
+    const list = this.pickListRef.current
+    if (!list) {
+      return
+    }
+    const top = Math.round(list.clientHeight * 0.85)
+    if (typeof list.scrollBy === 'function') {
+      list.scrollBy({ top, behavior: 'smooth' })
+    } else {
+      list.scrollTop += top
+      this.measurePickList()
+    }
+  }
+
+  // A value in the list, unticked (or ticked again).
+  toggleLeft = (name) =>
+    this.setState(({ left }) => ({
+      left: left.includes(name) ? left.filter((n) => n !== name) : [...left, name],
+      confirming: false,
+      startError: null,
+    }))
+
+  // Every value ticked again; or, with every one ticked, none, to tick only a few.
+  tickAll = () => this.setState({ left: [], confirming: false, startError: null })
+
+  untickAll = () =>
+    this.setState(({ allNames }) => ({ left: [...(allNames || [])], confirming: false, startError: null }))
+
+  // The host's list, less those unticked.
+  pickedNames() {
+    const { allNames, left } = this.state
+    if (!allNames) {
+      return []
+    }
+    const unticked = new Set(left)
+    return allNames.filter((name) => !unticked.has(name))
+  }
+
+  // The most one batch may make: the host's, null for no limit.
+  batchLimit() {
+    const { batchLimit } = this.props
+    if (batchLimit === null) {
+      return Infinity
+    }
+    return Number.isFinite(batchLimit) && batchLimit > 0 ? batchLimit : DEFAULT_BATCH_LIMIT
+  }
+
+  // The chosen template as it would start: titled with the template's name, as its reports are, and for what's chosen
+  // under the templates (a report for each, as the template, for none of them). Made again only when either changes, so
+  // the preview isn't handed a new document on every render.
+  previewReport() {
+    const { chosen } = this.state
+    const locks = this.reportLocks()
+    if (!chosen?.report) {
+      return chosen?.report
+    }
+    const withLocks = !!this.props.enableFilterLocks
+    const key = withLocks ? filterLocksKey(locks) : ''
     if (this.preview?.chosen !== chosen || this.preview.key !== key) {
-      const report = { ...chosen.report, sessionFilterLocks: locks }
-      if (!locks.length) {
-        delete report.sessionFilterLocks
+      const report = { ...chosen.report, ...(chosen.title ? { title: chosen.title } : {}) }
+      if (withLocks) {
+        report.sessionFilterLocks = locks
+        if (!locks.length) {
+          delete report.sessionFilterLocks
+        }
       }
       this.preview = { chosen, key, report }
     }
     return this.preview.report
   }
 
-  // The values a report each is started for, when that's what's chosen; null for one report.
+  // The values a report each is started for, when that's what's chosen; null for one report. Those ticked in the
+  // host's list are by name ({ name }); those picked, without the list, by their lock ({ lock }), none of them left
+  // out (an excluded value can't have a report of its own).
   startsEach() {
-    if (!this.props.enableFilterLocks || !this.props.onStartEach || !this.state.forEach) {
+    if (!this.props.enableFilterLocks || !this.props.onStartEach || this.state.mode !== 'each') {
       return null
     }
-    return eachOf(this.state.locks)
+    if (this.listEach()) {
+      return this.pickedNames().map((name) => ({ name }))
+    }
+    const { locks } = this.state
+    return locks.every((lock) => lock.filter_type === 'include') ? locks.map((lock) => ({ lock })) : []
   }
 
-  // Beside Start report: what the report will be for (the report's filter lock), and Change…; with two or more values
-  // picked, whether it's one report for all of them or one each.
-  renderLock() {
+  // What stops a report each from starting, said beside Back and Start: more than the limit, or, without the host's
+  // list, a value picked that's left out.
+  eachProblem(each, what) {
+    if (!each) {
+      return null
+    }
+    const limit = this.batchLimit()
+    if (each.length > limit) {
+      return T.tooMany(limit)
+    }
+    if (!this.listEach() && this.state.locks.some((lock) => lock.filter_type !== 'include')) {
+      return T.forEachExcluded(what)
+    }
+    return null
+  }
+
+  // Under the templates, with enableFilterLocks: who the report is for, one of three, each saying what it makes.
+  // Everything (the host's word for no filter lock); the values picked (FilterLockField, which opens FilterLockPopover
+  // inside the dialog); and, with onStartEach, a report for each: each value in the host's list, any unticked in the
+  // list shown in the preview's place (renderPicking), or, without the list, each value picked.
+  renderFor() {
     const labels = this.props.filterLockLabels || {}
-    const { locks, forEach, starting } = this.state
-    return (
-      <div className={`${RS}-templates-lock`} ref={this.setLockHost} data-test='reports-templates-lock'>
-        <span className={`${RS}-templates-lock-label`}>{labels.title || STRINGS.filterLock.title}</span>
-        <FilterLockField
-          classPrefix={RS}
-          locks={locks}
-          labels={labels}
-          authentication={this.props.authentication}
-          loadSuggestions={this.props.loadFilterLockSuggestions}
-          parentElement={this.state.lockHost || undefined}
-          disabled={starting}
-          onChange={this.setLocks}
-        />
-        {this.props.onStartEach && eachOf(locks) ? (
-          <SelectBox prefix={RS}>
-            <select
-              className={`${RS}-select`}
-              value={forEach ? 'each' : 'all'}
-              aria-label={T.howMany}
-              data-test='reports-templates-how-many'
-              disabled={starting}
-              onChange={(e) => this.setState({ forEach: e.target.value === 'each', startError: null })}
+    const what = labels.title || STRINGS.filterLock.title
+    const { mode, locks, starting, confirming, picking, allNames } = this.state
+    const busy = starting || confirming
+    // With none picked yet, the field says so, and Change… is Pick….
+    const lockField = () => (
+      <FilterLockField
+        classPrefix={RS}
+        locks={locks}
+        labels={locks.length ? labels : { ...labels, none: T.forSomeNone, change: T.forSomePick }}
+        authentication={this.props.authentication}
+        loadSuggestions={this.props.loadFilterLockSuggestions}
+        parentElement={this.state.lockHost || undefined}
+        disabled={busy}
+        onChange={this.setLocks}
+      />
+    )
+    // A report for each: how many of the host's list get one (once it's in), and Edit list…; without the list, the
+    // values picked.
+    let eachDetail = null
+    if (mode === 'each' && !this.listEach()) {
+      eachDetail = lockField()
+    } else if (mode === 'each') {
+      eachDetail = (
+        <>
+          <span className={`${RS}-templates-for-count`} data-test='reports-templates-for-count'>
+            {allNames ? T.forEachCount(this.pickedNames().length, allNames.length) : T.forEachLoading}
+          </span>
+          {allNames ? (
+            <button
+              type='button'
+              className={`${RS}-templates-link`}
+              aria-expanded={picking}
+              data-test='reports-templates-edit-list'
+              disabled={busy}
+              onClick={this.togglePicking}
             >
-              <option value='all'>{T.forAll}</option>
-              <option value='each'>{T.forEach(locks.length)}</option>
-            </select>
-          </SelectBox>
-        ) : null}
-      </div>
+              {T.forEachEdit}
+            </button>
+          ) : null}
+        </>
+      )
+    }
+    const options = [
+      { key: 'all', name: labels.none || STRINGS.filterLock.none, says: T.forAllWhat },
+      { key: 'some', name: T.forSome(what), says: T.forSomeWhat, detail: mode === 'some' ? lockField() : null },
+    ]
+    if (this.props.onStartEach) {
+      options.push({ key: 'each', name: T.forEach(oneOf(what)), says: T.forEachWhat, detail: eachDetail })
+    }
+    return (
+      <section className={`${RS}-templates-for`} ref={this.setLockHost} data-test='reports-templates-lock'>
+        <h3 className={`${RS}-templates-heading`} id={this.forId}>
+          {what}
+        </h3>
+        <div className={`${RS}-templates-for-options`} role='radiogroup' aria-labelledby={this.forId}>
+          {options.map(({ key, name, says, detail }) => (
+            <React.Fragment key={key}>
+              <label className={`${RS}-templates-for-option`} data-checked={mode === key || undefined}>
+                <input
+                  type='radio'
+                  name={this.forId}
+                  value={key}
+                  checked={mode === key}
+                  disabled={busy}
+                  data-test={`reports-templates-for-${key}`}
+                  onChange={() => this.setMode(key)}
+                />
+                <span className={`${RS}-templates-text`}>
+                  <span className={`${RS}-templates-name`}>{name}</span>
+                  <span className={`${RS}-templates-for-what`}>{says}</span>
+                </span>
+              </label>
+              {mode === key && detail ? <div className={`${RS}-templates-for-detail`}>{detail}</div> : null}
+            </React.Fragment>
+          ))}
+        </div>
+      </section>
     )
   }
 
   // Waits for the template's document with enableFilterLocks: until it's in, what the template is for isn't known.
+  // Specific values need one picked at least; a batch, one at least, and no more than the limit.
   canStart() {
-    const { chosenId, chosen, starting } = this.state
+    const { chosenId, chosen, starting, mode, locks } = this.state
     const each = this.startsEach()
-    return !!chosenId && !starting && (!this.props.enableFilterLocks || !!chosen) && (!each || each.length <= BATCH_MAX)
+    const locking = !!this.props.enableFilterLocks
+    return (
+      !!chosenId &&
+      !starting &&
+      (!locking || !!chosen) &&
+      (!locking || mode !== 'some' || locks.length > 0) &&
+      (!each || (each.length > 0 && each.length <= this.batchLimit()))
+    )
   }
 
-  // The id a report from the template is made under for these locks: the same each time it's asked for.
-  startIdFor(templateId, locks) {
-    const startKey = `${templateId}\n${filterLocksKey(locks)}`
+  // The chosen template's name, which its reports are titled with: from its document once it's in, and from the list
+  // until then (without enableFilterLocks, it can be started before its document is in).
+  chosenTitle() {
+    const { chosenId, chosen, templates } = this.state
+    return (chosen || (templates || []).find((template) => template.id === chosenId))?.title || undefined
+  }
+
+  // The id a report from the template is made under for these locks (or this value, by name): the same each time it's
+  // asked for.
+  startIdFor(templateId, locks, name) {
+    const startKey = name === undefined ? `${templateId}\n${filterLocksKey(locks)}` : `${templateId}\nname:${name}`
     if (!this.startIds.has(startKey)) {
       this.startIds.set(startKey, newReportId())
     }
@@ -276,21 +556,31 @@ export class TemplatesDialog extends React.Component {
     if (!this.canStart()) {
       return
     }
-    const locks = this.props.enableFilterLocks ? this.state.locks : []
+    const locks = this.reportLocks()
     // None, from a template that has one, is said: the report is for everything, not for the template's.
     const said = locks.length > 0 || (this.props.enableFilterLocks && templateLocks(this.state.chosen).length > 0)
     const each = this.startsEach()
-    this.setState({ starting: true, startError: null })
+    // A batch asks first, saying how many and about how long.
+    if (each && !this.state.confirming) {
+      this.setState({ confirming: true, startError: null })
+      return
+    }
+    this.setState({ starting: true, startError: null, confirming: false })
     try {
       if (each) {
         await this.props.onStartEach({
           templateId,
-          title: this.state.chosen.title,
-          starts: each.map((lock) => ({ id: this.startIdFor(templateId, [lock]), lock })),
+          title: this.chosenTitle(),
+          starts: each.map(({ lock, name }) =>
+            lock
+              ? { id: this.startIdFor(templateId, [lock]), lock }
+              : { id: this.startIdFor(templateId, null, name), name },
+          ),
         })
       } else {
         await this.props.onStart({
           templateId,
+          title: this.chosenTitle(),
           id: this.startIdFor(templateId, locks),
           ...(said ? { sessionFilterLocks: locks } : {}),
         })
@@ -314,11 +604,30 @@ export class TemplatesDialog extends React.Component {
     return [...tags].sort(byName)
   }
 
+  // Over the templates: what they are, with Manage templates (for an organization's admins), and how to narrow them.
+  // Titled where the column has a second part, who the report is for, or the link to Manage templates.
   renderFilters() {
-    const { q, categoryId, tags: chosenTags, categories } = this.state
+    const { onManage, enableFilterLocks } = this.props
+    const { q, categoryId, tags: chosenTags, categories, starting } = this.state
     const tags = this.allTags()
     return (
       <div className={`${RS}-templates-filters`}>
+        {onManage || enableFilterLocks ? (
+          <div className={`${RS}-templates-head`}>
+            <h3 className={`${RS}-templates-heading`}>{T.list}</h3>
+            {onManage ? (
+              <button
+                type='button'
+                className={`${RS}-templates-link`}
+                data-test='reports-templates-manage'
+                disabled={starting}
+                onClick={onManage}
+              >
+                {S.manageTemplates.open}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <input
           ref={this.searchRef}
           type='search'
@@ -433,7 +742,93 @@ export class TemplatesDialog extends React.Component {
     )
   }
 
+  // The list a report for each is made for, in the preview's place: every value, ticked, to untick any that shouldn't
+  // get a report.
+  renderPicking() {
+    const labels = this.props.filterLockLabels || {}
+    const what = labels.title || STRINGS.filterLock.title
+    const { allNames, pickQ } = this.state
+    const left = new Set(this.state.left)
+    const q = pickQ.trim().toLowerCase()
+    const shown = allNames.filter((name) => !q || name.toLowerCase().includes(q))
+    return (
+      <div className={`${RS}-templates-preview ${RS}-templates-pick`} data-test='reports-templates-pick'>
+        <div className={`${RS}-templates-pick-head`}>
+          <div className={`${RS}-templates-pick-titles`}>
+            <h3 className={`${RS}-templates-pick-title`}>{T.pickTitle(what)}</h3>
+            <p className={`${RS}-templates-pick-what`} role='status'>
+              {T.pickWhat(allNames.length - left.size, allNames.length)}
+            </p>
+          </div>
+          <input
+            type='search'
+            className={`${RS}-input`}
+            value={pickQ}
+            placeholder={T.pickSearch(what)}
+            aria-label={T.pickSearch(what)}
+            data-test='reports-templates-pick-search'
+            onChange={(e) => this.setState({ pickQ: e.target.value })}
+          />
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-test='reports-templates-pick-all'
+            onClick={left.size ? this.tickAll : this.untickAll}
+          >
+            {left.size ? T.pickAll : T.untickAll}
+          </button>
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-test='reports-templates-pick-done'
+            onClick={this.togglePicking}
+          >
+            {T.pickDone}
+          </button>
+        </div>
+        {shown.length ? (
+          <div className={`${RS}-templates-pick-body`}>
+            <ul
+              ref={this.pickListRef}
+              className={`${RS}-templates-pick-list`}
+              aria-label={T.pickTitle(what)}
+              onScroll={this.onPickScroll}
+            >
+              {shown.map((name) => (
+                <li key={name}>
+                  <label className={`${RS}-templates-pick-item`}>
+                    <input type='checkbox' checked={!left.has(name)} onChange={() => this.toggleLeft(name)} />
+                    <span>{name}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            {this.state.pickBelow > 0 ? (
+              <>
+                <div className={`${RS}-templates-pick-fade`} aria-hidden='true' />
+                <button
+                  type='button'
+                  className={`${RS}-templates-pick-more`}
+                  data-test='reports-templates-pick-more'
+                  onClick={this.scrollPickList}
+                >
+                  <Icon name='down' size={13} />
+                  {T.pickMore(this.state.pickBelow)}
+                </button>
+              </>
+            ) : null}
+          </div>
+        ) : (
+          <p className={`${RS}-templates-empty`}>{T.pickNone}</p>
+        )}
+      </div>
+    )
+  }
+
   renderPreview() {
+    if (this.state.picking && this.state.mode === 'each' && this.state.allNames && this.listEach()) {
+      return this.renderPicking()
+    }
     const { chosenId, chosen, chosenError } = this.state
     const { authentication, autoQLConfig, dataFormatting, previewProps } = this.props
     let content
@@ -461,7 +856,7 @@ export class TemplatesDialog extends React.Component {
       // Made again for another filter lock, rather than told that its lock changed (which offers Rerun all).
       content = (
         <ReportBuilder
-          key={this.props.enableFilterLocks ? `${chosen.id}\n${filterLocksKey(this.state.locks)}` : chosen.id}
+          key={this.props.enableFilterLocks ? `${chosen.id}\n${filterLocksKey(this.reportLocks())}` : chosen.id}
           {...previewProps}
           authentication={authentication}
           autoQLConfig={autoQLConfig}
@@ -479,11 +874,17 @@ export class TemplatesDialog extends React.Component {
     )
   }
 
+  // The footer has only Back (Cancel, while a batch asks) and Start. Beside them: why it can't start, the batch's
+  // question, or, for a report for each, about how long it takes.
   render() {
-    const { onClose, onManage } = this.props
-    const { starting, startError } = this.state
+    const { onClose } = this.props
+    const { starting, startError, confirming } = this.state
+    const what = this.props.filterLockLabels?.title || STRINGS.filterLock.title
     const each = this.startsEach()
-    const problem = startError || (each && each.length > BATCH_MAX ? T.tooMany(BATCH_MAX) : null)
+    const problem = startError || this.eachProblem(each, what)
+    const minutes = each?.length ? batchMinutes(each.length) : 0
+    const asking = confirming && each && !problem ? T.confirmEach(each.length, T.about(minutes)) : null
+    const takes = each?.length && !problem ? T.takes(each.length, minutes) : null
     return (
       <ReportModal
         title={T.title}
@@ -493,31 +894,30 @@ export class TemplatesDialog extends React.Component {
         testId='reports-templates'
         busy={starting}
         onClose={onClose}
-        status={problem}
+        status={problem || asking || takes}
         statusTone={problem ? 'error' : undefined}
         actions={
           <>
-            {this.props.enableFilterLocks ? this.renderLock() : null}
-            {onManage ? (
+            {asking ? (
               <button
                 type='button'
                 className={`${RS}-button`}
-                data-test='reports-templates-manage'
-                disabled={starting}
-                onClick={onManage}
+                data-test='reports-templates-confirm-cancel'
+                onClick={() => this.setState({ confirming: false })}
               >
-                {S.manageTemplates.open}
+                {S.cancel}
               </button>
-            ) : null}
-            <button
-              type='button'
-              className={`${RS}-button`}
-              data-test='reports-templates-back'
-              disabled={starting}
-              onClick={onClose}
-            >
-              {T.back}
-            </button>
+            ) : (
+              <button
+                type='button'
+                className={`${RS}-button`}
+                data-test='reports-templates-back'
+                disabled={starting}
+                onClick={onClose}
+              >
+                {T.back}
+              </button>
+            )}
             <button
               type='button'
               className={`${RS}-button`}
@@ -533,6 +933,8 @@ export class TemplatesDialog extends React.Component {
                   </span>
                   {T.starting}
                 </>
+              ) : asking ? (
+                T.confirmStart(each.length)
               ) : each ? (
                 T.startEach(each.length)
               ) : (
@@ -545,6 +947,7 @@ export class TemplatesDialog extends React.Component {
         <div className={`${RS}-templates-aside`}>
           {this.renderFilters()}
           {this.renderList()}
+          {this.props.enableFilterLocks ? this.renderFor() : null}
         </div>
         {this.renderPreview()}
       </ReportModal>

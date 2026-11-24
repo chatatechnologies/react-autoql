@@ -2,7 +2,8 @@ import React from 'react'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { createEmptyReport } from '../model/reportSchema'
-import { appendReportBlock, createReport, fetchReports, ReportsApiError } from '../run/reportsApi'
+import { appendReportBlock, createReport, fetchReport, fetchReports, ReportsApiError } from '../run/reportsApi'
+import { approveReport } from '../model/approval'
 import { AddToReportDialog } from '../workspace/AddToReportDialog'
 import { REPORTS_PAGE_SIZE } from '../workspace/reportsConstants'
 import { REPORT_TITLE_MAX } from '../workspace/documents'
@@ -12,6 +13,7 @@ import { REPORTS_STRINGS } from '../workspace/reportsStrings'
 jest.mock('../run/reportsApi', () => ({
   ReportsApiError: jest.requireActual('../run/reportsApi').ReportsApiError,
   fetchReports: jest.fn(),
+  fetchReport: jest.fn(),
   createReport: jest.fn(),
   appendReportBlock: jest.fn(),
 }))
@@ -100,8 +102,52 @@ const storedAs = async ({ id, report: document }) => ({ id, title: document.titl
 
 beforeEach(() => {
   fetchReports.mockReset()
+  fetchReport.mockReset()
   createReport.mockReset()
   appendReportBlock.mockReset()
+})
+
+describe('AddToReportDialog with enableApproval (RW-372)', () => {
+  // r1 is approved; r3 carries an approval made before it changed, which doesn't hold.
+  const documentOf = (title) => createEmptyReport({ title, blocks: [{ id: 'h', type: 'heading', text: title }] })
+  const approved = (id, title) => approveReport(documentOf(title), { name: 'Dana Lee', reportId: id })
+  const DOCUMENTS = {
+    r1: () => approved('r1', 'Q3 review'),
+    r2: () => documentOf(''),
+    r3: () => ({ ...approved('r3', 'Book of business'), title: 'Book of business, again' }),
+  }
+  beforeEach(() => {
+    fetchReports.mockResolvedValue({ reports: REPORTS })
+    fetchReport.mockImplementation(async ({ id }) => ({ id, report: DOCUMENTS[id]() }))
+  })
+  const note = () => screen.queryByTestId('reports-add-to-report-approved')
+
+  it('says under an approved report chosen that adding to it returns it to draft', async () => {
+    setup({ enableApproval: true })
+    await listed()
+    await waitFor(() => expect(note()).toHaveTextContent(S.approved))
+    expect(fetchReport).toHaveBeenCalledWith({ authentication: AUTH, id: 'r1' })
+
+    fireEvent.click(report('Untitled report'))
+    await waitFor(() => expect(fetchReport).toHaveBeenCalledWith({ authentication: AUTH, id: 'r2' }))
+    expect(note()).toBeNull()
+    fireEvent.click(report('Book of business'))
+    await waitFor(() => expect(fetchReport).toHaveBeenCalledTimes(3))
+    expect(note()).toBeNull()
+
+    // Read once.
+    fireEvent.click(report('Q3 review'))
+    expect(note()).toHaveTextContent(S.approved)
+    expect(fetchReport).toHaveBeenCalledTimes(3)
+  })
+
+  it('reads nothing without it', async () => {
+    setup()
+    await listed()
+    fireEvent.click(report('Untitled report'))
+    expect(fetchReport).not.toHaveBeenCalled()
+    expect(note()).toBeNull()
+  })
 })
 
 describe('AddToReportDialog', () => {
