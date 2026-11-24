@@ -12,11 +12,13 @@ const DEBOUNCE_MS = 250
 // Calls onPages with the content pages (paginate's), after each change has settled. Renders only the
 // measurer, which must sit outside the zoom (ZoomFrame) so it measures true sizes. It starts once the space
 // it's in has a size, so where nothing can be laid out (jsdom, a builder still hidden) there's no measurer
-// and nothing is reported; the editor then shows one sheet.
+// and nothing is reported; the editor then shows one sheet. With `enableApproval`, every page keeps its footer's
+// room, as the preview's do.
 export class EditorPagination extends React.Component {
   static defaultProps = {
     onPages: () => {},
     debounceMs: DEBOUNCE_MS,
+    enableApproval: false,
   }
 
   anchorRef = React.createRef()
@@ -65,6 +67,7 @@ export class EditorPagination extends React.Component {
     if (
       prevProps.report !== this.props.report ||
       prevProps.views !== this.props.views ||
+      prevProps.enableApproval !== this.props.enableApproval ||
       !sameBrandFonts(prevProps.branding, this.props.branding) ||
       !deepEqual(prevProps.dataFormatting, this.props.dataFormatting)
     ) {
@@ -93,6 +96,7 @@ export class EditorPagination extends React.Component {
       measurer: () => this.measurerRef.current,
       isCurrent: () => this.mounted && token === this.token,
       estimate: false,
+      enableApproval: this.props.enableApproval,
     })
     if (pages && this.mounted && token === this.token) {
       this.props.onPages(pages)

@@ -87,6 +87,7 @@ export const LayoutMeasurer = React.forwardRef(function LayoutMeasurer(
 // uses (the organisation's among them, from `branding`) have loaded. `measurer` reads the measurer's element;
 // `isCurrent` is asked after the wait, and a null result means a newer layout took over. With `estimate` false,
 // there's no result where nothing can be measured (jsdom, a hidden builder) rather than one from estimated heights.
+// With `enableApproval`, every page keeps its footer's room (getPageGeometry).
 export const measureContentPages = async ({
   report,
   views,
@@ -94,8 +95,9 @@ export const measureContentPages = async ({
   measurer,
   isCurrent = () => true,
   estimate = true,
+  enableApproval = false,
 }) => {
-  const geometry = getPageGeometry(report.page)
+  const geometry = getPageGeometry(report.page, { approval: enableApproval })
   await Promise.all(paperFontFamilies(report.page, branding).map((stack) => loadFontStack(stack)))
   await waitForFonts()
   await nextFrame()
@@ -116,11 +118,17 @@ export const measureContentPages = async ({
   })
 }
 
+// With `enableApproval` (RW-372), a report prints as a draft, with DRAFT across every page, until it's approved:
+// `approval` is the approval that holds for it (model/approval.js), and then every page's footer says who prepared it,
+// cover and all, before its page number. The footer's room is kept on every page either way, so approving doesn't move
+// what's on the pages.
 export class PrintPreview extends React.Component {
   static defaultProps = {
     onLayout: () => {},
     zoom: FIT,
     onFit: undefined,
+    enableApproval: false,
+    approval: null,
   }
 
   measurerRef = React.createRef()
@@ -138,6 +146,7 @@ export class PrintPreview extends React.Component {
     if (
       prevProps.report !== this.props.report ||
       prevProps.views !== this.props.views ||
+      prevProps.enableApproval !== this.props.enableApproval ||
       !sameBrandFonts(prevProps.branding, this.props.branding) ||
       !deepEqual(prevProps.dataFormatting, this.props.dataFormatting)
     ) {
@@ -150,7 +159,7 @@ export class PrintPreview extends React.Component {
     this.layoutToken += 1
   }
 
-  getGeometry = () => getPageGeometry(this.props.report.page)
+  getGeometry = () => getPageGeometry(this.props.report.page, { approval: this.props.enableApproval })
 
   getFontStyle = () => paperFontStyle(this.props.report.page, this.props.branding)
 
@@ -173,6 +182,7 @@ export class PrintPreview extends React.Component {
         branding: this.props.branding,
         measurer: () => this.measurerRef.current,
         isCurrent: () => this.mounted && token === this.layoutToken,
+        enableApproval: this.props.enableApproval,
       })
       if (!contentPages) {
         return
@@ -208,19 +218,25 @@ export class PrintPreview extends React.Component {
   }
 
   renderPage = ({ key, number, total, header = true, footer = true, overflow = false, children }) => {
-    const { report, branding, runAt, generatedAt } = this.props
+    const { report, branding, runAt, generatedAt, enableApproval, approval } = this.props
     const geometry = this.getGeometry()
     const inches = (n) => `${n}in`
     const showHeader = header && geometry.headerIn > 0
-    const showFooter = footer && geometry.footerIn > 0
-    const left = report.page.footer
+    // A page without its footer (the cover) still says who prepared the report.
+    const showFooter = (footer || enableApproval) && geometry.footerIn > 0
+    const footerOn = footer && report.page.footer
+    const left = footerOn
       ? footerText({
           generated: formatPrintedDate(generatedAt),
           dataAsOf: runAt ? formatPrintedDate(runAt, { time: true }) : null,
           hasData: this.props.canRun && hasDataBlocks(report),
         })
       : ''
-    const right = report.page.pageNumbers ? STRINGS.preview.page(number, total) : ''
+    const prepared =
+      enableApproval && approval ? STRINGS.approval.preparedBy(approval.name, formatPrintedDate(approval.at)) : ''
+    const right = [prepared, footer && report.page.pageNumbers ? STRINGS.preview.page(number, total) : '']
+      .filter(Boolean)
+      .join(' · ')
 
     return (
       <div key={key} className={`${RB}-page-frame`}>
@@ -250,7 +266,7 @@ export class PrintPreview extends React.Component {
             className={`${RB}-page-content`}
             style={{
               height: inches(
-                geometry.contentHeightIn + (header ? 0 : geometry.headerIn) + (footer ? 0 : geometry.footerIn),
+                geometry.contentHeightIn + (header ? 0 : geometry.headerIn) + (showFooter ? 0 : geometry.footerIn),
               ),
             }}
           >
@@ -258,7 +274,12 @@ export class PrintPreview extends React.Component {
           </div>
           {showFooter ? (
             <div className={`${RB}-page-footer`} style={{ height: inches(geometry.footerIn) }}>
-              <RunningFooter left={left} right={right} />
+              {left || right ? <RunningFooter left={left} right={right} /> : null}
+            </div>
+          ) : null}
+          {enableApproval && !approval ? (
+            <div className={`${RB}-page-watermark`} aria-hidden='true' data-test='report-page-watermark'>
+              <span>{STRINGS.approval.watermark}</span>
             </div>
           ) : null}
         </div>

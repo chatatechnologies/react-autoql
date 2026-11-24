@@ -2,6 +2,7 @@ import React from 'react'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { Reports } from '../workspace/Reports'
+import { approveReport, withoutApproval } from '../model/approval'
 import {
   createReport,
   createReportFolder,
@@ -901,6 +902,36 @@ describe('Reports', () => {
       expect(deleted).toBe(true)
       expect(deleteReport.mock.calls.map(([call]) => call.id)).toEqual([A, B])
       expect(home().reports).toEqual([])
+    })
+  })
+
+  describe('approval (enableApproval, RW-372)', () => {
+    it('gives each report’s builder the approver and the report’s id, and saves at once when it’s approved or back to draft', async () => {
+      setup({ saveDelay: 60000, enableApproval: true, approverName: 'Dana Lee' })
+      fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))
+      await screen.findByTestId('builder')
+      expect(mockBuilder.props).toMatchObject({ enableApproval: true, approverName: 'Dana Lee', reportId: A })
+
+      // An edit waits for the pause; an approval doesn't.
+      act(() => mockBuilder.props.onChange(documentOf('Q3 book, final')))
+      expect(saveReport).not.toHaveBeenCalled()
+      const approved = approveReport(documentOf('Q3 book, final'), { name: 'Dana Lee', reportId: A })
+      act(() => mockBuilder.props.onChange(approved))
+      await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(1))
+      expect(saveReport).toHaveBeenCalledWith(expect.objectContaining({ id: A, report: approved }))
+      await waitFor(() => expect(screen.getByTestId('reports-save-status')).toHaveAttribute('data-state', 'saved'))
+
+      act(() => mockBuilder.props.onChange(withoutApproval(approved)))
+      await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(2))
+      expect(saveReport.mock.calls[1][0].report).not.toHaveProperty('approval')
+    })
+
+    it('gives none of it to a builder without it', async () => {
+      setup()
+      fireEvent.click(await screen.findByRole('button', { name: 'Open Q3 book' }))
+      await screen.findByTestId('builder')
+      expect(mockBuilder.props.enableApproval).toBe(false)
+      expect(mockBuilder.props.approverName).toBeUndefined()
     })
   })
 })

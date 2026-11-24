@@ -30,7 +30,15 @@ import { detailsOf, detailsProblem, detailsToSend } from './templateDetails'
 // already made from a template keep their copy whatever happens to it. Each change is made one at a time, and what
 // went wrong is said beside the dialog's buttons.
 //
-// Props: authentication, onEdit (opens a template to be edited; without it there's no Edit), onClose.
+// Publishing, unpublishing, deleting and the rest are asked about first, in a card under the button they're asked from
+// (RW-370), so the list stays where it is. The card has the focus, Cancel first, and keeps it; Escape or a click
+// elsewhere answers it as Cancel does, and the focus goes back to the button it was asked from.
+//
+// With no template yet, it says how one is made, and offers New report (`onNewReport`) to make the report first.
+//
+// Props: authentication, onEdit (opens a template to be edited; without it there's no Edit), onNewReport (closes it
+// for New report; without it there's no New report), focusTemplateId (the template just edited: once the list's in,
+// the focus goes to its Edit button), onClose.
 
 const S = REPORTS_STRINGS
 const M = S.manageTemplates
@@ -58,6 +66,50 @@ const hasChangesWaiting = (template) => template.status === 'PUBLISHED' && !!tem
 // A published template that's taken back to a draft before it's changed: the service can't keep its changes apart.
 const mustUnpublishFirst = (template) => template.status === 'PUBLISHED' && !keepsTemplateDrafts(template)
 
+// What a template's Publish button does, asked about first (RW-370): publishes a draft, publishes a published one's
+// changes waiting (RW-361), or takes a published one back to a draft.
+const publishActionOf = (template) => {
+  if (template.status !== 'PUBLISHED') {
+    return 'publish'
+  }
+  return hasChangesWaiting(template) ? 'publishChanges' : 'unpublish'
+}
+
+// On a button while its change is on its way.
+const SPINNER = (
+  <span className={`${RS}-spin`}>
+    <Icon name='spinner' size={13} />
+  </span>
+)
+
+// Where a question's card goes in its row (RW-370), in pixels from the row's top left, from where things are on screen:
+// the button it's asked from, the row, the part of the list in view, and the card's size. It goes under the button,
+// its right edge a little past the button's and inside the row, with its arrow at the button's middle; over the
+// button instead when it fits there and not under it.
+const QUESTION_GAP = 8
+const QUESTION_PAST = 16
+const ARROW_INSET = 14
+
+export const questionPlacement = ({ button, row, view, width, height }) => {
+  const left = Math.max(0, Math.min(button.right + QUESTION_PAST - width - row.left, row.width - width))
+  const fitsUnder = button.bottom + QUESTION_GAP + height <= view.bottom
+  const fitsOver = button.top - QUESTION_GAP - height >= view.top
+  const over = !fitsUnder && fitsOver
+  return {
+    left,
+    top: over ? button.top - row.top - QUESTION_GAP - height : button.bottom - row.top + QUESTION_GAP,
+    arrow: Math.max(ARROW_INSET, Math.min(button.left + button.width / 2 - row.left - left, width - ARROW_INSET)),
+    placement: over ? 'above' : 'below',
+  }
+}
+
+// The ids that name a question's card by its title and describe it by what it says.
+let questionIds = 0
+const nextQuestionIds = () => {
+  questionIds += 1
+  return { title: `${RS}-manage-question-${questionIds}`, what: `${RS}-manage-question-what-${questionIds}` }
+}
+
 const dateOf = (iso) => {
   const date = new Date(iso)
   return Number.isNaN(date.getTime())
@@ -66,6 +118,15 @@ const dateOf = (iso) => {
 }
 
 export class ManageTemplatesDialog extends React.Component {
+  // The question's card and its Cancel, and the button the question was asked from: where the focus goes, and goes
+  // back.
+  questionRef = React.createRef()
+  cancelRef = React.createRef()
+  askedFrom = null
+  ids = nextQuestionIds()
+  // The Edit button of the template just edited (focusTemplateId).
+  editedRef = React.createRef()
+
   state = {
     tab: 'templates',
     templates: null,
@@ -75,7 +136,8 @@ export class ManageTemplatesDialog extends React.Component {
     ownCategories: null,
     loadError: null,
     // What's being changed: a template's title or a category's name (`renamingId`), and a change that's asked about
-    // first (`confirming`: { id, action }, the action 'delete', 'discard', 'unpublishToEdit' or 'unpublishToRename').
+    // first (`confirming`: { id, action }, the action 'publish', 'publishChanges', 'unpublish', 'delete', 'discard',
+    // 'unpublishToEdit' or 'unpublishToRename').
     confirming: null,
     renamingId: null,
     renameText: '',
@@ -88,11 +150,97 @@ export class ManageTemplatesDialog extends React.Component {
 
   componentDidMount() {
     this.mounted = true
+    document.addEventListener('mousedown', this.onMouseDown)
+    window.addEventListener('resize', this.placeQuestion)
     this.load()
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { confirming, renamingId, tab, templates } = this.state
+    if (confirming && confirming !== prevState.confirming) {
+      // Asked: its card goes by the button it was asked from, and the focus to its Cancel, so going on takes a
+      // deliberate choice.
+      this.placeQuestion()
+      this.cancelRef.current?.focus()
+    } else if (!confirming && this.askedFrom) {
+      // Answered (Cancel, Escape, or the change made): back where it was asked from, but not when a title's being
+      // renamed (its field has the focus), nor once the other tab is shown.
+      const from = this.askedFrom
+      this.askedFrom = null
+      if (!renamingId && tab === prevState.tab) {
+        this.focusBack(from)
+      }
+    }
+    if (prevState.templates === null && templates && this.editedRef.current) {
+      // Back from the template editor: its Edit button, unless the focus was moved while the list loaded.
+      const active = document.activeElement
+      if (active === document.body || active === this.editedRef.current.closest('[role="dialog"]')) {
+        this.editedRef.current.focus()
+      }
+    }
   }
 
   componentWillUnmount() {
     this.mounted = false
+    document.removeEventListener('mousedown', this.onMouseDown)
+    window.removeEventListener('resize', this.placeQuestion)
+  }
+
+  // The question's card, where questionPlacement puts it: once it's asked, and again when the window is resized.
+  placeQuestion = () => {
+    const card = this.questionRef.current
+    const button = this.askedFrom?.button
+    const row = card?.parentElement
+    if (!row || !button?.isConnected) {
+      return
+    }
+    const list = card.closest(`.${RS}-manage`)
+    const { left, top, arrow, placement } = questionPlacement({
+      button: button.getBoundingClientRect(),
+      row: row.getBoundingClientRect(),
+      view: list ? list.getBoundingClientRect() : { top: -Infinity, bottom: Infinity },
+      width: card.offsetWidth,
+      height: card.offsetHeight,
+    })
+    card.style.left = `${left}px`
+    card.style.right = 'auto'
+    card.style.top = `${top}px`
+    card.style.setProperty('--rs-question-arrow', `${arrow}px`)
+    card.dataset.placement = placement
+    card.scrollIntoView?.({ block: 'nearest' })
+  }
+
+  // A click outside the question answers it as Cancel does, but not once its change is on its way. A click on the
+  // button it was asked from is left to that button.
+  onMouseDown = (e) => {
+    const card = this.questionRef.current
+    if (!card || this.state.busyId || card.contains(e.target) || this.askedFrom?.button?.contains(e.target)) {
+      return
+    }
+    this.setState({ confirming: null })
+  }
+
+  // In the question, Escape answers it as Cancel does and leaves the dialog open, and Tab, either way, goes to its
+  // other button.
+  onQuestionKeyDown = (e, cancel, busy) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      if (!busy) {
+        cancel()
+      }
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      const buttons = Array.from(e.currentTarget.querySelectorAll('button:not([disabled])'))
+      buttons.find((button) => button !== document.activeElement)?.focus()
+    }
+  }
+
+  // Back to the button a question was asked from; to its row's Publish button once that's gone (Discard changes, its
+  // changes discarded); to the dialog once the row's gone too (deleted).
+  focusBack = ({ button, row, dialog }) => {
+    const publish = row?.querySelector('[data-test="reports-manage-publish"]')
+    const back = [button, publish, dialog].find((element) => element?.isConnected)
+    back?.focus()
   }
 
   load = () => {
@@ -145,17 +293,21 @@ export class ManageTemplatesDialog extends React.Component {
     }
   }
 
-  confirm = (id, action) => this.setState({ confirming: { id, action }, renamingId: null, error: null, notice: null })
+  // A change asked about first, from a button (`from`, the one clicked): the focus goes back to it once it's answered.
+  confirm = (id, action, from) => {
+    this.askedFrom = { button: from, row: from?.closest('li'), dialog: from?.closest('[role="dialog"]') }
+    this.setState({ confirming: { id, action }, renamingId: null, error: null, notice: null })
+  }
 
   replaceTemplate = (templates, id, change) =>
     templates.map((template) => (template.id === id ? change(template) : template))
 
   // ---------------------------------------------------------------- templates
 
-  // Its title, clicked: renamed in place.
-  startRenaming = (template) => {
+  // Its title, clicked (`from`): renamed in place.
+  startRenaming = (template, from) => {
     if (mustUnpublishFirst(template)) {
-      this.confirm(template.id, 'unpublishToRename')
+      this.confirm(template.id, 'unpublishToRename', from)
       return
     }
     this.setState({ renamingId: template.id, renameText: template.title, confirming: null, error: null, notice: null })
@@ -202,10 +354,10 @@ export class ManageTemplatesDialog extends React.Component {
     })
   }
 
-  // Edit: the whole template in the builder (TemplateEditor).
-  edit = (template) => {
+  // Edit (`from`): the whole template in the builder (TemplateEditor).
+  edit = (template, from) => {
     if (mustUnpublishFirst(template)) {
-      this.confirm(template.id, 'unpublishToEdit')
+      this.confirm(template.id, 'unpublishToEdit', from)
       return
     }
     this.props.onEdit(template)
@@ -231,13 +383,14 @@ export class ManageTemplatesDialog extends React.Component {
   }
 
   // Publishes a draft, or a published template's changes in place of it as it was (RW-361); or takes a published one
-  // back to a draft, which drops changes it had waiting.
+  // back to a draft, which drops changes it had waiting. Asked about first (RW-370).
   togglePublished = (template) => {
     const { authentication } = this.props
     const publishing = template.status !== 'PUBLISHED' || hasChangesWaiting(template)
     this.change(template.id, publishing ? 'publish' : 'unpublish', async () => {
       const answered = await (publishing ? publishTemplate : unpublishTemplate)({ authentication, id: template.id })
       return {
+        confirming: null,
         templates: this.replaceTemplate(this.state.templates, template.id, (old) => ({
           ...old,
           ...(answered || {}),
@@ -329,28 +482,50 @@ export class ManageTemplatesDialog extends React.Component {
 
   // ---------------------------------------------------------------- drawing
 
-  renderConfirm(
-    text,
+  // A question before a change (`ask`: its title for `name`, and what going on means), in a card by the button it was
+  // asked from (placeQuestion). Once its change is on its way, it can't be taken back: Cancel, Escape and a click
+  // elsewhere wait.
+  renderQuestion(
+    ask,
+    name,
     onConfirm,
     busy,
     { label = M.delete, variant = 'danger', test = 'reports-manage-confirm-delete' } = {},
   ) {
+    const cancel = () => this.setState({ confirming: null })
     return (
-      <div className={`${RS}-manage-confirm`} role='group' aria-label={text}>
-        <span>{text}</span>
-        <button type='button' className={`${RS}-button`} onClick={() => this.setState({ confirming: null })}>
-          {S.cancel}
-        </button>
-        <button
-          type='button'
-          className={`${RS}-button`}
-          data-variant={variant}
-          data-test={test}
-          disabled={busy}
-          onClick={onConfirm}
-        >
-          {label}
-        </button>
+      <div
+        ref={this.questionRef}
+        className={`${RS}-manage-question`}
+        role='alertdialog'
+        aria-labelledby={this.ids.title}
+        aria-describedby={this.ids.what}
+        data-test='reports-manage-question'
+        onKeyDown={(e) => this.onQuestionKeyDown(e, cancel, busy)}
+      >
+        <span className={`${RS}-manage-question-arrow`} aria-hidden='true' />
+        <p className={`${RS}-manage-question-title`} id={this.ids.title}>
+          {ask.title(name)}
+        </p>
+        <p className={`${RS}-manage-question-what`} id={this.ids.what}>
+          {ask.what}
+        </p>
+        <div className={`${RS}-manage-question-actions`}>
+          <button ref={this.cancelRef} type='button' className={`${RS}-button`} disabled={busy} onClick={cancel}>
+            {S.cancel}
+          </button>
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-variant={variant}
+            data-test={test}
+            disabled={busy}
+            onClick={onConfirm}
+          >
+            {busy ? SPINNER : null}
+            {label}
+          </button>
+        </div>
       </div>
     )
   }
@@ -362,24 +537,31 @@ export class ManageTemplatesDialog extends React.Component {
       return null
     }
     const title = template.title || S.untitled
-    const unpublish = { variant: 'primary', test: 'reports-manage-confirm-unpublish' }
+    const ask = (action, onConfirm, options) => () =>
+      this.renderQuestion(M.asks[action], title, onConfirm, busy, options)
+    // Publish, Publish changes or Unpublish: what the button does, once it's answered.
+    const toggle = () => this.togglePublished(template)
+    const publish = (label) => ({ label, variant: 'primary', test: 'reports-manage-confirm-publish' })
+    const unpublish = (label) => ({ label, variant: 'primary', test: 'reports-manage-confirm-unpublish' })
     const asks = {
-      delete: () => this.renderConfirm(M.deleteConfirm(title), () => this.removeTemplate(template), busy),
-      discard: () =>
-        this.renderConfirm(M.discardConfirm(title), () => this.discardChanges(template), busy, {
-          label: M.discard,
-          test: 'reports-manage-confirm-discard',
-        }),
-      unpublishToEdit: () =>
-        this.renderConfirm(M.unpublishToEdit(title), () => this.unpublishFirst(template, 'edit'), busy, {
-          ...unpublish,
-          label: M.unpublishAndEdit,
-        }),
-      unpublishToRename: () =>
-        this.renderConfirm(M.unpublishToRename(title), () => this.unpublishFirst(template, 'rename'), busy, {
-          ...unpublish,
-          label: M.unpublishAndRename,
-        }),
+      publish: ask('publish', toggle, publish(M.publish)),
+      publishChanges: ask('publishChanges', toggle, publish(M.publishChanges)),
+      unpublish: ask('unpublish', toggle, publish(M.unpublish)),
+      delete: ask('delete', () => this.removeTemplate(template)),
+      discard: ask('discard', () => this.discardChanges(template), {
+        label: M.discard,
+        test: 'reports-manage-confirm-discard',
+      }),
+      unpublishToEdit: ask(
+        'unpublishToEdit',
+        () => this.unpublishFirst(template, 'edit'),
+        unpublish(M.unpublishAndEdit),
+      ),
+      unpublishToRename: ask(
+        'unpublishToRename',
+        () => this.unpublishFirst(template, 'rename'),
+        unpublish(M.unpublishAndRename),
+      ),
     }
     return asks[confirming.action]?.() || null
   }
@@ -417,7 +599,7 @@ export class ManageTemplatesDialog extends React.Component {
         title={M.renameTitle}
         data-test='reports-manage-title'
         disabled={!!busyId}
-        onClick={() => this.startRenaming(template)}
+        onClick={(e) => this.startRenaming(template, e.currentTarget)}
       >
         {title}
       </button>
@@ -425,15 +607,10 @@ export class ManageTemplatesDialog extends React.Component {
   }
 
   renderTemplateActions(template, busy) {
-    const { onEdit } = this.props
+    const { onEdit, focusTemplateId } = this.props
     const { confirming, renamingId, renameText, busyId } = this.state
     const published = template.status === 'PUBLISHED'
     const waiting = hasChangesWaiting(template)
-    const spinner = (
-      <span className={`${RS}-spin`}>
-        <Icon name='spinner' size={13} />
-      </span>
-    )
     if (renamingId === template.id) {
       return (
         <div className={`${RS}-manage-actions`}>
@@ -453,7 +630,7 @@ export class ManageTemplatesDialog extends React.Component {
             disabled={busy || !renameText.trim()}
             onClick={() => this.saveTitle(template)}
           >
-            {busy ? spinner : null}
+            {busy ? SPINNER : null}
             {M.save}
           </button>
         </div>
@@ -463,11 +640,12 @@ export class ManageTemplatesDialog extends React.Component {
       <div className={`${RS}-manage-actions`}>
         {onEdit ? (
           <button
+            ref={template.id === focusTemplateId ? this.editedRef : undefined}
             type='button'
             className={`${RS}-button`}
             data-test='reports-manage-edit'
             disabled={!!busyId}
-            onClick={() => this.edit(template)}
+            onClick={(e) => this.edit(template, e.currentTarget)}
           >
             {M.edit}
           </button>
@@ -477,9 +655,9 @@ export class ManageTemplatesDialog extends React.Component {
           className={`${RS}-button`}
           data-test='reports-manage-publish'
           disabled={!!busyId}
-          onClick={() => this.togglePublished(template)}
+          onClick={(e) => this.confirm(template.id, publishActionOf(template), e.currentTarget)}
         >
-          {busy && !confirming ? spinner : null}
+          {busy && !confirming ? SPINNER : null}
           {waiting ? M.publishChanges : published ? M.unpublish : M.publish}
         </button>
         {waiting ? (
@@ -488,7 +666,7 @@ export class ManageTemplatesDialog extends React.Component {
             className={`${RS}-button`}
             data-test='reports-manage-discard'
             disabled={!!busyId}
-            onClick={() => this.confirm(template.id, 'discard')}
+            onClick={(e) => this.confirm(template.id, 'discard', e.currentTarget)}
           >
             {M.discardChanges}
           </button>
@@ -498,7 +676,7 @@ export class ManageTemplatesDialog extends React.Component {
           className={`${RS}-button`}
           data-test='reports-manage-delete'
           disabled={!!busyId}
-          onClick={() => this.confirm(template.id, 'delete')}
+          onClick={(e) => this.confirm(template.id, 'delete', e.currentTarget)}
         >
           {M.delete}
         </button>
@@ -536,10 +714,43 @@ export class ManageTemplatesDialog extends React.Component {
     )
   }
 
+  // Nothing in a tab yet: said in the middle of it, with how to make one (`how`) and what can be done from here.
+  renderNone({ test, icon, title, how, action }) {
+    return (
+      <div className={`${RS}-manage-none`} data-test={test}>
+        {icon ? (
+          <span className={`${RS}-manage-none-icon`}>
+            <Icon name={icon} size={20} />
+          </span>
+        ) : null}
+        <p className={`${RS}-manage-none-title`}>{title}</p>
+        {how ? <p>{how}</p> : null}
+        {action}
+      </div>
+    )
+  }
+
   renderTemplates() {
     const { templates } = this.state
     if (!templates.length) {
-      return <p className={`${RS}-manage-empty`}>{M.noTemplates}</p>
+      const { onNewReport } = this.props
+      return this.renderNone({
+        test: 'reports-manage-no-templates',
+        icon: 'template',
+        title: M.noTemplates,
+        how: M.noTemplatesHow,
+        action: onNewReport ? (
+          <button
+            type='button'
+            className={`${RS}-button`}
+            data-variant='primary'
+            data-test='reports-manage-new-report'
+            onClick={onNewReport}
+          >
+            {M.newReport}
+          </button>
+        ) : null,
+      })
     }
     return <ul className={`${RS}-manage-list`}>{templates.map((template) => this.renderTemplate(template))}</ul>
   }
@@ -600,14 +811,14 @@ export class ManageTemplatesDialog extends React.Component {
               type='button'
               className={`${RS}-button`}
               disabled={!!busyId}
-              onClick={() => this.confirm(category.id, 'delete')}
+              onClick={(e) => this.confirm(category.id, 'delete', e.currentTarget)}
             >
               {M.delete}
             </button>
           </div>
         </div>
         {confirming?.id === category.id
-          ? this.renderConfirm(M.deleteCategoryConfirm(category.name), () => this.removeCategory(category), busy)
+          ? this.renderQuestion(M.asks.deleteCategory, category.name, () => this.removeCategory(category), busy)
           : null}
       </li>
     )
@@ -646,7 +857,7 @@ export class ManageTemplatesDialog extends React.Component {
         {ownCategories.length ? (
           <ul className={`${RS}-manage-list`}>{ownCategories.map((category) => this.renderCategory(category))}</ul>
         ) : (
-          <p className={`${RS}-manage-empty`}>{M.noCategories}</p>
+          this.renderNone({ test: 'reports-manage-no-categories', title: M.noCategories })
         )}
       </>
     )

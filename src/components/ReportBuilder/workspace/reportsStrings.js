@@ -123,6 +123,8 @@ export const REPORTS_STRINGS = {
     templateGone: 'that template isn’t published any more',
     templateDeleted: 'the template no longer exists (it may have been deleted)',
     batchUnderWay: 'reports are still being made from a template; start more once they’re done',
+    // One batch at a time in this browser (RW-371).
+    batchElsewhere: 'reports are being made from a template in another tab; start more once they’re done there',
     filling: 'its data is still being filled in',
     busy: 'AutoQL is too busy just now',
     forbidden: 'you don’t have permission to manage templates',
@@ -190,12 +192,44 @@ export const REPORTS_STRINGS = {
     back: 'Back',
     start: 'Start report',
     starting: 'Starting…',
-    // With two or more values picked for the filter lock (households, say): one report for all of them, or one each.
-    howMany: 'Reports to start',
-    forAll: 'One report for all of them',
-    forEach: (n) => `A report for each (${n})`,
-    startEach: (n) => `Start ${n} reports`,
+    // Under the templates, with a filter lock to choose: who the report is for, one of three, each saying what it makes.
+    // `what` is what the host's values are ("Households"), `one` one of them ("household"). Everything is the host's
+    // word for no filter lock ("All households"), or the field's own. A report each is said as "each", so it isn't
+    // taken for one report for all of them.
+    forAllWhat: 'One report across all of them',
+    forSome: (what) => `Specific ${what.toLowerCase()}`,
+    forSomeWhat: 'One report for the ones you pick',
+    forSomeNone: 'None picked yet',
+    forSomePick: 'Pick…',
+    forEach: (one) => `Each ${one}`,
+    forEachWhat: 'A separate report for each',
+    forEachCount: (n, total) => `${n} of ${total} get a report`,
+    forEachEdit: 'Edit list…',
+    forEachLoading: 'Loading the list…',
+    // Without the host's list, a report each is for the values picked: one left out can't have a report of its own.
+    forEachExcluded: (what) => `A report for each can’t be made for excluded ${what.toLowerCase()}. Remove them.`,
+    startEach: (n) => (n === 1 ? 'Start 1 report' : `Start ${n} reports`),
     tooMany: (max) => `Up to ${max} reports can be started at once. Pick fewer.`,
+    // Beside Back and Start while a report for each is chosen, before it's started: about how long it takes.
+    takes: (n, minutes) =>
+      `${minutes <= 1 ? 'About a minute' : `About ${minutes} minutes`}. Keep this page open while ${
+        n === 1 ? 'it’s' : 'they’re'
+      } made.`,
+    // The list a report for each is made for (RW-371), in the preview's place: every value ticked, to untick any.
+    pickTitle: (what) => `${what} for this batch`,
+    pickWhat: (n, total) => `${n} of ${total} get a report. Untick any that shouldn’t.`,
+    pickSearch: (what) => `Search ${what.toLowerCase()}`,
+    pickNone: 'Nothing matches.',
+    // Under the list while some are out of sight below.
+    pickMore: (n) => `${n} more below`,
+    pickAll: 'Tick all',
+    untickAll: 'Untick all',
+    pickDone: 'Done',
+    // Before a batch starts: how many, and about how long.
+    confirmEach: (n, time) =>
+      `Make ${n} ${n === 1 ? 'report' : 'reports'}? It takes ${time}, and this page has to stay open.`,
+    confirmStart: (n) => (n === 1 ? 'Make 1 report' : `Make ${n} reports`),
+    about: (minutes) => (minutes <= 1 ? 'about a minute' : `about ${minutes} minutes`),
   },
 
   // A report for each household from a template (RW-353), made and filled in a few at a time while the home page lists
@@ -204,7 +238,11 @@ export const REPORTS_STRINGS = {
     folder: (title, day) => `${title} — ${day}`,
     title: (title, value) => `${title} — ${value}`,
     making: (settled, total, folder) =>
-      `Making ${total} reports in “${folder}”: ${settled} done so far. Keep this page open until they’re all done.`,
+      `Making ${total} ${
+        total === 1 ? 'report' : 'reports'
+      } in “${folder}”: ${settled} done so far. Keep this page open until ${
+        total === 1 ? 'it’s' : 'they’re all'
+      } done.`,
     made: (made, total, folder) =>
       made < total
         ? `${made} of ${total} reports ${made === 1 ? 'is' : 'are'} in “${folder}”.`
@@ -222,6 +260,25 @@ export const REPORTS_STRINGS = {
       n === 1
         ? '1 of them wasn’t finished here: open it to check its data and its name.'
         : `${n} of them weren’t finished here: open them to check their data and names.`,
+    // While a batch is being made, and once it's stopped (RW-371).
+    stop: 'Stop',
+    stopping: (folder) => `Stopping: the reports under way are being finished in “${folder}”.`,
+    stopped: (made, total, folder) =>
+      `Stopped. ${made} of ${total} reports ${
+        made === 1 ? 'is' : 'are'
+      } in “${folder}”. Starting the same ones again today makes only the rest.`,
+    // Made for them earlier the same day, in the same folder: not made again.
+    skipped: (n) =>
+      n === 1
+        ? '1 was there already from earlier today, so it wasn’t made again.'
+        : `${n} were there already from earlier today, so they weren’t made again.`,
+    allThere: (total, folder) =>
+      total === 1 ? `Its report is already in “${folder}”.` : `All ${total} reports are already in “${folder}”.`,
+    // Looked up as its report was made, and not there (or not one value): no report for it.
+    notFound: (names, more) =>
+      `No report was made for ${names.join(', ')}${more ? ` and ${more} more` : ''}: ${
+        names.length + more === 1 ? 'it wasn’t' : 'they weren’t'
+      } found in your data.`,
     notMade: (n, total, reason) =>
       n === total
         ? `None of the ${total} reports were made: ${reason}.`
@@ -262,7 +319,10 @@ export const REPORTS_STRINGS = {
     templatesTab: 'Templates',
     categoriesTab: 'Categories',
     loading: 'Loading…',
-    noTemplates: 'No templates yet. Save a report as one from its ⋮ menu.',
+    // With none yet: in the middle of the tab, with how one's made and New report.
+    noTemplates: 'No templates yet',
+    noTemplatesHow: 'Make a report, then save it as a template from its ⋮ menu.',
+    newReport: 'New report',
     draft: 'Draft',
     published: 'Published',
     unpublishedChanges: 'Unpublished changes',
@@ -274,26 +334,55 @@ export const REPORTS_STRINGS = {
     unpublish: 'Unpublish',
     discardChanges: 'Discard changes',
     discard: 'Discard',
-    discardConfirm: (title) => `Discard the unpublished changes to “${title}”? It stays as it’s published.`,
-    // A published template, where its changes can't be kept apart from it until they're published (before RW-361).
-    unpublishToEdit: (title) =>
-      `“${title}” is published. Unpublish it to edit it? No reports can be started from it until it’s published again.`,
-    unpublishToRename: (title) =>
-      `“${title}” is published. Unpublish it to rename it? No reports can be started from it until it’s published again.`,
     unpublishAndEdit: 'Unpublish and edit',
     unpublishAndRename: 'Unpublish and rename',
     // A published template's new title, kept with its changes (RW-361).
     titleKept: (title) => `“${title}” is kept with the template’s unpublished changes. Publish them to use it.`,
     delete: 'Delete',
-    deleteConfirm: (title) => `Delete “${title}”? Reports already made from it keep their copy.`,
+    // What's asked before a change, by the change (RW-370): the question, with the template's or category's name, and
+    // what going on means.
+    asks: {
+      publish: {
+        title: (title) => `Publish “${title}”?`,
+        what: 'Everyone in your organization can start reports from it.',
+      },
+      publishChanges: {
+        title: (title) => `Publish your changes to “${title}”?`,
+        what: 'Reports started from it from now on use them. Reports already made don’t change.',
+      },
+      unpublish: {
+        title: (title) => `Unpublish “${title}”?`,
+        what: 'No one can start a report from it until it’s published again. Reports already made from it don’t change.',
+      },
+      discard: {
+        title: (title) => `Discard the unpublished changes to “${title}”?`,
+        what: 'It stays as it’s published.',
+      },
+      // A published template, where its changes can't be kept apart from it until they're published (before RW-361).
+      unpublishToEdit: {
+        title: (title) => `“${title}” is published. Unpublish it to edit it?`,
+        what: 'No reports can be started from it until it’s published again.',
+      },
+      unpublishToRename: {
+        title: (title) => `“${title}” is published. Unpublish it to rename it?`,
+        what: 'No reports can be started from it until it’s published again.',
+      },
+      delete: {
+        title: (title) => `Delete “${title}”?`,
+        what: 'Reports already made from it keep their copy.',
+      },
+      deleteCategory: {
+        title: (name) => `Delete “${name}”?`,
+        what: 'Its templates stay, without a category.',
+      },
+    },
     save: 'Save',
-    noCategories: 'No categories yet.',
+    noCategories: 'No categories yet',
     newCategory: 'New category',
     newCategoryPlaceholder: 'e.g. Client reviews',
     addCategory: 'Add category',
     rename: 'Rename',
     renameLabel: (name) => `Rename ${name}`,
-    deleteCategoryConfirm: (name) => `Delete “${name}”? Its templates stay, without a category.`,
   },
 
   // A template opened from Manage templates › Edit (an organization's admins): the whole of it in the builder, its
@@ -314,6 +403,11 @@ export const REPORTS_STRINGS = {
     publish: 'Publish',
     publishChanges: 'Publish changes',
     publishing: 'Publishing…',
+    // What Publish and Publish changes ask first (RW-370), as Manage templates does.
+    publishTitle: (title) => `Publish “${title}”?`,
+    publishWhat: 'Everyone in your organization can start reports from it.',
+    publishChangesTitle: (title) => `Publish your changes to “${title}”?`,
+    publishChangesWhat: 'Reports started from it from now on use them. Reports already made don’t change.',
     discardChanges: 'Discard changes',
     saved: 'Saved. Publish it in Manage templates, or here, to let others start reports from it.',
     savedChanges: 'Saved. Reports are started from the template as it’s published until you publish the changes.',
@@ -395,5 +489,7 @@ export const REPORTS_STRINGS = {
     noDataSource: 'Reports can’t be used until a data source is selected.',
     adding: 'Adding…',
     add: 'Add to report',
+    // With enableApproval (RW-372), said under an approved report while it's chosen.
+    approved: 'This report is approved. Adding to it returns it to draft.',
   },
 }

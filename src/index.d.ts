@@ -625,12 +625,23 @@ export interface ReportFilterLock {
   show_message?: string
 }
 
+// Who approved a report and when (enableApproval, RW-372), and what they approved: `fingerprint` is the report's
+// content as it was then, and its id. The approval holds only while both are the same.
+export interface ReportApproval {
+  name: string
+  // ISO 8601.
+  at: string
+  fingerprint: string
+}
+
 export interface Report {
   schemaVersion: number
   title: string
   page: ReportPageSetup
   // What the report is for: a household, say, or several. None asks every question for everything.
   sessionFilterLocks?: ReportFilterLock[]
+  // With enableApproval: the report's approval, kept in the report itself.
+  approval?: ReportApproval
   blocks: ReportBlock[]
 }
 
@@ -742,6 +753,17 @@ export interface ReportBuilderProps {
   // opens. Without it, the picker searches AutoQL's values.
   loadFilterLockSuggestions?: () => Promise<string[]>
   filterLockLabels?: ReportFilterLockLabels
+  // Reports are approved before they go out (RW-372): until it's approved, a report prints with DRAFT across every
+  // page. Report options › Approve… (and Approve… in the preview) asks "I have reviewed and approved this report.", and
+  // an approved report prints "Prepared by {name}, {date}" at the foot of every page instead. It opens as it prints,
+  // locked: Edit… asks first, and returns it to draft. Off by default.
+  enableApproval?: boolean
+  // With enableApproval: the signed-in user's name, which approvals are made under. Without one, nothing can be
+  // approved.
+  approverName?: string
+  // With enableApproval: the report's id where you keep it. An approval holds for this report only, as it was
+  // approved: a copy of it, or the report changed anywhere, is a draft.
+  reportId?: string
   className?: string
 }
 
@@ -1097,6 +1119,8 @@ export declare function deleteReportTag(options: ReportsCall & { id: string }): 
 export interface ReportsNotice {
   tone: 'error' | 'info'
   text: string
+  // A batch being made from a template (RW-371) says how it's going with Stop.
+  action?: { label: string; onClick: () => void }
 }
 
 // What renderHome draws the home page from.
@@ -1191,6 +1215,15 @@ export interface ReportsProps {
   enableFilterLocks?: boolean
   loadFilterLockSuggestions?: () => Promise<string[]>
   filterLockLabels?: ReportFilterLockLabels
+  // Reports are approved before they go out (RW-372; see ReportBuilder's enableApproval), under approverName, the
+  // signed-in user's name. Templates, and reports started from them, start as drafts. Off by default.
+  enableApproval?: boolean
+  approverName?: string
+  // With enableFilterLocks: the most reports one batch from a template may make (a report for each household), so it
+  // can differ by role; null for no limit. 50 by default (RW-371).
+  batchLimit?: number | null
+  // Told when a batch of reports starts (true) and once it's over (false): ask before leaving while one runs.
+  onBatchRunningChange?: (running: boolean) => void
   // Passed on to each report's ReportBuilder.
   branding?: ReportBranding
   enableBranding?: boolean
@@ -1213,6 +1246,10 @@ export declare class Reports extends React.Component<ReportsProps> {
   hasUnsavedChanges(): boolean
   // Saves the report shown, now.
   saveNow(): void
+  // Whether a batch of reports is being made from a template here (RW-371).
+  isBatchRunning(): boolean
+  // Stops it: the reports under way are finished, and no more are started.
+  stopBatch(): void
   // Lists the reports again.
   reload(): void
 }
@@ -1249,6 +1286,8 @@ export interface AddToReportDialogProps {
   onClose: () => void
   // After it's added (before onClose): which report, and whether it was made for this.
   onAdded?: (added: { id: string; title: string; created: boolean }) => void
+  // With Reports' enableApproval: a report chosen that's approved says adding to it returns it to draft.
+  enableApproval?: boolean
 }
 
 // "Add to Report…": adds a block to the end of one of the user's reports, or to a new one.

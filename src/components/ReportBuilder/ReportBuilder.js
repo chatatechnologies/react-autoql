@@ -35,6 +35,7 @@ import {
 } from './model/reportOperations'
 import { buildTileIndex, resolveTile } from './model/tiles'
 import { filterLocksKey, summarizeFilterLocks } from './model/filterLocks'
+import { approveReport, heldApproval, withoutApproval } from './model/approval'
 import { getDataBlockView, isCapture } from './model/blockView'
 import {
   getAnalysisBlocker,
@@ -54,6 +55,8 @@ import { Toolbar } from './components/Toolbar'
 import { Palette } from './components/Palette'
 import { BlockDetails, defaultDraft } from './components/BlockDetails'
 import { BrandingDialog } from './components/BrandingDialog'
+import { ConfirmDialog } from './components/ConfirmDialog'
+import { Icon } from './components/icons'
 import { Sheet } from './components/Sheet'
 import { EditorPagination } from './components/EditorPagination'
 import { getStartPages, isPrintable } from './layout/paginate'
@@ -197,6 +200,20 @@ export class ReportBuilderWithoutTheme extends React.Component {
     // When the host gave the report the filter lock it has (ms since the epoch): answers from before then were asked
     // without it, and Rerun all is offered for them. A change made here counts too, without this.
     lockChangedAt: PropTypes.number,
+    // Reports are approved before they go out (RW-372): until it's approved, a report prints as a draft, with DRAFT
+    // across every page. Report options › Approve… (and Approve… in the preview) asks "I have reviewed and approved
+    // this report.", and an approved report prints "Prepared by {name}, {date}" at the foot of every page instead.
+    // It opens as it prints, locked: Edit… asks first, and returns it to draft. The footer's room is kept on every page
+    // while this is on, so approving doesn't move what's on the pages. The approval is kept in the report
+    // (model/approval.js). Off by default.
+    enableApproval: PropTypes.bool,
+    // With enableApproval: the signed-in user's name, which an approval is made under. Without one, nothing can be
+    // approved here.
+    approverName: PropTypes.string,
+    // With enableApproval: the report's id where the host keeps it. An approval holds for this report only, as it was
+    // approved: a copy of it (a template made from it, a report started from that), or the report changed anywhere
+    // (Add to Report, say), is a draft.
+    reportId: PropTypes.string,
     className: PropTypes.string,
   }
 
@@ -227,6 +244,9 @@ export class ReportBuilderWithoutTheme extends React.Component {
     loadFilterLockSuggestions: undefined,
     filterLockLabels: undefined,
     lockChangedAt: undefined,
+    enableApproval: false,
+    approverName: undefined,
+    reportId: undefined,
     className: undefined,
   }
 
@@ -295,6 +315,8 @@ export class ReportBuilderWithoutTheme extends React.Component {
       // When the report's filter lock last changed (ms): answers from before then were asked with the one it had, and
       // Rerun all is offered for them.
       lockChangedAt: null,
+      // The approval question open (enableApproval): 'approve', or 'edit' for an approved report; null for none.
+      approvalDialog: null,
     }
     this.pendingSeq = 0
     this.pendingSeqs = {} // blockId → the seq of the one wait that may still land
@@ -369,6 +391,15 @@ export class ReportBuilderWithoutTheme extends React.Component {
   }
 
   getTileIndex = memoize((dashboards) => buildTileIndex(dashboards))
+
+  // The approval that holds for the report as the host passed it (model/approval.js), with enableApproval: null for a
+  // draft. Worked out again only when the report or its id changes.
+  getHeldApproval = memoize((report, reportId) => heldApproval(report, reportId))
+
+  approvalOf = () => (this.props.enableApproval ? this.getHeldApproval(this.props.report, this.props.reportId) : null)
+
+  // An approved report is shown as it prints, and nothing changes it until Edit… returns it to draft.
+  isLocked = () => !this.props.readOnly && !!this.approvalOf()
 
   getPlan = memoize((report, tileIndex, authentication, autoQLConfig, getAuthenticationForProject) =>
     planReportRun({ report, tileIndex, authentication, autoQLConfig, getAuthenticationForProject }),
@@ -476,13 +507,118 @@ export class ReportBuilderWithoutTheme extends React.Component {
 
   // Remembers what it emitted: something that finishes later builds on it until the host passes a report
   // back (a host may apply onChange a render or more later). A read-only report isn't changed: anything that
-  // lands meanwhile (an answer on its way, say) is dropped.
+  // lands meanwhile (an answer on its way, say) is dropped, as it is for an approved one. Any change made here ends an
+  // approval the report still carries (one that no longer holds), so changing it back doesn't approve it again.
   change = (next) => {
-    if (this.props.readOnly) {
+    if (this.props.readOnly || this.isLocked()) {
       return
     }
+    this.emit(withoutApproval(next))
+  }
+
+  emit = (next) => {
     this.lastEmitted = { base: this.props.report, report: next }
     this.props.onChange(next)
+  }
+
+  // ---------------------------------------------------------------- approval (enableApproval, RW-372)
+
+  // Approve… is offered on a draft, where the host says who's approving.
+  canApprove = () =>
+    !!this.props.enableApproval &&
+    !this.props.readOnly &&
+    !!(this.props.approverName || '').trim() &&
+    !this.approvalOf()
+
+  // Why the report can't be approved yet: an answer still on its way would change it once it is.
+  approveBlocked = () => {
+    const { pending, rerunAll, run } = this.state
+    const waiting =
+      Object.values(pending).some((wait) => wait && !wait.error) || !!rerunAll?.running || run?.status === 'running'
+    return waiting ? STRINGS.approval.approveWait : null
+  }
+
+  openApprove = () => {
+    if (this.canApprove() && !this.approveBlocked()) {
+      this.setState({ approvalDialog: 'approve', details: null })
+    }
+  }
+
+  openEdit = () => {
+    if (this.isLocked()) {
+      this.setState({ approvalDialog: 'edit' })
+    }
+  }
+
+  closeApprovalDialog = () => this.setState({ approvalDialog: null })
+
+  // "I have reviewed and approved this report.": the report as it is now, approved under the host's name. It's shown
+  // as it prints from then on.
+  approve = () => {
+    if (!this.canApprove() || this.approveBlocked()) {
+      this.closeApprovalDialog()
+      return
+    }
+    this.emit(approveReport(this.getLatestReport(), { name: this.props.approverName, reportId: this.props.reportId }))
+    this.setState({ approvalDialog: null, previewOpen: false, selectedId: null, details: null })
+  }
+
+  // Edit… on an approved report, once it's asked: the report is a draft again, and back in the editor.
+  returnToDraft = () => {
+    if (this.isLocked()) {
+      this.emit(withoutApproval(this.getLatestReport()))
+    }
+    this.setState({ approvalDialog: null, previewOpen: false })
+  }
+
+  // Before the host's own status in the toolbar: a draft, or who approved it and when.
+  renderApprovalStatus = (approval) => {
+    if (!this.props.enableApproval || this.props.readOnly) {
+      return null
+    }
+    const text = approval
+      ? STRINGS.approval.approvedBy(approval.name, formatPrintedDate(approval.at))
+      : STRINGS.approval.draft
+    return (
+      <span
+        className={`${RB}-approval-status`}
+        data-state={approval ? 'approved' : 'draft'}
+        title={text}
+        data-test='report-builder-approval-status'
+      >
+        {approval ? <Icon name='check' size={12} /> : null}
+        <span className={`${RB}-approval-status-text`}>{text}</span>
+      </span>
+    )
+  }
+
+  renderApprovalDialog = () => {
+    const { approvalDialog } = this.state
+    if (approvalDialog === 'approve' && this.canApprove()) {
+      return (
+        <ConfirmDialog
+          title={STRINGS.approval.approveTitle}
+          message={STRINGS.approval.approveConfirm}
+          confirmLabel={STRINGS.approval.approveAction}
+          onConfirm={this.approve}
+          onCancel={this.closeApprovalDialog}
+          testId='report-builder-approve-dialog'
+        />
+      )
+    }
+    if (approvalDialog === 'edit' && this.isLocked()) {
+      return (
+        <ConfirmDialog
+          title={STRINGS.approval.editTitle}
+          message={STRINGS.approval.editConfirm}
+          confirmLabel={STRINGS.approval.editAction}
+          onConfirm={this.returnToDraft}
+          onCancel={this.closeApprovalDialog}
+          testId='report-builder-edit-dialog'
+        />
+      )
+    }
+    return null
   }
 
   // The report as it stands for a change made now: the last one emitted, until the host passes a new one. Every
@@ -1281,6 +1417,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
             canRun={canRun}
             canCapture={canCapture}
             onPages={this.onEditorPages}
+            enableApproval={!!this.props.enableApproval}
           />
           <ZoomFrame zoom={this.state.zoom} onFit={this.onFit}>
             <Sheet
@@ -1414,11 +1551,13 @@ export class ReportBuilderWithoutTheme extends React.Component {
   render() {
     const { report, plan, requestKeys, views } = this.derive()
     const branding = this.getBranding(this.props.branding, this.state.orgBranding)
-    const geometry = getPageGeometry(report.page)
+    const geometry = getPageGeometry(report.page, { approval: !!this.props.enableApproval })
     const { readOnly } = this.props
     const { run, printing, notice, layoutInfo } = this.state
-    // Read-only, the report shows as it prints: the preview, already free of anything that edits.
-    const previewOpen = this.state.previewOpen || readOnly
+    const approval = this.approvalOf()
+    const locked = this.isLocked()
+    // Read-only or approved, the report shows as it prints: the preview, already free of anything that edits.
+    const previewOpen = this.state.previewOpen || readOnly || locked
     const isStale = this.isStale(requestKeys)
     const running = run?.status === 'running'
     const hasRunnable = plan.jobs.length > 0
@@ -1469,6 +1608,11 @@ export class ReportBuilderWithoutTheme extends React.Component {
                   ? this.rerunAll
                   : undefined
               }
+              approvalStatus={this.renderApprovalStatus(approval)}
+              onApprove={this.canApprove() ? this.openApprove : undefined}
+              approveBlocked={this.canApprove() ? this.approveBlocked() : null}
+              locked={locked}
+              onEdit={this.openEdit}
             />
             {notice || (previewOpen && layoutInfo?.overflowCount) ? (
               <div className={`${RB}-notice`} role='status'>
@@ -1505,12 +1649,14 @@ export class ReportBuilderWithoutTheme extends React.Component {
                   canRun={this.props.enableRunReport}
                   zoom={this.state.zoom}
                   onFit={this.onFit}
+                  enableApproval={!!this.props.enableApproval}
+                  approval={approval}
                 />
               ) : (
                 this.renderEditor({ report, views, geometry, branding })
               )}
             </div>
-            {this.state.brandingOpen && this.canEditBranding() && !readOnly ? (
+            {this.state.brandingOpen && this.canEditBranding() && !readOnly && !locked ? (
               <BrandingDialog
                 branding={branding}
                 reportTitle={report.title}
@@ -1518,6 +1664,7 @@ export class ReportBuilderWithoutTheme extends React.Component {
                 onClose={this.closeBranding}
               />
             ) : null}
+            {this.renderApprovalDialog()}
           </div>
         </RichTextContext.Provider>
       </ErrorBoundary>
