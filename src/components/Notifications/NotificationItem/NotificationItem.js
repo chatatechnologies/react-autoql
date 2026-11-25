@@ -4,8 +4,6 @@ import { v4 as uuid } from 'uuid'
 import dayjs from '../../../js/dayjsWithPlugins'
 import { isMobile } from 'react-device-detect'
 import {
-  GENERAL_ERROR,
-  fetchNotification,
   dismissNotification,
   deleteNotification,
   updateDataAlertStatus,
@@ -74,7 +72,6 @@ export default class NotificationItem extends React.Component {
     displayProjectName: PropTypes.bool,
     defaultExpanded: PropTypes.bool,
     enableMoreOptionsMenu: PropTypes.bool,
-    isSelecting: PropTypes.bool,
     tooltipID: PropTypes.string,
     chartTooltipID: PropTypes.string,
     shouldRenderSummarySection: PropTypes.bool,
@@ -97,7 +94,6 @@ export default class NotificationItem extends React.Component {
     displayProjectName: false,
     defaultExpanded: false,
     enableMoreOptionsMenu: true,
-    isSelecting: false,
     shouldRenderSummarySection: false,
     showMagicWandQuoteButton: false,
     enableBillingGate: false,
@@ -120,62 +116,26 @@ export default class NotificationItem extends React.Component {
   }
 
   componentDidMount = () => {
-    this._isMounted = true
     if (this.props.defaultExpanded) {
-      this.loadQueryResponse()
+      this.setState({ queryResponse: { data: this.props.notification.query_result } })
     }
   }
 
   componentDidUpdate = (prevProps, prevState) => {
     if (this.state.expanded && !prevState.expanded) {
       this.props.updateScrollbars(500)
-      this.loadQueryResponse()
+      if (!this.state.queryResponse && this.props.notification?.query_result) {
+        this.setState({ queryResponse: { data: this.props.notification.query_result } })
+      }
     }
   }
 
   componentWillUnmount = () => {
-    this._isMounted = false
     clearTimeout(this.initialCollapseTimer)
   }
 
-  // Data alert fields (query_result, data_alert_id, outcome, ...) are under the notification's payload
-  getPayload = () => this.props.notification?.payload ?? {}
-
-  // The notification list doesn't include query_result, so it is fetched when the notification is expanded
-  loadQueryResponse = () => {
-    if (this.state.queryResponse || this.isFetchingQueryResponse) {
-      return
-    }
-
-    const queryResult = this.getPayload().query_result
-    if (queryResult) {
-      this.setState({ queryResponse: { data: queryResult } })
-      return
-    }
-
-    this.isFetchingQueryResponse = true
-    fetchNotification({
-      ...getAuthentication(this.props.authentication),
-      id: this.props.notification.id,
-    })
-      .then((notification) => {
-        if (this._isMounted) {
-          this.setState({ queryResponse: { data: notification?.payload?.query_result } })
-        }
-      })
-      .catch((error) => {
-        console.error(error)
-        if (this._isMounted) {
-          this.setState({ queryResponse: { data: { message: error?.data?.message ?? GENERAL_ERROR } } })
-        }
-      })
-      .finally(() => {
-        this.isFetchingQueryResponse = false
-      })
-  }
-
   isError = () => {
-    return this.getPayload().outcome === 'ERROR'
+    return this.props.notification?.outcome === 'ERROR'
   }
 
   isUnread = () => {
@@ -195,11 +155,6 @@ export default class NotificationItem extends React.Component {
   }
 
   onClick = (notification) => {
-    // In select mode the click selects the notification (handled by the feed) instead of expanding it
-    if (this.props.isSelecting) {
-      return
-    }
-
     if (this.state.expanded) {
       this.collapse()
       this.props.onCollapseCallback(notification)
@@ -263,8 +218,8 @@ export default class NotificationItem extends React.Component {
 
   changeDataAlertStatus = (status) => {
     updateDataAlertStatus({
-      dataAlertId: this.getPayload().data_alert_id,
-      type: this.getPayload().data_alert_type,
+      dataAlertId: this.props.notification.data_alert_id,
+      type: this.props.notification.data_alert_type,
       status,
       ...getAuthentication(this.props.authentication),
     })
@@ -355,8 +310,8 @@ export default class NotificationItem extends React.Component {
             </span>
           </div>
         </div>
-        {this.state.enableMoreOptionsMenu && !this.props.isSelecting && this.moreOptionsButton()}
-        {!this.props.isSelecting && this.renderExpandArrow()}
+        {this.state.enableMoreOptionsMenu && this.moreOptionsButton()}
+        {this.renderExpandArrow()}
       </div>
     )
   }
@@ -452,21 +407,21 @@ export default class NotificationItem extends React.Component {
   }
 
   renderSummarySection = () => {
-    const payload = this.getPayload()
+    const { notification } = this.props
 
-    if (!payload.expression) {
+    if (!notification?.expression) {
       return null
     }
 
-    const queryResponse = this.state.queryResponse ?? { data: payload.query_result }
-    const queryResultMetadata = { data: payload.result_metadata }
+    const queryResponse = { data: notification?.query_result }
+    const queryResultMetadata = { data: notification?.result_metadata }
     if (queryResultMetadata.data !== null) {
       return (
         <div className='react-autoql-notification-condition-statement'>
           <span>Summary: </span>
           <ConditionBuilder
             key={`expression-builder-${this.COMPONENT_KEY}`}
-            expression={payload.expression}
+            expression={notification?.expression}
             queryResponse={queryResponse}
             queryResultMetadata={queryResultMetadata}
             conditionStatementOnly

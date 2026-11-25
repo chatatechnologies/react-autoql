@@ -57,7 +57,6 @@ class NotificationFeed extends React.Component {
       pagination: {},
       displayNotificationItemCheckbox: false,
       selectedNotifications: [],
-      isAllSelected: false,
       isMobile: false,
       isLandscape: false,
     }
@@ -270,9 +269,6 @@ class NotificationFeed extends React.Component {
         if (newList?.length && this._isMounted) {
           newState.notificationList = [...this.state.notificationList, ...newList]
           newState.pagination = data.pagination
-          if (this.state.isAllSelected) {
-            newState.selectedNotifications = [...this.state.selectedNotifications, ...newList.map((n) => n.id)]
-          }
         }
 
         this.setState(newState)
@@ -321,7 +317,6 @@ class NotificationFeed extends React.Component {
           notificationList: response.items,
           pagination: response.pagination,
           unFetchedNotifications: 0,
-          ...(this.state.isAllSelected && { selectedNotifications: response.items?.map((n) => n.id) ?? [] }),
         })
       })
       .catch((error) => {
@@ -351,14 +346,11 @@ class NotificationFeed extends React.Component {
           return
         }
 
-        // A different project or title filter is a different set of notifications, so clear the selection
         this.setState({
           isFetchingFirstNotifications: false,
           notificationList: response.items,
           pagination: response.pagination,
           unFetchedNotifications: 0,
-          selectedNotifications: [],
-          isAllSelected: false,
         })
       })
       .catch((error) => {
@@ -390,13 +382,20 @@ class NotificationFeed extends React.Component {
   }
 
   onDeleteAllClick = () => {
+    const newList = []
+    let pagination = this.state.pagination ?? {}
+    if (pagination) {
+      pagination = {
+        ...pagination,
+        total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
+      }
+    }
+
     this.setState({
-      notificationList: [],
-      pagination: { ...this.state.pagination, total_items: 0 },
+      notificationList: newList,
+      pagination,
       isDeleting: true,
       selectedNotifications: [],
-      isAllSelected: false,
-      displayNotificationItemCheckbox: false,
     })
   }
   onMarkAllAsReadClick = () => {
@@ -453,12 +452,11 @@ class NotificationFeed extends React.Component {
   }
   onDeleteMultipleNotificationsClick = () => {
     const newList = this.state.notificationList.filter((n) => !this.state.selectedNotifications.includes(n.id))
-    const deletedCount = this.state.notificationList.length - newList.length
     let pagination = this.state.pagination ?? {}
     if (pagination) {
       pagination = {
         ...pagination,
-        total_items: Math.max((pagination.total_items ?? 0) - deletedCount, 0),
+        total_items: pagination.total_items > 0 ? pagination.total_items - 1 : 0,
       }
     }
 
@@ -467,8 +465,6 @@ class NotificationFeed extends React.Component {
       pagination,
       isDeleting: true,
       selectedNotifications: [],
-      isAllSelected: false,
-      displayNotificationItemCheckbox: false,
     })
   }
   onDeleteClick = (notification) => {
@@ -507,59 +503,23 @@ class NotificationFeed extends React.Component {
     this.refreshNotifications()
   }
   onSelectNotificationClick = () => {
-    this.lastClickedNotificationID = undefined
-    this.collapseActive()
     this.setState({ displayNotificationItemCheckbox: true })
   }
   onCancelSelectNotificationClick = () => {
-    this.lastClickedNotificationID = undefined
-    this.setState({ displayNotificationItemCheckbox: false, selectedNotifications: [], isAllSelected: false })
+    this.setState({ displayNotificationItemCheckbox: false, selectedNotifications: [] })
   }
-  onNotificationItemClick = (option, e) => {
-    const selected = this.state.selectedNotifications ?? []
-    const isSelecting = !selected.includes(option.id)
+  onNotificationItemClick = (option) => {
+    let selected = []
 
-    // Shift-click applies the clicked notification's new state to every notification between it and the
-    // last one clicked
-    let ids = [option.id]
-    const list = this.state.notificationList
-    const anchorIndex = list.findIndex((n) => n.id === this.lastClickedNotificationID)
-    if (e?.shiftKey && anchorIndex !== -1) {
-      const index = list.findIndex((n) => n.id === option.id)
-      ids = list.slice(Math.min(anchorIndex, index), Math.max(anchorIndex, index) + 1).map((n) => n.id)
+    if (this.state.selectedNotifications?.includes(option.id)) {
+      selected = this.state.selectedNotifications.filter((id) => id !== option.id)
+    } else {
+      selected = [...this.state.selectedNotifications, option.id]
     }
-    this.lastClickedNotificationID = option.id
 
-    if (isSelecting) {
-      this.setState({ selectedNotifications: [...selected, ...ids.filter((id) => !selected.includes(id))] })
-    } else {
-      // Unselecting leaves "all" mode: only the notifications still checked will be deleted
-      this.setState({ selectedNotifications: selected.filter((id) => !ids.includes(id)), isAllSelected: false })
-    }
-  }
-  onSelectAllClick = () => {
-    if (this.state.isAllSelected) {
-      this.setState({ selectedNotifications: [], isAllSelected: false })
-    } else {
-      this.setState({ selectedNotifications: this.state.notificationList.map((n) => n.id), isAllSelected: true })
-    }
-  }
-  // The server can delete everything in the feed's scope only when that scope is a project (or all
-  // projects) with no title filter. Otherwise "select all" deletes the loaded notifications.
-  canDeleteAllOnServer = () => {
-    return (
-      !!this.props.enableFetchAllNotificationFeedAcrossProjects &&
-      !this.props.notificationTitle &&
-      !!this.props.selectedProjectId
-    )
-  }
-  isDeleteAllSelected = () => this.state.isAllSelected && this.canDeleteAllOnServer()
-  onDeleteSelectedConfirm = () => {
-    if (this.isDeleteAllSelected()) {
-      this.deleteAllNotifications()
-    } else {
-      this.deleteSelectedNotification()
-    }
+    this.setState({
+      selectedNotifications: selected,
+    })
   }
   renderTopOptions = () => {
     const shouldRenderDeleteAllButton =
@@ -569,7 +529,7 @@ class NotificationFeed extends React.Component {
     return (
       <div className='notification-feed-top-options-container'>
         {shouldRenderDeleteAllButton && this.renderDeleteAllButton()}
-        {this.state.displayNotificationItemCheckbox ? this.renderSelectAllControl() : this.renderDataAlertsManagerButton()}
+        {this.renderDataAlertsManagerButton()}
         {this.renderNotificationsOptionsButton()}
       </div>
     )
@@ -577,11 +537,12 @@ class NotificationFeed extends React.Component {
   renderNotificationItemCheckbox = (notification) => {
     return (
       <div className='notification-item-checkbox'>
-        {/* Not clickable itself: the click reaches the notification container, which handles shift-click too */}
         <Checkbox
           checked={this.state.selectedNotifications.includes(notification.id)}
           className='notification-item-checkbox'
-          clickable={false}
+          onChange={() => {
+            this.onNotificationItemClick(notification)
+          }}
         />
       </div>
     )
@@ -646,41 +607,10 @@ class NotificationFeed extends React.Component {
       <span>Select</span>
     </div>
   )
-  getSelectedCount = () => {
-    if (this.isDeleteAllSelected()) {
-      return this.state.pagination?.total_items ?? this.state.notificationList.length
-    }
-    return this.state.selectedNotifications.length
-  }
-  // Sits on the left, above the notification checkboxes. Shows a dash when only some are selected.
-  renderSelectAllControl = () => {
-    const hasSelection = this.state.selectedNotifications.length > 0
-    return (
-      <div className='react-autoql-notification-select-all' onClick={this.onSelectAllClick}>
-        <Checkbox
-          checked={this.state.isAllSelected}
-          indeterminate={hasSelection && !this.state.isAllSelected}
-          clickable={false}
-        />
-        <span>Select all</span>
-      </div>
-    )
-  }
-  getDeleteSelectedTitle = () => {
-    if (this.isDeleteAllSelected()) {
-      const total = this.getSelectedCount()
-      const projectName =
-        this.props.selectedProjectName === this.ALL_PROJECTS ? 'all data sources' : this.props.selectedProjectName
-      return `Delete all ${total} notification${total === 1 ? '' : 's'} for ${projectName}?`
-    }
-
-    const count = this.state.selectedNotifications.length
-    return `Delete ${count} notification${count === 1 ? '' : 's'}?`
-  }
   renderDeleteButton = () => (
     <ConfirmPopover
-      onConfirm={this.onDeleteSelectedConfirm}
-      title={this.getDeleteSelectedTitle()}
+      onConfirm={this.deleteSelectedNotification}
+      title='Delete the selected notifications?'
       confirmText='Yes'
       backText='Cancel'
       popoverParentElement={this.props.popoverParentElement ?? this.feedContainer}
@@ -691,10 +621,7 @@ class NotificationFeed extends React.Component {
       <div
         className={`react-autoql-notification-delete ${this.state.selectedNotifications.length === 0 ? 'disable' : ''}`}
       >
-        <Icon type='trash' />{' '}
-        <span className='react-autoql-notification-delete-label'>
-          {this.getSelectedCount() ? `Delete (${this.getSelectedCount()})` : 'Delete'}
-        </span>
+        <Icon type='trash' /> <span>Delete</span>
       </div>
     </ConfirmPopover>
   )
@@ -803,7 +730,7 @@ class NotificationFeed extends React.Component {
     })
       .then(() => this.handleDeleteNotificationsResponse())
       .catch((error) => this.props.onErrorCallback(error))
-      .finally(this.onDeleteEnd)
+      .finally(this.onDeleteEnd())
   }
 
   deleteAllNotifications = () => {
@@ -811,11 +738,11 @@ class NotificationFeed extends React.Component {
     this.onDeleteAllClick()
     deleteAllNotifications({ ...getAuthentication(this.props.authentication), projectId: this.props.selectedProjectId })
       .then(() => this.handleDeleteNotificationsResponse())
+
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
       })
-      .finally(this.onDeleteEnd)
   }
   render = () => {
     const notificationListContainerClass = classNames('react-autoql-notification-list-container', {
@@ -879,23 +806,12 @@ class NotificationFeed extends React.Component {
               >
                 <div className='notification-feed-list'>
                   {this.state.notificationList.map((notification, i) => {
-                    const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.payload?.data_alert_id)
+                    const dataAlert = this.state.dataAlerts?.find((alert) => alert.id === notification.data_alert_id)
                     return (
-                      <div
-                        className={`notification-item-container ${
-                          this.state.displayNotificationItemCheckbox ? 'selecting' : ''
-                        } ${this.state.selectedNotifications.includes(notification.id) ? 'selected' : ''}`}
-                        key={i}
-                        onClick={
-                          this.state.displayNotificationItemCheckbox
-                            ? (e) => this.onNotificationItemClick(notification, e)
-                            : undefined
-                        }
-                      >
+                      <div className='notification-item-container' key={i}>
                         {this.state.displayNotificationItemCheckbox &&
                           this.renderNotificationItemCheckbox(notification)}
                         <NotificationItem
-                          isSelecting={this.state.displayNotificationItemCheckbox}
                           ref={(ref) => (this.notificationRefs[notification.id] = ref)}
                           key={notification.id}
                           authentication={this.props.authentication}
