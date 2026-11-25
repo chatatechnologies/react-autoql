@@ -14,11 +14,10 @@ import {
   getDataFormatting,
   getAutoQLConfig,
   isAggregation,
-  isColumnDateType,
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
-import { getSankeyNodeKey, getSankeyNodeSort } from './sankeyNodeOrder'
+import { getSankeyNodeKey, getSankeyNodeSort, shouldFilterLinkDrilldown } from './sankeyNodeOrder'
 import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 import './ChataSankeyDiagram.scss'
@@ -746,7 +745,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         if (!sourceColumn?.name || !targetColumn?.name) return
 
         // A date node can merge several timestamps, so filter on the whole date range instead of one raw value
-        if (isColumnDateType(sourceColumn) || isColumnDateType(targetColumn)) {
+        if (shouldFilterLinkDrilldown({ sourceColumn, targetColumn, isAggregatedData })) {
           const rowForFilter = new Array(props.columns.length).fill(null)
           rowForFilter[sourceColumnIndex] = sourceRawValue
           rowForFilter[targetColumnIndex] = targetRawValue

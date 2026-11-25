@@ -1,8 +1,9 @@
-import { getSankeyNodeKey, getSankeyNodeSort } from './sankeyNodeOrder'
+import { getSankeyNodeKey, getSankeyNodeSort, shouldFilterLinkDrilldown } from './sankeyNodeOrder'
 
 const dateColumn = { name: 'transfer_date', type: 'DATE', precision: 'DAY' }
 const senderColumn = { name: 'sender', type: 'STRING' }
 const receiverColumn = { name: 'receiver', type: 'STRING' }
+const monthStringColumn = { name: 'month', type: 'DATE_STRING', precision: 'MONTH' }
 
 describe('getSankeyNodeKey', () => {
   test('merges date values that format the same', () => {
@@ -13,6 +14,13 @@ describe('getSankeyNodeKey', () => {
 
   test('keeps raw values for non-date columns', () => {
     expect(getSankeyNodeKey({ rawKey: 'abc::123', display: 'abc', column: senderColumn })).toEqual('abc::123')
+  })
+
+  test('keeps raw values for DATE_STRING columns, even when they format the same', () => {
+    const a = getSankeyNodeKey({ rawKey: '2026-11', display: 'November 2026', column: monthStringColumn })
+    const b = getSankeyNodeKey({ rawKey: '2026-11-01', display: 'November 2026', column: monthStringColumn })
+    expect(a).toEqual('2026-11')
+    expect(b).toEqual('2026-11-01')
   })
 
   test('falls back to the raw value when a date has no display value', () => {
@@ -60,5 +68,38 @@ describe('getSankeyNodeSort', () => {
       { stage: 0, rawValue: 'c', value: 5 },
     ]
     expect(nodes.sort(sort).map((n) => n.rawValue)).toEqual(['b', 'c', 'a'])
+  })
+})
+
+describe('shouldFilterLinkDrilldown', () => {
+  test('filters on the date range for a link to a DATE node in a list query', () => {
+    expect(
+      shouldFilterLinkDrilldown({ sourceColumn: senderColumn, targetColumn: dateColumn, isAggregatedData: false }),
+    ).toBe(true)
+    expect(
+      shouldFilterLinkDrilldown({ sourceColumn: dateColumn, targetColumn: receiverColumn, isAggregatedData: false }),
+    ).toBe(true)
+  })
+
+  test('uses the drilldown endpoint for aggregated data, even with a DATE column', () => {
+    expect(
+      shouldFilterLinkDrilldown({ sourceColumn: senderColumn, targetColumn: dateColumn, isAggregatedData: true }),
+    ).toBe(false)
+  })
+
+  test('uses the drilldown endpoint for DATE_STRING columns', () => {
+    expect(
+      shouldFilterLinkDrilldown({
+        sourceColumn: senderColumn,
+        targetColumn: monthStringColumn,
+        isAggregatedData: false,
+      }),
+    ).toBe(false)
+  })
+
+  test('uses the drilldown endpoint when neither column is a date', () => {
+    expect(
+      shouldFilterLinkDrilldown({ sourceColumn: senderColumn, targetColumn: receiverColumn, isAggregatedData: false }),
+    ).toBe(false)
   })
 })
