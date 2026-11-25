@@ -17,6 +17,7 @@ import {
 } from 'autoql-fe-utils'
 import { DataLimitWarning } from '../../DataLimitWarning'
 import SankeyColumnSelector from './SankeyColumnSelector'
+import { getSankeyNodeKey, getSankeyNodeSort, shouldFilterLinkDrilldown } from './sankeyNodeOrder'
 import { SANKEY_VALUE_COUNT_SENTINEL } from '../chartPropHelpers'
 
 import './ChataSankeyDiagram.scss'
@@ -321,17 +322,19 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         const sourceDisplay = sourceDisplayValue == null ? '' : String(sourceDisplayValue)
         const targetDisplay = targetDisplayValue == null ? '' : String(targetDisplayValue)
 
-        const sourceId = `${i}|||${source}`
-        const targetId = `${i + 1}|||${target}`
+        const sourceKey = getSankeyNodeKey({ rawKey: source, display: sourceDisplay, column: sourceColumn })
+        const targetKey = getSankeyNodeKey({ rawKey: target, display: targetDisplay, column: targetColumn })
+        const sourceId = `${i}|||${sourceKey}`
+        const targetId = `${i + 1}|||${targetKey}`
         const key = `${sourceId}>>>>${targetId}`
         const existing = flowMap.get(key)
         flowMap.set(key, {
           sourceId,
           targetId,
-          sourceName: source,
-          targetName: target,
-          sourceRawValue: row[pathColumnIndices[i]],
-          targetRawValue: row[pathColumnIndices[i + 1]],
+          sourceName: sourceKey,
+          targetName: targetKey,
+          sourceRawValue: existing ? existing.sourceRawValue : row[pathColumnIndices[i]],
+          targetRawValue: existing ? existing.targetRawValue : row[pathColumnIndices[i + 1]],
           sourceDisplay,
           targetDisplay,
           sourceStage: i,
@@ -660,6 +663,7 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
     const sankey = d3Sankey()
       .nodeWidth(15)
       .nodePadding(10)
+      .nodeSort(getSankeyNodeSort(props.columns, pathColumnIndices))
       .nodeAlign((node) => {
         // Lock horizontal placement by selected path stage so categories from different
         // path columns never collapse into the same visual column.
@@ -739,6 +743,21 @@ const ChataSankeyDiagram = forwardRef((props, forwardedRef) => {
         const sourceColumn = props.columns?.[sourceColumnIndex]
         const targetColumn = props.columns?.[targetColumnIndex]
         if (!sourceColumn?.name || !targetColumn?.name) return
+
+        // A date node can merge several timestamps, so filter on the whole date range instead of one raw value
+        if (shouldFilterLinkDrilldown({ sourceColumn, targetColumn, isAggregatedData })) {
+          const rowForFilter = new Array(props.columns.length).fill(null)
+          rowForFilter[sourceColumnIndex] = sourceRawValue
+          rowForFilter[targetColumnIndex] = targetRawValue
+
+          props.onChartClick({
+            stringColumnIndices: [sourceColumnIndex, targetColumnIndex],
+            rows: [rowForFilter, rowForFilter],
+            activeKey: `link-${d.source?.id}-${d.target?.id}`,
+          })
+          return
+        }
+
         const sourceGroupBy = {
           name: sourceColumn.name,
           drill_down: sourceColumn.drill_down,
