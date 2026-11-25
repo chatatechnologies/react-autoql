@@ -74,7 +74,7 @@ export default class NotificationItem extends React.Component {
   }
 
   isError = () => {
-    return this.props.notification?.outcome === 'ERROR'
+    return this.props.notification?.payload?.outcome === 'ERROR'
   }
 
   isUnread = () => {

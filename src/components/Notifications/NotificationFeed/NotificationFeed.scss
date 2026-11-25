@@ -114,6 +114,11 @@
     width: 100%;
     display: flex;
     align-items: center;
+
+    &.selecting {
+      cursor: pointer;
+      user-select: none;
+    }
   }
   .notification-item-checkbox {
     padding: 0px 10px;
@@ -189,5 +194,13 @@
   }
   .react-autoql-notification-select-container {
     display: flex;
+  }
+  .react-autoql-notification-select-all {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
   }
 }
