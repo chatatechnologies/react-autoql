@@ -1,5 +1,10 @@
+const { TEST_REACT_MODULES } = require('./test/testReact')
+
 const esModules = ['uuid'].join('|')
 module.exports = {
+  // React comes from a pinned install outside the repo (see test/testReact.js)
+  globalSetup: '<rootDir>/test/globalSetup.js',
+  modulePaths: [TEST_REACT_MODULES],
   setupFilesAfterEnv: ['<rootDir>/test/setupTests.js'],
   setupFiles: ['<rootDir>/test/globals.js', '<rootDir>/mocks/client.js'],
   verbose: false,
