@@ -114,9 +114,26 @@
     width: 100%;
     display: flex;
     align-items: center;
+
+    &.selecting {
+      cursor: pointer;
+      user-select: none;
+    }
   }
   .notification-item-checkbox {
     padding: 0px 10px;
+  }
+}
+
+// Smaller than the default 20px checkbox, like SelectableTable's
+.notification-item-checkbox,
+.react-autoql-notification-select-all {
+  .react-autoql-checkbox__input {
+    width: 15px;
+    height: 15px;
+  }
+  .react-autoql-checkbox-tick {
+    font-size: 11px;
   }
 }
 
@@ -189,5 +206,31 @@
   }
   .react-autoql-notification-select-container {
     display: flex;
+  }
+  .react-autoql-notification-select-all {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+}
+
+.react-autoql-notification-select-all-banner {
+  margin: 0 20px 8px;
+  padding: 6px 10px;
+  text-align: center;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid var(--react-autoql-border-color);
+  background: var(--react-autoql-background-color-primary);
+  color: var(--react-autoql-text-color-primary);
+
+  a {
+    color: var(--react-autoql-accent-color);
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
   }
 }

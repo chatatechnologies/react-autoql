@@ -1,5 +1,11 @@
 # react-autoql
 
+## React is a peer dependency only
+
+`react` and `react-dom` belong only in `peerDependencies`. Never add them to `dependencies` or `devDependencies`, and never install them into this repo's `node_modules` (no `npm install react…`, not even with `--no-save`). The host app provides React; a second copy here breaks hooks ("Invalid hook call") when the host app links this package.
+
+Tests get React from a pinned install outside the repo (`~/.cache/react-autoql/test-react-<version>`), which jest's `globalSetup` installs on first run and finds through `modulePaths` (see `test/testReact.js`). `npm test` and `npx jest` both just work. It must stay React 16 while the tests use `enzyme-adapter-react-16`.
+
 ## Adding a new chart / visualization type
 
 Display types are defined in **autoql-fe-utils** (sibling repo `../autoql-fe-utils`), so a new chart spans both repos. Use the treemap (`src/components/Charts/ChataTreemap`) as the reference implementation — it already follows every rule below.
