@@ -125,6 +125,18 @@
   }
 }
 
+// Smaller than the default 20px checkbox, like SelectableTable's
+.notification-item-checkbox,
+.react-autoql-notification-select-all {
+  .react-autoql-checkbox__input {
+    width: 15px;
+    height: 15px;
+  }
+  .react-autoql-checkbox-tick {
+    font-size: 11px;
+  }
+}
+
 .react-autoql-notification-list-container.mobile {
   .notification-feed-list {
     padding: 0 10px;

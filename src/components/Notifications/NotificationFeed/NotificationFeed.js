@@ -37,6 +37,7 @@ class NotificationFeed extends React.Component {
     this.COMPONENT_KEY = uuid()
     this.MODAL_COMPONENT_KEY = uuid()
     this.NOTIFICATION_FETCH_LIMIT = 10
+    this.ALL_IDS_FETCH_LIMIT = 500
     this.MIN_FETCH_LIMIT = 10
     this.MAX_FETCH_LIMIT = 30
     this.CONTAINER_PADDING_OFFSET = 172.5 // Padding offset for container height calculation
@@ -557,24 +558,28 @@ class NotificationFeed extends React.Component {
       this.setState({ selectedNotifications: this.state.notificationList.map((n) => n.id), isAllSelected: true })
     }
   }
-  // The header checkbox selects the loaded notifications. Everything in the database can be selected (from the
-  // banner) only when the feed shows one specific project with no title filter: the server can't delete by title,
-  // and selecting everything never spans all projects.
-  canDeleteAllOnServer = () => {
+  // The header checkbox selects the loaded notifications. The banner then offers every notification the feed is
+  // showing (same project and title filter), except when the feed spans all projects: selecting everything never
+  // deletes across projects.
+  canSelectEverything = () => {
+    if (!this.props.enableFetchAllNotificationFeedAcrossProjects) {
+      return true
+    }
     const projectId = this.props.selectedProjectId
-    return (
-      !!this.props.enableFetchAllNotificationFeedAcrossProjects &&
-      !this.props.notificationTitle &&
-      !!projectId &&
-      `${projectId}`.toLowerCase() !== 'all'
-    )
+    return !!projectId && `${projectId}`.toLowerCase() !== 'all'
   }
-  isDeleteAllSelected = () => this.state.isEverythingSelected && this.canDeleteAllOnServer()
+  isDeleteAllSelected = () => this.state.isEverythingSelected && this.canSelectEverything()
   onSelectEverythingClick = () => {
     this.setState({ isEverythingSelected: true })
   }
   onClearSelectionClick = () => {
     this.setState({ selectedNotifications: [], isAllSelected: false, isEverythingSelected: false })
+  }
+  getEverythingLabel = (total) => {
+    const notifications = `${total} notification${total === 1 ? '' : 's'}`
+    return this.props.enableFetchAllNotificationFeedAcrossProjects
+      ? `${notifications} in ${this.props.selectedProjectName}`
+      : notifications
   }
   renderSelectAllBanner = () => {
     const total = this.state.pagination?.total_items ?? 0
@@ -582,19 +587,16 @@ class NotificationFeed extends React.Component {
     if (
       !this.state.displayNotificationItemCheckbox ||
       !this.state.isAllSelected ||
-      !this.canDeleteAllOnServer() ||
+      !this.canSelectEverything() ||
       total <= loaded
     ) {
       return null
     }
 
-    const projectName = this.props.selectedProjectName
     if (this.state.isEverythingSelected) {
       return (
         <div className='react-autoql-notification-select-all-banner'>
-          <span>
-            All {total} notifications in {projectName} are selected.
-          </span>{' '}
+          <span>All {this.getEverythingLabel(total)} are selected.</span>{' '}
           <a onClick={this.onClearSelectionClick}>Clear selection</a>
         </div>
       )
@@ -603,15 +605,48 @@ class NotificationFeed extends React.Component {
     return (
       <div className='react-autoql-notification-select-all-banner'>
         <span>All {loaded} loaded notifications are selected.</span>{' '}
-        <a onClick={this.onSelectEverythingClick}>
-          Select all {total} in {projectName}
-        </a>
+        <a onClick={this.onSelectEverythingClick}>Select all {this.getEverythingLabel(total)}</a>
       </div>
     )
   }
+  // The IDs of every notification the feed is showing, fetched from the same list endpoint (without query results)
+  fetchAllNotificationIds = async () => {
+    const ids = []
+    const limit = this.ALL_IDS_FETCH_LIMIT
+    for (let offset = 0; ; offset += limit) {
+      const data = await fetchNotificationFeed({
+        ...getAuthentication(this.props.authentication),
+        offset,
+        limit,
+        enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
+        selectedProjectId: this.props.selectedProjectId,
+        notificationTitle: this.props.notificationTitle,
+      })
+      const items = data?.items ?? []
+      ids.push(...items.map((n) => n.id))
+      if (items.length < limit) {
+        return ids
+      }
+    }
+  }
+  deleteEverySelectedNotification = () => {
+    this.onDeleteAllClick()
+    return this.fetchAllNotificationIds()
+      .then((notificationList) =>
+        deleteMultipleNotifications({ ...getAuthentication(this.props.authentication), notificationList }),
+      )
+      .then(() => this.handleDeleteNotificationsResponse())
+      .catch((error) => {
+        console.error(error)
+        this.props.onErrorCallback(error)
+        // The list was cleared before deleting, so load it again to show what is left
+        this.setState({ pagination: {} }, this.getNotifications)
+      })
+      .finally(this.onDeleteEnd)
+  }
   onDeleteSelectedConfirm = () => {
     if (this.isDeleteAllSelected()) {
-      this.deleteAllNotifications()
+      this.deleteEverySelectedNotification()
     } else {
       this.deleteSelectedNotification()
     }
@@ -727,7 +762,7 @@ class NotificationFeed extends React.Component {
   getDeleteSelectedTitle = () => {
     if (this.isDeleteAllSelected()) {
       const total = this.getSelectedCount()
-      return `Delete all ${total} notification${total === 1 ? '' : 's'} in ${this.props.selectedProjectName}?`
+      return `Delete all ${this.getEverythingLabel(total)}?`
     }
 
     const count = this.state.selectedNotifications.length

@@ -1,6 +1,6 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import { deleteAllNotifications, deleteMultipleNotifications } from 'autoql-fe-utils'
+import { deleteAllNotifications, deleteMultipleNotifications, fetchNotificationFeed } from 'autoql-fe-utils'
 
 import { findByTestAttr } from '../../../../test/testUtils'
 import { testAuthentication } from '../../../../test/testData'
@@ -10,7 +10,10 @@ jest.mock('autoql-fe-utils', () => ({
   ...jest.requireActual('autoql-fe-utils'),
   deleteAllNotifications: jest.fn(),
   deleteMultipleNotifications: jest.fn(),
+  fetchNotificationFeed: jest.fn(() => Promise.resolve({ items: [] })),
 }))
+
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const defaultProps = {
   authentication: testAuthentication,
@@ -129,12 +132,15 @@ describe('selecting notifications', () => {
     )
   })
 
-  test('the banner offers to select everything in the project, then deletes it all on the server', () => {
+  test('the banner selects everything in the project, and Delete removes every one of their IDs', async () => {
+    const ids = Array.from({ length: 25 }, (_, i) => `nt_${i + 1}`)
+    fetchNotificationFeed.mockResolvedValueOnce({ items: ids.map((id) => ({ id })) })
+
     const wrapper = setupSelecting(projectProps)
     expect(banner(wrapper).exists()).toBe(false)
 
     wrapper.instance().onSelectAllClick()
-    expect(banner(wrapper).text()).toBe('All 3 loaded notifications are selected. Select all 25 in Sales')
+    expect(banner(wrapper).text()).toBe('All 3 loaded notifications are selected. Select all 25 notifications in Sales')
 
     banner(wrapper).find('a').simulate('click')
     expect(banner(wrapper).text()).toBe('All 25 notifications in Sales are selected. Clear selection')
@@ -142,10 +148,55 @@ describe('selecting notifications', () => {
     expect(wrapper.instance().getDeleteSelectedTitle()).toBe('Delete all 25 notifications in Sales?')
 
     wrapper.instance().onDeleteSelectedConfirm()
-    expect(deleteAllNotifications).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'prj_1' }))
-    expect(deleteMultipleNotifications).not.toHaveBeenCalled()
+    await flushPromises()
+    expect(fetchNotificationFeed).toHaveBeenCalledWith(
+      expect.objectContaining({ offset: 0, limit: 500, selectedProjectId: 'prj_1' }),
+    )
+    expect(deleteMultipleNotifications).toHaveBeenCalledWith(expect.objectContaining({ notificationList: ids }))
+    expect(deleteAllNotifications).not.toHaveBeenCalled()
     expect(wrapper.state('notificationList')).toEqual([])
     expect(wrapper.state('pagination').total_items).toBe(0)
+  })
+
+  test('the banner is offered outside cross-project mode, and fetches IDs page by page', async () => {
+    const firstPage = Array.from({ length: 500 }, (_, i) => ({ id: `nt_${i}` }))
+    fetchNotificationFeed
+      .mockResolvedValueOnce({ items: firstPage })
+      .mockResolvedValueOnce({ items: [{ id: 'nt_500' }] })
+
+    const wrapper = setupSelecting()
+    wrapper.setState({ pagination: { total_items: 501 } })
+    wrapper.instance().onSelectAllClick()
+    expect(banner(wrapper).text()).toBe('All 3 loaded notifications are selected. Select all 501 notifications')
+
+    banner(wrapper).find('a').simulate('click')
+    wrapper.instance().onDeleteSelectedConfirm()
+    await flushPromises()
+    await flushPromises()
+
+    expect(fetchNotificationFeed).toHaveBeenCalledTimes(2)
+    expect(fetchNotificationFeed).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 500, limit: 500 }))
+    expect(deleteMultipleNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ notificationList: [...firstPage.map((n) => n.id), 'nt_500'] }),
+    )
+  })
+
+  test('reloads the list when deleting everything fails', async () => {
+    fetchNotificationFeed.mockRejectedValueOnce(new Error('network')).mockResolvedValue({ items: [] })
+    jest.spyOn(console, 'error').mockImplementation(() => {})
+    const onErrorCallback = jest.fn()
+
+    const wrapper = setupSelecting({ ...projectProps, onErrorCallback })
+    wrapper.instance().onSelectAllClick()
+    wrapper.instance().onSelectEverythingClick()
+    wrapper.instance().onDeleteSelectedConfirm()
+    await flushPromises()
+    await flushPromises()
+
+    expect(onErrorCallback).toHaveBeenCalled()
+    expect(deleteMultipleNotifications).not.toHaveBeenCalled()
+    expect(fetchNotificationFeed).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 0 }))
+    console.error.mockRestore()
   })
 
   test('clear selection in the banner unselects everything', () => {
@@ -180,7 +231,10 @@ describe('selecting notifications', () => {
     wrapper.instance().onSelectEverythingClick()
     wrapper.instance().onDeleteSelectedConfirm()
     expect(deleteAllNotifications).not.toHaveBeenCalled()
-    expect(deleteMultipleNotifications).toHaveBeenCalled()
+    expect(fetchNotificationFeed).not.toHaveBeenCalled()
+    expect(deleteMultipleNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ notificationList: ['nt_1', 'nt_2', 'nt_3'] }),
+    )
   })
 
   test('does not show the banner when every notification is already loaded', () => {
