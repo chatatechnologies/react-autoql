@@ -1,6 +1,6 @@
 import React from 'react'
 import { shallow } from 'enzyme'
-import { fetchNotification, updateDataAlertStatus } from 'autoql-fe-utils'
+import { GENERAL_ERROR, fetchNotification, updateDataAlertStatus } from 'autoql-fe-utils'
 
 import { testAuthentication } from '../../../../test/testData'
 import NotificationItem from './NotificationItem'
@@ -70,6 +70,15 @@ describe('NotificationItem with notifications service payloads', () => {
 
     expect(fetchNotification).not.toHaveBeenCalled()
     expect(wrapper.state('queryResponse')).toEqual({ data: queryResult })
+  })
+
+  test('shows the general error when the fetched notification has no query result', async () => {
+    fetchNotification.mockResolvedValue({ ...notification, payload: {} })
+
+    const wrapper = setup({ defaultExpanded: true })
+    await flushPromises()
+
+    expect(wrapper.state('queryResponse')).toEqual({ data: { message: GENERAL_ERROR } })
   })
 
   test('shows an error message when the fetch fails', async () => {

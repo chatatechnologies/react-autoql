@@ -160,7 +160,9 @@ export default class NotificationItem extends React.Component {
     })
       .then((notification) => {
         if (this._isMounted) {
-          this.setState({ queryResponse: { data: notification?.payload?.query_result } })
+          this.setState({
+            queryResponse: { data: notification?.payload?.query_result ?? { message: GENERAL_ERROR } },
+          })
         }
       })
       .catch((error) => {

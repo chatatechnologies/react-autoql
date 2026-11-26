@@ -182,11 +182,15 @@ describe('selecting notifications', () => {
   })
 
   test('reloads the list when deleting everything fails', async () => {
-    fetchNotificationFeed.mockRejectedValueOnce(new Error('network')).mockResolvedValue({ items: [] })
+    fetchNotificationFeed.mockRejectedValueOnce(new Error('network'))
     jest.spyOn(console, 'error').mockImplementation(() => {})
     const onErrorCallback = jest.fn()
 
     const wrapper = setupSelecting({ ...projectProps, onErrorCallback })
+    // getNotifications does nothing while a delete is in progress, so the reload needs isDeleting cleared first
+    let stateAtReload
+    wrapper.instance().getNotifications = jest.fn(() => (stateAtReload = { ...wrapper.instance().state }))
+
     wrapper.instance().onSelectAllClick()
     wrapper.instance().onSelectEverythingClick()
     wrapper.instance().onDeleteSelectedConfirm()
@@ -195,8 +199,58 @@ describe('selecting notifications', () => {
 
     expect(onErrorCallback).toHaveBeenCalled()
     expect(deleteMultipleNotifications).not.toHaveBeenCalled()
-    expect(fetchNotificationFeed).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 0 }))
+    expect(wrapper.instance().getNotifications).toHaveBeenCalledTimes(1)
+    expect(stateAtReload.isDeleting).toBe(false)
+    expect(stateAtReload.pagination).toEqual({})
     console.error.mockRestore()
+  })
+
+  test('reads every ID when the service returns fewer per page than asked for', async () => {
+    const page = (start) => ({ items: Array.from({ length: 100 }, (_, i) => ({ id: `nt_${start + i}` })) })
+    fetchNotificationFeed
+      .mockResolvedValueOnce(page(0))
+      .mockResolvedValueOnce(page(100))
+      .mockResolvedValueOnce({ items: page(200).items.slice(0, 50) })
+
+    const wrapper = setupSelecting(projectProps)
+    wrapper.setState({ pagination: { total_items: 250 } })
+    wrapper.instance().onSelectAllClick()
+    wrapper.instance().onSelectEverythingClick()
+    wrapper.instance().onDeleteSelectedConfirm()
+    for (let i = 0; i < 4; i++) {
+      await flushPromises()
+    }
+
+    expect(fetchNotificationFeed.mock.calls.map(([args]) => args.offset)).toEqual([0, 100, 200])
+    expect(deleteMultipleNotifications.mock.calls[0][0].notificationList).toHaveLength(250)
+  })
+
+  test('stops fetching IDs when a page adds nothing new, e.g. a service that ignores the offset', async () => {
+    fetchNotificationFeed.mockResolvedValue({ items: notificationList })
+
+    const wrapper = setupSelecting(projectProps)
+    wrapper.instance().onSelectAllClick()
+    wrapper.instance().onSelectEverythingClick()
+    wrapper.instance().onDeleteSelectedConfirm()
+    for (let i = 0; i < 4; i++) {
+      await flushPromises()
+    }
+
+    expect(fetchNotificationFeed).toHaveBeenCalledTimes(2)
+    expect(deleteMultipleNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({ notificationList: ['nt_1', 'nt_2', 'nt_3'] }),
+    )
+    fetchNotificationFeed.mockImplementation(() => Promise.resolve({ items: [] }))
+  })
+
+  test('tells the host about a delete of everything, as Delete all does', async () => {
+    const onConfirmCallback = jest.fn()
+    const wrapper = setupSelecting({ ...projectProps, onConfirmCallback })
+    wrapper.instance().onSelectAllClick()
+    wrapper.instance().onSelectEverythingClick()
+    wrapper.instance().onDeleteSelectedConfirm()
+    await flushPromises()
+    expect(onConfirmCallback).toHaveBeenCalledTimes(1)
   })
 
   test('clear selection in the banner unselects everything', () => {

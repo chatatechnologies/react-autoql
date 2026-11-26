@@ -609,29 +609,33 @@ class NotificationFeed extends React.Component {
       </div>
     )
   }
-  // The IDs of every notification the feed is showing, fetched from the same list endpoint (without query results)
-  fetchAllNotificationIds = async () => {
-    const ids = []
-    const limit = this.ALL_IDS_FETCH_LIMIT
-    for (let offset = 0; ; offset += limit) {
+  // The IDs of every notification the feed is showing, fetched from the same list endpoint (without query results).
+  // Each request starts after the IDs already fetched, so a service that returns fewer than `limit` per page is still
+  // read to the end. It stops at `total` IDs, or when a page adds none (the end, or a service ignoring the offset).
+  fetchAllNotificationIds = async (total) => {
+    const ids = new Set()
+    while (ids.size < total) {
       const data = await fetchNotificationFeed({
         ...getAuthentication(this.props.authentication),
-        offset,
-        limit,
+        offset: ids.size,
+        limit: this.ALL_IDS_FETCH_LIMIT,
         enableFetchAllNotificationFeedAcrossProjects: this.props.enableFetchAllNotificationFeedAcrossProjects,
         selectedProjectId: this.props.selectedProjectId,
         notificationTitle: this.props.notificationTitle,
       })
-      const items = data?.items ?? []
-      ids.push(...items.map((n) => n.id))
-      if (items.length < limit) {
-        return ids
+      const countBefore = ids.size
+      ;(data?.items ?? []).forEach((n) => ids.add(n.id))
+      if (ids.size === countBefore) {
+        break
       }
     }
+    return [...ids]
   }
   deleteEverySelectedNotification = () => {
+    const total = this.state.pagination?.total_items ?? 0
+    this.props.onConfirmCallback()
     this.onDeleteAllClick()
-    return this.fetchAllNotificationIds()
+    return this.fetchAllNotificationIds(total)
       .then((notificationList) =>
         deleteMultipleNotifications({ ...getAuthentication(this.props.authentication), notificationList }),
       )
@@ -639,8 +643,9 @@ class NotificationFeed extends React.Component {
       .catch((error) => {
         console.error(error)
         this.props.onErrorCallback(error)
-        // The list was cleared before deleting, so load it again to show what is left
-        this.setState({ pagination: {} }, this.getNotifications)
+        // The list was cleared before deleting, so load it again to show what is left. isDeleting is cleared here
+        // because getNotifications does nothing while a delete is in progress.
+        this.setState({ pagination: {}, isDeleting: false }, this.getNotifications)
       })
       .finally(this.onDeleteEnd)
   }
