@@ -164,6 +164,7 @@ class VizToolbar extends React.Component {
             ${displayType === selectedDisplayType ? 'react-autoql-toolbar-btn-selected' : ''}`}
           tooltip={name}
           tooltipID={this.props.tooltipID ?? `react-autoql-viz-toolbar-tooltip-${this.COMPONENT_KEY}`}
+          ariaLabel={name}
           data-test='viz-toolbar-button'
           disabled={this.props.responseRef?.state?.isLoadingData}
           size='small'

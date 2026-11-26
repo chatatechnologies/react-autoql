@@ -128,3 +128,17 @@ describe('process click event properly', () => {
     expect(buttonComponent.exists()).toBe(true)
   })
 })
+
+describe('accessible name', () => {
+  test('puts ariaLabel on the button as its aria-label', () => {
+    const wrapper = setup({ ariaLabel: 'Follow markets' })
+    const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
+    expect(buttonComponent.prop('aria-label')).toBe('Follow markets')
+  })
+
+  test('adds no aria-label without one', () => {
+    const wrapper = setup()
+    const buttonComponent = findByTestAttr(wrapper, 'react-autoql-btn')
+    expect(buttonComponent.prop('aria-label')).toBeUndefined()
+  })
+})

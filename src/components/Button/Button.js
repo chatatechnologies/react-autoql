@@ -30,6 +30,8 @@ export class ButtonWithoutRef extends React.Component {
     filled: PropTypes.bool,
     border: PropTypes.bool,
     tooltip: PropTypes.string,
+    // The accessible name, for a button whose only content is an icon
+    ariaLabel: PropTypes.string,
     icon: PropTypes.string,
     iconOnly: PropTypes.bool,
     splitButton: PropTypes.shape({
@@ -45,6 +47,7 @@ export class ButtonWithoutRef extends React.Component {
     disabled: false,
     multiline: false,
     tooltip: undefined,
+    ariaLabel: undefined,
     filled: false,
     border: true,
     icon: undefined,
@@ -111,6 +114,7 @@ export class ButtonWithoutRef extends React.Component {
         onClick={isSplitRight ? () => this.setState({ isSplitPopoverOpen: !this.state.isSplitPopoverOpen }) : this.props.onClick}
         data-tooltip-html={this.props.tooltip}
         data-tooltip-id={this.props.tooltipID}
+        aria-label={isSplitRight ? undefined : this.props.ariaLabel}
       >
         {isSplitRight ? (
           <Icon className='react-autoql-btn-icon' type='caret-down' />

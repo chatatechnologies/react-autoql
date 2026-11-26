@@ -221,6 +221,19 @@ export type ValueActionCallback = (value: any, row: Record<string, any>, context
 // A plain function, or an object that also sets the link's tooltip (default "Open")
 export type ValueActionCallbackEntry = ValueActionCallback | { onClick: ValueActionCallback; tooltip?: string }
 
+// An action the host adds to every answer's toolbar (`customToolbarOptions` on DataMessenger and Dashboard)
+export interface CustomToolbarOption {
+  name: string
+  // An Icon type, such as 'star' or 'layers-plus'. A toolbar button shows nothing else, so it needs one.
+  icon?: string
+  // A method, so a callback typed with a narrower payload than this one still fits
+  callback?(data: ReportToolbarOptionData, extra: ReportToolbarOptionExtra): void
+  // 'toolbar': a button of its own, before Delete and More options. 'menu', the default: an item under More options.
+  placement?: 'toolbar' | 'menu'
+  // The toolbar button's tooltip, when it should differ from `name`. `name` stays the button's accessible name.
+  tooltip?: string
+}
+
 export interface DashboardProps {
   authentication?: Authentication
   autoQLConfig?: AutoQLConfig
@@ -237,6 +250,7 @@ export interface DashboardProps {
   // Called when the value is clicked in a cell of a column whose value_action is
   // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
+  customToolbarOptions?: CustomToolbarOption[]
   onSuccessCallback?: (response: any) => void
   autoChartAggregations?: boolean
   enableDynamicCharting?: boolean
@@ -351,6 +365,7 @@ export interface DataMessengerProps {
   // Called when the value is clicked in a cell of a column whose value_action is
   // { type: 'callback', callback_name }. Keyed by callback_name; the row is keyed by column name.
   valueActionCallbacks?: Record<string, ValueActionCallbackEntry>
+  customToolbarOptions?: CustomToolbarOption[]
   onSuccessAlert?: (message: string) => void
   onProjectSelectChange?: (projectId: string) => void
   source?: string | string[]

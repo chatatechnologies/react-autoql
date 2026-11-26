@@ -78,6 +78,12 @@
     &.react-autoql-toolbar-btn-selected {
       color: var(--react-autoql-accent-color) !important;
     }
+
+    // The outline is off for the mouse, but a keyboard user needs to see which button has focus
+    &:focus-visible {
+      outline: 2px solid var(--react-autoql-accent-color) !important;
+      outline-offset: 1px;
+    }
   }
 
   .react-autoql-toolbar-btn:hover {
