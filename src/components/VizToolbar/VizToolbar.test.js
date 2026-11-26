@@ -178,3 +178,13 @@ describe('tooltip rendering', () => {
     })
   })
 })
+
+// The answer's toolbars show on keyboard focus as well as hover, so each icon button needs a name of its own
+describe('accessible names', () => {
+  test('names each chart button for the chart it shows', () => {
+    const { wrapper } = setup({ queryOutputProps: { queryResponse: responseTestCases[8] } })
+    const buttons = findByTestAttr(wrapper, 'viz-toolbar-button')
+    expect(buttons.length).toBeGreaterThan(1)
+    buttons.forEach((button) => expect(button.prop('ariaLabel')).toBe(button.prop('tooltip')))
+  })
+})

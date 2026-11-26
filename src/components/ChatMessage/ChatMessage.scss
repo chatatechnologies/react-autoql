@@ -111,9 +111,10 @@
     flex-wrap: wrap;
     flex-direction: row;
 
+    // Hidden by opacity alone: an element with visibility: hidden can't take focus, so the keyboard could never
+    // reach a toolbar to show it (the :focus-visible rule below).
     &:not(.active) {
       pointer-events: none;
-      visibility: hidden;
       opacity: 0;
     }
   }
@@ -131,6 +132,15 @@
   .react-autoql-toolbar.active {
     pointer-events: auto !important;
     visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  // Keyboard focus anywhere in the message shows its toolbars, as hovering it does, so a keyboard user sees the
+  // button they've tabbed to. :focus-visible rather than :focus-within: a button clicked with the mouse keeps focus,
+  // and mustn't hold the toolbar open once the pointer leaves. A rule of its own, so a browser without :has() drops
+  // only this one and not the hover rule above.
+  &:has(:focus-visible) .react-autoql-toolbar {
+    pointer-events: auto !important;
     opacity: 1 !important;
   }
 

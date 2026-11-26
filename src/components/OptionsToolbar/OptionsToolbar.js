@@ -41,6 +41,10 @@ import { autoQLConfigType, authenticationType, dataFormattingType } from '../../
 import './OptionsToolbar.scss'
 import '../FocusPromptPopover/FocusPromptPopover.scss'
 
+// A custom option with `placement: 'toolbar'` is a button of its own on the toolbar. Any other is an item in the
+// More options menu, where every custom option went before `placement` existed.
+const isToolbarOption = (option) => option?.placement === 'toolbar'
+
 export class OptionsToolbar extends React.Component {
   constructor(props) {
     super(props)
@@ -105,6 +109,18 @@ export class OptionsToolbar extends React.Component {
     source: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
     scope: PropTypes.string,
     initialIsFiltering: PropTypes.bool,
+    tooltipID: PropTypes.string,
+    // The host's own actions on the answer (customToolbarOptions): in the More options menu, or as buttons of their
+    // own with `placement: 'toolbar'`
+    customOptions: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        icon: PropTypes.string,
+        callback: PropTypes.func,
+        placement: PropTypes.oneOf(['toolbar', 'menu']),
+        tooltip: PropTypes.string,
+      }),
+    ),
   }
 
   static defaultProps = {
@@ -447,6 +463,45 @@ export class OptionsToolbar extends React.Component {
     )
   }
 
+  // What a custom option's callback is handed, whether it was clicked on the toolbar or in the menu
+  onCustomOptionClick = (option) => {
+    const responseRef = this.props.responseRef
+    const responseCopy = _cloneDeep(responseRef?.queryResponse)
+    this.setState({ activeMenu: undefined })
+    const cols = responseRef?.state?.columns
+    const columnVisibility = {}
+    cols?.forEach((col) => {
+      if (col.name) columnVisibility[col.name] = col.is_visible
+    })
+    // A second argument, which callbacks written before it ignore: a way to capture the
+    // answer as it's shown now (QueryOutput.captureForReport), for "Add to Report…".
+    const extra = {
+      captureForReport: (options) => responseRef?.captureForReport?.(options) ?? { ok: false, reason: 'unsupported' },
+    }
+    option.callback?.(
+      {
+        query: responseRef?.queryResponse?.data?.data?.text,
+        queryId: this.getResponseQueryId(),
+        queryResponse: responseCopy,
+        aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
+        displayType: responseRef?.state?.displayType,
+        columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
+        displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
+        filters: responseCopy?.data?.data?.fe_req?.session_filter_locks,
+        tableFilters: responseRef?.getCombinedFilters?.(),
+        orders: responseCopy?.data?.data?.fe_req?.orders,
+        dataConfig: {
+          tableConfig: _cloneDeep(responseRef?.tableConfig),
+          pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
+        },
+        networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
+        chartControls: _cloneDeep(responseRef?.state?.chartControls),
+        columnVisibility,
+      },
+      extra,
+    )
+  }
+
   getMenuItemClass = (className) => {
     return `react-autoql-toolbar-btn react-autoql-btn ${className || ''}`
   }
@@ -529,54 +584,16 @@ export class OptionsToolbar extends React.Component {
             </li>
           )}
           {shouldShowButton.showCustomOptions &&
-            this.props.customOptions.map((option, i) => {
-              return (
-                <li
-                  key={`custom-option-${i}`}
-                  onClick={() => {
-                    const responseRef = this.props.responseRef
-                    const responseCopy = _cloneDeep(responseRef?.queryResponse)
-                    this.setState({ activeMenu: undefined })
-                    const cols = responseRef?.state?.columns
-                    const columnVisibility = {}
-                    cols?.forEach((col) => {
-                      if (col.name) columnVisibility[col.name] = col.is_visible
-                    })
-                    // A second argument, which callbacks written before it ignore: a way to capture the
-                    // answer as it's shown now (QueryOutput.captureForReport), for "Add to Report…".
-                    const extra = {
-                      captureForReport: (options) =>
-                        responseRef?.captureForReport?.(options) ?? { ok: false, reason: 'unsupported' },
-                    }
-                    option.callback?.(
-                      {
-                        query: responseRef?.queryResponse?.data?.data?.text,
-                        queryId: this.getResponseQueryId(),
-                        queryResponse: responseCopy,
-                        aggConfig: _cloneDeep(responseRef?.state?.aggConfig),
-                        displayType: responseRef?.state?.displayType,
-                        columnSelects: responseCopy?.data?.data?.fe_req?.additional_selects,
-                        displayOverrides: responseCopy?.data?.data?.fe_req?.display_overrides,
-                        filters: responseCopy?.data?.data?.fe_req?.session_filter_locks,
-                        tableFilters: responseRef?.getCombinedFilters?.(),
-                        orders: responseCopy?.data?.data?.fe_req?.orders,
-                        dataConfig: {
-                          tableConfig: _cloneDeep(responseRef?.tableConfig),
-                          pivotTableConfig: _cloneDeep(responseRef?.pivotTableConfig),
-                        },
-                        networkColumnConfig: _cloneDeep(responseRef?.state?.networkColumnConfig),
-                        chartControls: _cloneDeep(responseRef?.state?.chartControls),
-                        columnVisibility,
-                      },
-                      extra,
-                    )
-                  }}
-                >
-                  <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type={option.icon} />
-                  {option.name}
-                </li>
-              )
-            })}
+            this.props.customOptions
+              .filter((option) => !isToolbarOption(option))
+              .map((option, i) => {
+                return (
+                  <li key={`custom-option-${i}`} onClick={() => this.onCustomOptionClick(option)}>
+                    <Icon style={{ verticalAlign: 'middle', marginRight: '7px' }} type={option.icon} />
+                    {option.name}
+                  </li>
+                )
+              })}
           {this.props.isEditing && this.props.showResetQueryOption && (
             <li
               className='context-menu-divider-top'
@@ -704,6 +721,7 @@ export class OptionsToolbar extends React.Component {
           ${this.state.isFiltering && isTable ? 'react-autoql-toolbar-btn-selected' : ''}`}
         tooltip={tooltip}
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        ariaLabel={tooltip}
         data-test='react-autoql-filter-button'
         size='small'
       >
@@ -719,6 +737,7 @@ export class OptionsToolbar extends React.Component {
         className={this.getMenuItemClass()}
         tooltip='Show/hide columns'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        ariaLabel='Show/hide columns'
         data-test='options-toolbar-col-vis'
         size='small'
       >
@@ -734,6 +753,7 @@ export class OptionsToolbar extends React.Component {
         className={this.getMenuItemClass()}
         tooltip='Report a problem'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        ariaLabel='Report a problem'
         size='small'
       >
         <Icon type='warning-triangle' />
@@ -918,6 +938,7 @@ export class OptionsToolbar extends React.Component {
           className={this.getMenuItemClass()}
           tooltip={disabledTooltip || 'Auto Analyze'}
           tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+          ariaLabel='Auto Analyze'
           size='small'
           disabled={isDisabled}
         >
@@ -959,12 +980,32 @@ export class OptionsToolbar extends React.Component {
         className={this.getMenuItemClass()}
         tooltip='Copy analysis'
         tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        ariaLabel='Copy analysis'
         data-test='options-toolbar-copy-markdown-btn'
         size='small'
       >
         <Icon type='copy' />
       </Button>
     )
+  }
+
+  // The custom options given `placement: 'toolbar'`, a button each. `name` is the button's accessible name, and its
+  // tooltip unless the option gives a `tooltip` of its own.
+  renderCustomToolbarBtns = () => {
+    return this.props.customOptions.filter(isToolbarOption).map((option, i) => (
+      <Button
+        key={`custom-toolbar-option-${i}`}
+        onClick={() => this.onCustomOptionClick(option)}
+        className={this.getMenuItemClass()}
+        tooltip={option.tooltip ?? option.name}
+        tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+        ariaLabel={option.name}
+        data-test='options-toolbar-custom-btn'
+        size='small'
+      >
+        <Icon type={option.icon} />
+      </Button>
+    ))
   }
 
   renderToolbar = (shouldShowButton) => {
@@ -991,12 +1032,14 @@ export class OptionsToolbar extends React.Component {
             this.renderMagicWandBtn()}
           {!isMarkdownOnly && shouldShowButton.showReportProblemButton && this.renderReportProblemBtn()}
           {shouldShowButton.showCopyMarkdownButton && this.renderCopyMarkdownBtn()}
+          {!isMarkdownOnly && shouldShowButton.showCustomToolbarOptions && this.renderCustomToolbarBtns()}
           {shouldShowButton.showDeleteButton && (
             <Button
               onClick={this.deleteMessage}
               className={this.getMenuItemClass()}
               tooltip={this.props.isMarkdownMessage ? 'Delete analysis' : 'Delete data response'}
               tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+              ariaLabel={this.props.isMarkdownMessage ? 'Delete analysis' : 'Delete data response'}
               data-test='options-toolbar-trash-btn'
               size='small'
             >
@@ -1022,6 +1065,7 @@ export class OptionsToolbar extends React.Component {
                 className={this.getMenuItemClass('more-options')}
                 tooltip='More options'
                 tooltipID={this.props.tooltipID ?? this.TOOLTIP_ID}
+                ariaLabel='More options'
                 data-test='react-autoql-toolbar-more-options-btn'
                 size='small'
               >
@@ -1081,6 +1125,8 @@ export class OptionsToolbar extends React.Component {
        */
       const isDataTruncated = !!props.isDataTruncated
       const isClientSideCSV = displayType === 'pivot_table'
+      const customOptions = props.customOptions ?? []
+      const canShowCustomOptions = !isDataTruncated && !this.isDrilldownResponse(props)
 
       shouldShowButton = {
         showFilterButton:
@@ -1123,7 +1169,10 @@ export class OptionsToolbar extends React.Component {
           !isMarkdownOnly &&
           !isDataTruncated &&
           (isMobile ? false : isDataResponse && autoQLConfig.enableNotifications && !this.isDrilldownResponse(props)),
-        showCustomOptions: !isDataTruncated && !!props.customOptions?.length && !this.isDrilldownResponse(props),
+        // The menu's custom options. The toolbar's follow the same rule and, like the menu behind More options, never
+        // show on a markdown-only message.
+        showCustomOptions: canShowCustomOptions && customOptions.some((option) => !isToolbarOption(option)),
+        showCustomToolbarOptions: !isMarkdownOnly && canShowCustomOptions && customOptions.some(isToolbarOption),
         showRefreshDataButton:
           (!isMarkdownOnly && isDataResponse && !!props.onRefreshClick) ||
           (!!props.onRefreshClick && !!props.showRefreshInEdit),

@@ -12,6 +12,7 @@ import { AiOutlineQuestionCircle } from '@react-icons/all-files/ai/AiOutlineQues
 import { AiOutlineTag } from '@react-icons/all-files/ai/AiOutlineTag'
 import { AiOutlineFileSearch } from '@react-icons/all-files/ai/AiOutlineFileSearch'
 import { AiOutlineNumber } from '@react-icons/all-files/ai/AiOutlineNumber'
+import { AiOutlineStar } from '@react-icons/all-files/ai/AiOutlineStar'
 
 import { BiLineChart } from '@react-icons/all-files/bi/BiLineChart'
 import { BiSearchAlt } from '@react-icons/all-files/bi/BiSearchAlt'
@@ -186,6 +187,10 @@ export default class Icon extends React.Component {
       }
       case 'bookmark': {
         icon = <BiBookmark />
+        break
+      }
+      case 'star': {
+        icon = <AiOutlineStar />
         break
       }
       case 'save': {

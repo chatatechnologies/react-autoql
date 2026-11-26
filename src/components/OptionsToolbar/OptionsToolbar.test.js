@@ -6,6 +6,7 @@ import { testAuthentication } from '../../../test/testData'
 import { QueryOutput } from '../QueryOutput/QueryOutput'
 import { OptionsToolbar } from './OptionsToolbar'
 import { Tooltip } from '../Tooltip'
+import { Button } from '../Button'
 import responseTestCases from '../../../test/responseTestCases'
 
 jest.mock('autoql-fe-utils', () => ({
@@ -1199,5 +1200,19 @@ describe('data alert query id', () => {
     }
     const queryId = getModalQueryId({ queryResponse, props: { queryId: 'q_cached_run' }, queryID: 'q_cached_run' })
     expect(queryId).toBe('q_saved')
+  })
+})
+
+// The answer's toolbars show on keyboard focus as well as hover, so each icon button needs a name of its own
+describe('accessible names', () => {
+  test('names every button on the toolbar', () => {
+    const { wrapper } = setup({
+      enableDeleteBtn: true,
+      enableMagicWand: true,
+      customOptions: [{ name: 'Follow markets', icon: 'star', placement: 'toolbar', callback: jest.fn() }],
+    })
+    const buttons = findByTestAttr(wrapper, 'autoql-options-toolbar').find(Button)
+    expect(buttons.length).toBeGreaterThanOrEqual(5)
+    buttons.forEach((button) => expect(button.prop('ariaLabel')).toBeTruthy())
   })
 })

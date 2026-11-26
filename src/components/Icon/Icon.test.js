@@ -8,4 +8,10 @@ describe('RTL - ', () => {
     const iconComponent = getByTestId('react-autoql-icon')
     expect(iconComponent).toBeTruthy()
   })
+
+  // An unknown type renders an empty span, so the case is what draws the star
+  test('draws the star', () => {
+    const { getByTestId } = render(<Icon type='star' />)
+    expect(getByTestId('react-autoql-icon').querySelector('svg')).toBeTruthy()
+  })
 })
