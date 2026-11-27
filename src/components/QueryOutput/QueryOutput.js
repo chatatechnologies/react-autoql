@@ -4002,7 +4002,12 @@ export class QueryOutput extends React.Component {
     }
 
     link.className = VALUE_ACTION_LINK_CLASS
-    link.innerHTML = formattedValue ?? ''
+
+    // In its own element so a value too long for the cell ends in an ellipsis without cutting off the arrow
+    const text = document.createElement('span')
+    text.className = `${VALUE_ACTION_LINK_CLASS}-text`
+    text.innerHTML = formattedValue ?? ''
+    link.appendChild(text)
 
     const hint = document.createElement('span')
     hint.id = `${VALUE_ACTION_LINK_CLASS}-hint-${uuid()}`
