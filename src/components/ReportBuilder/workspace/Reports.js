@@ -151,13 +151,12 @@ const listReports = async (authentication) => {
 }
 
 // The list once a report is opened: with its title and data status as stored, or with the report added if the list
-// didn't have it (it was on a page that failed to list), so its tab has its title.
-const withOpened = (reports, detail) =>
+// didn't have it (it was on a page that failed to list), so its tab has its title. `title` is what it's listed under
+// instead, if anything: a batch's report still being made keeps the name it's given (RW-386).
+const withOpened = (reports, detail, title = detail.title) =>
   reports.some((report) => report.id === detail.id)
-    ? reports.map((report) =>
-        report.id === detail.id ? { ...report, title: detail.title, dataStatus: detail.dataStatus } : report,
-      )
-    : [...reports, summaryOfDetail(detail)]
+    ? reports.map((report) => (report.id === detail.id ? { ...report, title, dataStatus: detail.dataStatus } : report))
+    : [...reports, { ...summaryOfDetail(detail), title }]
 
 // The browser's time zone, which AutoQL asks a template's questions in.
 const browserTimeZone = () => {
@@ -1113,7 +1112,8 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState(({ reports }) => ({
       opened: { id, report: detail.report },
       saveState: fresh.current,
-      reports: reports && withOpened(reports, detail),
+      // A batch's report still being made stays listed, and its tab titled, under the name it's given (RW-386).
+      reports: reports && withOpened(reports, detail, this.batchTitles.get(id)),
     }))
     if (follow) {
       this.followFill(id, sourceId, detail)

@@ -1354,6 +1354,42 @@ describe('a report for each household from a template (RW-353)', () => {
     expect(lastSaveOf(R1).report.title).toBe('Monthly review — Brown Family')
   })
 
+  it('keeps the name on a batch report’s tab and row when it’s opened while AutoQL fills it in (RW-386)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    let fill
+    const filled = new Promise((resolve) => {
+      fill = resolve
+    })
+    fetchReportDataStatus.mockImplementation(async () => {
+      await filled
+      return { dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] }
+    })
+    // Read while AutoQL fills it in: as it's stored, under the template's own title ("Quarterly review").
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 2, dataStatus: 'RUNNING', blocks: [dataBlock('d1')] },
+      )
+    })
+    const tabNamed = (name) => within(screen.getByTestId('reports-tabs')).queryByRole('button', { name })
+    setup({ enableFilterLocks: true })
+    await startEach()
+    await waitFor(() => expect(listed(R2)).toBeTruthy())
+
+    await act(async () => homeProps.current.openReport(R1))
+    await waitFor(() => expect(fetchReport).toHaveBeenCalledWith(expect.objectContaining({ id: R1 })))
+    await waitFor(() => expect(mockBuilder.props?.report?.title).toBe('Quarterly review'))
+    expect(tabNamed('Monthly review — Brown Family')).toBeTruthy()
+    expect(tabNamed('Quarterly review')).toBeNull()
+    // Back on the home page, its row has the name too.
+    fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'All reports' }))
+    await waitFor(() => expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family' }))
+
+    await act(async () => fill())
+    await waitFor(() => expect(lastSaveOf(R1)?.report.title).toBe('Monthly review — Brown Family'))
+  })
+
   it('lists one it couldn’t name under the template’s title again, as it’s stored (RW-386)', async () => {
     createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
     fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] })
