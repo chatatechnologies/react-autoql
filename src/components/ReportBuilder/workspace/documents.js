@@ -14,6 +14,30 @@ const S = REPORTS_STRINGS
 // The service's limit on a title, in characters (code points).
 export const REPORT_TITLE_MAX = 200
 
+// The service's limit on a folder's or a tag's name, in characters (code points), once trimmed.
+export const ORGANIZER_NAME_MAX = 80
+
+// Text cut to `max` code points, with an ellipsis when it had more.
+export const clipped = (text, max) => {
+  const points = Array.from(text)
+  return points.length > max ? `${points.slice(0, Math.max(max - 1, 1)).join('')}…` : text
+}
+
+// A report for each household (RW-353): the folder suggested for them, named for the template and the day, within a
+// folder name's length.
+export const batchFolderName = (title, date) => {
+  const day = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+  const room = ORGANIZER_NAME_MAX - Array.from(S.batch.folder('', day)).length
+  return S.batch.folder(clipped((title || '').trim() || S.untitled, room), day)
+}
+
+// The folder a batch goes into (RW-387): the name given for it, trimmed and within a folder name's length, or, with
+// none given, the one suggested.
+export const batchFolderOf = (name, title, date) => {
+  const given = typeof name === 'string' ? name.trim() : ''
+  return given ? clipped(given, ORGANIZER_NAME_MAX) : batchFolderName(title, date)
+}
+
 // The service keeps a report of up to 5 MiB, serialized. Adding blocks stops short of that, so a full report can
 // still be edited and saved.
 export const REPORT_ADD_MAX_BYTES = 4.5 * 1024 * 1024

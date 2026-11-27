@@ -1020,11 +1020,11 @@ describe('a report for each household from a template (RW-353)', () => {
     const report = stored({ id, blocks: [dataBlock('d1'), dataBlock('d2')], ...rest })
     return { ...report, folderId, report: { ...report.report, sessionFilterLocks }, created: true }
   }
-  const startEach = async (starts = STARTS) => {
+  const startEach = async (starts = STARTS, more = {}) => {
     await waitFor(() => expect(homeProps.current?.reports).not.toBeNull())
     fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
     await act(() =>
-      mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts }),
+      mockDialogs.newReport.onStartEachFromTemplate({ templateId: 'tp1', title: 'Monthly review', starts, ...more }),
     )
   }
   const listed = (id) => homeProps.current.reports.find((report) => report.id === id)
@@ -1301,6 +1301,73 @@ describe('a report for each household from a template (RW-353)', () => {
     expect(mockDialogs.newReport.onStartEachFromTemplate).toBeUndefined()
   })
 
+  it('makes them in the folder named before they started (RW-387)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    setup({ enableFilterLocks: true })
+    await startEach(STARTS, { folderName: '  Q4 household reviews  ' })
+
+    expect(createReportFolder).toHaveBeenCalledTimes(1)
+    expect(createReportFolder).toHaveBeenCalledWith(expect.objectContaining({ name: 'Q4 household reviews' }))
+    const folderId = createReportFolder.mock.calls[0][0].id
+    await waitFor(() => expect(homeProps.current.notices[0].text).toBe('Both reports are in “Q4 household reviews”.'))
+    expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family', folderId })
+  })
+
+  it('makes them in the day’s folder when the name before they started is blank (RW-387)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start))
+    setup({ enableFilterLocks: true })
+    await startEach(STARTS, { folderName: '   ' })
+
+    expect(createReportFolder).toHaveBeenCalledWith(expect.objectContaining({ name: expect.stringMatching(FOLDER) }))
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in “Monthly review — /))
+  })
+
+  it('lists each report under the name it’s given while AutoQL is still filling it in (RW-386)', async () => {
+    // AutoQL makes them under the template's own title ("Quarterly review").
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    let fill
+    const filled = new Promise((resolve) => {
+      fill = resolve
+    })
+    fetchReportDataStatus.mockImplementation(async () => {
+      await filled
+      return { dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] }
+    })
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      )
+    })
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(listed(R2)).toBeTruthy())
+    expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family', dataStatus: 'PENDING' })
+    expect(listed(R2)).toMatchObject({ title: 'Monthly review — Nguyen Family', dataStatus: 'PENDING' })
+    expect(saveReport).not.toHaveBeenCalled()
+
+    await act(async () => fill())
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/^Both reports are in/))
+    expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family', dataStatus: 'DONE' })
+    expect(lastSaveOf(R1).report.title).toBe('Monthly review — Brown Family')
+  })
+
+  it('lists one it couldn’t name under the template’s title again, as it’s stored (RW-386)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] })
+    // Filled in by AutoQL, then it can't be read to be named.
+    fetchReport.mockRejectedValue(new ReportsApiError({ status: 0 }))
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/weren’t finished here/))
+    expect(listed(R1)).toMatchObject({ title: 'Quarterly review', dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ title: 'Quarterly review', dataStatus: 'DONE' })
+    expect(saveReport).not.toHaveBeenCalled()
+  })
+
   describe('every household at once, safely (RW-371)', () => {
     const R3 = 'aaaaaaaa-0000-4000-8000-0000000000b3'
     const R4 = 'aaaaaaaa-0000-4000-8000-0000000000b4'
@@ -1370,12 +1437,12 @@ describe('a report for each household from a template (RW-353)', () => {
       })
       await act(async () => waits.forEach((go) => go()))
       await finalNotice(
-        /^Stopped\. 3 of 5 reports are in “Monthly review — .+”\. Starting the same ones again today makes only the rest\.$/,
+        /^Stopped\. 3 of 5 reports are in “Monthly review — .+”\. Starting the same ones again in that folder makes only the rest\.$/,
       )
       expect(createReportFromTemplate).toHaveBeenCalledTimes(3)
     })
 
-    it('skips the households that already have a report in the day’s folder from the template, named or not yet', async () => {
+    it('skips the households that already have a report in the batch’s folder from the template, named or not yet', async () => {
       const ADEYEMI = lock('Adeyemi Family')
       createReportFolder.mockImplementation(async ({ id, name }) => ({ id, name, reportCount: 3, created: true }))
       const inFolder = (folderId) => [
@@ -1399,7 +1466,7 @@ describe('a report for each household from a template (RW-353)', () => {
       await startEach([...STARTS, { id: R3, lock: ADEYEMI }])
 
       await finalNotice(
-        /^Your report is in “Monthly review — .+”\. 2 were there already from earlier today, so they weren’t made again\.$/,
+        /^Your report is in “Monthly review — .+”\. 2 were in the folder already, so they weren’t made again\.$/,
       )
       expect(createReportFromTemplate).toHaveBeenCalledTimes(1)
       expect(createReportFromTemplate).toHaveBeenCalledWith(

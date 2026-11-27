@@ -12,7 +12,8 @@ import './Reports.scss'
 //
 // Props: title, description (the line under it), size ('small' or 'large'), headerExtra (more of the header, under
 // the description), status (the line beside the actions; statusTone 'error' for a failure), actions (its buttons),
-// initialFocus (a ref to focus first; else the body's first field or button), busy, onClose, testId, children.
+// initialFocus (a ref to focus first; else the body's first field or button), busy, onClose, testId, children; and
+// over, for a dialog opened over another one (a question it asks): drawn above it, its backdrop over it.
 
 const FOCUSABLE_PARTS = [
   'button:not([disabled])',
@@ -90,10 +91,22 @@ export class ReportModal extends React.Component {
     if (typeof document === 'undefined') {
       return null
     }
-    const { title, description, size, headerExtra, status, statusTone, actions, busy, testId, className, children } =
-      this.props
+    const {
+      title,
+      description,
+      size,
+      headerExtra,
+      status,
+      statusTone,
+      actions,
+      busy,
+      testId,
+      className,
+      over,
+      children,
+    } = this.props
     return ReactDOM.createPortal(
-      <div className={`${RS}-layer`}>
+      <div className={`${RS}-layer`} data-over={over || undefined}>
         <div className={`${RS}-modal-backdrop`} onMouseDown={this.close} />
         <div
           ref={this.dialogRef}
