@@ -8,6 +8,7 @@ import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
 import { setSessionFilterLocks, setTitle, updateBlock } from '../model/reportOperations'
 import { filterLocksKey, normalizeFilterLocks, titleLockName } from '../model/filterLocks'
+import { clipped } from '../model/text'
 import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
   createReportFolder,
@@ -44,7 +45,6 @@ import { REPORTS_STRINGS } from './reportsStrings'
 import { filledDataFill, fillNoticeOf } from './fillNotice'
 import {
   batchFolderOf,
-  clipped,
   describeReportError,
   isReportGone,
   isUnauthorized,
@@ -213,6 +213,11 @@ const batchTitleOf = (title, lock) => {
   const room = REPORT_TITLE_MAX - Array.from(S.batch.title('', value)).length
   return S.batch.title(clipped((typeof title === 'string' && title.trim()) || S.untitled, room), value)
 }
+
+// Whether a report was made the same day (this browser's) as `as`, when the batch started; one that doesn't say when
+// it was made is taken to have been.
+const madeTheSameDay = (createdAt, as) =>
+  !createdAt || new Date(createdAt).toDateString() === new Date(as).toDateString()
 
 // Whether a report made from a template is for the lock asked for: a service before RW-352 makes it for the template's.
 const lockKeptOn = (report, lock) => filterLocksKey(report?.sessionFilterLocks) === filterLocksKey([lock])
@@ -1326,6 +1331,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.localFills.get(id)?.stop()
     this.localFills.delete(id)
     this.fillInfo.delete(id)
+    this.batchTitles.delete(id)
     if (this.pendingLocks.delete(id)) {
       this.keepPendingLocks()
     }
@@ -1359,6 +1365,8 @@ export class ReportsWithoutTheme extends React.Component {
     const merged = this.unshownMerge?.id === id ? this.unshownMerge.blocks : null
     const next = merged ? withBlocksAdded(change, merged) : change
     const title = typeof next?.title === 'string' ? next.title : ''
+    // Changed by the user, a batch's report is listed as they have it: its batch name isn't put back over it.
+    this.batchTitles.delete(id)
     this.setState(({ opened, reports }) => ({
       opened: opened?.id === id ? { id, report: next } : opened,
       reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
@@ -1664,9 +1672,9 @@ export class ReportsWithoutTheme extends React.Component {
   // why none were made.
   //
   // RW-371: one batch at a time in this browser, whichever tab (a lease kept under the host's prefix); the reports made
-  // in the batch's folder from the same template earlier (a batch stopped, or the page closed on one) aren't made
-  // again; Stop (stopBatch) lets those under way finish and starts no more; and the host hears while one runs
-  // (onBatchRunningChange), as the browser does before the page closes.
+  // in the batch's folder from the same template earlier the same day (a batch stopped, or the page closed on one)
+  // aren't made again; Stop (stopBatch) lets those under way finish and starts no more; and the host hears while one
+  // runs (onBatchRunningChange), as the browser does before the page closes.
   startEachFromTemplate = async ({ templateId, title, starts, folderName }) => {
     if (this.batch) {
       throw new ReportsApiError({ status: 409, code: 'REPORT_BATCH_UNDER_WAY' })
@@ -1720,10 +1728,11 @@ export class ReportsWithoutTheme extends React.Component {
     Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, batch.queue.length) }, worker)).then(end, end)
   }
 
-  // Picking up again (RW-371): a report already in the batch's folder (the day's, unless it was named otherwise) from
-  // the same template, for one of the values asked for, is left as it is, and isn't made again. One that was named is
-  // known by its name ("<the template's name> — <the value>"); one that wasn't (its page closed first) is read for what
-  // it's for. What's left to make is the batch.
+  // Picking up again (RW-371): a report made earlier the same day in the batch's folder, from the same template, for one
+  // of the values asked for, is left as it is, and isn't made again. Only the same day's: a folder can be named, and
+  // used again on another day (RW-387), when its reports are made again. One that was named is known by its name
+  // ("<the template's name> — <the value>"); one that wasn't (its page closed first) is read for what it's for. What's
+  // left to make is the batch.
   skipMadeAlready = async (batch) => {
     const authentication = this.credentialsFor(batch.sourceId)
     const inFolder = []
@@ -1739,7 +1748,9 @@ export class ReportsWithoutTheme extends React.Component {
         break
       }
     }
-    const fromTemplate = inFolder.filter((report) => report.templateId === batch.templateId)
+    const fromTemplate = inFolder.filter(
+      (report) => report.templateId === batch.templateId && madeTheSameDay(report.createdAt, batch.startedAt),
+    )
     if (!fromTemplate.length) {
       return
     }
@@ -1975,15 +1986,19 @@ export class ReportsWithoutTheme extends React.Component {
       }
       const title = batchTitleOf(batch.title || saver.report?.title, lock)
       saver.edit(setTitle(saver.report, title))
-      // Its own name now, saved or waiting in its saver: the list no longer stands in for it.
-      this.batchTitles.delete(id)
       if (this.stillOn(batch.sourceId)) {
         this.setState(({ opened, reports }) => ({
           opened: opened?.id === id ? { id, report: saver.report } : opened,
           reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
         }))
       }
-      return await saver.flush()
+      const saved = await saver.flush()
+      // Saved under its name, the list no longer stands in for it. Not saved, it's listed as it's stored again
+      // (makeOneOfBatch), for its name to be checked.
+      if (saved) {
+        this.batchTitles.delete(id)
+      }
+      return saved
     } finally {
       this.naming.delete(id)
     }

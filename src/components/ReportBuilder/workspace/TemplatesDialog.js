@@ -6,7 +6,7 @@ import { FilterLockField } from '../components/FilterLockField'
 import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
 import { STRINGS } from '../strings'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates } from '../run/reportsApi'
-import { batchFolderName, batchFolderOf, describeReportError, newReportId, ORGANIZER_NAME_MAX } from './documents'
+import { batchFolderName, describeReportError, newReportId } from './documents'
 import { ReportModal } from './ReportModal'
 import { BATCH_AT_ONCE, BATCH_SECONDS_PER_REPORT, DEFAULT_BATCH_LIMIT, RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
@@ -38,6 +38,7 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // starts at once; without the list, it's each value picked. At most `batchLimit` at once (DEFAULT_BATCH_LIMIT; null
 // for no limit). A batch says about how long it takes, and asks before it starts, in a pop-up over the dialog
 // (RW-385) that has the folder they go into: named for the template and the day, or as the user names it (RW-387).
+// `folderName` is the name as typed there, or null for the one suggested; the host makes it a folder's name.
 
 // A template's own filter lock, from its document.
 const templateLocks = (template) => normalizeFilterLocks(template?.report?.sessionFilterLocks)
@@ -139,7 +140,8 @@ export class TemplatesDialog extends React.Component {
       pickQ: '',
       pickBelow: 0,
       // A batch's question before it starts, in a pop-up (RW-385): how many, about how long, and the folder they go
-      // into, as it's named there (RW-387): null until it's asked, then kept should it ask again for this template.
+      // into (RW-387): its name as typed there, kept should it ask again for this template; null for the one
+      // suggested, worked out whenever it's shown or started, so it's always the day's.
       confirming: false,
       folderName: null,
       // The dialog, for the filter lock's popover to open in: one opened outside it couldn't take focus.
@@ -424,7 +426,7 @@ export class TemplatesDialog extends React.Component {
 
   // What stops a report each from starting, said beside Back and Start: more than the limit, or, without the host's
   // list, a value picked that's left out.
-  eachProblem(each, what) {
+  eachProblem(each, what = this.props.filterLockLabels?.title || STRINGS.filterLock.title) {
     if (!each) {
       return null
     }
@@ -525,7 +527,8 @@ export class TemplatesDialog extends React.Component {
   }
 
   // Waits for the template's document with enableFilterLocks: until it's in, what the template is for isn't known.
-  // Specific values need one picked at least; a batch, one at least, and no more than the limit.
+  // Specific values need one picked at least; a batch, one at least, and nothing said against it (eachProblem), so
+  // neither Start nor its pop-up's button gets past one.
   canStart() {
     const { chosenId, chosen, starting, mode, locks } = this.state
     const each = this.startsEach()
@@ -535,7 +538,7 @@ export class TemplatesDialog extends React.Component {
       !starting &&
       (!locking || !!chosen) &&
       (!locking || mode !== 'some' || locks.length > 0) &&
-      (!each || (each.length > 0 && each.length <= this.batchLimit()))
+      (!each || (each.length > 0 && !this.eachProblem(each)))
     )
   }
 
@@ -565,30 +568,29 @@ export class TemplatesDialog extends React.Component {
     // None, from a template that has one, is said: the report is for everything, not for the template's.
     const said = locks.length > 0 || (this.props.enableFilterLocks && templateLocks(this.state.chosen).length > 0)
     const each = this.startsEach()
-    // A batch asks first, in a pop-up (RW-385): how many, about how long, and the folder they go into, named for the
-    // template and the day unless it was named otherwise when it last asked (RW-387).
+    // A batch asks first, in a pop-up (RW-385): how many, about how long, and the folder they go into (RW-387), as it
+    // was named when it last asked, or, left blank, the one suggested.
     if (each && !this.state.confirming) {
       this.setState(({ folderName }) => ({
         confirming: true,
         startError: null,
-        folderName: folderName?.trim() ? folderName : batchFolderName(this.chosenTitle(), new Date()),
+        folderName: folderName?.trim() ? folderName : null,
       }))
       return
     }
     this.setState({ starting: true, startError: null, confirming: false })
     try {
       if (each) {
-        const title = this.chosenTitle()
         await this.props.onStartEach({
           templateId,
-          title,
+          title: this.chosenTitle(),
           starts: each.map(({ lock, name }) =>
             lock
               ? { id: this.startIdFor(templateId, [lock]), lock }
               : { id: this.startIdFor(templateId, null, name), name },
           ),
-          // Left blank, it's the one suggested.
-          folderName: batchFolderOf(this.state.folderName, title, new Date()),
+          // As typed: the host makes the name (startEachFromTemplate), the one suggested when it's null or blank.
+          folderName: this.state.folderName,
         })
       } else {
         await this.props.onStart({
@@ -937,8 +939,7 @@ export class TemplatesDialog extends React.Component {
           id={this.folderId}
           type='text'
           className={`${RS}-input`}
-          value={this.state.folderName || ''}
-          maxLength={ORGANIZER_NAME_MAX}
+          value={this.state.folderName ?? batchFolderName(this.chosenTitle(), new Date())}
           spellCheck={false}
           data-test='reports-templates-confirm-folder'
           onChange={(e) => this.setState({ folderName: e.target.value })}

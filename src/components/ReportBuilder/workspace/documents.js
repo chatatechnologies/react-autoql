@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import { clipped } from '../model/text'
 import { ReportsApiError } from '../run/reportsApi'
 import { REPORTS_STRINGS } from './reportsStrings'
 
@@ -16,12 +17,6 @@ export const REPORT_TITLE_MAX = 200
 
 // The service's limit on a folder's or a tag's name, in characters (code points), once trimmed.
 export const ORGANIZER_NAME_MAX = 80
-
-// Text cut to `max` code points, with an ellipsis when it had more.
-export const clipped = (text, max) => {
-  const points = Array.from(text)
-  return points.length > max ? `${points.slice(0, Math.max(max - 1, 1)).join('')}…` : text
-}
 
 // A report for each household (RW-353): the folder suggested for them, named for the template and the day, within a
 // folder name's length.

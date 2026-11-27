@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import '@testing-library/jest-dom'
 import { batchMinutes, matchingTemplates, TemplatesDialog } from '../workspace/TemplatesDialog'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates, ReportsApiError } from '../run/reportsApi'
+import { batchFolderName } from '../workspace/documents'
 
 // New report › Start from a template: the templates published for the data source, searched by title and narrowed by
 // category and tags, the one chosen shown as it prints, and the report started from it under an id kept for a retry.
@@ -22,6 +23,12 @@ jest.mock('../ReportBuilder', () => ({
     return <div data-test='preview-builder'>{props.report?.title}</div>
   },
 }))
+
+// The folder suggested for a batch, named for the day (RW-387): the real one, unless a test says otherwise.
+jest.mock('../workspace/documents', () => {
+  const actual = jest.requireActual('../workspace/documents')
+  return { ...actual, batchFolderName: jest.fn(actual.batchFolderName) }
+})
 
 // The filter lock's field (RW-351) as a button that picks the lock a test sets, saying what its own button would
 // (data-change): the popover is FilterLockField's own.
@@ -105,6 +112,7 @@ const FOLDER = /^Household review — [A-Z][a-z]{2} \d{1,2}, \d{4}$/
 
 beforeEach(() => {
   jest.clearAllMocks()
+  batchFolderName.mockImplementation(jest.requireActual('../workspace/documents').batchFolderName)
   mockBuilder.props = null
   mockLock.next = []
   fetchReportTemplates.mockResolvedValue({ templates: TEMPLATES, page: 1, pageSize: 200, totalPages: 1, totalItems: 3 })
@@ -448,7 +456,7 @@ describe('TemplatesDialog', () => {
           { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: BROWN },
           { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: NGUYEN },
         ],
-        folderName: expect.stringMatching(FOLDER),
+        folderName: null,
       })
       expect(first.starts[0].id).not.toBe(first.starts[1].id)
       expect(again).toEqual(first)
@@ -585,13 +593,13 @@ describe('TemplatesDialog', () => {
           id: expect.stringMatching(/^[0-9a-f-]{36}$/),
           name,
         })),
-        folderName: expect.stringMatching(FOLDER),
+        folderName: null,
       })
       const ids = onStartEach.mock.calls[0][0].starts.map((start) => start.id)
       expect(new Set(ids).size).toBe(3)
     })
 
-    it('makes them in the folder named in its pop-up, kept when it asks again, or the one suggested (RW-387)', async () => {
+    it('makes them in the folder as it’s named in its pop-up, kept when it asks again, or the one suggested (RW-387)', async () => {
       const onStartEach = jest
         .fn()
         .mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
@@ -599,23 +607,44 @@ describe('TemplatesDialog', () => {
       await open({ onStartEach })
       fireEvent.click(forOption('each'))
       fireEvent.click(startButton())
-      const suggested = folderField().value
-      expect(suggested).toMatch(FOLDER)
-      expect(folderField()).toHaveAttribute('maxLength', '80')
+      expect(folderField().value).toMatch(FOLDER)
+      // Cut to a folder name's length by code points where it's made, not by the browser's UTF-16 count.
+      expect(folderField()).not.toHaveAttribute('maxLength')
       fireEvent.change(folderField(), { target: { value: '  Q4 household reviews  ' } })
       await act(async () => fireEvent.click(confirmStart()))
-      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: 'Q4 household reviews' }))
+      // As typed: the host makes it a folder's name.
+      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: '  Q4 household reviews  ' }))
 
-      // It wasn't started: asked again, the folder is as it was named. Left blank, it's the one suggested, and Enter in
-      // it makes them.
+      // It wasn't started: asked again, the folder is as it was named.
       expect(screen.getByText('The report wasn’t started: couldn’t reach the server.')).toBeInTheDocument()
       fireEvent.click(startButton())
       expect(folderField()).toHaveValue('  Q4 household reviews  ')
+      // Left blank, it's the one suggested when it asks again; and Enter in it makes them, in that one.
       fireEvent.change(folderField(), { target: { value: '   ' } })
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+      fireEvent.click(startButton())
+      expect(folderField().value).toMatch(FOLDER)
       await act(async () => fireEvent.keyDown(folderField(), { key: 'Enter' }))
       expect(confirmDialog()).toBeNull()
       expect(onStartEach).toHaveBeenCalledTimes(2)
-      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: suggested }))
+      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: null }))
+    })
+
+    it('suggests the day’s folder each time it asks, so one left open past midnight has the new day (RW-387)', async () => {
+      batchFolderName.mockImplementation((title) => `${title} — Nov 27, 2026`)
+      const { onStartEach } = await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 27, 2026')
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+
+      // The next day.
+      batchFolderName.mockImplementation((title) => `${title} — Nov 28, 2026`)
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 28, 2026')
+      // Not named, it's left to the host, which names it for the day it starts.
+      await act(async () => fireEvent.click(confirmStart()))
+      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: null }))
     })
 
     it('goes back to the dialog as it was on Escape, and suggests each template’s own folder (RW-385, RW-387)', async () => {

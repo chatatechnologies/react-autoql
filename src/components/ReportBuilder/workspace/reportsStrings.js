@@ -231,7 +231,7 @@ export const REPORTS_STRINGS = {
     confirmWhat: (time) => `It takes ${time}, and this page has to stay open.`,
     confirmFolder: 'Folder',
     confirmFolderNote:
-      'If there’s already a folder with this name, they go into it, and any made there before aren’t made again.',
+      'If there’s already a folder with this name, they go into it, and any made there earlier today aren’t made again.',
     confirmStart: (n) => (n === 1 ? 'Make 1 report' : `Make ${n} reports`),
     about: (minutes) => (minutes <= 1 ? 'about a minute' : `about ${minutes} minutes`),
   },
@@ -270,13 +270,12 @@ export const REPORTS_STRINGS = {
     stopped: (made, total, folder) =>
       `Stopped. ${made} of ${total} reports ${
         made === 1 ? 'is' : 'are'
-      } in “${folder}”. Starting the same ones again in that folder makes only the rest.`,
-    // Made for them earlier, in the same folder (RW-387: it can be named, so it's the folder, not the day): not made
-    // again.
+      } in “${folder}”. Starting the same ones again in that folder today makes only the rest.`,
+    // Made for them earlier the same day, in the same folder: not made again.
     skipped: (n) =>
       n === 1
-        ? '1 was in the folder already, so it wasn’t made again.'
-        : `${n} were in the folder already, so they weren’t made again.`,
+        ? '1 was there already from earlier today, so it wasn’t made again.'
+        : `${n} were there already from earlier today, so they weren’t made again.`,
     allThere: (total, folder) =>
       total === 1 ? `Its report is already in “${folder}”.` : `All ${total} reports are already in “${folder}”.`,
     // Looked up as its report was made, and not there (or not one value): no report for it.

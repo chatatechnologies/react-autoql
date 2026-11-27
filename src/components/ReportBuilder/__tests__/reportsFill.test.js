@@ -1390,6 +1390,27 @@ describe('a report for each household from a template (RW-353)', () => {
     await waitFor(() => expect(lastSaveOf(R1)?.report.title).toBe('Monthly review — Brown Family'))
   })
 
+  it('lists one whose name couldn’t be saved under the template’s title again, as it’s stored (RW-386)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] })
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      )
+    })
+    // The service turns its name down.
+    saveReport.mockRejectedValue(new ReportsApiError({ status: 422, code: 'REPORT_INVALID' }))
+    setup({ enableFilterLocks: true })
+    await startEach()
+
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/weren’t finished here/))
+    expect(saveReport).toHaveBeenCalledWith(expect.objectContaining({ id: R1 }))
+    expect(listed(R1)).toMatchObject({ title: 'Quarterly review', dataStatus: 'DONE' })
+    expect(listed(R2)).toMatchObject({ title: 'Quarterly review', dataStatus: 'DONE' })
+  })
+
   it('lists one it couldn’t name under the template’s title again, as it’s stored (RW-386)', async () => {
     createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
     fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] })
@@ -1473,20 +1494,35 @@ describe('a report for each household from a template (RW-353)', () => {
       })
       await act(async () => waits.forEach((go) => go()))
       await finalNotice(
-        /^Stopped\. 3 of 5 reports are in “Monthly review — .+”\. Starting the same ones again in that folder makes only the rest\.$/,
+        /^Stopped\. 3 of 5 reports are in “Monthly review — .+”\. Starting the same ones again in that folder today makes only the rest\.$/,
       )
       expect(createReportFromTemplate).toHaveBeenCalledTimes(3)
     })
 
-    it('skips the households that already have a report in the batch’s folder from the template, named or not yet', async () => {
+    it('skips the households that have a report in the batch’s folder from the template made earlier today, named or not yet', async () => {
       const ADEYEMI = lock('Adeyemi Family')
       createReportFolder.mockImplementation(async ({ id, name }) => ({ id, name, reportCount: 3, created: true }))
+      const today = new Date().toISOString()
       const inFolder = (folderId) => [
-        { ...stored({ id: 'old-brown' }), title: 'Monthly review — Brown Family', folderId, report: undefined },
+        {
+          ...stored({ id: 'old-brown' }),
+          title: 'Monthly review — Brown Family',
+          folderId,
+          createdAt: today,
+          report: undefined,
+        },
         // Its page closed before it was named: what it's for is in it.
-        { ...stored({ id: 'old-nguyen' }), folderId, report: undefined },
+        { ...stored({ id: 'old-nguyen' }), folderId, createdAt: today, report: undefined },
         // Another template's.
-        { ...stored({ id: 'other' }), title: 'Monthly review — Adeyemi Family', templateId: 'tp2', folderId },
+        {
+          ...stored({ id: 'other' }),
+          title: 'Monthly review — Adeyemi Family',
+          templateId: 'tp2',
+          folderId,
+          createdAt: today,
+        },
+        // Made in this folder on another day (RW-387: a folder can be named, and used again): made again.
+        { ...stored({ id: 'last-month' }), title: 'Monthly review — Adeyemi Family', folderId },
       ]
       fetchReports.mockImplementation(async ({ folderId } = {}) => ({
         reports: folderId ? inFolder(folderId) : [],
@@ -1502,7 +1538,7 @@ describe('a report for each household from a template (RW-353)', () => {
       await startEach([...STARTS, { id: R3, lock: ADEYEMI }])
 
       await finalNotice(
-        /^Your report is in “Monthly review — .+”\. 2 were in the folder already, so they weren’t made again\.$/,
+        /^Your report is in “Monthly review — .+”\. 2 were there already from earlier today, so they weren’t made again\.$/,
       )
       expect(createReportFromTemplate).toHaveBeenCalledTimes(1)
       expect(createReportFromTemplate).toHaveBeenCalledWith(
@@ -1512,9 +1548,10 @@ describe('a report for each household from a template (RW-353)', () => {
     })
 
     it('makes nothing when every household has its report there already, and says so', async () => {
+      const today = new Date().toISOString()
       const inFolder = (folderId) => [
-        { ...stored({ id: 'b' }), title: 'Monthly review — Brown Family', folderId },
-        { ...stored({ id: 'n' }), title: 'Monthly review — Nguyen Family', folderId },
+        { ...stored({ id: 'b' }), title: 'Monthly review — Brown Family', folderId, createdAt: today },
+        { ...stored({ id: 'n' }), title: 'Monthly review — Nguyen Family', folderId, createdAt: today },
       ]
       fetchReports.mockImplementation(async ({ folderId } = {}) => ({
         reports: folderId ? inFolder(folderId) : [],
