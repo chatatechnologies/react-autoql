@@ -450,33 +450,71 @@ body.react-autoql-no-select {
 }
 
 // Values in a column with a value_action are links: an <a>, or a <button> for a host app callback.
+// Drawn as an accent-tinted pill (like the Quick Topics chips) with a trailing arrow, so it reads as
+// clickable without hovering. It fills the cell, with the arrow at the right edge; the text keeps the
+// column's alignment, and a value too long for the cell ends in an ellipsis.
 // Hovering one also drops the row's hover look (see ChataTable.scss), so it's clear the click goes
 // to the link rather than the row's drilldown. Scoped through the cell's wrappers so link styles
 // around the table (e.g. chat messages make every link bold with no underline) don't override it.
 .react-autoql-cell-value-wrapper .react-autoql-cell-value .react-autoql-cell-value-action {
-  display: inline;
-  margin: 0 -2px;
-  padding: 0 2px;
-  border: none;
-  border-radius: 3px;
-  background: none;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  margin: -3px 0;
+  padding: 1px 7px;
+  vertical-align: middle;
+  border: 1px solid color-mix(in srgb, var(--react-autoql-accent-color, #26a7e9) 45%, transparent);
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--react-autoql-accent-color, #26a7e9) 18%, transparent);
   font: inherit;
-  font-weight: inherit;
-  line-height: inherit;
+  font-weight: 500;
+  line-height: 1.4;
   text-align: inherit;
-  color: var(--react-autoql-accent-color);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  color: var(--react-autoql-text-color-primary);
+
+  .react-autoql-cell-value-action-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.1s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
+  // › for a callback or a same-tab link, ↗ for a link that opens a new tab. A mask, so it takes the text color.
+  &::after {
+    content: '';
+    flex: 0 0 auto;
+    width: 0.75em;
+    height: 0.75em;
+    margin-left: 4px;
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3l5 5-5 5'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3l5 5-5 5'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+
+  &[target='_blank']::after {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 11l6-6M6 5h5v5'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 11l6-6M6 5h5v5'/%3E%3C/svg%3E");
+  }
 
   &:hover {
-    background-color: rgba(var(--react-autoql-accent-color-rgb, 38, 167, 233), 0.15);
-    text-decoration-thickness: 2px;
+    background-color: color-mix(in srgb, var(--react-autoql-accent-color, #26a7e9) 28%, transparent);
+    border-color: var(--react-autoql-accent-color);
+  }
+
+  &:active {
+    background-color: color-mix(in srgb, var(--react-autoql-accent-color, #26a7e9) 36%, transparent);
   }
 
   &:focus-visible {
-    outline: 1px solid var(--react-autoql-accent-color);
+    outline: 2px solid var(--react-autoql-accent-color);
+    outline-offset: 1px;
   }
 }
 
