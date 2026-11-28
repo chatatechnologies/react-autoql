@@ -45,6 +45,7 @@ import { REPORTS_STRINGS } from './reportsStrings'
 import { filledDataFill, fillNoticeOf } from './fillNotice'
 import {
   batchFolderOf,
+  madeLately,
   describeReportError,
   isReportGone,
   isUnauthorized,
@@ -213,11 +214,6 @@ const batchTitleOf = (title, lock) => {
   const room = REPORT_TITLE_MAX - Array.from(S.batch.title('', value)).length
   return S.batch.title(clipped((typeof title === 'string' && title.trim()) || S.untitled, room), value)
 }
-
-// Whether a report was made the same day (this browser's) as `as`, when the batch started; one that doesn't say when
-// it was made is taken to have been.
-const madeTheSameDay = (createdAt, as) =>
-  !createdAt || new Date(createdAt).toDateString() === new Date(as).toDateString()
 
 // Whether a report made from a template is for the lock asked for: a service before RW-352 makes it for the template's.
 const lockKeptOn = (report, lock) => filterLocksKey(report?.sessionFilterLocks) === filterLocksKey([lock])
@@ -455,8 +451,9 @@ export class ReportsWithoutTheme extends React.Component {
     this.pendingTitles = new Map()
     // Batch reports being named, whose savers the report shown isn't to replace meanwhile (readFilled).
     this.naming = new Set()
-    // Batch reports still being made: id → the name each is given once it's filled in, which the list shows meanwhile
-    // (RW-386), as AutoQL makes them under the template's own title.
+    // Batch reports still being made: id → { title, as }, the name each is given once it's filled in and the titles
+    // AutoQL made it under (the template's own). While it still has one of those, it's listed under the name
+    // (listedTitle, RW-386).
     this.batchTitles = new Map()
     this.root = React.createRef()
     this.templateEditor = React.createRef()
@@ -977,7 +974,11 @@ export class ReportsWithoutTheme extends React.Component {
       }
       const listed = savedAt && reports ? reports.find((report) => report.id === id) : null
       if (listed && isLater(savedAt, listed.updatedAt)) {
-        patch.reports = reports.map((report) => (report.id === id ? { ...report, updatedAt: savedAt } : report))
+        // And under the title it has now, so a save that comes after one failed (a batch report's name, RW-386: its
+        // retry, or the next edit's save) shows what it stored.
+        const now = this.savers.get(id)?.report?.title
+        const title = this.listedTitle(id, typeof now === 'string' ? now : listed.title)
+        patch.reports = reports.map((report) => (report.id === id ? { ...report, updatedAt: savedAt, title } : report))
       }
       return Object.keys(patch).length ? patch : null
     })
@@ -1118,7 +1119,7 @@ export class ReportsWithoutTheme extends React.Component {
       opened: { id, report: detail.report },
       saveState: fresh.current,
       // A batch's report still being made stays listed, and its tab titled, under the name it's given (RW-386).
-      reports: reports && withOpened(reports, detail, this.batchTitles.get(id)),
+      reports: reports && withOpened(reports, detail, this.listedTitle(id, detail.title)),
     }))
     if (follow) {
       this.followFill(id, sourceId, detail)
@@ -1365,11 +1366,12 @@ export class ReportsWithoutTheme extends React.Component {
     const merged = this.unshownMerge?.id === id ? this.unshownMerge.blocks : null
     const next = merged ? withBlocksAdded(change, merged) : change
     const title = typeof next?.title === 'string' ? next.title : ''
-    // Changed by the user, a batch's report is listed as they have it: its batch name isn't put back over it.
-    this.batchTitles.delete(id)
+    // A batch's report keeps its batch name on the list while its title is still the template's (listedTitle): any
+    // other change leaves it, and a rename shows.
+    const listed = this.listedTitle(id, title)
     this.setState(({ opened, reports }) => ({
       opened: opened?.id === id ? { id, report: next } : opened,
-      reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
+      reports: reports ? reports.map((report) => (report.id === id ? { ...report, title: listed } : report)) : reports,
     }))
     // Saved by a newer version of the builder: shown, but never saved over. Approved, or back to draft (RW-372), it's
     // saved at once rather than after the pause edits wait for.
@@ -1728,9 +1730,9 @@ export class ReportsWithoutTheme extends React.Component {
     Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, batch.queue.length) }, worker)).then(end, end)
   }
 
-  // Picking up again (RW-371): a report made earlier the same day in the batch's folder, from the same template, for one
-  // of the values asked for, is left as it is, and isn't made again. Only the same day's: a folder can be named, and
-  // used again on another day (RW-387), when its reports are made again. One that was named is known by its name
+  // Picking up again (RW-371): a report made lately in the batch's folder (the same day, or overnight: madeLately), from
+  // the same template, for one of the values asked for, is left as it is, and isn't made again. Only lately: a folder
+  // can be named, and used again on another day (RW-387), when its reports are made again. One that was named is known by its name
   // ("<the template's name> — <the value>"); one that wasn't (its page closed first) is read for what it's for. What's
   // left to make is the batch.
   skipMadeAlready = async (batch) => {
@@ -1749,7 +1751,7 @@ export class ReportsWithoutTheme extends React.Component {
       }
     }
     const fromTemplate = inFolder.filter(
-      (report) => report.templateId === batch.templateId && madeTheSameDay(report.createdAt, batch.startedAt),
+      (report) => report.templateId === batch.templateId && madeLately(report.createdAt, batch.startedAt),
     )
     if (!fromTemplate.length) {
       return
@@ -1837,7 +1839,8 @@ export class ReportsWithoutTheme extends React.Component {
     // Listed under the name it's given once it's filled in (RW-386): AutoQL makes it under the template's own title.
     const stored = summaryOfDetail(detail)
     const title = batchTitleOf(batch.title || detail.report?.title || stored.title, lock)
-    this.batchTitles.set(detail.id, title)
+    const as = [stored.title, detail.report?.title].filter((made) => typeof made === 'string')
+    this.batchTitles.set(detail.id, { title, as })
     this.listBatchReport(batch, { ...stored, title })
     try {
       const filled = this.batch === batch ? await this.fillBatchReport(batch, detail, lock) : null
@@ -2020,14 +2023,22 @@ export class ReportsWithoutTheme extends React.Component {
     })
   }
 
-  // The list as the service has it, a batch's reports still being made under the names they're given (RW-386).
+  // What a report is listed under: a batch's report still under way whose title is still one AutoQL made it under (the
+  // template's own) is listed under the name the batch gives it (RW-386). Renamed, or once its name is saved, it's
+  // listed as it is.
+  listedTitle = (id, title) => {
+    const standIn = this.batchTitles.get(id)
+    return standIn && standIn.as.includes(title) ? standIn.title : title
+  }
+
+  // The list as the service has it, a batch's reports still being made under the names they're given (listedTitle).
   withBatchTitles = (reports) => {
     if (!this.batchTitles.size) {
       return reports
     }
     return reports.map((report) => {
-      const title = this.batchTitles.get(report.id)
-      return title === undefined ? report : { ...report, title }
+      const title = this.listedTitle(report.id, report.title)
+      return title === report.title ? report : { ...report, title }
     })
   }
 

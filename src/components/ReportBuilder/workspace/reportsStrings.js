@@ -232,6 +232,8 @@ export const REPORTS_STRINGS = {
     confirmFolder: 'Folder',
     confirmFolderNote:
       'If there’s already a folder with this name, they go into it, and any made there earlier today aren’t made again.',
+    // A folder's name typed longer than the service takes.
+    confirmFolderTooLong: (max) => `A folder’s name can be up to ${max} characters.`,
     confirmStart: (n) => (n === 1 ? 'Make 1 report' : `Make ${n} reports`),
     about: (minutes) => (minutes <= 1 ? 'about a minute' : `about ${minutes} minutes`),
   },

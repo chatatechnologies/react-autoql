@@ -15,6 +15,7 @@ import {
 } from '../run/reportsApi'
 import { captureQuestion } from '../run/captureRun'
 import { lookUpFilterLock } from '../run/filterLockLookup'
+import { batchFolderOf, madeLately } from '../workspace/documents'
 
 // A report started from a template (enableTemplates): made from it, then shown read-only while AutoQL fills in its data,
 // read again as blocks fill, and said how it went. The waits are short here, so the fill can be followed in real time.
@@ -1390,6 +1391,88 @@ describe('a report for each household from a template (RW-353)', () => {
     await waitFor(() => expect(lastSaveOf(R1)?.report.title).toBe('Monthly review — Brown Family'))
   })
 
+  it('keeps them under their names when the list is loaded again, but not one renamed meanwhile (RW-386)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    let fill
+    const filled = new Promise((resolve) => {
+      fill = resolve
+    })
+    fetchReportDataStatus.mockImplementation(async () => {
+      await filled
+      return { dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] }
+    })
+    fetchReport.mockImplementation(async ({ id }) => {
+      const start = STARTS.find((s) => s.id === id)
+      return made(
+        { id, sessionFilterLocks: [start.lock] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      )
+    })
+    // What the service lists meanwhile: the batch's reports as AutoQL made them, under the template's own title.
+    let onServer = []
+    fetchReports.mockImplementation(async ({ folderId } = {}) => ({ reports: folderId ? [] : onServer, totalPages: 1 }))
+    setup({ enableFilterLocks: true })
+    await startEach()
+    await waitFor(() => expect(listed(R2)).toBeTruthy())
+    const folderId = createReportFolder.mock.calls[0][0].id
+    const asStored = (id, rest = {}) => ({
+      ...stored({ id, dataStatus: 'RUNNING' }),
+      folderId,
+      report: undefined,
+      ...rest,
+    })
+
+    onServer = [asStored(R1), asStored(R2)]
+    await act(async () => homeProps.current.retryList())
+    await waitFor(() => expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family' }))
+    expect(listed(R2)).toMatchObject({ title: 'Monthly review — Nguyen Family' })
+
+    // One renamed meanwhile is listed as it is, not under its batch name.
+    onServer = [asStored(R1, { title: 'Brown — for Thursday' }), asStored(R2)]
+    await act(async () => homeProps.current.retryList())
+    await waitFor(() => expect(listed(R1)).toMatchObject({ title: 'Brown — for Thursday' }))
+    expect(listed(R2)).toMatchObject({ title: 'Monthly review — Nguyen Family' })
+
+    await act(async () => fill())
+    await waitFor(() => expect(lastSaveOf(R2)?.report.title).toBe('Monthly review — Nguyen Family'))
+  })
+
+  it('lists one under its name once a save of it goes through after all, as on new credentials (RW-386)', async () => {
+    createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
+    fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] })
+    fetchReport.mockImplementation(async ({ id }) =>
+      made(
+        { id, sessionFilterLocks: [BROWN] },
+        { version: 3, dataStatus: 'DONE', blocks: [dataBlock('d1', answered)] },
+      ),
+    )
+    // Its name is turned away with the token, and saved once there's a new one (when, as the service says it).
+    saveReport.mockImplementation(async ({ id, version }) => ({
+      id,
+      version: version + 1,
+      updatedAt: new Date().toISOString(),
+    }))
+    saveReport.mockRejectedValueOnce(new ReportsApiError({ status: 401, code: 'UNAUTHORIZED' }))
+    const view = setup({ enableFilterLocks: true })
+    await startEach([{ id: R1, lock: BROWN }])
+    await waitFor(() => expect(homeProps.current.notices[0].text).toMatch(/wasn’t finished here/))
+    expect(listed(R1)).toMatchObject({ title: 'Quarterly review' })
+
+    view.rerender(
+      <Reports
+        authentication={{ ...AUTH, token: `h.${b64url({ project_id: 'p1', renewed: true })}.s` }}
+        renderHome={renderHome}
+        storageKeyPrefix='test.'
+        saveDelay={0}
+        enableTemplates
+        enableFilterLocks
+      />,
+    )
+    await waitFor(() => expect(saveReport).toHaveBeenCalledTimes(2))
+    expect(lastSaveOf(R1).report.title).toBe('Monthly review — Brown Family')
+    await waitFor(() => expect(listed(R1)).toMatchObject({ title: 'Monthly review — Brown Family' }))
+  })
+
   it('lists one whose name couldn’t be saved under the template’s title again, as it’s stored (RW-386)', async () => {
     createReportFromTemplate.mockImplementation(async (start) => made(start, { dataStatus: 'PENDING' }))
     fetchReportDataStatus.mockResolvedValue({ dataStatus: 'DONE', version: 3, dataUpdatedAt: 'now', dataErrors: [] })
@@ -1656,5 +1739,30 @@ describe('a report for each household from a template (RW-353)', () => {
       fireEvent.click(within(screen.getByTestId('reports-tabs')).getByRole('button', { name: 'New report' }))
       expect(mockDialogs.newReport.batchLimit).toBeNull()
     })
+  })
+})
+
+describe('madeLately: what a batch picked up again counts as made already (RW-387)', () => {
+  it('counts one made the same day, or within 12 hours before, across midnight too', () => {
+    expect(madeLately('2026-11-27T09:00:00', '2026-11-27T22:00:00')).toBe(true)
+    expect(madeLately('2026-11-27T23:58:00', '2026-11-28T00:05:00')).toBe(true)
+    expect(madeLately('2026-11-27T13:00:00', '2026-11-28T00:05:00')).toBe(true)
+  })
+
+  it('doesn’t count one made longer before on another day, or one that doesn’t say when it was made', () => {
+    expect(madeLately('2026-11-27T11:00:00', '2026-11-28T00:05:00')).toBe(false)
+    expect(madeLately('2026-10-28T18:00:00', '2026-11-28T00:05:00')).toBe(false)
+    expect(madeLately(undefined, '2026-11-28T00:05:00')).toBe(false)
+    expect(madeLately(null, '2026-11-28T00:05:00')).toBe(false)
+  })
+})
+
+describe('batchFolderOf: the folder a batch goes into (RW-387)', () => {
+  it('is the name given, trimmed and never cut, or the one suggested for the template and the day', () => {
+    const day = new Date(2026, 10, 27)
+    const long = `${'a'.repeat(85)}😀`
+    expect(batchFolderOf(`  ${long}  `, 'Monthly review', day)).toBe(long)
+    expect(batchFolderOf('   ', 'Monthly review', day)).toMatch(/^Monthly review — Nov 27, 2026$/)
+    expect(batchFolderOf(null, 'Monthly review', day)).toMatch(/^Monthly review — Nov 27, 2026$/)
   })
 })

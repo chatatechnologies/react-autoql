@@ -26,11 +26,26 @@ export const batchFolderName = (title, date) => {
   return S.batch.folder(clipped((title || '').trim() || S.untitled, room), day)
 }
 
-// The folder a batch goes into (RW-387): the name given for it, trimmed and within a folder name's length, or, with
-// none given, the one suggested.
+// The folder a batch goes into (RW-387): the name given for it, trimmed, or, with none given, the one suggested. A
+// name given is never cut: two long names cut alike would be one folder. One too long is turned down where the folder
+// is made, and Start from a template says so before it gets there.
 export const batchFolderOf = (name, title, date) => {
   const given = typeof name === 'string' ? name.trim() : ''
-  return given ? clipped(given, ORGANIZER_NAME_MAX) : batchFolderName(title, date)
+  return given || batchFolderName(title, date)
+}
+
+// How long a batch picked up again counts a report it finds as made already (RW-371, RW-387): made the same day (this
+// browser's) as the batch starts, or within PICK_UP_HOURS before, so one stopped before midnight and started again
+// after it isn't made twice. Older reports, in a folder used again another day, are made again; so is one that doesn't
+// say when it was made, rather than be skipped for good.
+export const PICK_UP_HOURS = 12
+export const madeLately = (createdAt, startedAt) => {
+  if (!createdAt) {
+    return false
+  }
+  const made = new Date(createdAt)
+  const start = new Date(startedAt)
+  return made.toDateString() === start.toDateString() || start - made < PICK_UP_HOURS * 60 * 60 * 1000
 }
 
 // The service keeps a report of up to 5 MiB, serialized. Adding blocks stops short of that, so a full report can

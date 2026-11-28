@@ -456,7 +456,7 @@ describe('TemplatesDialog', () => {
           { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: BROWN },
           { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: NGUYEN },
         ],
-        folderName: null,
+        folderName: expect.stringMatching(FOLDER),
       })
       expect(first.starts[0].id).not.toBe(first.starts[1].id)
       expect(again).toEqual(first)
@@ -593,7 +593,7 @@ describe('TemplatesDialog', () => {
           id: expect.stringMatching(/^[0-9a-f-]{36}$/),
           name,
         })),
-        folderName: null,
+        folderName: expect.stringMatching(FOLDER),
       })
       const ids = onStartEach.mock.calls[0][0].starts.map((start) => start.id)
       expect(new Set(ids).size).toBe(3)
@@ -627,7 +627,9 @@ describe('TemplatesDialog', () => {
       await act(async () => fireEvent.keyDown(folderField(), { key: 'Enter' }))
       expect(confirmDialog()).toBeNull()
       expect(onStartEach).toHaveBeenCalledTimes(2)
-      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: null }))
+      expect(onStartEach).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folderName: expect.stringMatching(FOLDER) }),
+      )
     })
 
     it('suggests the day’s folder each time it asks, so one left open past midnight has the new day (RW-387)', async () => {
@@ -642,9 +644,49 @@ describe('TemplatesDialog', () => {
       batchFolderName.mockImplementation((title) => `${title} — Nov 28, 2026`)
       fireEvent.click(startButton())
       expect(folderField()).toHaveValue('Household review — Nov 28, 2026')
-      // Not named, it's left to the host, which names it for the day it starts.
+      // The one it showed is the one it starts with.
       await act(async () => fireEvent.click(confirmStart()))
-      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: null }))
+      expect(onStartEach).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folderName: 'Household review — Nov 28, 2026' }),
+      )
+    })
+
+    it('keeps a name typed while it asks the same day, and suggests the new day’s folder the next (RW-387)', async () => {
+      batchFolderName.mockImplementation((title) => `${title} — Nov 27, 2026`)
+      await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      fireEvent.change(folderField(), { target: { value: 'Household review — Nov 27, 2026 (west)' } })
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 27, 2026 (west)')
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+
+      // The next day: the name typed then isn't kept over the new day's.
+      batchFolderName.mockImplementation((title) => `${title} — Nov 28, 2026`)
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 28, 2026')
+    })
+
+    it('says when a folder’s name is too long, by characters as the service counts them, and waits (RW-387)', async () => {
+      const { onStartEach } = await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      const status = () => confirmDialog().querySelector('[role="status"]')
+      // 80 characters, two of them outside the Basic Multilingual Plane (82 UTF-16 units): taken.
+      fireEvent.change(folderField(), { target: { value: `${'a'.repeat(78)}😀😀` } })
+      expect(status().textContent).toBe('')
+      expect(confirmStart()).toBeEnabled()
+      expect(folderField()).not.toHaveAttribute('aria-invalid')
+      // 81: said, and neither Make nor Enter starts it.
+      fireEvent.change(folderField(), { target: { value: `${'a'.repeat(79)}😀😀` } })
+      expect(status()).toHaveTextContent('A folder’s name can be up to 80 characters.')
+      expect(status()).toHaveAttribute('data-tone', 'error')
+      expect(folderField()).toHaveAttribute('aria-invalid', 'true')
+      expect(confirmStart()).toBeDisabled()
+      await act(async () => fireEvent.keyDown(folderField(), { key: 'Enter' }))
+      expect(confirmDialog()).not.toBeNull()
+      expect(onStartEach).not.toHaveBeenCalled()
     })
 
     it('goes back to the dialog as it was on Escape, and suggests each template’s own folder (RW-385, RW-387)', async () => {
