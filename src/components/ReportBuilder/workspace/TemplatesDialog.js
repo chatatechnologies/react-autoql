@@ -6,7 +6,7 @@ import { FilterLockField } from '../components/FilterLockField'
 import { filterLocksKey, normalizeFilterLocks } from '../model/filterLocks'
 import { STRINGS } from '../strings'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates } from '../run/reportsApi'
-import { describeReportError, newReportId } from './documents'
+import { batchFolderName, describeReportError, newReportId, ORGANIZER_NAME_MAX } from './documents'
 import { ReportModal } from './ReportModal'
 import { BATCH_AT_ONCE, BATCH_SECONDS_PER_REPORT, DEFAULT_BATCH_LIMIT, RS } from './reportsConstants'
 import { REPORTS_STRINGS } from './reportsStrings'
@@ -31,12 +31,15 @@ import { REPORTS_STRINGS } from './reportsStrings'
 // starts out as the template's own, which a template keeps from the report it was made from, so Start report waits for
 // the template's document; the preview shows the report for what's chosen.
 //
-// With onStartEach too, a report for each value (RW-353): onStartEach({ templateId, title, starts: [{ id, lock }] }),
-// which resolves once they're under way or rejects with why none were made. With the host's list
+// With onStartEach too, a report for each value (RW-353): onStartEach({ templateId, title, starts: [{ id, lock }],
+// folderName }), which resolves once they're under way or rejects with why none were made. With the host's list
 // (loadFilterLockSuggestions), it's every value in it, any unticked again in the list shown in the preview's place
 // (RW-371), started by name (starts: [{ id, name }]), each looked up as its report is made, so a batch of hundreds
 // starts at once; without the list, it's each value picked. At most `batchLimit` at once (DEFAULT_BATCH_LIMIT; null
-// for no limit). A batch says about how long it takes, and asks before it starts.
+// for no limit). A batch says about how long it takes, and asks before it starts, in a pop-up over the dialog
+// (RW-385) that has the folder they go into: named for the template and the day, or as the user names it (RW-387).
+// `folderName` is the name as the pop-up showed it: the one suggested, or as typed there (up to a folder name's
+// length, by code points). The host makes it a folder's name, the one suggested when it's null or blank.
 
 // A template's own filter lock, from its document.
 const templateLocks = (template) => normalizeFilterLocks(template?.report?.sessionFilterLocks)
@@ -111,6 +114,7 @@ export class TemplatesDialog extends React.Component {
     this.loadRequest = 0
     dialogIds += 1
     this.forId = `${RS}-templates-for-${dialogIds}`
+    this.folderId = `${RS}-templates-folder-${dialogIds}`
     this.state = {
       templates: null,
       categories: [],
@@ -136,8 +140,13 @@ export class TemplatesDialog extends React.Component {
       picking: false,
       pickQ: '',
       pickBelow: 0,
-      // A batch's question before it starts: how many, and about how long.
+      // A batch's question before it starts, in a pop-up (RW-385): how many, about how long, and the folder they go
+      // into (RW-387). `folderName` is its name as typed there, null for the one suggested (worked out whenever it's
+      // shown, so it's the day's); `folderNameFor` the suggestion a typed name replaced. A typed name is kept should
+      // it ask again while that's still the suggestion: the same template, the same day.
       confirming: false,
+      folderName: null,
+      folderNameFor: null,
       // The dialog, for the filter lock's popover to open in: one opened outside it couldn't take focus.
       lockHost: null,
     }
@@ -197,6 +206,8 @@ export class TemplatesDialog extends React.Component {
       chosenError: null,
       startError: null,
       confirming: false,
+      folderName: null,
+      folderNameFor: null,
       ...this.locksOf(kept),
     })
     if (kept) {
@@ -417,9 +428,14 @@ export class TemplatesDialog extends React.Component {
     return locks.every((lock) => lock.filter_type === 'include') ? locks.map((lock) => ({ lock })) : []
   }
 
+  // What the host's values are called ("Households"), or the field's own word.
+  lockWhat() {
+    return this.props.filterLockLabels?.title || STRINGS.filterLock.title
+  }
+
   // What stops a report each from starting, said beside Back and Start: more than the limit, or, without the host's
   // list, a value picked that's left out.
-  eachProblem(each, what) {
+  eachProblem(each) {
     if (!each) {
       return null
     }
@@ -428,7 +444,7 @@ export class TemplatesDialog extends React.Component {
       return T.tooMany(limit)
     }
     if (!this.listEach() && this.state.locks.some((lock) => lock.filter_type !== 'include')) {
-      return T.forEachExcluded(what)
+      return T.forEachExcluded(this.lockWhat())
     }
     return null
   }
@@ -439,7 +455,7 @@ export class TemplatesDialog extends React.Component {
   // list shown in the preview's place (renderPicking), or, without the list, each value picked.
   renderFor() {
     const labels = this.props.filterLockLabels || {}
-    const what = labels.title || STRINGS.filterLock.title
+    const what = this.lockWhat()
     const { mode, locks, starting, confirming, picking, allNames } = this.state
     const busy = starting || confirming
     // With none picked yet, the field says so, and Change… is Pick….
@@ -520,7 +536,8 @@ export class TemplatesDialog extends React.Component {
   }
 
   // Waits for the template's document with enableFilterLocks: until it's in, what the template is for isn't known.
-  // Specific values need one picked at least; a batch, one at least, and no more than the limit.
+  // Specific values need one picked at least; a batch, one at least, and nothing said against it (eachProblem), so
+  // neither Start nor its pop-up's button gets past one.
   canStart() {
     const { chosenId, chosen, starting, mode, locks } = this.state
     const each = this.startsEach()
@@ -530,7 +547,7 @@ export class TemplatesDialog extends React.Component {
       !starting &&
       (!locking || !!chosen) &&
       (!locking || mode !== 'some' || locks.length > 0) &&
-      (!each || (each.length > 0 && each.length <= this.batchLimit()))
+      (!each || (each.length > 0 && !this.eachProblem(each)))
     )
   }
 
@@ -560,9 +577,23 @@ export class TemplatesDialog extends React.Component {
     // None, from a template that has one, is said: the report is for everything, not for the template's.
     const said = locks.length > 0 || (this.props.enableFilterLocks && templateLocks(this.state.chosen).length > 0)
     const each = this.startsEach()
-    // A batch asks first, saying how many and about how long.
+    // A batch asks first, in a pop-up (RW-385): how many, about how long, and the folder they go into (RW-387): as it
+    // was named when it last asked, while the suggestion it replaced is still the one, or else the one suggested.
     if (each && !this.state.confirming) {
-      this.setState({ confirming: true, startError: null })
+      const suggested = batchFolderName(this.chosenTitle(), new Date())
+      this.setState(({ folderName, folderNameFor }) => {
+        const kept = !!folderName?.trim() && folderNameFor === suggested
+        return {
+          confirming: true,
+          startError: null,
+          folderName: kept ? folderName : null,
+          folderNameFor: kept ? folderNameFor : null,
+        }
+      })
+      return
+    }
+    // Nor with a folder name it won't take.
+    if (each && this.folderProblem()) {
       return
     }
     this.setState({ starting: true, startError: null, confirming: false })
@@ -576,6 +607,8 @@ export class TemplatesDialog extends React.Component {
               ? { id: this.startIdFor(templateId, [lock]), lock }
               : { id: this.startIdFor(templateId, null, name), name },
           ),
+          // As the pop-up showed it, the one suggested or as typed: the host makes it a folder's name.
+          folderName: this.state.folderName ?? this.shownFolder ?? null,
         })
       } else {
         await this.props.onStart({
@@ -874,40 +907,115 @@ export class TemplatesDialog extends React.Component {
     )
   }
 
-  // The footer has only Back (Cancel, while a batch asks) and Start. Beside them: why it can't start, the batch's
-  // question, or, for a report for each, about how long it takes.
-  render() {
-    const { onClose } = this.props
-    const { starting, startError, confirming } = this.state
-    const what = this.props.filterLockLabels?.title || STRINGS.filterLock.title
-    const each = this.startsEach()
-    const problem = startError || this.eachProblem(each, what)
-    const minutes = each?.length ? batchMinutes(each.length) : 0
-    const asking = confirming && each && !problem ? T.confirmEach(each.length, T.about(minutes)) : null
-    const takes = each?.length && !problem ? T.takes(each.length, minutes) : null
+  cancelConfirm = () => this.setState({ confirming: false })
+
+  // A folder's name typed longer than the service takes (by code points, as it counts): said, rather than cut, which
+  // could make two names one folder.
+  folderProblem() {
+    const { folderName } = this.state
+    return typeof folderName === 'string' && Array.from(folderName.trim()).length > ORGANIZER_NAME_MAX
+      ? T.confirmFolderTooLong(ORGANIZER_NAME_MAX)
+      : null
+  }
+
+  // Typed in the folder's name: kept with the suggestion it replaced.
+  setFolderName = (e) => {
+    const { value } = e.target
+    this.setState(({ folderNameFor }) => ({ folderName: value, folderNameFor: folderNameFor ?? this.shownSuggestion }))
+  }
+
+  // Enter in the folder's name makes them, as its pop-up's main button does, unless there's something to fix first.
+  onFolderKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.nativeEvent?.isComposing) {
+      e.preventDefault()
+      if (!this.folderProblem()) {
+        this.start()
+      }
+    }
+  }
+
+  // A batch's question, in a pop-up over the dialog (RW-385): how many, about how long, and the folder they go into,
+  // which can be named (RW-387). Cancel, Escape and the backdrop go back to the dialog as it was. The name shown is
+  // the one started with (shownFolder), so a pop-up open past midnight makes the folder it showed.
+  renderConfirm(each, minutes) {
+    this.shownSuggestion = batchFolderName(this.chosenTitle(), new Date())
+    this.shownFolder = this.state.folderName ?? this.shownSuggestion
+    const problem = this.folderProblem()
     return (
       <ReportModal
-        title={T.title}
-        description={T.what}
-        size='large'
-        initialFocus={this.searchRef}
-        testId='reports-templates'
-        busy={starting}
-        onClose={onClose}
-        status={problem || asking || takes}
+        title={T.confirmTitle(each.length)}
+        size='small'
+        over
+        testId='reports-templates-confirm'
+        onClose={this.cancelConfirm}
+        status={problem}
         statusTone={problem ? 'error' : undefined}
         actions={
           <>
-            {asking ? (
-              <button
-                type='button'
-                className={`${RS}-button`}
-                data-test='reports-templates-confirm-cancel'
-                onClick={() => this.setState({ confirming: false })}
-              >
-                {S.cancel}
-              </button>
-            ) : (
+            <button
+              type='button'
+              className={`${RS}-button`}
+              data-test='reports-templates-confirm-cancel'
+              onClick={this.cancelConfirm}
+            >
+              {S.cancel}
+            </button>
+            <button
+              type='button'
+              className={`${RS}-button`}
+              data-variant='primary'
+              data-test='reports-templates-confirm-start'
+              disabled={!!problem}
+              onClick={this.start}
+            >
+              {T.confirmStart(each.length)}
+            </button>
+          </>
+        }
+      >
+        <p className={`${RS}-templates-confirm-what`}>{T.confirmWhat(T.about(minutes))}</p>
+        <label className={`${RS}-label`} htmlFor={this.folderId}>
+          {T.confirmFolder}
+        </label>
+        <input
+          id={this.folderId}
+          type='text'
+          className={`${RS}-input`}
+          value={this.shownFolder}
+          spellCheck={false}
+          aria-invalid={problem ? true : undefined}
+          data-test='reports-templates-confirm-folder'
+          onChange={this.setFolderName}
+          onKeyDown={this.onFolderKeyDown}
+        />
+        <p className={`${RS}-note`}>{T.confirmFolderNote}</p>
+      </ReportModal>
+    )
+  }
+
+  // The footer has only Back and Start. Beside them: why it can't start, or, for a report for each, about how long it
+  // takes. A report for each asks before it starts, in a pop-up of its own (renderConfirm).
+  render() {
+    const { onClose } = this.props
+    const { starting, startError, confirming } = this.state
+    const each = this.startsEach()
+    const problem = startError || this.eachProblem(each)
+    const minutes = each?.length ? batchMinutes(each.length) : 0
+    const takes = each?.length && !problem ? T.takes(each.length, minutes) : null
+    return (
+      <>
+        <ReportModal
+          title={T.title}
+          description={T.what}
+          size='large'
+          initialFocus={this.searchRef}
+          testId='reports-templates'
+          busy={starting}
+          onClose={onClose}
+          status={problem || takes}
+          statusTone={problem ? 'error' : undefined}
+          actions={
+            <>
               <button
                 type='button'
                 className={`${RS}-button`}
@@ -917,40 +1025,39 @@ export class TemplatesDialog extends React.Component {
               >
                 {T.back}
               </button>
-            )}
-            <button
-              type='button'
-              className={`${RS}-button`}
-              data-variant='primary'
-              data-test='reports-templates-start'
-              disabled={!this.canStart()}
-              onClick={this.start}
-            >
-              {starting ? (
-                <>
-                  <span className={`${RS}-spin`}>
-                    <Icon name='spinner' size={14} />
-                  </span>
-                  {T.starting}
-                </>
-              ) : asking ? (
-                T.confirmStart(each.length)
-              ) : each ? (
-                T.startEach(each.length)
-              ) : (
-                T.start
-              )}
-            </button>
-          </>
-        }
-      >
-        <div className={`${RS}-templates-aside`}>
-          {this.renderFilters()}
-          {this.renderList()}
-          {this.props.enableFilterLocks ? this.renderFor() : null}
-        </div>
-        {this.renderPreview()}
-      </ReportModal>
+              <button
+                type='button'
+                className={`${RS}-button`}
+                data-variant='primary'
+                data-test='reports-templates-start'
+                disabled={!this.canStart()}
+                onClick={this.start}
+              >
+                {starting ? (
+                  <>
+                    <span className={`${RS}-spin`}>
+                      <Icon name='spinner' size={14} />
+                    </span>
+                    {T.starting}
+                  </>
+                ) : each ? (
+                  T.startEach(each.length)
+                ) : (
+                  T.start
+                )}
+              </button>
+            </>
+          }
+        >
+          <div className={`${RS}-templates-aside`}>
+            {this.renderFilters()}
+            {this.renderList()}
+            {this.props.enableFilterLocks ? this.renderFor() : null}
+          </div>
+          {this.renderPreview()}
+        </ReportModal>
+        {confirming && each?.length && !problem ? this.renderConfirm(each, minutes) : null}
+      </>
     )
   }
 }

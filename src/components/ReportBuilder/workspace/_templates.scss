@@ -214,6 +214,15 @@
       margin: auto;
     }
   }
+
+  // A batch's question, in a pop-up over the dialog (RW-385): about how long, at the body's size so it's read, then
+  // the folder they go into, named there (RW-387).
+  .#{$rs}-templates-confirm-what {
+    margin: 0 0 1rem;
+    color: $text;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
 }
 
 // Draft or published, and a published template's changes waiting to be published: in Manage templates' rows and over a

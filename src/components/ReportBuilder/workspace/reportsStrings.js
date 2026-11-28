@@ -225,9 +225,15 @@ export const REPORTS_STRINGS = {
     pickAll: 'Tick all',
     untickAll: 'Untick all',
     pickDone: 'Done',
-    // Before a batch starts: how many, and about how long.
-    confirmEach: (n, time) =>
-      `Make ${n} ${n === 1 ? 'report' : 'reports'}? It takes ${time}, and this page has to stay open.`,
+    // Before a batch starts, in a pop-up of its own (RW-385): how many, about how long, and the folder they go into,
+    // which can be named (RW-387).
+    confirmTitle: (n) => (n === 1 ? 'Make 1 report?' : `Make ${n} reports?`),
+    confirmWhat: (time) => `It takes ${time}, and this page has to stay open.`,
+    confirmFolder: 'Folder',
+    confirmFolderNote:
+      'If there’s already a folder with this name, they go into it, and any made there earlier today aren’t made again.',
+    // A folder's name typed longer than the service takes.
+    confirmFolderTooLong: (max) => `A folder’s name can be up to ${max} characters.`,
     confirmStart: (n) => (n === 1 ? 'Make 1 report' : `Make ${n} reports`),
     about: (minutes) => (minutes <= 1 ? 'about a minute' : `about ${minutes} minutes`),
   },
@@ -266,7 +272,7 @@ export const REPORTS_STRINGS = {
     stopped: (made, total, folder) =>
       `Stopped. ${made} of ${total} reports ${
         made === 1 ? 'is' : 'are'
-      } in “${folder}”. Starting the same ones again today makes only the rest.`,
+      } in “${folder}”. Starting the same ones again in that folder today makes only the rest.`,
     // Made for them earlier the same day, in the same folder: not made again.
     skipped: (n) =>
       n === 1

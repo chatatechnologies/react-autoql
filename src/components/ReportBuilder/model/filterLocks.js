@@ -1,3 +1,5 @@
+import { clipped } from './text'
+
 // A report's filter lock: the AutoQL session filter locks every question in it is asked with, so one report can be
 // made again for another household (or whatever the host's data locks on). It's kept at the report's root as
 // `sessionFilterLocks`, each lock as the query API takes it in `session_filter_locks`, and FilterLockPopover makes it:
@@ -35,10 +37,7 @@ export const summarizeFilterLocks = (locks) => {
 // A lock's name as a report's title takes it: a report made for each household is titled "<its title> — <the
 // household>" (RW-353), the household cut to 80 characters with an ellipsis. The page header knows it there (RW-373).
 export const TITLE_LOCK_NAME_MAX = 80
-export const titleLockName = (name) => {
-  const points = Array.from(String(name))
-  return points.length > TITLE_LOCK_NAME_MAX ? `${points.slice(0, TITLE_LOCK_NAME_MAX - 1).join('')}…` : String(name)
-}
+export const titleLockName = (name) => clipped(name, TITLE_LOCK_NAME_MAX)
 
 // The same for any two locks that lock the same values, whatever their order.
 export const filterLocksKey = (locks) =>

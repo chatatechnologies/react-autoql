@@ -8,6 +8,7 @@ import { createEmptyReport, isNewerSchema } from '../model/reportSchema'
 import { Icon } from '../components/icons'
 import { setSessionFilterLocks, setTitle, updateBlock } from '../model/reportOperations'
 import { filterLocksKey, normalizeFilterLocks, titleLockName } from '../model/filterLocks'
+import { clipped } from '../model/text'
 import { fillQuestions, questionBlocks } from '../run/fillQuestions'
 import {
   createReportFolder,
@@ -43,10 +44,13 @@ import {
 import { REPORTS_STRINGS } from './reportsStrings'
 import { filledDataFill, fillNoticeOf } from './fillNotice'
 import {
+  batchFolderOf,
+  madeLately,
   describeReportError,
   isReportGone,
   isUnauthorized,
   newReportId,
+  ORGANIZER_NAME_MAX,
   REPORT_TITLE_MAX,
   stripQueryResponses,
   titleOf,
@@ -148,13 +152,12 @@ const listReports = async (authentication) => {
 }
 
 // The list once a report is opened: with its title and data status as stored, or with the report added if the list
-// didn't have it (it was on a page that failed to list), so its tab has its title.
-const withOpened = (reports, detail) =>
+// didn't have it (it was on a page that failed to list), so its tab has its title. `title` is what it's listed under
+// instead, if anything: a batch's report still being made keeps the name it's given (RW-386).
+const withOpened = (reports, detail, title = detail.title) =>
   reports.some((report) => report.id === detail.id)
-    ? reports.map((report) =>
-        report.id === detail.id ? { ...report, title: detail.title, dataStatus: detail.dataStatus } : report,
-      )
-    : [...reports, summaryOfDetail(detail)]
+    ? reports.map((report) => (report.id === detail.id ? { ...report, title, dataStatus: detail.dataStatus } : report))
+    : [...reports, { ...summaryOfDetail(detail), title }]
 
 // The browser's time zone, which AutoQL asks a template's questions in.
 const browserTimeZone = () => {
@@ -199,25 +202,13 @@ const failure = (error, action) => {
 }
 
 const nameOf = (name) => (typeof name === 'string' ? name.trim() : '')
-const NAME_MAX = 80
 
 // A name the service would turn down (empty, or over 80 characters once trimmed), refused before asking it.
 const BAD_NAME = () => new ReportsApiError({ status: 422, code: 'REPORT_NAME_INVALID' })
-const isBadName = (name) => !name || Array.from(name).length > NAME_MAX
+const isBadName = (name) => !name || Array.from(name).length > ORGANIZER_NAME_MAX
 
-// Text cut to `max` code points, with an ellipsis when it had more.
-const clipped = (text, max) => {
-  const points = Array.from(text)
-  return points.length > max ? `${points.slice(0, Math.max(max - 1, 1)).join('')}…` : text
-}
-
-// A report for each household (RW-353): their folder, named for the template and the day, within a folder name's
-// length; and each report's title, the template's name and the household it's for, within a title's.
-const batchFolderName = (title, date) => {
-  const day = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-  const room = NAME_MAX - Array.from(S.batch.folder('', day)).length
-  return S.batch.folder(clipped((title || '').trim() || S.untitled, room), day)
-}
+// A report for each household (RW-353): each report's title, the template's name and the household it's for, within a
+// title's length. Their folder is batchFolderOf's (documents.js).
 const batchTitleOf = (title, lock) => {
   const value = titleLockName(lock.format_txt || lock.value)
   const room = REPORT_TITLE_MAX - Array.from(S.batch.title('', value)).length
@@ -460,6 +451,10 @@ export class ReportsWithoutTheme extends React.Component {
     this.pendingTitles = new Map()
     // Batch reports being named, whose savers the report shown isn't to replace meanwhile (readFilled).
     this.naming = new Set()
+    // Batch reports still being made: id → { title, as }, the name each is given once it's filled in and the titles
+    // AutoQL made it under (the template's own). While it still has one of those, it's listed under the name
+    // (listedTitle, RW-386).
+    this.batchTitles = new Map()
     this.root = React.createRef()
     this.templateEditor = React.createRef()
 
@@ -696,9 +691,10 @@ export class ReportsWithoutTheme extends React.Component {
         this.tabsSource = sourceId
         this.tabs = tabs
         this.shownId = shown
-        // The list and what's shown arrive together, so the host never hears of the home page on the way.
+        // The list and what's shown arrive together, so the host never hears of the home page on the way. A batch's
+        // reports still being made are listed under the names they're given (RW-386).
         this.setState({
-          reports,
+          reports: this.withBatchTitles(reports),
           listError: null,
           listMissing: missing ? describeReportError(missing, 'loadSome').message : null,
           tabs,
@@ -978,7 +974,11 @@ export class ReportsWithoutTheme extends React.Component {
       }
       const listed = savedAt && reports ? reports.find((report) => report.id === id) : null
       if (listed && isLater(savedAt, listed.updatedAt)) {
-        patch.reports = reports.map((report) => (report.id === id ? { ...report, updatedAt: savedAt } : report))
+        // And under the title it has now, so a save that comes after one failed (a batch report's name, RW-386: its
+        // retry, or the next edit's save) shows what it stored.
+        const now = this.savers.get(id)?.report?.title
+        const title = this.listedTitle(id, typeof now === 'string' ? now : listed.title)
+        patch.reports = reports.map((report) => (report.id === id ? { ...report, updatedAt: savedAt, title } : report))
       }
       return Object.keys(patch).length ? patch : null
     })
@@ -1118,7 +1118,8 @@ export class ReportsWithoutTheme extends React.Component {
     this.setState(({ reports }) => ({
       opened: { id, report: detail.report },
       saveState: fresh.current,
-      reports: reports && withOpened(reports, detail),
+      // A batch's report still being made stays listed, and its tab titled, under the name it's given (RW-386).
+      reports: reports && withOpened(reports, detail, this.listedTitle(id, detail.title)),
     }))
     if (follow) {
       this.followFill(id, sourceId, detail)
@@ -1331,6 +1332,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.localFills.get(id)?.stop()
     this.localFills.delete(id)
     this.fillInfo.delete(id)
+    this.batchTitles.delete(id)
     if (this.pendingLocks.delete(id)) {
       this.keepPendingLocks()
     }
@@ -1364,9 +1366,12 @@ export class ReportsWithoutTheme extends React.Component {
     const merged = this.unshownMerge?.id === id ? this.unshownMerge.blocks : null
     const next = merged ? withBlocksAdded(change, merged) : change
     const title = typeof next?.title === 'string' ? next.title : ''
+    // A batch's report keeps its batch name on the list while its title is still the template's (listedTitle): any
+    // other change leaves it, and a rename shows.
+    const listed = this.listedTitle(id, title)
     this.setState(({ opened, reports }) => ({
       opened: opened?.id === id ? { id, report: next } : opened,
-      reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
+      reports: reports ? reports.map((report) => (report.id === id ? { ...report, title: listed } : report)) : reports,
     }))
     // Saved by a newer version of the builder: shown, but never saved over. Approved, or back to draft (RW-372), it's
     // saved at once rather than after the pause edits wait for.
@@ -1660,18 +1665,19 @@ export class ReportsWithoutTheme extends React.Component {
   // ---------------------------------------------------------------- a report for each household (RW-353)
 
   // New report › Start from a template, a report for each value picked for the filter lock (each household, say): in
-  // a folder of their own, named for the template and the day, each for one of them and named for it. They're made and
-  // filled in a few at a time — by AutoQL, or by this page where AutoQL doesn't fill reports itself — while the home
-  // page lists them and says how it's going. Each is saved as it's done, so the page stays open until then. `starts`
-  // are [{ id, lock }], or [{ id, name }] for values picked all at once, each looked up as its report is made (RW-371);
+  // a folder of their own — `folderName`, as named before it started (RW-387), or else named for the template and the
+  // day — each for one of them and named for it. They're made and filled in a few at a time — by AutoQL, or by this
+  // page where AutoQL doesn't fill reports itself — while the home page lists them, under the names they're given
+  // (RW-386), and says how it's going. Each is saved as it's done, so the page stays open until then. `starts` are
+  // [{ id, lock }], or [{ id, name }] for values picked all at once, each looked up as its report is made (RW-371);
   // an id for each from the dialog (the same one when it tries again). Resolves once they're under way; rejects with
   // why none were made.
   //
   // RW-371: one batch at a time in this browser, whichever tab (a lease kept under the host's prefix); the reports made
-  // in the day's folder from the same template earlier (a batch stopped, or the page closed on one) aren't made again;
-  // Stop (stopBatch) lets those under way finish and starts no more; and the host hears while one runs
-  // (onBatchRunningChange), as the browser does before the page closes.
-  startEachFromTemplate = async ({ templateId, title, starts }) => {
+  // in the batch's folder from the same template earlier the same day (a batch stopped, or the page closed on one)
+  // aren't made again; Stop (stopBatch) lets those under way finish and starts no more; and the host hears while one
+  // runs (onBatchRunningChange), as the browser does before the page closes.
+  startEachFromTemplate = async ({ templateId, title, starts, folderName }) => {
     if (this.batch) {
       throw new ReportsApiError({ status: 409, code: 'REPORT_BATCH_UNDER_WAY' })
     }
@@ -1690,7 +1696,7 @@ export class ReportsWithoutTheme extends React.Component {
     this.props.onBatchRunningChange?.(true)
     this.saveNow()
     try {
-      batch.folder = await this.createFolder(batchFolderName(title, new Date()))
+      batch.folder = await this.createFolder(batchFolderOf(folderName, title, new Date()))
       await this.skipMadeAlready(batch)
     } catch (error) {
       this.dropBatch(batch)
@@ -1724,10 +1730,11 @@ export class ReportsWithoutTheme extends React.Component {
     Promise.all(Array.from({ length: Math.min(BATCH_AT_ONCE, batch.queue.length) }, worker)).then(end, end)
   }
 
-  // Picking up again (RW-371): a report already in the batch's folder — the day's — from the same template, for one of
-  // the values asked for, is left as it is, and isn't made again. One that was named is known by its name ("<the
-  // template's name> — <the value>"); one that wasn't (its page closed first) is read for what it's for. What's left to
-  // make is the batch.
+  // Picking up again (RW-371): a report made lately in the batch's folder (the same day, or overnight: madeLately), from
+  // the same template, for one of the values asked for, is left as it is, and isn't made again. Only lately: a folder
+  // can be named, and used again on another day (RW-387), when its reports are made again. One that was named is known by its name
+  // ("<the template's name> — <the value>"); one that wasn't (its page closed first) is read for what it's for. What's
+  // left to make is the batch.
   skipMadeAlready = async (batch) => {
     const authentication = this.credentialsFor(batch.sourceId)
     const inFolder = []
@@ -1743,7 +1750,9 @@ export class ReportsWithoutTheme extends React.Component {
         break
       }
     }
-    const fromTemplate = inFolder.filter((report) => report.templateId === batch.templateId)
+    const fromTemplate = inFolder.filter(
+      (report) => report.templateId === batch.templateId && madeLately(report.createdAt, batch.startedAt),
+    )
     if (!fromTemplate.length) {
       return
     }
@@ -1827,7 +1836,12 @@ export class ReportsWithoutTheme extends React.Component {
       batch.failed.push(error)
       return
     }
-    this.listBatchReport(batch, summaryOfDetail(detail))
+    // Listed under the name it's given once it's filled in (RW-386): AutoQL makes it under the template's own title.
+    const stored = summaryOfDetail(detail)
+    const title = batchTitleOf(batch.title || detail.report?.title || stored.title, lock)
+    const as = [stored.title, detail.report?.title].filter((made) => typeof made === 'string')
+    this.batchTitles.set(detail.id, { title, as })
+    this.listBatchReport(batch, { ...stored, title })
     try {
       const filled = this.batch === batch ? await this.fillBatchReport(batch, detail, lock) : null
       if (!filled) {
@@ -1850,6 +1864,10 @@ export class ReportsWithoutTheme extends React.Component {
       // Made, then filling it in or naming it went wrong: in the folder, not finished.
       batch.unfinished += 1
     } finally {
+      // Never named here: listed as it's stored, under the template's title, for its name to be checked.
+      if (this.batchTitles.delete(detail.id)) {
+        this.relistBatchReport(batch, detail.id, { title: stored.title })
+      }
       this.releaseBatchSaver(detail.id)
     }
   }
@@ -1977,7 +1995,13 @@ export class ReportsWithoutTheme extends React.Component {
           reports: reports ? reports.map((report) => (report.id === id ? { ...report, title } : report)) : reports,
         }))
       }
-      return await saver.flush()
+      const saved = await saver.flush()
+      // Saved under its name, the list no longer stands in for it. Not saved, it's listed as it's stored again
+      // (makeOneOfBatch), for its name to be checked.
+      if (saved) {
+        this.batchTitles.delete(id)
+      }
+      return saved
     } finally {
       this.naming.delete(id)
     }
@@ -1997,6 +2021,37 @@ export class ReportsWithoutTheme extends React.Component {
         reports: listed ? reports.map((r) => (r.id === report.id ? { ...r, ...report } : r)) : [report, ...reports],
       }
     })
+  }
+
+  // What a report is listed under: a batch's report still under way whose title is still one AutoQL made it under (the
+  // template's own) is listed under the name the batch gives it (RW-386). Renamed, or once its name is saved, it's
+  // listed as it is.
+  listedTitle = (id, title) => {
+    const standIn = this.batchTitles.get(id)
+    return standIn && standIn.as.includes(title) ? standIn.title : title
+  }
+
+  // The list as the service has it, a batch's reports still being made under the names they're given (listedTitle).
+  withBatchTitles = (reports) => {
+    if (!this.batchTitles.size) {
+      return reports
+    }
+    return reports.map((report) => {
+      const title = this.listedTitle(report.id, report.title)
+      return title === report.title ? report : { ...report, title }
+    })
+  }
+
+  // A batch report on the home page's list changed, if it's still there (it may have been deleted meanwhile).
+  relistBatchReport = (batch, id, changes) => {
+    if (!this.stillOn(batch.sourceId)) {
+      return
+    }
+    this.setState(({ reports }) =>
+      reports?.some((r) => r.id === id)
+        ? { reports: reports.map((r) => (r.id === id ? { ...r, ...changes } : r)) }
+        : null,
+    )
   }
 
   // What the home page says while a batch is made, with Stop (RW-371); and once Stop is chosen, that it's stopping. Each

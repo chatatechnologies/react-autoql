@@ -463,6 +463,16 @@ $rs: 'react-autoql-reports';
     }
   }
 
+  // A dialog over another one (ReportModal's `over`), a question one asks: its backdrop covers the dialog under it.
+  &[data-over] {
+    .#{$rs}-modal-backdrop {
+      z-index: 9002;
+    }
+    .#{$rs}-modal {
+      z-index: 9003;
+    }
+  }
+
   .#{$rs}-modal-header {
     flex: none;
     display: flex;

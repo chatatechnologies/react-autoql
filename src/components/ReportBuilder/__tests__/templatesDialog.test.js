@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import '@testing-library/jest-dom'
 import { batchMinutes, matchingTemplates, TemplatesDialog } from '../workspace/TemplatesDialog'
 import { fetchReportCategories, fetchReportTemplate, fetchReportTemplates, ReportsApiError } from '../run/reportsApi'
+import { batchFolderName } from '../workspace/documents'
 
 // New report › Start from a template: the templates published for the data source, searched by title and narrowed by
 // category and tags, the one chosen shown as it prints, and the report started from it under an id kept for a retry.
@@ -22,6 +23,12 @@ jest.mock('../ReportBuilder', () => ({
     return <div data-test='preview-builder'>{props.report?.title}</div>
   },
 }))
+
+// The folder suggested for a batch, named for the day (RW-387): the real one, unless a test says otherwise.
+jest.mock('../workspace/documents', () => {
+  const actual = jest.requireActual('../workspace/documents')
+  return { ...actual, batchFolderName: jest.fn(actual.batchFolderName) }
+})
 
 // The filter lock's field (RW-351) as a button that picks the lock a test sets, saying what its own button would
 // (data-change): the popover is FilterLockField's own.
@@ -92,9 +99,20 @@ const footerButtons = () =>
     .getAllByRole('button')
     .map((button) => button.textContent)
 const status = () => startButton().parentElement.querySelector('[role="status"]')
+// A batch's question, in a pop-up of its own over the dialog (RW-385), with the folder they go into (RW-387).
+const confirmDialog = () => screen.queryByTestId('reports-templates-confirm')
+const confirmButtons = () =>
+  [screen.getByTestId('reports-templates-confirm-cancel'), screen.getByTestId('reports-templates-confirm-start')].map(
+    (button) => button.textContent,
+  )
+const confirmStart = () => screen.getByTestId('reports-templates-confirm-start')
+const folderField = () => screen.getByTestId('reports-templates-confirm-folder')
+// The folder suggested for a batch from "Household review": named for it and the day.
+const FOLDER = /^Household review — [A-Z][a-z]{2} \d{1,2}, \d{4}$/
 
 beforeEach(() => {
   jest.clearAllMocks()
+  batchFolderName.mockImplementation(jest.requireActual('../workspace/documents').batchFolderName)
   mockBuilder.props = null
   mockLock.next = []
   fetchReportTemplates.mockResolvedValue({ templates: TEMPLATES, page: 1, pageSize: 200, totalPages: 1, totalItems: 3 })
@@ -420,13 +438,14 @@ describe('TemplatesDialog', () => {
       expect(startButton()).toHaveTextContent('Start 2 reports')
       expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
 
-      // It asks first (RW-371).
+      // It asks first (RW-371), in a pop-up (RW-385).
       await act(async () => fireEvent.click(startButton()))
       expect(onStartEach).not.toHaveBeenCalled()
-      await act(async () => fireEvent.click(startButton()))
+      await act(async () => fireEvent.click(confirmStart()))
+      expect(confirmDialog()).toBeNull()
       expect(screen.getByText('The report wasn’t started: couldn’t reach the server.')).toBeInTheDocument()
       await act(async () => fireEvent.click(startButton()))
-      await act(async () => fireEvent.click(startButton()))
+      await act(async () => fireEvent.click(confirmStart()))
 
       expect(onStart).not.toHaveBeenCalled()
       const [first, again] = onStartEach.mock.calls.map(([call]) => call)
@@ -437,6 +456,7 @@ describe('TemplatesDialog', () => {
           { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: BROWN },
           { id: expect.stringMatching(/^[0-9a-f-]{36}$/), lock: NGUYEN },
         ],
+        folderName: expect.stringMatching(FOLDER),
       })
       expect(first.starts[0].id).not.toBe(first.starts[1].id)
       expect(again).toEqual(first)
@@ -540,17 +560,31 @@ describe('TemplatesDialog', () => {
 
       fireEvent.click(startButton())
       expect(onStartEach).not.toHaveBeenCalled()
-      expect(status()).toHaveTextContent('Make 3 reports? It takes about a minute, and this page has to stay open.')
-      expect(footerButtons()).toEqual(['Cancel', 'Make 3 reports'])
+      // It asks in a pop-up over the dialog (RW-385): how many, about how long, and the folder they go into, named for
+      // the template and the day (RW-387).
+      expect(confirmDialog()).toHaveAttribute('role', 'dialog')
+      expect(confirmDialog()).toHaveAttribute('aria-modal', 'true')
+      // Drawn over the dialog, its backdrop covering it.
+      expect(confirmDialog().closest('.react-autoql-reports-layer')).toHaveAttribute('data-over')
+      expect(confirmDialog()).toHaveAccessibleName('Make 3 reports?')
+      expect(confirmDialog()).toHaveTextContent('It takes about a minute, and this page has to stay open.')
+      expect(screen.getByLabelText('Folder')).toBe(folderField())
+      expect(folderField().value).toMatch(FOLDER)
+      expect(folderField()).toHaveFocus()
+      expect(confirmButtons()).toEqual(['Cancel', 'Make 3 reports'])
+      // The dialog under it is as it was, nothing in it to change meanwhile.
+      expect(footerButtons()).toEqual(['Back', 'Start 3 reports'])
+      expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
       expect(forOption('all')).toBeDisabled()
       expect(editList()).toBeDisabled()
       fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
-      expect(status()).toHaveTextContent('About a minute. Keep this page open while they’re made.')
+      expect(confirmDialog()).toBeNull()
+      expect(forOption('all')).toBeEnabled()
       expect(footerButtons()).toEqual(['Back', 'Start 3 reports'])
       expect(onStartEach).not.toHaveBeenCalled()
 
       fireEvent.click(startButton())
-      await act(async () => fireEvent.click(startButton()))
+      await act(async () => fireEvent.click(confirmStart()))
       expect(onStart).not.toHaveBeenCalled()
       expect(onStartEach).toHaveBeenCalledWith({
         templateId: 't1',
@@ -559,9 +593,118 @@ describe('TemplatesDialog', () => {
           id: expect.stringMatching(/^[0-9a-f-]{36}$/),
           name,
         })),
+        folderName: expect.stringMatching(FOLDER),
       })
       const ids = onStartEach.mock.calls[0][0].starts.map((start) => start.id)
       expect(new Set(ids).size).toBe(3)
+    })
+
+    it('makes them in the folder as it’s named in its pop-up, kept when it asks again, or the one suggested (RW-387)', async () => {
+      const onStartEach = jest
+        .fn()
+        .mockRejectedValueOnce(new ReportsApiError({ status: 0 }))
+        .mockResolvedValue(undefined)
+      await open({ onStartEach })
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      expect(folderField().value).toMatch(FOLDER)
+      // Cut to a folder name's length by code points where it's made, not by the browser's UTF-16 count.
+      expect(folderField()).not.toHaveAttribute('maxLength')
+      fireEvent.change(folderField(), { target: { value: '  Q4 household reviews  ' } })
+      await act(async () => fireEvent.click(confirmStart()))
+      // As typed: the host makes it a folder's name.
+      expect(onStartEach).toHaveBeenLastCalledWith(expect.objectContaining({ folderName: '  Q4 household reviews  ' }))
+
+      // It wasn't started: asked again, the folder is as it was named.
+      expect(screen.getByText('The report wasn’t started: couldn’t reach the server.')).toBeInTheDocument()
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('  Q4 household reviews  ')
+      // Left blank, it's the one suggested when it asks again; and Enter in it makes them, in that one.
+      fireEvent.change(folderField(), { target: { value: '   ' } })
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+      fireEvent.click(startButton())
+      expect(folderField().value).toMatch(FOLDER)
+      await act(async () => fireEvent.keyDown(folderField(), { key: 'Enter' }))
+      expect(confirmDialog()).toBeNull()
+      expect(onStartEach).toHaveBeenCalledTimes(2)
+      expect(onStartEach).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folderName: expect.stringMatching(FOLDER) }),
+      )
+    })
+
+    it('suggests the day’s folder each time it asks, so one left open past midnight has the new day (RW-387)', async () => {
+      batchFolderName.mockImplementation((title) => `${title} — Nov 27, 2026`)
+      const { onStartEach } = await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 27, 2026')
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+
+      // The next day.
+      batchFolderName.mockImplementation((title) => `${title} — Nov 28, 2026`)
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 28, 2026')
+      // The one it showed is the one it starts with.
+      await act(async () => fireEvent.click(confirmStart()))
+      expect(onStartEach).toHaveBeenLastCalledWith(
+        expect.objectContaining({ folderName: 'Household review — Nov 28, 2026' }),
+      )
+    })
+
+    it('keeps a name typed while it asks the same day, and suggests the new day’s folder the next (RW-387)', async () => {
+      batchFolderName.mockImplementation((title) => `${title} — Nov 27, 2026`)
+      await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      fireEvent.change(folderField(), { target: { value: 'Household review — Nov 27, 2026 (west)' } })
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 27, 2026 (west)')
+      fireEvent.click(screen.getByTestId('reports-templates-confirm-cancel'))
+
+      // The next day: the name typed then isn't kept over the new day's.
+      batchFolderName.mockImplementation((title) => `${title} — Nov 28, 2026`)
+      fireEvent.click(startButton())
+      expect(folderField()).toHaveValue('Household review — Nov 28, 2026')
+    })
+
+    it('says when a folder’s name is too long, by characters as the service counts them, and waits (RW-387)', async () => {
+      const { onStartEach } = await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      const status = () => confirmDialog().querySelector('[role="status"]')
+      // 80 characters, two of them outside the Basic Multilingual Plane (82 UTF-16 units): taken.
+      fireEvent.change(folderField(), { target: { value: `${'a'.repeat(78)}😀😀` } })
+      expect(status().textContent).toBe('')
+      expect(confirmStart()).toBeEnabled()
+      expect(folderField()).not.toHaveAttribute('aria-invalid')
+      // 81: said, and neither Make nor Enter starts it.
+      fireEvent.change(folderField(), { target: { value: `${'a'.repeat(79)}😀😀` } })
+      expect(status()).toHaveTextContent('A folder’s name can be up to 80 characters.')
+      expect(status()).toHaveAttribute('data-tone', 'error')
+      expect(folderField()).toHaveAttribute('aria-invalid', 'true')
+      expect(confirmStart()).toBeDisabled()
+      await act(async () => fireEvent.keyDown(folderField(), { key: 'Enter' }))
+      expect(confirmDialog()).not.toBeNull()
+      expect(onStartEach).not.toHaveBeenCalled()
+    })
+
+    it('goes back to the dialog as it was on Escape, and suggests each template’s own folder (RW-385, RW-387)', async () => {
+      const { onClose, onStartEach } = await open()
+      fireEvent.click(forOption('each'))
+      fireEvent.click(startButton())
+      fireEvent.change(folderField(), { target: { value: 'Mine' } })
+      fireEvent.keyDown(folderField(), { key: 'Escape' })
+      expect(confirmDialog()).toBeNull()
+      expect(screen.getByTestId('reports-templates')).toBeInTheDocument()
+      expect(onClose).not.toHaveBeenCalled()
+      expect(onStartEach).not.toHaveBeenCalled()
+
+      // Another template: its own folder is suggested, not the name given for the last one.
+      fireEvent.click(screen.getAllByTestId('reports-templates-item')[1])
+      await waitFor(() => expect(startButton()).toBeEnabled())
+      fireEvent.click(startButton())
+      expect(folderField().value).toMatch(/^New accounts — [A-Z][a-z]{2} \d{1,2}, \d{4}$/)
     })
 
     it('unticks any in the list shown in the preview’s place, or every one to tick a few', async () => {
